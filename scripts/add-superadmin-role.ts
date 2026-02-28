@@ -1,7 +1,7 @@
 import PocketBase from 'pocketbase'
 
 const pb = new PocketBase('https://kscw-api.lucanepa.com')
-await pb.collection('_superusers').authWithPassword('admin@kscw.ch', '@Bocconi13')
+await pb.collection('_superusers').authWithPassword('admin@kscw.ch', 'REDACTED_ROTATE_ME')
 
 // Add 'superadmin' to role select values
 const col = await pb.collections.getOne('members')

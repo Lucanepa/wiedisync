@@ -15,7 +15,7 @@ const DRY_RUN = !!process.env.DRY_RUN
 
 const PB_URL = process.env.PB_URL ?? 'https://kscw-api.lucanepa.com'
 const PB_EMAIL = process.env.PB_EMAIL ?? 'admin@kscw.ch'
-const PB_PASSWORD = process.env.PB_PASSWORD ?? '***REDACTED***'
+const PB_PASSWORD = process.env.PB_PASSWORD ?? 'REDACTED_ROTATE_ME'
 
 const SUPABASE_URL = 'https://wilrrlwqgvzjdhmnwmte.supabase.co'
 const SUPABASE_SERVICE_KEY =

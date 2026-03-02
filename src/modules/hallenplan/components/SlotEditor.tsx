@@ -127,7 +127,7 @@ export default function SlotEditor({
             <select
               value={form.hall}
               onChange={(e) => update('hall', e.target.value)}
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
             >
               <option value="">{t('selectPlaceholder')}</option>
               {halls.map((h) => (
@@ -140,7 +140,7 @@ export default function SlotEditor({
             <select
               value={form.team}
               onChange={(e) => update('team', e.target.value)}
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
             >
               <option value="">{t('selectPlaceholder')}</option>
               {teams.map((tm) => (
@@ -157,7 +157,7 @@ export default function SlotEditor({
             <select
               value={form.day_of_week}
               onChange={(e) => update('day_of_week', Number(e.target.value))}
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
             >
               {DAY_OPTIONS.map((d) => (
                 <option key={d.value} value={d.value}>{d.label}</option>
@@ -169,7 +169,7 @@ export default function SlotEditor({
             <select
               value={form.slot_type}
               onChange={(e) => update('slot_type', e.target.value as typeof form.slot_type)}
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
             >
               {TYPE_OPTIONS.map((tp) => (
                 <option key={tp.value} value={tp.value}>{tp.label}</option>
@@ -186,7 +186,7 @@ export default function SlotEditor({
               type="time"
               value={form.start_time}
               onChange={(e) => update('start_time', e.target.value)}
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
             />
           </div>
           <div>
@@ -195,7 +195,7 @@ export default function SlotEditor({
               type="time"
               value={form.end_time}
               onChange={(e) => update('end_time', e.target.value)}
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
             />
           </div>
         </div>
@@ -220,7 +220,7 @@ export default function SlotEditor({
                 type="date"
                 value={form.valid_from}
                 onChange={(e) => update('valid_from', e.target.value)}
-                className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
               />
             </div>
             <div>
@@ -229,7 +229,7 @@ export default function SlotEditor({
                 type="date"
                 value={form.valid_until}
                 onChange={(e) => update('valid_until', e.target.value)}
-                className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
               />
             </div>
           </div>
@@ -243,7 +243,7 @@ export default function SlotEditor({
             value={form.label}
             onChange={(e) => update('label', e.target.value)}
             placeholder="e.g. Training H3, Home game vs. TVA"
-            className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
           />
         </div>
 
@@ -254,7 +254,7 @@ export default function SlotEditor({
             value={form.notes}
             onChange={(e) => update('notes', e.target.value)}
             rows={3}
-            className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
           />
         </div>
 

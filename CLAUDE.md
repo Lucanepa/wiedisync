@@ -11,6 +11,7 @@ All infrastructure details (IPs, URLs, ports, credentials, deploy commands) are 
 
 ## Key Patterns
 - **Mobile-first**: All UI must be designed mobile-first — responsive layout, touch-friendly targets (min 44px), and tested on small screens before desktop
+- **Dark mode contrast**: Always ensure text/bg contrast in both light and dark mode. Every input, select, textarea must have explicit `dark:bg-gray-700 dark:text-gray-100` (or equivalent). Never leave default browser colors — they break in dark mode.
 - **Hallenplan virtual slots**: Games, trainings, and GCal hall events are converted to `HallSlot`-shaped objects at display time (via `_virtual` metadata field) and merged with real `hall_slots`. They're never stored in the DB. See `INFRA.md → Hallenplan Virtual Slots` for the full mapping table.
 - PocketBase hooks use isolated scopes — shared code must use `require(__hooks + "/file.js")` with `module.exports`
 - `pb_hooks/` is gitignored (contains API keys) — deployed separately via SSH/rsync

@@ -163,7 +163,7 @@ export default function ClosureManager({ halls, closures, onClose, onChanged }: 
               <select
                 value={form.hall}
                 onChange={(e) => update('hall', e.target.value)}
-                className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
               >
                 <option value="">{t('selectPlaceholder')}</option>
                 {halls.map((h) => (
@@ -176,7 +176,7 @@ export default function ClosureManager({ halls, closures, onClose, onChanged }: 
               <select
                 value={form.source}
                 onChange={(e) => update('source', e.target.value as typeof form.source)}
-                className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
               >
                 {SOURCE_OPTIONS.map((s) => (
                   <option key={s.value} value={s.value}>{s.label}</option>
@@ -192,7 +192,7 @@ export default function ClosureManager({ halls, closures, onClose, onChanged }: 
                 type="date"
                 value={form.start_date}
                 onChange={(e) => update('start_date', e.target.value)}
-                className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
               />
             </div>
             <div>
@@ -201,7 +201,7 @@ export default function ClosureManager({ halls, closures, onClose, onChanged }: 
                 type="date"
                 value={form.end_date}
                 onChange={(e) => update('end_date', e.target.value)}
-                className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
               />
             </div>
           </div>
@@ -213,7 +213,7 @@ export default function ClosureManager({ halls, closures, onClose, onChanged }: 
               value={form.reason}
               onChange={(e) => update('reason', e.target.value)}
               placeholder="e.g. Holidays, maintenance, renovation"
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
             />
           </div>
 

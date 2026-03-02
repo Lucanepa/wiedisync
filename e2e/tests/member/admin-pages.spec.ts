@@ -1,0 +1,25 @@
+import { test, expect } from '@playwright/test'
+
+// Use admin storageState for admin route tests
+test.use({ storageState: 'e2e/.auth/admin.json' })
+
+test.describe('Admin pages (admin user)', () => {
+  test('Spielplanung loads', async ({ page }) => {
+    await page.goto('/admin/spielplanung')
+    await page.waitForLoadState('domcontentloaded')
+
+    // Should NOT redirect away — admin has access
+    await expect(page).toHaveURL('/admin/spielplanung')
+    const body = page.locator('body')
+    await expect(body).not.toContainText('Error')
+  })
+
+  test('Hallenplan loads', async ({ page }) => {
+    await page.goto('/admin/hallenplan')
+    await page.waitForLoadState('domcontentloaded')
+
+    await expect(page).toHaveURL('/admin/hallenplan')
+    const body = page.locator('body')
+    await expect(body).not.toContainText('Error')
+  })
+})

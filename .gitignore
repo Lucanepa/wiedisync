@@ -22,6 +22,12 @@ pb_hooks/
 INFRA.md
 CONTINGENCY.md
 
+# Playwright
+playwright-report/
+test-results/
+e2e/.auth/
+.env.test
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

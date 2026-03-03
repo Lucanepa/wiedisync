@@ -1,10 +1,9 @@
 import { useTranslation } from 'react-i18next'
 
-export type TabKey = 'upcoming' | 'recent' | 'results' | 'rankings'
+export type TabKey = 'upcoming' | 'results' | 'rankings'
 
 const TAB_KEYS: { key: TabKey; labelKey: string }[] = [
   { key: 'upcoming', labelKey: 'tabUpcoming' },
-  { key: 'recent', labelKey: 'tabRecent' },
   { key: 'results', labelKey: 'tabResults' },
   { key: 'rankings', labelKey: 'tabRankings' },
 ]

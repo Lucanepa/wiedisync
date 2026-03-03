@@ -6,6 +6,8 @@ export interface CalendarEntry {
   type: 'game' | 'training' | 'event' | 'closure' | 'hall'
   title: string
   date: Date
+  /** End date for multi-day entries (closures, multi-day events). Undefined = single-day. */
+  endDate?: Date
   startTime: string | null
   endTime: string | null
   allDay: boolean
@@ -18,7 +20,7 @@ export interface CalendarEntry {
 }
 
 export type ViewMode = 'calendar' | 'list-date' | 'list-team'
-export type CalendarViewMode = 'hallenplan' | 'month' | 'list'
+export type CalendarViewMode = 'hallenplan' | 'month' | 'week'
 
 export type SportFilter = 'volleyball' | 'basketball' | 'all'
 export type GameTypeFilter = 'home' | 'away' | 'all'

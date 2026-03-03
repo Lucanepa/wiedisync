@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useTheme } from '../../hooks/useTheme'
 import { useAuth } from '../../hooks/useAuth'
 import { usePB } from '../../hooks/usePB'
-import { formatDate, formatTime, formatWeekday } from '../../utils/dateHelpers'
+import { formatDate, formatDateCompact, formatTime, formatWeekday } from '../../utils/dateHelpers'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import TeamChip from '../../components/TeamChip'
 import GameDetailModal from '../games/components/GameDetailModal'
@@ -120,7 +120,7 @@ export default function HomePage() {
   })
 
   return (
-    <div>
+    <div className="min-w-0">
       {/* Hero */}
       <div className="flex flex-col items-center pb-6 pt-2 text-center">
         <img
@@ -285,40 +285,43 @@ function EmptyCard({ message }: { message: string }) {
 
 function CompactGameRow({ game, showScore, onClick }: { game: ExpandedGame; showScore: boolean; onClick?: () => void }) {
   const kscwTeam = game.expand?.kscw_team?.name ?? ''
-  const dateStr = game.date ? formatDate(game.date) : ''
+  const dateStr = game.date ? formatDateCompact(game.date) : ''
+  const homeWon = Number(game.home_score) > Number(game.away_score)
+  const awayWon = Number(game.away_score) > Number(game.home_score)
 
   return (
     <div
-      className="flex cursor-pointer items-center gap-3 border-b border-gray-100 px-4 py-3 last:border-b-0 hover:bg-gray-50 active:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-700/50 dark:active:bg-gray-700"
+      className="flex cursor-pointer items-center gap-3 border-b border-gray-100 px-4 py-2 last:border-b-0 hover:bg-gray-50 active:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-700/50 dark:active:bg-gray-700"
       onClick={onClick}
     >
       {/* Date & time */}
-      <div className="w-24 shrink-0 text-xs text-gray-500 dark:text-gray-400">
+      <div className="w-16 shrink-0 text-xs text-gray-500 dark:text-gray-400">
         <div>{dateStr}</div>
         {game.time && <div>{formatTime(game.time)}</div>}
       </div>
 
-      {/* Teams */}
+      {/* Team names — stacked, Wiedikon team bold */}
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5 text-sm">
-          <span className={`truncate text-gray-900 dark:text-gray-100 ${game.type === 'home' ? 'font-semibold' : ''}`}>
+        <div className="flex items-center gap-2">
+          <p className={`min-w-0 truncate text-sm text-gray-900 dark:text-gray-100 ${game.type === 'home' ? 'font-bold' : ''}`}>
             {game.home_team}
-          </span>
-          <span className="shrink-0 text-gray-400 dark:text-gray-500">–</span>
-          <span className={`truncate text-gray-900 dark:text-gray-100 ${game.type === 'away' ? 'font-semibold' : ''}`}>
-            {game.away_team}
-          </span>
+          </p>
+          {kscwTeam && <TeamChip team={kscwTeam} size="sm" className="shrink-0" />}
         </div>
-        <div className="mt-0.5 flex items-center gap-2">
-          <span className="text-xs text-gray-400 dark:text-gray-500">{game.league}</span>
-          {kscwTeam && <TeamChip team={kscwTeam} size="sm" />}
-        </div>
+        <p className={`truncate text-sm text-gray-900 dark:text-gray-100 ${game.type === 'away' ? 'font-bold' : ''}`}>
+          {game.away_team}
+        </p>
       </div>
 
-      {/* Score */}
+      {/* Vertical score: green=winner, red=loser, bold=Wiedikon */}
       {showScore && game.status === 'completed' && (
-        <div className="shrink-0 font-mono text-lg font-bold text-gray-900 dark:text-white">
-          {game.home_score}:{game.away_score}
+        <div className="shrink-0 text-right font-mono text-sm leading-snug">
+          <div className={`${homeWon ? 'text-green-600 dark:text-green-400' : awayWon ? 'text-red-500' : 'text-gray-400'} ${game.type === 'home' ? 'font-bold' : 'font-medium'}`}>
+            {game.home_score}
+          </div>
+          <div className={`${awayWon ? 'text-green-600 dark:text-green-400' : homeWon ? 'text-red-500' : 'text-gray-400'} ${game.type === 'away' ? 'font-bold' : 'font-medium'}`}>
+            {game.away_score}
+          </div>
         </div>
       )}
     </div>

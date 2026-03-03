@@ -7,9 +7,11 @@ interface CalendarFiltersProps {
   filters: CalendarFilterState
   onChange: (filters: CalendarFilterState) => void
   allowedSources?: SourceFilter[]
+  /** Compact mode: smaller chips for use below the calendar */
+  compact?: boolean
 }
 
-export default function CalendarFilters({ filters, onChange, allowedSources }: CalendarFiltersProps) {
+export default function CalendarFilters({ filters, onChange, allowedSources, compact }: CalendarFiltersProps) {
   const { t } = useTranslation('calendar')
 
   const allSourceOptions = [
@@ -31,19 +33,21 @@ export default function CalendarFilters({ filters, onChange, allowedSources }: C
   }))
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
+    <div className={`flex flex-col ${compact ? 'gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3' : 'gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4'}`}>
       <FilterChips
         options={sourceOptions}
         selected={filters.sources}
         onChange={(sources) => onChange({ ...filters, sources: sources as SourceFilter[] })}
+        compact={compact}
       />
 
       {teamChipOptions.length > 0 && (
-        <div className="border-t border-gray-200 pt-3 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0 dark:border-gray-700">
+        <div className={`${compact ? 'border-t border-gray-200 pt-2 sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0 dark:border-gray-700' : 'border-t border-gray-200 pt-3 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0 dark:border-gray-700'}`}>
           <FilterChips
             options={teamChipOptions}
             selected={filters.selectedTeamIds}
             onChange={(ids) => onChange({ ...filters, selectedTeamIds: ids })}
+            compact={compact}
           />
         </div>
       )}

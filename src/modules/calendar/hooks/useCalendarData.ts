@@ -5,37 +5,35 @@ import type { CalendarEntry, CalendarFilterState } from '../../../types/calendar
 import {
   parseDate,
   toDateKey,
-  startOfMonth,
-  endOfMonth,
   eachDayOfInterval,
 } from '../../../utils/dateUtils'
-import { format } from 'date-fns'
+import { format, isBefore, isAfter, isSameDay } from 'date-fns'
 
 interface UseCalendarDataOptions {
   filters: CalendarFilterState
-  month: Date
+  /** Visible range start (inclusive) */
+  rangeStart: Date
+  /** Visible range end (inclusive) */
+  rangeEnd: Date
   enabled?: boolean
 }
 
 /**
- * Compute a wide fetch range: from 1 month before to 1 month after the current month.
- * This lets month navigation stay instant (no re-fetch) for ±1 month.
- * When the user navigates further, the range shifts and a single re-fetch occurs.
+ * Compute a wide fetch range based on the visible range.
+ * Rounds to quarter boundaries for stable caching.
  */
-function useFetchRange(month: Date) {
+function useFetchRange(rangeStart: Date) {
   return useMemo(() => {
-    // Round to quarter boundaries: Jan/Apr/Jul/Oct
-    // This gives a stable 4-month window that only shifts every ~3 months of navigation
-    const m = month.getMonth()
-    const y = month.getFullYear()
-    const quarterStart = Math.floor(m / 4) * 4 // 0, 4, 8
-    const rangeStart = new Date(y, quarterStart - 1, 1) // 1 month before quarter
-    const rangeEnd = new Date(y, quarterStart + 5, 0) // end of month after quarter+3
+    const m = rangeStart.getMonth()
+    const y = rangeStart.getFullYear()
+    const quarterStart = Math.floor(m / 4) * 4
+    const fetchStart = new Date(y, quarterStart - 1, 1)
+    const fetchEnd = new Date(y, quarterStart + 5, 0)
     return {
-      start: format(rangeStart, 'yyyy-MM-dd'),
-      end: format(rangeEnd, 'yyyy-MM-dd'),
+      start: format(fetchStart, 'yyyy-MM-dd'),
+      end: format(fetchEnd, 'yyyy-MM-dd'),
     }
-  }, [month])
+  }, [rangeStart])
 }
 
 function buildDateFilter(field: string, rangeStart: string, rangeEnd: string): string {
@@ -90,14 +88,20 @@ function trainingToEntry(training: Training): CalendarEntry {
 }
 
 function eventToEntry(event: Event): CalendarEntry {
+  const startDate = parseDate(event.start_date)
+  const endDate = event.end_date ? parseDate(event.end_date) : undefined
+  // Multi-day if end_date is a different day from start_date
+  const isMultiDay = endDate && !isSameDay(startDate, endDate)
+
   return {
     id: event.id,
     type: 'event',
     title: event.title,
-    date: parseDate(event.start_date),
+    date: startDate,
+    endDate: isMultiDay ? endDate : undefined,
     startTime: event.all_day ? null : event.start_date.split(' ')[1]?.slice(0, 5) ?? null,
     endTime: event.all_day ? null : event.end_date?.split(' ')[1]?.slice(0, 5) ?? null,
-    allDay: event.all_day,
+    allDay: event.all_day || !!isMultiDay,
     location: event.location ?? '',
     teamNames: [],
     description: event.description ?? '',
@@ -105,18 +109,19 @@ function eventToEntry(event: Event): CalendarEntry {
   }
 }
 
-function closureToEntries(closure: HallClosure): CalendarEntry[] {
+function closureToEntry(closure: HallClosure): CalendarEntry {
   const expandedHall = (closure.expand as { hall?: { name: string } })?.hall
   const hallName = expandedHall?.name ?? ''
   const start = parseDate(closure.start_date)
   const end = parseDate(closure.end_date)
-  const days = eachDayOfInterval(start, end)
+  const isMultiDay = !isSameDay(start, end)
 
-  return days.map((day) => ({
-    id: `${closure.id}-${toDateKey(day)}`,
-    type: 'closure' as const,
+  return {
+    id: closure.id,
+    type: 'closure',
     title: `Hall closure: ${hallName}`,
-    date: day,
+    date: start,
+    endDate: isMultiDay ? end : undefined,
     startTime: null,
     endTime: null,
     allDay: true,
@@ -124,7 +129,7 @@ function closureToEntries(closure: HallClosure): CalendarEntry[] {
     teamNames: [],
     description: closure.reason ?? '',
     source: closure,
-  }))
+  }
 }
 
 function hallEventToEntry(he: HallEvent): CalendarEntry {
@@ -143,12 +148,14 @@ function hallEventToEntry(he: HallEvent): CalendarEntry {
   }
 }
 
-export function useCalendarData({ filters, month, enabled = true }: UseCalendarDataOptions) {
-  // Fetch a wide range (stable ~6-month window) so month navigation is instant
-  const fetchRange = useFetchRange(month)
+/** Check if an entry overlaps with a date range */
+function entryOverlapsRange(entry: CalendarEntry, rangeStart: Date, rangeEnd: Date): boolean {
+  const entryEnd = entry.endDate ?? entry.date
+  return !isAfter(entry.date, rangeEnd) && !isBefore(entryEnd, rangeStart)
+}
 
-  const monthStartDate = startOfMonth(month)
-  const monthEndDate = endOfMonth(month)
+export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true }: UseCalendarDataOptions) {
+  const fetchRange = useFetchRange(rangeStart)
 
   const noSourceFilter = filters.sources.length === 0
   const wantHome = noSourceFilter || filters.sources.includes('game-home')
@@ -204,7 +211,6 @@ export function useCalendarData({ filters, month, enabled = true }: UseCalendarD
     all: true,
   })
 
-  // Build all entries from wide-range data, then filter to current month
   const entries = useMemo(() => {
     const all: CalendarEntry[] = []
 
@@ -222,17 +228,11 @@ export function useCalendarData({ filters, month, enabled = true }: UseCalendarD
     }
     if (fetchTrainings) all.push(...trainings.map(trainingToEntry))
     if (fetchEvents) all.push(...events.map(eventToEntry))
-    if (fetchClosures) {
-      for (const c of closuresRaw) {
-        all.push(...closureToEntries(c))
-      }
-    }
+    if (fetchClosures) all.push(...closuresRaw.map(closureToEntry))
     if (fetchHallEvents) all.push(...hallEvents.map(hallEventToEntry))
 
-    // Filter to current month client-side
-    const filtered = all.filter((entry) => {
-      return entry.date >= monthStartDate && entry.date <= monthEndDate
-    })
+    // Filter to visible range
+    const filtered = all.filter((entry) => entryOverlapsRange(entry, rangeStart, rangeEnd))
 
     filtered.sort((a, b) => {
       const dateCmp = toDateKey(a.date).localeCompare(toDateKey(b.date))
@@ -243,7 +243,7 @@ export function useCalendarData({ filters, month, enabled = true }: UseCalendarD
     })
 
     return filtered
-  }, [games, trainings, events, closuresRaw, hallEvents, fetchGames, fetchTrainings, fetchEvents, fetchClosures, fetchHallEvents, wantHome, wantAway, monthStartDate, monthEndDate])
+  }, [games, trainings, events, closuresRaw, hallEvents, fetchGames, fetchTrainings, fetchEvents, fetchClosures, fetchHallEvents, wantHome, wantAway, rangeStart, rangeEnd])
 
   const closedDates = useMemo(() => {
     const dates = new Set<string>()

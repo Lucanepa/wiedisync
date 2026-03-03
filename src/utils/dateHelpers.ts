@@ -2,6 +2,15 @@ const dateFmt = new Intl.DateTimeFormat('en-US', { day: 'numeric', month: 'short
 const dateShortFmt = new Intl.DateTimeFormat('en-US', { day: '2-digit', month: '2-digit' })
 const weekdayFmt = new Intl.DateTimeFormat('en-US', { weekday: 'short' })
 
+/** Swiss compact: dd.mm.yy */
+export function formatDateCompact(date: string): string {
+  const d = new Date(date)
+  const dd = String(d.getDate()).padStart(2, '0')
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const yy = String(d.getFullYear()).slice(-2)
+  return `${dd}.${mm}.${yy}`
+}
+
 export function formatDate(date: string): string {
   return dateFmt.format(new Date(date))
 }

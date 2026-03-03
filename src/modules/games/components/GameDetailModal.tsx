@@ -231,37 +231,30 @@ export default function GameDetailModal({ game, onClose }: GameDetailModalProps)
             {expanded.expand?.scorer_taefeler_member ? (
               <DetailRow
                 label={t('scorerTaefeler')}
-                value={[
-                  expanded.expand.scorer_taefeler_duty_team?.name,
-                  `${expanded.expand.scorer_taefeler_member.first_name} ${expanded.expand.scorer_taefeler_member.last_name}`,
-                ].filter(Boolean).join(' — ')}
+                value={`${expanded.expand.scorer_taefeler_member.first_name} ${expanded.expand.scorer_taefeler_member.last_name}`}
               />
             ) : (
               <>
-                {(expanded.expand?.scorer_member || game.scorer_team || game.scorer_person) && (
+                {(expanded.expand?.scorer_member || game.scorer_person) && (
                   <DetailRow
                     label={t('scorer')}
                     value={expanded.expand?.scorer_member
-                      ? [expanded.expand.scorer_duty_team?.name, `${expanded.expand.scorer_member.first_name} ${expanded.expand.scorer_member.last_name}`].filter(Boolean).join(' — ')
-                      : [game.scorer_team, game.scorer_person].filter(Boolean).join(' — ')
+                      ? `${expanded.expand.scorer_member.first_name} ${expanded.expand.scorer_member.last_name}`
+                      : game.scorer_person
                     }
                   />
                 )}
-                {(expanded.expand?.taefeler_member || game.taefeler_team || game.taefeler_person) && (
+                {(expanded.expand?.taefeler_member || game.taefeler_person) && (
                   <DetailRow
                     label={t('taefeler')}
                     value={expanded.expand?.taefeler_member
-                      ? [expanded.expand.taefeler_duty_team?.name, `${expanded.expand.taefeler_member.first_name} ${expanded.expand.taefeler_member.last_name}`].filter(Boolean).join(' — ')
-                      : [game.taefeler_team, game.taefeler_person].filter(Boolean).join(' — ')
+                      ? `${expanded.expand.taefeler_member.first_name} ${expanded.expand.taefeler_member.last_name}`
+                      : game.taefeler_person
                     }
                   />
                 )}
               </>
             )}
-            <DetailRow
-              label={t('confirmed')}
-              value={game.duty_confirmed ? t('common:yes') : t('common:no')}
-            />
           </div>
         )}
       </div>

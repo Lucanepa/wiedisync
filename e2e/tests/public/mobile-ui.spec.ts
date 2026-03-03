@@ -52,7 +52,7 @@ test.describe('Mobile UI — public pages (unauthenticated)', () => {
     await page.waitForLoadState('domcontentloaded')
 
     // Desktop sidebar rail (w-16 shrink-0) should not render
-    const sidebarRail = page.locator('div.w-16.shrink-0')
+    const sidebarRail = page.locator('div.flex.h-screen > div.w-16.shrink-0')
     await expect(sidebarRail).toHaveCount(0)
   })
 

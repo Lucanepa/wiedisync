@@ -3,13 +3,13 @@ export default {
 
   // View options
   viewHall: 'Halle',
+  viewWeek: 'Woche',
   viewMonth: 'Monat',
-  viewList: 'Liste',
 
   // Subtitles
   subtitleHall: 'Hallenbelegungsplan',
+  subtitleWeek: 'Wochenübersicht aller Termine',
   subtitleMonth: 'Monatsübersicht aller Termine',
-  subtitleList: 'Alle Termine chronologisch',
 
   // Source filters
   sourceGames: 'Spiele',
@@ -18,8 +18,8 @@ export default {
   sourceEvents: 'Events',
 
   // Game type filters
-  gameTypeHome: 'Heim',
-  gameTypeAway: 'Auswärts',
+  gameTypeHome: 'Heimspiele',
+  gameTypeAway: 'Auswärtsspiele',
   sourceHallHW: 'Halle HW',
 
   // Type labels

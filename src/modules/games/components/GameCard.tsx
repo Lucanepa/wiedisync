@@ -74,9 +74,9 @@ export default function GameCard({ game, onClick, variant = 'card' }: GameCardPr
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 text-sm">
-            <span className={`text-gray-900 dark:text-gray-100 ${game.type === 'home' ? 'font-semibold' : ''}`}>{game.home_team}</span>
-            <span className="text-gray-400 dark:text-gray-500">–</span>
-            <span className={`text-gray-900 dark:text-gray-100 ${game.type === 'away' ? 'font-semibold' : ''}`}>{game.away_team}</span>
+            <span className={`min-w-0 truncate text-gray-900 dark:text-gray-100 ${game.type === 'home' ? 'font-semibold' : ''}`}>{game.home_team}</span>
+            <span className="shrink-0 text-gray-400 dark:text-gray-500">–</span>
+            <span className={`min-w-0 truncate text-gray-900 dark:text-gray-100 ${game.type === 'away' ? 'font-semibold' : ''}`}>{game.away_team}</span>
           </div>
           <div className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{game.league}</div>
         </div>
@@ -93,14 +93,14 @@ export default function GameCard({ game, onClick, variant = 'card' }: GameCardPr
   return (
     <div
       onClick={() => onClick?.(game)}
-      className={`rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm transition-shadow ${onClick ? 'cursor-pointer hover:shadow-md' : ''}`}
+      className={`overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm transition-shadow ${onClick ? 'cursor-pointer hover:shadow-md' : ''}`}
     >
       {/* Top: date+time left, team chip right */}
-      <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-        <span>
+      <div className="flex items-center justify-between gap-2 text-xs text-gray-500 dark:text-gray-400">
+        <span className="min-w-0 truncate">
           {dateStr} {game.time && `· ${game.time}`}
         </span>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <StatusBadge status={game.status} />
           {kscwTeamName && <TeamChip team={kscwTeamName} size="sm" />}
         </div>
@@ -109,9 +109,9 @@ export default function GameCard({ game, onClick, variant = 'card' }: GameCardPr
       {/* Teams */}
       <div className="mt-3 flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1 text-right">
-          <span className={`truncate text-sm text-gray-900 dark:text-gray-100 ${game.type === 'home' ? 'font-semibold' : ''}`}>
+          <p className={`truncate text-sm text-gray-900 dark:text-gray-100 ${game.type === 'home' ? 'font-semibold' : ''}`}>
             {game.home_team}
-          </span>
+          </p>
         </div>
 
         {game.status === 'completed' || game.status === 'live' ? (
@@ -127,16 +127,16 @@ export default function GameCard({ game, onClick, variant = 'card' }: GameCardPr
         )}
 
         <div className="min-w-0 flex-1">
-          <span className={`truncate text-sm text-gray-900 dark:text-gray-100 ${game.type === 'away' ? 'font-semibold' : ''}`}>
+          <p className={`truncate text-sm text-gray-900 dark:text-gray-100 ${game.type === 'away' ? 'font-semibold' : ''}`}>
             {game.away_team}
-          </span>
+          </p>
         </div>
       </div>
 
       {/* Bottom: league left, hall right */}
-      <div className="mt-3 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-        <span className="truncate">{game.league}</span>
-        {hallInfo && <span className="truncate text-right">{hallInfo}</span>}
+      <div className="mt-3 flex items-center justify-between gap-2 text-xs text-gray-500 dark:text-gray-400">
+        <span className="min-w-0 flex-1 truncate">{game.league}</span>
+        {hallInfo && <span className="min-w-0 flex-1 truncate text-right">{hallInfo}</span>}
       </div>
     </div>
   )

@@ -38,9 +38,6 @@ export default function GamesPage() {
       case 'upcoming':
         parts.push(`status = "scheduled"`, `date >= "${today}"`)
         break
-      case 'recent':
-        parts.push(`status = "completed"`, `date < "${today}"`)
-        break
       case 'results':
         parts.push(`(status = "completed" || status = "live")`)
         break
@@ -102,7 +99,6 @@ export default function GamesPage() {
   return (
     <div className="min-w-0">
       <h1 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-gray-100">{t('title')}</h1>
-      <p className="mt-1 text-gray-600 dark:text-gray-400">{t('subtitle')}</p>
 
       <div className="mt-6 space-y-4">
         <TeamFilterBar selected={selectedTeams} onChange={setSelectedTeams} />
@@ -112,8 +108,8 @@ export default function GamesPage() {
       <div className="mt-6">
         {isLoading && <LoadingSpinner />}
 
-        {/* Upcoming / Recent: card grid */}
-        {showGames && (activeTab === 'upcoming' || activeTab === 'recent') && (
+        {/* Upcoming: card grid */}
+        {showGames && activeTab === 'upcoming' && (
           <>
             {games.length === 0 ? (
               <EmptyState tab={activeTab} />
@@ -168,7 +164,6 @@ function EmptyState({ tab }: { tab: string }) {
 
   const messages: Record<string, string> = {
     upcoming: t('noUpcoming'),
-    recent: t('noRecent'),
     results: t('noResults'),
     rankings: t('noRankings'),
   }

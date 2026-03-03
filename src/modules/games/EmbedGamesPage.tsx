@@ -32,9 +32,6 @@ export default function EmbedGamesPage() {
       case 'upcoming':
         parts.push(`status = "scheduled"`, `date >= "${today}"`)
         break
-      case 'recent':
-        parts.push(`status = "completed"`, `date < "${today}"`)
-        break
       case 'results':
         parts.push(`(status = "completed" || status = "live")`)
         break

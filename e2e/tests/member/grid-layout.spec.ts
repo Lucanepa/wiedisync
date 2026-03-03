@@ -38,10 +38,12 @@ test.describe('Grid layout — desktop/mobile layout switch', () => {
     await page.waitForLoadState('domcontentloaded')
     await page.waitForTimeout(500)
 
+    // Sidebar rail selector: direct child of the root flex h-screen layout
+    const sidebarRail = page.locator('div.flex.h-screen > div.w-16.shrink-0')
+
     // Tab bar visible, sidebar rail hidden
     const tabBar = page.locator('nav.fixed.bottom-0')
     await expect(tabBar).toBeVisible()
-    const sidebarRail = page.locator('div.w-16.shrink-0')
     await expect(sidebarRail).toHaveCount(0)
 
     // Resize to desktop
@@ -49,7 +51,7 @@ test.describe('Grid layout — desktop/mobile layout switch', () => {
     await page.waitForTimeout(500)
 
     // Sidebar rail appears, tab bar disappears
-    await expect(page.locator('div.w-16.shrink-0')).toBeVisible()
+    await expect(sidebarRail).toBeVisible()
     await expect(page.locator('nav.fixed.bottom-0')).toHaveCount(0)
   })
 })

@@ -1,6 +1,5 @@
 export default {
   title: 'Games & Results',
-  subtitle: 'Swiss Volley data — upcoming games, results, rankings.',
 
   // Tabs
   tabUpcoming: 'Upcoming',

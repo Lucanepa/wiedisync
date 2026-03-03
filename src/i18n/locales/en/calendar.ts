@@ -20,8 +20,8 @@ export default {
   sourceEvents: 'Events',
 
   // Game type filters
-  gameTypeHome: 'Home',
-  gameTypeAway: 'Away',
+  gameTypeHome: 'Home games',
+  gameTypeAway: 'Away games',
   sourceHallHW: 'Halle HW',
 
   // Type labels

@@ -12,6 +12,8 @@ interface FilterChipsProps {
   selected: string[]
   onChange: (selected: string[]) => void
   multiple?: boolean
+  /** Compact mode: smaller chips for use below calendar */
+  compact?: boolean
 }
 
 export default function FilterChips({
@@ -19,6 +21,7 @@ export default function FilterChips({
   selected,
   onChange,
   multiple = true,
+  compact = false,
 }: FilterChipsProps) {
   function handleClick(value: string) {
     if (multiple) {
@@ -32,8 +35,14 @@ export default function FilterChips({
     }
   }
 
+  const sizeClasses = compact
+    ? 'rounded-full border px-2 py-0.5 text-[10px] font-medium transition-colors'
+    : 'min-h-[44px] rounded-full border px-3 py-2 text-sm font-medium transition-colors sm:min-h-0 sm:py-1 sm:text-xs'
+
+  const unselectedClasses = 'border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+
   return (
-    <div className="flex flex-wrap gap-2 sm:gap-1.5">
+    <div className={`flex flex-wrap ${compact ? 'gap-1' : 'gap-2 sm:gap-1.5'}`}>
       {options.map((option) => {
         const isSelected = selected.includes(option.value)
 
@@ -42,11 +51,7 @@ export default function FilterChips({
             <button
               key={option.value}
               onClick={() => handleClick(option.value)}
-              className={`min-h-[44px] rounded-full border px-3 py-2 text-sm font-medium transition-colors sm:min-h-0 sm:py-1 sm:text-xs ${
-                isSelected
-                  ? option.colorClasses
-                  : 'border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-              }`}
+              className={`${sizeClasses} ${isSelected ? option.colorClasses : unselectedClasses}`}
             >
               {option.label}
             </button>
@@ -58,9 +63,7 @@ export default function FilterChips({
           <button
             key={option.value}
             onClick={() => handleClick(option.value)}
-            className={`min-h-[44px] rounded-full px-3 py-2 text-sm font-medium transition-colors sm:min-h-0 sm:py-1 sm:text-xs ${
-              !isSelected ? 'border border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600' : ''
-            }`}
+            className={`${sizeClasses} ${!isSelected ? unselectedClasses : ''}`}
             style={
               isSelected
                 ? {

@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import type { RecordModel } from 'pocketbase'
 import type { Game, Team, Hall } from '../../../types'
+import { formatDateCompact } from '../../../utils/dateHelpers'
 import TeamChip from '../../../components/TeamChip'
 
 interface GameCardProps {
@@ -15,13 +16,6 @@ type ExpandedGame = Game & {
     hall?: Hall & RecordModel
   }
 }
-
-const dateFormatter = new Intl.DateTimeFormat('en-US', {
-  weekday: 'short',
-  day: 'numeric',
-  month: 'short',
-  year: 'numeric',
-})
 
 function StatusBadge({ status }: { status: Game['status'] }) {
   const { t } = useTranslation('games')
@@ -60,32 +54,48 @@ export default function GameCard({ game, onClick, variant = 'card' }: GameCardPr
       ? [game.away_hall_json.name, game.away_hall_json.city].filter(Boolean).join(', ')
       : ''
   const kscwTeamName = expanded.expand?.kscw_team?.name ?? ''
-  const dateStr = game.date ? dateFormatter.format(new Date(game.date)) : ''
 
   if (variant === 'compact') {
+    const short = game.date ? formatDateCompact(game.date) : ''
+    const hasScore = game.status === 'completed' || game.status === 'live'
+    const homeWon = Number(game.home_score) > Number(game.away_score)
+    const awayWon = Number(game.away_score) > Number(game.home_score)
+
     return (
       <div
         onClick={() => onClick?.(game)}
-        className={`flex items-center gap-4 border-b border-gray-100 dark:border-gray-700 px-4 py-3 ${onClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700' : ''}`}
+        className={`flex items-center gap-3 border-b border-gray-100 px-4 py-2 dark:border-gray-700 ${onClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700' : ''}`}
       >
-        <div className="w-28 shrink-0 text-sm text-gray-500 dark:text-gray-400">
-          <div>{dateStr}</div>
-          <div>{game.time}</div>
+        {/* Date + time */}
+        <div className="w-16 shrink-0 text-xs text-gray-500 dark:text-gray-400">
+          <div>{short}</div>
+          {game.time && <div>{game.time}</div>}
         </div>
+
+        {/* Team names — stacked */}
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 text-sm">
-            <span className={`min-w-0 truncate text-gray-900 dark:text-gray-100 ${game.type === 'home' ? 'font-semibold' : ''}`}>{game.home_team}</span>
-            <span className="shrink-0 text-gray-400 dark:text-gray-500">–</span>
-            <span className={`min-w-0 truncate text-gray-900 dark:text-gray-100 ${game.type === 'away' ? 'font-semibold' : ''}`}>{game.away_team}</span>
-          </div>
-          <div className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{game.league}</div>
+          <p className={`truncate text-sm text-gray-900 dark:text-gray-100 ${game.type === 'home' ? 'font-bold' : ''}`}>
+            {game.home_team}
+          </p>
+          <p className={`truncate text-sm text-gray-900 dark:text-gray-100 ${game.type === 'away' ? 'font-bold' : ''}`}>
+            {game.away_team}
+          </p>
         </div>
-        {game.status === 'completed' && (
-          <div className="shrink-0 text-right font-mono text-lg font-bold text-gray-900 dark:text-white">
-            {game.home_score}:{game.away_score}
+
+        {/* Vertical score: green for winner, red for loser */}
+        {hasScore && (
+          <div className="shrink-0 text-right font-mono text-sm font-bold leading-snug">
+            <div className={homeWon ? 'text-green-500' : awayWon ? 'text-red-500' : 'text-gray-400'}>
+              {game.home_score}
+            </div>
+            <div className={awayWon ? 'text-green-500' : homeWon ? 'text-red-500' : 'text-gray-400'}>
+              {game.away_score}
+            </div>
           </div>
         )}
-        <StatusBadge status={game.status} />
+
+        {/* Only show badge for non-completed states (live, postponed) */}
+        {game.status !== 'completed' && <StatusBadge status={game.status} />}
       </div>
     )
   }
@@ -93,50 +103,30 @@ export default function GameCard({ game, onClick, variant = 'card' }: GameCardPr
   return (
     <div
       onClick={() => onClick?.(game)}
-      className={`overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm transition-shadow ${onClick ? 'cursor-pointer hover:shadow-md' : ''}`}
+      className={`overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 shadow-sm transition-shadow ${onClick ? 'cursor-pointer hover:shadow-md' : ''}`}
     >
-      {/* Top: date+time left, team chip right */}
-      <div className="flex items-center justify-between gap-2 text-xs text-gray-500 dark:text-gray-400">
-        <span className="min-w-0 truncate">
-          {dateStr} {game.time && `· ${game.time}`}
-        </span>
-        <div className="flex shrink-0 items-center gap-2">
-          <StatusBadge status={game.status} />
-          {kscwTeamName && <TeamChip team={kscwTeamName} size="sm" />}
+      <div className="flex gap-3">
+        {/* Left: date, time, halle, league */}
+        <div className="w-20 shrink-0 space-y-0.5 text-xs text-gray-500 dark:text-gray-400">
+          <div className="font-medium text-gray-700 dark:text-gray-300">{game.date ? formatDateCompact(game.date) : ''}</div>
+          {game.time && <div>{game.time}</div>}
+          {hallInfo && <div className="truncate">{hallInfo}</div>}
+          <div className="truncate">{game.league}</div>
         </div>
-      </div>
 
-      {/* Teams */}
-      <div className="mt-3 flex items-center justify-between gap-3">
-        <div className="min-w-0 flex-1 text-right">
-          <p className={`truncate text-sm text-gray-900 dark:text-gray-100 ${game.type === 'home' ? 'font-semibold' : ''}`}>
+        {/* Right: teams stacked + chips */}
+        <div className="min-w-0 flex-1">
+          <p className={`truncate text-sm text-gray-900 dark:text-gray-100 ${game.type === 'home' ? 'font-bold' : ''}`}>
             {game.home_team}
           </p>
-        </div>
-
-        {game.status === 'completed' || game.status === 'live' ? (
-          <div className="shrink-0 text-center">
-            <div className="font-mono text-2xl font-bold leading-none text-gray-900 dark:text-white">
-              {game.home_score}
-              <span className="mx-1 text-gray-400 dark:text-gray-500">:</span>
-              {game.away_score}
-            </div>
-          </div>
-        ) : (
-          <div className="shrink-0 px-3 text-center text-lg font-light text-gray-400 dark:text-gray-500">vs</div>
-        )}
-
-        <div className="min-w-0 flex-1">
-          <p className={`truncate text-sm text-gray-900 dark:text-gray-100 ${game.type === 'away' ? 'font-semibold' : ''}`}>
+          <p className={`truncate text-sm text-gray-900 dark:text-gray-100 ${game.type === 'away' ? 'font-bold' : ''}`}>
             {game.away_team}
           </p>
+          <div className="mt-1.5 flex items-center gap-2">
+            <StatusBadge status={game.status} />
+            {kscwTeamName && <TeamChip team={kscwTeamName} size="sm" />}
+          </div>
         </div>
-      </div>
-
-      {/* Bottom: league left, hall right */}
-      <div className="mt-3 flex items-center justify-between gap-2 text-xs text-gray-500 dark:text-gray-400">
-        <span className="min-w-0 flex-1 truncate">{game.league}</span>
-        {hallInfo && <span className="min-w-0 flex-1 truncate text-right">{hallInfo}</span>}
       </div>
     </div>
   )

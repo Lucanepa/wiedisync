@@ -34,6 +34,8 @@ export default {
   gameType: 'Typ',
   typeHome: 'Heimspiel',
   typeAway: 'Auswärtsspiel',
+  typeHomeShort: 'Heim',
+  typeAwayShort: 'Auswärts',
   source: 'Quelle',
   sourceSwissVolley: 'Swiss Volley',
   sourceManual: 'Manuell',
@@ -58,4 +60,5 @@ export default {
   noRecent: 'Keine letzten Spiele',
   noResults: 'Keine Resultate',
   noRankings: 'Keine Rangliste',
+  showMore: 'Mehr Spiele anzeigen',
 } as const

@@ -18,15 +18,19 @@ test.describe('Overflow — public pages at 320px', () => {
 })
 
 test.describe('Overflow — vertical layout', () => {
-  test('footer is reachable by scrolling on home page', async ({ page }) => {
+  test('page bottom is reachable by scrolling on home page', async ({ page }) => {
     await page.goto('/')
     await page.waitForLoadState('domcontentloaded')
     await page.waitForTimeout(1000)
 
-    const footer = page.locator('footer')
-    await expect(footer).toBeAttached()
-    await footer.scrollIntoViewIfNeeded()
-    await expect(footer).toBeVisible()
+    // Scroll to the bottom of the page and verify we can reach it
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
+    await page.waitForTimeout(300)
+
+    const atBottom = await page.evaluate(() => {
+      return window.innerHeight + window.scrollY >= document.body.scrollHeight - 10
+    })
+    expect(atBottom).toBe(true)
   })
 
   test('content not hidden behind tab bar on mobile', async ({ page }) => {

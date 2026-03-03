@@ -225,10 +225,11 @@ export default function ScorerPage() {
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {/* Date */}
               <div>
-                <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                <label htmlFor="scorer-date" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                   {t('filterDate')}
                 </label>
                 <input
+                  id="scorer-date"
                   type="date"
                   value={dateFilter}
                   onChange={(e) => setDateFilter(e.target.value)}
@@ -238,10 +239,10 @@ export default function ScorerPage() {
 
               {/* Duty Team */}
               <div>
-                <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                <label htmlFor="scorer-duty-team" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                   {t('filterDutyTeam')}
                 </label>
-                <select value={dutyTeamFilter} onChange={(e) => setDutyTeamFilter(e.target.value)} className={selectClass}>
+                <select id="scorer-duty-team" value={dutyTeamFilter} onChange={(e) => setDutyTeamFilter(e.target.value)} className={selectClass}>
                   <option value="">{t('filterAllTeams')}</option>
                   {teams.map((team) => (
                     <option key={team.id} value={team.id}>{team.name}</option>
@@ -251,10 +252,10 @@ export default function ScorerPage() {
 
               {/* Duty Type */}
               <div>
-                <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                <label htmlFor="scorer-duty-type" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                   {t('filterDutyType')}
                 </label>
-                <select value={dutyTypeFilter} onChange={(e) => setDutyTypeFilter(e.target.value as DutyTypeFilter)} className={selectClass}>
+                <select id="scorer-duty-type" value={dutyTypeFilter} onChange={(e) => setDutyTypeFilter(e.target.value as DutyTypeFilter)} className={selectClass}>
                   <option value="all">{t('filterAllTypes')}</option>
                   <option value="scorer">{t('scorer')}</option>
                   <option value="taefeler">{t('scoreboard')}</option>
@@ -264,10 +265,10 @@ export default function ScorerPage() {
 
               {/* Unassigned Duty */}
               <div>
-                <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                <label htmlFor="scorer-unassigned" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                   {t('filterUnassigned')}
                 </label>
-                <select value={unassignedFilter} onChange={(e) => setUnassignedFilter(e.target.value as UnassignedFilter)} className={selectClass}>
+                <select id="scorer-unassigned" value={unassignedFilter} onChange={(e) => setUnassignedFilter(e.target.value as UnassignedFilter)} className={selectClass}>
                   <option value="all">{t('filterAllDuties')}</option>
                   <option value="any">{t('filterAnyUnassigned')}</option>
                   <option value="scorer">{t('scorer')}</option>
@@ -278,10 +279,11 @@ export default function ScorerPage() {
 
               {/* Search Assignee */}
               <div>
-                <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                <label htmlFor="scorer-search" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                   {t('filterSearchAssignee')}
                 </label>
                 <input
+                  id="scorer-search"
                   type="text"
                   value={searchAssignee}
                   onChange={(e) => setSearchAssignee(e.target.value)}

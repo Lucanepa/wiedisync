@@ -33,6 +33,8 @@ export default {
   gameType: 'Type',
   typeHome: 'Home game',
   typeAway: 'Away game',
+  typeHomeShort: 'Home',
+  typeAwayShort: 'Away',
   source: 'Source',
   sourceSwissVolley: 'Swiss Volley',
   sourceManual: 'Manual',
@@ -57,4 +59,5 @@ export default {
   noRecent: 'No recent games',
   noResults: 'No results',
   noRankings: 'No rankings',
+  showMore: 'Show more games',
 } as const

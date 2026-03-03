@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import type { RecordModel } from 'pocketbase'
 import type { Game, Team, Hall } from '../../../types'
 import { formatDateCompact } from '../../../utils/dateHelpers'
+import { leagueShort } from '../../../utils/leagueShort'
 import TeamChip from '../../../components/TeamChip'
 
 interface GameCardProps {
@@ -46,6 +47,7 @@ function StatusBadge({ status }: { status: Game['status'] }) {
 }
 
 export default function GameCard({ game, onClick, variant = 'card' }: GameCardProps) {
+  const { t } = useTranslation('games')
   const expanded = game as ExpandedGame
   const expandedHall = expanded.expand?.hall
   const hallInfo = expandedHall
@@ -105,16 +107,27 @@ export default function GameCard({ game, onClick, variant = 'card' }: GameCardPr
       onClick={() => onClick?.(game)}
       className={`overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 shadow-sm transition-shadow ${onClick ? 'cursor-pointer hover:shadow-md' : ''}`}
     >
+      {/* H/A badge top-right */}
+      <div className="flex justify-end">
+        <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold leading-none ${
+          game.type === 'home'
+            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
+            : 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300'
+        }`}>
+          {game.type === 'home' ? t('typeHomeShort') : t('typeAwayShort')}
+        </span>
+      </div>
+
       <div className="flex gap-3">
-        {/* Left: date, time, halle, league */}
+        {/* Left: date, time, league, chip */}
         <div className="w-20 shrink-0 space-y-0.5 text-xs text-gray-500 dark:text-gray-400">
           <div className="font-medium text-gray-700 dark:text-gray-300">{game.date ? formatDateCompact(game.date) : ''}</div>
           {game.time && <div>{game.time}</div>}
-          {hallInfo && <div className="truncate">{hallInfo}</div>}
-          <div className="truncate">{game.league}</div>
+          <div className="truncate">{leagueShort(game.league)}</div>
+          {kscwTeamName && <div className="pt-0.5"><TeamChip team={kscwTeamName} size="xs" /></div>}
         </div>
 
-        {/* Right: teams stacked + chips */}
+        {/* Right: teams stacked + hall */}
         <div className="min-w-0 flex-1">
           <p className={`truncate text-sm text-gray-900 dark:text-gray-100 ${game.type === 'home' ? 'font-bold' : ''}`}>
             {game.home_team}
@@ -122,9 +135,9 @@ export default function GameCard({ game, onClick, variant = 'card' }: GameCardPr
           <p className={`truncate text-sm text-gray-900 dark:text-gray-100 ${game.type === 'away' ? 'font-bold' : ''}`}>
             {game.away_team}
           </p>
-          <div className="mt-1.5 flex items-center gap-2">
+          <div className="mt-1 flex items-center gap-2">
             <StatusBadge status={game.status} />
-            {kscwTeamName && <TeamChip team={kscwTeamName} size="sm" />}
+            {hallInfo && <span className="truncate text-xs text-gray-500 dark:text-gray-400">{hallInfo}</span>}
           </div>
         </div>
       </div>

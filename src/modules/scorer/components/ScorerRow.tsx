@@ -205,6 +205,7 @@ export default function ScorerRow({
         <button
           onClick={() => handleExportICal(expanded, t('scorerDutyIcal', { home: game.home_team, away: game.away_team }))}
           title={t('exportICal')}
+          aria-label={t('exportICal')}
           className="ml-auto rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -280,6 +281,7 @@ export default function ScorerRow({
                   onClick={() => onUpdate(game.id, { duty_confirmed: false })}
                   className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
                   title={t('unconfirm')}
+                  aria-label={t('unconfirm')}
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

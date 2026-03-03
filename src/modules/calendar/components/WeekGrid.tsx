@@ -38,6 +38,7 @@ function blockClasses(e: CalendarEntry): string {
 /* ── time helpers ─────────────────────────────────────────── */
 
 const HOUR_HEIGHT = 48 // px per hour
+const TOP_PAD = 12     // px padding above first hour line
 
 /** Get time range for a day: Mon-Fri 17:00-22:00, Sat-Sun 10:30-20:30 */
 function getDayTimeRange(date: Date): { startMin: number; endMin: number } {
@@ -66,7 +67,7 @@ function timeToMinutes(time: string): number {
 }
 
 function minutesToOffset(minutes: number, rangeStartMin: number): number {
-  return ((minutes - rangeStartMin) / 60) * HOUR_HEIGHT
+  return TOP_PAD + ((minutes - rangeStartMin) / 60) * HOUR_HEIGHT
 }
 
 function formatHour(minutes: number): string {
@@ -156,16 +157,37 @@ export default function WeekGrid({
   const weekSunday = endOfWeek(weekStart)
   const weekDays = eachDayOfInterval(weekMonday, weekSunday)
 
-  // Compute time range for the whole week (widest of all days)
-  const timeRange = useMemo(() => getVisibleRange(weekDays), [weekDays])
+  // Compute time range for the whole week, tightened to actual entries
+  const timeRange = useMemo(() => {
+    const base = getVisibleRange(weekDays)
+    let earliestMin = Infinity
+    let latestMin = -Infinity
+    for (const e of entries) {
+      if (e.allDay || e.endDate || !e.startTime) continue
+      for (const day of weekDays) {
+        if (isSameDay(e.date, day)) {
+          const sm = timeToMinutes(e.startTime)
+          earliestMin = Math.min(earliestMin, sm)
+          latestMin = Math.max(latestMin, e.endTime ? timeToMinutes(e.endTime) : sm + 60)
+        }
+      }
+    }
+    if (earliestMin === Infinity) return base
+    const smartStart = Math.floor((earliestMin - 30) / 60) * 60
+    const smartEnd = Math.max(latestMin, base.endMin)
+    return {
+      startMin: Math.max(smartStart, 0),
+      endMin: Math.ceil(smartEnd / 60) * 60,
+    }
+  }, [weekDays, entries])
   const totalHours = (timeRange.endMin - timeRange.startMin) / 60
-  const totalHeight = totalHours * HOUR_HEIGHT
+  const totalHeight = totalHours * HOUR_HEIGHT + TOP_PAD
 
   // Generate hour labels
   const hourLabels = useMemo(() => {
     const labels: { minutes: number; label: string }[] = []
     const firstHour = Math.ceil(timeRange.startMin / 60) * 60
-    for (let m = firstHour; m < timeRange.endMin; m += 60) {
+    for (let m = firstHour; m <= timeRange.endMin; m += 60) {
       labels.push({ minutes: m, label: formatHour(m) })
     }
     return labels

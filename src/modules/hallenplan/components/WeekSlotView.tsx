@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import type { HallSlot, HallClosure, Hall } from '../../../types'
 import { toISODate, minutesToTime } from '../../../utils/dateHelpers'
-import { positionSlotsMultiHall, generateTimeLabels, SLOT_HEIGHT, TOTAL_ROWS, topToMinutes, START_HOUR, SLOT_MINUTES, getDayRange } from '../utils/timeGrid'
+import { positionSlotsMultiHall, generateTimeLabels, SLOT_HEIGHT, topToMinutes, SLOT_MINUTES, getDayRange, getSmartStartHour, getSmartEndHour } from '../utils/timeGrid'
 import { buildConflictSet } from '../utils/conflictDetection'
 import SlotBlock from './SlotBlock'
 import ClosureOverlay from './ClosureOverlay'
@@ -31,9 +31,31 @@ export default function WeekSlotView({
   onSlotClick,
   onEmptyCellClick,
 }: WeekSlotViewProps) {
-  const timeLabels = useMemo(() => generateTimeLabels(), [])
+  // Smart time range across all week slots
+  const smartStart = useMemo(() => {
+    if (slots.length === 0) return 10
+    let best = Infinity
+    for (let d = 0; d < 7; d++) {
+      const ds = slots.filter((s) => s.day_of_week === d)
+      if (ds.length > 0) best = Math.min(best, getSmartStartHour(ds, d))
+    }
+    return best === Infinity ? 10 : best
+  }, [slots])
+  const smartEnd = useMemo(() => {
+    if (slots.length === 0) return 22
+    let best = -Infinity
+    for (let d = 0; d < 7; d++) {
+      const ds = slots.filter((s) => s.day_of_week === d)
+      if (ds.length > 0) best = Math.max(best, getSmartEndHour(ds, d))
+    }
+    return best === -Infinity ? 22 : best
+  }, [slots])
+  const baseMinute = smartStart * 60
+  const totalRows = (smartEnd - smartStart) * (60 / SLOT_MINUTES)
+
+  const timeLabels = useMemo(() => generateTimeLabels(smartStart, smartEnd), [smartStart, smartEnd])
   const conflictSet = useMemo(() => buildConflictSet(slots), [slots])
-  const gridHeight = TOTAL_ROWS * SLOT_HEIGHT
+  const gridHeight = totalRows * SLOT_HEIGHT
 
   // Determine which halls are visible (selected or all halls that have data)
   const visibleHalls = useMemo(() => {
@@ -51,8 +73,8 @@ export default function WeekSlotView({
 
   // Position slots using multi-hall grouping when multiple halls visible
   const positioned = useMemo(
-    () => positionSlotsMultiHall(slots),
-    [slots],
+    () => positionSlotsMultiHall(slots, baseMinute),
+    [slots, baseMinute],
   )
 
   // Group positioned slots by (day, hall) for rendering
@@ -116,9 +138,9 @@ export default function WeekSlotView({
     if (!isAdmin) return
     const rect = e.currentTarget.getBoundingClientRect()
     const y = e.clientY - rect.top
-    const minutes = topToMinutes(y)
+    const minutes = topToMinutes(y, baseMinute)
     const snapped = Math.floor(minutes / SLOT_MINUTES) * SLOT_MINUTES
-    if (snapped < START_HOUR * 60) return
+    if (snapped < baseMinute) return
     const time = minutesToTime(snapped)
     onEmptyCellClick(dayIndex, time, hallId)
   }
@@ -201,9 +223,9 @@ export default function WeekSlotView({
           {/* Day × Hall columns */}
           {visibleDays.map((dayIndex) => {
             const { startMin, endMin } = getDayRange(dayIndex)
-            const inactiveTopH = ((startMin - START_HOUR * 60) / SLOT_MINUTES) * SLOT_HEIGHT
-            const inactiveBottomTop = ((endMin - START_HOUR * 60) / SLOT_MINUTES) * SLOT_HEIGHT
-            const inactiveBottomH = gridHeight - inactiveBottomTop
+            const inactiveTopH = Math.max(0, ((startMin - baseMinute) / SLOT_MINUTES) * SLOT_HEIGHT)
+            const inactiveBottomTop = ((endMin - baseMinute) / SLOT_MINUTES) * SLOT_HEIGHT
+            const inactiveBottomH = Math.max(0, gridHeight - inactiveBottomTop)
 
             if (multiHall) {
               return visibleHalls.map((hall, hi) => {

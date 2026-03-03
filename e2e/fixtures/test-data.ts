@@ -31,3 +31,10 @@ export const SUPERADMIN_ROUTES = [
 
 /** Known team slugs in the dev DB */
 export const KNOWN_TEAM_SLUGS = ['H1', 'H3', 'D2'] as const
+
+/** Viewport presets matching Tailwind breakpoints */
+export const VIEWPORTS = {
+  xs: { width: 320, height: 568 },   // iPhone SE / smallest target
+  sm: { width: 640, height: 900 },   // Tailwind sm breakpoint
+  lg: { width: 1024, height: 768 },  // Tailwind lg (desktop sidebar threshold)
+} as const

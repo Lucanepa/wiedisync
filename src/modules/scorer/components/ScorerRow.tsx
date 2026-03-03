@@ -185,7 +185,7 @@ export default function ScorerRow({
   }
 
   const roleLabel = (role: AssignRole) =>
-    role === 'scorer' ? t('scorer') : role === 'taefeler' ? t('referee') : t('scorerTaefeler')
+    role === 'scorer' ? t('scorer') : role === 'taefeler' ? t('scoreboard') : t('scorerTaefeler')
 
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
@@ -249,7 +249,7 @@ export default function ScorerRow({
               onSelfAssign={() => setConfirmRole('scorer')}
             />
             <AssignmentEditor
-              label={t('referee')}
+              label={t('scoreboard')}
               requireLicence={false}
               teamValue={game.taefeler_duty_team ?? ''}
               personValue={game.taefeler_member ?? ''}

@@ -100,7 +100,7 @@ export default function GamesPage() {
   const showGames = activeTab !== 'rankings' && !isLoading
 
   return (
-    <div>
+    <div className="min-w-0">
       <h1 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-gray-100">{t('title')}</h1>
       <p className="mt-1 text-gray-600 dark:text-gray-400">{t('subtitle')}</p>
 

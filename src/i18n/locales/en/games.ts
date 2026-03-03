@@ -48,7 +48,7 @@ export default {
   referee2nd: '2nd Referee',
   gameNumber: 'Game #',
   taefeler: 'Täfeler',
-  scorerTaefeler: 'Scorer/Referee',
+  scorerTaefeler: 'Scorer/Scoreboard',
   confirmed: 'Confirmed',
   gameInfo: 'Game info',
   venue: 'Venue',

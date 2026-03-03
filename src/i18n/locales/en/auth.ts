@@ -7,6 +7,7 @@ export default {
   passwordPlaceholder: 'Enter password',
   signingIn: 'Signing in...',
   invalidCredentials: 'Invalid email or password',
+  rememberMe: 'Remember me',
 
   // Profile
   editProfile: 'Edit Profile',

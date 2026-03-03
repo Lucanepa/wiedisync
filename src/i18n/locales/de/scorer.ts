@@ -8,7 +8,7 @@ export default {
 
   // Labels
   scorer: 'Schreiber',
-  referee: 'Täfeler',
+  scoreboard: 'Täfeler',
   scorerTaefeler: 'Schreiber/Täfeler',
   confirmed: 'Bestätigt',
 

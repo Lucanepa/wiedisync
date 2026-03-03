@@ -257,7 +257,7 @@ export default function ScorerPage() {
                 <select value={dutyTypeFilter} onChange={(e) => setDutyTypeFilter(e.target.value as DutyTypeFilter)} className={selectClass}>
                   <option value="all">{t('filterAllTypes')}</option>
                   <option value="scorer">{t('scorer')}</option>
-                  <option value="taefeler">{t('referee')}</option>
+                  <option value="taefeler">{t('scoreboard')}</option>
                   <option value="scorer_taefeler">{t('scorerTaefeler')}</option>
                 </select>
               </div>
@@ -271,7 +271,7 @@ export default function ScorerPage() {
                   <option value="all">{t('filterAllDuties')}</option>
                   <option value="any">{t('filterAnyUnassigned')}</option>
                   <option value="scorer">{t('scorer')}</option>
-                  <option value="taefeler">{t('referee')}</option>
+                  <option value="taefeler">{t('scoreboard')}</option>
                   <option value="scorer_taefeler">{t('scorerTaefeler')}</option>
                 </select>
               </div>

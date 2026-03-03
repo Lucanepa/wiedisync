@@ -11,6 +11,7 @@ export class LoginPage {
   readonly submitButton: Locator
   readonly errorMessage: Locator
   readonly logo: Locator
+  readonly rememberMeCheckbox: Locator
 
   constructor(page: Page) {
     this.page = page
@@ -21,6 +22,7 @@ export class LoginPage {
     this.submitButton = page.getByRole('button', { name: 'Anmelden' })
     this.errorMessage = page.locator('p').filter({ hasText: /Ungültige|Invalid/ })
     this.logo = page.getByAltText('KSC Wiedikon')
+    this.rememberMeCheckbox = page.getByRole('checkbox', { name: /Angemeldet bleiben/ })
   }
 
   async goto() {

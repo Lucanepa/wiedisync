@@ -13,6 +13,9 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [rememberMe, setRememberMe] = useState(
+    () => localStorage.getItem('kscw-remember-me') !== 'false',
+  )
 
   useEffect(() => {
     if (user) navigate('/', { replace: true })
@@ -22,6 +25,7 @@ export default function LoginPage() {
     e.preventDefault()
     setError('')
     setLoading(true)
+    localStorage.setItem('kscw-remember-me', String(rememberMe))
     try {
       await login(email, password)
       navigate('/', { replace: true })
@@ -77,6 +81,19 @@ export default function LoginPage() {
                 className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                 placeholder={t('passwordPlaceholder')}
               />
+            </div>
+
+            <div className="flex items-center">
+              <input
+                id="remember-me"
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700"
+              />
+              <label htmlFor="remember-me" className="ml-2 text-sm text-gray-600 dark:text-gray-400">
+                {t('rememberMe')}
+              </label>
             </div>
 
             {error && (

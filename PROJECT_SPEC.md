@@ -1,4 +1,4 @@
-# KSCW Volley Platform — Project Specification
+# KSCWiedisync— Project Specification
 
 ## Overview
 

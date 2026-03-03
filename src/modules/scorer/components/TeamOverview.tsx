@@ -101,7 +101,7 @@ export default function TeamOverview({ games, members }: TeamOverviewProps) {
 
   const dutyLabel: Record<string, string> = {
     scorer: t('scorer'),
-    taefeler: t('referee'),
+    taefeler: t('scoreboard'),
     scorer_taefeler: t('scorerTaefeler'),
   }
 

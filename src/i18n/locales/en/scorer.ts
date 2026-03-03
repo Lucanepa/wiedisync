@@ -1,6 +1,6 @@
 export default {
   title: 'Scorer duty',
-  subtitle: 'Manage scorer and referee assignments for home games.',
+  subtitle: 'Manage scorer and scoreboard assignments for home games.',
 
   // Tabs
   tabGames: 'Games',
@@ -8,8 +8,8 @@ export default {
 
   // Labels
   scorer: 'Scorer',
-  referee: 'Referee',
-  scorerTaefeler: 'Scorer/Referee',
+  scoreboard: 'Scoreboard',
+  scorerTaefeler: 'Scorer/Scoreboard',
   confirmed: 'Confirmed',
 
   // Status labels

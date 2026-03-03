@@ -3,28 +3,68 @@ import { test as setup, expect } from '@playwright/test'
 const USER_FILE = 'e2e/.auth/user.json'
 const ADMIN_FILE = 'e2e/.auth/admin.json'
 
+const PB_URL = process.env.VITE_PB_URL!
+
+/**
+ * Authenticate via PocketBase REST API directly, then inject the auth token
+ * into localStorage so the app picks it up. This avoids the UI login form
+ * and its rate-limiting issues (PocketBase: 2 auth req / 3s per IP).
+ */
+async function loginViaAPI(
+  page: import('@playwright/test').Page,
+  email: string,
+  password: string,
+  storageStatePath: string,
+) {
+  // Call the PocketBase auth endpoint directly
+  const response = await page.request.post(
+    `${PB_URL}/api/collections/members/auth-with-password`,
+    {
+      data: { identity: email, password },
+    },
+  )
+
+  expect(response.ok(), `Login API failed for ${email}: ${response.status()}`).toBeTruthy()
+
+  const authData = await response.json()
+
+  // Navigate to the app so we can set localStorage on the correct origin
+  await page.goto('/')
+  await page.waitForLoadState('domcontentloaded')
+
+  // Inject PocketBase auth token into localStorage (same format the SDK uses)
+  await page.evaluate((data) => {
+    localStorage.setItem(
+      'pocketbase_auth',
+      JSON.stringify({ token: data.token, record: data.record }),
+    )
+  }, authData)
+
+  // Reload so the app picks up the auth state
+  await page.reload()
+  await page.waitForLoadState('domcontentloaded')
+
+  // Verify we're authenticated — should be on home page, not redirected to /login
+  await expect(page).toHaveURL('/', { timeout: 15_000 })
+
+  // Save the full storage state (localStorage + cookies) for reuse
+  await page.context().storageState({ path: storageStatePath })
+}
+
 setup('authenticate as regular user', async ({ page }) => {
-  await page.goto('/login')
-
-  // Login page defaults to German before auth
-  await page.getByPlaceholder('name@beispiel.ch').fill(process.env.TEST_USER_EMAIL!)
-  await page.getByPlaceholder('Passwort eingeben').fill(process.env.TEST_USER_PASSWORD!)
-  await page.getByRole('button', { name: 'Anmelden' }).click()
-
-  // Wait for redirect to home page after successful login
-  await expect(page).toHaveURL('/', { timeout: 10_000 })
-
-  await page.context().storageState({ path: USER_FILE })
+  await loginViaAPI(
+    page,
+    process.env.TEST_USER_EMAIL!,
+    process.env.TEST_USER_PASSWORD!,
+    USER_FILE,
+  )
 })
 
 setup('authenticate as admin', async ({ page }) => {
-  await page.goto('/login')
-
-  await page.getByPlaceholder('name@beispiel.ch').fill(process.env.TEST_ADMIN_EMAIL!)
-  await page.getByPlaceholder('Passwort eingeben').fill(process.env.TEST_ADMIN_PASSWORD!)
-  await page.getByRole('button', { name: 'Anmelden' }).click()
-
-  await expect(page).toHaveURL('/', { timeout: 10_000 })
-
-  await page.context().storageState({ path: ADMIN_FILE })
+  await loginViaAPI(
+    page,
+    process.env.TEST_ADMIN_EMAIL!,
+    process.env.TEST_ADMIN_PASSWORD!,
+    ADMIN_FILE,
+  )
 })

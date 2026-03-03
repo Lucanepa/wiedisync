@@ -15,6 +15,9 @@ test.describe.serial('Login flow', () => {
   })
 
   test('shows error on invalid credentials', async ({ page }) => {
+    // Brief pause to avoid PocketBase rate limit collision with concurrent auth requests
+    await page.waitForTimeout(2_000)
+
     const loginPage = new LoginPage(page)
     await loginPage.goto()
     await loginPage.login('wrong@example.com', 'wrongpassword')
@@ -23,6 +26,9 @@ test.describe.serial('Login flow', () => {
   })
 
   test('successful login redirects to home', async ({ page }) => {
+    // Wait for rate limit window to clear after invalid creds test
+    await page.waitForTimeout(3_000)
+
     const loginPage = new LoginPage(page)
     await loginPage.goto()
     await loginPage.login(
@@ -30,6 +36,6 @@ test.describe.serial('Login flow', () => {
       process.env.TEST_USER_PASSWORD!,
     )
 
-    await expect(page).toHaveURL('/', { timeout: 10_000 })
+    await expect(page).toHaveURL('/', { timeout: 15_000 })
   })
 })

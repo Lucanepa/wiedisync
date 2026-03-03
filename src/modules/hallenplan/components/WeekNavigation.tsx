@@ -20,23 +20,17 @@ export default function WeekNavigation({
   onPrev,
   onNext,
   onToday,
-  halls,
-  selectedHallIds,
-  onSelectHalls,
+  halls: _halls,
+  selectedHallIds: _selectedHallIds,
+  onSelectHalls: _onSelectHalls,
   isAdmin,
   onOpenClosureManager,
   showSummary,
   onToggleSummary,
 }: WeekNavigationProps) {
+  // Hall filter chips are rendered separately below content by HallenplanView
+  void _halls; void _selectedHallIds; void _onSelectHalls
   const { t } = useTranslation('hallenplan')
-
-  function toggleHall(hallId: string) {
-    if (selectedHallIds.includes(hallId)) {
-      onSelectHalls(selectedHallIds.filter((id) => id !== hallId))
-    } else {
-      onSelectHalls([...selectedHallIds, hallId])
-    }
-  }
 
   return (
     <div className="mb-4 space-y-3 rounded-lg bg-white p-4 shadow-sm dark:bg-gray-800">
@@ -95,32 +89,7 @@ export default function WeekNavigation({
         </div>
       </div>
 
-      {/* Hall filter chips */}
-      <div className="flex flex-wrap gap-1.5">
-        <button
-          onClick={() => onSelectHalls([])}
-          className={`rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
-            selectedHallIds.length === 0
-              ? 'border-brand-300 bg-brand-50 text-brand-700 dark:border-brand-600 dark:bg-brand-900/30 dark:text-brand-300'
-              : 'border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-          }`}
-        >
-          {t('common:allHalls')}
-        </button>
-        {halls.map((hall) => (
-          <button
-            key={hall.id}
-            onClick={() => toggleHall(hall.id)}
-            className={`rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
-              selectedHallIds.includes(hall.id)
-                ? 'border-brand-300 bg-brand-50 text-brand-700 dark:border-brand-600 dark:bg-brand-900/30 dark:text-brand-300'
-                : 'border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-            }`}
-          >
-            {hall.name}
-          </button>
-        ))}
-      </div>
+      {/* Hall filter chips — hidden, rendered separately below content by HallenplanView */}
     </div>
   )
 }

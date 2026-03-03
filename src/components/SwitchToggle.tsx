@@ -8,6 +8,7 @@ interface SwitchToggleProps {
   iconOff: ReactNode
   iconOn: ReactNode
   size?: 'sm' | 'md'
+  ariaLabel?: string
 }
 
 export default function SwitchToggle({
@@ -18,12 +19,16 @@ export default function SwitchToggle({
   iconOff,
   iconOn,
   size = 'sm',
+  ariaLabel,
 }: SwitchToggleProps) {
   const isMd = size === 'md'
 
   return (
     <button
       type="button"
+      role="switch"
+      aria-checked={enabled}
+      aria-label={ariaLabel ?? (enabled ? labelRight : labelLeft)}
       onClick={onChange}
       className="flex items-center gap-2"
     >

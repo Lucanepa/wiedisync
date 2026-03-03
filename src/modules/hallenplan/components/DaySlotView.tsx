@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import type { HallSlot, HallClosure, Hall } from '../../../types'
 import { toISODate, minutesToTime } from '../../../utils/dateHelpers'
-import { positionSlotsMultiHall, generateTimeLabels, SLOT_HEIGHT, TOTAL_ROWS, topToMinutes, START_HOUR, SLOT_MINUTES, getDayRange } from '../utils/timeGrid'
+import { positionSlotsMultiHall, generateTimeLabels, SLOT_HEIGHT, topToMinutes, SLOT_MINUTES, getDayRange, getSmartStartHour, getSmartEndHour } from '../utils/timeGrid'
 import { buildConflictSet } from '../utils/conflictDetection'
 import SlotBlock from './SlotBlock'
 import ClosureOverlay from './ClosureOverlay'
@@ -31,17 +31,22 @@ export default function DaySlotView({
   onSlotClick,
   onEmptyCellClick,
 }: DaySlotViewProps) {
-  const timeLabels = useMemo(() => generateTimeLabels(), [])
-
   // Filter slots for the selected day only
   const daySlots = useMemo(
     () => slots.filter((s) => s.day_of_week === dayIndex),
     [slots, dayIndex],
   )
 
-  const positioned = useMemo(() => positionSlotsMultiHall(daySlots), [daySlots])
+  // Smart time range: 30min before earliest slot → latest slot end
+  const smartStart = useMemo(() => getSmartStartHour(daySlots, dayIndex), [daySlots, dayIndex])
+  const smartEnd = useMemo(() => getSmartEndHour(daySlots, dayIndex), [daySlots, dayIndex])
+  const baseMinute = smartStart * 60
+  const totalRows = (smartEnd - smartStart) * (60 / SLOT_MINUTES)
+
+  const timeLabels = useMemo(() => generateTimeLabels(smartStart, smartEnd), [smartStart, smartEnd])
+  const positioned = useMemo(() => positionSlotsMultiHall(daySlots, baseMinute), [daySlots, baseMinute])
   const conflictSet = useMemo(() => buildConflictSet(daySlots), [daySlots])
-  const gridHeight = TOTAL_ROWS * SLOT_HEIGHT
+  const gridHeight = totalRows * SLOT_HEIGHT
 
   // Visible halls: selected halls or halls with data
   const visibleHalls = useMemo(() => {
@@ -92,9 +97,9 @@ export default function DaySlotView({
     if (!isAdmin) return
     const rect = e.currentTarget.getBoundingClientRect()
     const y = e.clientY - rect.top
-    const minutes = topToMinutes(y)
+    const minutes = topToMinutes(y, baseMinute)
     const snapped = Math.floor(minutes / SLOT_MINUTES) * SLOT_MINUTES
-    if (snapped < START_HOUR * 60) return
+    if (snapped < baseMinute) return
     const time = minutesToTime(snapped)
     onEmptyCellClick(dayIndex, time, hallId)
   }
@@ -107,9 +112,9 @@ export default function DaySlotView({
   }
 
   const { startMin, endMin } = getDayRange(dayIndex)
-  const inactiveTopH = ((startMin - START_HOUR * 60) / SLOT_MINUTES) * SLOT_HEIGHT
-  const inactiveBottomTop = ((endMin - START_HOUR * 60) / SLOT_MINUTES) * SLOT_HEIGHT
-  const inactiveBottomH = gridHeight - inactiveBottomTop
+  const inactiveTopH = Math.max(0, ((startMin - baseMinute) / SLOT_MINUTES) * SLOT_HEIGHT)
+  const inactiveBottomTop = ((endMin - baseMinute) / SLOT_MINUTES) * SLOT_HEIGHT
+  const inactiveBottomH = Math.max(0, gridHeight - inactiveBottomTop)
 
   return (
     <div className="overflow-y-auto rounded-lg bg-white shadow-sm dark:bg-gray-800">

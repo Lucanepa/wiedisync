@@ -32,21 +32,21 @@ export interface PositionedSlot {
 }
 
 /** Converts a time string to pixel offset from grid top */
-export function timeToTop(time: string): number {
+export function timeToTop(time: string, baseMinute = START_HOUR * 60): number {
   const minutes = timeToMinutes(time)
-  return ((minutes - START_HOUR * 60) / SLOT_MINUTES) * SLOT_HEIGHT
+  return ((minutes - baseMinute) / SLOT_MINUTES) * SLOT_HEIGHT
 }
 
 /** Converts a pixel offset from grid top to minutes since midnight */
-export function topToMinutes(top: number): number {
-  return Math.round(top / SLOT_HEIGHT) * SLOT_MINUTES + START_HOUR * 60
+export function topToMinutes(top: number, baseMinute = START_HOUR * 60): number {
+  return Math.round(top / SLOT_HEIGHT) * SLOT_MINUTES + baseMinute
 }
 
 /**
  * Positions slots within each day column, handling overlaps with sub-column layout.
  * Uses a greedy interval coloring algorithm.
  */
-export function positionSlots(slots: HallSlot[]): PositionedSlot[] {
+export function positionSlots(slots: HallSlot[], baseMinute = START_HOUR * 60): PositionedSlot[] {
   // Group by day_of_week
   const byDay = new Map<number, HallSlot[]>()
   for (const slot of slots) {
@@ -96,7 +96,7 @@ export function positionSlots(slots: HallSlot[]): PositionedSlot[] {
 
       result.push({
         slot,
-        top: ((startMin - START_HOUR * 60) / SLOT_MINUTES) * SLOT_HEIGHT,
+        top: ((startMin - baseMinute) / SLOT_MINUTES) * SLOT_HEIGHT,
         height: ((endMin - startMin) / SLOT_MINUTES) * SLOT_HEIGHT,
         left: (subCol / totalCols) * 100,
         width: (1 / totalCols) * 100,
@@ -112,7 +112,7 @@ export function positionSlots(slots: HallSlot[]): PositionedSlot[] {
  * Positions slots grouped by (day, hall). Within each hall column, uses greedy overlap.
  * `left`/`width` are percentages within the hall sub-column.
  */
-export function positionSlotsMultiHall(slots: HallSlot[]): PositionedSlot[] {
+export function positionSlotsMultiHall(slots: HallSlot[], baseMinute = START_HOUR * 60): PositionedSlot[] {
   // Group by (day_of_week, hall)
   const byDayHall = new Map<string, HallSlot[]>()
   for (const slot of slots) {
@@ -163,7 +163,7 @@ export function positionSlotsMultiHall(slots: HallSlot[]): PositionedSlot[] {
 
       result.push({
         slot,
-        top: ((startMin - START_HOUR * 60) / SLOT_MINUTES) * SLOT_HEIGHT,
+        top: ((startMin - baseMinute) / SLOT_MINUTES) * SLOT_HEIGHT,
         height: ((endMin - startMin) / SLOT_MINUTES) * SLOT_HEIGHT,
         left: (subCol / totalCols) * 100,
         width: (1 / totalCols) * 100,
@@ -175,10 +175,10 @@ export function positionSlotsMultiHall(slots: HallSlot[]): PositionedSlot[] {
   return result
 }
 
-/** Generates time labels for the grid (every SLOT_MINUTES from START_HOUR to END_HOUR) */
-export function generateTimeLabels(): { time: string; isFullHour: boolean }[] {
+/** Generates time labels for the grid (every SLOT_MINUTES from startHour to endHour) */
+export function generateTimeLabels(startHour = START_HOUR, endHour = END_HOUR): { time: string; isFullHour: boolean }[] {
   const labels: { time: string; isFullHour: boolean }[] = []
-  for (let h = START_HOUR; h < END_HOUR; h++) {
+  for (let h = startHour; h < endHour; h++) {
     for (let m = 0; m < 60; m += SLOT_MINUTES) {
       labels.push({
         time: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`,
@@ -187,4 +187,25 @@ export function generateTimeLabels(): { time: string; isFullHour: boolean }[] {
     }
   }
   return labels
+}
+
+/** Compute a smart visible start hour for a day based on actual slots (30min before earliest slot, floored to hour) */
+export function getSmartStartHour(daySlots: HallSlot[], dayIndex: number): number {
+  if (daySlots.length === 0) return getDayRange(dayIndex).startMin / 60 | 0
+  let earliest = Infinity
+  for (const s of daySlots) {
+    earliest = Math.min(earliest, timeToMinutes(s.start_time))
+  }
+  // 30 min before earliest, floored to the hour
+  return Math.max(Math.floor((earliest - 30) / 60), START_HOUR)
+}
+
+/** Compute a smart visible end hour for a day based on actual slots (ceiled to hour after latest slot) */
+export function getSmartEndHour(daySlots: HallSlot[], dayIndex: number): number {
+  if (daySlots.length === 0) return Math.ceil(getDayRange(dayIndex).endMin / 60)
+  let latest = -Infinity
+  for (const s of daySlots) {
+    latest = Math.max(latest, timeToMinutes(s.end_time))
+  }
+  return Math.min(Math.ceil(latest / 60), END_HOUR)
 }

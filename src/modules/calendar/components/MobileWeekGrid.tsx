@@ -33,6 +33,7 @@ function blockClasses(e: CalendarEntry): string {
 /* ── time helpers ─────────────────────────────────────────── */
 
 const HOUR_HEIGHT = 48 // px per hour
+const TOP_PAD = 12     // px padding above first hour line
 
 /** Get time range for a day: Mon-Fri 17:00-22:00, Sat-Sun 10:00-21:00 */
 function getDayTimeRange(date: Date): { startMin: number; endMin: number } {
@@ -61,7 +62,7 @@ function timeToMinutes(time: string): number {
 }
 
 function minutesToOffset(minutes: number, rangeStartMin: number): number {
-  return ((minutes - rangeStartMin) / 60) * HOUR_HEIGHT
+  return TOP_PAD + ((minutes - rangeStartMin) / 60) * HOUR_HEIGHT
 }
 
 function formatHour(minutes: number): string {
@@ -145,16 +146,44 @@ export default function MobileWeekGrid({
   // 3 visible days
   const days = useMemo(() => [dayStart, addDays(dayStart, 1), addDays(dayStart, 2)], [dayStart])
 
-  // Compute time range based on visible days
-  const timeRange = useMemo(() => getVisibleRange(days), [days])
+  // Compute time range based on visible days, tightened to actual entries
+  const timeRange = useMemo(() => {
+    const base = getVisibleRange(days)
+    // Find earliest timed entry across visible days
+    let earliestMin = Infinity
+    let latestMin = -Infinity
+    for (const e of entries) {
+      if (e.allDay || e.endDate || !e.startTime) continue
+      for (const day of days) {
+        if (isSameDay(e.date, day)) {
+          const sm = timeToMinutes(e.startTime)
+          earliestMin = Math.min(earliestMin, sm)
+          if (e.endTime) {
+            latestMin = Math.max(latestMin, timeToMinutes(e.endTime))
+          } else {
+            latestMin = Math.max(latestMin, sm + 60)
+          }
+        }
+      }
+    }
+    if (earliestMin === Infinity) return base // no timed entries, use default
+    // Start 30min before earliest event, floored to nearest hour
+    const smartStart = Math.floor((earliestMin - 30) / 60) * 60
+    // End at latest event end or day range end, whichever is later
+    const smartEnd = Math.max(latestMin, base.endMin)
+    return {
+      startMin: Math.max(smartStart, 0),
+      endMin: Math.ceil(smartEnd / 60) * 60, // ceil to nearest hour
+    }
+  }, [days, entries])
   const totalHours = (timeRange.endMin - timeRange.startMin) / 60
-  const totalHeight = totalHours * HOUR_HEIGHT
+  const totalHeight = totalHours * HOUR_HEIGHT + TOP_PAD
 
   // Generate hour labels (every full hour within range)
   const hourLabels = useMemo(() => {
     const labels: { minutes: number; label: string }[] = []
     const firstHour = Math.ceil(timeRange.startMin / 60) * 60
-    for (let m = firstHour; m < timeRange.endMin; m += 60) {
+    for (let m = firstHour; m <= timeRange.endMin; m += 60) {
       labels.push({ minutes: m, label: formatHour(m) })
     }
     return labels
@@ -242,7 +271,7 @@ export default function MobileWeekGrid({
       </div>
 
       {/* Day headers */}
-      <div className="grid grid-cols-[2.5rem_repeat(3,1fr)] border-b border-gray-200 dark:border-gray-700">
+      <div className="grid grid-cols-[3rem_repeat(3,1fr)] border-b border-gray-200 dark:border-gray-700">
         <div />
         {days.map((date, i) => {
           const isToday = isSameDay(date, today)
@@ -268,7 +297,7 @@ export default function MobileWeekGrid({
         const hasAllDay = days.some((d) => (allDayByDay.get(toDateKey(d)) ?? []).length > 0)
         if (!hasAllDay) return null
         return (
-          <div className="grid grid-cols-[2.5rem_repeat(3,1fr)] border-b border-gray-200 dark:border-gray-700">
+          <div className="grid grid-cols-[3rem_repeat(3,1fr)] border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-center text-[9px] text-gray-400">
               {t('common:allDay')}
             </div>
@@ -303,14 +332,14 @@ export default function MobileWeekGrid({
         className="relative flex-1 overflow-y-auto"
         style={{ maxHeight: 'calc(100vh - 18rem)' }}
       >
-        <div className="grid grid-cols-[2.5rem_repeat(3,1fr)]" style={{ height: totalHeight }}>
+        <div className="grid grid-cols-[3rem_repeat(3,1fr)]" style={{ height: totalHeight }}>
           {/* Hour labels */}
-          <div className="relative">
+          <div className="relative border-r border-gray-200 dark:border-gray-700">
             {hourLabels.map((hl) => (
               <div
                 key={hl.minutes}
-                className="absolute right-0.5 text-[9px] text-gray-400"
-                style={{ top: minutesToOffset(hl.minutes, timeRange.startMin) - 5 }}
+                className="absolute right-1 text-[10px] leading-none text-gray-400"
+                style={{ top: Math.max(0, minutesToOffset(hl.minutes, timeRange.startMin) - 5) }}
               >
                 {hl.label}
               </div>
@@ -356,12 +385,12 @@ export default function MobileWeekGrid({
                     key={pe.entry.id}
                     type="button"
                     onClick={() => onEntryClick?.(pe.entry)}
-                    className={`absolute overflow-hidden rounded px-1 text-[10px] leading-tight ${blockClasses(pe.entry)}`}
+                    className={`absolute overflow-hidden rounded px-1 py-0.5 text-[10px] leading-tight ${blockClasses(pe.entry)}`}
                     style={{
-                      top: pe.top,
-                      height: pe.height,
-                      left: `${pe.left * 100}%`,
-                      width: `calc(${pe.width * 100}% - 2px)`,
+                      top: pe.top + 1,
+                      height: pe.height - 2,
+                      left: `calc(${pe.left * 100}% + 1px)`,
+                      width: `calc(${pe.width * 100}% - 3px)`,
                     }}
                   >
                     <div className="truncate font-medium">{pe.entry.startTime}</div>

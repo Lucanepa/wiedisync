@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
 import { useRealtime } from '../../hooks/useRealtime'
 import { useIsMobile } from '../../hooks/useMediaQuery'
@@ -21,6 +22,7 @@ function getTodayDayIndex(): number {
 }
 
 export default function HallenplanView() {
+  const { t } = useTranslation('hallenplan')
   const { isAdmin } = useAuth()
   const isMobile = useIsMobile()
   const { weekDays, goNext, goPrev, goToday, weekLabel, mondayStr, sundayStr } = useWeekNavigation()
@@ -33,6 +35,40 @@ export default function HallenplanView() {
   const [closureManagerOpen, setClosureManagerOpen] = useState(false)
   const [virtualDetailSlot, setVirtualDetailSlot] = useState<HallSlot | null>(null)
   const [showSummary, setShowSummary] = useState(false)
+
+  function handleToggleSummary() {
+    const next = !showSummary
+    setShowSummary(next)
+    if (next) {
+      // Enter fullscreen + landscape on mobile (requires user gesture)
+      const el = document.documentElement
+      const requestFs = el.requestFullscreen?.bind(el)
+        ?? (el as HTMLElement & { webkitRequestFullscreen?: () => Promise<void> }).webkitRequestFullscreen?.bind(el)
+      if (requestFs) {
+        requestFs()
+          .then(() => screen.orientation?.lock?.('landscape'))
+          .catch(() => {})
+      }
+    } else {
+      // Exit fullscreen + unlock orientation
+      screen.orientation?.unlock?.()
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {})
+      }
+    }
+  }
+
+  // Sync summary state when user exits fullscreen via system gesture
+  useEffect(() => {
+    function onFsChange() {
+      if (!document.fullscreenElement && showSummary) {
+        setShowSummary(false)
+        screen.orientation?.unlock?.()
+      }
+    }
+    document.addEventListener('fullscreenchange', onFsChange)
+    return () => document.removeEventListener('fullscreenchange', onFsChange)
+  }, [showSummary])
 
   const { halls, teams, slots, rawSlots, closures, isLoading, refetch } = useHallenplanData(
     selectedHallIds,
@@ -80,6 +116,14 @@ export default function HallenplanView() {
     setSelectedDayIndex(getTodayDayIndex())
   }
 
+  function toggleHall(hallId: string) {
+    if (selectedHallIds.includes(hallId)) {
+      setSelectedHallIds(selectedHallIds.filter((id) => id !== hallId))
+    } else {
+      setSelectedHallIds([...selectedHallIds, hallId])
+    }
+  }
+
   return (
     <>
       {isMobile ? (
@@ -97,7 +141,7 @@ export default function HallenplanView() {
             isAdmin={isAdmin}
             onOpenClosureManager={() => setClosureManagerOpen(true)}
             showSummary={showSummary}
-            onToggleSummary={() => setShowSummary((v) => !v)}
+            onToggleSummary={handleToggleSummary}
           />
 
           {isLoading ? (
@@ -131,7 +175,7 @@ export default function HallenplanView() {
             isAdmin={isAdmin}
             onOpenClosureManager={() => setClosureManagerOpen(true)}
             showSummary={showSummary}
-            onToggleSummary={() => setShowSummary((v) => !v)}
+            onToggleSummary={handleToggleSummary}
           />
 
           {isLoading ? (
@@ -151,6 +195,37 @@ export default function HallenplanView() {
             />
           )}
         </>
+      )}
+
+      {/* Hall filter chips — below content, compact */}
+      {halls.length > 0 && (
+        <div className="mt-3 border-t border-gray-200 pt-3 dark:border-gray-700">
+          <div className="flex flex-wrap gap-1">
+            <button
+              onClick={() => setSelectedHallIds([])}
+              className={`rounded-full border px-2 py-0.5 text-[10px] font-medium transition-colors ${
+                selectedHallIds.length === 0
+                  ? 'border-brand-300 bg-brand-50 text-brand-700 dark:border-brand-600 dark:bg-brand-900/30 dark:text-brand-300'
+                  : 'border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+              }`}
+            >
+              {t('common:allHalls')}
+            </button>
+            {halls.map((hall) => (
+              <button
+                key={hall.id}
+                onClick={() => toggleHall(hall.id)}
+                className={`rounded-full border px-2 py-0.5 text-[10px] font-medium transition-colors ${
+                  selectedHallIds.includes(hall.id)
+                    ? 'border-brand-300 bg-brand-50 text-brand-700 dark:border-brand-600 dark:bg-brand-900/30 dark:text-brand-300'
+                    : 'border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                }`}
+              >
+                {hall.name}
+              </button>
+            ))}
+          </div>
+        </div>
       )}
 
       {editorOpen && (

@@ -25,6 +25,9 @@ export default function GamesPage() {
   const [activeTab, setActiveTab] = useState<TabKey>('upcoming')
   const [selectedTeams, setSelectedTeams] = useState<string[]>([])
   const [selectedGame, setSelectedGame] = useState<Game | null>(null)
+  const [showAll, setShowAll] = useState(false)
+
+  const INITIAL_LIMIT = 20
 
   const today = useMemo(() => new Date().toISOString().split('T')[0], [])
   const teamFilter = buildTeamFilter(selectedTeams)
@@ -50,10 +53,12 @@ export default function GamesPage() {
     }
   }, [activeTab, teamFilter, today])
 
+  const perPage = showAll ? 500 : INITIAL_LIMIT
+
   const { data: games, isLoading: gamesLoading } = usePB<Game>(
     'games',
     gameQuery
-      ? { filter: gameQuery.filter, sort: gameQuery.sort, expand: 'kscw_team,hall', perPage: 50 }
+      ? { filter: gameQuery.filter, sort: gameQuery.sort, expand: 'kscw_team,hall', perPage }
       : { filter: 'id = ""', perPage: 1 },
   )
 
@@ -102,7 +107,7 @@ export default function GamesPage() {
 
       <div className="mt-6 space-y-4">
         <TeamFilterBar selected={selectedTeams} onChange={setSelectedTeams} />
-        <GameTabs activeTab={activeTab} onChange={setActiveTab} />
+        <GameTabs activeTab={activeTab} onChange={(tab) => { setActiveTab(tab); setShowAll(false) }} />
       </div>
 
       <div className="mt-6">
@@ -114,11 +119,21 @@ export default function GamesPage() {
             {games.length === 0 ? (
               <EmptyState tab={activeTab} />
             ) : (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {games.map((g) => (
-                  <GameCard key={g.id} game={g} onClick={setSelectedGame} />
-                ))}
-              </div>
+              <>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {games.map((g) => (
+                    <GameCard key={g.id} game={g} onClick={setSelectedGame} />
+                  ))}
+                </div>
+                {!showAll && games.length >= INITIAL_LIMIT && (
+                  <button
+                    onClick={() => setShowAll(true)}
+                    className="mt-4 w-full rounded-lg border border-gray-200 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
+                  >
+                    {t('showMore')}
+                  </button>
+                )}
+              </>
             )}
           </>
         )}
@@ -129,11 +144,21 @@ export default function GamesPage() {
             {games.length === 0 ? (
               <EmptyState tab={activeTab} />
             ) : (
-              <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-                {games.map((g) => (
-                  <GameCard key={g.id} game={g} onClick={setSelectedGame} variant="compact" />
-                ))}
-              </div>
+              <>
+                <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                  {games.map((g) => (
+                    <GameCard key={g.id} game={g} onClick={setSelectedGame} variant="compact" />
+                  ))}
+                </div>
+                {!showAll && games.length >= INITIAL_LIMIT && (
+                  <button
+                    onClick={() => setShowAll(true)}
+                    className="mt-4 w-full rounded-lg border border-gray-200 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
+                  >
+                    {t('showMore')}
+                  </button>
+                )}
+              </>
             )}
           </>
         )}

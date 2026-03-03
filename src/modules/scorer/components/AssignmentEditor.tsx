@@ -55,6 +55,7 @@ export default function AssignmentEditor({
         value={teamValue}
         onChange={(e) => onTeamChange(e.target.value)}
         disabled={disabled}
+        aria-label={`${label} – ${t('selectTeam')}`}
         className="min-h-[44px] w-full rounded border border-gray-300 px-2 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 disabled:bg-gray-50 disabled:text-gray-500 dark:disabled:bg-gray-900 dark:disabled:text-gray-400"
       >
         <option value="">{t('selectTeam')}</option>
@@ -68,6 +69,7 @@ export default function AssignmentEditor({
         value={personValue}
         onChange={(e) => onPersonChange(e.target.value)}
         disabled={disabled}
+        aria-label={`${label} – ${t('selectPerson')}`}
         className="min-h-[44px] w-full rounded border border-gray-300 px-2 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 disabled:bg-gray-50 disabled:text-gray-500 dark:disabled:bg-gray-900 dark:disabled:text-gray-400"
       >
         <option value="">{t('selectPerson')}</option>

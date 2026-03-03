@@ -26,14 +26,16 @@ export default function DayNavigation({
   onPrevWeek,
   onNextWeek,
   onToday,
-  halls,
-  selectedHallIds,
-  onSelectHalls,
+  halls: _halls,
+  selectedHallIds: _selectedHallIds,
+  onSelectHalls: _onSelectHalls,
   isAdmin,
   onOpenClosureManager,
   showSummary,
   onToggleSummary,
 }: DayNavigationProps) {
+  // Hall filter chips are rendered separately below content by HallenplanView
+  void _halls; void _selectedHallIds; void _onSelectHalls
   const { t } = useTranslation('hallenplan')
 
   const DAY_FULL = [
@@ -52,14 +54,6 @@ export default function DayNavigation({
     : ''
 
   const todayStr = new Date().toDateString()
-
-  function toggleHall(hallId: string) {
-    if (selectedHallIds.includes(hallId)) {
-      onSelectHalls(selectedHallIds.filter((id) => id !== hallId))
-    } else {
-      onSelectHalls([...selectedHallIds, hallId])
-    }
-  }
 
   return (
     <div className="mb-4 space-y-3 rounded-lg bg-white p-3 shadow-sm dark:bg-gray-800">
@@ -146,32 +140,7 @@ export default function DayNavigation({
         )}
       </div>
 
-      {/* Hall filter chips */}
-      <div className="flex flex-wrap gap-1.5">
-        <button
-          onClick={() => onSelectHalls([])}
-          className={`min-h-[44px] rounded-full border px-3 py-2 text-sm font-medium transition-colors ${
-            selectedHallIds.length === 0
-              ? 'border-brand-300 bg-brand-50 text-brand-700 dark:border-brand-600 dark:bg-brand-900/30 dark:text-brand-300'
-              : 'border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-          }`}
-        >
-          {t('common:allHalls')}
-        </button>
-        {halls.map((hall) => (
-          <button
-            key={hall.id}
-            onClick={() => toggleHall(hall.id)}
-            className={`min-h-[44px] rounded-full border px-3 py-2 text-sm font-medium transition-colors ${
-              selectedHallIds.includes(hall.id)
-                ? 'border-brand-300 bg-brand-50 text-brand-700 dark:border-brand-600 dark:bg-brand-900/30 dark:text-brand-300'
-                : 'border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-            }`}
-          >
-            {hall.name}
-          </button>
-        ))}
-      </div>
+      {/* Hall filter chips — hidden, rendered separately below content by HallenplanView */}
     </div>
   )
 }

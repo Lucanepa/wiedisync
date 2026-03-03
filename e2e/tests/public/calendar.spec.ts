@@ -14,10 +14,10 @@ test.describe('Calendar page', () => {
     await page.goto('/calendar')
     await page.waitForLoadState('domcontentloaded')
 
-    // Three view options: "Halle", "Monat", "Liste" (de)
+    // Three view options: "Halle", "Monat", "Woche" (de)
     await expect(page.getByRole('button', { name: 'Halle', exact: true })).toBeVisible({ timeout: 10_000 })
     await expect(page.getByRole('button', { name: 'Monat' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Liste' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Woche' })).toBeVisible()
   })
 
   test('can switch to month view', async ({ page }) => {
@@ -31,11 +31,11 @@ test.describe('Calendar page', () => {
     await expect(body).not.toContainText('Error boundary')
   })
 
-  test('can switch to list view', async ({ page }) => {
+  test('can switch to week view', async ({ page }) => {
     await page.goto('/calendar')
     await page.waitForLoadState('domcontentloaded')
 
-    await page.getByRole('button', { name: 'Liste' }).click()
+    await page.getByRole('button', { name: 'Woche' }).click()
 
     const body = page.locator('body')
     await expect(body).not.toContainText('Error boundary')

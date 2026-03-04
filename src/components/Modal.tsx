@@ -37,7 +37,7 @@ export default function Modal({ open, onClose, title, children, size = 'md', hid
       onClick={(e) => {
         if (e.target === ref.current && !hideClose) onClose()
       }}
-      className={`fixed inset-x-0 bottom-0 top-auto m-0 w-full rounded-t-xl bg-white p-0 shadow-xl backdrop:bg-black/50 sm:inset-0 sm:m-auto sm:rounded-lg dark:bg-gray-800 ${sizeClasses[size]}`}
+      className={`fixed inset-x-0 bottom-0 top-auto m-0 w-full max-w-none rounded-t-xl bg-white p-0 shadow-xl backdrop:bg-black/50 sm:inset-0 sm:m-auto sm:rounded-lg dark:bg-gray-800 ${sizeClasses[size]}`}
     >
       <div className="w-full">
         <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 sm:px-6 sm:py-4 dark:border-gray-700">

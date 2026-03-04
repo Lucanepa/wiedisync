@@ -20,8 +20,9 @@ const PAST_PAGE_SIZE = 5
 
 export default function ScorerPage() {
   const { t } = useTranslation('scorer')
-  const { user, isAdmin, isCoach } = useAuth()
+  const { user, isAdmin, isSuperAdmin, isCoach } = useAuth()
   const canEdit = isAdmin || isCoach
+  const showContact = isAdmin || isCoach || isSuperAdmin
 
   const [tab, setTab] = useState<Tab>('games')
 
@@ -63,7 +64,7 @@ export default function ScorerPage() {
     filter: 'active = true',
     sort: '+last_name,+first_name',
     perPage: 500,
-    fields: 'id,name,first_name,last_name,scorer_licence',
+    fields: 'id,name,first_name,last_name,scorer_licence,active,phone,email',
   })
 
   const { data: teams } = usePB<Team>('teams', {
@@ -72,13 +73,28 @@ export default function ScorerPage() {
     perPage: 50,
   })
 
-  // User's team memberships (for self-assign)
-  const { data: userMemberTeams } = usePB<MemberTeam>('member_teams', {
-    filter: user ? `member="${user.id}"` : '',
-    perPage: 20,
-    enabled: !!user,
+  // All member-team relationships (for filtering persons by team)
+  const { data: allMemberTeams } = usePB<MemberTeam>('member_teams', {
+    perPage: 500,
   })
-  const userTeamIds = useMemo(() => userMemberTeams.map((mt) => mt.team), [userMemberTeams])
+  const teamMemberIds = useMemo(() => {
+    const map = new Map<string, Set<string>>()
+    for (const mt of allMemberTeams) {
+      if (!map.has(mt.team)) map.set(mt.team, new Set())
+      map.get(mt.team)!.add(mt.member)
+    }
+    return map
+  }, [allMemberTeams])
+
+  // User's team memberships (for self-assign)
+  const userTeamIds = useMemo(() => {
+    if (!user) return []
+    const ids: string[] = []
+    for (const mt of allMemberTeams) {
+      if (mt.member === user.id) ids.push(mt.team)
+    }
+    return ids
+  }, [allMemberTeams, user])
 
   // Member lookup for search
   const memberMap = useMemo(() => {
@@ -325,8 +341,10 @@ export default function ScorerPage() {
                     game={g}
                     members={members}
                     teams={teams}
+                    teamMemberIds={teamMemberIds}
                     onUpdate={handleUpdate}
                     canEdit={canEdit}
+                    showContact={showContact}
                     userId={user?.id}
                     userTeamIds={userTeamIds}
                     userHasLicence={user?.scorer_licence ?? false}

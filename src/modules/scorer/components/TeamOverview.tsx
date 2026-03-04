@@ -17,14 +17,14 @@ interface DutyEntry {
   memberName: string | null
 }
 
-const dateFormatter = new Intl.DateTimeFormat('de-CH', {
-  weekday: 'short',
-  day: 'numeric',
-  month: 'short',
-})
+function getDateFormatter(locale: string) {
+  const loc = locale === 'de' ? 'de-CH' : 'en-GB'
+  return new Intl.DateTimeFormat(loc, { weekday: 'short', day: 'numeric', month: 'short' })
+}
 
 export default function TeamOverview({ games, members }: TeamOverviewProps) {
-  const { t } = useTranslation('scorer')
+  const { t, i18n } = useTranslation('scorer')
+  const dateFormatter = useMemo(() => getDateFormatter(i18n.language), [i18n.language])
 
   const memberMap = useMemo(() => {
     const map = new Map<string, Member>()

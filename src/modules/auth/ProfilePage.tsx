@@ -137,7 +137,12 @@ export default function ProfilePage() {
         <div className="mt-3 space-y-2">
           {upcomingTrainings.map((tr) => (
             <div key={tr.id} className="flex items-center gap-3 rounded-lg border bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800">
-              <span className="text-lg">🎯</span>
+              <svg className="h-5 w-5 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16.05 10.966a5 2.5 0 0 1-8.1 0" />
+                <path d="m16.923 14.049 4.48 2.04a1 1 0 0 1 .001 1.831l-8.574 3.9a2 2 0 0 1-1.66 0l-8.574-3.91a1 1 0 0 1 0-1.83l4.484-2.04" />
+                <path d="M16.949 14.14a5 2.5 0 1 1-9.9 0L10.063 3.5a2 2 0 0 1 3.874 0z" />
+                <path d="M9.194 6.57a5 2.5 0 0 0 5.61 0" />
+              </svg>
               <div className="flex-1">
                 <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                   {t('training')} {tr.expand?.team?.name ?? ''}

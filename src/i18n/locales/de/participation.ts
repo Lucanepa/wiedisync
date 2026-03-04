@@ -1,0 +1,18 @@
+export default {
+  confirmed: 'Zugesagt',
+  declined: 'Abgesagt',
+  tentative: 'Vielleicht',
+  absent: 'Abwesend',
+  rsvp: 'Antworten',
+  notResponded: 'Keine Antwort',
+  respondBy: 'Antwort bis',
+  respondByHint: 'Erinnerung 1 Tag vorher',
+  deadlinePassed: 'Frist abgelaufen',
+  viewRoster: 'Aufgebot anzeigen',
+  rosterTitle: 'Teilnahme',
+  noResponses: 'Noch keine Antworten',
+  maxPlayers: 'Max. Spieler',
+  spotsLeft: '{{count}} Plätze frei',
+  full: 'Voll',
+  summaryOf: 'von {{total}}',
+} as const

@@ -1,9 +1,15 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { RecordModel } from 'pocketbase'
 import type { Game, Team, Hall, Member } from '../../../types'
 import TeamChip from '../../../components/TeamChip'
+import ParticipationButton from '../../../components/ParticipationButton'
+import ParticipationSummary from '../../../components/ParticipationSummary'
+import ParticipationRosterModal from '../../../components/ParticipationRosterModal'
+import { useAuth } from '../../../hooks/useAuth'
+import { useMutation } from '../../../hooks/useMutation'
 import { sanitizeUrl } from '../../../utils/sanitizeUrl'
+import { formatDate } from '../../../utils/dateHelpers'
 
 interface GameDetailModalProps {
   game: Game | null
@@ -40,6 +46,11 @@ const dateFormatter = new Intl.DateTimeFormat('en-US', {
 
 export default function GameDetailModal({ game, onClose }: GameDetailModalProps) {
   const { t } = useTranslation('games')
+  const { user, isCoachOf } = useAuth()
+  const [rosterOpen, setRosterOpen] = useState(false)
+  const [editingDeadline, setEditingDeadline] = useState(false)
+  const [deadlineValue, setDeadlineValue] = useState(game?.respond_by?.split(' ')[0] ?? '')
+  const { update: updateGame } = useMutation<Game>('games')
 
   useEffect(() => {
     if (!game) return
@@ -68,6 +79,7 @@ export default function GameDetailModal({ game, onClose }: GameDetailModalProps)
   const dateStr = game.date ? dateFormatter.format(new Date(game.date)) : ''
 
   return (
+    <>
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
       onClick={onClose}
@@ -257,8 +269,81 @@ export default function GameDetailModal({ game, onClose }: GameDetailModalProps)
             )}
           </div>
         )}
+
+        {/* Participation */}
+        {game.status === 'scheduled' && (
+          <div className="space-y-3 border-t dark:border-gray-700 px-6 py-4">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              {t('participation')}
+            </h4>
+            <div className="flex items-center justify-between">
+              <ParticipationSummary activityType="game" activityId={game.id} />
+              {user && (
+                <ParticipationButton activityType="game" activityId={game.id} activityDate={game.date} />
+              )}
+            </div>
+            {game.respond_by && !editingDeadline && (
+              <DetailRow label={t('respondBy')} value={formatDate(game.respond_by.split(' ')[0])} />
+            )}
+            {isCoachOf(game.kscw_team) && (
+              editingDeadline ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="date"
+                    value={deadlineValue}
+                    onChange={(e) => setDeadlineValue(e.target.value)}
+                    max={game.date?.split(' ')[0]}
+                    className="rounded-lg border px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                  />
+                  <button
+                    onClick={async () => {
+                      await updateGame(game.id, { respond_by: deadlineValue || null })
+                      setEditingDeadline(false)
+                    }}
+                    className="rounded bg-brand-500 px-2 py-1 text-xs text-white hover:bg-brand-600"
+                  >
+                    OK
+                  </button>
+                  <button
+                    onClick={() => setEditingDeadline(false)}
+                    className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400"
+                  >
+                    ✗
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => {
+                    setDeadlineValue(game.respond_by?.split(' ')[0] ?? '')
+                    setEditingDeadline(true)
+                  }}
+                  className="text-xs text-brand-600 hover:underline dark:text-brand-400"
+                >
+                  {t('setDeadline')}
+                </button>
+              )
+            )}
+            <button
+              onClick={() => setRosterOpen(true)}
+              className="w-full rounded-lg border px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+            >
+              {t('participationRoster')}
+            </button>
+          </div>
+        )}
       </div>
     </div>
+    <ParticipationRosterModal
+      open={rosterOpen}
+      onClose={() => setRosterOpen(false)}
+      activityType="game"
+      activityId={game?.id ?? ''}
+      activityDate={game?.date ?? ''}
+      teamId={game?.kscw_team ?? null}
+      title={t('participationRoster')}
+      respondBy={game?.respond_by}
+    />
+    </>
   )
 }
 

@@ -24,4 +24,9 @@ export default {
   meeting: 'Meeting',
   tournament: 'Tournament',
   other: 'Other',
+  respondBy: 'Respond by',
+  respondByHint: 'Reminder 1 day before',
+  maxPlayers: 'Max players',
+  participation: 'Participation',
+  viewRoster: 'View roster',
 } as const

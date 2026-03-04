@@ -133,6 +133,7 @@ export interface Game extends RecordModel {
   duty_confirmed: boolean
   referees_json: Array<{ name: string; id?: number }>
   source: 'swiss_volley' | 'manual'
+  respond_by: string
 }
 
 export interface ScorerEditLog extends RecordModel {
@@ -173,6 +174,7 @@ export interface Training extends RecordModel {
   notes: string
   cancelled: boolean
   cancel_reason: string
+  respond_by: string
 }
 
 export interface TrainingAttendance extends RecordModel {
@@ -204,6 +206,8 @@ export interface Event extends RecordModel {
   hall: string
   teams: string[]
   created_by: string
+  respond_by: string
+  max_players: number
 }
 
 export interface HallEvent extends RecordModel {

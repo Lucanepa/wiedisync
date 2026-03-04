@@ -60,4 +60,8 @@ export default {
   noResults: 'No results',
   noRankings: 'No rankings',
   showMore: 'Show more games',
+  participation: 'Participation',
+  participationRoster: 'View roster',
+  setDeadline: 'Set deadline',
+  respondBy: 'Respond by',
 } as const

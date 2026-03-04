@@ -4,6 +4,9 @@ import type { Game, Team, Hall } from '../../../types'
 import { formatDateCompact } from '../../../utils/dateHelpers'
 import { leagueShort } from '../../../utils/leagueShort'
 import TeamChip from '../../../components/TeamChip'
+import ParticipationButton from '../../../components/ParticipationButton'
+import ParticipationSummary from '../../../components/ParticipationSummary'
+import { useAuth } from '../../../hooks/useAuth'
 
 interface GameCardProps {
   game: Game
@@ -48,6 +51,7 @@ function StatusBadge({ status }: { status: Game['status'] }) {
 
 export default function GameCard({ game, onClick, variant = 'card' }: GameCardProps) {
   const { t } = useTranslation('games')
+  const { user } = useAuth()
   const expanded = game as ExpandedGame
   const expandedHall = expanded.expand?.hall
   const hallInfo = expandedHall
@@ -139,6 +143,12 @@ export default function GameCard({ game, onClick, variant = 'card' }: GameCardPr
             <StatusBadge status={game.status} />
             {hallInfo && <span className="truncate text-xs text-gray-500 dark:text-gray-400">{hallInfo}</span>}
           </div>
+          {user && game.status === 'scheduled' && (
+            <div className="mt-1.5 flex items-center gap-2">
+              <ParticipationSummary activityType="game" activityId={game.id} compact />
+              <ParticipationButton activityType="game" activityId={game.id} activityDate={game.date} compact />
+            </div>
+          )}
         </div>
       </div>
     </div>

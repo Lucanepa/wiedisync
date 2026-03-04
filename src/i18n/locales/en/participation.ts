@@ -1,0 +1,18 @@
+export default {
+  confirmed: 'Confirmed',
+  declined: 'Declined',
+  tentative: 'Maybe',
+  absent: 'Absent',
+  rsvp: 'RSVP',
+  notResponded: 'No response',
+  respondBy: 'Respond by',
+  respondByHint: 'Reminder 1 day before',
+  deadlinePassed: 'Deadline passed',
+  viewRoster: 'View roster',
+  rosterTitle: 'Participation',
+  noResponses: 'No responses yet',
+  maxPlayers: 'Max players',
+  spotsLeft: '{{count}} spots left',
+  full: 'Full',
+  summaryOf: 'of {{total}}',
+} as const

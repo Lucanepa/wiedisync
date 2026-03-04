@@ -7,6 +7,7 @@ import { useRealtime } from '../../hooks/useRealtime'
 import EmptyState from '../../components/EmptyState'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import LoadingSpinner from '../../components/LoadingSpinner'
+import ParticipationRosterModal from '../../components/ParticipationRosterModal'
 import EventCard from './EventCard'
 import EventForm from './EventForm'
 import type { Event, Team } from '../../types'
@@ -19,6 +20,7 @@ export default function EventsPage() {
   const [formOpen, setFormOpen] = useState(false)
   const [editingEvent, setEditingEvent] = useState<Event | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [rosterEvent, setRosterEvent] = useState<Event | null>(null)
 
   const { data: events, isLoading, refetch } = usePB<EventExpanded>('events', {
     sort: '-start_date',
@@ -84,6 +86,7 @@ export default function EventsPage() {
                 event={event}
                 onEdit={isCoach ? handleEdit : undefined}
                 onDelete={isCoach ? setDeletingId : undefined}
+                onOpenRoster={setRosterEvent}
               />
             ))}
           </div>
@@ -108,6 +111,18 @@ export default function EventsPage() {
         message={t('deleteConfirm')}
         confirmLabel={t('deleteEvent')}
         danger
+      />
+
+      <ParticipationRosterModal
+        open={rosterEvent !== null}
+        onClose={() => setRosterEvent(null)}
+        activityType="event"
+        activityId={rosterEvent?.id ?? ''}
+        activityDate={rosterEvent?.start_date ?? ''}
+        teamId={rosterEvent?.teams?.[0] ?? null}
+        title={t('participation')}
+        respondBy={rosterEvent?.respond_by}
+        maxPlayers={rosterEvent?.max_players}
       />
     </div>
   )

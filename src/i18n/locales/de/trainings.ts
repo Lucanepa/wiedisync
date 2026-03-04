@@ -49,4 +49,7 @@ export default {
   generatePreview: 'Vorschau Daten',
   generate: 'Erstellen',
   trainingsGenerated: '{{count}} Trainings erstellt',
+  respondBy: 'Antwort bis',
+  respondByHint: 'Erinnerung 1 Tag vorher',
+  participation: 'Teilnahme',
 } as const

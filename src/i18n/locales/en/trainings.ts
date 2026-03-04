@@ -52,4 +52,6 @@ export default {
   respondBy: 'Respond by',
   respondByHint: 'Reminder 1 day before',
   participation: 'Participation',
+  minParticipants: 'Min. participants',
+  maxParticipants: 'Max. participants',
 } as const

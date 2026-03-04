@@ -4,7 +4,7 @@ import Modal from '../../components/Modal'
 import { useAuth } from '../../hooks/useAuth'
 import { useMutation } from '../../hooks/useMutation'
 import { usePB } from '../../hooks/usePB'
-import type { Training, Team, Hall, Member } from '../../types'
+import type { Training, Team, Hall } from '../../types'
 
 interface TrainingFormProps {
   open: boolean
@@ -19,26 +19,8 @@ export default function TrainingForm({ open, training, onSave, onCancel }: Train
   const { create, update, isLoading } = useMutation<Training>('trainings')
   const { isAdmin, coachTeamIds } = useAuth()
 
-  type TeamExpanded = Team & { expand?: { coach?: Member[]; team_responsible?: Member[] } }
-  const { data: allTeams } = usePB<TeamExpanded>('teams', { filter: 'active=true', sort: 'name', perPage: 50, expand: 'coach,team_responsible' })
+  const { data: allTeams } = usePB<Team>('teams', { filter: 'active=true', sort: 'name', perPage: 50 })
   const { data: halls } = usePB<Hall>('halls', { sort: 'name', perPage: 50 })
-
-  // Deduplicated list of coaches from teams.coach/team_responsible
-  const coaches = useMemo(() => {
-    const seen = new Set<string>()
-    const list: Member[] = []
-    for (const team of allTeams) {
-      for (const arr of [team.expand?.coach, team.expand?.team_responsible]) {
-        for (const m of arr ?? []) {
-          if (!seen.has(m.id)) {
-            seen.add(m.id)
-            list.push(m)
-          }
-        }
-      }
-    }
-    return list.sort((a, b) => (a.last_name ?? '').localeCompare(b.last_name ?? ''))
-  }, [allTeams])
 
   // Non-admin coaches only see their own teams
   const teams = useMemo(
@@ -51,11 +33,12 @@ export default function TrainingForm({ open, training, onSave, onCancel }: Train
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
   const [hallId, setHallId] = useState('')
-  const [coachId, setCoachId] = useState('')
   const [notes, setNotes] = useState('')
   const [cancelled, setCancelled] = useState(false)
   const [cancelReason, setCancelReason] = useState('')
   const [respondBy, setRespondBy] = useState('')
+  const [minParticipants, setMinParticipants] = useState('')
+  const [maxParticipants, setMaxParticipants] = useState('')
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -65,22 +48,24 @@ export default function TrainingForm({ open, training, onSave, onCancel }: Train
       setStartTime(training.start_time)
       setEndTime(training.end_time)
       setHallId(training.hall ?? '')
-      setCoachId(training.coach ?? '')
       setNotes(training.notes ?? '')
       setCancelled(training.cancelled)
       setCancelReason(training.cancel_reason ?? '')
       setRespondBy(training.respond_by?.split(' ')[0] ?? '')
+      setMinParticipants(training.min_participants ? String(training.min_participants) : '')
+      setMaxParticipants(training.max_participants ? String(training.max_participants) : '')
     } else {
       setTeamId('')
       setDate('')
       setStartTime('')
       setEndTime('')
       setHallId('')
-      setCoachId('')
       setNotes('')
       setCancelled(false)
       setCancelReason('')
       setRespondBy('')
+      setMinParticipants('')
+      setMaxParticipants('')
     }
     setError('')
   }, [training, open])
@@ -100,11 +85,12 @@ export default function TrainingForm({ open, training, onSave, onCancel }: Train
       start_time: startTime,
       end_time: endTime,
       hall: hallId || undefined,
-      coach: coachId || undefined,
       notes,
       cancelled,
       cancel_reason: cancelled ? cancelReason : '',
       respond_by: respondBy || null,
+      min_participants: minParticipants ? Number(minParticipants) : null,
+      max_participants: maxParticipants ? Number(maxParticipants) : null,
     }
 
     try {
@@ -190,18 +176,27 @@ export default function TrainingForm({ open, training, onSave, onCancel }: Train
           </select>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Coach</label>
-          <select
-            value={coachId}
-            onChange={(e) => setCoachId(e.target.value)}
-            className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-          >
-            <option value="">{tc('select')}</option>
-            {coaches.map((c) => (
-              <option key={c.id} value={c.id}>{`${c.first_name ?? ''} ${c.last_name ?? ''}`.trim() || c.name}</option>
-            ))}
-          </select>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('minParticipants')}</label>
+            <input
+              type="number"
+              value={minParticipants}
+              onChange={(e) => setMinParticipants(e.target.value)}
+              min={0}
+              className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('maxParticipants')}</label>
+            <input
+              type="number"
+              value={maxParticipants}
+              onChange={(e) => setMaxParticipants(e.target.value)}
+              min={0}
+              className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            />
+          </div>
         </div>
 
         <div>

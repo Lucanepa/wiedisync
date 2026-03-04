@@ -52,4 +52,6 @@ export default {
   respondBy: 'Antwort bis',
   respondByHint: 'Erinnerung 1 Tag vorher',
   participation: 'Teilnahme',
+  minParticipants: 'Min. Teilnehmer',
+  maxParticipants: 'Max. Teilnehmer',
 } as const

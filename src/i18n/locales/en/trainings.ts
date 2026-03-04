@@ -54,4 +54,13 @@ export default {
   participation: 'Participation',
   minParticipants: 'Min. participants',
   maxParticipants: 'Max. participants',
+  untilSeasonEnd: 'Until season end ({{date}})',
+
+  // Recurring edit
+  editRecurringTitle: 'Edit recurring training',
+  editRecurringDescription: 'This training is part of a recurring series. What do you want to edit?',
+  editThisOnly: 'This training only',
+  editSameDay: 'All trainings on the same weekday',
+  editAllRecurring: 'All recurring trainings',
+  cancelEdit: 'Cancel',
 } as const

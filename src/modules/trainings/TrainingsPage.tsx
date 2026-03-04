@@ -11,6 +11,8 @@ import ParticipationRosterModal from '../../components/ParticipationRosterModal'
 import TrainingCard from './TrainingCard'
 import TrainingForm from './TrainingForm'
 import RecurringTrainingModal from './RecurringTrainingModal'
+import RecurringEditDialog from './RecurringEditDialog'
+import type { RecurringEditScope } from './RecurringEditDialog'
 import AttendanceSheet from './AttendanceSheet'
 import CoachDashboard from './CoachDashboard'
 import LoadingSpinner from '../../components/LoadingSpinner'
@@ -29,6 +31,8 @@ export default function TrainingsPage() {
   const [attendanceTeam, setAttendanceTeam] = useState<string | null>(null)
   const [formOpen, setFormOpen] = useState(false)
   const [editingTraining, setEditingTraining] = useState<Training | null>(null)
+  const [editScope, setEditScope] = useState<RecurringEditScope>('this')
+  const [recurringEditDialogOpen, setRecurringEditDialogOpen] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [recurringOpen, setRecurringOpen] = useState(false)
   const [rosterTraining, setRosterTraining] = useState<{ id: string; teamId: string; date: string } | null>(null)
@@ -51,12 +55,26 @@ export default function TrainingsPage() {
 
   function handleEdit(training: Training) {
     setEditingTraining(training)
+    if (training.hall_slot) {
+      // Recurring training — ask what scope to edit
+      setRecurringEditDialogOpen(true)
+    } else {
+      // Non-recurring — edit directly
+      setEditScope('this')
+      setFormOpen(true)
+    }
+  }
+
+  function handleRecurringEditSelect(scope: RecurringEditScope) {
+    setEditScope(scope)
+    setRecurringEditDialogOpen(false)
     setFormOpen(true)
   }
 
   function handleFormSave() {
     setFormOpen(false)
     setEditingTraining(null)
+    setEditScope('this')
     refetch()
   }
 
@@ -85,6 +103,7 @@ export default function TrainingsPage() {
             <button
               onClick={() => {
                 setEditingTraining(null)
+                setEditScope('this')
                 setFormOpen(true)
               }}
               className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600"
@@ -131,7 +150,14 @@ export default function TrainingsPage() {
           <LoadingSpinner />
         ) : trainings.length === 0 ? (
           <EmptyState
-            icon="🎯"
+            icon={
+              <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16.05 10.966a5 2.5 0 0 1-8.1 0" />
+                <path d="m16.923 14.049 4.48 2.04a1 1 0 0 1 .001 1.831l-8.574 3.9a2 2 0 0 1-1.66 0l-8.574-3.91a1 1 0 0 1 0-1.83l4.484-2.04" />
+                <path d="M16.949 14.14a5 2.5 0 1 1-9.9 0L10.063 3.5a2 2 0 0 1 3.874 0z" />
+                <path d="M9.194 6.57a5 2.5 0 0 0 5.61 0" />
+              </svg>
+            }
             title={t('noTrainings')}
             description={t('noTrainingsDescription')}
           />
@@ -160,13 +186,24 @@ export default function TrainingsPage() {
         }}
       />
 
+      <RecurringEditDialog
+        open={recurringEditDialogOpen}
+        onClose={() => {
+          setRecurringEditDialogOpen(false)
+          setEditingTraining(null)
+        }}
+        onSelect={handleRecurringEditSelect}
+      />
+
       <TrainingForm
         open={formOpen}
         training={editingTraining}
+        editScope={editScope}
         onSave={handleFormSave}
         onCancel={() => {
           setFormOpen(false)
           setEditingTraining(null)
+          setEditScope('this')
         }}
       />
 

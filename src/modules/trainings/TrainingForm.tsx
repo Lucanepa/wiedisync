@@ -4,19 +4,22 @@ import Modal from '../../components/Modal'
 import { useAuth } from '../../hooks/useAuth'
 import { useMutation } from '../../hooks/useMutation'
 import { usePB } from '../../hooks/usePB'
+import pb from '../../pb'
 import type { Training, Team, Hall } from '../../types'
+import type { RecurringEditScope } from './RecurringEditDialog'
 
 interface TrainingFormProps {
   open: boolean
   training?: Training | null
+  editScope?: RecurringEditScope
   onSave: () => void
   onCancel: () => void
 }
 
-export default function TrainingForm({ open, training, onSave, onCancel }: TrainingFormProps) {
+export default function TrainingForm({ open, training, editScope = 'this', onSave, onCancel }: TrainingFormProps) {
   const { t } = useTranslation('trainings')
   const { t: tc } = useTranslation('common')
-  const { create, update, isLoading } = useMutation<Training>('trainings')
+  const { create, update, isLoading: isMutating } = useMutation<Training>('trainings')
   const { isAdmin, coachTeamIds } = useAuth()
 
   const { data: allTeams } = usePB<Team>('teams', { filter: 'active=true', sort: 'name', perPage: 50 })
@@ -40,6 +43,7 @@ export default function TrainingForm({ open, training, onSave, onCancel }: Train
   const [minParticipants, setMinParticipants] = useState('')
   const [maxParticipants, setMaxParticipants] = useState('')
   const [error, setError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
     if (training) {
@@ -93,17 +97,77 @@ export default function TrainingForm({ open, training, onSave, onCancel }: Train
       max_participants: maxParticipants ? Number(maxParticipants) : null,
     }
 
+    setIsLoading(true)
     try {
       if (training) {
         await update(training.id, data)
+
+        // Bulk update siblings if editing recurring
+        if (editScope !== 'this' && training.hall_slot) {
+          await bulkUpdateSiblings(training, data)
+        }
       } else {
         await create(data)
       }
       onSave()
     } catch {
       setError(tc('errorSaving'))
+    } finally {
+      setIsLoading(false)
     }
   }
+
+  async function bulkUpdateSiblings(
+    source: Training,
+    data: Record<string, unknown>,
+  ) {
+    // Fields to propagate (exclude date-specific fields)
+    const bulkData: Record<string, unknown> = {
+      start_time: data.start_time,
+      end_time: data.end_time,
+      hall: data.hall,
+      notes: data.notes,
+      respond_by: data.respond_by,
+      min_participants: data.min_participants,
+      max_participants: data.max_participants,
+    }
+
+    // Find sibling trainings with same hall_slot, excluding the one we already updated
+    let filter = `hall_slot="${source.hall_slot}" && id!="${source.id}" && date>="${new Date().toISOString().split('T')[0]}"`
+
+    if (editScope === 'same_day') {
+      // Same day of week: compute from source training date
+      const dayOfWeek = new Date(source.date).getDay()
+      // PB doesn't have day-of-week filter, so we fetch all and filter client-side
+      const allSiblings = await pb.collection('trainings').getFullList<Training>({
+        filter,
+        sort: 'date',
+      })
+      const sameDaySiblings = allSiblings.filter(
+        (t) => new Date(t.date).getDay() === dayOfWeek,
+      )
+      for (const sibling of sameDaySiblings) {
+        await pb.collection('trainings').update(sibling.id, bulkData)
+      }
+    } else {
+      // All recurring
+      const allSiblings = await pb.collection('trainings').getFullList<Training>({
+        filter,
+        sort: 'date',
+      })
+      for (const sibling of allSiblings) {
+        await pb.collection('trainings').update(sibling.id, bulkData)
+      }
+    }
+  }
+
+  const scopeLabel = editScope === 'all'
+    ? t('editAllRecurring')
+    : editScope === 'same_day'
+      ? t('editSameDay')
+      : ''
+
+  const loading = isLoading || isMutating
 
   return (
     <Modal
@@ -113,6 +177,12 @@ export default function TrainingForm({ open, training, onSave, onCancel }: Train
       size="md"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
+        {training && editScope !== 'this' && (
+          <div className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
+            {scopeLabel}
+          </div>
+        )}
+
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{tc('team')}</label>
           <select
@@ -256,10 +326,10 @@ export default function TrainingForm({ open, training, onSave, onCancel }: Train
           </button>
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={loading}
             className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50"
           >
-            {isLoading ? tc('saving') : tc('save')}
+            {loading ? tc('saving') : tc('save')}
           </button>
         </div>
       </form>

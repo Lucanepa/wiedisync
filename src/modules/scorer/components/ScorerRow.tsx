@@ -11,8 +11,10 @@ interface ScorerRowProps {
   game: Game
   members: Member[]
   teams: Team[]
+  teamMemberIds: Map<string, Set<string>>
   onUpdate: (gameId: string, fields: Partial<Game>) => void
   canEdit: boolean
+  showContact: boolean
   userId?: string
   userTeamIds?: string[]
   userHasLicence?: boolean
@@ -31,11 +33,10 @@ export type ExpandedGame = Game & {
   }
 }
 
-const dateFormatter = new Intl.DateTimeFormat('de-CH', {
-  weekday: 'short',
-  day: 'numeric',
-  month: 'short',
-})
+function getDateFormatter(locale: string) {
+  const loc = locale === 'de' ? 'de-CH' : 'en-GB'
+  return new Intl.DateTimeFormat(loc, { weekday: 'short', day: 'numeric', month: 'short' })
+}
 
 /** Game has scorer+taefeler (separate) assignments */
 function isSeparateMode(game: Game): boolean {
@@ -112,16 +113,18 @@ export default function ScorerRow({
   game,
   members,
   teams,
+  teamMemberIds,
   onUpdate,
   canEdit,
+  showContact,
   userId,
   userTeamIds = [],
   userHasLicence = false,
 }: ScorerRowProps) {
-  const { t } = useTranslation('scorer')
+  const { t, i18n } = useTranslation('scorer')
   const expanded = game as ExpandedGame
   const kscwTeam = expanded.expand?.kscw_team?.name ?? ''
-  const dateStr = game.date ? dateFormatter.format(new Date(game.date)) : ''
+  const dateStr = game.date ? getDateFormatter(i18n.language).format(new Date(game.date)) : ''
 
   const separate = isSeparateMode(game)
   const combined = isCombinedMode(game)
@@ -215,7 +218,7 @@ export default function ScorerRow({
       </div>
 
       {/* Assignment editors */}
-      <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-3 space-y-3">
         {combined ? (
           /* Combined mode: single scorer/taefeler slot */
           <AssignmentEditor
@@ -225,10 +228,11 @@ export default function ScorerRow({
             personValue={game.scorer_taefeler_member ?? ''}
             members={members}
             teams={teams}
+            teamMemberIds={teamMemberIds}
             onTeamChange={(v) => handleAdminUpdate(game.id, { scorer_taefeler_duty_team: v })}
             onPersonChange={(v) => handleAdminUpdate(game.id, { scorer_taefeler_member: v })}
             disabled={!canEdit || game.duty_confirmed}
-            showContact={canEdit}
+            showContact={showContact}
             selfAssignButton={canSelfAssign('scorer_taefeler')}
             onSelfAssign={() => setConfirmRole('scorer_taefeler')}
           />
@@ -242,10 +246,11 @@ export default function ScorerRow({
               personValue={game.scorer_member ?? ''}
               members={members}
               teams={teams}
+              teamMemberIds={teamMemberIds}
               onTeamChange={(v) => handleAdminUpdate(game.id, { scorer_duty_team: v })}
               onPersonChange={(v) => handleAdminUpdate(game.id, { scorer_member: v })}
               disabled={!canEdit || game.duty_confirmed}
-              showContact={canEdit}
+              showContact={showContact}
               selfAssignButton={canSelfAssign('scorer')}
               onSelfAssign={() => setConfirmRole('scorer')}
             />
@@ -256,10 +261,11 @@ export default function ScorerRow({
               personValue={game.taefeler_member ?? ''}
               members={members}
               teams={teams}
+              teamMemberIds={teamMemberIds}
               onTeamChange={(v) => handleAdminUpdate(game.id, { taefeler_duty_team: v })}
               onPersonChange={(v) => handleAdminUpdate(game.id, { taefeler_member: v })}
               disabled={!canEdit || game.duty_confirmed}
-              showContact={canEdit}
+              showContact={showContact}
               selfAssignButton={canSelfAssign('taefeler')}
               onSelfAssign={() => setConfirmRole('taefeler')}
             />

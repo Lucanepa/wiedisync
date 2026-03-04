@@ -14,6 +14,12 @@ interface RecurringTrainingModalProps {
   onGenerated: () => void
 }
 
+function getSeasonEndDate(): string {
+  const now = new Date()
+  const year = now.getMonth() < 5 ? now.getFullYear() : now.getFullYear() + 1
+  return `${year}-05-31`
+}
+
 export default function RecurringTrainingModal({ open, onClose, onGenerated }: RecurringTrainingModalProps) {
   const { t } = useTranslation('trainings')
   const { t: tc } = useTranslation('common')
@@ -25,20 +31,33 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated }: R
     perPage: 100,
   })
 
+  const { data: halls } = usePB<Hall>('halls', { sort: 'name', perPage: 50 })
+
   const [selectedSlot, setSelectedSlot] = useState('')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
+  const [untilSeasonEnd, setUntilSeasonEnd] = useState(false)
+  const [hallId, setHallId] = useState('')
+  const [notes, setNotes] = useState('')
+  const [respondBy, setRespondBy] = useState('')
+  const [minParticipants, setMinParticipants] = useState('')
+  const [maxParticipants, setMaxParticipants] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [generated, setGenerated] = useState(0)
 
   const slot = slots.find((s) => s.id === selectedSlot)
 
+  // When slot changes, default the hall to the slot's hall
+  const effectiveHallId = hallId || slot?.hall || ''
+
+  const effectiveEndDate = untilSeasonEnd ? getSeasonEndDate() : endDate
+
   const previewDates = useMemo(() => {
-    if (!slot || !startDate || !endDate) return []
+    if (!slot || !startDate || !effectiveEndDate) return []
     const dates: string[] = []
     const start = new Date(startDate)
-    const end = new Date(endDate)
+    const end = new Date(effectiveEndDate)
     const targetDay = slot.day_of_week // 0=Sunday, 1=Monday, etc.
 
     const current = new Date(start)
@@ -52,7 +71,7 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated }: R
       current.setDate(current.getDate() + 7)
     }
     return dates
-  }, [slot, startDate, endDate])
+  }, [slot, startDate, effectiveEndDate])
 
   async function handleGenerate() {
     if (!slot || previewDates.length === 0) return
@@ -69,8 +88,12 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated }: R
           date,
           start_time: slot.start_time,
           end_time: slot.end_time,
-          hall: slot.hall,
+          hall: effectiveHallId,
           cancelled: false,
+          notes,
+          respond_by: respondBy || null,
+          min_participants: minParticipants ? Number(minParticipants) : null,
+          max_participants: maxParticipants ? Number(maxParticipants) : null,
         })
         count++
       }
@@ -83,15 +106,21 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated }: R
     }
   }
 
+  const inputCls = 'mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100'
+  const labelCls = 'block text-sm font-medium text-gray-700 dark:text-gray-300'
+
   return (
     <Modal open={open} onClose={onClose} title={t('recurringTitle')} size="md">
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('selectSlot')}</label>
+          <label className={labelCls}>{t('selectSlot')}</label>
           <select
             value={selectedSlot}
-            onChange={(e) => setSelectedSlot(e.target.value)}
-            className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            onChange={(e) => {
+              setSelectedSlot(e.target.value)
+              setHallId('')
+            }}
+            className={inputCls}
           >
             <option value="">{tc('select')}</option>
             {slots.map((s) => (
@@ -102,26 +131,98 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated }: R
           </select>
         </div>
 
+        <div>
+          <label className={labelCls}>{tc('hall')}</label>
+          <select
+            value={effectiveHallId}
+            onChange={(e) => setHallId(e.target.value)}
+            className={inputCls}
+          >
+            <option value="">{tc('select')}</option>
+            {halls.map((h) => (
+              <option key={h.id} value={h.id}>{h.name}</option>
+            ))}
+          </select>
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{tc('from')}</label>
+            <label className={labelCls}>{tc('from')}</label>
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+              className={inputCls}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{tc('to')}</label>
+            <label className={labelCls}>{tc('to')}</label>
             <input
               type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
+              value={untilSeasonEnd ? getSeasonEndDate() : endDate}
+              onChange={(e) => { setEndDate(e.target.value); setUntilSeasonEnd(false) }}
               min={startDate}
-              className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+              disabled={untilSeasonEnd}
+              className={inputCls}
             />
           </div>
+        </div>
+
+        <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+          <input
+            type="checkbox"
+            checked={untilSeasonEnd}
+            onChange={(e) => {
+              setUntilSeasonEnd(e.target.checked)
+              if (e.target.checked) setEndDate(getSeasonEndDate())
+            }}
+            className="rounded border-gray-300 dark:border-gray-600"
+          />
+          {t('untilSeasonEnd', { date: formatDate(getSeasonEndDate()) })}
+        </label>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className={labelCls}>{t('minParticipants')}</label>
+            <input
+              type="number"
+              value={minParticipants}
+              onChange={(e) => setMinParticipants(e.target.value)}
+              min={0}
+              className={inputCls}
+            />
+          </div>
+          <div>
+            <label className={labelCls}>{t('maxParticipants')}</label>
+            <input
+              type="number"
+              value={maxParticipants}
+              onChange={(e) => setMaxParticipants(e.target.value)}
+              min={0}
+              className={inputCls}
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className={labelCls}>{t('respondBy')}</label>
+          <input
+            type="date"
+            value={respondBy}
+            onChange={(e) => setRespondBy(e.target.value)}
+            className={inputCls}
+          />
+          <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">{t('respondByHint')}</p>
+        </div>
+
+        <div>
+          <label className={labelCls}>{tc('notes')}</label>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={2}
+            className={inputCls}
+          />
         </div>
 
         {previewDates.length > 0 && (

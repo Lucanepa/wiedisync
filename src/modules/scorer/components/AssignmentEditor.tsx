@@ -9,6 +9,7 @@ interface AssignmentEditorProps {
   personValue: string
   members: Member[]
   teams: Team[]
+  teamMemberIds: Map<string, Set<string>>
   onTeamChange: (teamId: string) => void
   onPersonChange: (memberId: string) => void
   disabled: boolean
@@ -24,6 +25,7 @@ export default function AssignmentEditor({
   personValue,
   members,
   teams,
+  teamMemberIds,
   onTeamChange,
   onPersonChange,
   disabled,
@@ -38,50 +40,65 @@ export default function AssignmentEditor({
     if (requireLicence) {
       list = list.filter((m) => m.scorer_licence)
     }
+    // Filter by selected team
+    if (teamValue) {
+      const teamMembers = teamMemberIds.get(teamValue)
+      if (teamMembers) {
+        list = list.filter((m) => teamMembers.has(m.id))
+      }
+    }
     return list.sort((a, b) =>
       `${a.last_name} ${a.first_name}`.localeCompare(`${b.last_name} ${b.first_name}`, 'de'),
     )
-  }, [members, requireLicence])
+  }, [members, requireLicence, teamValue, teamMemberIds])
 
   const assignedPerson = useMemo(() => {
     if (!personValue) return null
     return members.find((m) => m.id === personValue) ?? null
   }, [members, personValue])
 
+  const selectClass = 'min-h-[44px] w-full rounded border border-gray-300 px-2 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 disabled:bg-gray-50 disabled:text-gray-500 dark:disabled:bg-gray-900 dark:disabled:text-gray-400'
+
   return (
     <div className="space-y-1.5">
       <span className="block text-xs font-medium text-gray-500 dark:text-gray-400">{label}</span>
-      <select
-        value={teamValue}
-        onChange={(e) => onTeamChange(e.target.value)}
-        disabled={disabled}
-        aria-label={`${label} – ${t('selectTeam')}`}
-        className="min-h-[44px] w-full rounded border border-gray-300 px-2 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 disabled:bg-gray-50 disabled:text-gray-500 dark:disabled:bg-gray-900 dark:disabled:text-gray-400"
-      >
-        <option value="">{t('selectTeam')}</option>
-        {teams.map((team) => (
-          <option key={team.id} value={team.id}>
-            {team.name}
-          </option>
-        ))}
-      </select>
-      <select
-        value={personValue}
-        onChange={(e) => onPersonChange(e.target.value)}
-        disabled={disabled}
-        aria-label={`${label} – ${t('selectPerson')}`}
-        className="min-h-[44px] w-full rounded border border-gray-300 px-2 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 disabled:bg-gray-50 disabled:text-gray-500 dark:disabled:bg-gray-900 dark:disabled:text-gray-400"
-      >
-        <option value="">{t('selectPerson')}</option>
-        {filteredMembers.map((m) => (
-          <option key={m.id} value={m.id}>
-            {m.first_name} {m.last_name}
-          </option>
-        ))}
-      </select>
+      <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-2">
+        <select
+          value={teamValue}
+          onChange={(e) => {
+            onTeamChange(e.target.value)
+            // Clear person when team changes (they may not be in the new team)
+            if (personValue) onPersonChange('')
+          }}
+          disabled={disabled}
+          aria-label={`${label} – ${t('selectTeam')}`}
+          className={selectClass}
+        >
+          <option value="">{t('selectTeam')}</option>
+          {teams.map((team) => (
+            <option key={team.id} value={team.id}>
+              {team.name}
+            </option>
+          ))}
+        </select>
+        <select
+          value={personValue}
+          onChange={(e) => onPersonChange(e.target.value)}
+          disabled={disabled}
+          aria-label={`${label} – ${t('selectPerson')}`}
+          className={selectClass}
+        >
+          <option value="">{t('selectPerson')}</option>
+          {filteredMembers.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.first_name} {m.last_name}
+            </option>
+          ))}
+        </select>
+      </div>
 
-      {/* Contact info for admins/coaches */}
-      {showContact && assignedPerson && (
+      {/* Contact info */}
+      {showContact && assignedPerson && (assignedPerson.phone || assignedPerson.email) && (
         <div className="rounded border border-gray-200 px-2 py-1.5 text-xs text-gray-500 dark:border-gray-700 dark:text-gray-400">
           {assignedPerson.phone && (
             <a href={`tel:${assignedPerson.phone}`} className="flex items-center gap-1 hover:text-brand-600 dark:hover:text-brand-400">

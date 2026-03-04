@@ -54,4 +54,13 @@ export default {
   participation: 'Teilnahme',
   minParticipants: 'Min. Teilnehmer',
   maxParticipants: 'Max. Teilnehmer',
+  untilSeasonEnd: 'Bis Saisonende ({{date}})',
+
+  // Recurring edit
+  editRecurringTitle: 'Wiederkehrendes Training bearbeiten',
+  editRecurringDescription: 'Dieses Training gehört zu einer wiederkehrenden Serie. Was möchtest du bearbeiten?',
+  editThisOnly: 'Nur dieses Training',
+  editSameDay: 'Alle Trainings am gleichen Wochentag',
+  editAllRecurring: 'Alle wiederkehrenden Trainings',
+  cancelEdit: 'Abbrechen',
 } as const

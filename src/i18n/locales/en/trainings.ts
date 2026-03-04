@@ -49,4 +49,7 @@ export default {
   generatePreview: 'Preview dates',
   generate: 'Generate',
   trainingsGenerated: '{{count}} trainings generated',
+  respondBy: 'Respond by',
+  respondByHint: 'Reminder 1 day before',
+  participation: 'Participation',
 } as const

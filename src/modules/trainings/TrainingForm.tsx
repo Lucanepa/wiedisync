@@ -37,7 +37,7 @@ export default function TrainingForm({ open, training, onSave, onCancel }: Train
         }
       }
     }
-    return list.sort((a, b) => a.name.localeCompare(b.name))
+    return list.sort((a, b) => (a.last_name ?? '').localeCompare(b.last_name ?? ''))
   }, [allTeams])
 
   // Non-admin coaches only see their own teams
@@ -55,6 +55,7 @@ export default function TrainingForm({ open, training, onSave, onCancel }: Train
   const [notes, setNotes] = useState('')
   const [cancelled, setCancelled] = useState(false)
   const [cancelReason, setCancelReason] = useState('')
+  const [respondBy, setRespondBy] = useState('')
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -68,6 +69,7 @@ export default function TrainingForm({ open, training, onSave, onCancel }: Train
       setNotes(training.notes ?? '')
       setCancelled(training.cancelled)
       setCancelReason(training.cancel_reason ?? '')
+      setRespondBy(training.respond_by?.split(' ')[0] ?? '')
     } else {
       setTeamId('')
       setDate('')
@@ -78,6 +80,7 @@ export default function TrainingForm({ open, training, onSave, onCancel }: Train
       setNotes('')
       setCancelled(false)
       setCancelReason('')
+      setRespondBy('')
     }
     setError('')
   }, [training, open])
@@ -101,6 +104,7 @@ export default function TrainingForm({ open, training, onSave, onCancel }: Train
       notes,
       cancelled,
       cancel_reason: cancelled ? cancelReason : '',
+      respond_by: respondBy || null,
     }
 
     try {
@@ -195,7 +199,7 @@ export default function TrainingForm({ open, training, onSave, onCancel }: Train
           >
             <option value="">{tc('select')}</option>
             {coaches.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
+              <option key={c.id} value={c.id}>{`${c.first_name ?? ''} ${c.last_name ?? ''}`.trim() || c.name}</option>
             ))}
           </select>
         </div>
@@ -208,6 +212,18 @@ export default function TrainingForm({ open, training, onSave, onCancel }: Train
             rows={2}
             className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('respondBy')}</label>
+          <input
+            type="date"
+            value={respondBy}
+            onChange={(e) => setRespondBy(e.target.value)}
+            max={date}
+            className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+          />
+          <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">{t('respondByHint')}</p>
         </div>
 
         {training && (

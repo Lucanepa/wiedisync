@@ -7,6 +7,7 @@ import { useMutation } from '../../hooks/useMutation'
 import TeamFilter from '../../components/TeamFilter'
 import EmptyState from '../../components/EmptyState'
 import ConfirmDialog from '../../components/ConfirmDialog'
+import ParticipationRosterModal from '../../components/ParticipationRosterModal'
 import TrainingCard from './TrainingCard'
 import TrainingForm from './TrainingForm'
 import RecurringTrainingModal from './RecurringTrainingModal'
@@ -30,6 +31,7 @@ export default function TrainingsPage() {
   const [editingTraining, setEditingTraining] = useState<Training | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [recurringOpen, setRecurringOpen] = useState(false)
+  const [rosterTraining, setRosterTraining] = useState<{ id: string; teamId: string; date: string } | null>(null)
 
   const { data: trainings, isLoading, refetch } = usePB<TrainingExpanded>('trainings', {
     filter: selectedTeam ? `team="${selectedTeam}"` : '',
@@ -140,6 +142,7 @@ export default function TrainingsPage() {
                 key={training.id}
                 training={training}
                 onOpenAttendance={handleOpenAttendance}
+                onOpenRoster={(id, teamId, date) => setRosterTraining({ id, teamId, date })}
                 onEdit={isCoachOf(training.team) ? handleEdit : undefined}
                 onDelete={isCoachOf(training.team) ? setDeletingId : undefined}
               />
@@ -181,6 +184,16 @@ export default function TrainingsPage() {
         message={t('deleteConfirm')}
         confirmLabel={t('deleteTraining')}
         danger
+      />
+
+      <ParticipationRosterModal
+        open={rosterTraining !== null}
+        onClose={() => setRosterTraining(null)}
+        activityType="training"
+        activityId={rosterTraining?.id ?? ''}
+        activityDate={rosterTraining?.date ?? ''}
+        teamId={rosterTraining?.teamId ?? null}
+        title={t('participation')}
       />
     </div>
   )

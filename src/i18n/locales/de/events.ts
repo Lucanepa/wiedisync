@@ -24,4 +24,9 @@ export default {
   meeting: 'Sitzung',
   tournament: 'Turnier',
   other: 'Andere',
+  respondBy: 'Antwort bis',
+  respondByHint: 'Erinnerung 1 Tag vorher',
+  maxPlayers: 'Max. Spieler',
+  participation: 'Teilnahme',
+  viewRoster: 'Aufgebot anzeigen',
 } as const

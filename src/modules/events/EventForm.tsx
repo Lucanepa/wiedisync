@@ -28,6 +28,8 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
   const [location, setLocation] = useState('')
   const [description, setDescription] = useState('')
   const [selectedTeams, setSelectedTeams] = useState<string[]>([])
+  const [respondBy, setRespondBy] = useState('')
+  const [maxPlayers, setMaxPlayers] = useState('')
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -40,6 +42,8 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
       setLocation(event.location ?? '')
       setDescription(event.description ?? '')
       setSelectedTeams(event.teams ?? [])
+      setRespondBy(event.respond_by?.split(' ')[0] ?? '')
+      setMaxPlayers(event.max_players ? String(event.max_players) : '')
     } else {
       setTitle('')
       setEventType('verein')
@@ -49,6 +53,8 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
       setLocation('')
       setDescription('')
       setSelectedTeams([])
+      setRespondBy('')
+      setMaxPlayers('')
     }
     setError('')
   }, [event, open])
@@ -78,6 +84,8 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
       description,
       teams: selectedTeams,
       created_by: user?.id,
+      respond_by: respondBy || null,
+      max_players: maxPlayers ? Number(maxPlayers) : null,
     }
 
     try {
@@ -181,6 +189,30 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
             className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
           />
         </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('respondBy')}</label>
+          <input
+            type="date"
+            value={respondBy}
+            onChange={(e) => setRespondBy(e.target.value)}
+            className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+          />
+          <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">{t('respondByHint')}</p>
+        </div>
+
+        {eventType === 'tournament' && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('maxPlayers')}</label>
+            <input
+              type="number"
+              value={maxPlayers}
+              onChange={(e) => setMaxPlayers(e.target.value)}
+              min={0}
+              className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            />
+          </div>
+        )}
 
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('teamsInvolved')}</label>

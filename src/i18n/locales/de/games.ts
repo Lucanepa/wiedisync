@@ -61,4 +61,8 @@ export default {
   noResults: 'Keine Resultate',
   noRankings: 'Keine Rangliste',
   showMore: 'Mehr Spiele anzeigen',
+  participation: 'Teilnahme',
+  participationRoster: 'Aufgebot anzeigen',
+  setDeadline: 'Frist setzen',
+  respondBy: 'Antwort bis',
 } as const

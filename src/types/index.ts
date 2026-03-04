@@ -175,6 +175,8 @@ export interface Training extends RecordModel {
   cancelled: boolean
   cancel_reason: string
   respond_by: string
+  min_participants: number
+  max_participants: number
 }
 
 export interface TrainingAttendance extends RecordModel {

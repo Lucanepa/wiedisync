@@ -43,133 +43,48 @@ export function topToMinutes(top: number, baseMinute = START_HOUR * 60): number 
 }
 
 /**
- * Positions slots within each day column, handling overlaps with sub-column layout.
- * Uses a greedy interval coloring algorithm.
+ * Positions slots within each day column. Overlapping slots stack on top of each other
+ * (full width) instead of being placed side-by-side.
  */
 export function positionSlots(slots: HallSlot[], baseMinute = START_HOUR * 60): PositionedSlot[] {
-  // Group by day_of_week
-  const byDay = new Map<number, HallSlot[]>()
-  for (const slot of slots) {
-    const group = byDay.get(slot.day_of_week) ?? []
-    group.push(slot)
-    byDay.set(slot.day_of_week, group)
-  }
-
   const result: PositionedSlot[] = []
 
-  for (const [day, daySlots] of byDay) {
-    // Sort by start_time, then by duration descending
-    const sorted = [...daySlots].sort((a, b) => {
-      const diff = timeToMinutes(a.start_time) - timeToMinutes(b.start_time)
-      if (diff !== 0) return diff
-      return (timeToMinutes(b.end_time) - timeToMinutes(b.start_time)) -
-             (timeToMinutes(a.end_time) - timeToMinutes(a.start_time))
+  for (const slot of slots) {
+    const startMin = timeToMinutes(slot.start_time)
+    const endMin = timeToMinutes(slot.end_time)
+
+    result.push({
+      slot,
+      top: ((startMin - baseMinute) / SLOT_MINUTES) * SLOT_HEIGHT,
+      height: ((endMin - startMin) / SLOT_MINUTES) * SLOT_HEIGHT,
+      left: 0,
+      width: 100,
+      dayIndex: slot.day_of_week,
     })
-
-    // Greedy column assignment: track end_time (minutes) of last slot in each sub-column
-    const columns: number[] = []
-    const assignments = new Map<string, number>()
-
-    for (const slot of sorted) {
-      const startMin = timeToMinutes(slot.start_time)
-      let placed = false
-      for (let c = 0; c < columns.length; c++) {
-        if (columns[c] <= startMin) {
-          columns[c] = timeToMinutes(slot.end_time)
-          assignments.set(slot.id, c)
-          placed = true
-          break
-        }
-      }
-      if (!placed) {
-        assignments.set(slot.id, columns.length)
-        columns.push(timeToMinutes(slot.end_time))
-      }
-    }
-
-    const totalCols = Math.max(columns.length, 1)
-
-    for (const slot of sorted) {
-      const subCol = assignments.get(slot.id)!
-      const startMin = timeToMinutes(slot.start_time)
-      const endMin = timeToMinutes(slot.end_time)
-
-      result.push({
-        slot,
-        top: ((startMin - baseMinute) / SLOT_MINUTES) * SLOT_HEIGHT,
-        height: ((endMin - startMin) / SLOT_MINUTES) * SLOT_HEIGHT,
-        left: (subCol / totalCols) * 100,
-        width: (1 / totalCols) * 100,
-        dayIndex: day,
-      })
-    }
   }
 
   return result
 }
 
 /**
- * Positions slots grouped by (day, hall). Within each hall column, uses greedy overlap.
- * `left`/`width` are percentages within the hall sub-column.
+ * Positions slots grouped by (day, hall). Overlapping slots in the same hall
+ * stack on top of each other (full width) instead of being placed side-by-side.
  */
 export function positionSlotsMultiHall(slots: HallSlot[], baseMinute = START_HOUR * 60): PositionedSlot[] {
-  // Group by (day_of_week, hall)
-  const byDayHall = new Map<string, HallSlot[]>()
-  for (const slot of slots) {
-    const key = `${slot.day_of_week}:${slot.hall}`
-    const group = byDayHall.get(key) ?? []
-    group.push(slot)
-    byDayHall.set(key, group)
-  }
-
   const result: PositionedSlot[] = []
 
-  for (const [key, groupSlots] of byDayHall) {
-    const day = Number(key.split(':')[0])
+  for (const slot of slots) {
+    const startMin = timeToMinutes(slot.start_time)
+    const endMin = timeToMinutes(slot.end_time)
 
-    const sorted = [...groupSlots].sort((a, b) => {
-      const diff = timeToMinutes(a.start_time) - timeToMinutes(b.start_time)
-      if (diff !== 0) return diff
-      return (timeToMinutes(b.end_time) - timeToMinutes(b.start_time)) -
-             (timeToMinutes(a.end_time) - timeToMinutes(a.start_time))
+    result.push({
+      slot,
+      top: ((startMin - baseMinute) / SLOT_MINUTES) * SLOT_HEIGHT,
+      height: ((endMin - startMin) / SLOT_MINUTES) * SLOT_HEIGHT,
+      left: 0,
+      width: 100,
+      dayIndex: slot.day_of_week,
     })
-
-    const columns: number[] = []
-    const assignments = new Map<string, number>()
-
-    for (const slot of sorted) {
-      const startMin = timeToMinutes(slot.start_time)
-      let placed = false
-      for (let c = 0; c < columns.length; c++) {
-        if (columns[c] <= startMin) {
-          columns[c] = timeToMinutes(slot.end_time)
-          assignments.set(slot.id, c)
-          placed = true
-          break
-        }
-      }
-      if (!placed) {
-        assignments.set(slot.id, columns.length)
-        columns.push(timeToMinutes(slot.end_time))
-      }
-    }
-
-    const totalCols = Math.max(columns.length, 1)
-
-    for (const slot of sorted) {
-      const subCol = assignments.get(slot.id)!
-      const startMin = timeToMinutes(slot.start_time)
-      const endMin = timeToMinutes(slot.end_time)
-
-      result.push({
-        slot,
-        top: ((startMin - baseMinute) / SLOT_MINUTES) * SLOT_HEIGHT,
-        height: ((endMin - startMin) / SLOT_MINUTES) * SLOT_HEIGHT,
-        left: (subCol / totalCols) * 100,
-        width: (1 / totalCols) * 100,
-        dayIndex: day,
-      })
-    }
   }
 
   return result

@@ -8,7 +8,7 @@ interface TeamFilterProps {
 }
 
 export default function TeamFilter({ selected, onChange }: TeamFilterProps) {
-  const { data: teams } = usePB<Team>('teams', { filter: 'active=true', sort: 'name', perPage: 50 })
+  const { data: teams } = usePB<Team>('teams', { filter: 'active=true && sport="volleyball"', sort: 'name', perPage: 50 })
 
   return (
     <div className="flex flex-wrap gap-2">

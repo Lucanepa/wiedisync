@@ -44,6 +44,8 @@ export default {
   // Empty state
   noTeams: 'No teams',
   noTeamsDescription: 'No teams found.',
+  noTeamMembership: 'No team assigned',
+  noTeamMembershipDescription: 'You are not currently assigned to any team.',
   noMembers: 'No members',
   noMembersDescription: 'This team has no members yet.',
 

@@ -63,4 +63,12 @@ export default {
   editSameDay: 'All trainings on the same weekday',
   editAllRecurring: 'All recurring trainings',
   cancelEdit: 'Cancel',
+
+  // Slot mode
+  slotDetected: 'Hall slot detected',
+  claimedSlot: 'Claimed slot',
+  regularSlot: 'Regular slot',
+  noSlotForDay: 'No hall slot for this day',
+  useSlot: 'Use hall slot',
+  enterManually: 'Enter manually',
 } as const

@@ -24,7 +24,7 @@ export default {
 
   // Detail modal
   date: 'Date',
-  kickoff: 'Kickoff',
+  kickoff: 'Start',
   hallLabel: 'Hall',
   address: 'Address',
   map: 'Map',

@@ -4,7 +4,7 @@ export default {
   // View options
   viewHall: 'Hall',
   viewWeek: 'Week',
-  viewMonth: 'Month',
+  viewMonth: 'Calendar',
   viewList: 'List',
 
   // Subtitles

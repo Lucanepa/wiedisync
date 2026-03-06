@@ -63,4 +63,12 @@ export default {
   editSameDay: 'Alle Trainings am gleichen Wochentag',
   editAllRecurring: 'Alle wiederkehrenden Trainings',
   cancelEdit: 'Abbrechen',
+
+  // Slot mode
+  slotDetected: 'Hallenslot erkannt',
+  claimedSlot: 'Beanspruchter Slot',
+  regularSlot: 'Regulärer Slot',
+  noSlotForDay: 'Kein Hallenslot an diesem Tag',
+  useSlot: 'Hallenslot verwenden',
+  enterManually: 'Manuell eingeben',
 } as const

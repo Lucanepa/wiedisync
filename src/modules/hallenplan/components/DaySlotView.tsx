@@ -1,6 +1,6 @@
-import { useMemo } from 'react'
+import { useMemo, useState, useCallback } from 'react'
 import type { HallSlot, HallClosure, Hall } from '../../../types'
-import { toISODate, minutesToTime } from '../../../utils/dateHelpers'
+import { toISODate, minutesToTime, timeToMinutes } from '../../../utils/dateHelpers'
 import { positionSlotsMultiHall, generateTimeLabels, SLOT_HEIGHT, topToMinutes, SLOT_MINUTES, getDayRange, getSmartStartHour, getSmartEndHour } from '../utils/timeGrid'
 import { buildConflictSet } from '../utils/conflictDetection'
 import SlotBlock from './SlotBlock'
@@ -58,7 +58,11 @@ export default function DaySlotView({
         .filter((c) => dayStr >= c.start_date && dayStr <= c.end_date)
         .map((c) => c.hall),
     )
-    const activeHallIds = new Set([...hallsWithSlots, ...hallsWithClosures])
+    // Include halls spanned by multi-hall slots
+    const hallsFromSpans = new Set(
+      daySlots.flatMap((s) => s._virtual?.spanHallIds ?? []),
+    )
+    const activeHallIds = new Set([...hallsWithSlots, ...hallsWithClosures, ...hallsFromSpans])
     const filtered = selectedHallIds.length > 0
       ? halls.filter((h) => selectedHallIds.includes(h.id))
       : halls.filter((h) => activeHallIds.has(h.id))
@@ -92,6 +96,54 @@ export default function DaySlotView({
     }
     return map
   }, [positioned])
+
+  // Detect which slots have overlapping siblings in the same hall
+  const overlappingSlotIds = useMemo(() => {
+    const ids = new Set<string>()
+    for (const group of slotsByHall.values()) {
+      if (group.length < 2) continue
+      for (let i = 0; i < group.length; i++) {
+        const a = group[i]
+        const aStart = timeToMinutes(a.slot.start_time)
+        const aEnd = timeToMinutes(a.slot.end_time)
+        for (let j = i + 1; j < group.length; j++) {
+          const b = group[j]
+          const bStart = timeToMinutes(b.slot.start_time)
+          const bEnd = timeToMinutes(b.slot.end_time)
+          if (aStart < bEnd && aEnd > bStart) {
+            ids.add(a.slot.id)
+            ids.add(b.slot.id)
+          }
+        }
+      }
+    }
+    return ids
+  }, [slotsByHall])
+
+  // Collect all overlapping slot IDs per hall for cycling
+  const overlapGroupsByHall = useMemo(() => {
+    const map = new Map<string, string[]>()
+    for (const [hallId, group] of slotsByHall.entries()) {
+      const ids = group.filter((p) => overlappingSlotIds.has(p.slot.id)).map((p) => p.slot.id)
+      if (ids.length >= 2) map.set(hallId, ids)
+    }
+    return map
+  }, [slotsByHall, overlappingSlotIds])
+
+  const [boostedMap, setBoostedMap] = useState<Map<string, string>>(new Map())
+
+  const handleSwap = useCallback((hallId: string) => {
+    const ids = overlapGroupsByHall.get(hallId)
+    if (!ids || ids.length < 2) return
+    setBoostedMap((prev) => {
+      const next = new Map(prev)
+      const current = next.get(hallId)
+      const currentIdx = current ? ids.indexOf(current) : -1
+      const nextIdx = (currentIdx + 1) % ids.length
+      next.set(hallId, ids[nextIdx])
+      return next
+    })
+  }, [overlapGroupsByHall])
 
   function handleCellClick(hallId: string, e: React.MouseEvent<HTMLDivElement>) {
     if (!isAdmin) return
@@ -166,7 +218,7 @@ export default function DaySlotView({
           return (
             <div
               key={hall.id}
-              className={`relative border-r border-gray-100 last:border-r-0 dark:border-gray-800 ${isAdmin ? 'cursor-cell' : ''}`}
+              className={`relative overflow-visible border-r border-gray-100 last:border-r-0 dark:border-gray-800 ${isAdmin ? 'cursor-cell' : ''}`}
               style={{ height: gridHeight }}
               onClick={(e) => handleCellClick(hall.id, e)}
             >
@@ -193,18 +245,38 @@ export default function DaySlotView({
                 <ClosureOverlay key={`${closure.id}-${idx}`} reason={closure.reason} />
               ))}
 
-              {hallSlots.map((ps) => (
-                <SlotBlock
-                  key={ps.slot.id}
-                  positioned={ps}
-                  teamName={getTeamName(ps.slot)}
-                  hasConflict={conflictSet.has(ps.slot.id)}
-                  isAdmin={isAdmin}
-                  isCoach={isCoach}
-                  compact={multiHall}
-                  onClick={() => onSlotClick(ps.slot)}
-                />
-              ))}
+              {overlapGroupsByHall.has(hall.id) && (
+                <button
+                  className="absolute right-1 top-1 z-50 flex h-6 w-6 items-center justify-center rounded bg-gray-700/60 text-white hover:bg-gray-700/80"
+                  onClick={(e) => { e.stopPropagation(); handleSwap(hall.id) }}
+                  title="Switch overlap"
+                >
+                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 4v12m0 0l4-4m-4 4l-4-4" />
+                  </svg>
+                </button>
+              )}
+
+              {hallSlots.map((ps) => {
+                const spanIds = ps.slot._virtual?.spanHallIds
+                const span = spanIds
+                  ? spanIds.filter((hid) => visibleHalls.some((h) => h.id === hid)).length
+                  : 1
+                return (
+                  <SlotBlock
+                    key={ps.slot.id}
+                    positioned={ps}
+                    teamName={getTeamName(ps.slot)}
+                    hasConflict={conflictSet.has(ps.slot.id)}
+                    isAdmin={isAdmin}
+                    isCoach={isCoach}
+                    compact={multiHall}
+                    isBoosted={boostedMap.get(hall.id) === ps.slot.id}
+                    hallSpan={span}
+                    onClick={() => onSlotClick(ps.slot)}
+                  />
+                )
+              })}
             </div>
           )
         })}

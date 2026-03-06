@@ -4,9 +4,9 @@ import type { Game, Team, Hall } from '../../../types'
 import { formatDateCompact } from '../../../utils/dateHelpers'
 import { leagueShort } from '../../../utils/leagueShort'
 import TeamChip from '../../../components/TeamChip'
-import ParticipationButton from '../../../components/ParticipationButton'
 import ParticipationSummary from '../../../components/ParticipationSummary'
 import { useAuth } from '../../../hooks/useAuth'
+import { useParticipation } from '../../../hooks/useParticipation'
 
 interface GameCardProps {
   game: Game
@@ -51,7 +51,8 @@ function StatusBadge({ status }: { status: Game['status'] }) {
 
 export default function GameCard({ game, onClick, variant = 'card' }: GameCardProps) {
   const { t } = useTranslation('games')
-  const { user } = useAuth()
+  const { user, memberTeamIds } = useAuth()
+  const canParticipate = !!user && !!game.kscw_team && memberTeamIds.includes(game.kscw_team)
   const expanded = game as ExpandedGame
   const expandedHall = expanded.expand?.hall
   const hallInfo = expandedHall
@@ -143,14 +144,60 @@ export default function GameCard({ game, onClick, variant = 'card' }: GameCardPr
             <StatusBadge status={game.status} />
             {hallInfo && <span className="truncate text-xs text-gray-500 dark:text-gray-400">{hallInfo}</span>}
           </div>
-          {user && game.status === 'scheduled' && (
+          {game.status === 'scheduled' && (
             <div className="mt-1.5 flex items-center gap-2">
-              <ParticipationSummary activityType="game" activityId={game.id} compact />
-              <ParticipationButton activityType="game" activityId={game.id} activityDate={game.date} compact />
+              {canParticipate && <GameCardParticipation game={game} />}
+              <div className="ml-auto">
+                <ParticipationSummary activityType="game" activityId={game.id} compact />
+              </div>
             </div>
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+function GameCardParticipation({ game }: { game: Game }) {
+  const { t } = useTranslation('participation')
+  const { effectiveStatus, hasAbsence, setStatus } = useParticipation('game', game.id, game.date)
+
+  if (hasAbsence) {
+    return <span className="text-xs text-gray-500 dark:text-gray-400">{t('absent')}</span>
+  }
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <button
+        onClick={(e) => { e.stopPropagation(); setStatus('confirmed') }}
+        className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
+          effectiveStatus === 'confirmed'
+            ? 'bg-green-600 text-white'
+            : 'bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-green-900/30 dark:hover:text-green-400'
+        }`}
+      >
+        {t('yes')}
+      </button>
+      <button
+        onClick={(e) => { e.stopPropagation(); setStatus('tentative') }}
+        className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
+          effectiveStatus === 'tentative'
+            ? 'bg-yellow-500 text-white'
+            : 'bg-gray-100 text-gray-600 hover:bg-yellow-100 hover:text-yellow-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-yellow-900/30 dark:hover:text-yellow-400'
+        }`}
+      >
+        {t('maybe')}
+      </button>
+      <button
+        onClick={(e) => { e.stopPropagation(); setStatus('declined') }}
+        className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
+          effectiveStatus === 'declined'
+            ? 'bg-red-600 text-white'
+            : 'bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-red-900/30 dark:hover:text-red-400'
+        }`}
+      >
+        {t('no')}
+      </button>
     </div>
   )
 }

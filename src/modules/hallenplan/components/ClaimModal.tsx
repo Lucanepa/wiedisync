@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import Modal from '../../../components/Modal'
 import TeamChip from '../../../components/TeamChip'
 import { useAuth } from '../../../hooks/useAuth'
-import { formatDate } from '../../../utils/dateHelpers'
+import { formatDate, toISODate } from '../../../utils/dateHelpers'
 import pb from '../../../pb'
 import type { HallSlot, Hall, Team, Training, Game } from '../../../types'
 
@@ -12,6 +12,7 @@ interface Props {
   halls: Hall[]
   teams: Team[]
   rawSlots: HallSlot[]
+  weekDays: Date[]
   onClose: () => void
   onClaimed: () => void
 }
@@ -26,7 +27,7 @@ function DetailRow({ label, value }: { label: string; value: string }) {
   )
 }
 
-export default function ClaimModal({ slot, halls, teams, rawSlots, onClose, onClaimed }: Props) {
+export default function ClaimModal({ slot, halls, teams, rawSlots, weekDays, onClose, onClaimed }: Props) {
   const { t } = useTranslation('hallenplan')
   const { user, coachTeamIds } = useAuth()
   const [selectedTeamId, setSelectedTeamId] = useState(coachTeamIds[0] || '')
@@ -34,30 +35,35 @@ export default function ClaimModal({ slot, halls, teams, rawSlots, onClose, onCl
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
-  const meta = slot._virtual!
+  const meta = slot._virtual
+  const isManuallyFree = !meta && !slot.team
   const hallName = halls.find((h) => h.id === slot.hall)?.name ?? ''
   const originalTeam = teams.find((tm) => tm.id === slot.team)
   const coachTeams = teams.filter((tm) => coachTeamIds.includes(tm.id))
 
   // Determine freed reason and source
-  const isCancelledTraining = meta.source === 'training' && meta.isCancelled
-  const isAwayGame = meta.source === 'game' && meta.isAway
-  const freedReason = isCancelledTraining ? 'cancelled_training' : 'away_game'
-  const freedSourceId = meta.sourceId
+  const isCancelledTraining = meta?.source === 'training' && meta.isCancelled
+  const isAwayGame = meta?.source === 'game' && meta.isAway
+  const freedReason = isManuallyFree ? 'manual_free' : isCancelledTraining ? 'cancelled_training' : 'away_game'
+  const freedSourceId = meta?.sourceId ?? ''
 
   // Determine the date and hall_slot ID
-  const dateStr = isCancelledTraining
-    ? (meta.sourceRecord as Training).date.slice(0, 10)
-    : isAwayGame
-      ? (meta.sourceRecord as Game).date.slice(0, 10)
-      : ''
+  let dateStr = ''
+  if (isManuallyFree) {
+    // For manually free recurring slots, resolve date from weekDays + day_of_week
+    dateStr = weekDays[slot.day_of_week] ? toISODate(weekDays[slot.day_of_week]) : ''
+  } else if (isCancelledTraining) {
+    dateStr = (meta!.sourceRecord as Training).date.slice(0, 10)
+  } else if (isAwayGame) {
+    dateStr = (meta!.sourceRecord as Game).date.slice(0, 10)
+  }
 
   // Find the hall_slot template ID
-  // For cancelled trainings: use the training's hall_slot reference
-  // For away games: find the recurring training slot for the team on that weekday
   let hallSlotId = ''
-  if (isCancelledTraining) {
-    hallSlotId = (meta.sourceRecord as Training).hall_slot
+  if (isManuallyFree) {
+    hallSlotId = slot.id
+  } else if (isCancelledTraining) {
+    hallSlotId = (meta!.sourceRecord as Training).hall_slot
   } else if (isAwayGame) {
     const matchingSlot = rawSlots.find(
       (s) =>
@@ -112,10 +118,12 @@ export default function ClaimModal({ slot, halls, teams, rawSlots, onClose, onCl
         <DetailRow label={t('date')} value={dateStr ? formatDate(dateStr) : ''} />
         <DetailRow label={t('startTime')} value={slot.start_time} />
         <DetailRow label={t('endTime')} value={slot.end_time} />
-        <DetailRow
-          label={t('reason')}
-          value={isCancelledTraining ? t('claimReasonCancelled') : t('claimReasonAway')}
-        />
+        {!isManuallyFree && (
+          <DetailRow
+            label={t('reason')}
+            value={isCancelledTraining ? t('claimReasonCancelled') : t('claimReasonAway')}
+          />
+        )}
         {originalTeam && (
           <div className="flex gap-3 py-1.5">
             <span className="w-28 shrink-0 text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -123,6 +131,9 @@ export default function ClaimModal({ slot, halls, teams, rawSlots, onClose, onCl
             </span>
             <TeamChip team={originalTeam.name} size="sm" />
           </div>
+        )}
+        {slot.notes && (
+          <DetailRow label={t('notes')} value={slot.notes} />
         )}
       </div>
 

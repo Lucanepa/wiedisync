@@ -2,7 +2,6 @@
 export const PUBLIC_ROUTES = [
   { path: '/', name: 'Home' },
   { path: '/games', name: 'Games' },
-  { path: '/teams', name: 'Teams' },
   { path: '/calendar', name: 'Calendar' },
   { path: '/events', name: 'Events' },
   { path: '/datenschutz', name: 'Privacy' },
@@ -11,6 +10,7 @@ export const PUBLIC_ROUTES = [
 
 /** Auth-required routes — should redirect to /login when unauthenticated */
 export const AUTH_ROUTES = [
+  { path: '/teams', name: 'Teams' },
   { path: '/trainings', name: 'Trainings' },
   { path: '/absences', name: 'Absences' },
   { path: '/scorer', name: 'Scorer' },

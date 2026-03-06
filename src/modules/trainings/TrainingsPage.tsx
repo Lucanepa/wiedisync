@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
 import { usePB } from '../../hooks/usePB'
@@ -24,8 +24,17 @@ type TrainingExpanded = Training & {
 
 export default function TrainingsPage() {
   const { t } = useTranslation('trainings')
-  const { isCoach, isCoachOf } = useAuth()
+  const { isCoach, isCoachOf, memberTeamIds } = useAuth()
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null)
+  const [autoSelected, setAutoSelected] = useState(false)
+
+  // Auto-select user's first team on initial load
+  useEffect(() => {
+    if (!autoSelected && memberTeamIds.length > 0) {
+      setSelectedTeam(memberTeamIds[0])
+      setAutoSelected(true)
+    }
+  }, [memberTeamIds, autoSelected])
   const [activeTab, setActiveTab] = useState<'trainings' | 'dashboard'>('trainings')
   const [attendanceTraining, setAttendanceTraining] = useState<string | null>(null)
   const [attendanceTeam, setAttendanceTeam] = useState<string | null>(null)

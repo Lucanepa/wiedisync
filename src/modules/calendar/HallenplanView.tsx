@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
 import { useRealtime } from '../../hooks/useRealtime'
@@ -14,7 +14,8 @@ import ClosureManager from '../hallenplan/components/ClosureManager'
 import VirtualSlotDetailModal from '../hallenplan/components/VirtualSlotDetailModal'
 import SummaryView from '../hallenplan/components/SummaryView'
 import LoadingSpinner from '../../components/LoadingSpinner'
-import type { HallSlot, HallClosure, Game, Training, HallEvent } from '../../types'
+import type { HallSlot, HallClosure, Game, Training, HallEvent, Hall } from '../../types'
+import type { FreedSlotInfo } from '../hallenplan/HallenplanPage'
 
 function getTodayDayIndex(): number {
   const dow = new Date().getDay()
@@ -76,6 +77,19 @@ export default function HallenplanView() {
     sundayStr,
     weekDays,
   )
+
+  const DAY_KEYS = ['dayMonday', 'dayTuesday', 'dayWednesday', 'dayThursday', 'dayFriday', 'daySaturday', 'daySunday'] as const
+  const freedSlotInfos = useMemo(() => {
+    const hallMap = new Map<string, Hall>(halls.map((h) => [h.id, h]))
+    return slots
+      .filter((s) => s._virtual?.isFreed || (!s._virtual && !s.team))
+      .map((s): FreedSlotInfo => ({
+        hallName: hallMap.get(s.hall)?.name || '?',
+        dayLabel: t(DAY_KEYS[s.day_of_week] ?? 'dayMonday'),
+        startTime: s.start_time,
+        endTime: s.end_time,
+      }))
+  }, [slots, halls, t])
 
   const handleRealtimeUpdate = useCallback(() => {
     refetch()
@@ -142,6 +156,7 @@ export default function HallenplanView() {
             onOpenClosureManager={() => setClosureManagerOpen(true)}
             showSummary={showSummary}
             onToggleSummary={handleToggleSummary}
+            freedSlots={freedSlotInfos}
           />
 
           {isLoading ? (
@@ -176,6 +191,7 @@ export default function HallenplanView() {
             onOpenClosureManager={() => setClosureManagerOpen(true)}
             showSummary={showSummary}
             onToggleSummary={handleToggleSummary}
+            freedSlots={freedSlotInfos}
           />
 
           {isLoading ? (

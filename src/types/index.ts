@@ -78,6 +78,8 @@ export interface VirtualSlotMeta {
   isFreed?: boolean
   isClaimed?: boolean
   claimRecord?: SlotClaim
+  /** When a slot spans multiple halls (e.g. BB game in A+B), lists all hall IDs */
+  spanHallIds?: string[]
 }
 
 export interface HallSlot extends RecordModel {
@@ -100,7 +102,7 @@ export interface HallClosure extends RecordModel {
   start_date: string
   end_date: string
   reason: string
-  source: 'hauswart' | 'admin' | 'auto'
+  source: 'hauswart' | 'admin' | 'auto' | 'gcal' | 'schulferien'
 }
 
 export interface Game extends RecordModel {

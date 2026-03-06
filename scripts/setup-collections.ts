@@ -196,7 +196,7 @@ const dependentCollections: CollectionDef[] = [
       date('start_date'),
       date('end_date'),
       text('reason'),
-      select('source', ['hauswart', 'admin', 'auto']),
+      select('source', ['hauswart', 'admin', 'auto', 'gcal', 'schulferien']),
     ],
   },
 

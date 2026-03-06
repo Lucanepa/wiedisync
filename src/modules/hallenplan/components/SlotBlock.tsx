@@ -4,7 +4,9 @@ import { getTeamColor } from '../../../utils/teamColors'
 import ConflictBadge from './ConflictBadge'
 import type { PositionedSlot } from '../utils/timeGrid'
 
-const FREED_COLOR = { bg: '#d1fae5', text: '#065f46', border: '#34d399' }
+const FREED_COLOR = { bg: '#a7f3d0', text: '#064e3b', border: '#10b981' }
+const CLOSURE_COLOR = { bg: '#1f2937', text: '#f87171', border: '#991b1b' }
+const CLOSURE_PATTERN = /geschlossen|gesperrt|closed/i
 
 const typeLabels: Record<string, string> = {
   training: 'Training',
@@ -21,18 +23,26 @@ interface SlotBlockProps {
   isAdmin: boolean
   isCoach?: boolean
   compact?: boolean
+  isBoosted?: boolean
+  /** Number of hall columns this slot spans (default 1) */
+  hallSpan?: number
   onClick: () => void
 }
 
-export default function SlotBlock({ positioned, teamName, hasConflict, isAdmin, isCoach = false, compact = false, onClick }: SlotBlockProps) {
+export default function SlotBlock({ positioned, teamName, hasConflict, isAdmin, isCoach = false, compact = false, isBoosted = false, hallSpan = 1, onClick }: SlotBlockProps) {
   const { t } = useTranslation('hallenplan')
-  const { slot, top, height, left, width } = positioned
+  const { slot, top, height, left, width: baseWidth } = positioned
+  // When spanning multiple hall columns, multiply the width
+  const width = baseWidth * hallSpan
   const isVirtual = !!slot._virtual
   const isAway = !!slot._virtual?.isAway
   const isCancelled = !!slot._virtual?.isCancelled
   const isHallEvent = slot._virtual?.source === 'hall_event'
+  const isHallClosure = isHallEvent && CLOSURE_PATTERN.test(slot.label || '')
   const isFreed = !!slot._virtual?.isFreed
   const isClaimed = !!slot._virtual?.isClaimed
+  // A real slot with no team = manually created "free" slot
+  const isManuallyFree = !isVirtual && !slot.team
 
   // Resolve claiming team name for color
   const claimExpand = isClaimed && slot._virtual?.claimRecord
@@ -40,21 +50,32 @@ export default function SlotBlock({ positioned, teamName, hasConflict, isAdmin, 
     : undefined
   const claimTeamName = claimExpand?.claimed_by_team?.name || teamName
 
-  const color = isFreed
-    ? FREED_COLOR
-    : isClaimed
-      ? getTeamColor(claimTeamName)
-      : isHallEvent
-        ? { bg: '#e0f2fe', text: '#0c4a6e', border: '#7dd3fc' }
-        : getTeamColor(teamName)
+  const color = isHallClosure
+    ? CLOSURE_COLOR
+    : (isFreed || isManuallyFree)
+      ? FREED_COLOR
+      : isClaimed
+        ? getTeamColor(claimTeamName)
+        : isHallEvent
+          ? { bg: '#e0f2fe', text: '#0c4a6e', border: '#7dd3fc' }
+          : getTeamColor(teamName)
 
-  // Freed/claimed slots are clickable for coaches too
-  const clickable = isVirtual || isAdmin || ((isFreed || isClaimed) && isCoach)
+  // Freed/claimed/manually-free slots are clickable for coaches too
+  const clickable = isVirtual || isAdmin || ((isFreed || isClaimed || isManuallyFree) && isCoach)
 
   // Virtual slots get dashed border; claimed slots get dotted border
   const borderStyle = isClaimed ? 'border-dotted' : isVirtual ? 'border-dashed' : ''
 
-  const bgOpacity = isFreed ? 'cc' : isAway ? '66' : isCancelled ? '88' : 'e6'
+  const bgOpacity = (isFreed || isManuallyFree) ? 'cc' : isAway ? '66' : isCancelled ? '88' : 'e6'
+
+  // Games render above other slots when overlapping in the same hall
+  // Boosted slots go to z-40 (above everything)
+  const isGame = slot.slot_type === 'game'
+  const zClass = isBoosted ? 'z-40' : isGame ? 'z-30' : 'z-20'
+
+  // Game slots get gold border and pulse animation
+  const gameGoldBorder = isGame && !isFreed && !isClaimed ? '#FFC832' : undefined
+  const gamePulseClass = isGame && !isFreed && !isClaimed && !isCancelled ? 'animate-game-pulse' : ''
 
   const awayStripes = isAway
     ? {
@@ -69,7 +90,7 @@ export default function SlotBlock({ positioned, teamName, hasConflict, isAdmin, 
 
     return (
       <div
-        className={`absolute z-20 overflow-hidden rounded-sm border-l-2 ${borderStyle} px-0.5 py-px text-[9px] leading-tight shadow-sm ${
+        className={`absolute ${zClass} overflow-hidden rounded-sm ${isGame && !isFreed && !isClaimed ? 'border' : 'border-l-2'} ${borderStyle} px-0.5 py-px text-[9px] leading-tight shadow-sm ${gamePulseClass} ${
           clickable ? 'cursor-pointer hover:brightness-95' : ''
         }`}
         style={{
@@ -79,15 +100,15 @@ export default function SlotBlock({ positioned, teamName, hasConflict, isAdmin, 
           width: `calc(${width}% - 1px)`,
           backgroundColor: color.bg + bgOpacity,
           color: color.text,
-          borderColor: color.border,
+          borderColor: gameGoldBorder || color.border,
           ...awayStripes,
         }}
-        onClick={clickable ? onClick : undefined}
+        onClick={clickable ? (e) => { e.stopPropagation(); onClick() } : undefined}
         title={`${teamName || slot.label} — ${slot.start_time}–${slot.end_time}${slot.label ? ` — ${slot.label}` : ''}`}
       >
         {hasConflict && <ConflictBadge />}
         <span className={`truncate font-semibold ${isCancelled && !isFreed ? 'line-through' : ''}`}>
-          {isFreed ? t('slotFreed') : isClaimed ? t('slotClaimed') : teamName || slot.label || typeLabels[slot.slot_type]}
+          {(isFreed || isManuallyFree) ? t('slotFreed') : isClaimed ? t('slotClaimed') : teamName || slot.label || typeLabels[slot.slot_type]}
         </span>
         {compactShowType && (
           <div className={`truncate opacity-80 ${isCancelled && !isFreed ? 'line-through' : ''}`}>
@@ -95,8 +116,9 @@ export default function SlotBlock({ positioned, teamName, hasConflict, isAdmin, 
           </div>
         )}
         {compactShowTime && (
-          <div className={`truncate opacity-70`}>
-            {slot.start_time}–{slot.end_time}
+          <div className="opacity-70">
+            <div>{slot.start_time} -</div>
+            <div>{slot.end_time}</div>
           </div>
         )}
       </div>
@@ -109,7 +131,7 @@ export default function SlotBlock({ positioned, teamName, hasConflict, isAdmin, 
 
   return (
     <div
-      className={`absolute z-20 overflow-hidden rounded-md border-l-4 ${borderStyle} px-1.5 py-0.5 text-xs leading-tight shadow-sm transition-all ${
+      className={`absolute ${zClass} overflow-hidden rounded-md ${isGame && !isFreed && !isClaimed ? 'border-2' : 'border-l-4'} ${borderStyle} px-1.5 py-0.5 text-xs leading-tight shadow-sm transition-all ${gamePulseClass} ${
         clickable ? 'cursor-pointer hover:brightness-95' : ''
       }`}
       style={{
@@ -119,10 +141,10 @@ export default function SlotBlock({ positioned, teamName, hasConflict, isAdmin, 
         width: `calc(${width}% - 2px)`,
         backgroundColor: color.bg + bgOpacity,
         color: color.text,
-        borderColor: color.border,
+        borderColor: gameGoldBorder || color.border,
         ...awayStripes,
       }}
-      onClick={clickable ? onClick : undefined}
+      onClick={clickable ? (e) => { e.stopPropagation(); onClick() } : undefined}
       title={`${teamName || slot.label} — ${slot.start_time}–${slot.end_time}${slot.label ? ` — ${slot.label}` : ''}`}
     >
       <div className="relative">
@@ -149,16 +171,19 @@ export default function SlotBlock({ positioned, teamName, hasConflict, isAdmin, 
             </svg>
           </span>
         )}
-        {isFreed ? (
+        {(isFreed || isManuallyFree) ? (
           <>
             <div className="flex items-center gap-1">
               <span className="font-bold uppercase">{t('slotFreed')}</span>
             </div>
             {showTime && (
-              <div className="mt-0.5 opacity-80">{slot.start_time}–{slot.end_time}</div>
+              <div className="mt-0.5 opacity-80">
+                <div>{slot.start_time} -</div>
+                <div>{slot.end_time}</div>
+              </div>
             )}
-            {showDetails && teamName && (
-              <div className="mt-0.5 truncate text-[10px] opacity-70">{teamName}</div>
+            {showDetails && slot.label && (
+              <div className="mt-0.5 truncate text-[10px] opacity-70">{slot.label}</div>
             )}
           </>
         ) : isClaimed ? (
@@ -167,7 +192,10 @@ export default function SlotBlock({ positioned, teamName, hasConflict, isAdmin, 
               <span className="truncate font-medium">{t('slotClaimed')}</span>
             </div>
             {showTime && (
-              <div className="mt-0.5 opacity-80">{slot.start_time}–{slot.end_time}</div>
+              <div className="mt-0.5 opacity-80">
+                <div>{slot.start_time} -</div>
+                <div>{slot.end_time}</div>
+              </div>
             )}
             {showDetails && teamName && (
               <div className="mt-0.5 truncate text-[10px] opacity-70">{teamName}</div>
@@ -189,7 +217,8 @@ export default function SlotBlock({ positioned, teamName, hasConflict, isAdmin, 
             </div>
             {showTime && (
               <div className={`mt-0.5 opacity-80 ${isCancelled ? 'line-through' : ''}`}>
-                {slot.start_time}–{slot.end_time}
+                <div>{slot.start_time} -</div>
+                <div>{slot.end_time}</div>
               </div>
             )}
             {showDetails && slot.label && teamName && (

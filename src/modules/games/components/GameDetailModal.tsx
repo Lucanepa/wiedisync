@@ -3,10 +3,10 @@ import { useTranslation } from 'react-i18next'
 import type { RecordModel } from 'pocketbase'
 import type { Game, Team, Hall, Member } from '../../../types'
 import TeamChip from '../../../components/TeamChip'
-import ParticipationButton from '../../../components/ParticipationButton'
 import ParticipationSummary from '../../../components/ParticipationSummary'
 import ParticipationRosterModal from '../../../components/ParticipationRosterModal'
 import { useAuth } from '../../../hooks/useAuth'
+import { useParticipation } from '../../../hooks/useParticipation'
 import { useMutation } from '../../../hooks/useMutation'
 import { sanitizeUrl } from '../../../utils/sanitizeUrl'
 import { formatDate } from '../../../utils/dateHelpers'
@@ -14,6 +14,7 @@ import { formatDate } from '../../../utils/dateHelpers'
 interface GameDetailModalProps {
   game: Game | null
   onClose: () => void
+  readOnly?: boolean
 }
 
 type ExpandedGame = Game & {
@@ -44,13 +45,19 @@ const dateFormatter = new Intl.DateTimeFormat('en-US', {
   year: 'numeric',
 })
 
-export default function GameDetailModal({ game, onClose }: GameDetailModalProps) {
+export default function GameDetailModal({ game, onClose, readOnly }: GameDetailModalProps) {
   const { t } = useTranslation('games')
-  const { user, isCoachOf } = useAuth()
+  const { user, isCoachOf, memberTeamIds } = useAuth()
   const [rosterOpen, setRosterOpen] = useState(false)
   const [editingDeadline, setEditingDeadline] = useState(false)
   const [deadlineValue, setDeadlineValue] = useState(game?.respond_by?.split(' ')[0] ?? '')
   const { update: updateGame } = useMutation<Game>('games')
+  const canParticipate = !!user && !!game?.kscw_team && memberTeamIds.includes(game.kscw_team)
+  const { effectiveStatus, hasAbsence, setStatus } = useParticipation(
+    'game',
+    game?.id ?? '',
+    game?.date,
+  )
 
   useEffect(() => {
     if (!game) return
@@ -77,6 +84,7 @@ export default function GameDetailModal({ game, onClose }: GameDetailModalProps)
   const kscwTeam = expanded.expand?.kscw_team?.name ?? ''
   const sets = parseSets(game.sets_json)
   const dateStr = game.date ? dateFormatter.format(new Date(game.date)) : ''
+  const showScorerContact = isCoachOf(game.kscw_team)
 
   return (
     <>
@@ -183,6 +191,54 @@ export default function GameDetailModal({ game, onClose }: GameDetailModalProps)
           )}
         </div>
 
+        {/* Participation — only for own team's scheduled games */}
+        {game.status === 'scheduled' && canParticipate && (
+          <div className="flex flex-wrap items-center gap-3 border-t dark:border-gray-700 px-6 py-3">
+            {hasAbsence ? (
+              <span className="text-sm text-gray-500 dark:text-gray-400">{t('participation:absent')}</span>
+            ) : (
+              <>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('participation:attending')}</span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setStatus('confirmed')}
+                    className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                      effectiveStatus === 'confirmed'
+                        ? 'bg-green-600 text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-green-900/30 dark:hover:text-green-400'
+                    }`}
+                  >
+                    {t('participation:yes')}
+                  </button>
+                  <button
+                    onClick={() => setStatus('tentative')}
+                    className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                      effectiveStatus === 'tentative'
+                        ? 'bg-yellow-500 text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-yellow-100 hover:text-yellow-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-yellow-900/30 dark:hover:text-yellow-400'
+                    }`}
+                  >
+                    {t('participation:maybe')}
+                  </button>
+                  <button
+                    onClick={() => setStatus('declined')}
+                    className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                      effectiveStatus === 'declined'
+                        ? 'bg-red-600 text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-red-900/30 dark:hover:text-red-400'
+                    }`}
+                  >
+                    {t('participation:no')}
+                  </button>
+                </div>
+              </>
+            )}
+            <div className="ml-auto border-l pl-3 dark:border-gray-600">
+              <ParticipationSummary activityType="game" activityId={game.id} compact />
+            </div>
+          </div>
+        )}
+
         {/* Game info */}
         <div className="space-y-3 border-t dark:border-gray-700 px-6 py-4">
           <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
@@ -241,28 +297,30 @@ export default function GameDetailModal({ game, onClose }: GameDetailModalProps)
               {t('scorerDuties')}
             </h4>
             {expanded.expand?.scorer_taefeler_member ? (
-              <DetailRow
+              <ScorerRow
                 label={t('scorerTaefeler')}
-                value={`${expanded.expand.scorer_taefeler_member.first_name} ${expanded.expand.scorer_taefeler_member.last_name}`}
+                member={expanded.expand.scorer_taefeler_member}
+                dutyTeam={expanded.expand.scorer_taefeler_duty_team}
+                showContact={showScorerContact}
               />
             ) : (
               <>
                 {(expanded.expand?.scorer_member || game.scorer_person) && (
-                  <DetailRow
+                  <ScorerRow
                     label={t('scorer')}
-                    value={expanded.expand?.scorer_member
-                      ? `${expanded.expand.scorer_member.first_name} ${expanded.expand.scorer_member.last_name}`
-                      : game.scorer_person
-                    }
+                    member={expanded.expand?.scorer_member}
+                    fallbackName={game.scorer_person}
+                    dutyTeam={expanded.expand?.scorer_duty_team}
+                    showContact={showScorerContact}
                   />
                 )}
                 {(expanded.expand?.taefeler_member || game.taefeler_person) && (
-                  <DetailRow
+                  <ScorerRow
                     label={t('taefeler')}
-                    value={expanded.expand?.taefeler_member
-                      ? `${expanded.expand.taefeler_member.first_name} ${expanded.expand.taefeler_member.last_name}`
-                      : game.taefeler_person
-                    }
+                    member={expanded.expand?.taefeler_member}
+                    fallbackName={game.taefeler_person}
+                    dutyTeam={expanded.expand?.taefeler_duty_team}
+                    showContact={showScorerContact}
                   />
                 )}
               </>
@@ -270,22 +328,13 @@ export default function GameDetailModal({ game, onClose }: GameDetailModalProps)
           </div>
         )}
 
-        {/* Participation */}
+        {/* Participation details (roster, deadline — coach only) */}
         {game.status === 'scheduled' && (
           <div className="space-y-3 border-t dark:border-gray-700 px-6 py-4">
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-              {t('participation')}
-            </h4>
-            <div className="flex items-center justify-between">
-              <ParticipationSummary activityType="game" activityId={game.id} />
-              {user && (
-                <ParticipationButton activityType="game" activityId={game.id} activityDate={game.date} />
-              )}
-            </div>
             {game.respond_by && !editingDeadline && (
               <DetailRow label={t('respondBy')} value={formatDate(game.respond_by.split(' ')[0])} />
             )}
-            {isCoachOf(game.kscw_team) && (
+            {!readOnly && isCoachOf(game.kscw_team) && (
               editingDeadline ? (
                 <div className="flex items-center gap-2">
                   <input
@@ -352,6 +401,43 @@ function DetailRow({ label, value }: { label: string; value: string }) {
     <div className="flex items-start gap-3 text-sm">
       <span className="w-28 shrink-0 text-gray-500 dark:text-gray-400">{label}</span>
       <span className="text-gray-900 dark:text-gray-100">{value}</span>
+    </div>
+  )
+}
+
+function ScorerRow({ label, member, fallbackName, dutyTeam, showContact }: {
+  label: string
+  member?: (Member & RecordModel) | null
+  fallbackName?: string
+  dutyTeam?: (Team & RecordModel) | null
+  showContact: boolean
+}) {
+  const name = member
+    ? `${member.first_name} ${member.last_name}`
+    : fallbackName ?? ''
+  const teamName = dutyTeam?.name
+
+  return (
+    <div className="text-sm">
+      <div className="flex items-start gap-3">
+        <span className="w-28 shrink-0 text-gray-500 dark:text-gray-400">{label}</span>
+        <div>
+          <span className="text-gray-900 dark:text-gray-100">
+            {name}
+            {teamName && <span className="ml-1 text-xs text-gray-400 dark:text-gray-500">({teamName})</span>}
+          </span>
+          {showContact && member && (member.phone || member.email) && (
+            <div className="mt-0.5 flex flex-wrap gap-x-3 text-xs text-gray-500 dark:text-gray-400">
+              {member.phone && (
+                <a href={`tel:${member.phone}`} className="hover:text-brand-600 dark:hover:text-brand-400">{member.phone}</a>
+              )}
+              {member.email && (
+                <a href={`mailto:${member.email}`} className="hover:text-brand-600 dark:hover:text-brand-400">{member.email}</a>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }

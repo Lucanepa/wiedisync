@@ -13,6 +13,7 @@ export default {
   recurring: 'Wiederkehrend',
   validFrom: 'Gültig ab',
   validTo: 'Gültig bis',
+  indefinitely: 'Unbefristet',
   label: 'Bezeichnung',
   notes: 'Notizen',
 
@@ -56,6 +57,11 @@ export default {
   sourceCaretaker: 'Hauswart',
   sourceAdmin: 'Admin',
   sourceAutomatic: 'Automatisch',
+  sourceGcal: 'Google Kalender',
+  sourceSchulferien: 'Schulferien',
+  allHalls: 'Alle Hallen',
+  halls: 'Hallen',
+  editAppliesToAllHalls: 'Änderung gilt für {{count}} Hallen',
 
   // Navigation
   today: 'Heute',
@@ -106,4 +112,11 @@ export default {
   claimSuccess: 'Slot erfolgreich beansprucht!',
   claimReleased: 'Beanspruchung aufgehoben.',
   claimDetailTitle: 'Beanspruchung Details',
+
+  // Filter
+  vbOnly: 'Nur VB',
+
+  // Available slots
+  slotsAvailable: '{{count}} Halle(n) frei',
+  slotsAvailableNone: 'Keine freien Hallen',
 } as const

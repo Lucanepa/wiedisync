@@ -1,14 +1,21 @@
 export const teamColors: Record<string, { bg: string; text: string; border: string }> = {
+  // Herren VB: shades of blue, brown, green
   H1: { bg: '#1d4ed8', text: '#ffffff', border: '#1e40af' },
   H2: { bg: '#2563eb', text: '#ffffff', border: '#1d4ed8' },
   H3: { bg: '#3b82f6', text: '#ffffff', border: '#2563eb' },
-  D1: { bg: '#db2777', text: '#ffffff', border: '#be185d' },
-  D2: { bg: '#ec4899', text: '#ffffff', border: '#db2777' },
-  D3: { bg: '#f472b6', text: '#ffffff', border: '#ec4899' },
-  D4: { bg: '#f9a8d4', text: '#1f2937', border: '#f472b6' },
-  'HU23': { bg: '#059669', text: '#ffffff', border: '#047857' },
-  'DU23': { bg: '#10b981', text: '#ffffff', border: '#059669' },
-  Legends: { bg: '#d97706', text: '#ffffff', border: '#b45309' },
+  'HU20': { bg: '#0ea5e9', text: '#ffffff', border: '#0284c7' },
+  'HU23': { bg: '#38bdf8', text: '#ffffff', border: '#0ea5e9' },
+  Legends: { bg: '#92400e', text: '#ffffff', border: '#78350f' },
+  // Damen VB: shades of red, yellow, orange
+  D1: { bg: '#dc2626', text: '#ffffff', border: '#b91c1c' },
+  D2: { bg: '#ea580c', text: '#ffffff', border: '#c2410c' },
+  D3: { bg: '#d97706', text: '#ffffff', border: '#b45309' },
+  D4: { bg: '#ca8a04', text: '#ffffff', border: '#a16207' },
+  'DU23': { bg: '#e11d48', text: '#ffffff', border: '#be123c' },
+  // Basketball: light brown
+  Basketball: { bg: '#a0845c', text: '#ffffff', border: '#8b6f47' },
+  // Other (KWI, Lehrer TV, TV Wiedikon): grey
+  Other: { bg: '#6b7280', text: '#ffffff', border: '#4b5563' },
 }
 
 export const svTeamIds: Record<string, string> = {

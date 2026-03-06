@@ -4,7 +4,7 @@ export default {
   // View options
   viewHall: 'Halle',
   viewWeek: 'Woche',
-  viewMonth: 'Monat',
+  viewMonth: 'Kalender',
 
   // Subtitles
   subtitleHall: 'Hallenbelegungsplan',

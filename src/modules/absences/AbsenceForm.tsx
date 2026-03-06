@@ -19,9 +19,9 @@ export default function AbsenceForm({ open, absence, onSave, onCancel }: Absence
   const { create, update, isLoading } = useMutation<Absence>('absences')
   const { data: allMembers } = usePB<Member>('members', {
     filter: 'active=true',
-    sort: 'name',
+    sort: 'last_name',
     perPage: 500,
-    fields: 'id,name,first_name,last_name',
+    fields: 'id,first_name,last_name',
   })
 
   const [memberId, setMemberId] = useState('')

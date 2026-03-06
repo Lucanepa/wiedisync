@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import Modal from '../../components/Modal'
+import { useAuth } from '../../hooks/useAuth'
 import { usePB } from '../../hooks/usePB'
 import { formatDate, toISODate } from '../../utils/dateHelpers'
 import pb from '../../pb'
@@ -24,12 +25,19 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated }: R
   const { t } = useTranslation('trainings')
   const { t: tc } = useTranslation('common')
 
-  const { data: slots } = usePB<SlotExpanded>('hall_slots', {
+  const { isAdmin, coachTeamIds } = useAuth()
+  const { data: allSlots } = usePB<SlotExpanded>('hall_slots', {
     filter: 'slot_type="training"',
     sort: 'day_of_week,start_time',
     expand: 'team,hall',
     perPage: 100,
   })
+
+  // Non-admin coaches only see their own teams' slots
+  const slots = useMemo(
+    () => isAdmin ? allSlots : allSlots.filter((s) => coachTeamIds.includes(s.team)),
+    [isAdmin, allSlots, coachTeamIds],
+  )
 
   const { data: halls } = usePB<Hall>('halls', { sort: 'name', perPage: 50 })
 
@@ -58,11 +66,12 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated }: R
     const dates: string[] = []
     const start = new Date(startDate)
     const end = new Date(effectiveEndDate)
-    const targetDay = slot.day_of_week // 0=Sunday, 1=Monday, etc.
+    // DB: 0=Mon..6=Sun → convert to JS: 0=Sun..6=Sat
+    const targetJsDay = (slot.day_of_week + 1) % 7
 
     const current = new Date(start)
     // Advance to first matching day
-    while (current.getDay() !== targetDay && current <= end) {
+    while (current.getDay() !== targetJsDay && current <= end) {
       current.setDate(current.getDate() + 1)
     }
 
@@ -125,7 +134,7 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated }: R
             <option value="">{tc('select')}</option>
             {slots.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.expand?.team?.name ?? '?'} — {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][s.day_of_week]} {s.start_time}–{s.end_time} ({s.expand?.hall?.name ?? '?'})
+                {s.expand?.team?.name ?? '?'} — {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'][s.day_of_week]} {s.start_time}–{s.end_time} ({s.expand?.hall?.name ?? '?'})
               </option>
             ))}
           </select>

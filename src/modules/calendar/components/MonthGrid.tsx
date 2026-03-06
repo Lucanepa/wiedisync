@@ -242,40 +242,6 @@ export default function MonthGrid({
 
           return (
             <div key={wi} className="flex flex-1 flex-col">
-              {/* Spanning bars row */}
-              {visibleLanes > 0 && (
-                <div className="relative border-r border-gray-200 dark:border-gray-700">
-                  {/* Grid for spanning bars */}
-                  <div className="grid grid-cols-7">
-                    {/* Invisible cells for column structure */}
-                    {week.map((_, ci) => (
-                      <div key={ci} style={{ height: `${visibleLanes * 20}px` }} />
-                    ))}
-                  </div>
-                  {/* Bars positioned absolutely */}
-                  {bars.filter((b) => b.lane < MAX_VISIBLE_BARS).map((bar) => (
-                    <button
-                      key={`${bar.entry.id}-${wi}`}
-                      type="button"
-                      onClick={() => onEntryClick?.(bar.entry)}
-                      className={`absolute truncate text-[10px] font-medium leading-[18px] transition-opacity hover:opacity-80 lg:text-xs ${barClasses(bar.entry)} ${
-                        bar.continued ? 'rounded-l-none' : 'rounded-l'
-                      } ${bar.continues ? 'rounded-r-none' : 'rounded-r'}`}
-                      style={{
-                        top: `${bar.lane * 20}px`,
-                        left: `${(bar.startCol / 7) * 100}%`,
-                        width: `${(bar.span / 7) * 100}%`,
-                        height: '18px',
-                        paddingLeft: bar.continued ? '2px' : '4px',
-                        paddingRight: '2px',
-                      }}
-                    >
-                      {!bar.continued && bar.entry.title}
-                    </button>
-                  ))}
-                </div>
-              )}
-
               {/* Day cells row */}
               <div className="grid flex-1 grid-cols-7">
                 {week.map((date, ci) => {
@@ -286,42 +252,70 @@ export default function MonthGrid({
                   const timed = timedByCol[ci]
                   const visibleTimed = timed.slice(0, MAX_VISIBLE_TIMED)
 
-                  // Count hidden items (bars beyond maxLane + timed beyond max)
-                  const hiddenBars = bars.filter(
-                    (b) => b.lane >= MAX_VISIBLE_BARS && ci >= b.startCol && ci < b.startCol + b.span,
-                  ).length
+                  // All-day/spanning entries covering this day
+                  const cellBars = bars.filter(
+                    (b) => ci >= b.startCol && ci < b.startCol + b.span,
+                  )
+                  const visibleBars = cellBars.filter((b) => b.lane < MAX_VISIBLE_BARS)
+                  const hiddenBars = cellBars.filter((b) => b.lane >= MAX_VISIBLE_BARS).length
                   const hiddenTimed = Math.max(0, timed.length - MAX_VISIBLE_TIMED)
                   const overflow = hiddenBars + hiddenTimed
+
+                  // Pick the first visible all-day entry for full-cell background
+                  const bgBar = visibleBars[0]
+                  const bgColor = bgBar ? barColors[colorKey(bgBar.entry)] : null
 
                   return (
                     <div
                       key={key}
-                      className={`relative min-h-[3rem] border-b border-r border-gray-200 p-0.5 sm:min-h-[4rem] lg:min-h-[5rem] lg:p-1 dark:border-gray-700 ${
-                        !inMonth
-                          ? 'bg-gray-50 dark:bg-gray-900'
-                          : isClosed
-                            ? 'bg-red-50/40 dark:bg-red-950/20'
-                            : 'bg-white dark:bg-gray-800'
+                      className={`relative flex min-h-[3rem] flex-col border-b border-r border-gray-200 p-0.5 sm:min-h-[4rem] lg:min-h-[5rem] lg:p-1 dark:border-gray-700 ${
+                        bgColor
+                          ? `${bgColor.bg} ${bgColor.darkBg}`
+                          : !inMonth
+                            ? 'bg-gray-50 dark:bg-gray-900'
+                            : isClosed
+                              ? 'bg-red-50/40 dark:bg-red-950/20'
+                              : 'bg-white dark:bg-gray-800'
                       }`}
+                      onClick={bgBar ? () => onEntryClick?.(bgBar.entry) : undefined}
+                      role={bgBar ? 'button' : undefined}
                     >
                       {/* Date number */}
-                      <div className="mb-0.5 flex items-start">
+                      <div className="flex items-start">
                         <span
                           className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium ${
                             isToday
                               ? 'bg-brand-500 font-bold text-white'
-                              : !inMonth
-                                ? 'text-gray-300 dark:text-gray-600'
-                                : 'text-gray-700 dark:text-gray-300'
+                              : bgColor
+                                ? `${bgColor.text} ${bgColor.darkText}`
+                                : !inMonth
+                                  ? 'text-gray-300 dark:text-gray-600'
+                                  : 'text-gray-700 dark:text-gray-300'
                           }`}
                         >
                           {date.getDate()}
                         </span>
                       </div>
 
+                      {/* All-day event labels (vertically centered) */}
+                      {visibleBars.length > 0 && (
+                        <div className="flex flex-1 flex-col items-center justify-center">
+                          {visibleBars.map((bar) => {
+                            // Only show label on the first column of the span
+                            if (ci !== bar.startCol) return null
+                            const c = barColors[colorKey(bar.entry)]
+                            return (
+                              <div key={bar.entry.id} className={`truncate text-center text-[10px] font-semibold leading-tight lg:text-xs ${c.text} ${c.darkText}`}>
+                                {bar.entry.title}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+
                       {/* Timed events */}
-                      {inMonth && (
-                        <div className="space-y-px overflow-hidden">
+                      {inMonth && visibleTimed.length + overflow > 0 && (
+                        <div className="mt-auto space-y-px overflow-hidden">
                           {visibleTimed.map((entry) => (
                             <button
                               key={entry.id}
@@ -330,7 +324,9 @@ export default function MonthGrid({
                                 e.stopPropagation()
                                 onEntryClick?.(entry)
                               }}
-                              className={`flex w-full items-center gap-0.5 truncate rounded px-0.5 text-left text-[10px] leading-snug transition-opacity hover:opacity-80 lg:text-xs`}
+                              className={`flex w-full items-center gap-0.5 truncate rounded px-0.5 text-left text-[10px] leading-snug transition-opacity hover:opacity-80 lg:text-xs ${
+                                bgColor ? `${bgColor.text} ${bgColor.darkText}` : 'text-gray-800 dark:text-gray-200'
+                              }`}
                             >
                               <span className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${dotColors[colorKey(entry)]}`} />
                               <span className="truncate">
@@ -346,14 +342,15 @@ export default function MonthGrid({
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation()
-                                // Collect all entries for this day (spanning + timed)
                                 const allForDay = entries.filter((en) => {
                                   const enEnd = en.endDate ?? en.date
                                   return toDateKey(en.date) <= key && toDateKey(enEnd) >= key
                                 })
                                 onOverflowClick?.(allForDay, date)
                               }}
-                              className="rounded px-1 text-[10px] font-medium text-gray-500 hover:bg-gray-100 lg:text-xs dark:text-gray-400 dark:hover:bg-gray-700"
+                              className={`rounded px-1 text-[10px] font-medium hover:bg-gray-100 lg:text-xs dark:hover:bg-gray-700 ${
+                                bgColor ? `${bgColor.text} ${bgColor.darkText}` : 'text-gray-500 dark:text-gray-400'
+                              }`}
                             >
                               +{overflow} more
                             </button>

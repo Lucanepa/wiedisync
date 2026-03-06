@@ -3,7 +3,8 @@ import type { RecordModel } from 'pocketbase'
 import pb from '../pb'
 import i18n from '../i18n'
 import { pbLangToI18n } from '../utils/languageMap'
-import type { Member, Team } from '../types'
+import { getCurrentSeason } from '../utils/dateHelpers'
+import type { Member, MemberTeam, Team } from '../types'
 
 interface AuthContextValue {
   user: (RecordModel & Member) | null
@@ -14,6 +15,9 @@ interface AuthContextValue {
   isCoach: boolean
   isCoachOf: (teamId: string) => boolean
   coachTeamIds: string[]
+  memberTeamIds: string[]
+  memberTeamNames: string[]
+  canViewTeam: (teamId: string) => boolean
   isVorstand: boolean
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
@@ -28,13 +32,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
   const [isLoading, setIsLoading] = useState(true)
   const [coachTeamIds, setCoachTeamIds] = useState<string[]>([])
+  const [memberTeamIds, setMemberTeamIds] = useState<string[]>([])
+  const [memberTeamNames, setMemberTeamNames] = useState<string[]>([])
 
-  // Auth refresh
+  // Auth refresh — skip if token was just issued (within last 5s, e.g. right after login)
   useEffect(() => {
     if (pb.authStore.isValid) {
-      pb.collection('members').authRefresh()
-        .catch(() => pb.authStore.clear())
-        .finally(() => setIsLoading(false))
+      const token = pb.authStore.token
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]))
+        const issuedAt = (payload.iat ?? 0) * 1000
+        const isFresh = Date.now() - issuedAt < 5000
+        if (isFresh) {
+          setIsLoading(false)
+        } else {
+          pb.collection('members').authRefresh()
+            .catch(() => pb.authStore.clear())
+            .finally(() => setIsLoading(false))
+        }
+      } catch {
+        pb.collection('members').authRefresh()
+          .catch(() => pb.authStore.clear())
+          .finally(() => setIsLoading(false))
+      }
     } else {
       setIsLoading(false)
     }
@@ -75,6 +95,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .catch(() => setCoachTeamIds([]))
   }, [user?.id])
 
+  // Fetch teams the user is a member of (current season)
+  useEffect(() => {
+    if (!user?.id) {
+      setMemberTeamIds([])
+      setMemberTeamNames([])
+      return
+    }
+    const season = getCurrentSeason()
+    pb.collection('member_teams')
+      .getFullList<MemberTeam & { expand?: { team?: Team } }>({
+        filter: `member="${user.id}" && season="${season}"`,
+        expand: 'team',
+      })
+      .then((mts) => {
+        setMemberTeamIds(mts.map((mt) => mt.team))
+        setMemberTeamNames(mts.map((mt) => mt.expand?.team?.name).filter((n): n is string => !!n))
+      })
+      .catch(() => {
+        setMemberTeamIds([])
+        setMemberTeamNames([])
+      })
+  }, [user?.id])
+
   const login = useCallback(async (email: string, password: string) => {
     await pb.collection('members').authWithPassword(email, password)
   }, [])
@@ -97,8 +140,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [isAdmin, coachTeamIds],
   )
 
+  const canViewTeam = useCallback(
+    (teamId: string) => isAdmin || isVorstand || isCoach || memberTeamIds.includes(teamId),
+    [isAdmin, isVorstand, isCoach, memberTeamIds],
+  )
+
   return (
-    <AuthContext.Provider value={{ user, isSuperAdmin, isAdmin, isApproved, isProfileComplete, isCoach, isCoachOf, coachTeamIds, isVorstand, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isSuperAdmin, isAdmin, isApproved, isProfileComplete, isCoach, isCoachOf, coachTeamIds, memberTeamIds, memberTeamNames, canViewTeam, isVorstand, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   )

@@ -46,14 +46,16 @@ export default function VirtualSlotDetailModal({ slot, halls, teams, onClose }: 
             <TeamChip team={teamName} size="sm" />
           </div>
         )}
-        <DetailRow label={t('league')} value={game.league} />
+        <DetailRow label={t('league')} value={game.league || ''} />
         <DetailRow label={t('start')} value={game.time?.slice(0, 5) || ''} />
         <DetailRow label={t('slot')} value={`${slot.start_time}–${slot.end_time}`} />
-        <DetailRow label={t('common:status')} value={statusLabels[game.status] || game.status} />
+        {game.status && (
+          <DetailRow label={t('common:status')} value={statusLabels[game.status] || game.status} />
+        )}
         {game.status === 'completed' && (
           <DetailRow label={t('result')} value={`${game.home_score}:${game.away_score}`} />
         )}
-        {meta.isAway && (
+        {meta.isAway && game.home_team && (
           <div className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
             {t('typeAway')} — {game.home_team} vs {game.away_team}
           </div>
@@ -106,8 +108,13 @@ export default function VirtualSlotDetailModal({ slot, halls, teams, onClose }: 
     hall_event: t('typeEvent'),
   }
 
+  const gameRecord = meta.source === 'game' ? meta.sourceRecord as Game : null
+  const hasGameNames = gameRecord?.home_team && gameRecord?.away_team
+
   const title = meta.source === 'game'
-    ? `${titles.game}: ${(meta.sourceRecord as Game).home_team} vs ${(meta.sourceRecord as Game).away_team}`
+    ? hasGameNames
+      ? `${titles.game}: ${gameRecord!.home_team} vs ${gameRecord!.away_team}`
+      : `${titles.game}${teamName ? ` — ${teamName}` : ''}`
     : meta.source === 'training'
       ? `${titles.training}${teamName ? ` — ${teamName}` : ''}`
       : (meta.sourceRecord as HallEvent).title

@@ -1,6 +1,6 @@
-import { useMemo } from 'react'
+import { useMemo, useState, useCallback } from 'react'
 import type { HallSlot, HallClosure, Hall } from '../../../types'
-import { toISODate, minutesToTime } from '../../../utils/dateHelpers'
+import { toISODate, minutesToTime, timeToMinutes } from '../../../utils/dateHelpers'
 import { positionSlotsMultiHall, generateTimeLabels, SLOT_HEIGHT, topToMinutes, SLOT_MINUTES, getDayRange, getSmartStartHour, getSmartEndHour } from '../utils/timeGrid'
 import { buildConflictSet } from '../utils/conflictDetection'
 import SlotBlock from './SlotBlock'
@@ -89,6 +89,55 @@ export default function WeekSlotView({
     return map
   }, [positioned])
 
+  // Detect which slots have overlapping siblings in the same (day, hall) group
+  const overlappingSlotIds = useMemo(() => {
+    const ids = new Set<string>()
+    for (const group of slotsByDayHall.values()) {
+      if (group.length < 2) continue
+      for (let i = 0; i < group.length; i++) {
+        const a = group[i]
+        const aStart = timeToMinutes(a.slot.start_time)
+        const aEnd = timeToMinutes(a.slot.end_time)
+        for (let j = i + 1; j < group.length; j++) {
+          const b = group[j]
+          const bStart = timeToMinutes(b.slot.start_time)
+          const bEnd = timeToMinutes(b.slot.end_time)
+          if (aStart < bEnd && aEnd > bStart) {
+            ids.add(a.slot.id)
+            ids.add(b.slot.id)
+          }
+        }
+      }
+    }
+    return ids
+  }, [slotsByDayHall])
+
+  // Collect all overlapping slot IDs per (day:hall) group for cycling
+  const overlapGroupsByKey = useMemo(() => {
+    const map = new Map<string, string[]>()
+    for (const [key, group] of slotsByDayHall.entries()) {
+      const ids = group.filter((p) => overlappingSlotIds.has(p.slot.id)).map((p) => p.slot.id)
+      if (ids.length >= 2) map.set(key, ids)
+    }
+    return map
+  }, [slotsByDayHall, overlappingSlotIds])
+
+  // Track which slot is "boosted" (brought to front) per (day:hall) group
+  const [boostedMap, setBoostedMap] = useState<Map<string, string>>(new Map())
+
+  const handleSwap = useCallback((dayHallKey: string) => {
+    const ids = overlapGroupsByKey.get(dayHallKey)
+    if (!ids || ids.length < 2) return
+    setBoostedMap((prev) => {
+      const next = new Map(prev)
+      const current = next.get(dayHallKey)
+      const currentIdx = current ? ids.indexOf(current) : -1
+      const nextIdx = (currentIdx + 1) % ids.length
+      next.set(dayHallKey, ids[nextIdx])
+      return next
+    })
+  }, [overlapGroupsByKey])
+
   // Determine closures per day per hall
   const closuresByDayHall = useMemo(() => {
     const map = new Map<string, HallClosure[]>()
@@ -124,14 +173,39 @@ export default function WeekSlotView({
     return Array.from(daysWithContent).sort((a, b) => a - b)
   }, [multiHall, positioned, closures, weekDays])
 
+  // Per-day visible halls: only show halls that have slots or closures on that day
+  const hallsByDay = useMemo(() => {
+    if (!multiHall) return new Map<number, Hall[]>()
+    const map = new Map<number, Hall[]>()
+    for (const dayIndex of visibleDays) {
+      const activeHallIds = new Set<string>()
+      for (const hall of visibleHalls) {
+        const key = `${dayIndex}:${hall.id}`
+        if ((slotsByDayHall.get(key)?.length ?? 0) > 0 || (closuresByDayHall.get(key)?.length ?? 0) > 0) {
+          activeHallIds.add(hall.id)
+        }
+      }
+      // Also include halls spanned by multi-hall slots (spanHallIds)
+      for (const ps of positioned) {
+        if (ps.dayIndex === dayIndex && ps.slot._virtual?.spanHallIds) {
+          for (const hid of ps.slot._virtual.spanHallIds) activeHallIds.add(hid)
+        }
+      }
+      // Show at least 1 hall per day (first visible hall) so the day column isn't empty
+      const dayHalls = visibleHalls.filter((h) => activeHallIds.has(h.id))
+      map.set(dayIndex, dayHalls.length > 0 ? dayHalls : [visibleHalls[0]])
+    }
+    return map
+  }, [multiHall, visibleDays, visibleHalls, slotsByDayHall, closuresByDayHall, positioned])
+
   const todayIndex = useMemo(() => {
     const today = toISODate(new Date())
     return weekDays.findIndex((d) => toISODate(d) === today)
   }, [weekDays])
 
-  // Grid template: time label + (day × halls) columns
+  // Grid template: time label + per-day hall columns (variable width per day)
   const totalDataCols = multiHall
-    ? visibleDays.length * visibleHalls.length
+    ? visibleDays.reduce((sum, d) => sum + (hallsByDay.get(d)?.length ?? 1), 0)
     : visibleDays.length
 
   function handleCellClick(dayIndex: number, hallId: string, e: React.MouseEvent<HTMLDivElement>) {
@@ -162,11 +236,11 @@ export default function WeekSlotView({
           {visibleDays.map((dayIndex) => {
             const day = weekDays[dayIndex]
             const dateStr = `${String(day.getDate()).padStart(2, '0')}.${String(day.getMonth() + 1).padStart(2, '0')}.`
-            const colSpan = multiHall ? visibleHalls.length : 1
+            const colSpan = multiHall ? (hallsByDay.get(dayIndex)?.length ?? 1) : 1
             return (
               <div
                 key={dayIndex}
-                className={`border-r border-gray-200 p-1 text-center text-sm last:border-r-0 dark:border-gray-700 ${
+                className={`border-r-2 border-gray-300 p-1 text-center text-sm last:border-r-0 dark:border-gray-600 ${
                   dayIndex === todayIndex ? 'bg-brand-50 font-bold text-brand-700 dark:bg-brand-900/30 dark:text-brand-300' : 'text-gray-700 dark:text-gray-300'
                 }`}
                 style={{ gridColumn: `span ${colSpan}` }}
@@ -185,18 +259,19 @@ export default function WeekSlotView({
             style={{ gridTemplateColumns: `60px repeat(${totalDataCols}, 1fr)` }}
           >
             <div className="border-r border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900" />
-            {visibleDays.map((dayIndex) =>
-              visibleHalls.map((hall, hi) => (
+            {visibleDays.map((dayIndex) => {
+              const dayHalls = hallsByDay.get(dayIndex) ?? [visibleHalls[0]]
+              return dayHalls.map((hall, hi) => (
                 <div
                   key={`${dayIndex}-${hall.id}`}
-                  className={`border-r border-gray-100 px-0.5 py-0.5 text-center text-[10px] font-medium text-gray-500 dark:border-gray-800 dark:text-gray-400 ${
-                    hi === visibleHalls.length - 1 ? 'border-r-gray-200 dark:border-r-gray-700' : ''
+                  className={`border-r px-0.5 py-0.5 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 ${
+                    hi === dayHalls.length - 1 ? 'border-r-2 border-gray-300 dark:border-gray-600' : 'border-gray-100 dark:border-gray-800'
                   }`}
                 >
                   {hall.name}
                 </div>
-              )),
-            )}
+              ))
+            })}
           </div>
         )}
 
@@ -228,16 +303,17 @@ export default function WeekSlotView({
             const inactiveBottomH = Math.max(0, gridHeight - inactiveBottomTop)
 
             if (multiHall) {
-              return visibleHalls.map((hall, hi) => {
+              const dayHalls = hallsByDay.get(dayIndex) ?? [visibleHalls[0]]
+              return dayHalls.map((hall, hi) => {
                 const dayHallKey = `${dayIndex}:${hall.id}`
                 const hallSlots = slotsByDayHall.get(dayHallKey) ?? []
                 const hallClosures = closuresByDayHall.get(dayHallKey) ?? []
-                const isLastInDay = hi === visibleHalls.length - 1
+                const isLastInDay = hi === dayHalls.length - 1
 
                 return (
                   <div
                     key={dayHallKey}
-                    className={`relative ${isLastInDay ? 'border-r border-gray-200 dark:border-gray-700' : 'border-r border-gray-100 dark:border-r-gray-800'} ${isAdmin ? 'cursor-cell' : ''}`}
+                    className={`relative overflow-visible ${isLastInDay ? 'border-r-2 border-gray-300 dark:border-gray-600' : 'border-r border-gray-100 dark:border-r-gray-800'} ${isAdmin ? 'cursor-cell' : ''}`}
                     style={{ height: gridHeight }}
                     onClick={(e) => handleCellClick(dayIndex, hall.id, e)}
                   >
@@ -264,18 +340,39 @@ export default function WeekSlotView({
                       <ClosureOverlay key={`${closure.id}-${idx}`} reason={closure.reason} />
                     ))}
 
-                    {hallSlots.map((ps) => (
-                      <SlotBlock
-                        key={ps.slot.id}
-                        positioned={ps}
-                        teamName={getTeamName(ps.slot)}
-                        hasConflict={conflictSet.has(ps.slot.id)}
-                        isAdmin={isAdmin}
-                        isCoach={isCoach}
-                        compact={true}
-                        onClick={() => onSlotClick(ps.slot)}
-                      />
-                    ))}
+                    {overlapGroupsByKey.has(dayHallKey) && (
+                      <button
+                        className="absolute right-0.5 top-0.5 z-50 flex h-5 w-5 items-center justify-center rounded bg-gray-700/60 text-white hover:bg-gray-700/80"
+                        onClick={(e) => { e.stopPropagation(); handleSwap(dayHallKey) }}
+                        title="Switch overlap"
+                      >
+                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 4v12m0 0l4-4m-4 4l-4-4" />
+                        </svg>
+                      </button>
+                    )}
+
+                    {hallSlots.map((ps) => {
+                      // Compute hall span for multi-hall slots
+                      const spanIds = ps.slot._virtual?.spanHallIds
+                      const span = spanIds
+                        ? spanIds.filter((hid) => dayHalls.some((h) => h.id === hid)).length
+                        : 1
+                      return (
+                        <SlotBlock
+                          key={ps.slot.id}
+                          positioned={ps}
+                          teamName={getTeamName(ps.slot)}
+                          hasConflict={conflictSet.has(ps.slot.id)}
+                          isAdmin={isAdmin}
+                          isCoach={isCoach}
+                          compact={true}
+                          isBoosted={boostedMap.get(dayHallKey) === ps.slot.id}
+                          hallSpan={span}
+                          onClick={() => onSlotClick(ps.slot)}
+                        />
+                      )
+                    })}
                   </div>
                 )
               })
@@ -288,7 +385,7 @@ export default function WeekSlotView({
             return (
               <div
                 key={dayIndex}
-                className={`relative border-r border-gray-200 last:border-r-0 dark:border-gray-700 ${isAdmin ? 'cursor-cell' : ''}`}
+                className={`relative border-r-2 border-gray-300 last:border-r-0 dark:border-gray-600 ${isAdmin ? 'cursor-cell' : ''}`}
                 style={{ height: gridHeight }}
                 onClick={(e) => handleCellClick(dayIndex, visibleHalls[0]?.id ?? '', e)}
               >
@@ -315,18 +412,37 @@ export default function WeekSlotView({
                   <ClosureOverlay key={`${closure.id}-${idx}`} reason={closure.reason} />
                 ))}
 
-                {daySlots.map((ps) => (
-                  <SlotBlock
-                    key={ps.slot.id}
-                    positioned={ps}
-                    teamName={getTeamName(ps.slot)}
-                    hasConflict={conflictSet.has(ps.slot.id)}
-                    isAdmin={isAdmin}
-                    isCoach={isCoach}
-                    compact={false}
-                    onClick={() => onSlotClick(ps.slot)}
-                  />
-                ))}
+                {(() => {
+                  const singleHallKey = `${dayIndex}:${visibleHalls[0]?.id}`
+                  return (
+                    <>
+                      {overlapGroupsByKey.has(singleHallKey) && (
+                        <button
+                          className="absolute right-1 top-1 z-50 flex h-6 w-6 items-center justify-center rounded bg-gray-700/60 text-white hover:bg-gray-700/80"
+                          onClick={(e) => { e.stopPropagation(); handleSwap(singleHallKey) }}
+                          title="Switch overlap"
+                        >
+                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 4v12m0 0l4-4m-4 4l-4-4" />
+                          </svg>
+                        </button>
+                      )}
+                      {daySlots.map((ps) => (
+                        <SlotBlock
+                          key={ps.slot.id}
+                          positioned={ps}
+                          teamName={getTeamName(ps.slot)}
+                          hasConflict={conflictSet.has(ps.slot.id)}
+                          isAdmin={isAdmin}
+                          isCoach={isCoach}
+                          compact={false}
+                          isBoosted={boostedMap.get(singleHallKey) === ps.slot.id}
+                          onClick={() => onSlotClick(ps.slot)}
+                        />
+                      ))}
+                    </>
+                  )
+                })()}
               </div>
             )
           })}

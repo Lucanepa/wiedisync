@@ -48,6 +48,20 @@ export default function SlotEditor({
     ? minutesToTime(timeToMinutes(prefill.time) + 90)
     : '19:30'
 
+  // "Indefinitely" = September 30 of next year
+  const indefiniteDate = (() => {
+    const now = new Date()
+    const year = now.getMonth() >= 9 ? now.getFullYear() + 2 : now.getFullYear() + 1
+    return `${year}-09-30`
+  })()
+
+  const todayStr = new Date().toISOString().slice(0, 10)
+
+  // Build a synthetic "KWI A+B" option
+  const kwiA = halls.find((h) => h.name === 'KWI A')
+  const kwiB = halls.find((h) => h.name === 'KWI B')
+  const COMBO_VALUE = kwiA && kwiB ? `${kwiA.id}+${kwiB.id}` : ''
+
   const [form, setForm] = useState({
     hall: slot?.hall ?? prefill?.hall ?? (halls[0]?.id ?? ''),
     team: slot?.team ?? '',
@@ -56,11 +70,13 @@ export default function SlotEditor({
     end_time: slot?.end_time ?? defaultEnd,
     slot_type: slot?.slot_type ?? ('training' as const),
     recurring: slot?.recurring ?? true,
-    valid_from: slot?.valid_from ?? '',
-    valid_until: slot?.valid_until ?? '',
+    valid_from: slot?.valid_from || todayStr,
+    valid_until: slot?.valid_until || indefiniteDate,
     label: slot?.label ?? '',
     notes: slot?.notes ?? '',
   })
+
+  const [indefinitely, setIndefinitely] = useState(!slot?.valid_until || slot.valid_until === indefiniteDate)
 
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -71,9 +87,11 @@ export default function SlotEditor({
     setForm((prev) => ({ ...prev, [key]: value }))
   }
 
+  const isCombo = COMBO_VALUE && form.hall === COMBO_VALUE
+
   async function handleSave() {
-    if (!form.hall || !form.team) {
-      setError(t('hallRequired') + ' / ' + t('common:team'))
+    if (!form.hall) {
+      setError(t('hallRequired'))
       return
     }
     if (timeToMinutes(form.start_time) >= timeToMinutes(form.end_time)) {
@@ -84,7 +102,17 @@ export default function SlotEditor({
     setIsSaving(true)
     setError(null)
     try {
-      if (slot) {
+      if (isCombo && kwiA && kwiB) {
+        // Create/update a slot for each hall in the combo
+        const hallIds = [kwiA.id, kwiB.id]
+        if (slot) {
+          await pb.collection('hall_slots').update(slot.id, { ...form, hall: hallIds[0] })
+        } else {
+          for (const hid of hallIds) {
+            await pb.collection('hall_slots').create({ ...form, hall: hid })
+          }
+        }
+      } else if (slot) {
         await pb.collection('hall_slots').update(slot.id, form)
       } else {
         await pb.collection('hall_slots').create(form)
@@ -130,9 +158,13 @@ export default function SlotEditor({
               className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
             >
               <option value="">{t('selectPlaceholder')}</option>
-              {halls.map((h) => (
-                <option key={h.id} value={h.id}>{h.name}</option>
-              ))}
+              {halls.flatMap((h) => {
+                const items = [<option key={h.id} value={h.id}>{h.name}</option>]
+                if (COMBO_VALUE && h.name === 'KWI A') {
+                  items.push(<option key="kwi-ab" value={COMBO_VALUE}>KWI A+B</option>)
+                }
+                return items
+              })}
             </select>
           </div>
           <div>
@@ -216,21 +248,50 @@ export default function SlotEditor({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('validFrom')}</label>
-              <input
-                type="date"
-                value={form.valid_from}
-                onChange={(e) => update('valid_from', e.target.value)}
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="date"
+                  value={form.valid_from}
+                  onChange={(e) => update('valid_from', e.target.value)}
+                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                />
+                <button
+                  type="button"
+                  onClick={() => update('valid_from', todayStr)}
+                  className="shrink-0 rounded-md border border-gray-300 px-2 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                >
+                  {t('today')}
+                </button>
+              </div>
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('validTo')}</label>
-              <input
-                type="date"
-                value={form.valid_until}
-                onChange={(e) => update('valid_until', e.target.value)}
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-              />
+              <div className="flex gap-2">
+                {!indefinitely && (
+                  <input
+                    type="date"
+                    value={form.valid_until}
+                    onChange={(e) => update('valid_until', e.target.value)}
+                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                  />
+                )}
+                <label className={`flex shrink-0 items-center gap-1.5 rounded-md border px-2 py-2 text-xs font-medium ${indefinitely ? 'border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 dark:border-brand-600' : 'border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700'}`}>
+                  <input
+                    type="checkbox"
+                    checked={indefinitely}
+                    onChange={(e) => {
+                      setIndefinitely(e.target.checked)
+                      if (e.target.checked) {
+                        update('valid_until', indefiniteDate)
+                      } else {
+                        update('valid_until', '')
+                      }
+                    }}
+                    className="h-3.5 w-3.5 rounded border-gray-300 dark:border-gray-600 text-brand-600 focus:ring-brand-500"
+                  />
+                  {t('indefinitely')}
+                </label>
+              </div>
             </div>
           </div>
         )}

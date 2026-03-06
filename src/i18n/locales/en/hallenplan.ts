@@ -13,6 +13,7 @@ export default {
   recurring: 'Recurring',
   validFrom: 'Valid from',
   validTo: 'Valid to',
+  indefinitely: 'Indefinitely',
   label: 'Label',
   notes: 'Notes',
 
@@ -56,6 +57,11 @@ export default {
   sourceCaretaker: 'Caretaker',
   sourceAdmin: 'Admin',
   sourceAutomatic: 'Automatic',
+  sourceGcal: 'Google Calendar',
+  sourceSchulferien: 'School holidays',
+  allHalls: 'All halls',
+  halls: 'halls',
+  editAppliesToAllHalls: 'Change applies to {{count}} halls',
 
   // Navigation
   today: 'Today',
@@ -106,4 +112,11 @@ export default {
   claimSuccess: 'Slot claimed successfully!',
   claimReleased: 'Claim released.',
   claimDetailTitle: 'Claim details',
+
+  // Filter
+  vbOnly: 'VB only',
+
+  // Available slots
+  slotsAvailable: '{{count}} slot(s) available',
+  slotsAvailableNone: 'No available slots',
 } as const

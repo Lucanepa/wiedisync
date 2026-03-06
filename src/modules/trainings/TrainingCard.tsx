@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next'
 import TeamChip from '../../components/TeamChip'
-import ParticipationButton from '../../components/ParticipationButton'
 import ParticipationSummary from '../../components/ParticipationSummary'
 import { useAuth } from '../../hooks/useAuth'
+import { useParticipation } from '../../hooks/useParticipation'
 import { formatDate, formatWeekday, formatTime } from '../../utils/dateHelpers'
 import type { Training, Team, Hall, Member } from '../../types'
 
@@ -20,7 +20,7 @@ interface TrainingCardProps {
 
 export default function TrainingCard({ training, onOpenAttendance, onOpenRoster, onEdit, onDelete }: TrainingCardProps) {
   const { t } = useTranslation('trainings')
-  const { user } = useAuth()
+  const { user, memberTeamIds } = useAuth()
   const team = training.expand?.team
   const hall = training.expand?.hall
   const coach = training.expand?.coach
@@ -50,15 +50,10 @@ export default function TrainingCard({ training, onOpenAttendance, onOpenRoster,
           )}
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          {user && !training.cancelled && (
+          {user && !training.cancelled && memberTeamIds.includes(training.team) && (
             <div className="flex items-center gap-1.5">
+              <TrainingParticipation training={training} />
               <ParticipationSummary activityType="training" activityId={training.id} compact />
-              <ParticipationButton
-                activityType="training"
-                activityId={training.id}
-                activityDate={training.date}
-                compact
-              />
             </div>
           )}
           {!training.cancelled && (
@@ -104,6 +99,50 @@ export default function TrainingCard({ training, onOpenAttendance, onOpenRoster,
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+function TrainingParticipation({ training }: { training: TrainingExpanded }) {
+  const { t } = useTranslation('participation')
+  const { effectiveStatus, hasAbsence, setStatus } = useParticipation('training', training.id, training.date)
+
+  if (hasAbsence) {
+    return <span className="text-xs text-gray-500 dark:text-gray-400">{t('absent')}</span>
+  }
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <button
+        onClick={() => setStatus('confirmed')}
+        className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
+          effectiveStatus === 'confirmed'
+            ? 'bg-green-600 text-white'
+            : 'bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-green-900/30 dark:hover:text-green-400'
+        }`}
+      >
+        {t('yes')}
+      </button>
+      <button
+        onClick={() => setStatus('tentative')}
+        className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
+          effectiveStatus === 'tentative'
+            ? 'bg-yellow-500 text-white'
+            : 'bg-gray-100 text-gray-600 hover:bg-yellow-100 hover:text-yellow-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-yellow-900/30 dark:hover:text-yellow-400'
+        }`}
+      >
+        {t('maybe')}
+      </button>
+      <button
+        onClick={() => setStatus('declined')}
+        className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
+          effectiveStatus === 'declined'
+            ? 'bg-red-600 text-white'
+            : 'bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-red-900/30 dark:hover:text-red-400'
+        }`}
+      >
+        {t('no')}
+      </button>
     </div>
   )
 }

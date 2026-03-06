@@ -132,10 +132,14 @@ function closureToEntry(closure: HallClosure): CalendarEntry {
   }
 }
 
+/** Detect hall events that are actually closures (e.g. "Halle geschlossen") */
+const CLOSURE_PATTERN = /geschlossen|gesperrt|closed/i
+
 function hallEventToEntry(he: HallEvent): CalendarEntry {
+  const isClosure = CLOSURE_PATTERN.test(he.title)
   return {
     id: he.id,
-    type: 'hall',
+    type: isClosure ? 'closure' : 'hall',
     title: he.title,
     date: parseDate(he.date),
     startTime: he.start_time || null,
@@ -254,8 +258,14 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
         dates.add(toDateKey(day))
       }
     }
+    // Also include hall events detected as closures
+    for (const he of hallEvents) {
+      if (CLOSURE_PATTERN.test(he.title)) {
+        dates.add(toDateKey(parseDate(he.date)))
+      }
+    }
     return dates
-  }, [closuresRaw])
+  }, [closuresRaw, hallEvents])
 
   return {
     entries,

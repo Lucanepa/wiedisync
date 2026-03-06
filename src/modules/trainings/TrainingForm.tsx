@@ -5,8 +5,26 @@ import { useAuth } from '../../hooks/useAuth'
 import { useMutation } from '../../hooks/useMutation'
 import { usePB } from '../../hooks/usePB'
 import pb from '../../pb'
-import type { Training, Team, Hall } from '../../types'
+import type { Training, Team, Hall, HallSlot, SlotClaim } from '../../types'
 import type { RecurringEditScope } from './RecurringEditDialog'
+
+// day_of_week in DB: 0=Mon, 1=Tue, ..., 6=Sun
+const DAY_NAMES = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
+
+/** Convert JS Date.getDay() (0=Sun) to DB day_of_week (0=Mon) */
+function jsToDbDay(jsDay: number): number {
+  return (jsDay + 6) % 7
+}
+
+interface SlotOption {
+  key: string        // 'slot-{id}' or 'claim-{id}'
+  label: string
+  startTime: string
+  endTime: string
+  hallId: string
+  hallSlotId: string // only for regular slots
+  type: 'regular' | 'claimed'
+}
 
 interface TrainingFormProps {
   open: boolean
@@ -45,6 +63,103 @@ export default function TrainingForm({ open, training, editScope = 'this', onSav
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
+  // Slot mode state
+  const [slotMode, setSlotMode] = useState<'auto' | 'manual'>('auto')
+  const [teamSlots, setTeamSlots] = useState<HallSlot[]>([])
+  const [teamClaims, setTeamClaims] = useState<SlotClaim[]>([])
+  const [selectedSlotKey, setSelectedSlotKey] = useState('')
+
+  // Fetch team's hall_slots and active claims when teamId changes
+  useEffect(() => {
+    if (!teamId) {
+      setTeamSlots([])
+      setTeamClaims([])
+      return
+    }
+    pb.collection('hall_slots').getFullList<HallSlot>({
+      filter: `team="${teamId}" && slot_type="training" && recurring=true`,
+      expand: 'hall',
+      sort: 'day_of_week,start_time',
+    }).then(setTeamSlots).catch(() => setTeamSlots([]))
+
+    const today = new Date().toISOString().split('T')[0]
+    pb.collection('slot_claims').getFullList<SlotClaim>({
+      filter: `claimed_by_team="${teamId}" && status="active" && date>="${today}"`,
+      expand: 'hall',
+      sort: 'date,start_time',
+    }).then(setTeamClaims).catch(() => setTeamClaims([]))
+  }, [teamId])
+
+  // Build matching slot options for the selected date
+  const slotOptions = useMemo<SlotOption[]>(() => {
+    if (!teamId || !date || slotMode === 'manual') return []
+    const dayOfWeek = jsToDbDay(new Date(date).getDay())
+
+    const regularOptions: SlotOption[] = teamSlots
+      .filter((s) => {
+        if (s.day_of_week !== dayOfWeek) return false
+        if (s.valid_from && date < s.valid_from.split(' ')[0]) return false
+        if (s.valid_until && date > s.valid_until.split(' ')[0]) return false
+        return true
+      })
+      .map((s) => ({
+        key: `slot-${s.id}`,
+        label: `${DAY_NAMES[s.day_of_week]} ${s.start_time.slice(0, 5)}–${s.end_time.slice(0, 5)}${(s.expand as Record<string, Hall>)?.hall?.name ? `, ${(s.expand as Record<string, Hall>).hall.name}` : ''}`,
+        startTime: s.start_time,
+        endTime: s.end_time,
+        hallId: s.hall,
+        hallSlotId: s.id,
+        type: 'regular',
+      }))
+
+    const claimOptions: SlotOption[] = teamClaims
+      .filter((c) => c.date.split(' ')[0] === date)
+      .map((c) => ({
+        key: `claim-${c.id}`,
+        label: `${c.start_time.slice(0, 5)}–${c.end_time.slice(0, 5)}${(c.expand as Record<string, Hall>)?.hall?.name ? `, ${(c.expand as Record<string, Hall>).hall.name}` : ''}`,
+        startTime: c.start_time,
+        endTime: c.end_time,
+        hallId: c.hall,
+        hallSlotId: '',
+        type: 'claimed',
+      }))
+
+    return [...regularOptions, ...claimOptions]
+  }, [teamId, date, slotMode, teamSlots, teamClaims])
+
+  // Auto-select slot when options change
+  useEffect(() => {
+    if (slotMode !== 'auto' || slotOptions.length === 0) {
+      if (slotMode === 'auto') setSelectedSlotKey('')
+      return
+    }
+    // If current selection is still valid, keep it
+    if (selectedSlotKey && slotOptions.some((o) => o.key === selectedSlotKey)) return
+    // Auto-select if exactly one option
+    if (slotOptions.length === 1) {
+      applySlot(slotOptions[0])
+    } else {
+      setSelectedSlotKey('')
+    }
+  }, [slotOptions]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  function applySlot(option: SlotOption) {
+    setSelectedSlotKey(option.key)
+    setStartTime(option.startTime)
+    setEndTime(option.endTime)
+    setHallId(option.hallId)
+  }
+
+  function switchToManual() {
+    setSlotMode('manual')
+    setSelectedSlotKey('')
+  }
+
+  function switchToAuto() {
+    setSlotMode('auto')
+    // Will re-trigger auto-select via the effect above
+  }
+
   useEffect(() => {
     if (training) {
       setTeamId(training.team)
@@ -58,6 +173,14 @@ export default function TrainingForm({ open, training, editScope = 'this', onSav
       setRespondBy(training.respond_by?.split(' ')[0] ?? '')
       setMinParticipants(training.min_participants ? String(training.min_participants) : '')
       setMaxParticipants(training.max_participants ? String(training.max_participants) : '')
+      // Edit mode: if training has a hall_slot, start in auto mode with it pre-selected
+      if (training.hall_slot) {
+        setSlotMode('auto')
+        setSelectedSlotKey(`slot-${training.hall_slot}`)
+      } else {
+        setSlotMode('manual')
+        setSelectedSlotKey('')
+      }
     } else {
       setTeamId('')
       setDate('')
@@ -70,6 +193,8 @@ export default function TrainingForm({ open, training, editScope = 'this', onSav
       setRespondBy('')
       setMinParticipants('')
       setMaxParticipants('')
+      setSlotMode('auto')
+      setSelectedSlotKey('')
     }
     setError('')
   }, [training, open])
@@ -83,12 +208,17 @@ export default function TrainingForm({ open, training, editScope = 'this', onSav
       return
     }
 
+    // Resolve hall_slot relation: only for regular slots in auto mode
+    const activeSlot = slotOptions.find((o) => o.key === selectedSlotKey)
+    const hallSlotId = slotMode === 'auto' && activeSlot?.type === 'regular' ? activeSlot.hallSlotId : ''
+
     const data = {
       team: teamId,
       date,
       start_time: startTime,
       end_time: endTime,
       hall: hallId || undefined,
+      hall_slot: hallSlotId,
       notes,
       cancelled,
       cancel_reason: cancelled ? cancelReason : '',
@@ -209,42 +339,108 @@ export default function TrainingForm({ open, training, editScope = 'this', onSav
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        {/* Slot mode indicator */}
+        {slotMode === 'auto' && teamId && date && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{tc('from')}</label>
-            <input
-              type="time"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              required
-              className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-            />
+            {slotOptions.length === 0 ? (
+              <div className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+                <span>{t('noSlotForDay')}</span>
+                <button type="button" onClick={switchToManual} className="text-brand-500 hover:underline">
+                  {t('enterManually')}
+                </button>
+              </div>
+            ) : slotOptions.length === 1 ? (
+              <div className="flex items-center justify-between rounded-lg bg-green-50 px-3 py-2 text-sm text-green-800 dark:bg-green-900/20 dark:text-green-300">
+                <span>
+                  {slotOptions[0].type === 'claimed' ? t('claimedSlot') : t('slotDetected')}: {slotOptions[0].label}
+                </span>
+                <button type="button" onClick={switchToManual} className="text-green-600 hover:underline dark:text-green-400">
+                  {t('enterManually')}
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2 rounded-lg bg-green-50 px-3 py-2 dark:bg-green-900/20">
+                <div className="flex items-center justify-between text-sm text-green-800 dark:text-green-300">
+                  <span>{t('slotDetected')}</span>
+                  <button type="button" onClick={switchToManual} className="text-green-600 hover:underline dark:text-green-400">
+                    {t('enterManually')}
+                  </button>
+                </div>
+                {slotOptions.map((opt) => (
+                  <label key={opt.key} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                    <input
+                      type="radio"
+                      name="slotOption"
+                      checked={selectedSlotKey === opt.key}
+                      onChange={() => applySlot(opt)}
+                      className="text-brand-500"
+                    />
+                    <span>
+                      {opt.type === 'claimed' ? `${t('claimedSlot')}: ` : `${t('regularSlot')}: `}
+                      {opt.label}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            )}
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{tc('to')}</label>
-            <input
-              type="time"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-              required
-              className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-            />
-          </div>
-        </div>
+        )}
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{tc('hall')}</label>
-          <select
-            value={hallId}
-            onChange={(e) => setHallId(e.target.value)}
-            className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-          >
-            <option value="">{tc('select')}</option>
-            {halls.map((h) => (
-              <option key={h.id} value={h.id}>{h.name}</option>
-            ))}
-          </select>
-        </div>
+        {slotMode === 'manual' && teamId && teamSlots.length > 0 && (
+          <div className="text-right">
+            <button type="button" onClick={switchToAuto} className="text-sm text-brand-500 hover:underline">
+              {t('useSlot')}
+            </button>
+          </div>
+        )}
+
+        {/* Time and hall fields — read-only when a slot is active */}
+        {(() => {
+          const slotActive = slotMode === 'auto' && !!selectedSlotKey
+          return (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{tc('from')}</label>
+                  <input
+                    type="time"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    required
+                    readOnly={slotActive}
+                    className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 ${slotActive ? 'opacity-60' : ''}`}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{tc('to')}</label>
+                  <input
+                    type="time"
+                    value={endTime}
+                    onChange={(e) => setEndTime(e.target.value)}
+                    required
+                    readOnly={slotActive}
+                    className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 ${slotActive ? 'opacity-60' : ''}`}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{tc('hall')}</label>
+                <select
+                  value={hallId}
+                  onChange={(e) => setHallId(e.target.value)}
+                  disabled={slotActive}
+                  className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 ${slotActive ? 'opacity-60' : ''}`}
+                >
+                  <option value="">{tc('select')}</option>
+                  {halls.map((h) => (
+                    <option key={h.id} value={h.id}>{h.name}</option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )
+        })()}
 
         <div className="grid grid-cols-2 gap-4">
           <div>

@@ -19,7 +19,7 @@ type SortDir = 'asc' | 'desc'
 export default function TeamDetail() {
   const { t } = useTranslation('teams')
   const { teamSlug } = useParams<{ teamSlug: string }>()
-  const { isCoachOf, isAdmin } = useAuth()
+  const { isCoachOf, isAdmin, canViewTeam } = useAuth()
   const [team, setTeam] = useState<Team | null>(null)
   const [loading, setLoading] = useState(true)
   const teamId = team?.id
@@ -114,7 +114,7 @@ export default function TeamDetail() {
     return <div className="py-12 text-center text-gray-500 dark:text-gray-400">{t('common:loading')}</div>
   }
 
-  if (!team) {
+  if (!team || !canViewTeam(team.id)) {
     return <EmptyState icon="❌" title={t('noTeams')} />
   }
 

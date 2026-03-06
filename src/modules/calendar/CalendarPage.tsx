@@ -150,7 +150,6 @@ export default function CalendarPage() {
             options={[
               { value: 'hallenplan', label: t('viewHall') },
               { value: 'month', label: t('viewMonth') },
-              { value: 'week', label: t('viewWeek', { defaultValue: 'Week' }) },
             ]}
             value={viewMode}
             onChange={handleViewChange}
@@ -261,6 +260,7 @@ export default function CalendarPage() {
         <GameDetailModal
           game={selectedEntry.source as Game}
           onClose={() => setSelectedEntry(null)}
+          readOnly
         />
       )}
       {selectedEntry && selectedEntry.type !== 'game' && (

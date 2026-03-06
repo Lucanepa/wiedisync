@@ -32,9 +32,24 @@ export default function ParticipationSummary({
   if (compact) {
     return (
       <span className="inline-flex items-center gap-1.5 text-xs">
-        {confirmed > 0 && <span className="text-green-600 dark:text-green-400">{confirmed}✓</span>}
-        {tentative > 0 && <span className="text-yellow-600 dark:text-yellow-400">{tentative}?</span>}
-        {declined > 0 && <span className="text-red-600 dark:text-red-400">{declined}✗</span>}
+        {confirmed > 0 && (
+          <span className="inline-flex items-center gap-1 text-green-600 dark:text-green-400">
+            {confirmed}
+            <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-green-600 text-[10px] font-bold leading-none text-white dark:bg-green-500">✓</span>
+          </span>
+        )}
+        {tentative > 0 && (
+          <span className="inline-flex items-center gap-1 text-yellow-600 dark:text-yellow-400">
+            {tentative}
+            <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-yellow-500 text-[10px] font-bold leading-none text-white">?</span>
+          </span>
+        )}
+        {declined > 0 && (
+          <span className="inline-flex items-center gap-1 text-red-600 dark:text-red-400">
+            {declined}
+            <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold leading-none text-white dark:bg-red-500">✗</span>
+          </span>
+        )}
       </span>
     )
   }

@@ -1,5 +1,6 @@
-import { useState, useMemo } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useAuth } from '../../hooks/useAuth'
 import type { Game, SvRanking } from '../../types'
 import { usePB } from '../../hooks/usePB'
 import { svTeamIds } from '../../utils/teamColors'
@@ -22,10 +23,20 @@ function buildTeamFilter(teams: string[]): string {
 
 export default function GamesPage() {
   const { t } = useTranslation('games')
+  const { memberTeamNames } = useAuth()
   const [activeTab, setActiveTab] = useState<TabKey>('upcoming')
   const [selectedTeams, setSelectedTeams] = useState<string[]>([])
   const [selectedGame, setSelectedGame] = useState<Game | null>(null)
   const [showAll, setShowAll] = useState(false)
+  const [autoSelected, setAutoSelected] = useState(false)
+
+  // Auto-select user's teams on initial load
+  useEffect(() => {
+    if (!autoSelected && memberTeamNames.length > 0) {
+      setSelectedTeams(memberTeamNames)
+      setAutoSelected(true)
+    }
+  }, [memberTeamNames, autoSelected])
 
   const INITIAL_LIMIT = 20
 
@@ -58,7 +69,7 @@ export default function GamesPage() {
   const { data: games, isLoading: gamesLoading } = usePB<Game>(
     'games',
     gameQuery
-      ? { filter: gameQuery.filter, sort: gameQuery.sort, expand: 'kscw_team,hall', perPage }
+      ? { filter: gameQuery.filter, sort: gameQuery.sort, expand: 'kscw_team,hall,scorer_member,taefeler_member,scorer_taefeler_member,scorer_duty_team,taefeler_duty_team,scorer_taefeler_duty_team', perPage }
       : { filter: 'id = ""', perPage: 1 },
   )
 

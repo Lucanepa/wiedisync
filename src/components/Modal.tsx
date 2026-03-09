@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react'
+import { X } from 'lucide-react'
 
 interface ModalProps {
   open: boolean
@@ -37,7 +38,7 @@ export default function Modal({ open, onClose, title, children, size = 'md', hid
       onClick={(e) => {
         if (e.target === ref.current && !hideClose) onClose()
       }}
-      className={`fixed inset-x-0 bottom-0 top-auto m-0 w-full max-w-none rounded-t-xl bg-white p-0 shadow-xl backdrop:bg-black/50 sm:inset-0 sm:m-auto sm:rounded-lg dark:bg-gray-800 ${sizeClasses[size]}`}
+      className={`fixed inset-x-0 bottom-0 top-auto m-0 w-full max-w-none rounded-t-xl border-0 bg-white p-0 shadow-xl backdrop:bg-black/50 sm:inset-0 sm:m-auto sm:rounded-xl dark:bg-gray-800 ${sizeClasses[size]}`}
     >
       <div className="w-full">
         <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 sm:px-6 sm:py-4 dark:border-gray-700">
@@ -46,11 +47,9 @@ export default function Modal({ open, onClose, title, children, size = 'md', hid
             <button
               onClick={onClose}
               aria-label="Close"
-              className="flex min-h-[44px] min-w-[44px] items-center justify-center text-gray-400 hover:text-gray-600 sm:min-h-0 sm:min-w-0 dark:hover:text-gray-300"
+              className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 sm:min-h-0 sm:min-w-0 dark:hover:bg-gray-700 dark:hover:text-gray-300"
             >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <X className="h-5 w-5" />
             </button>
           )}
         </div>

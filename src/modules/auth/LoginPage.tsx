@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
 import { useTheme } from '../../hooks/useTheme'
+import Button from '../../components/ui/Button'
+import { Input } from '../../components/ui/Input'
 
 export default function LoginPage() {
   const { login, user } = useAuth()
@@ -53,35 +55,25 @@ export default function LoginPage() {
           </h1>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                {t('email')}
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-                className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-                placeholder={t('emailPlaceholder')}
-              />
-            </div>
+            <Input
+              type="email"
+              label={t('email')}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+              placeholder={t('emailPlaceholder')}
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                {t('password')}
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoComplete="current-password"
-                className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-                placeholder={t('passwordPlaceholder')}
-              />
-            </div>
+            <Input
+              type="password"
+              label={t('password')}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
+              placeholder={t('passwordPlaceholder')}
+            />
 
             <div className="flex items-center">
               <input
@@ -100,13 +92,9 @@ export default function LoginPage() {
               <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50"
-            >
+            <Button type="submit" loading={loading} className="w-full">
               {loading ? t('signingIn') : t('signIn')}
-            </button>
+            </Button>
           </form>
         </div>
       </div>

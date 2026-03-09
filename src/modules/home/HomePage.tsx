@@ -8,11 +8,13 @@ import { useNotifications } from '../../hooks/useNotifications'
 import { useSportPreference } from '../../hooks/useSportPreference'
 import { formatDate, formatDateCompact, formatTime, formatWeekday } from '../../utils/dateHelpers'
 import TeamChip from '../../components/TeamChip'
-import SportToggle from '../../components/SportToggle'
+import StatusBadge from '../../components/StatusBadge'
+import { VolleyballIcon, BasketballIcon } from '../../components/SportToggle'
 import NotificationPanel from '../../components/NotificationPanel'
 import GameDetailModal from '../games/components/GameDetailModal'
 import type { Game, Event, Team, Training, Hall, Member, MemberTeam, Notification } from '../../types'
 import type { RecordModel } from 'pocketbase'
+import { ClipboardList, Clock, AlertTriangle, Trophy, Bell } from 'lucide-react'
 
 type ExpandedGame = Game & {
   expand?: { kscw_team?: Team & RecordModel; hall?: RecordModel }
@@ -26,20 +28,15 @@ type TrainingExpanded = Training & {
 
 type MemberTeamExpanded = MemberTeam & { expand?: { team?: Team } }
 
-const eventTypeColors: Record<string, { bg: string; text: string }> = {
-  verein: { bg: '#dbeafe', text: '#1e40af' },
-  social: { bg: '#dcfce7', text: '#166534' },
-  meeting: { bg: '#fef3c7', text: '#92400e' },
-  tournament: { bg: '#fee2e2', text: '#991b1b' },
-  other: { bg: '#f3f4f6', text: '#374151' },
-}
 
 export default function HomePage() {
   const { t } = useTranslation('home')
   const { t: tn } = useTranslation('notifications')
   const { theme } = useTheme()
-  const { user, isApproved } = useAuth()
+  const { user, isApproved, primarySport } = useAuth()
   const { sport, setSport } = useSportPreference()
+  // Hide sport toggle for logged-in users who play only one sport
+  const showSportToggle = !user || primarySport === 'both'
   const [selectedGame, setSelectedGame] = useState<ExpandedGame | null>(null)
   const [showAllGames, setShowAllGames] = useState(false)
   const [showAllResults, setShowAllResults] = useState(false)
@@ -143,24 +140,59 @@ export default function HomePage() {
 
   return (
     <div className="min-w-0">
-      {/* Hero */}
+      {/* Hero with sport icons flanking logo */}
       <div className="flex flex-col items-center pb-6 pt-2 text-center">
-        <img
-          src={theme === 'light' ? '/kscw_blau.png' : '/kscw_weiss.png'}
-          alt="KSC Wiedikon"
-          className="h-20 w-auto sm:h-24"
-        />
+        <div className="flex items-center gap-4">
+          {showSportToggle && (
+            <button
+              onClick={() => setSport('vb')}
+              className={`rounded-full p-2 transition-all ${
+                sport === 'vb' || sport === 'all'
+                  ? 'scale-110 text-brand-600 dark:text-brand-400'
+                  : 'text-gray-300 hover:text-gray-400 dark:text-gray-600 dark:hover:text-gray-500'
+              }`}
+              aria-label="Volleyball"
+            >
+              <VolleyballIcon className="h-7 w-7 sm:h-8 sm:w-8" />
+            </button>
+          )}
+          <img
+            src={theme === 'light' ? '/kscw_blau.png' : '/kscw_weiss.png'}
+            alt="KSC Wiedikon"
+            className="h-20 w-auto sm:h-24"
+          />
+          {showSportToggle && (
+            <button
+              onClick={() => setSport('bb')}
+              className={`rounded-full p-2 transition-all ${
+                sport === 'bb' || sport === 'all'
+                  ? 'scale-110 text-orange-500 dark:text-orange-400'
+                  : 'text-gray-300 hover:text-gray-400 dark:text-gray-600 dark:hover:text-gray-500'
+              }`}
+              aria-label="Basketball"
+            >
+              <BasketballIcon className="h-7 w-7 sm:h-8 sm:w-8" />
+            </button>
+          )}
+        </div>
         <h1 className="mt-3 text-2xl font-bold text-gray-900 sm:text-3xl dark:text-gray-100">
           KSC Wiedikon
         </h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           {t('subtitle')}
         </p>
-      </div>
-
-      {/* Sport toggle */}
-      <div className="mb-6 flex justify-center">
-        <SportToggle value={sport} onChange={setSport} />
+        {showSportToggle && (
+          <button
+            onClick={() => setSport('all')}
+            className={`mt-2 text-xs font-medium transition-colors ${
+              sport === 'all'
+                ? 'text-brand-600 dark:text-brand-400'
+                : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
+            }`}
+          >
+            {t('all')}
+          </button>
+        )}
       </div>
 
       {/* News section — latest notifications */}
@@ -314,11 +346,11 @@ function SectionHeader({
   )
 }
 
-const newsTypeIcons: Record<string, string> = {
-  activity_change: '📋',
-  upcoming_activity: '⏰',
-  deadline_reminder: '⚠️',
-  result_available: '🏆',
+const newsTypeIcons: Record<string, React.ReactNode> = {
+  activity_change: <ClipboardList className="h-4 w-4" />,
+  upcoming_activity: <Clock className="h-4 w-4" />,
+  deadline_reminder: <AlertTriangle className="h-4 w-4" />,
+  result_available: <Trophy className="h-4 w-4" />,
 }
 
 function NewsRow({ notification }: { notification: Notification }) {
@@ -345,8 +377,8 @@ function NewsRow({ notification }: { notification: Notification }) {
 
   return (
     <div className="flex items-center gap-3 border-b border-gray-100 px-4 py-2.5 last:border-b-0 dark:border-gray-700">
-      <span className="shrink-0 text-base">{newsTypeIcons[notification.type] ?? '🔔'}</span>
-      <p className="min-w-0 flex-1 truncate text-sm text-gray-900 dark:text-gray-100">{message}</p>
+      <span className="shrink-0 text-gray-500 dark:text-gray-400">{newsTypeIcons[notification.type] ?? <Bell className="h-4 w-4" />}</span>
+      <p className="min-w-0 flex-1 truncate text-sm text-gray-900 dark:text-gray-100">{String(message)}</p>
       <span className="shrink-0 text-xs text-gray-400 dark:text-gray-500">{timeAgo}</span>
     </div>
   )
@@ -426,13 +458,10 @@ function CompactTrainingRow({ training }: { training: TrainingExpanded }) {
 }
 
 function EventRow({ event }: { event: EventExpanded }) {
-  const { t } = useTranslation('events')
   const teams = event.expand?.teams ?? []
-  const colors = eventTypeColors[event.event_type] ?? eventTypeColors.other
-
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-      <div className="flex items-start gap-3">
+    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-card dark:border-gray-700 dark:bg-gray-800">
+      <div className="flex items-start gap-3 p-4">
         {/* Date badge */}
         <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg bg-brand-50 dark:bg-brand-900/40">
           <span className="text-lg font-bold leading-none text-brand-600 dark:text-brand-400">
@@ -445,12 +474,7 @@ function EventRow({ event }: { event: EventExpanded }) {
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span
-              className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase"
-              style={{ backgroundColor: colors.bg, color: colors.text }}
-            >
-              {t(event.event_type === 'verein' ? 'club' : event.event_type)}
-            </span>
+            <StatusBadge status={event.event_type} />
             <h3 className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
               {event.title}
             </h3>

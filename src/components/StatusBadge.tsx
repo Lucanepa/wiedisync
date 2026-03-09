@@ -1,19 +1,25 @@
-const defaultColors: Record<string, { bg: string; text: string }> = {
-  present: { bg: '#dcfce7', text: '#166534' },
-  absent: { bg: '#fee2e2', text: '#991b1b' },
-  late: { bg: '#fef3c7', text: '#92400e' },
-  excused: { bg: '#dbeafe', text: '#1e40af' },
-  injury: { bg: '#fee2e2', text: '#991b1b' },
-  vacation: { bg: '#e0f2fe', text: '#075985' },
-  work: { bg: '#ffedd5', text: '#9a3412' },
-  personal: { bg: '#f3e8ff', text: '#6b21a8' },
-  other: { bg: '#f3f4f6', text: '#374151' },
+const defaultColors: Record<string, string> = {
+  present: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+  absent: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+  late: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
+  excused: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+  injury: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+  vacation: 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-400',
+  work: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
+  personal: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
+  other: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
   // Roles
-  user: { bg: '#dbeafe', text: '#1e40af' },
-  coach: { bg: '#dcfce7', text: '#166534' },
-  vorstand: { bg: '#fef3c7', text: '#92400e' },
-  admin: { bg: '#fee2e2', text: '#991b1b' },
-  superadmin: { bg: '#f3e8ff', text: '#6b21a8' },
+  user: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+  coach: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+  vorstand: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
+  admin: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+  superadmin: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
+  superuser: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
+  // Event types
+  verein: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+  social: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+  meeting: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
+  tournament: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
 }
 
 const labelMap: Record<string, string> = {
@@ -29,27 +35,45 @@ const labelMap: Record<string, string> = {
   // Roles
   user: 'User',
   coach: 'Coach',
-
   captain: 'Captain',
   team_responsible: 'Team Resp.',
   vorstand: 'Board',
   admin: 'Admin',
   superadmin: 'SuperAdmin',
+  superuser: 'Superuser',
+  // Event types
+  verein: 'Verein',
+  social: 'Social',
+  meeting: 'Meeting',
+  tournament: 'Tournament',
 }
 
 interface StatusBadgeProps {
   status: string
+  /** @deprecated Use the built-in color map instead */
   colorMap?: Record<string, { bg: string; text: string }>
   className?: string
 }
 
 export default function StatusBadge({ status, colorMap, className = '' }: StatusBadgeProps) {
-  const colors = (colorMap ?? defaultColors)[status] ?? defaultColors.other
+  // Legacy inline-style path for callers still using colorMap
+  if (colorMap) {
+    const colors = colorMap[status] ?? colorMap.other ?? { bg: '#f3f4f6', text: '#374151' }
+    return (
+      <span
+        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${className}`}
+        style={{ backgroundColor: colors.bg, color: colors.text }}
+      >
+        {labelMap[status] ?? status}
+      </span>
+    )
+  }
+
+  const colorClass = defaultColors[status] ?? defaultColors.other
 
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${className}`}
-      style={{ backgroundColor: colors.bg, color: colors.text }}
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${colorClass} ${className}`}
     >
       {labelMap[status] ?? status}
     </span>

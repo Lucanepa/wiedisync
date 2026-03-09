@@ -65,7 +65,7 @@ export default function DayNavigation({
   const todayStr = new Date().toDateString()
 
   return (
-    <div className="mb-4 space-y-3 rounded-lg bg-white p-3 shadow-sm dark:bg-gray-800">
+    <div className="mb-4 space-y-3 rounded-xl bg-white p-3 shadow-card dark:bg-gray-800">
       {/* Week navigation row */}
       <div className="flex items-center justify-between">
         <button

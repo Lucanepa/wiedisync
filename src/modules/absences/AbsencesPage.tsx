@@ -10,6 +10,7 @@ import ConfirmDialog from '../../components/ConfirmDialog'
 import AbsenceCard from './AbsenceCard'
 import AbsenceForm from './AbsenceForm'
 import TeamAbsenceView from './TeamAbsenceView'
+import Button from '../../components/ui/Button'
 import type { Absence, Member } from '../../types'
 
 type AbsenceExpanded = Absence & { expand?: { member?: Member } }
@@ -59,15 +60,14 @@ export default function AbsencesPage() {
           <h1 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-gray-100">{t('title')}</h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('subtitle')}</p>
         </div>
-        <button
+        <Button
           onClick={() => {
             setEditingAbsence(null)
             setFormOpen(true)
           }}
-          className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600"
         >
           {t('newAbsence')}
-        </button>
+        </Button>
       </div>
 
       {/* Tabs (coach only) */}

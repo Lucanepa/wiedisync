@@ -19,6 +19,8 @@ export default {
   showAll: 'Show all',
   noUpcomingActivities: 'No activities in the next 4 weeks.',
   noActiveAbsences: 'No active absences.',
+  teams: 'Teams',
+  roles: 'Roles',
 
   // Profile Edit
   firstName: 'First Name',

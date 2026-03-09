@@ -184,7 +184,7 @@ export default function DaySlotView({
   const inactiveBottomH = Math.max(0, gridHeight - inactiveBottomTop)
 
   return (
-    <div className="overflow-y-auto rounded-lg bg-white shadow-sm dark:bg-gray-800">
+    <div className="overflow-y-auto rounded-lg bg-white shadow-card dark:bg-gray-800">
       {/* Hall sub-headers (only when multi-hall) */}
       {multiHall && (
         <div

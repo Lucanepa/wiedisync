@@ -6,6 +6,8 @@ import { useMutation } from '../../hooks/useMutation'
 import { usePB } from '../../hooks/usePB'
 import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
+import Button from '../../components/ui/Button'
+import { Input, Textarea, Select } from '../../components/ui/Input'
 import type { Training, Team, Hall, HallSlot, SlotClaim } from '../../types'
 import type { RecurringEditScope } from './RecurringEditDialog'
 
@@ -321,31 +323,25 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
           </div>
         )}
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{tc('team')}</label>
-          <select
-            value={teamId}
-            onChange={(e) => setTeamId(e.target.value)}
-            required
-            className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-          >
-            <option value="">{tc('select')}</option>
-            {teams.map((t) => (
-              <option key={t.id} value={t.id}>{t.name}</option>
-            ))}
-          </select>
-        </div>
+        <Select
+          label={tc('team')}
+          value={teamId}
+          onChange={(e) => setTeamId(e.target.value)}
+          required
+        >
+          <option value="">{tc('select')}</option>
+          {teams.map((t) => (
+            <option key={t.id} value={t.id}>{t.name}</option>
+          ))}
+        </Select>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{tc('date')}</label>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            required
-            className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-          />
-        </div>
+        <Input
+          label={tc('date')}
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          required
+        />
 
         {/* Slot mode indicator */}
         {slotMode === 'auto' && teamId && date && (
@@ -408,54 +404,50 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
           return (
             <>
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{tc('from')}</label>
-                  <input
-                    type="time"
-                    value={startTime}
-                    onChange={(e) => setStartTime(e.target.value)}
-                    required
-                    readOnly={slotActive}
-                    className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 ${slotActive ? 'opacity-60' : ''}`}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{tc('to')}</label>
-                  <input
-                    type="time"
-                    value={endTime}
-                    onChange={(e) => setEndTime(e.target.value)}
-                    required
-                    readOnly={slotActive}
-                    className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 ${slotActive ? 'opacity-60' : ''}`}
-                  />
-                </div>
+                <Input
+                  label={tc('from')}
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  required
+                  readOnly={slotActive}
+                  className={slotActive ? 'opacity-60' : ''}
+                />
+                <Input
+                  label={tc('to')}
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  required
+                  readOnly={slotActive}
+                  className={slotActive ? 'opacity-60' : ''}
+                />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{tc('hall')}</label>
-                <select
+                <Select
+                  label={tc('hall')}
                   value={hallId}
                   onChange={(e) => {
                     setHallId(e.target.value)
                     if (e.target.value !== '__other__') setHallName('')
                   }}
                   disabled={slotActive}
-                  className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 ${slotActive ? 'opacity-60' : ''}`}
+                  className={slotActive ? 'opacity-60' : ''}
                 >
                   <option value="">{tc('select')}</option>
                   {halls.map((h) => (
                     <option key={h.id} value={h.id}>{h.name}</option>
                   ))}
                   <option value="__other__">{tc('otherHall')}</option>
-                </select>
+                </Select>
                 {hallId === '__other__' && (
-                  <input
+                  <Input
                     type="text"
                     value={hallName}
                     onChange={(e) => setHallName(e.target.value)}
                     placeholder={tc('hallNamePlaceholder')}
-                    className="mt-2 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                    className="mt-2"
                   />
                 )}
               </div>
@@ -464,49 +456,37 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
         })()}
 
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('minParticipants')}</label>
-            <input
-              type="number"
-              value={minParticipants}
-              onChange={(e) => setMinParticipants(e.target.value)}
-              min={0}
-              className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('maxParticipants')}</label>
-            <input
-              type="number"
-              value={maxParticipants}
-              onChange={(e) => setMaxParticipants(e.target.value)}
-              min={0}
-              className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{tc('notes')}</label>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            rows={2}
-            className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+          <Input
+            label={t('minParticipants')}
+            type="number"
+            value={minParticipants}
+            onChange={(e) => setMinParticipants(e.target.value)}
+            min={0}
+          />
+          <Input
+            label={t('maxParticipants')}
+            type="number"
+            value={maxParticipants}
+            onChange={(e) => setMaxParticipants(e.target.value)}
+            min={0}
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('respondBy')}</label>
-          <input
-            type="date"
-            value={respondBy}
-            onChange={(e) => setRespondBy(e.target.value)}
-            max={date}
-            className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-          />
-          <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">{t('respondByHint')}</p>
-        </div>
+        <Textarea
+          label={tc('notes')}
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          rows={2}
+        />
+
+        <Input
+          label={t('respondBy')}
+          type="date"
+          value={respondBy}
+          onChange={(e) => setRespondBy(e.target.value)}
+          max={date}
+          helperText={t('respondByHint')}
+        />
 
         {training && (
           <div>
@@ -520,12 +500,12 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
               {t('cancelTraining')}
             </label>
             {cancelled && (
-              <textarea
+              <Textarea
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
                 rows={2}
                 placeholder={t('cancelReason')}
-                className="mt-2 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                className="mt-2"
               />
             )}
           </div>
@@ -534,20 +514,12 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
         {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
         <div className="flex justify-end gap-3 pt-2">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-          >
+          <Button variant="ghost" type="button" onClick={onCancel}>
             {tc('cancel')}
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50"
-          >
+          </Button>
+          <Button type="submit" loading={loading}>
             {loading ? tc('saving') : tc('save')}
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>

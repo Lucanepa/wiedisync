@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { ClipboardList, Clock, AlertTriangle, Trophy, Bell } from 'lucide-react'
 import type { Notification } from '../types'
 
 interface NotificationPanelProps {
@@ -11,11 +12,11 @@ interface NotificationPanelProps {
   onClose: () => void
 }
 
-const typeIcons: Record<string, string> = {
-  activity_change: '📋',
-  upcoming_activity: '⏰',
-  deadline_reminder: '⚠️',
-  result_available: '🏆',
+const typeIcons: Record<string, React.ReactNode> = {
+  activity_change: <ClipboardList className="h-4 w-4" />,
+  upcoming_activity: <Clock className="h-4 w-4" />,
+  deadline_reminder: <AlertTriangle className="h-4 w-4" />,
+  result_available: <Trophy className="h-4 w-4" />,
 }
 
 const typeLabels: Record<string, string> = {
@@ -70,7 +71,7 @@ export default function NotificationPanel({
   function renderMessage(n: Notification): string {
     try {
       const data = n.body ? JSON.parse(n.body) : {}
-      return t(n.title, data)
+      return String(t(n.title, data))
     } catch {
       return n.title
     }
@@ -133,7 +134,7 @@ export default function NotificationPanel({
                 </div>
 
                 {/* Icon */}
-                <span className="shrink-0 pt-0.5 text-base">{typeIcons[n.type] ?? '🔔'}</span>
+                <span className="shrink-0 pt-0.5 text-gray-500 dark:text-gray-400">{typeIcons[n.type] ?? <Bell className="h-4 w-4" />}</span>
 
                 {/* Content */}
                 <div className="min-w-0 flex-1">

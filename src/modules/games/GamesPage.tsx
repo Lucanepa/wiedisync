@@ -25,8 +25,9 @@ function buildTeamFilter(teams: string[]): string {
 
 export default function GamesPage() {
   const { t } = useTranslation('games')
-  const { memberTeamNames } = useAuth()
+  const { user, memberTeamNames, primarySport } = useAuth()
   const { sport, setSport } = useSportPreference()
+  const showSportToggle = !user || primarySport === 'both'
   const [activeTab, setActiveTab] = useState<TabKey>('upcoming')
   const [selectedTeams, setSelectedTeams] = useState<string[]>([])
   const [selectedGame, setSelectedGame] = useState<Game | null>(null)
@@ -128,9 +129,11 @@ export default function GamesPage() {
       <h1 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-gray-100">{t('title')}</h1>
 
       <div className="mt-6 space-y-4">
-        <div className="flex items-center gap-4">
-          <SportToggle value={sport} onChange={setSport} />
-        </div>
+        {showSportToggle && (
+          <div className="flex items-center gap-4">
+            <SportToggle value={sport} onChange={setSport} />
+          </div>
+        )}
         <TeamFilterBar selected={selectedTeams} onChange={setSelectedTeams} sport={sport} />
         <GameTabs activeTab={activeTab} onChange={(tab) => { setActiveTab(tab); setShowAll(false) }} />
       </div>

@@ -6,6 +6,8 @@ import { useRealtime } from '../../hooks/useRealtime'
 import { useAuth } from '../../hooks/useAuth'
 import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
+import Button from '../../components/ui/Button'
+import { Input, Select } from '../../components/ui/Input'
 import ScorerRow, { hasAnyAssignment } from './components/ScorerRow'
 import TeamOverview from './components/TeamOverview'
 import LoadingSpinner from '../../components/LoadingSpinner'
@@ -205,8 +207,7 @@ export default function ScorerPage() {
     }
   }
 
-  const selectClass = 'min-h-[44px] w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100'
-  const inputClass = selectClass
+  const filterLabelClass = 'mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400'
 
   return (
     <div>
@@ -233,74 +234,72 @@ export default function ScorerPage() {
       {tab === 'games' && (
         <>
           {/* Filters */}
-          <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
+          <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {/* Date */}
               <div>
-                <label htmlFor="scorer-date" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                <label htmlFor="scorer-date" className={filterLabelClass}>
                   {t('filterDate')}
                 </label>
-                <input
+                <Input
                   id="scorer-date"
                   type="date"
                   value={dateFilter}
                   onChange={(e) => setDateFilter(e.target.value)}
-                  className={inputClass}
                 />
               </div>
 
               {/* Duty Team */}
               <div>
-                <label htmlFor="scorer-duty-team" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                <label htmlFor="scorer-duty-team" className={filterLabelClass}>
                   {t('filterDutyTeam')}
                 </label>
-                <select id="scorer-duty-team" value={dutyTeamFilter} onChange={(e) => setDutyTeamFilter(e.target.value)} className={selectClass}>
+                <Select id="scorer-duty-team" value={dutyTeamFilter} onChange={(e) => setDutyTeamFilter(e.target.value)}>
                   <option value="">{t('filterAllTeams')}</option>
                   {teams.map((team) => (
                     <option key={team.id} value={team.id}>{team.name}</option>
                   ))}
-                </select>
+                </Select>
               </div>
 
               {/* Duty Type */}
               <div>
-                <label htmlFor="scorer-duty-type" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                <label htmlFor="scorer-duty-type" className={filterLabelClass}>
                   {t('filterDutyType')}
                 </label>
-                <select id="scorer-duty-type" value={dutyTypeFilter} onChange={(e) => setDutyTypeFilter(e.target.value as DutyTypeFilter)} className={selectClass}>
+                <Select id="scorer-duty-type" value={dutyTypeFilter} onChange={(e) => setDutyTypeFilter(e.target.value as DutyTypeFilter)}>
                   <option value="all">{t('filterAllTypes')}</option>
                   <option value="scorer">{t('scorer')}</option>
                   <option value="taefeler">{t('scoreboard')}</option>
                   <option value="scorer_taefeler">{t('scorerTaefeler')}</option>
-                </select>
+                </Select>
               </div>
 
               {/* Unassigned Duty */}
               <div>
-                <label htmlFor="scorer-unassigned" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                <label htmlFor="scorer-unassigned" className={filterLabelClass}>
                   {t('filterUnassigned')}
                 </label>
-                <select id="scorer-unassigned" value={unassignedFilter} onChange={(e) => setUnassignedFilter(e.target.value as UnassignedFilter)} className={selectClass}>
+                <Select id="scorer-unassigned" value={unassignedFilter} onChange={(e) => setUnassignedFilter(e.target.value as UnassignedFilter)}>
                   <option value="all">{t('filterAllDuties')}</option>
                   <option value="any">{t('filterAnyUnassigned')}</option>
                   <option value="scorer">{t('scorer')}</option>
                   <option value="taefeler">{t('scoreboard')}</option>
                   <option value="scorer_taefeler">{t('scorerTaefeler')}</option>
-                </select>
+                </Select>
               </div>
 
               {/* Search Assignee */}
               <div>
-                <label htmlFor="scorer-search" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                <label htmlFor="scorer-search" className={filterLabelClass}>
                   {t('filterSearchAssignee')}
                 </label>
-                <input
+                <Input
                   id="scorer-search"
                   type="text"
                   value={searchAssignee}
                   onChange={(e) => setSearchAssignee(e.target.value)}
                   placeholder={t('searchAssigneePlaceholder')}
-                  className={inputClass}
                 />
               </div>
             </div>
@@ -308,12 +307,9 @@ export default function ScorerPage() {
             {/* Clear filters */}
             {hasActiveFilters && (
               <div className="mt-3 flex justify-center">
-                <button
-                  onClick={clearFilters}
-                  className="rounded-full border border-gray-300 px-4 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700"
-                >
+                <Button variant="secondary" size="sm" onClick={clearFilters} className="rounded-full">
                   {t('clearFilters')}
-                </button>
+                </Button>
               </div>
             )}
           </div>
@@ -353,12 +349,13 @@ export default function ScorerPage() {
           {/* Past games — show older games button + load more */}
           <div className="mt-8">
             {!showPast ? (
-              <button
+              <Button
+                variant="secondary"
                 onClick={() => { setShowPast(true); setPastVisible(PAST_PAGE_SIZE) }}
-                className="mx-auto flex items-center gap-2 rounded-full border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700"
+                className="mx-auto rounded-full"
               >
-                {t('showOlderGames', { count: pastTotal || '...' })}
-              </button>
+                {t('showOlderGames', { count: pastTotal || 0 })}
+              </Button>
             ) : (
               <div className="mt-4">
                 {pastLoading && <LoadingSpinner />}
@@ -374,8 +371,10 @@ export default function ScorerPage() {
                           game={g}
                           members={members}
                           teams={teams}
+                          teamMemberIds={teamMemberIds}
                           onUpdate={handleUpdate}
                           canEdit={canEdit}
+                          showContact={showContact}
                           userId={user?.id}
                           userTeamIds={userTeamIds}
                           userHasLicence={user?.scorer_licence ?? false}
@@ -384,23 +383,25 @@ export default function ScorerPage() {
                     </div>
                     {pastVisible < allPastGames.length && (
                       <div className="mt-4 flex justify-center">
-                        <button
+                        <Button
+                          variant="secondary"
                           onClick={() => setPastVisible((v) => v + PAST_PAGE_SIZE)}
-                          className="rounded-full border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700"
+                          className="rounded-full"
                         >
                           {t('loadMore')}
-                        </button>
+                        </Button>
                       </div>
                     )}
                   </>
                 )}
                 <div className="mt-3 flex justify-center">
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setShowPast(false)}
-                    className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
                   >
                     {t('hidePast')}
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}

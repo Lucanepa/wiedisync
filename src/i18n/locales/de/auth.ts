@@ -19,6 +19,8 @@ export default {
   showAll: 'Alle anzeigen',
   noUpcomingActivities: 'Keine Aktivitäten in den nächsten 4 Wochen.',
   noActiveAbsences: 'Keine aktiven Absenzen.',
+  teams: 'Teams',
+  roles: 'Rollen',
 
   // Profile Edit
   firstName: 'Vorname',

@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import pb from '../../../pb'
+import Button from '../../../components/ui/Button'
 import ResultsTable from './ResultsTable'
 import ConfirmDialog from '../../../components/ConfirmDialog'
 
@@ -99,30 +100,31 @@ export default function SqlEditor() {
 
       {/* Actions */}
       <div className="flex flex-wrap items-center gap-2">
-        <button
+        <Button
+          variant="primary"
           onClick={handleExecute}
           disabled={loading || !query.trim()}
-          className="min-h-[44px] rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50 sm:min-h-0"
+          loading={loading}
         >
           {loading ? '...' : t('execute')}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="ghost"
           onClick={() => {
             setQuery('')
             setResult(null)
             setExecTimeMs(null)
           }}
-          className="min-h-[44px] rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 sm:min-h-0 dark:text-gray-300 dark:hover:bg-gray-700"
         >
           {t('clear')}
-        </button>
+        </Button>
         {history.length > 0 && (
-          <button
+          <Button
+            variant="ghost"
             onClick={() => setShowHistory(!showHistory)}
-            className="min-h-[44px] rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 sm:min-h-0 dark:text-gray-300 dark:hover:bg-gray-700"
           >
             {t('history')} ({history.length})
-          </button>
+          </Button>
         )}
         {execTimeMs !== null && (
           <span className="text-xs text-gray-500 dark:text-gray-400">{execTimeMs}ms</span>

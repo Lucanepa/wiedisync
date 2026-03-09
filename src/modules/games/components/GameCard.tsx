@@ -110,7 +110,7 @@ export default function GameCard({ game, onClick, variant = 'card' }: GameCardPr
   return (
     <div
       onClick={() => onClick?.(game)}
-      className={`overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 shadow-sm transition-shadow ${onClick ? 'cursor-pointer hover:shadow-md' : ''}`}
+      className={`overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 shadow-card transition-shadow ${onClick ? 'cursor-pointer hover:shadow-card-hover' : ''}`}
     >
       {/* H/A badge top-right */}
       <div className="flex justify-end">

@@ -292,7 +292,7 @@ export default function WeekSlotView({
   }
 
   return (
-    <div className="rounded-lg bg-white shadow-sm dark:bg-gray-800">
+    <div className="rounded-lg bg-white shadow-card dark:bg-gray-800">
       <div className="min-w-[700px] overflow-x-auto">
         {/* Day headers row */}
         <div

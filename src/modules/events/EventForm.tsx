@@ -5,6 +5,8 @@ import { useAuth } from '../../hooks/useAuth'
 import { useMutation } from '../../hooks/useMutation'
 import { usePB } from '../../hooks/usePB'
 import pb from '../../pb'
+import Button from '../../components/ui/Button'
+import { Input, Textarea, Select } from '../../components/ui/Input'
 import type { Event, EventSession, Team } from '../../types'
 
 interface SessionDraft {
@@ -39,8 +41,6 @@ function formatDateShort(dateStr: string): string {
   const d = new Date(dateStr + 'T00:00:00')
   return d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })
 }
-
-const inputClass = 'mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100'
 
 export default function EventForm({ open, event, onSave, onCancel }: EventFormProps) {
   const { t } = useTranslation('events')
@@ -256,56 +256,44 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
       size="md"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('eventTitle')}</label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-            className={inputClass}
-          />
-        </div>
+        <Input
+          label={t('eventTitle')}
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          required
+        />
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('eventType')}</label>
-          <select
-            value={eventType}
-            onChange={(e) => setEventType(e.target.value as Event['event_type'])}
-            className={inputClass}
-          >
-            <option value="verein">{t('club')}</option>
-            <option value="social">{t('social')}</option>
-            <option value="meeting">{t('meeting')}</option>
-            <option value="tournament">{t('tournament')}</option>
-            <option value="other">{t('other')}</option>
-          </select>
-        </div>
+        <Select
+          label={t('eventType')}
+          value={eventType}
+          onChange={(e) => setEventType(e.target.value as Event['event_type'])}
+        >
+          <option value="verein">{t('club')}</option>
+          <option value="social">{t('social')}</option>
+          <option value="meeting">{t('meeting')}</option>
+          <option value="tournament">{t('tournament')}</option>
+          <option value="other">{t('other')}</option>
+        </Select>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('startDate')}</label>
-            <input
-              type={allDay ? 'date' : 'datetime-local'}
-              value={startDate}
-              onChange={(e) => {
-                setStartDate(e.target.value)
-                if (!endDate || endDate < e.target.value) setEndDate(e.target.value)
-              }}
-              required
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('endDate')}</label>
-            <input
-              type={allDay ? 'date' : 'datetime-local'}
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              min={startDate}
-              className={inputClass}
-            />
-          </div>
+          <Input
+            label={t('startDate')}
+            type={allDay ? 'date' : 'datetime-local'}
+            value={startDate}
+            onChange={(e) => {
+              setStartDate(e.target.value)
+              if (!endDate || endDate < e.target.value) setEndDate(e.target.value)
+            }}
+            required
+          />
+          <Input
+            label={t('endDate')}
+            type={allDay ? 'date' : 'datetime-local'}
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            min={startDate}
+          />
         </div>
 
         <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
@@ -318,48 +306,36 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
           {t('allDay')}
         </label>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('location')}</label>
-          <input
-            type="text"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            className={inputClass}
-          />
-        </div>
+        <Input
+          label={t('location')}
+          type="text"
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+        />
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('description')}</label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={3}
-            className={inputClass}
-          />
-        </div>
+        <Textarea
+          label={t('description')}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          rows={3}
+        />
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('respondBy')}</label>
-          <input
-            type="date"
-            value={respondBy}
-            onChange={(e) => setRespondBy(e.target.value)}
-            className={inputClass}
-          />
-          <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">{t('respondByHint')}</p>
-        </div>
+        <Input
+          label={t('respondBy')}
+          type="date"
+          value={respondBy}
+          onChange={(e) => setRespondBy(e.target.value)}
+          helperText={t('respondByHint')}
+        />
 
         {eventType === 'tournament' && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('maxPlayers')}</label>
-            <input
-              type="number"
-              value={maxPlayers}
-              onChange={(e) => setMaxPlayers(e.target.value)}
-              min={0}
-              className={inputClass}
-            />
-          </div>
+          <Input
+            label={t('maxPlayers')}
+            type="number"
+            value={maxPlayers}
+            onChange={(e) => setMaxPlayers(e.target.value)}
+            min={0}
+          />
         )}
 
         <div>
@@ -495,20 +471,12 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
         {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
         <div className="flex justify-end gap-3 pt-2">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-          >
+          <Button variant="ghost" type="button" onClick={onCancel}>
             {tc('cancel')}
-          </button>
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50"
-          >
+          </Button>
+          <Button type="submit" loading={isLoading}>
             {isLoading ? tc('saving') : tc('save')}
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>

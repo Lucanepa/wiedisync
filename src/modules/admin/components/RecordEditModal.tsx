@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { RecordModel } from 'pocketbase'
 import pb from '../../../pb'
+import { logActivity } from '../../../utils/logActivity'
 import Modal from '../../../components/Modal'
 import ConfirmDialog from '../../../components/ConfirmDialog'
 
@@ -77,8 +78,10 @@ export default function RecordEditModal({
         }
         if (isEdit) {
           await pb.collection(collection).update(record!.id, fd)
+          logActivity('update', collection, record!.id, formData)
         } else {
-          await pb.collection(collection).create(fd)
+          const rec = await pb.collection(collection).create(fd)
+          logActivity('create', collection, rec.id, formData)
         }
       } else {
         // Clean up data — convert empty strings to null for optional fields
@@ -101,8 +104,10 @@ export default function RecordEditModal({
         }
         if (isEdit) {
           await pb.collection(collection).update(record!.id, cleanData)
+          logActivity('update', collection, record!.id, cleanData)
         } else {
-          await pb.collection(collection).create(cleanData)
+          const rec = await pb.collection(collection).create(cleanData)
+          logActivity('create', collection, rec.id, cleanData)
         }
       }
       onSaved()
@@ -119,6 +124,7 @@ export default function RecordEditModal({
     setLoading(true)
     try {
       await pb.collection(collection).delete(record.id)
+      logActivity('delete', collection, record.id)
       onSaved()
       onClose()
     } catch (err) {

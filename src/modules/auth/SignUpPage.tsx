@@ -5,6 +5,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useTheme } from '../../hooks/useTheme'
 import { usePB } from '../../hooks/usePB'
 import pb from '../../pb'
+import { logActivity } from '../../utils/logActivity'
 import type { Team } from '../../types'
 
 type Step = 'email' | 'claim' | 'register'
@@ -83,7 +84,7 @@ export default function SignUpPage() {
 
     setLoading(true)
     try {
-      await pb.collection('members').create({
+      const newMember = await pb.collection('members').create({
         first_name: firstName,
         last_name: lastName,
         name: `${firstName} ${lastName}`,
@@ -96,6 +97,7 @@ export default function SignUpPage() {
         requested_team: selectedTeam,
       })
       await login(email.trim().toLowerCase(), password)
+      logActivity('create', 'members', newMember.id, { first_name: firstName, last_name: lastName, requested_team: selectedTeam })
       navigate('/pending', { replace: true })
     } catch {
       setError(t('registrationFailed'))

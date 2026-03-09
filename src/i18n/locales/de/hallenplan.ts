@@ -59,6 +59,7 @@ export default {
   sourceAutomatic: 'Automatisch',
   sourceGcal: 'Google Kalender',
   sourceSchulferien: 'Schulferien',
+  closed: 'Gesperrt',
   allHalls: 'Alle Hallen',
   halls: 'Hallen',
   editAppliesToAllHalls: 'Änderung gilt für {{count}} Hallen',
@@ -105,6 +106,7 @@ export default {
   claimTeamLabel: 'Für Team',
   claimReasonCancelled: 'Training abgesagt',
   claimReasonAway: 'Auswärtsspiel',
+  claimReasonSpielhalle: 'Spielhalle',
   claimOriginalTeam: 'Ursprünglich',
   claimClaimedBy: 'Beansprucht von',
   claimClaimedAt: 'Beansprucht am',
@@ -115,6 +117,7 @@ export default {
 
   // Filter
   vbOnly: 'Nur VB',
+  all: 'Alle',
 
   // Available slots
   slotsAvailable: '{{count}} Halle(n) frei',

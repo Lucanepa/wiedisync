@@ -54,7 +54,7 @@ export default {
   participation: 'Teilnahme',
   minParticipants: 'Min. Teilnehmer',
   maxParticipants: 'Max. Teilnehmer',
-  untilSeasonEnd: 'Bis Saisonende ({{date}})',
+  untilSeasonEnd: 'Unbefristet',
 
   // Recurring edit
   editRecurringTitle: 'Wiederkehrendes Training bearbeiten',

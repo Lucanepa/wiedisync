@@ -208,6 +208,7 @@ export default function TrainingsPage() {
         open={formOpen}
         training={editingTraining}
         editScope={editScope}
+        defaultTeamId={selectedTeam}
         onSave={handleFormSave}
         onCancel={() => {
           setFormOpen(false)
@@ -220,6 +221,7 @@ export default function TrainingsPage() {
         open={recurringOpen}
         onClose={() => setRecurringOpen(false)}
         onGenerated={refetch}
+        selectedTeamId={selectedTeam}
       />
 
       <ConfirmDialog

@@ -6,6 +6,8 @@ import {
   trainingToVirtualSlot,
   hallEventToVirtualSlots,
   mergeVirtualSlots,
+  CLOSURE_PATTERN,
+  resolveHallEventHalls,
 } from '../utils/virtualSlots'
 
 export function useHallenplanData(
@@ -87,6 +89,37 @@ export function useHallenplanData(
     perPage: 100,
   })
 
+  // Convert GCal closure events ("Halle geschlossen") into synthetic HallClosure records
+  // and merge with real closures (deduplicating where a hall_closures record already exists)
+  const mergedClosures = useMemo(() => {
+    const syntheticClosures: HallClosure[] = []
+    for (const he of hallEvents) {
+      if (!CLOSURE_PATTERN.test(he.title)) continue
+      const hallIds = resolveHallEventHalls(he, halls)
+      const dateStr = he.date.slice(0, 10)
+      for (const hallId of hallIds) {
+        // Skip if a real hall_closures record already covers this hall+date
+        const alreadyCovered = closures.some(
+          (c) => c.hall === hallId && c.start_date <= dateStr && c.end_date >= dateStr,
+        )
+        if (alreadyCovered) continue
+        syntheticClosures.push({
+          id: `gcal-closure-${he.id}-${hallId}`,
+          collectionId: '',
+          collectionName: 'hall_closures',
+          created: '',
+          updated: '',
+          hall: hallId,
+          start_date: dateStr,
+          end_date: dateStr,
+          reason: he.title,
+          source: 'gcal',
+        } as HallClosure)
+      }
+    }
+    return [...closures, ...syntheticClosures]
+  }, [closures, hallEvents, halls])
+
   // Convert and merge virtual slots
   const slots = useMemo(() => {
     const virtualSlots: HallSlot[] = []
@@ -101,6 +134,8 @@ export function useHallenplanData(
     }
 
     for (const he of hallEvents) {
+      // Skip closure events — they're handled as ClosureOverlay via mergedClosures
+      if (CLOSURE_PATTERN.test(he.title)) continue
       virtualSlots.push(...hallEventToVirtualSlots(he, weekDays, halls))
     }
 
@@ -110,8 +145,8 @@ export function useHallenplanData(
       ? virtualSlots.filter((vs) => hallSet.has(vs.hall))
       : virtualSlots
 
-    return mergeVirtualSlots(rawSlots, filteredVirtual, slotClaims, closures, games, weekDays, halls, teams)
-  }, [rawSlots, games, trainings, hallEvents, weekDays, halls, teams, selectedHallIds, slotClaims, closures])
+    return mergeVirtualSlots(rawSlots, filteredVirtual, slotClaims, mergedClosures, games, weekDays, halls, teams)
+  }, [rawSlots, games, trainings, hallEvents, weekDays, halls, teams, selectedHallIds, slotClaims, mergedClosures])
 
   const refetch = () => {
     refetchSlots()
@@ -123,5 +158,5 @@ export function useHallenplanData(
     hallsLoading || teamsLoading || slotsLoading || closuresLoading ||
     gamesLoading || trainingsLoading || hallEventsLoading || claimsLoading
 
-  return { halls, teams, slots, rawSlots, closures, slotClaims, isLoading, refetch }
+  return { halls, teams, slots, rawSlots, closures: mergedClosures, slotClaims, isLoading, refetch }
 }

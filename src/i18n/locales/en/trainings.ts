@@ -54,7 +54,7 @@ export default {
   participation: 'Participation',
   minParticipants: 'Min. participants',
   maxParticipants: 'Max. participants',
-  untilSeasonEnd: 'Until season end ({{date}})',
+  untilSeasonEnd: 'Indefinitely',
 
   // Recurring edit
   editRecurringTitle: 'Edit recurring training',

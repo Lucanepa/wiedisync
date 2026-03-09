@@ -5,7 +5,6 @@ import { useTheme } from '../../hooks/useTheme'
 import { useAuth } from '../../hooks/useAuth'
 import { usePB } from '../../hooks/usePB'
 import { formatDate, formatDateCompact, formatTime, formatWeekday } from '../../utils/dateHelpers'
-import LoadingSpinner from '../../components/LoadingSpinner'
 import TeamChip from '../../components/TeamChip'
 import GameDetailModal from '../games/components/GameDetailModal'
 import type { Game, Event, Team, Training, Hall, Member, MemberTeam } from '../../types'
@@ -139,94 +138,76 @@ export default function HomePage() {
       {/* Content grid: events left, games right */}
       <div className="grid gap-6 lg:grid-cols-5">
         {/* Events — left column (wider) */}
-        <div className="lg:col-span-2">
-          <SectionHeader
-            title={t('events')}
-            linkTo="/events"
-            linkLabel={t('allEvents')}
-          />
-          {eventsLoading ? (
-            <LoadingSpinner />
-          ) : events.length === 0 ? (
-            <EmptyCard message={t('noEvents')} />
-          ) : (
+        {!eventsLoading && events.length > 0 && (
+          <div className="lg:col-span-2">
+            <SectionHeader
+              title={t('events')}
+              linkTo="/events"
+              linkLabel={t('allEvents')}
+            />
             <div className="space-y-3">
               {events.map((event) => (
                 <EventRow key={event.id} event={event} />
               ))}
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Games — right column */}
         <div className="space-y-6 lg:col-span-3">
           {/* Next trainings (logged-in only) */}
-          {hasTeams && (
+          {hasTeams && !trainingsLoading && nextTrainings.length > 0 && (
             <div>
               <SectionHeader title={t('nextTrainings')} linkTo="/trainings" linkLabel={t('allTrainings')} />
-              {trainingsLoading ? (
-                <LoadingSpinner />
-              ) : nextTrainings.length === 0 ? (
-                <EmptyCard message={t('noTrainings')} />
-              ) : (
-                <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-                  {nextTrainings.map((tr) => (
-                    <CompactTrainingRow key={tr.id} training={tr} />
-                  ))}
-                </div>
-              )}
+              <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+                {nextTrainings.map((tr) => (
+                  <CompactTrainingRow key={tr.id} training={tr} />
+                ))}
+              </div>
             </div>
           )}
 
           {/* Latest results */}
-          <div>
-            <SectionHeader
-              title={t('latestResults')}
-              linkTo="/games"
-              linkLabel={t('allResults')}
-              filterToggle={hasTeams ? {
-                active: !showAllResults,
-                label: t('myTeams'),
-                onToggle: () => setShowAllResults((v) => !v),
-              } : undefined}
-            />
-            {resultsLoading ? (
-              <LoadingSpinner />
-            ) : latestResults.length === 0 ? (
-              <EmptyCard message={t('noResults')} />
-            ) : (
+          {!resultsLoading && latestResults.length > 0 && (
+            <div>
+              <SectionHeader
+                title={t('latestResults')}
+                linkTo="/games"
+                linkLabel={t('allResults')}
+                filterToggle={hasTeams ? {
+                  active: !showAllResults,
+                  label: t('myTeams'),
+                  onToggle: () => setShowAllResults((v) => !v),
+                } : undefined}
+              />
               <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
                 {latestResults.map((g) => (
                   <CompactGameRow key={g.id} game={g} showScore onClick={() => setSelectedGame(g)} />
                 ))}
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Next games */}
-          <div>
-            <SectionHeader
-              title={t('nextGames')}
-              linkTo="/games"
-              linkLabel={t('allGames')}
-              filterToggle={hasTeams ? {
-                active: !showAllGames,
-                label: t('myTeams'),
-                onToggle: () => setShowAllGames((v) => !v),
-              } : undefined}
-            />
-            {gamesLoading ? (
-              <LoadingSpinner />
-            ) : nextGames.length === 0 ? (
-              <EmptyCard message={t('noUpcoming')} />
-            ) : (
+          {!gamesLoading && nextGames.length > 0 && (
+            <div>
+              <SectionHeader
+                title={t('nextGames')}
+                linkTo="/games"
+                linkLabel={t('allGames')}
+                filterToggle={hasTeams ? {
+                  active: !showAllGames,
+                  label: t('myTeams'),
+                  onToggle: () => setShowAllGames((v) => !v),
+                } : undefined}
+              />
               <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
                 {nextGames.map((g) => (
                   <CompactGameRow key={g.id} game={g} showScore={false} onClick={() => setSelectedGame(g)} />
                 ))}
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -271,14 +252,6 @@ function SectionHeader({
       >
         {linkLabel} →
       </Link>
-    </div>
-  )
-}
-
-function EmptyCard({ message }: { message: string }) {
-  return (
-    <div className="rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
-      {message}
     </div>
   )
 }

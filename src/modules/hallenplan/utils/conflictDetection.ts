@@ -78,6 +78,10 @@ export function buildConflictSet<T extends SlotCandidate & { id: string }>(slots
       // Skip: don't flag conflicts between two virtual slots of the same team
       // (a game naturally replaces training for that team)
       if (a._virtual && b._virtual && a.team && a.team === b.team) continue
+      // Skip: Spielhalle freed slots represent available time, not real usage
+      if (a._virtual?.isSpielhalleFreed || b._virtual?.isSpielhalleFreed) continue
+      // Skip: freed/claimed slots don't conflict with other slots
+      if (a._virtual?.isFreed || a._virtual?.isClaimed || b._virtual?.isFreed || b._virtual?.isClaimed) continue
       conflicting.add(a.id)
       conflicting.add(b.id)
     }

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams, Link } from 'react-router-dom'
 import pb from '../../pb'
+import { logActivity } from '../../utils/logActivity'
 import { useTeamMembers, type ExpandedMemberTeam } from '../../hooks/useTeamMembers'
 import { useAuth } from '../../hooks/useAuth'
 import { usePendingMembers } from '../../hooks/usePendingMembers'
@@ -80,11 +81,13 @@ export default function TeamDetail() {
   async function handleApprove(member: Member) {
     try {
       await pb.collection('members').update(member.id, { approved: true })
-      await pb.collection('member_teams').create({
+      logActivity('update', 'members', member.id, { approved: true })
+      const mt = await pb.collection('member_teams').create({
         member: member.id,
         team: teamId!,
         season: getCurrentSeason(),
       })
+      logActivity('create', 'member_teams', mt.id, { member: member.id, team: teamId })
       refetchPending()
     } catch {
       // ignore
@@ -94,6 +97,7 @@ export default function TeamDetail() {
   async function handleReject(memberId: string) {
     try {
       await pb.collection('members').delete(memberId)
+      logActivity('delete', 'members', memberId)
       refetchPending()
     } catch {
       // ignore

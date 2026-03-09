@@ -37,7 +37,7 @@ export default function TrainingCard({ training, onOpenAttendance, onOpenRoster,
           </div>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             {formatTime(training.start_time)} – {formatTime(training.end_time)}
-            {hall && <span> · {hall.name}</span>}
+            {(hall || training.hall_name) && <span> · {hall?.name || training.hall_name}</span>}
             {coach && <span> · {coach.name}</span>}
           </p>
           {training.cancelled && (

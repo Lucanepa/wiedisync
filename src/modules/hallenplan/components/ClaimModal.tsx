@@ -5,6 +5,7 @@ import TeamChip from '../../../components/TeamChip'
 import { useAuth } from '../../../hooks/useAuth'
 import { formatDate, toISODate } from '../../../utils/dateHelpers'
 import pb from '../../../pb'
+import { logActivity } from '../../../utils/logActivity'
 import type { HallSlot, Hall, Team, Training, Game } from '../../../types'
 
 interface Props {
@@ -44,13 +45,14 @@ export default function ClaimModal({ slot, halls, teams, rawSlots, weekDays, onC
   // Determine freed reason and source
   const isCancelledTraining = meta?.source === 'training' && meta.isCancelled
   const isAwayGame = meta?.source === 'game' && meta.isAway
-  const freedReason = isManuallyFree ? 'manual_free' : isCancelledTraining ? 'cancelled_training' : 'away_game'
+  const isSpielhalleFreed = !!meta?.isSpielhalleFreed
+  const freedReason = isManuallyFree || isSpielhalleFreed ? 'manual_free' : isCancelledTraining ? 'cancelled_training' : 'away_game'
   const freedSourceId = meta?.sourceId ?? ''
 
   // Determine the date and hall_slot ID
   let dateStr = ''
-  if (isManuallyFree) {
-    // For manually free recurring slots, resolve date from weekDays + day_of_week
+  if (isManuallyFree || isSpielhalleFreed) {
+    // For manually free or Spielhalle freed recurring slots, resolve date from weekDays + day_of_week
     dateStr = weekDays[slot.day_of_week] ? toISODate(weekDays[slot.day_of_week]) : ''
   } else if (isCancelledTraining) {
     dateStr = (meta!.sourceRecord as Training).date.slice(0, 10)
@@ -62,6 +64,10 @@ export default function ClaimModal({ slot, halls, teams, rawSlots, weekDays, onC
   let hallSlotId = ''
   if (isManuallyFree) {
     hallSlotId = slot.id
+  } else if (isSpielhalleFreed) {
+    // Spielhalle freed: the original slot ID is embedded in the virtual ID (freed-spielhalle-{slotId}-{dayIdx})
+    const origId = slot.id.replace(/^freed-spielhalle-/, '').replace(/-\d+$/, '')
+    hallSlotId = origId || slot.id
   } else if (isCancelledTraining) {
     hallSlotId = (meta!.sourceRecord as Training).hall_slot
   } else if (isAwayGame) {
@@ -85,7 +91,7 @@ export default function ClaimModal({ slot, halls, teams, rawSlots, weekDays, onC
     setError('')
 
     try {
-      await pb.collection('slot_claims').create({
+      const rec = await pb.collection('slot_claims').create({
         hall_slot: hallSlotId,
         hall: slot.hall,
         date: dateStr,
@@ -98,6 +104,7 @@ export default function ClaimModal({ slot, halls, teams, rawSlots, weekDays, onC
         notes,
         status: 'active',
       })
+      logActivity('create', 'slot_claims', rec.id, { hall: slot.hall, date: dateStr, claimed_by_team: selectedTeamId })
       onClaimed()
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
@@ -121,7 +128,7 @@ export default function ClaimModal({ slot, halls, teams, rawSlots, weekDays, onC
         {!isManuallyFree && (
           <DetailRow
             label={t('reason')}
-            value={isCancelledTraining ? t('claimReasonCancelled') : t('claimReasonAway')}
+            value={isSpielhalleFreed ? t('claimReasonSpielhalle') : isCancelledTraining ? t('claimReasonCancelled') : t('claimReasonAway')}
           />
         )}
         {originalTeam && (

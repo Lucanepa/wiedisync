@@ -36,10 +36,8 @@ interface SummaryViewProps {
 export default function SummaryView({ slots, closures, weekDays, halls }: SummaryViewProps) {
   const visibleHalls = useMemo(() => {
     const hallsWithSlots = new Set(slots.map((s) => s.hall))
-    const hallsWithClosures = new Set(closures.map((c) => c.hall))
-    const activeHallIds = new Set([...hallsWithSlots, ...hallsWithClosures])
-    return halls.filter((h) => activeHallIds.has(h.id))
-  }, [halls, slots, closures])
+    return halls.filter((h) => hallsWithSlots.has(h.id))
+  }, [halls, slots])
 
   const visibleDays = useMemo(() => {
     const daysWithContent = new Set<number>()

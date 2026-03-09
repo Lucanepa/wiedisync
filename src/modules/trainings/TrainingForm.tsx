@@ -5,11 +5,12 @@ import { useAuth } from '../../hooks/useAuth'
 import { useMutation } from '../../hooks/useMutation'
 import { usePB } from '../../hooks/usePB'
 import pb from '../../pb'
+import { logActivity } from '../../utils/logActivity'
 import type { Training, Team, Hall, HallSlot, SlotClaim } from '../../types'
 import type { RecurringEditScope } from './RecurringEditDialog'
 
 // day_of_week in DB: 0=Mon, 1=Tue, ..., 6=Sun
-const DAY_NAMES = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
+const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
 
 /** Convert JS Date.getDay() (0=Sun) to DB day_of_week (0=Mon) */
 function jsToDbDay(jsDay: number): number {
@@ -30,11 +31,12 @@ interface TrainingFormProps {
   open: boolean
   training?: Training | null
   editScope?: RecurringEditScope
+  defaultTeamId?: string | null
   onSave: () => void
   onCancel: () => void
 }
 
-export default function TrainingForm({ open, training, editScope = 'this', onSave, onCancel }: TrainingFormProps) {
+export default function TrainingForm({ open, training, editScope = 'this', defaultTeamId, onSave, onCancel }: TrainingFormProps) {
   const { t } = useTranslation('trainings')
   const { t: tc } = useTranslation('common')
   const { create, update, isLoading: isMutating } = useMutation<Training>('trainings')
@@ -54,6 +56,7 @@ export default function TrainingForm({ open, training, editScope = 'this', onSav
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
   const [hallId, setHallId] = useState('')
+  const [hallName, setHallName] = useState('')
   const [notes, setNotes] = useState('')
   const [cancelled, setCancelled] = useState(false)
   const [cancelReason, setCancelReason] = useState('')
@@ -104,7 +107,7 @@ export default function TrainingForm({ open, training, editScope = 'this', onSav
       })
       .map((s) => ({
         key: `slot-${s.id}`,
-        label: `${DAY_NAMES[s.day_of_week]} ${s.start_time.slice(0, 5)}–${s.end_time.slice(0, 5)}${(s.expand as Record<string, Hall>)?.hall?.name ? `, ${(s.expand as Record<string, Hall>).hall.name}` : ''}`,
+        label: `${tc(DAY_KEYS[s.day_of_week])} ${s.start_time.slice(0, 5)}–${s.end_time.slice(0, 5)}${(s.expand as Record<string, Hall>)?.hall?.name ? `, ${(s.expand as Record<string, Hall>).hall.name}` : ''}`,
         startTime: s.start_time,
         endTime: s.end_time,
         hallId: s.hall,
@@ -125,7 +128,7 @@ export default function TrainingForm({ open, training, editScope = 'this', onSav
       }))
 
     return [...regularOptions, ...claimOptions]
-  }, [teamId, date, slotMode, teamSlots, teamClaims])
+  }, [teamId, date, slotMode, teamSlots, teamClaims, tc])
 
   // Auto-select slot when options change
   useEffect(() => {
@@ -166,7 +169,8 @@ export default function TrainingForm({ open, training, editScope = 'this', onSav
       setDate(training.date.split(' ')[0])
       setStartTime(training.start_time)
       setEndTime(training.end_time)
-      setHallId(training.hall ?? '')
+      setHallId(training.hall_name ? '__other__' : (training.hall ?? ''))
+      setHallName(training.hall_name ?? '')
       setNotes(training.notes ?? '')
       setCancelled(training.cancelled)
       setCancelReason(training.cancel_reason ?? '')
@@ -182,11 +186,12 @@ export default function TrainingForm({ open, training, editScope = 'this', onSav
         setSelectedSlotKey('')
       }
     } else {
-      setTeamId('')
+      setTeamId(defaultTeamId ?? '')
       setDate('')
       setStartTime('')
       setEndTime('')
       setHallId('')
+      setHallName('')
       setNotes('')
       setCancelled(false)
       setCancelReason('')
@@ -217,7 +222,8 @@ export default function TrainingForm({ open, training, editScope = 'this', onSav
       date,
       start_time: startTime,
       end_time: endTime,
-      hall: hallId || undefined,
+      hall: hallId === '__other__' ? '' : (hallId || undefined),
+      hall_name: hallId === '__other__' ? hallName : '',
       hall_slot: hallSlotId,
       notes,
       cancelled,
@@ -278,6 +284,7 @@ export default function TrainingForm({ open, training, editScope = 'this', onSav
       )
       for (const sibling of sameDaySiblings) {
         await pb.collection('trainings').update(sibling.id, bulkData)
+        logActivity('update', 'trainings', sibling.id, bulkData)
       }
     } else {
       // All recurring
@@ -287,6 +294,7 @@ export default function TrainingForm({ open, training, editScope = 'this', onSav
       })
       for (const sibling of allSiblings) {
         await pb.collection('trainings').update(sibling.id, bulkData)
+        logActivity('update', 'trainings', sibling.id, bulkData)
       }
     }
   }
@@ -428,7 +436,10 @@ export default function TrainingForm({ open, training, editScope = 'this', onSav
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{tc('hall')}</label>
                 <select
                   value={hallId}
-                  onChange={(e) => setHallId(e.target.value)}
+                  onChange={(e) => {
+                    setHallId(e.target.value)
+                    if (e.target.value !== '__other__') setHallName('')
+                  }}
                   disabled={slotActive}
                   className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 ${slotActive ? 'opacity-60' : ''}`}
                 >
@@ -436,7 +447,17 @@ export default function TrainingForm({ open, training, editScope = 'this', onSav
                   {halls.map((h) => (
                     <option key={h.id} value={h.id}>{h.name}</option>
                   ))}
+                  <option value="__other__">{tc('otherHall')}</option>
                 </select>
+                {hallId === '__other__' && (
+                  <input
+                    type="text"
+                    value={hallName}
+                    onChange={(e) => setHallName(e.target.value)}
+                    placeholder={tc('hallNamePlaceholder')}
+                    className="mt-2 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                  />
+                )}
               </div>
             </>
           )

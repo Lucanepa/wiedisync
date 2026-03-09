@@ -1,4 +1,5 @@
 import { useMemo, useState, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { HallSlot, HallClosure, Hall } from '../../../types'
 import { toISODate, minutesToTime, timeToMinutes } from '../../../utils/dateHelpers'
 import { positionSlotsMultiHall, generateTimeLabels, SLOT_HEIGHT, topToMinutes, SLOT_MINUTES, getDayRange, getSmartStartHour, getSmartEndHour } from '../utils/timeGrid'
@@ -69,6 +70,7 @@ export default function DaySlotView({
     return filtered.length > 0 ? filtered : halls.slice(0, 1)
   }, [halls, daySlots, closures, day, selectedHallIds])
 
+  const { t } = useTranslation('hallenplan')
   const multiHall = visibleHalls.length > 1
 
   // Check closures for this day per hall
@@ -84,6 +86,17 @@ export default function DaySlotView({
     }
     return map
   }, [closures, day])
+
+  // Detect if all visible halls are closed and no slots exist → collapse to single column
+  const allHallsClosed = useMemo(() => {
+    if (!multiHall || daySlots.length > 0) return null
+    for (const hall of visibleHalls) {
+      if (!closuresByHall.has(hall.id)) return null
+    }
+    // All halls closed — return the first closure's reason
+    const first = closuresByHall.values().next().value
+    return first?.[0] ?? null
+  }, [multiHall, daySlots, visibleHalls, closuresByHall])
 
   // Group positioned slots by hall
   const slotsByHall = useMemo(() => {
@@ -174,24 +187,30 @@ export default function DaySlotView({
       {multiHall && (
         <div
           className="grid border-b border-gray-200 dark:border-gray-700"
-          style={{ gridTemplateColumns: `40px repeat(${visibleHalls.length}, 1fr)` }}
+          style={{ gridTemplateColumns: allHallsClosed ? '40px 1fr' : `40px repeat(${visibleHalls.length}, 1fr)` }}
         >
           <div className="border-r border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900" />
-          {visibleHalls.map((hall) => (
-            <div
-              key={hall.id}
-              className="border-r border-gray-100 px-1 py-1.5 text-center text-xs font-medium text-gray-600 last:border-r-0 dark:border-gray-800 dark:text-gray-400"
-            >
-              {hall.name}
+          {allHallsClosed ? (
+            <div className="border-r border-gray-100 px-1 py-1.5 text-center text-xs font-medium text-gray-600 last:border-r-0 dark:border-gray-800 dark:text-gray-400">
+              {t('allHalls')}
             </div>
-          ))}
+          ) : (
+            visibleHalls.map((hall) => (
+              <div
+                key={hall.id}
+                className="border-r border-gray-100 px-1 py-1.5 text-center text-xs font-medium text-gray-600 last:border-r-0 dark:border-gray-800 dark:text-gray-400"
+              >
+                {hall.name}
+              </div>
+            ))
+          )}
         </div>
       )}
 
       {/* Time grid body */}
       <div
         className="grid"
-        style={{ gridTemplateColumns: multiHall ? `40px repeat(${visibleHalls.length}, 1fr)` : '40px 1fr' }}
+        style={{ gridTemplateColumns: allHallsClosed ? '40px 1fr' : (multiHall ? `40px repeat(${visibleHalls.length}, 1fr)` : '40px 1fr') }}
       >
         {/* Time labels column */}
         <div className="border-r border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900">
@@ -211,7 +230,25 @@ export default function DaySlotView({
         </div>
 
         {/* Hall columns */}
-        {visibleHalls.map((hall) => {
+        {allHallsClosed ? (
+          <div
+            className="relative"
+            style={{ height: gridHeight }}
+          >
+            {timeLabels.map(({ time, isFullHour }, idx) => (
+              <div
+                key={time}
+                className={`absolute inset-x-0 ${
+                  isFullHour
+                    ? 'border-b border-gray-200 dark:border-gray-700'
+                    : 'border-b border-dashed border-gray-100 dark:border-gray-800'
+                }`}
+                style={{ top: idx * SLOT_HEIGHT, height: SLOT_HEIGHT }}
+              />
+            ))}
+            <ClosureOverlay reason={allHallsClosed.reason} hallName={t('allHalls')} />
+          </div>
+        ) : visibleHalls.map((hall) => {
           const hallSlots = slotsByHall.get(hall.id) ?? []
           const hallClosures = closuresByHall.get(hall.id) ?? []
 

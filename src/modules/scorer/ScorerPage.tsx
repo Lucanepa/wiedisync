@@ -5,6 +5,7 @@ import { usePB } from '../../hooks/usePB'
 import { useRealtime } from '../../hooks/useRealtime'
 import { useAuth } from '../../hooks/useAuth'
 import pb from '../../pb'
+import { logActivity } from '../../utils/logActivity'
 import ScorerRow, { hasAnyAssignment } from './components/ScorerRow'
 import TeamOverview from './components/TeamOverview'
 import LoadingSpinner from '../../components/LoadingSpinner'
@@ -187,20 +188,15 @@ export default function ScorerPage() {
     try {
       await pb.collection('games').update(gameId, fields)
       if (user && oldGame) {
+        const changes: Record<string, { old: string; new: string }> = {}
         for (const [key, newVal] of Object.entries(fields)) {
           const oldVal = (oldGame as Record<string, unknown>)[key]
           if (oldVal !== newVal) {
-            pb.collection('scorer_edit_log')
-              .create({
-                action: 'UPDATE',
-                game: gameId,
-                field_name: key,
-                old_value: String(oldVal ?? ''),
-                new_value: String(newVal ?? ''),
-                changed_by: user.id,
-              })
-              .catch(() => {})
+            changes[key] = { old: String(oldVal ?? ''), new: String(newVal ?? '') }
           }
+        }
+        if (Object.keys(changes).length > 0) {
+          logActivity('update', 'games', gameId, changes)
         }
       }
       refetch()

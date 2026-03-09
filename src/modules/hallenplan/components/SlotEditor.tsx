@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Modal from '../../../components/Modal'
 import pb from '../../../pb'
+import { logActivity } from '../../../utils/logActivity'
 import { useConflictChecker } from '../hooks/useConflictChecker'
 import { minutesToTime, timeToMinutes } from '../../../utils/dateHelpers'
 import type { Hall, HallSlot, Team } from '../../../types'
@@ -48,13 +49,6 @@ export default function SlotEditor({
     ? minutesToTime(timeToMinutes(prefill.time) + 90)
     : '19:30'
 
-  // "Indefinitely" = September 30 of next year
-  const indefiniteDate = (() => {
-    const now = new Date()
-    const year = now.getMonth() >= 9 ? now.getFullYear() + 2 : now.getFullYear() + 1
-    return `${year}-09-30`
-  })()
-
   const todayStr = new Date().toISOString().slice(0, 10)
 
   // Build a synthetic "KWI A+B" option
@@ -70,13 +64,13 @@ export default function SlotEditor({
     end_time: slot?.end_time ?? defaultEnd,
     slot_type: slot?.slot_type ?? ('training' as const),
     recurring: slot?.recurring ?? true,
-    valid_from: slot?.valid_from || todayStr,
-    valid_until: slot?.valid_until || indefiniteDate,
+    valid_from: (slot?.valid_from?.slice(0, 10)) || todayStr,
+    valid_until: (slot?.valid_until?.slice(0, 10)) || '',
     label: slot?.label ?? '',
     notes: slot?.notes ?? '',
   })
 
-  const [indefinitely, setIndefinitely] = useState(!slot?.valid_until || slot.valid_until === indefiniteDate)
+  const [indefinitely, setIndefinitely] = useState(slot ? !!slot.indefinite : true)
 
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -102,20 +96,29 @@ export default function SlotEditor({
     setIsSaving(true)
     setError(null)
     try {
+      const payload = {
+        ...form,
+        indefinite: indefinitely,
+        valid_until: indefinitely ? '' : form.valid_until,
+      }
       if (isCombo && kwiA && kwiB) {
         // Create/update a slot for each hall in the combo
         const hallIds = [kwiA.id, kwiB.id]
         if (slot) {
-          await pb.collection('hall_slots').update(slot.id, { ...form, hall: hallIds[0] })
+          await pb.collection('hall_slots').update(slot.id, { ...payload, hall: hallIds[0] })
+          logActivity('update', 'hall_slots', slot.id, payload)
         } else {
           for (const hid of hallIds) {
-            await pb.collection('hall_slots').create({ ...form, hall: hid })
+            const rec = await pb.collection('hall_slots').create({ ...payload, hall: hid })
+            logActivity('create', 'hall_slots', rec.id, { ...payload, hall: hid })
           }
         }
       } else if (slot) {
-        await pb.collection('hall_slots').update(slot.id, form)
+        await pb.collection('hall_slots').update(slot.id, payload)
+        logActivity('update', 'hall_slots', slot.id, payload)
       } else {
-        await pb.collection('hall_slots').create(form)
+        const rec = await pb.collection('hall_slots').create(payload)
+        logActivity('create', 'hall_slots', rec.id, payload)
       }
       onSaved()
       onClose()
@@ -131,6 +134,7 @@ export default function SlotEditor({
     setIsSaving(true)
     try {
       await pb.collection('hall_slots').delete(slot.id)
+      logActivity('delete', 'hall_slots', slot.id)
       onSaved()
       onClose()
     } catch (err) {

@@ -18,11 +18,14 @@ import ClaimDetailModal from './components/ClaimDetailModal'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import type { HallSlot, HallClosure, SlotClaim, Team, Hall } from '../../types'
 
+export type SportFilter = 'all' | 'vb' | 'bb'
+
 export interface FreedSlotInfo {
   hallName: string
   dayLabel: string
   startTime: string
   endTime: string
+  slot: HallSlot
 }
 
 function getTodayDayIndex(): number {
@@ -43,7 +46,7 @@ export default function HallenplanPage() {
   const [prefill, setPrefill] = useState<{ day: number; time: string; hall: string } | null>(null)
   const [closureManagerOpen, setClosureManagerOpen] = useState(false)
   const [showSummary, setShowSummary] = useState(false)
-  const [vbOnly, setVbOnly] = useState(true)
+  const [sportFilter, setSportFilter] = useState<SportFilter>('vb')
 
   // Claim modals
   const [claimSlot, setClaimSlot] = useState<HallSlot | null>(null)
@@ -59,22 +62,27 @@ export default function HallenplanPage() {
     weekDays,
   )
 
-  // Filter to volleyball-only slots when toggle is on
-  const vbTeamIds = useMemo(
-    () => new Set(teams.filter((t: Team) => t.sport === 'volleyball').map((t: Team) => t.id)),
-    [teams],
-  )
+  // Filter slots by sport
+  const teamsBySport = useMemo(() => {
+    const vb = new Set(teams.filter((t: Team) => t.sport === 'volleyball').map((t: Team) => t.id))
+    const bb = new Set(teams.filter((t: Team) => t.sport === 'basketball').map((t: Team) => t.id))
+    return { vb, bb }
+  }, [teams])
   const filteredSlots = useMemo(
-    () => vbOnly
-      ? slots.filter((s) => {
-          // Filter out basketball team slots
-          if (s.team && !vbTeamIds.has(s.team)) return false
-          // Filter out BB game hall events (GCal basketball games)
-          if (s._virtual?.source === 'hall_event' && s.slot_type === 'game') return false
-          return true
-        })
-      : slots,
-    [slots, vbOnly, vbTeamIds],
+    () => {
+      if (sportFilter === 'all') return slots
+      const allowedTeams = sportFilter === 'vb' ? teamsBySport.vb : teamsBySport.bb
+      return slots.filter((s) => {
+        // Keep slots with no team (free/spielhalle)
+        if (!s.team) return true
+        // Filter by sport
+        if (!allowedTeams.has(s.team)) return false
+        // VB mode: filter out BB game hall events (GCal basketball games)
+        if (sportFilter === 'vb' && s._virtual?.source === 'hall_event' && s.slot_type === 'game') return false
+        return true
+      })
+    },
+    [slots, sportFilter, teamsBySport],
   )
 
   const DAY_KEYS = ['dayMonday', 'dayTuesday', 'dayWednesday', 'dayThursday', 'dayFriday', 'daySaturday', 'daySunday'] as const
@@ -87,6 +95,7 @@ export default function HallenplanPage() {
         dayLabel: t(DAY_KEYS[s.day_of_week] ?? 'dayMonday'),
         startTime: s.start_time,
         endTime: s.end_time,
+        slot: s,
       }))
   }, [filteredSlots, halls, t])
 
@@ -107,8 +116,8 @@ export default function HallenplanPage() {
     // A real slot with no team = manually created "free" slot
     const isManuallyFree = !meta && !slot.team
 
-    // Freed slot (virtual or manual) → open claim modal (for coaches)
-    if ((meta?.isFreed || isManuallyFree) && isCoach) {
+    // Freed slot (virtual or manual) → open claim modal (for coaches/admins)
+    if ((meta?.isFreed || isManuallyFree) && (isCoach || isAdmin)) {
       setClaimSlot(slot)
       return
     }
@@ -196,9 +205,10 @@ export default function HallenplanPage() {
             onOpenClosureManager={() => setClosureManagerOpen(true)}
             showSummary={showSummary}
             onToggleSummary={() => setShowSummary((v) => !v)}
-            vbOnly={vbOnly}
-            onToggleVbOnly={() => setVbOnly((v) => !v)}
+            sportFilter={sportFilter}
+            onSetSportFilter={setSportFilter}
             freedSlots={freedSlotInfos}
+            onFreedSlotClick={handleSlotClick}
           />
 
           {isLoading ? (
@@ -232,17 +242,14 @@ export default function HallenplanPage() {
             onSelectHalls={setSelectedHallIds}
             isAdmin={isAdmin}
             onOpenClosureManager={() => setClosureManagerOpen(true)}
-            showSummary={showSummary}
-            onToggleSummary={() => setShowSummary((v) => !v)}
-            vbOnly={vbOnly}
-            onToggleVbOnly={() => setVbOnly((v) => !v)}
+            sportFilter={sportFilter}
+            onSetSportFilter={setSportFilter}
             freedSlots={freedSlotInfos}
+            onFreedSlotClick={handleSlotClick}
           />
 
           {isLoading ? (
             <LoadingSpinner />
-          ) : showSummary ? (
-            <SummaryView slots={filteredSlots} closures={closures} weekDays={weekDays} halls={halls} />
           ) : (
             <WeekSlotView
               slots={filteredSlots}

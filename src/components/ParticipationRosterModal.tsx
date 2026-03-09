@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import Modal from './Modal'
 import { useTeamMembers } from '../hooks/useTeamMembers'
-import { useTeamParticipations } from '../hooks/useParticipation'
+import { useTeamParticipations, useAllEventParticipations } from '../hooks/useParticipation'
 import pb from '../pb'
 import { getFileUrl } from '../utils/pbFile'
-import type { Participation, Absence, Member } from '../types'
+import type { Participation, Absence, Member, EventSession } from '../types'
 import { formatDate } from '../utils/dateHelpers'
 
 interface ParticipationRosterModalProps {
@@ -18,6 +18,17 @@ interface ParticipationRosterModalProps {
   title: string
   respondBy?: string
   maxPlayers?: number
+  eventSessions?: EventSession[]
+  participationMode?: 'whole' | 'per_day' | 'per_session' | ''
+}
+
+function formatSessionLabel(session: EventSession): string {
+  const dateStr = session.date?.split(' ')[0] ?? ''
+  const d = new Date(dateStr + 'T00:00:00')
+  const datePart = d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })
+  if (session.label) return session.label
+  if (session.start_time) return `${datePart} ${session.start_time}${session.end_time ? '–' + session.end_time : ''}`
+  return datePart
 }
 
 export default function ParticipationRosterModal({
@@ -30,10 +41,16 @@ export default function ParticipationRosterModal({
   title,
   respondBy,
   maxPlayers,
+  eventSessions,
+  participationMode,
 }: ParticipationRosterModalProps) {
   const { t } = useTranslation('participation')
+  const { t: te } = useTranslation('events')
   const { members } = useTeamMembers(teamId ?? undefined)
   const [absences, setAbsences] = useState<Absence[]>([])
+  const [activeSessionTab, setActiveSessionTab] = useState<string | null>(null) // null = overall
+
+  const hasSessionMode = participationMode && participationMode !== 'whole' && eventSessions && eventSessions.length > 0
 
   const memberList: Member[] = members
     .map((mt) => mt.expand?.member)
@@ -42,11 +59,35 @@ export default function ParticipationRosterModal({
 
   const memberIds = memberList.map((m) => m.id)
 
-  const { participations, isLoading } = useTeamParticipations(
+  // For regular (non-session) mode, filter by session tab if active
+  const { participations: regularParticipations, isLoading: regularLoading } = useTeamParticipations(
     activityType,
     activityId ?? '',
     memberIds,
+    hasSessionMode ? (activeSessionTab ?? undefined) : undefined,
   )
+
+  // For session mode overall tab: fetch ALL participations across sessions
+  const { participations: allParticipations, isLoading: allLoading } = useAllEventParticipations(
+    hasSessionMode && activeSessionTab === null ? (activityId ?? '') : '',
+    memberIds,
+  )
+
+  const participations = hasSessionMode && activeSessionTab === null ? allParticipations : regularParticipations
+  const isLoading = hasSessionMode && activeSessionTab === null ? allLoading : regularLoading
+
+  // For the overall tab, compute per-member session counts
+  const memberSessionCounts = useMemo(() => {
+    if (!hasSessionMode || activeSessionTab !== null) return new Map<string, { confirmed: number; total: number }>()
+    const map = new Map<string, { confirmed: number; total: number }>()
+    const totalSessions = eventSessions!.length
+    for (const m of memberList) {
+      const memberParts = allParticipations.filter((p) => p.member === m.id)
+      const confirmed = memberParts.filter((p) => p.status === 'confirmed').length
+      map.set(m.id, { confirmed, total: totalSessions })
+    }
+    return map
+  }, [hasSessionMode, activeSessionTab, eventSessions, memberList, allParticipations])
 
   // Fetch absences overlapping activity date (same pattern as AttendanceSheet)
   const fetchAbsences = useCallback(async () => {
@@ -68,10 +109,15 @@ export default function ParticipationRosterModal({
     if (open && activityDate) fetchAbsences()
   }, [open, fetchAbsences, activityDate])
 
-  const confirmed = participations.filter(p => p.status === 'confirmed').length
-  const tentative = participations.filter(p => p.status === 'tentative').length
+  const confirmedParts = participations.filter(p => p.status === 'confirmed')
+  const confirmed = confirmedParts.length
+  const confirmedGuests = confirmedParts.reduce((sum, p) => sum + (p.guest_count ?? 0), 0)
+  const tentativeParts = participations.filter(p => p.status === 'tentative')
+  const tentative = tentativeParts.length
+  const tentativeGuests = tentativeParts.reduce((sum, p) => sum + (p.guest_count ?? 0), 0)
   const declined = participations.filter(p => p.status === 'declined').length
   const notResponded = memberList.length - participations.length
+  const totalGuests = confirmedGuests + tentativeGuests
 
   const deadlinePassed = respondBy ? new Date(respondBy) < new Date() : false
 
@@ -102,12 +148,50 @@ export default function ParticipationRosterModal({
 
   return (
     <Modal open={open} onClose={onClose} title={title} size="lg">
+      {/* Session tabs */}
+      {hasSessionMode && (
+        <div className="mb-4 flex gap-1 overflow-x-auto rounded-lg border border-gray-200 bg-gray-50 p-1 dark:border-gray-600 dark:bg-gray-800">
+          <button
+            onClick={() => setActiveSessionTab(null)}
+            className={`shrink-0 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+              activeSessionTab === null
+                ? 'bg-brand-500 text-white shadow-sm'
+                : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
+            }`}
+          >
+            {te('overallView')}
+          </button>
+          {eventSessions!.map((session) => (
+            <button
+              key={session.id}
+              onClick={() => setActiveSessionTab(session.id)}
+              className={`shrink-0 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                activeSessionTab === session.id
+                  ? 'bg-brand-500 text-white shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
+              }`}
+            >
+              {formatSessionLabel(session)}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Summary header */}
       <div className="mb-4 flex flex-wrap gap-3 text-sm">
-        <span className="text-green-600 dark:text-green-400">{confirmed} {t('confirmed')}</span>
-        <span className="text-yellow-600 dark:text-yellow-400">{tentative} {t('tentative')}</span>
+        <span className="text-green-600 dark:text-green-400">
+          {confirmed}{confirmedGuests > 0 && `+${confirmedGuests}`} {t('confirmed')}
+        </span>
+        <span className="text-yellow-600 dark:text-yellow-400">
+          {tentative}{tentativeGuests > 0 && `+${tentativeGuests}`} {t('tentative')}
+        </span>
         <span className="text-red-600 dark:text-red-400">{declined} {t('declined')}</span>
         <span className="text-gray-500 dark:text-gray-400">{notResponded} {t('notResponded')}</span>
+        {totalGuests > 0 && (
+          <span className="text-brand-600 dark:text-brand-400">
+            {totalGuests} {t('guests')}
+          </span>
+        )}
       </div>
 
       {/* Deadline banner */}
@@ -123,18 +207,21 @@ export default function ParticipationRosterModal({
       )}
 
       {/* Max players indicator for tournaments */}
-      {maxPlayers != null && maxPlayers > 0 && (
-        <div className={`mb-4 rounded-lg px-3 py-2 text-sm ${
-          confirmed >= maxPlayers
-            ? 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400'
-            : 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400'
-        }`}>
-          {confirmed >= maxPlayers
-            ? t('full')
-            : t('spotsLeft', { count: maxPlayers - confirmed })}
-          {` (${confirmed}/${maxPlayers})`}
-        </div>
-      )}
+      {maxPlayers != null && maxPlayers > 0 && (() => {
+        const totalConfirmed = confirmed + confirmedGuests
+        return (
+          <div className={`mb-4 rounded-lg px-3 py-2 text-sm ${
+            totalConfirmed >= maxPlayers
+              ? 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400'
+              : 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400'
+          }`}>
+            {totalConfirmed >= maxPlayers
+              ? t('full')
+              : t('spotsLeft', { count: maxPlayers - totalConfirmed })}
+            {` (${totalConfirmed}/${maxPlayers})`}
+          </div>
+        )
+      })()}
 
       {/* Member list */}
       {isLoading ? (
@@ -169,14 +256,35 @@ export default function ParticipationRosterModal({
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm text-gray-900 dark:text-gray-100">
                     {member.first_name} {member.last_name}
+                    {participation && (participation.guest_count ?? 0) > 0 && (
+                      <span className="ml-1 text-xs text-brand-600 dark:text-brand-400">
+                        +{participation.guest_count} {t('guests')}
+                      </span>
+                    )}
                   </p>
                   {participation?.note && (
                     <p className="truncate text-xs text-gray-400">{participation.note}</p>
                   )}
                 </div>
 
-                {/* Status badge */}
-                {status ? (
+                {/* Status badge — show session count in overall tab */}
+                {hasSessionMode && activeSessionTab === null ? (
+                  (() => {
+                    const counts = memberSessionCounts.get(member.id)
+                    if (!counts) return <span className="shrink-0 text-xs text-gray-400 dark:text-gray-500">{t('notResponded')}</span>
+                    return (
+                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
+                        counts.confirmed === counts.total
+                          ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                          : counts.confirmed > 0
+                            ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                            : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
+                      }`}>
+                        {te('sessionsConfirmed', { confirmed: counts.confirmed, total: counts.total })}
+                      </span>
+                    )
+                  })()
+                ) : status ? (
                   <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[status] ?? ''}`}>
                     {statusLabels[status] ?? t('notResponded')}
                   </span>

@@ -19,4 +19,7 @@ export default {
   spotsLeft: '{{count}} Plätze frei',
   full: 'Voll',
   summaryOf: 'von {{total}}',
+  guests: 'Gäste',
+  guestsCount_one: '{{count}} Gast',
+  guestsCount_other: '{{count}} Gäste',
 } as const

@@ -10,6 +10,7 @@ export default {
   events: 'Events',
   gameplan: 'Game Planning',
   hallenplan: 'Hall Slots',
+  terminplanung: 'Game Scheduling',
   manageDb: 'Manage Database',
   openInNewTab: 'Open in new tab',
   admin: 'Admin',
@@ -23,4 +24,5 @@ export default {
   privacy: 'Privacy',
   impressum: 'Imprint',
   clubdeskSync: 'ClubDesk Sync',
+  notifications: 'Notifications',
 } as const

@@ -27,6 +27,10 @@ import EventsPage from './modules/events/EventsPage'
 import DatenschutzPage from './modules/legal/DatenschutzPage'
 import ImpressumPage from './modules/legal/ImpressumPage'
 import AuthRoute from './components/AuthRoute'
+import AdminSetupPage from './modules/gameScheduling/pages/AdminSetupPage'
+import AdminDashboardPage from './modules/gameScheduling/pages/AdminDashboardPage'
+import PublicTerminplanungPage from './modules/gameScheduling/pages/PublicTerminplanungPage'
+import OpponentFlowPage from './modules/gameScheduling/pages/OpponentFlowPage'
 
 export default function App() {
   return (
@@ -39,6 +43,8 @@ export default function App() {
           <Route path="login" element={<LoginPage />} />
           <Route path="signup" element={<SignUpPage />} />
           <Route path="pending" element={<PendingPage />} />
+          <Route path="terminplanung" element={<PublicTerminplanungPage />} />
+          <Route path="terminplanung/:token" element={<OpponentFlowPage />} />
 
           <Route element={<Layout />}>
             <Route index element={<HomePage />} />
@@ -57,6 +63,8 @@ export default function App() {
             <Route path="profile" element={<AuthRoute><ProfilePage /></AuthRoute>} />
             <Route path="admin/spielplanung" element={<AdminRoute><SpielplanungPage /></AdminRoute>} />
             <Route path="admin/hallenplan" element={<AdminRoute><HallenplanPage /></AdminRoute>} />
+            <Route path="admin/terminplanung" element={<AdminRoute><AdminSetupPage /></AdminRoute>} />
+            <Route path="admin/terminplanung/dashboard" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
             <Route path="admin/database" element={<SuperAdminRoute><DatabasePage /></SuperAdminRoute>} />
             <Route path="admin/clubdesk-sync" element={<SuperAdminRoute><ClubDeskSyncPage /></SuperAdminRoute>} />
           </Route>

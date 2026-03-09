@@ -63,9 +63,11 @@ const adminItems = [
 
 interface MoreSheetProps {
   onClose: () => void
+  unreadNotifications?: number
+  onOpenNotifications?: () => void
 }
 
-export default function MoreSheet({ onClose }: MoreSheetProps) {
+export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNotifications }: MoreSheetProps) {
   const { user, isAdmin, isApproved, isSuperAdmin, logout } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const { t, i18n } = useTranslation('nav')
@@ -101,6 +103,28 @@ export default function MoreSheet({ onClose }: MoreSheetProps) {
 
         {/* Nav items */}
         <nav className="px-4 pb-2">
+          {/* Notifications row */}
+          {user && isApproved && onOpenNotifications && (
+            <>
+              <button
+                onClick={onOpenNotifications}
+                className="flex min-h-[48px] w-full items-center gap-4 rounded-lg px-4 py-3 text-base font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+              >
+                <div className="relative">
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                  </svg>
+                  {unreadNotifications > 0 && (
+                    <span className="absolute -right-1 -top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-red-500 px-0.5 text-[9px] font-bold text-white">
+                      {unreadNotifications > 99 ? '99+' : unreadNotifications}
+                    </span>
+                  )}
+                </div>
+                {t('notifications')}
+              </button>
+              <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
+            </>
+          )}
           {(!user || !isApproved) ? null : secondaryItems.map((item) => (
             <NavLink
               key={item.to}

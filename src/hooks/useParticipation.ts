@@ -8,12 +8,14 @@ export function useParticipation(
   activityType: Participation['activity_type'],
   activityId: string,
   activityDate?: string,
+  sessionId?: string,
 ) {
   const { user } = useAuth()
 
+  const sessionFilter = sessionId ? ` && session_id="${sessionId}"` : ''
   const { data: participations, refetch } = usePB<Participation>('participations', {
     filter: user && activityId
-      ? `member="${user.id}" && activity_type="${activityType}" && activity_id="${activityId}"`
+      ? `member="${user.id}" && activity_type="${activityType}" && activity_id="${activityId}"${sessionFilter}`
       : '',
     perPage: 1,
     enabled: !!user && !!activityId,
@@ -32,10 +34,10 @@ export function useParticipation(
   const participation = participations[0] ?? null
   const hasAbsence = absences.length > 0
 
-  const setStatus = useCallback(async (status: Participation['status'], note = '') => {
+  const setStatus = useCallback(async (status: Participation['status'], note = '', guestCount = 0) => {
     if (!user) return
     if (participation) {
-      await update(participation.id, { status, note })
+      await update(participation.id, { status, note, guest_count: guestCount })
     } else {
       await create({
         member: user.id,
@@ -43,6 +45,8 @@ export function useParticipation(
         activity_id: activityId,
         status,
         note,
+        guest_count: guestCount,
+        ...(sessionId ? { session_id: sessionId } : {}),
       })
     }
     refetch()
@@ -69,6 +73,28 @@ export function useTeamParticipations(
   activityType: Participation['activity_type'],
   activityId: string,
   memberIds: string[],
+  sessionId?: string,
+) {
+  const memberFilter = memberIds.length > 0
+    ? memberIds.map((id) => `member="${id}"`).join(' || ')
+    : 'member=""'
+
+  const sessionFilter = sessionId ? ` && session_id="${sessionId}"` : ''
+  const { data, refetch, isLoading } = usePB<Participation>('participations', {
+    filter: activityId
+      ? `(${memberFilter}) && activity_type="${activityType}" && activity_id="${activityId}"${sessionFilter}`
+      : '',
+    perPage: 200,
+    enabled: !!activityId && memberIds.length > 0,
+  })
+
+  return { participations: data, refetch, isLoading }
+}
+
+/** Fetch all participations for an event across all sessions (for roster aggregation) */
+export function useAllEventParticipations(
+  activityId: string,
+  memberIds: string[],
 ) {
   const memberFilter = memberIds.length > 0
     ? memberIds.map((id) => `member="${id}"`).join(' || ')
@@ -76,9 +102,9 @@ export function useTeamParticipations(
 
   const { data, refetch, isLoading } = usePB<Participation>('participations', {
     filter: activityId
-      ? `(${memberFilter}) && activity_type="${activityType}" && activity_id="${activityId}"`
+      ? `(${memberFilter}) && activity_type="event" && activity_id="${activityId}"`
       : '',
-    perPage: 200,
+    perPage: 500,
     enabled: !!activityId && memberIds.length > 0,
   })
 

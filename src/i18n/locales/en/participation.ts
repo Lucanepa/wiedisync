@@ -19,4 +19,7 @@ export default {
   spotsLeft: '{{count}} spots left',
   full: 'Full',
   summaryOf: 'of {{total}}',
+  guests: 'Guests',
+  guestsCount_one: '{{count}} guest',
+  guestsCount_other: '{{count}} guests',
 } as const

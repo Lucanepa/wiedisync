@@ -1,0 +1,123 @@
+export default {
+  // Nav & page titles
+  title: 'Game Scheduling',
+  adminTitle: 'Game Scheduling (Admin)',
+  setupTitle: 'Season Setup',
+  dashboardTitle: 'Dashboard',
+
+  // Season config
+  season: 'Season',
+  seasonStatus: 'Status',
+  statusSetup: 'Setup',
+  statusOpen: 'Open',
+  statusClosed: 'Closed',
+  createSeason: 'Create New Season',
+  openForBooking: 'Open for Booking',
+  closeBooking: 'Close Booking',
+
+  // Spielsamstage
+  spielsamstage: 'Game Saturdays',
+  addSpielssamstag: 'Add Game Saturday',
+  removeSpielssamstag: 'Remove',
+  timeSlot: 'Time Slot',
+  hall: 'Hall',
+
+  // Slot generation
+  generateSlots: 'Generate Game Slots',
+  generatingSlots: 'Generating game slots...',
+  slotsGenerated: '{{count}} game slots generated',
+  slotSource: 'Source',
+  sourceHallSlot: 'Hall Plan',
+  sourceSpielsamstag: 'Game Saturday',
+  sourceSpielHalle: 'Game Hall',
+  sourceManual: 'Manual',
+  teamSlotConfig: 'Team Configuration',
+  latestSlot: 'Evening slot (latest)',
+  spielsamstagMode: 'Game Saturday mode',
+
+  // Slot status
+  available: 'Available',
+  booked: 'Booked',
+  blocked: 'Blocked',
+
+  // Admin dashboard
+  allTeams: 'All Teams',
+  homeBookings: 'Home Bookings',
+  awayProposals: 'Away Proposals',
+  noBookingsYet: 'No bookings yet',
+  confirmProposal: 'Confirm Proposal',
+  rejectProposal: 'Reject',
+  proposal: 'Proposal',
+  proposalNumber: 'Proposal {{number}}',
+  confirmed: 'Confirmed',
+  pending: 'Pending',
+  rejected: 'Rejected',
+  opponent: 'Opponent',
+  contactEmail: 'Contact Email',
+  adminNotes: 'Admin Notes',
+  override: 'Override',
+  sendSummary: 'Send Summary',
+
+  // Excel
+  excelImport: 'Excel Import',
+  excelExport: 'Excel Export',
+  importGames: 'Import Games',
+  exportSchedule: 'Export Schedule',
+  uploadFile: 'Upload File',
+  preview: 'Preview',
+  importSuccess: '{{count}} games imported',
+  downloadExcel: 'Download Excel',
+
+  // Public opponent flow
+  publicTitle: 'Game Scheduling KSCW',
+  publicSubtitle: 'Schedule your games with KSCW',
+  selectGender: 'Gender',
+  genderMen: 'Men',
+  genderWomen: 'Women',
+  selectLeague: 'League',
+  matchingTeam: 'Your opponent',
+  clubName: 'Club Name',
+  contactName: 'Contact Person',
+  contactEmailLabel: 'Email',
+  register: 'Continue',
+  registering: 'Registering...',
+
+  // Opponent flow - home game
+  homeGameTitle: 'KSCW Home Game',
+  homeGameDesc: 'Choose a slot for the game in our hall',
+  pickSlot: 'Pick Slot',
+  confirmSlot: 'Confirm Slot',
+  slotBooked: 'Slot booked!',
+  noSlotsAvailable: 'No slots available',
+
+  // Opponent flow - away game
+  awayGameTitle: 'Away Game',
+  awayGameDesc: 'Propose 3 slots for the game in your hall',
+  proposalDate: 'Date & Time',
+  proposalPlace: 'Hall / Address',
+  submitProposals: 'Submit Proposals',
+  submitting: 'Submitting...',
+  proposalsSubmitted: 'Proposals submitted!',
+  awaitingConfirmation: 'Awaiting confirmation',
+
+  // Confirmation
+  confirmationTitle: 'Thank you!',
+  confirmationMessage: 'You will receive a confirmation email.',
+  bookingStatus: 'Booking Status',
+
+  // Errors & validation
+  slotUnavailable: 'This slot is no longer available.',
+  conflictSameDay: 'There is already a game on the same day.',
+  conflictGapRule: 'Too close to another game (min. 1 day gap).',
+  conflictClosure: 'The hall is closed on this date.',
+  conflictDoubleBooking: 'This slot is already taken.',
+  conflictCrossTeam: 'Players from {{teams}} have another game on this date.',
+  invalidEmail: 'Please enter a valid email address.',
+  required: 'This field is required.',
+  turnstileError: 'Please confirm you are not a robot.',
+  seasonNotOpen: 'Game scheduling is currently not open.',
+
+  // Email
+  emailBookingConfirmSubject: 'Game slot confirmed – KSCW',
+  emailNewBookingSubject: 'New booking – {{opponent}}',
+}

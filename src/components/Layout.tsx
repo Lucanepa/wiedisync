@@ -4,9 +4,12 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../hooks/useAuth'
 import { useTheme } from '../hooks/useTheme'
 import { useIsDesktop } from '../hooks/useMediaQuery'
+import { useNotifications } from '../hooks/useNotifications'
 import { getFileUrl } from '../utils/pbFile'
 import BottomTabBar from './BottomTabBar'
 import MoreSheet from './MoreSheet'
+import NotificationBell from './NotificationBell'
+import NotificationPanel from './NotificationPanel'
 import PrivacyNotice from './PrivacyNotice'
 import SwitchToggle from './SwitchToggle'
 import TeamChip from './TeamChip'
@@ -46,6 +49,7 @@ function useNavItems(isLoggedIn: boolean, isApproved: boolean) {
     adminItems: [
       { to: '/admin/spielplanung', label: t('gameplan'), icon: '📋' },
       { to: '/admin/hallenplan', label: t('hallenplan'), icon: '🏟️' },
+      { to: '/admin/terminplanung', label: t('terminplanung'), icon: '📅' },
     ],
     superadminItems: [
       { to: '/admin/database', label: t('manageDb'), icon: '🗄️' },
@@ -57,7 +61,9 @@ function useNavItems(isLoggedIn: boolean, isApproved: boolean) {
 export default function Layout() {
   const [sidebarExpanded, setSidebarExpanded] = useState(false)
   const [moreOpen, setMoreOpen] = useState(false)
+  const [notifPanelOpen, setNotifPanelOpen] = useState(false)
   const { user, isAdmin, isApproved, isProfileComplete, isSuperAdmin, logout } = useAuth()
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications()
   const { theme, toggleTheme } = useTheme()
   const { t, i18n } = useTranslation('nav')
   const isDesktop = useIsDesktop()
@@ -97,6 +103,13 @@ export default function Layout() {
                 className="h-8 w-auto"
               />
             </button>
+            {user && isApproved && (
+              <NotificationBell
+                unreadCount={unreadCount}
+                onClick={() => setNotifPanelOpen(true)}
+                className="mt-4"
+              />
+            )}
           </div>
 
           {/* Expanded sidebar — overlays on top */}
@@ -358,11 +371,29 @@ export default function Layout() {
         <BottomTabBar
           onMoreTap={() => setMoreOpen(true)}
           moreActive={moreOpen}
+          unreadNotifications={unreadCount}
         />
       )}
 
       {/* More sheet */}
-      {moreOpen && <MoreSheet onClose={() => setMoreOpen(false)} />}
+      {moreOpen && (
+        <MoreSheet
+          onClose={() => setMoreOpen(false)}
+          unreadNotifications={unreadCount}
+          onOpenNotifications={() => { setMoreOpen(false); setNotifPanelOpen(true) }}
+        />
+      )}
+
+      {/* Notification panel */}
+      {notifPanelOpen && (
+        <NotificationPanel
+          notifications={notifications}
+          unreadCount={unreadCount}
+          onMarkAsRead={markAsRead}
+          onMarkAllAsRead={markAllAsRead}
+          onClose={() => setNotifPanelOpen(false)}
+        />
+      )}
 
       <PrivacyNotice />
 

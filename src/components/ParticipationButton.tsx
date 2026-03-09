@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParticipation } from '../hooks/useParticipation'
-import type { Participation } from '../types'
+import type { Participation, EventSession } from '../types'
+import SessionParticipationSheet from './SessionParticipationSheet'
 
 interface ParticipationButtonProps {
   activityType: Participation['activity_type']
@@ -11,6 +12,10 @@ interface ParticipationButtonProps {
   respondBy?: string
   maxPlayers?: number
   confirmedCount?: number
+  sessionId?: string
+  /** For multi-session events: pass mode + sessions to show session sheet */
+  participationMode?: 'whole' | 'per_day' | 'per_session' | ''
+  eventSessions?: EventSession[]
 }
 
 const statusStyles = {
@@ -28,14 +33,27 @@ export default function ParticipationButton({
   respondBy,
   maxPlayers,
   confirmedCount,
+  sessionId,
+  participationMode,
+  eventSessions,
 }: ParticipationButtonProps) {
   const { t } = useTranslation('participation')
-  const { effectiveStatus, hasAbsence, setStatus } = useParticipation(
+  const { participation, effectiveStatus, hasAbsence, setStatus } = useParticipation(
     activityType,
     activityId,
     activityDate,
+    sessionId,
   )
   const [menuOpen, setMenuOpen] = useState(false)
+  const [sessionSheetOpen, setSessionSheetOpen] = useState(false)
+  const [guestCount, setGuestCount] = useState(0)
+
+  // Sync guest count from existing participation
+  useEffect(() => {
+    setGuestCount(participation?.guest_count ?? 0)
+  }, [participation?.guest_count])
+
+  const hasSessionMode = participationMode && participationMode !== 'whole' && eventSessions && eventSessions.length > 0
 
   const statusLabels: Record<string, string> = {
     confirmed: t('confirmed'),
@@ -60,7 +78,36 @@ export default function ParticipationButton({
 
   async function handleSelect(status: Participation['status']) {
     setMenuOpen(false)
-    await setStatus(status)
+    await setStatus(status, '', status === 'declined' ? 0 : guestCount)
+  }
+
+  async function handleGuestChange(delta: number) {
+    const newCount = Math.max(0, guestCount + delta)
+    setGuestCount(newCount)
+    if (effectiveStatus && effectiveStatus !== 'declined') {
+      await setStatus(effectiveStatus as Participation['status'], participation?.note ?? '', newCount)
+    }
+  }
+
+  // Multi-session mode: render session-aware button
+  if (hasSessionMode) {
+    return (
+      <>
+        <button
+          onClick={() => setSessionSheetOpen(true)}
+          className="inline-flex min-h-[44px] items-center gap-1 rounded-full bg-brand-100 px-2.5 py-1 text-xs font-medium text-brand-700 hover:bg-brand-200 dark:bg-brand-900/30 dark:text-brand-400 dark:hover:bg-brand-900/50 sm:min-h-0"
+        >
+          {t('events:sessionParticipation')}
+        </button>
+        {sessionSheetOpen && (
+          <SessionParticipationSheet
+            activityId={activityId}
+            sessions={eventSessions!}
+            onClose={() => setSessionSheetOpen(false)}
+          />
+        )}
+      </>
+    )
   }
 
   return (
@@ -78,6 +125,9 @@ export default function ParticipationButton({
         {currentStyle ? (
           <>
             {currentStyle.icon} {!compact && statusLabels[effectiveStatus!]}
+            {guestCount > 0 && (
+              <span className="ml-0.5 text-[10px] opacity-75">+{guestCount}</span>
+            )}
           </>
         ) : (
           <>{t('rsvp')}</>
@@ -93,7 +143,7 @@ export default function ParticipationButton({
       {menuOpen && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-          <div className="absolute right-0 top-full z-20 mt-1 w-32 rounded-lg border bg-white py-1 shadow-lg dark:border-gray-600 dark:bg-gray-800">
+          <div className="absolute right-0 top-full z-20 mt-1 w-40 rounded-lg border bg-white py-1 shadow-lg dark:border-gray-600 dark:bg-gray-800">
             {(['confirmed', 'tentative', 'declined'] as const).map((status) => {
               const style = statusStyles[status]
               const isDisabledConfirmed = status === 'confirmed' && isFull && effectiveStatus !== 'confirmed'
@@ -115,6 +165,31 @@ export default function ParticipationButton({
                 </button>
               )
             })}
+
+            {/* Guest counter — shown when confirmed or tentative */}
+            {effectiveStatus && effectiveStatus !== 'declined' && effectiveStatus !== 'absent' && (
+              <div className="border-t px-3 py-2 dark:border-gray-700">
+                <p className="mb-1 text-xs text-gray-500 dark:text-gray-400">{t('guests')}</p>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleGuestChange(-1)}
+                    disabled={guestCount <= 0}
+                    className="flex h-7 w-7 items-center justify-center rounded-md bg-gray-100 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-30 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                  >
+                    −
+                  </button>
+                  <span className="min-w-[1.5rem] text-center text-sm font-medium text-gray-900 dark:text-gray-100">
+                    {guestCount}
+                  </span>
+                  <button
+                    onClick={() => handleGuestChange(1)}
+                    className="flex h-7 w-7 items-center justify-center rounded-md bg-gray-100 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </>
       )}

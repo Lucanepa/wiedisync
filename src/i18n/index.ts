@@ -17,6 +17,8 @@ import home from './locales/en/home'
 import legal from './locales/en/legal'
 import admin from './locales/en/admin'
 import participation from './locales/en/participation'
+import notifications from './locales/en/notifications'
+import gameScheduling from './locales/en/gameScheduling'
 
 import deCommon from './locales/de/common'
 import deNav from './locales/de/nav'
@@ -34,6 +36,8 @@ import deHome from './locales/de/home'
 import deLegal from './locales/de/legal'
 import deAdmin from './locales/de/admin'
 import deParticipation from './locales/de/participation'
+import deNotifications from './locales/de/notifications'
+import deGameScheduling from './locales/de/gameScheduling'
 
 const savedLng = typeof window !== 'undefined'
   ? localStorage.getItem('kscw-lang') ?? 'de'
@@ -59,6 +63,8 @@ i18n.use(initReactI18next).init({
     'legal',
     'admin',
     'participation',
+    'notifications',
+    'gameScheduling',
   ],
   defaultNS: 'common',
   resources: {
@@ -79,6 +85,8 @@ i18n.use(initReactI18next).init({
       legal,
       admin,
       participation,
+      notifications,
+      gameScheduling,
     },
     de: {
       common: deCommon,
@@ -97,6 +105,8 @@ i18n.use(initReactI18next).init({
       legal: deLegal,
       admin: deAdmin,
       participation: deParticipation,
+      notifications: deNotifications,
+      gameScheduling: deGameScheduling,
     },
   },
   interpolation: {

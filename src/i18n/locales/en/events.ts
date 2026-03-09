@@ -29,4 +29,18 @@ export default {
   maxPlayers: 'Max players',
   participation: 'Participation',
   viewRoster: 'View roster',
+
+  // Session / participation mode
+  participationMode: 'Participation mode',
+  modeWhole: 'Whole event',
+  modePerDay: 'Per day',
+  modePerSession: 'Per time slot',
+  addTimeBlock: 'Add time slot',
+  sessions: 'Time slots',
+  sessionLabel: 'Label',
+  sessionDate: 'Date',
+  removeSession: 'Remove time slot',
+  sessionsConfirmed: '{{confirmed}}/{{total}} confirmed',
+  overallView: 'Overall',
+  sessionParticipation: 'Participation per time slot',
 } as const

@@ -62,9 +62,10 @@ const primaryTabs: TabItem[] = [
 interface BottomTabBarProps {
   onMoreTap: () => void
   moreActive: boolean
+  unreadNotifications?: number
 }
 
-export default function BottomTabBar({ onMoreTap, moreActive }: BottomTabBarProps) {
+export default function BottomTabBar({ onMoreTap, moreActive, unreadNotifications = 0 }: BottomTabBarProps) {
   const { t } = useTranslation('nav')
   const { user, isApproved } = useAuth()
   const visibleTabs = primaryTabs.filter((tab) => !tab.requiresAuth || (user && isApproved))
@@ -92,7 +93,7 @@ export default function BottomTabBar({ onMoreTap, moreActive }: BottomTabBarProp
         {/* More tab */}
         <button
           onClick={onMoreTap}
-          className={`flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors ${
+          className={`relative flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors ${
             moreActive
               ? 'text-gold-500 dark:text-gold-400'
               : 'text-gray-500 dark:text-gray-400'
@@ -101,6 +102,9 @@ export default function BottomTabBar({ onMoreTap, moreActive }: BottomTabBarProp
           <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
           </svg>
+          {unreadNotifications > 0 && (
+            <span className="absolute right-2.5 top-1 h-2 w-2 rounded-full bg-red-500" />
+          )}
           {t('more')}
         </button>
       </div>

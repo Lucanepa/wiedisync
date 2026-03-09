@@ -1,0 +1,106 @@
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useGameSchedulingSeason } from '../hooks/useGameSchedulingSeason'
+import { useAdminBookings } from '../hooks/useAdminBookings'
+import { useTeams } from '../../../hooks/useTeams'
+import LoadingSpinner from '../../../components/LoadingSpinner'
+import SeasonConfig from '../components/SeasonConfig'
+import SpielsamstageEditor from '../components/SpielsamstageEditor'
+import SlotGenerationPanel from '../components/SlotGenerationPanel'
+import TeamSlotConfigPanel from '../components/TeamSlotConfigPanel'
+import ExcelImportPanel from '../components/ExcelImportPanel'
+import type { SpielsamstagConfig, TeamSlotConfig } from '../../../types'
+
+export default function AdminSetupPage() {
+  const { t } = useTranslation('gameScheduling')
+  const { season, allSeasons, isLoading, createSeason, updateSeason, setSeason } = useGameSchedulingSeason()
+  const { generateSlots } = useAdminBookings(season?.id)
+  const { data: teams } = useTeams()
+  const [generating, setGenerating] = useState(false)
+  const [genResult, setGenResult] = useState<{ total_created: number } | null>(null)
+
+  if (isLoading) return <LoadingSpinner />
+
+  const handleCreateSeason = async (name: string) => {
+    await createSeason(name)
+  }
+
+  const handleUpdateSpielsamstage = async (spielsamstage: SpielsamstagConfig[]) => {
+    if (!season) return
+    await updateSeason(season.id, { spielsamstage } as Record<string, unknown>)
+  }
+
+  const handleUpdateTeamConfig = async (config: TeamSlotConfig) => {
+    if (!season) return
+    await updateSeason(season.id, { team_slot_config: config } as Record<string, unknown>)
+  }
+
+  const handleStatusChange = async (status: 'setup' | 'open' | 'closed') => {
+    if (!season) return
+    await updateSeason(season.id, { status } as Record<string, unknown>)
+  }
+
+  const handleGenerate = async () => {
+    if (!season) return
+    setGenerating(true)
+    setGenResult(null)
+    try {
+      const result = await generateSlots(season.id)
+      setGenResult(result)
+    } catch (err) {
+      console.error('Slot generation failed:', err)
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  const volleyballTeams = (teams || []).filter(t => t.sport === 'volleyball' && t.active)
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-gray-100">
+          {t('setupTitle')}
+        </h1>
+      </div>
+
+      {/* Season Config */}
+      <SeasonConfig
+        season={season}
+        allSeasons={allSeasons}
+        onCreateSeason={handleCreateSeason}
+        onSelectSeason={setSeason}
+        onStatusChange={handleStatusChange}
+      />
+
+      {season && (
+        <>
+          {/* Spielsamstage Editor */}
+          <SpielsamstageEditor
+            spielsamstage={season.spielsamstage || []}
+            onUpdate={handleUpdateSpielsamstage}
+          />
+
+          {/* Team Slot Configuration */}
+          <TeamSlotConfigPanel
+            teams={volleyballTeams}
+            config={season.team_slot_config || {}}
+            onUpdate={handleUpdateTeamConfig}
+          />
+
+          {/* Excel Import */}
+          <ExcelImportPanel />
+
+          {/* Slot Generation */}
+          <SlotGenerationPanel
+            seasonStatus={season.status}
+            generating={generating}
+            genResult={genResult}
+            onGenerate={handleGenerate}
+          />
+        </>
+      )}
+    </div>
+  )
+}

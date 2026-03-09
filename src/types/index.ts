@@ -16,6 +16,7 @@ export interface Team extends RecordModel {
   social_url: string
   sponsors: string[]
   sponsors_logos: string[]
+  bp_team_id: string
 }
 
 export interface Member extends RecordModel {
@@ -137,7 +138,7 @@ export interface Game extends RecordModel {
   scorer_taefeler_duty_team: string
   duty_confirmed: boolean
   referees_json: Array<{ name: string; id?: number }>
-  source: 'swiss_volley' | 'manual'
+  source: 'swiss_volley' | 'manual' | 'basketplan'
   respond_by: string
 }
 
@@ -208,6 +209,16 @@ export interface Event extends RecordModel {
   created_by: string
   respond_by: string
   max_players: number
+  participation_mode: 'whole' | 'per_day' | 'per_session' | ''
+}
+
+export interface EventSession extends RecordModel {
+  event: string
+  date: string
+  start_time: string
+  end_time: string
+  label: string
+  sort_order: number
 }
 
 export interface HallEvent extends RecordModel {
@@ -228,6 +239,8 @@ export interface Participation extends RecordModel {
   activity_id: string
   status: 'confirmed' | 'declined' | 'tentative'
   note: string
+  session_id: string
+  guest_count: number
 }
 
 export interface UserLog extends RecordModel {
@@ -236,4 +249,78 @@ export interface UserLog extends RecordModel {
   collection_name: string
   record_id: string
   data: Record<string, unknown> | null
+}
+
+// ── Game Scheduling (Terminplanung) ──────────────────────────────────
+
+export interface GameSchedulingSeason extends RecordModel {
+  season: string
+  status: 'setup' | 'open' | 'closed'
+  spielsamstage: SpielsamstagConfig[]
+  team_slot_config: TeamSlotConfig | null
+  notes: string
+}
+
+export interface SpielsamstagConfig {
+  date: string
+  slots: { time: string; hall_id: string }[]
+}
+
+export interface TeamSlotConfig {
+  [teamId: string]: {
+    source: 'hall_slot' | 'spielsamstag' | 'manual'
+    hall_slot_id?: string
+  }
+}
+
+export interface GameSchedulingSlot extends RecordModel {
+  season: string
+  kscw_team: string
+  date: string
+  start_time: string
+  end_time: string
+  hall: string
+  source: 'hall_slot' | 'spielsamstag' | 'spielhalle' | 'manual'
+  status: 'available' | 'booked' | 'blocked'
+  booking: string
+  game: string
+}
+
+export interface GameSchedulingOpponent extends RecordModel {
+  season: string
+  club_name: string
+  contact_name: string
+  contact_email: string
+  kscw_team: string
+  token: string
+  home_game: string
+  away_game: string
+}
+
+export interface GameSchedulingBooking extends RecordModel {
+  season: string
+  opponent: string
+  type: 'home_slot_pick' | 'away_proposal'
+  game: string
+  slot: string
+  proposed_datetime_1: string
+  proposed_place_1: string
+  proposed_datetime_2: string
+  proposed_place_2: string
+  proposed_datetime_3: string
+  proposed_place_3: string
+  confirmed_proposal: number
+  status: 'pending' | 'confirmed' | 'rejected'
+  admin_notes: string
+}
+
+export interface Notification extends RecordModel {
+  member: string
+  type: 'activity_change' | 'upcoming_activity' | 'deadline_reminder' | 'result_available'
+  title: string
+  body: string
+  activity_type: 'game' | 'training' | 'event' | ''
+  activity_id: string
+  team: string
+  read: boolean
 }

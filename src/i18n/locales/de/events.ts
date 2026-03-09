@@ -29,4 +29,18 @@ export default {
   maxPlayers: 'Max. Spieler',
   participation: 'Teilnahme',
   viewRoster: 'Aufgebot anzeigen',
+
+  // Session / participation mode
+  participationMode: 'Teilnahme-Modus',
+  modeWhole: 'Ganzer Event',
+  modePerDay: 'Pro Tag',
+  modePerSession: 'Pro Zeitblock',
+  addTimeBlock: 'Zeitblock hinzufügen',
+  sessions: 'Zeitblöcke',
+  sessionLabel: 'Bezeichnung',
+  sessionDate: 'Datum',
+  removeSession: 'Zeitblock entfernen',
+  sessionsConfirmed: '{{confirmed}}/{{total}} zugesagt',
+  overallView: 'Gesamt',
+  sessionParticipation: 'Teilnahme pro Zeitblock',
 } as const

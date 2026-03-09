@@ -4,10 +4,12 @@ import { useTranslation } from 'react-i18next'
 import { useTheme } from '../../hooks/useTheme'
 import { useAuth } from '../../hooks/useAuth'
 import { usePB } from '../../hooks/usePB'
+import { useNotifications } from '../../hooks/useNotifications'
 import { formatDate, formatDateCompact, formatTime, formatWeekday } from '../../utils/dateHelpers'
 import TeamChip from '../../components/TeamChip'
+import NotificationPanel from '../../components/NotificationPanel'
 import GameDetailModal from '../games/components/GameDetailModal'
-import type { Game, Event, Team, Training, Hall, Member, MemberTeam } from '../../types'
+import type { Game, Event, Team, Training, Hall, Member, MemberTeam, Notification } from '../../types'
 import type { RecordModel } from 'pocketbase'
 
 type ExpandedGame = Game & {
@@ -32,11 +34,15 @@ const eventTypeColors: Record<string, { bg: string; text: string }> = {
 
 export default function HomePage() {
   const { t } = useTranslation('home')
+  const { t: tn } = useTranslation('notifications')
   const { theme } = useTheme()
-  const { user } = useAuth()
+  const { user, isApproved } = useAuth()
   const [selectedGame, setSelectedGame] = useState<ExpandedGame | null>(null)
   const [showAllGames, setShowAllGames] = useState(false)
   const [showAllResults, setShowAllResults] = useState(false)
+  const [notifPanelOpen, setNotifPanelOpen] = useState(false)
+  const { notifications: allNotifs, unreadCount, markAsRead, markAllAsRead } = useNotifications()
+  const latestNews = allNotifs.slice(0, 3)
 
   const today = useMemo(() => new Date().toISOString().split('T')[0], [])
 
@@ -135,6 +141,23 @@ export default function HomePage() {
         </p>
       </div>
 
+      {/* News section — latest notifications */}
+      {user && isApproved && latestNews.length > 0 && (
+        <div className="mb-6">
+          <SectionHeader
+            title={tn('news')}
+            linkTo="#"
+            linkLabel={tn('showAll')}
+            onLinkClick={(e) => { e.preventDefault(); setNotifPanelOpen(true) }}
+          />
+          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+            {latestNews.map((n) => (
+              <NewsRow key={n.id} notification={n} />
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Content grid: events left, games right */}
       <div className="grid gap-6 lg:grid-cols-5">
         {/* Events — left column (wider) */}
@@ -212,6 +235,16 @@ export default function HomePage() {
       </div>
 
       <GameDetailModal game={selectedGame} onClose={() => setSelectedGame(null)} />
+
+      {notifPanelOpen && (
+        <NotificationPanel
+          notifications={allNotifs}
+          unreadCount={unreadCount}
+          onMarkAsRead={markAsRead}
+          onMarkAllAsRead={markAllAsRead}
+          onClose={() => setNotifPanelOpen(false)}
+        />
+      )}
     </div>
   )
 }
@@ -223,11 +256,13 @@ function SectionHeader({
   linkTo,
   linkLabel,
   filterToggle,
+  onLinkClick,
 }: {
   title: string
   linkTo: string
   linkLabel: string
   filterToggle?: { active: boolean; label: string; onToggle: () => void }
+  onLinkClick?: (e: React.MouseEvent) => void
 }) {
   return (
     <div className="mb-3 flex items-center justify-between">
@@ -248,10 +283,49 @@ function SectionHeader({
       </div>
       <Link
         to={linkTo}
+        onClick={onLinkClick}
         className="text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
       >
         {linkLabel} →
       </Link>
+    </div>
+  )
+}
+
+const newsTypeIcons: Record<string, string> = {
+  activity_change: '📋',
+  upcoming_activity: '⏰',
+  deadline_reminder: '⚠️',
+  result_available: '🏆',
+}
+
+function NewsRow({ notification }: { notification: Notification }) {
+  const { t } = useTranslation('notifications')
+  const message = (() => {
+    try {
+      const data = notification.body ? JSON.parse(notification.body) : {}
+      return t(notification.title, data)
+    } catch {
+      return notification.title
+    }
+  })()
+
+  const timeAgo = (() => {
+    const diff = Date.now() - new Date(notification.created).getTime()
+    const minutes = Math.floor(diff / 60000)
+    if (minutes < 1) return t('justNow')
+    if (minutes < 60) return t('minutesAgo', { count: minutes })
+    const hours = Math.floor(minutes / 60)
+    if (hours < 24) return t('hoursAgo', { count: hours })
+    const days = Math.floor(hours / 24)
+    return t('daysAgo', { count: days })
+  })()
+
+  return (
+    <div className="flex items-center gap-3 border-b border-gray-100 px-4 py-2.5 last:border-b-0 dark:border-gray-700">
+      <span className="shrink-0 text-base">{newsTypeIcons[notification.type] ?? '🔔'}</span>
+      <p className="min-w-0 flex-1 truncate text-sm text-gray-900 dark:text-gray-100">{message}</p>
+      <span className="shrink-0 text-xs text-gray-400 dark:text-gray-500">{timeAgo}</span>
     </div>
   )
 }

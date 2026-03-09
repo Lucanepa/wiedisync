@@ -13,15 +13,20 @@ export function useParticipationSummary(
     enabled: !!activityId,
   })
 
-  const confirmed = data.filter(p => p.status === 'confirmed').length
-  const tentative = data.filter(p => p.status === 'tentative').length
+  const confirmedParts = data.filter(p => p.status === 'confirmed')
+  const tentativeParts = data.filter(p => p.status === 'tentative')
+  const confirmed = confirmedParts.length
+  const tentative = tentativeParts.length
   const declined = data.filter(p => p.status === 'declined').length
+  const guests = data.reduce((sum, p) => sum + (p.guest_count ?? 0), 0)
 
   return {
     confirmed,
     tentative,
     declined,
+    guests,
     total: data.length,
+    totalWithGuests: data.length + guests,
     participations: data,
   }
 }

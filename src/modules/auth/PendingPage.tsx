@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
 import { useTheme } from '../../hooks/useTheme'
 import ProfileEditModal from './ProfileEditModal'
+import Button from '../../components/ui/Button'
 import pb from '../../pb'
 import type { Team } from '../../types'
 
@@ -96,20 +97,13 @@ export default function PendingPage() {
 
           {/* Actions */}
           <div className="space-y-3">
-            <button
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="w-full rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50"
-            >
+            <Button onClick={handleRefresh} loading={refreshing} className="w-full">
               {refreshing ? t('checking') : t('refreshStatus')}
-            </button>
+            </Button>
 
-            <button
-              onClick={logout}
-              className="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-            >
+            <Button variant="secondary" onClick={logout} className="w-full">
               {t('logout')}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

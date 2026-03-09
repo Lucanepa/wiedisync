@@ -4,6 +4,7 @@ import type { RecordModel } from 'pocketbase'
 import pb from '../../../pb'
 import { logActivity } from '../../../utils/logActivity'
 import Modal from '../../../components/Modal'
+import Button from '../../../components/ui/Button'
 import ConfirmDialog from '../../../components/ConfirmDialog'
 
 interface SchemaField {
@@ -329,28 +330,23 @@ export default function RecordEditModal({
           <div className="flex items-center justify-between pt-2">
             <div>
               {isEdit && (
-                <button
-                  onClick={() => setShowDeleteConfirm(true)}
-                  className="min-h-[44px] rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 sm:min-h-0"
-                >
+                <Button variant="danger" onClick={() => setShowDeleteConfirm(true)}>
                   {t('deleteRecord')}
-                </button>
+                </Button>
               )}
             </div>
             <div className="flex gap-3">
-              <button
-                onClick={onClose}
-                className="min-h-[44px] rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 sm:min-h-0 dark:text-gray-300 dark:hover:bg-gray-700"
-              >
+              <Button variant="ghost" onClick={onClose}>
                 {t('cancel')}
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="primary"
                 onClick={handleSave}
                 disabled={loading}
-                className="min-h-[44px] rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50 sm:min-h-0"
+                loading={loading}
               >
                 {loading ? '...' : t('save')}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

@@ -3,6 +3,7 @@ import { Link, Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
 import { usePB } from '../../hooks/usePB'
+import Button from '../../components/ui/Button'
 import StatusBadge from '../../components/StatusBadge'
 import TeamChip from '../../components/TeamChip'
 import ParticipationButton from '../../components/ParticipationButton'
@@ -72,40 +73,68 @@ export default function ProfilePage() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex flex-wrap items-start gap-6">
-        {user.photo ? (
-          <img
-            src={getFileUrl('members', user.id, user.photo)}
-            alt={user.name}
-            className="h-24 w-24 rounded-full object-cover"
-          />
-        ) : (
-          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gray-200 text-2xl font-bold text-gray-500 dark:bg-gray-700 dark:text-gray-400">
-            {initials}
+      {/* Header card */}
+      <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
+        {/* Top: avatar + name + edit */}
+        <div className="flex items-center gap-4">
+          {user.photo ? (
+            <img
+              src={getFileUrl('members', user.id, user.photo)}
+              alt={user.name}
+              className="h-16 w-16 rounded-full object-cover ring-2 ring-brand-500/20 dark:ring-brand-400/30"
+            />
+          ) : (
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-50 text-lg font-bold text-brand-600 ring-2 ring-brand-500/20 dark:bg-brand-900/30 dark:text-brand-400 dark:ring-brand-400/30">
+              {initials}
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-xl font-bold text-gray-900 dark:text-gray-100">{user.name}</h1>
+            {(user.number > 0 || user.position) && (
+              <div className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+                {user.number > 0 && (
+                  <p className="font-semibold text-gray-700 dark:text-gray-300">#{user.number}</p>
+                )}
+                {user.position && (
+                  <p className="capitalize">{user.position}</p>
+                )}
+              </div>
+            )}
           </div>
-        )}
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{user.name}</h1>
-          <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
-            {user.number > 0 && <span>#{user.number}</span>}
-            <span className="capitalize">{user.position}</span>
-            {user.role.map((r) => <StatusBadge key={r} status={r} />)}
-          </div>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {memberTeams.map((mt) => (
-              <Link key={mt.id} to={`/teams/${mt.expand?.team?.name ?? mt.team}`}>
-                <TeamChip team={mt.expand?.team?.name ?? '?'} />
-              </Link>
-            ))}
-          </div>
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => setEditOpen(true)}
-            className="mt-3 rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600"
+            className="shrink-0"
           >
             {t('editProfile')}
-          </button>
+          </Button>
         </div>
+
+        {/* Teams & Roles */}
+        {(memberTeams.length > 0 || user.role.length > 0) && (
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-gray-100 pt-3 dark:border-gray-700">
+            {memberTeams.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                <span className="shrink-0 text-xs leading-none text-gray-400 dark:text-gray-500">{t('teams')}</span>
+                {memberTeams.map((mt) => (
+                  <Link key={mt.id} to={`/teams/${mt.expand?.team?.name ?? mt.team}`} className="flex">
+                    <TeamChip team={mt.expand?.team?.name ?? '?'} size="sm" />
+                  </Link>
+                ))}
+              </div>
+            )}
+            {user.role.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                <span className="shrink-0 text-xs leading-none text-gray-400 dark:text-gray-500">{t('roles')}</span>
+                {[...user.role].sort((a, b) => {
+                  const order = ['user', 'coach', 'vorstand', 'admin', 'superuser', 'superadmin']
+                  return (order.indexOf(a) === -1 ? 99 : order.indexOf(a)) - (order.indexOf(b) === -1 ? 99 : order.indexOf(b))
+                }).map((r) => <StatusBadge key={r} status={r} />)}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Contact Info */}

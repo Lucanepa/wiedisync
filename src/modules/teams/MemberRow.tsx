@@ -52,7 +52,7 @@ export function getMemberRole(memberId: string, team?: Team | null): string | nu
   return null
 }
 
-export default function MemberRow({ memberTeam, teamId, teamSlug, team, canEdit, isAdmin, onTeamUpdate }: MemberRowProps) {
+export default function MemberRow({ memberTeam, teamId: _teamId, teamSlug, team, canEdit, isAdmin, onTeamUpdate }: MemberRowProps) {
   const { t } = useTranslation('teams')
   const member = memberTeam.expand?.member
   const [editingField, setEditingField] = useState<string | null>(null)
@@ -144,7 +144,7 @@ export default function MemberRow({ memberTeam, teamId, teamSlug, team, canEdit,
             onChange={(e) => setEditValue(e.target.value)}
             onKeyDown={(e) => handleKeyDown(e, 'number')}
             onBlur={() => saveField('number', editValue ? parseInt(editValue, 10) : 0)}
-            className="w-14 rounded border px-1.5 py-0.5 text-sm dark:bg-gray-700 dark:border-gray-600"
+            className="w-14 rounded border px-1.5 py-0.5 text-sm dark:bg-gray-700 dark:border-gray-600 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             autoFocus
           />
         ) : (
@@ -193,38 +193,47 @@ export default function MemberRow({ memberTeam, teamId, teamSlug, team, canEdit,
 
       {/* Role — editable by admin only */}
       <td className="px-4 py-3">
-        {isAdmin && editingField === 'role' ? (
-          <div className="flex flex-wrap gap-1">
-            {LEADERSHIP_ROLES.map((r) => {
-              const active = (team?.[r] ?? []).includes(member.id)
-              return (
-                <button
-                  key={r}
-                  onClick={() => toggleRole(r)}
-                  className={`rounded-full px-2 py-0.5 text-xs font-medium transition-colors ${
-                    active
-                      ? 'bg-brand-500 text-white'
-                      : 'bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-400'
-                  }`}
-                >
-                  {t(roleI18nKeys[r])}
-                </button>
-              )
-            })}
+        {isAdmin ? (
+          <div className="relative">
             <button
-              onClick={() => setEditingField(null)}
-              className="ml-1 text-xs text-gray-400 hover:text-gray-600"
+              onClick={() => setEditingField(editingField === 'role' ? null : 'role')}
+              className="flex items-center gap-1 text-xs"
             >
-              ✓
+              {role ? (
+                <StatusBadge status={role} colorMap={roleColors} />
+              ) : (
+                <span className="text-gray-400 hover:text-brand-600">+</span>
+              )}
             </button>
+            {editingField === 'role' && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setEditingField(null)} />
+                <div className="absolute left-0 z-20 mt-1 w-44 rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-600 dark:bg-gray-800">
+                  {LEADERSHIP_ROLES.map((r) => {
+                    const active = (team?.[r] ?? []).includes(member.id)
+                    return (
+                      <button
+                        key={r}
+                        onClick={() => toggleRole(r)}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
+                      >
+                        <span className={`flex h-4 w-4 items-center justify-center rounded border ${active ? 'border-brand-500 bg-brand-500 text-white' : 'border-gray-300 dark:border-gray-500'}`}>
+                          {active && (
+                            <svg className="h-3 w-3" viewBox="0 0 12 12" fill="currentColor">
+                              <path d="M10 3L4.5 8.5 2 6" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          )}
+                        </span>
+                        {t(roleI18nKeys[r])}
+                      </button>
+                    )
+                  })}
+                </div>
+              </>
+            )}
           </div>
         ) : (
-          <span
-            className={isAdmin ? 'cursor-pointer' : ''}
-            onClick={isAdmin ? () => setEditingField('role') : undefined}
-          >
-            {role ? <StatusBadge status={role} colorMap={roleColors} /> : isAdmin ? <span className="text-xs text-gray-400 hover:text-brand-600">+</span> : null}
-          </span>
+          role ? <StatusBadge status={role} colorMap={roleColors} /> : null
         )}
       </td>
     </tr>

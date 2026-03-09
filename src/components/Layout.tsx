@@ -16,22 +16,27 @@ import TeamChip from './TeamChip'
 import { usePB } from '../hooks/usePB'
 import ProfileEditModal from '../modules/auth/ProfileEditModal'
 import type { MemberTeam, Team } from '../types'
+import {
+  Home, Calendar, Trophy, UserX, PenSquare, PartyPopper, Users,
+  ClipboardList, Building2, CalendarClock, Database, RefreshCcw,
+} from 'lucide-react'
 
 type ExpandedMemberTeam = MemberTeam & { expand?: { team?: Team } }
 
 function useNavItems(isLoggedIn: boolean, isApproved: boolean) {
   const { t } = useTranslation('nav')
+  const iconClass = 'h-5 w-5'
   const publicItems = [
-    { to: '/', label: t('home'), icon: '🏠' },
-    { to: '/calendar', label: t('calendar'), icon: '📅' },
-    { to: '/games', label: t('games'), icon: '🏆' },
+    { to: '/', label: t('home'), icon: <Home className={iconClass} /> },
+    { to: '/calendar', label: t('calendar'), icon: <Calendar className={iconClass} /> },
+    { to: '/games', label: t('games'), icon: <Trophy className={iconClass} /> },
   ]
   const authItems = [
     {
       to: '/trainings',
       label: t('trainings'),
       icon: (
-        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <svg className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
           <path d="M16.05 10.966a5 2.5 0 0 1-8.1 0" />
           <path d="m16.923 14.049 4.48 2.04a1 1 0 0 1 .001 1.831l-8.574 3.9a2 2 0 0 1-1.66 0l-8.574-3.91a1 1 0 0 1 0-1.83l4.484-2.04" />
           <path d="M16.949 14.14a5 2.5 0 1 1-9.9 0L10.063 3.5a2 2 0 0 1 3.874 0z" />
@@ -39,21 +44,21 @@ function useNavItems(isLoggedIn: boolean, isApproved: boolean) {
         </svg>
       ),
     },
-    { to: '/absences', label: t('absences'), icon: '👤' },
-    { to: '/scorer', label: t('scorer'), icon: '📝' },
-    { to: '/events', label: t('events'), icon: '🎉' },
-    { to: '/teams', label: t('teams'), icon: '👥' },
+    { to: '/absences', label: t('absences'), icon: <UserX className={iconClass} /> },
+    { to: '/scorer', label: t('scorer'), icon: <PenSquare className={iconClass} /> },
+    { to: '/events', label: t('events'), icon: <PartyPopper className={iconClass} /> },
+    { to: '/teams', label: t('teams'), icon: <Users className={iconClass} /> },
   ]
   return {
     navItems: isLoggedIn && isApproved ? [...publicItems, ...authItems] : publicItems,
     adminItems: [
-      { to: '/admin/spielplanung', label: t('gameplan'), icon: '📋' },
-      { to: '/admin/hallenplan', label: t('hallenplan'), icon: '🏟️' },
-      { to: '/admin/terminplanung', label: t('terminplanung'), icon: '📅' },
+      { to: '/admin/spielplanung', label: t('gameplan'), icon: <ClipboardList className={iconClass} /> },
+      { to: '/admin/hallenplan', label: t('hallenplan'), icon: <Building2 className={iconClass} /> },
+      { to: '/admin/terminplanung', label: t('terminplanung'), icon: <CalendarClock className={iconClass} /> },
     ],
     superadminItems: [
-      { to: '/admin/database', label: t('manageDb'), icon: '🗄️' },
-      { to: '/admin/clubdesk-sync', label: t('clubdeskSync'), icon: '🔄' },
+      { to: '/admin/database', label: t('manageDb'), icon: <Database className={iconClass} /> },
+      { to: '/admin/clubdesk-sync', label: t('clubdeskSync'), icon: <RefreshCcw className={iconClass} /> },
     ],
   }
 }
@@ -147,13 +152,13 @@ export default function Layout() {
                               ? 'bg-brand-50 text-brand-700'
                               : 'text-gray-700 hover:bg-gray-100'
                             : isActive
-                              ? 'border-l-2 border-gold-400 bg-brand-800 text-gold-400'
+                              ? 'border-l-3 border-gold-400 bg-brand-800 text-gold-400'
                               : 'text-gray-300 hover:bg-brand-800 hover:text-white'
                         }`
                       }
                       end={item.to === '/'}
                     >
-                      <span>{item.icon}</span>
+                      {item.icon}
                       {item.label}
                     </NavLink>
                   </li>
@@ -183,12 +188,12 @@ export default function Layout() {
                                   ? 'bg-brand-50 text-brand-700'
                                   : 'text-gray-700 hover:bg-gray-100'
                                 : isActive
-                                  ? 'border-l-2 border-gold-400 bg-brand-800 text-gold-400'
+                                  ? 'border-l-3 border-gold-400 bg-brand-800 text-gold-400'
                                   : 'text-gray-300 hover:bg-brand-800 hover:text-white'
                             }`
                           }
                         >
-                          <span>{item.icon}</span>
+                          {item.icon}
                           {item.label}
                         </NavLink>
                       </li>
@@ -220,12 +225,12 @@ export default function Layout() {
                                   ? 'bg-brand-50 text-brand-700'
                                   : 'text-gray-700 hover:bg-gray-100'
                                 : isActive
-                                  ? 'border-l-2 border-gold-400 bg-brand-800 text-gold-400'
+                                  ? 'border-l-3 border-gold-400 bg-brand-800 text-gold-400'
                                   : 'text-gray-300 hover:bg-brand-800 hover:text-white'
                             }`
                           }
                         >
-                          <span>{item.icon}</span>
+                          {item.icon}
                           {item.label}
                         </NavLink>
                       </li>

@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import Modal from '../../../components/Modal'
+import Button from '../../../components/ui/Button'
+import { Input, Select } from '../../../components/ui/Input'
 import pb from '../../../pb'
 import { logActivity } from '../../../utils/logActivity'
 import type { Hall, HallClosure } from '../../../types'
@@ -210,18 +212,22 @@ export default function ClosureManager({ halls, closures, onClose, onChanged }: 
                         </div>
                       </div>
                       <div className="flex shrink-0 gap-1">
-                        <button
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => startEdit(group)}
-                          className="min-h-[44px] rounded px-2 py-1 text-xs text-brand-600 hover:bg-brand-50 hover:text-brand-700 dark:hover:bg-gray-800 sm:min-h-0"
+                          className="text-brand-600 hover:bg-brand-50 hover:text-brand-700 dark:hover:bg-gray-800"
                         >
                           {t('common:edit')}
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => handleDeleteGroup(group)}
-                          className="min-h-[44px] rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50 hover:text-red-800 dark:hover:bg-gray-800 sm:min-h-0"
+                          className="text-red-600 hover:bg-red-50 hover:text-red-800 dark:hover:bg-gray-800"
                         >
                           {t('common:delete')}
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -240,70 +246,51 @@ export default function ClosureManager({ halls, closures, onClose, onChanged }: 
           </h3>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('hall')}</label>
-              <select
-                value={form.hall}
-                onChange={(e) => update('hall', e.target.value)}
-                disabled={!!editingGroup}
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 disabled:opacity-50"
-              >
-                <option value="">{t('selectPlaceholder')}</option>
-                {halls.map((h) => (
-                  <option key={h.id} value={h.id}>{h.name}</option>
-                ))}
-              </select>
-              {editingGroup && editingGroup.records.length > 1 && (
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  {t('editAppliesToAllHalls', { count: editingGroup.records.length })}
-                </p>
-              )}
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('source')}</label>
-              <select
-                value={form.source}
-                onChange={(e) => update('source', e.target.value as typeof form.source)}
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-              >
-                {SOURCE_OPTIONS.map((s) => (
-                  <option key={s.value} value={s.value}>{s.label}</option>
-                ))}
-              </select>
-            </div>
+            <Select
+              label={t('hall')}
+              value={form.hall}
+              onChange={(e) => update('hall', e.target.value)}
+              disabled={!!editingGroup}
+              helperText={editingGroup && editingGroup.records.length > 1 ? t('editAppliesToAllHalls', { count: editingGroup.records.length }) : undefined}
+            >
+              <option value="">{t('selectPlaceholder')}</option>
+              {halls.map((h) => (
+                <option key={h.id} value={h.id}>{h.name}</option>
+              ))}
+            </Select>
+            <Select
+              label={t('source')}
+              value={form.source}
+              onChange={(e) => update('source', e.target.value as typeof form.source)}
+            >
+              {SOURCE_OPTIONS.map((s) => (
+                <option key={s.value} value={s.value}>{s.label}</option>
+              ))}
+            </Select>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('common:from')}</label>
-              <input
-                type="date"
-                value={form.start_date}
-                onChange={(e) => update('start_date', e.target.value)}
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('common:to')}</label>
-              <input
-                type="date"
-                value={form.end_date}
-                onChange={(e) => update('end_date', e.target.value)}
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('common:reason')}</label>
-            <input
-              type="text"
-              value={form.reason}
-              onChange={(e) => update('reason', e.target.value)}
-              placeholder="e.g. Holidays, maintenance, renovation"
-              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            <Input
+              type="date"
+              label={t('common:from')}
+              value={form.start_date}
+              onChange={(e) => update('start_date', e.target.value)}
+            />
+            <Input
+              type="date"
+              label={t('common:to')}
+              value={form.end_date}
+              onChange={(e) => update('end_date', e.target.value)}
             />
           </div>
+
+          <Input
+            type="text"
+            label={t('common:reason')}
+            value={form.reason}
+            onChange={(e) => update('reason', e.target.value)}
+            placeholder="e.g. Holidays, maintenance, renovation"
+          />
 
           {error && (
             <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
@@ -313,20 +300,18 @@ export default function ClosureManager({ halls, closures, onClose, onChanged }: 
 
           <div className="flex gap-3">
             {editingGroup && (
-              <button
-                onClick={cancelEdit}
-                className="rounded-md border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
-              >
+              <Button variant="ghost" onClick={cancelEdit}>
                 {t('common:cancel')}
-              </button>
+              </Button>
             )}
-            <button
+            <Button
+              variant="primary"
               onClick={handleSave}
               disabled={isSaving}
-              className="rounded-md bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50"
+              loading={isSaving}
             >
               {isSaving ? t('common:saving') : editingGroup ? t('common:update') : t('common:add')}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

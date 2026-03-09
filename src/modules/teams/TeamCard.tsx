@@ -12,7 +12,7 @@ export default function TeamCard({ team, memberCount }: TeamCardProps) {
   return (
     <Link
       to={`/teams/${team.name}`}
-      className="relative block overflow-hidden rounded-lg border bg-white dark:bg-gray-800 p-5 shadow-sm transition-shadow hover:shadow-md"
+      className="relative block overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-card transition-shadow hover:shadow-card-hover"
       style={{ borderLeftWidth: '4px', borderLeftColor: team.color || '#6b7280' }}
     >
       {team.team_picture && (

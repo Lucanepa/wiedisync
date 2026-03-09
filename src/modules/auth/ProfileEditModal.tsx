@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import Modal from '../../components/Modal'
+import Button from '../../components/ui/Button'
+import { Input, Select } from '../../components/ui/Input'
 import { useAuth } from '../../hooks/useAuth'
 import { getFileUrl } from '../../utils/pbFile'
 import { pbLangToI18n } from '../../utils/languageMap'
@@ -143,8 +145,6 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
   const currentPhoto = photoPreview
     ?? (user.photo ? getFileUrl('members', user.id, user.photo) : null)
 
-  const inputClass = 'mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100'
-
   // In onboarding mode, data is pre-populated if the member was imported from Clubdesk
   const hasExistingData = onboarding && !!user.first_name
 
@@ -172,20 +172,15 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
         )}
 
         {/* Language selector */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            {t('language')} {onboarding && <span className="text-red-500">*</span>}
-          </label>
-          <select
-            value={language}
-            onChange={(e) => handleLanguageChange(e.target.value as 'german' | 'english')}
-            required
-            className={inputClass}
-          >
-            <option value="german">{t('languageGerman')}</option>
-            <option value="english">{t('languageEnglish')}</option>
-          </select>
-        </div>
+        <Select
+          label={`${t('language')}${onboarding ? ' *' : ''}`}
+          value={language}
+          onChange={(e) => handleLanguageChange(e.target.value as 'german' | 'english')}
+          required
+        >
+          <option value="german">{t('languageGerman')}</option>
+          <option value="english">{t('languageEnglish')}</option>
+        </Select>
 
         {/* Photo */}
         <div className="flex items-center gap-4">
@@ -201,13 +196,14 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
             </div>
           )}
           <div>
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               onClick={() => fileInputRef.current?.click()}
-              className="rounded-lg border px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
             >
               {t('changePhoto')}
-            </button>
+            </Button>
             <input
               ref={fileInputRef}
               type="file"
@@ -219,82 +215,58 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              {t('firstName')} {onboarding && <span className="text-red-500">*</span>}
-            </label>
-            <input
-              type="text"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              required
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              {t('lastName')} {onboarding && <span className="text-red-500">*</span>}
-            </label>
-            <input
-              type="text"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              required
-              className={inputClass}
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            {t('email')} {onboarding && <span className="text-red-500">*</span>}
-          </label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+          <Input
+            label={`${t('firstName')}${onboarding ? ' *' : ''}`}
+            type="text"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
             required
-            className={inputClass}
+          />
+          <Input
+            label={`${t('lastName')}${onboarding ? ' *' : ''}`}
+            type="text"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            required
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('phone')}</label>
-          <input
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className={inputClass}
-          />
-        </div>
+        <Input
+          label={`${t('email')}${onboarding ? ' *' : ''}`}
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+
+        <Input
+          label={t('phone')}
+          type="tel"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+        />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('number')}</label>
-            <input
-              type="number"
-              min={0}
-              max={99}
-              value={number || ''}
-              onChange={(e) => setNumber(parseInt(e.target.value) || 0)}
-              placeholder="#"
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('birthdate')}</label>
-            <input
-              type="date"
-              value={birthdate}
-              onChange={(e) => setBirthdate(e.target.value)}
-              className={inputClass}
-            />
-          </div>
+          <Input
+            label={t('number')}
+            type="number"
+            min={0}
+            max={99}
+            value={number || ''}
+            onChange={(e) => setNumber(parseInt(e.target.value) || 0)}
+            placeholder="#"
+          />
+          <Input
+            label={t('birthdate')}
+            type="date"
+            value={birthdate}
+            onChange={(e) => setBirthdate(e.target.value)}
+          />
         </div>
 
         {/* Change Password — hidden in onboarding */}
         {!onboarding && (
-          <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-600 dark:bg-gray-800/50">
+          <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-600 dark:bg-gray-800">
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
               {t('changePassword')}
             </span>
@@ -303,21 +275,22 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
                 {t('resetLinkSent')}
               </span>
             ) : (
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={handlePasswordReset}
-                disabled={resetLoading}
-                className="rounded-lg border border-brand-500 px-3 py-1.5 text-sm font-medium text-brand-600 hover:bg-brand-50 disabled:opacity-50 dark:border-brand-400 dark:text-brand-400 dark:hover:bg-brand-900/20"
+                loading={resetLoading}
               >
                 {resetLoading ? tc('saving') : t('sendResetLink')}
-              </button>
+              </Button>
             )}
           </div>
         )}
 
         {/* Read-only fields — hidden in onboarding */}
         {!onboarding && (
-          <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-3 dark:border-gray-600 dark:bg-gray-800/50">
+          <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-3 dark:border-gray-600 dark:bg-gray-800">
             <p className="mb-2 text-xs font-medium text-gray-500 dark:text-gray-400">
               {t('managedByCoach')}
             </p>
@@ -334,21 +307,21 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
 
         <div className="flex justify-end gap-3 pt-2">
           {!onboarding && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
               onClick={onClose}
-              className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
             >
               {tc('cancel')}
-            </button>
+            </Button>
           )}
-          <button
+          <Button
             type="submit"
-            disabled={loading}
-            className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50"
+            variant="primary"
+            loading={loading}
           >
             {loading ? tc('saving') : onboarding ? t('completeProfile') : tc('save')}
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>

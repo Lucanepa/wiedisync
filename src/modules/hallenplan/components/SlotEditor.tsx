@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Modal from '../../../components/Modal'
+import Button from '../../../components/ui/Button'
+import { Input, Textarea, Select } from '../../../components/ui/Input'
 import pb from '../../../pb'
 import { logActivity } from '../../../utils/logActivity'
 import { useConflictChecker } from '../hooks/useConflictChecker'
@@ -163,86 +165,68 @@ export default function SlotEditor({
       <div className="space-y-4">
         {/* Row 1: Hall + Team */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('hall')}</label>
-            <select
-              value={form.hall}
-              onChange={(e) => update('hall', e.target.value)}
-              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-            >
-              <option value="">{t('selectPlaceholder')}</option>
-              {halls.flatMap((h) => {
-                const items = [<option key={h.id} value={h.id}>{h.name}</option>]
-                if (COMBO_VALUE && h.name === 'KWI A') {
-                  items.push(<option key="kwi-ab" value={COMBO_VALUE}>KWI A+B</option>)
-                }
-                return items
-              })}
-            </select>
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('team')}</label>
-            <select
-              value={form.team}
-              onChange={(e) => update('team', e.target.value)}
-              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-            >
-              <option value="">{t('selectPlaceholder')}</option>
-              {visibleTeams.map((tm) => (
-                <option key={tm.id} value={tm.id}>{tm.name}</option>
-              ))}
-            </select>
-          </div>
+          <Select
+            label={t('hall')}
+            value={form.hall}
+            onChange={(e) => update('hall', e.target.value)}
+          >
+            <option value="">{t('selectPlaceholder')}</option>
+            {halls.flatMap((h) => {
+              const items = [<option key={h.id} value={h.id}>{h.name}</option>]
+              if (COMBO_VALUE && h.name === 'KWI A') {
+                items.push(<option key="kwi-ab" value={COMBO_VALUE}>KWI A+B</option>)
+              }
+              return items
+            })}
+          </Select>
+          <Select
+            label={t('team')}
+            value={form.team}
+            onChange={(e) => update('team', e.target.value)}
+          >
+            <option value="">{t('selectPlaceholder')}</option>
+            {visibleTeams.map((tm) => (
+              <option key={tm.id} value={tm.id}>{tm.name}</option>
+            ))}
+          </Select>
         </div>
 
         {/* Row 2: Day + Type */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('dayOfWeek')}</label>
-            <select
-              value={form.day_of_week}
-              onChange={(e) => update('day_of_week', Number(e.target.value))}
-              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-            >
-              {DAY_OPTIONS.map((d) => (
-                <option key={d.value} value={d.value}>{d.label}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('slotType')}</label>
-            <select
-              value={form.slot_type}
-              onChange={(e) => update('slot_type', e.target.value as typeof form.slot_type)}
-              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-            >
-              {TYPE_OPTIONS.map((tp) => (
-                <option key={tp.value} value={tp.value}>{tp.label}</option>
-              ))}
-            </select>
-          </div>
+          <Select
+            label={t('dayOfWeek')}
+            value={form.day_of_week}
+            onChange={(e) => update('day_of_week', Number(e.target.value))}
+          >
+            {DAY_OPTIONS.map((d) => (
+              <option key={d.value} value={d.value}>{d.label}</option>
+            ))}
+          </Select>
+          <Select
+            label={t('slotType')}
+            value={form.slot_type}
+            onChange={(e) => update('slot_type', e.target.value as typeof form.slot_type)}
+          >
+            {TYPE_OPTIONS.map((tp) => (
+              <option key={tp.value} value={tp.value}>{tp.label}</option>
+            ))}
+          </Select>
         </div>
 
         {/* Row 3: Times */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('startTime')}</label>
-            <input
-              type="time"
-              value={form.start_time}
-              onChange={(e) => update('start_time', e.target.value)}
-              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('endTime')}</label>
-            <input
-              type="time"
-              value={form.end_time}
-              onChange={(e) => update('end_time', e.target.value)}
-              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-            />
-          </div>
+          <Input
+            type="time"
+            label={t('startTime')}
+            value={form.start_time}
+            onChange={(e) => update('start_time', e.target.value)}
+          />
+          <Input
+            type="time"
+            label={t('endTime')}
+            value={form.end_time}
+            onChange={(e) => update('end_time', e.target.value)}
+          />
         </div>
 
         {/* Row 4: Recurring */}
@@ -260,32 +244,32 @@ export default function SlotEditor({
         {form.recurring && (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('validFrom')}</label>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('validFrom')}</label>
               <div className="flex gap-2">
-                <input
+                <Input
                   type="date"
                   value={form.valid_from}
                   onChange={(e) => update('valid_from', e.target.value)}
-                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                 />
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => update('valid_from', todayStr)}
-                  className="shrink-0 rounded-md border border-gray-300 px-2 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                  className="shrink-0"
                 >
                   {t('today')}
-                </button>
+                </Button>
               </div>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('validTo')}</label>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('validTo')}</label>
               <div className="flex gap-2">
                 {!indefinitely && (
-                  <input
+                  <Input
                     type="date"
                     value={form.valid_until}
                     onChange={(e) => update('valid_until', e.target.value)}
-                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                   />
                 )}
                 <label className={`flex shrink-0 items-center gap-1.5 rounded-md border px-2 py-2 text-xs font-medium ${indefinitely ? 'border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 dark:border-brand-600' : 'border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700'}`}>
@@ -310,27 +294,21 @@ export default function SlotEditor({
         )}
 
         {/* Row 6: Label */}
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('label')}</label>
-          <input
-            type="text"
-            value={form.label}
-            onChange={(e) => update('label', e.target.value)}
-            placeholder="e.g. Training H3, Home game vs. TVA"
-            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-          />
-        </div>
+        <Input
+          type="text"
+          label={t('label')}
+          value={form.label}
+          onChange={(e) => update('label', e.target.value)}
+          placeholder="e.g. Training H3, Home game vs. TVA"
+        />
 
         {/* Row 7: Notes */}
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('notes')}</label>
-          <textarea
-            value={form.notes}
-            onChange={(e) => update('notes', e.target.value)}
-            rows={3}
-            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-          />
-        </div>
+        <Textarea
+          label={t('notes')}
+          value={form.notes}
+          onChange={(e) => update('notes', e.target.value)}
+          rows={3}
+        />
 
         {/* Conflict warning */}
         {conflicts.length > 0 && (
@@ -358,29 +336,28 @@ export default function SlotEditor({
         <div className="flex items-center justify-between border-t pt-4">
           <div>
             {slot && canDelete && (
-              <button
+              <Button
+                variant="danger"
                 onClick={handleDelete}
                 disabled={isSaving}
-                className="rounded-md px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                className="bg-transparent text-red-600 hover:bg-red-50 dark:bg-transparent dark:text-red-400 dark:hover:bg-red-900/20"
               >
                 {t('common:delete')}
-              </button>
+              </Button>
             )}
           </div>
           <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              className="rounded-md border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
-            >
+            <Button variant="ghost" onClick={onClose}>
               {t('common:cancel')}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="primary"
               onClick={handleSave}
               disabled={isSaving}
-              className="rounded-md bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50"
+              loading={isSaving}
             >
               {isSaving ? t('common:saving') : t('common:save')}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

@@ -212,7 +212,7 @@ export default function CalendarPage() {
 
       {/* Filters — above the calendar views */}
       {needsData && (
-        <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-gray-800">
+        <div className="rounded-xl bg-white p-3 shadow-card dark:bg-gray-800">
           <CalendarFilters
             filters={filters}
             onChange={setFilters}

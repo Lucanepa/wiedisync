@@ -25,7 +25,7 @@ export default function TrainingCard({ training, onOpenRoster, onEdit, onDelete 
   const coach = training.expand?.coach
 
   return (
-    <div className={`overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 shadow-sm ${training.cancelled ? 'opacity-60' : ''}`}>
+    <div className={`overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 shadow-card ${training.cancelled ? 'opacity-60' : ''}`}>
       {/* Top row: team chip + date */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">

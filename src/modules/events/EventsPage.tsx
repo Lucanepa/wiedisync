@@ -10,6 +10,7 @@ import LoadingSpinner from '../../components/LoadingSpinner'
 import ParticipationRosterModal from '../../components/ParticipationRosterModal'
 import EventCard from './EventCard'
 import EventForm from './EventForm'
+import Button from '../../components/ui/Button'
 import type { Event, Team } from '../../types'
 
 type EventExpanded = Event & { expand?: { teams?: Team[] } }
@@ -57,15 +58,14 @@ export default function EventsPage() {
           <h1 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-gray-100">{t('title')}</h1>
         </div>
         {isCoach && (
-          <button
+          <Button
             onClick={() => {
               setEditingEvent(null)
               setFormOpen(true)
             }}
-            className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600"
           >
             {t('newEvent')}
-          </button>
+          </Button>
         )}
       </div>
 

@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
+import Button from '../../../components/ui/Button'
+import { Input } from '../../../components/ui/Input'
 import pb from '../../../pb'
 import type { Team } from '../../../types'
 
@@ -151,45 +153,30 @@ export default function PublicTerminplanungPage() {
           )}
 
           {/* Club info */}
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              {t('clubName')}
-            </label>
-            <input
-              type="text"
-              value={clubName}
-              onChange={e => setClubName(e.target.value)}
-              placeholder="z.B. VBC Zürich Affoltern"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-              required
-            />
-          </div>
+          <Input
+            type="text"
+            label={t('clubName')}
+            value={clubName}
+            onChange={e => setClubName(e.target.value)}
+            placeholder="z.B. VBC Zürich Affoltern"
+            required
+          />
 
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              {t('contactName')}
-            </label>
-            <input
-              type="text"
-              value={contactName}
-              onChange={e => setContactName(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-              required
-            />
-          </div>
+          <Input
+            type="text"
+            label={t('contactName')}
+            value={contactName}
+            onChange={e => setContactName(e.target.value)}
+            required
+          />
 
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              {t('contactEmailLabel')}
-            </label>
-            <input
-              type="email"
-              value={contactEmail}
-              onChange={e => setContactEmail(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-              required
-            />
-          </div>
+          <Input
+            type="email"
+            label={t('contactEmailLabel')}
+            value={contactEmail}
+            onChange={e => setContactEmail(e.target.value)}
+            required
+          />
 
           <Turnstile
             ref={turnstileRef}
@@ -203,13 +190,15 @@ export default function PublicTerminplanungPage() {
             <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
           )}
 
-          <button
+          <Button
             type="submit"
+            variant="primary"
             disabled={loading || seasonOpen === false || !selectedTeamId || !turnstileToken}
-            className="w-full rounded-md bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            loading={loading}
+            className="w-full"
           >
             {loading ? t('registering') : t('register')}
-          </button>
+          </Button>
         </form>
       </div>
     </div>

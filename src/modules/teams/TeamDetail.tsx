@@ -3,9 +3,10 @@ import { useTranslation } from 'react-i18next'
 import { useParams, Link } from 'react-router-dom'
 import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
-import { useTeamMembers, type ExpandedMemberTeam } from '../../hooks/useTeamMembers'
+import { useTeamMembers } from '../../hooks/useTeamMembers'
 import { useAuth } from '../../hooks/useAuth'
 import { usePendingMembers } from '../../hooks/usePendingMembers'
+import Button from '../../components/ui/Button'
 import TeamChip from '../../components/TeamChip'
 import EmptyState from '../../components/EmptyState'
 import { sanitizeUrl } from '../../utils/sanitizeUrl'
@@ -169,9 +170,9 @@ export default function TeamDetail() {
         {isCoachOf(teamId ?? '') && (
           <Link
             to={`/teams/${teamSlug}/roster/edit`}
-            className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600"
+            className="inline-flex items-center justify-center rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-600"
           >
-            {t('editRoster')}
+            {t('editTeam')}
           </Link>
         )}
       </div>
@@ -192,18 +193,21 @@ export default function TeamDetail() {
                   <p className="truncate text-sm text-gray-500 dark:text-gray-400">{member.email}</p>
                 </div>
                 <div className="flex shrink-0 gap-2">
-                  <button
+                  <Button
+                    variant="primary"
+                    size="sm"
                     onClick={() => handleApprove(member)}
-                    className="rounded-lg bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700"
+                    className="bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
                   >
                     {t('approve')}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="danger"
+                    size="sm"
                     onClick={() => handleReject(member.id)}
-                    className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700"
                   >
                     {t('reject')}
-                  </button>
+                  </Button>
                 </div>
               </div>
             ))}

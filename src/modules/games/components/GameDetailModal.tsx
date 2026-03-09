@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { RecordModel } from 'pocketbase'
 import type { Game, Team, Hall, Member } from '../../../types'
+import Button from '../../../components/ui/Button'
 import TeamChip from '../../../components/TeamChip'
 import ParticipationSummary from '../../../components/ParticipationSummary'
 import ParticipationRosterModal from '../../../components/ParticipationRosterModal'
@@ -345,15 +346,16 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
                     max={game.date?.split(' ')[0]}
                     className="rounded-lg border px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                   />
-                  <button
+                  <Button
+                    variant="primary"
+                    size="sm"
                     onClick={async () => {
                       await updateGame(game.id, { respond_by: deadlineValue || null })
                       setEditingDeadline(false)
                     }}
-                    className="rounded bg-brand-500 px-2 py-1 text-xs text-white hover:bg-brand-600"
                   >
                     OK
-                  </button>
+                  </Button>
                   <button
                     onClick={() => setEditingDeadline(false)}
                     className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400"
@@ -373,12 +375,13 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
                 </button>
               )
             )}
-            <button
+            <Button
+              variant="secondary"
               onClick={() => setRosterOpen(true)}
-              className="w-full rounded-lg border px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+              className="w-full"
             >
               {t('participationRoster')}
-            </button>
+            </Button>
           </div>
         )}
       </div>

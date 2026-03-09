@@ -15,6 +15,7 @@ import RecurringEditDialog from './RecurringEditDialog'
 import type { RecurringEditScope } from './RecurringEditDialog'
 import CoachDashboard from './CoachDashboard'
 import LoadingSpinner from '../../components/LoadingSpinner'
+import Button from '../../components/ui/Button'
 import type { Training, Team, Hall, Member } from '../../types'
 
 type TrainingExpanded = Training & {
@@ -95,22 +96,21 @@ export default function TrainingsPage() {
         </div>
         {isCoach && (
           <div className="flex gap-2">
-            <button
+            <Button
+              variant="secondary"
               onClick={() => setRecurringOpen(true)}
-              className="rounded-lg border border-brand-500 px-4 py-2 text-sm font-medium text-brand-600 hover:bg-brand-50 dark:border-brand-400 dark:text-brand-400 dark:hover:bg-brand-900/20"
             >
               {t('recurringTitle')}
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => {
                 setEditingTraining(null)
                 setEditScope('this')
                 setFormOpen(true)
               }}
-              className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600"
             >
               {t('newTraining')}
-            </button>
+            </Button>
           </div>
         )}
       </div>

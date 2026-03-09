@@ -13,7 +13,7 @@ export default function RankingsTable({ league, rankings }: RankingsTableProps) 
   const sorted = [...rankings].sort((a, b) => a.rank - b.rank)
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm overflow-hidden">
+    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-card overflow-hidden">
       <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-4 py-3">
         <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">{league}</h3>
       </div>

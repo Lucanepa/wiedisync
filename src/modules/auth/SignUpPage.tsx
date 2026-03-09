@@ -6,6 +6,8 @@ import { useTheme } from '../../hooks/useTheme'
 import { usePB } from '../../hooks/usePB'
 import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
+import Button from '../../components/ui/Button'
+import { Input, Select } from '../../components/ui/Input'
 import type { Team } from '../../types'
 
 type Step = 'email' | 'claim' | 'register'
@@ -106,9 +108,6 @@ export default function SignUpPage() {
     }
   }
 
-  const inputClass =
-    'mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100'
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 dark:bg-gray-900">
       <div className="w-full max-w-sm">
@@ -128,32 +127,23 @@ export default function SignUpPage() {
           {/* Step 1: Email check */}
           {step === 'email' && (
             <form onSubmit={handleEmailCheck} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t('email')}
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoComplete="email"
-                  className={inputClass}
-                  placeholder={t('emailPlaceholder')}
-                />
-              </div>
+              <Input
+                type="email"
+                label={t('email')}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+                placeholder={t('emailPlaceholder')}
+              />
 
               {error && (
                 <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
               )}
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50"
-              >
+              <Button type="submit" loading={loading} className="w-full">
                 {loading ? t('checkingEmail') : t('continue')}
-              </button>
+              </Button>
 
               <p className="text-center text-sm text-gray-500 dark:text-gray-400">
                 {t('alreadyHaveAccount')}{' '}
@@ -200,12 +190,9 @@ export default function SignUpPage() {
                 >
                   {t('signIn')}
                 </Link>
-                <button
-                  onClick={() => { setStep('email'); setError(''); setResetSent(false) }}
-                  className="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-                >
+                <Button variant="secondary" onClick={() => { setStep('email'); setError(''); setResetSent(false) }} className="w-full">
                   {t('tryDifferentEmail')}
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -215,20 +202,18 @@ export default function SignUpPage() {
             <form onSubmit={handleRegister} className="space-y-4">
               {/* Email (read-only) */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t('email')}
-                </label>
-                <div className="mt-1 flex items-center gap-2">
-                  <input
+                <div className="flex items-center gap-2">
+                  <Input
                     type="email"
+                    label={t('email')}
                     value={email}
                     readOnly
-                    className={`${inputClass} bg-gray-50 dark:bg-gray-600`}
+                    className="bg-gray-50 dark:bg-gray-600"
                   />
                   <button
                     type="button"
                     onClick={() => { setStep('email'); setError('') }}
-                    className="shrink-0 text-sm text-brand-600 hover:text-brand-500 dark:text-brand-400"
+                    className="mt-6 shrink-0 text-sm text-brand-600 hover:text-brand-500 dark:text-brand-400"
                   >
                     {t('change')}
                   </button>
@@ -236,96 +221,66 @@ export default function SignUpPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {t('firstName')}
-                  </label>
-                  <input
-                    type="text"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    required
-                    autoComplete="given-name"
-                    className={inputClass}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {t('lastName')}
-                  </label>
-                  <input
-                    type="text"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    required
-                    autoComplete="family-name"
-                    className={inputClass}
-                  />
-                </div>
-              </div>
-
-              {/* Team selector */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t('selectTeam')}
-                </label>
-                <select
-                  value={selectedTeam}
-                  onChange={(e) => setSelectedTeam(e.target.value)}
+                <Input
+                  type="text"
+                  label={t('firstName')}
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
                   required
-                  className={inputClass}
-                >
-                  <option value="">{t('selectTeamPlaceholder')}</option>
-                  {teams.map((team) => (
-                    <option key={team.id} value={team.id}>
-                      {team.name} — {team.league}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t('password')}
-                </label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="given-name"
+                />
+                <Input
+                  type="text"
+                  label={t('lastName')}
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
                   required
-                  minLength={8}
-                  autoComplete="new-password"
-                  className={inputClass}
-                  placeholder={t('passwordPlaceholder')}
+                  autoComplete="family-name"
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t('confirmPassword')}
-                </label>
-                <input
-                  type="password"
-                  value={passwordConfirm}
-                  onChange={(e) => setPasswordConfirm(e.target.value)}
-                  required
-                  minLength={8}
-                  autoComplete="new-password"
-                  className={inputClass}
-                />
-              </div>
+              <Select
+                label={t('selectTeam')}
+                value={selectedTeam}
+                onChange={(e) => setSelectedTeam(e.target.value)}
+                required
+              >
+                <option value="">{t('selectTeamPlaceholder')}</option>
+                {teams.map((team) => (
+                  <option key={team.id} value={team.id}>
+                    {team.name} — {team.league}
+                  </option>
+                ))}
+              </Select>
+
+              <Input
+                type="password"
+                label={t('password')}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={8}
+                autoComplete="new-password"
+                placeholder={t('passwordPlaceholder')}
+              />
+
+              <Input
+                type="password"
+                label={t('confirmPassword')}
+                value={passwordConfirm}
+                onChange={(e) => setPasswordConfirm(e.target.value)}
+                required
+                minLength={8}
+                autoComplete="new-password"
+              />
 
               {error && (
                 <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
               )}
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50"
-              >
+              <Button type="submit" loading={loading} className="w-full">
                 {loading ? t('creatingAccount') : t('signUp')}
-              </button>
+              </Button>
             </form>
           )}
         </div>

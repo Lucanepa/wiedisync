@@ -114,7 +114,7 @@ export default function SummaryView({ slots, closures, weekDays, halls }: Summar
 
   if (visibleHalls.length === 0) {
     return (
-      <div className="rounded-lg bg-white p-8 text-center text-sm text-gray-500 shadow-sm dark:bg-gray-800 dark:text-gray-400">
+      <div className="rounded-lg bg-white p-8 text-center text-sm text-gray-500 shadow-card dark:bg-gray-800 dark:text-gray-400">
         No data to display
       </div>
     )
@@ -135,7 +135,7 @@ export default function SummaryView({ slots, closures, weekDays, halls }: Summar
 
 
   return (
-    <div className="overflow-x-auto rounded-lg bg-white shadow-sm dark:bg-gray-800" style={{ touchAction: 'pan-x pinch-zoom' }}>
+    <div className="overflow-x-auto rounded-lg bg-white shadow-card dark:bg-gray-800" style={{ touchAction: 'pan-x pinch-zoom' }}>
       {/* Day headers */}
       <div className="grid border-b border-gray-200 dark:border-gray-700" style={{ gridTemplateColumns: gridCols }}>
         <div className="border-r border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900" />

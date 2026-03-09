@@ -38,7 +38,7 @@ export default function WeekNavigation({
   const { t } = useTranslation('hallenplan')
 
   return (
-    <div className="mb-4 space-y-3 rounded-lg bg-white p-4 shadow-sm dark:bg-gray-800">
+    <div className="mb-4 space-y-3 rounded-xl bg-white p-4 shadow-card dark:bg-gray-800">
       {/* Top row: week nav + actions */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">

@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { usePB } from '../../hooks/usePB'
 import { useAuth } from '../../hooks/useAuth'
@@ -11,7 +12,7 @@ export default function TeamsPage() {
   const { t } = useTranslation('teams')
   const { isAdmin, isVorstand, isCoach, memberTeamIds } = useAuth()
   const { data: teams, isLoading } = usePB<Team>('teams', {
-    filter: 'active=true && sport="volleyball"',
+    filter: 'active=true',
     sort: 'name',
     perPage: 50,
   })
@@ -30,6 +31,12 @@ export default function TeamsPage() {
     acc[mt.team] = (acc[mt.team] ?? 0) + 1
     return acc
   }, {})
+
+  const { vbTeams, bbTeams } = useMemo(() => {
+    const vb = visibleTeams.filter((t) => t.sport === 'volleyball')
+    const bb = visibleTeams.filter((t) => t.sport === 'basketball')
+    return { vbTeams: vb, bbTeams: bb }
+  }, [visibleTeams])
 
   if (isLoading) {
     return <LoadingSpinner />
@@ -50,11 +57,29 @@ export default function TeamsPage() {
       <h1 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-gray-100">{t('title')}</h1>
       <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('subtitleSeason', { season })}</p>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {visibleTeams.map((team) => (
-          <TeamCard key={team.id} team={team} memberCount={countByTeam[team.id] ?? 0} />
-        ))}
-      </div>
+      {vbTeams.length > 0 && (
+        <>
+          {bbTeams.length > 0 && (
+            <h2 className="mt-6 text-lg font-semibold text-gray-900 dark:text-gray-100">Volleyball</h2>
+          )}
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {vbTeams.map((team) => (
+              <TeamCard key={team.id} team={team} memberCount={countByTeam[team.id] ?? 0} />
+            ))}
+          </div>
+        </>
+      )}
+
+      {bbTeams.length > 0 && (
+        <>
+          <h2 className="mt-8 text-lg font-semibold text-gray-900 dark:text-gray-100">Basketball</h2>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {bbTeams.map((team) => (
+              <TeamCard key={team.id} team={team} memberCount={countByTeam[team.id] ?? 0} />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   )
 }

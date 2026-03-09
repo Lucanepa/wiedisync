@@ -5,7 +5,7 @@ import { toISODate, timeToMinutes, minutesToTime } from '../../../utils/dateHelp
 export const CLOSURE_PATTERN = /geschlossen|gesperrt|closed/i
 
 /** Hall events matching this pattern are basketball games */
-const BB_GAME_PATTERN = /^BB\s/i
+export const BB_GAME_PATTERN = /^BB\s/i
 
 /** Games occupy the hall from 45min before start, game itself lasts ~2h → 2h45m total */
 const GAME_WARMUP_MINUTES = 45

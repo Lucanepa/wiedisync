@@ -289,8 +289,9 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
           </div>
         )}
 
-        {/* Scorer / Täfeler */}
-        {(game.scorer_member || game.taefeler_member || game.scorer_taefeler_member ||
+        {/* Scorer / Täfeler — volleyball only */}
+        {expanded.expand?.kscw_team?.sport !== 'basketball' &&
+        (game.scorer_member || game.taefeler_member || game.scorer_taefeler_member ||
           game.scorer_team || game.scorer_person || game.taefeler_team || game.taefeler_person) && (
           <div className="space-y-3 border-t dark:border-gray-700 px-6 py-4">
             <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">

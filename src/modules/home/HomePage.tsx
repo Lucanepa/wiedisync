@@ -5,8 +5,10 @@ import { useTheme } from '../../hooks/useTheme'
 import { useAuth } from '../../hooks/useAuth'
 import { usePB } from '../../hooks/usePB'
 import { useNotifications } from '../../hooks/useNotifications'
+import { useSportPreference } from '../../hooks/useSportPreference'
 import { formatDate, formatDateCompact, formatTime, formatWeekday } from '../../utils/dateHelpers'
 import TeamChip from '../../components/TeamChip'
+import SportToggle from '../../components/SportToggle'
 import NotificationPanel from '../../components/NotificationPanel'
 import GameDetailModal from '../games/components/GameDetailModal'
 import type { Game, Event, Team, Training, Hall, Member, MemberTeam, Notification } from '../../types'
@@ -37,6 +39,7 @@ export default function HomePage() {
   const { t: tn } = useTranslation('notifications')
   const { theme } = useTheme()
   const { user, isApproved } = useAuth()
+  const { sport, setSport } = useSportPreference()
   const [selectedGame, setSelectedGame] = useState<ExpandedGame | null>(null)
   const [showAllGames, setShowAllGames] = useState(false)
   const [showAllResults, setShowAllResults] = useState(false)
@@ -45,6 +48,13 @@ export default function HomePage() {
   const latestNews = allNotifs.slice(0, 3)
 
   const today = useMemo(() => new Date().toISOString().split('T')[0], [])
+
+  // Sport filter clause for PB queries (filter via kscw_team relation)
+  const sportFilter = useMemo(() => {
+    if (sport === 'vb') return 'kscw_team.sport = "volleyball"'
+    if (sport === 'bb') return 'kscw_team.sport = "basketball"'
+    return '' // 'all' — no filter
+  }, [sport])
 
   // Fetch user's team memberships (only when logged in)
   const { data: memberTeams } = usePB<MemberTeamExpanded>('member_teams', {
@@ -64,16 +74,18 @@ export default function HomePage() {
   }, [userTeamIds, hasTeams])
 
   // Next 5 upcoming games (all)
+  const allGamesFilter = [`status = "scheduled"`, `date >= "${today}"`, sportFilter].filter(Boolean).join(' && ')
   const { data: allNextGames, isLoading: gamesLoading } = usePB<ExpandedGame>('games', {
-    filter: `status = "scheduled" && date >= "${today}"`,
+    filter: allGamesFilter,
     sort: '+date,+time',
     expand: 'kscw_team,hall',
     perPage: 5,
   })
 
   // Next 5 upcoming games (my teams only)
+  const myGamesFilter = [`status = "scheduled"`, `date >= "${today}"`, `(${teamGameFilter})`, sportFilter].filter(Boolean).join(' && ')
   const { data: myNextGames } = usePB<ExpandedGame>('games', {
-    filter: `status = "scheduled" && date >= "${today}" && (${teamGameFilter})`,
+    filter: myGamesFilter,
     sort: '+date,+time',
     expand: 'kscw_team,hall',
     perPage: 5,
@@ -81,16 +93,18 @@ export default function HomePage() {
   })
 
   // Latest 5 results (all)
+  const allResultsFilter = [`status = "completed"`, sportFilter].filter(Boolean).join(' && ')
   const { data: allLatestResults, isLoading: resultsLoading } = usePB<ExpandedGame>('games', {
-    filter: `status = "completed"`,
+    filter: allResultsFilter,
     sort: '-date,-time',
     expand: 'kscw_team,hall',
     perPage: 5,
   })
 
   // Latest 5 results (my teams only)
+  const myResultsFilter = [`status = "completed"`, `(${teamGameFilter})`, sportFilter].filter(Boolean).join(' && ')
   const { data: myLatestResults } = usePB<ExpandedGame>('games', {
-    filter: `status = "completed" && (${teamGameFilter})`,
+    filter: myResultsFilter,
     sort: '-date,-time',
     expand: 'kscw_team,hall',
     perPage: 5,
@@ -101,8 +115,11 @@ export default function HomePage() {
   const trainingFilter = useMemo(() => {
     if (!hasTeams) return ''
     const teamPart = userTeamIds.map((id) => `team="${id}"`).join(' || ')
-    return `(${teamPart}) && date >= "${today}" && cancelled = false`
-  }, [userTeamIds, hasTeams, today])
+    const parts = [`(${teamPart})`, `date >= "${today}"`, `cancelled = false`]
+    if (sport === 'vb') parts.push('team.sport = "volleyball"')
+    else if (sport === 'bb') parts.push('team.sport = "basketball"')
+    return parts.join(' && ')
+  }, [userTeamIds, hasTeams, today, sport])
 
   const { data: nextTrainings, isLoading: trainingsLoading } = usePB<TrainingExpanded>('trainings', {
     filter: trainingFilter,
@@ -139,6 +156,11 @@ export default function HomePage() {
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           {t('subtitle')}
         </p>
+      </div>
+
+      {/* Sport toggle */}
+      <div className="mb-6 flex justify-center">
+        <SportToggle value={sport} onChange={setSport} />
       </div>
 
       {/* News section — latest notifications */}

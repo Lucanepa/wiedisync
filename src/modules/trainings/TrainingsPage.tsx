@@ -13,7 +13,6 @@ import TrainingForm from './TrainingForm'
 import RecurringTrainingModal from './RecurringTrainingModal'
 import RecurringEditDialog from './RecurringEditDialog'
 import type { RecurringEditScope } from './RecurringEditDialog'
-import AttendanceSheet from './AttendanceSheet'
 import CoachDashboard from './CoachDashboard'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import type { Training, Team, Hall, Member } from '../../types'
@@ -36,8 +35,6 @@ export default function TrainingsPage() {
     }
   }, [memberTeamIds, autoSelected])
   const [activeTab, setActiveTab] = useState<'trainings' | 'dashboard'>('trainings')
-  const [attendanceTraining, setAttendanceTraining] = useState<string | null>(null)
-  const [attendanceTeam, setAttendanceTeam] = useState<string | null>(null)
   const [formOpen, setFormOpen] = useState(false)
   const [editingTraining, setEditingTraining] = useState<Training | null>(null)
   const [editScope, setEditScope] = useState<RecurringEditScope>('this')
@@ -48,7 +45,7 @@ export default function TrainingsPage() {
 
   const { data: trainings, isLoading, refetch } = usePB<TrainingExpanded>('trainings', {
     filter: selectedTeam ? `team="${selectedTeam}"` : '',
-    sort: '-date',
+    sort: 'date',
     expand: 'team,hall,coach',
     perPage: 50,
   })
@@ -56,11 +53,6 @@ export default function TrainingsPage() {
   const { remove } = useMutation<Training>('trainings')
 
   useRealtime('trainings', () => refetch())
-
-  function handleOpenAttendance(trainingId: string, teamId: string) {
-    setAttendanceTraining(trainingId)
-    setAttendanceTeam(teamId)
-  }
 
   function handleEdit(training: Training) {
     setEditingTraining(training)
@@ -171,12 +163,11 @@ export default function TrainingsPage() {
             description={t('noTrainingsDescription')}
           />
         ) : (
-          <div className="space-y-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {trainings.map((training) => (
               <TrainingCard
                 key={training.id}
                 training={training}
-                onOpenAttendance={handleOpenAttendance}
                 onOpenRoster={(id, teamId, date) => setRosterTraining({ id, teamId, date })}
                 onEdit={isCoachOf(training.team) ? handleEdit : undefined}
                 onDelete={isCoachOf(training.team) ? setDeletingId : undefined}
@@ -185,15 +176,6 @@ export default function TrainingsPage() {
           </div>
         )}
       </div>
-
-      <AttendanceSheet
-        trainingId={attendanceTraining}
-        teamId={attendanceTeam}
-        onClose={() => {
-          setAttendanceTraining(null)
-          setAttendanceTeam(null)
-        }}
-      />
 
       <RecurringEditDialog
         open={recurringEditDialogOpen}

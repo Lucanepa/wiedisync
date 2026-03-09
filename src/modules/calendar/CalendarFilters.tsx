@@ -9,9 +9,11 @@ interface CalendarFiltersProps {
   allowedSources?: SourceFilter[]
   /** Compact mode: smaller chips for use below the calendar */
   compact?: boolean
+  /** Show All/None toggle for each section */
+  showBulkToggle?: boolean
 }
 
-export default function CalendarFilters({ filters, onChange, allowedSources, compact }: CalendarFiltersProps) {
+export default function CalendarFilters({ filters, onChange, allowedSources, compact, showBulkToggle }: CalendarFiltersProps) {
   const { t } = useTranslation('calendar')
 
   const allSourceOptions = [
@@ -32,6 +34,19 @@ export default function CalendarFilters({ filters, onChange, allowedSources, com
     label: t.name,
   }))
 
+  // For teams: empty selectedTeamIds means "all teams" in the data layer.
+  // In the UI, we show all as active when empty, and convert between the two models.
+  const allTeamIds = teamChipOptions.map((t) => t.value)
+  const teamSelected = filters.selectedTeamIds.length === 0 ? allTeamIds : filters.selectedTeamIds
+  function handleTeamChange(ids: string[]) {
+    // If all teams are selected (or re-selected), reset to empty (= all)
+    if (ids.length === allTeamIds.length) {
+      onChange({ ...filters, selectedTeamIds: [] })
+    } else {
+      onChange({ ...filters, selectedTeamIds: ids })
+    }
+  }
+
   return (
     <div className={`flex flex-col ${compact ? 'gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3' : 'gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4'}`}>
       <FilterChips
@@ -39,15 +54,17 @@ export default function CalendarFilters({ filters, onChange, allowedSources, com
         selected={filters.sources}
         onChange={(sources) => onChange({ ...filters, sources: sources as SourceFilter[] })}
         compact={compact}
+        showBulkToggle={showBulkToggle}
       />
 
       {teamChipOptions.length > 0 && (
         <div className={`${compact ? 'border-t border-gray-200 pt-2 sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0 dark:border-gray-700' : 'border-t border-gray-200 pt-3 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0 dark:border-gray-700'}`}>
           <FilterChips
             options={teamChipOptions}
-            selected={filters.selectedTeamIds}
-            onChange={(ids) => onChange({ ...filters, selectedTeamIds: ids })}
+            selected={teamSelected}
+            onChange={handleTeamChange}
             compact={compact}
+            showBulkToggle={showBulkToggle}
           />
         </div>
       )}

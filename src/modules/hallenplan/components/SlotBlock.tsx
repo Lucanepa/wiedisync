@@ -36,6 +36,7 @@ interface SlotBlockProps {
   hasConflict: boolean
   isAdmin: boolean
   isCoach?: boolean
+  coachTeamIds?: string[]
   compact?: boolean
   isBoosted?: boolean
   /** Number of hall columns this slot spans (default 1) */
@@ -43,7 +44,7 @@ interface SlotBlockProps {
   onClick: () => void
 }
 
-export default function SlotBlock({ positioned, teamName, hasConflict, isAdmin, isCoach = false, compact = false, isBoosted = false, hallSpan = 1, onClick }: SlotBlockProps) {
+export default function SlotBlock({ positioned, teamName, hasConflict, isAdmin, isCoach = false, coachTeamIds = [], compact = false, isBoosted = false, hallSpan = 1, onClick }: SlotBlockProps) {
   const { t } = useTranslation('hallenplan')
   const { slot, top, height, left, width: baseWidth } = positioned
   // When spanning multiple hall columns, multiply the width
@@ -74,8 +75,9 @@ export default function SlotBlock({ positioned, teamName, hasConflict, isAdmin, 
           ? { bg: '#e0f2fe', text: '#0c4a6e', border: '#7dd3fc' }
           : getTeamColor(teamName)
 
-  // Freed/claimed/manually-free slots are clickable for coaches too
-  const clickable = isVirtual || isAdmin || ((isFreed || isClaimed || isManuallyFree) && isCoach)
+  // Freed/claimed/manually-free slots are clickable for coaches; own-team real slots too
+  const isOwnTeamSlot = isCoach && slot.team && coachTeamIds.includes(slot.team)
+  const clickable = isVirtual || isAdmin || ((isFreed || isClaimed || isManuallyFree) && isCoach) || (isOwnTeamSlot && !isVirtual)
 
   // Virtual slots get dashed border; claimed slots get dotted border
   const borderStyle = isClaimed ? 'border-dotted' : isVirtual ? 'border-dashed' : ''

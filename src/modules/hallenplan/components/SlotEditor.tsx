@@ -13,6 +13,8 @@ interface SlotEditorProps {
   halls: Hall[]
   teams: Team[]
   allSlots: HallSlot[]
+  isAdmin?: boolean
+  coachTeamIds?: string[]
   onClose: () => void
   onSaved: () => void
 }
@@ -23,6 +25,8 @@ export default function SlotEditor({
   halls,
   teams,
   allSlots,
+  isAdmin = true,
+  coachTeamIds = [],
   onClose,
   onSaved,
 }: SlotEditorProps) {
@@ -51,6 +55,11 @@ export default function SlotEditor({
 
   const todayStr = new Date().toISOString().slice(0, 10)
 
+  // Filter teams for coaches (own teams only) vs admins (all teams)
+  const visibleTeams = isAdmin ? teams : teams.filter((tm) => coachTeamIds.includes(tm.id))
+  const defaultTeam = slot?.team ?? (!isAdmin && coachTeamIds.length === 1 ? coachTeamIds[0] : '')
+  const canDelete = isAdmin || (slot?.team ? coachTeamIds.includes(slot.team) : false)
+
   // Build a synthetic "KWI A+B" option
   const kwiA = halls.find((h) => h.name === 'KWI A')
   const kwiB = halls.find((h) => h.name === 'KWI B')
@@ -58,7 +67,7 @@ export default function SlotEditor({
 
   const [form, setForm] = useState({
     hall: slot?.hall ?? prefill?.hall ?? (halls[0]?.id ?? ''),
-    team: slot?.team ?? '',
+    team: defaultTeam,
     day_of_week: slot?.day_of_week ?? prefill?.day ?? 0,
     start_time: slot?.start_time ?? prefill?.time ?? '18:00',
     end_time: slot?.end_time ?? defaultEnd,
@@ -179,7 +188,7 @@ export default function SlotEditor({
               className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
             >
               <option value="">{t('selectPlaceholder')}</option>
-              {teams.map((tm) => (
+              {visibleTeams.map((tm) => (
                 <option key={tm.id} value={tm.id}>{tm.name}</option>
               ))}
             </select>
@@ -348,7 +357,7 @@ export default function SlotEditor({
         {/* Actions */}
         <div className="flex items-center justify-between border-t pt-4">
           <div>
-            {slot && (
+            {slot && canDelete && (
               <button
                 onClick={handleDelete}
                 disabled={isSaving}

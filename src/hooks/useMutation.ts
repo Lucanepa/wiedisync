@@ -4,7 +4,7 @@ import pb from '../pb'
 import { logActivity } from '../utils/logActivity'
 
 /** Collections where we skip logging (to avoid infinite loops or noise) */
-const SKIP_LOG = new Set(['user_logs', 'scorer_edit_log'])
+const SKIP_LOG = new Set(['user_logs'])
 
 export function useMutation<T extends RecordModel>(collection: string) {
   const [isLoading, setIsLoading] = useState(false)

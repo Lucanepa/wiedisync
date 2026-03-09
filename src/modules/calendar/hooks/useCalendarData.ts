@@ -161,14 +161,13 @@ function entryOverlapsRange(entry: CalendarEntry, rangeStart: Date, rangeEnd: Da
 export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true }: UseCalendarDataOptions) {
   const fetchRange = useFetchRange(rangeStart)
 
-  const noSourceFilter = filters.sources.length === 0
-  const wantHome = noSourceFilter || filters.sources.includes('game-home')
-  const wantAway = noSourceFilter || filters.sources.includes('game-away')
+  const wantHome = filters.sources.includes('game-home')
+  const wantAway = filters.sources.includes('game-away')
   const fetchGames = enabled && (wantHome || wantAway)
-  const fetchTrainings = enabled && (noSourceFilter || filters.sources.includes('training'))
-  const fetchClosures = enabled && (noSourceFilter || filters.sources.includes('closure'))
-  const fetchEvents = enabled && (noSourceFilter || filters.sources.includes('event'))
-  const fetchHallEvents = enabled && (noSourceFilter || filters.sources.includes('hall'))
+  const fetchTrainings = enabled && filters.sources.includes('training')
+  const fetchClosures = enabled && filters.sources.includes('closure')
+  const fetchEvents = enabled && filters.sources.includes('event')
+  const fetchHallEvents = enabled && filters.sources.includes('hall')
 
   const { data: games, isLoading: gamesLoading } = usePB<Game>('games', {
     enabled: fetchGames,

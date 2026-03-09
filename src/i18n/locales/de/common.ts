@@ -89,4 +89,8 @@ export default {
   overlapDetected: 'Überschneidung erkannt:',
   tryAdjustingFilter: 'Versuche den Teamfilter anzupassen.',
   approved: 'Genehmigt',
+  all: 'Alle',
+  none: 'Keine',
+  selectAll: 'Alle auswählen',
+  selectNone: 'Alle abwählen',
 } as const

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { getTeamColor } from '../utils/teamColors'
 
 interface FilterChipOption {
@@ -14,6 +15,8 @@ interface FilterChipsProps {
   multiple?: boolean
   /** Compact mode: smaller chips for use below calendar */
   compact?: boolean
+  /** Show All/None toggle buttons */
+  showBulkToggle?: boolean
 }
 
 export default function FilterChips({
@@ -22,7 +25,10 @@ export default function FilterChips({
   onChange,
   multiple = true,
   compact = false,
+  showBulkToggle = false,
 }: FilterChipsProps) {
+  const { t } = useTranslation('common')
+
   function handleClick(value: string) {
     if (multiple) {
       if (selected.includes(value)) {
@@ -41,8 +47,32 @@ export default function FilterChips({
 
   const unselectedClasses = 'border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
 
+  const allSelected = options.every((o) => selected.includes(o.value))
+  const noneSelected = selected.length === 0
+
   return (
-    <div className={`flex flex-wrap ${compact ? 'gap-1' : 'gap-2 sm:gap-1.5'}`}>
+    <div className={`flex flex-wrap items-center ${compact ? 'gap-1' : 'gap-2 sm:gap-1.5'}`}>
+      {showBulkToggle && (
+        <button
+          onClick={() => {
+            if (allSelected) {
+              onChange([])
+            } else {
+              onChange(options.map((o) => o.value))
+            }
+          }}
+          className={`${sizeClasses} ${
+            allSelected
+              ? 'border-brand-300 bg-brand-50 text-brand-700 dark:border-brand-600 dark:bg-brand-900/30 dark:text-brand-300'
+              : noneSelected
+                ? 'border-red-200 bg-red-50 text-red-600 dark:border-red-700 dark:bg-red-900/30 dark:text-red-400'
+                : unselectedClasses
+          }`}
+          title={allSelected ? t('selectNone') : t('selectAll')}
+        >
+          {allSelected ? t('all') : noneSelected ? t('none') : t('all')}
+        </button>
+      )}
       {options.map((option) => {
         const isSelected = selected.includes(option.value)
 

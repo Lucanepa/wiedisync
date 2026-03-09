@@ -16,6 +16,7 @@ interface DaySlotViewProps {
   selectedHallIds: string[]
   isAdmin: boolean
   isCoach?: boolean
+  coachTeamIds?: string[]
   onSlotClick: (slot: HallSlot) => void
   onEmptyCellClick: (dayOfWeek: number, time: string, hallId: string) => void
 }
@@ -29,6 +30,7 @@ export default function DaySlotView({
   selectedHallIds,
   isAdmin,
   isCoach = false,
+  coachTeamIds = [],
   onSlotClick,
   onEmptyCellClick,
 }: DaySlotViewProps) {
@@ -159,7 +161,7 @@ export default function DaySlotView({
   }, [overlapGroupsByHall])
 
   function handleCellClick(hallId: string, e: React.MouseEvent<HTMLDivElement>) {
-    if (!isAdmin) return
+    if (!isAdmin && !isCoach) return
     const rect = e.currentTarget.getBoundingClientRect()
     const y = e.clientY - rect.top
     const minutes = topToMinutes(y, baseMinute)
@@ -255,7 +257,7 @@ export default function DaySlotView({
           return (
             <div
               key={hall.id}
-              className={`relative overflow-visible border-r border-gray-100 last:border-r-0 dark:border-gray-800 ${isAdmin ? 'cursor-cell' : ''}`}
+              className={`relative overflow-visible border-r border-gray-100 last:border-r-0 dark:border-gray-800 ${(isAdmin || isCoach) ? 'cursor-cell' : ''}`}
               style={{ height: gridHeight }}
               onClick={(e) => handleCellClick(hall.id, e)}
             >
@@ -307,6 +309,7 @@ export default function DaySlotView({
                     hasConflict={conflictSet.has(ps.slot.id)}
                     isAdmin={isAdmin}
                     isCoach={isCoach}
+                    coachTeamIds={coachTeamIds}
                     compact={multiHall}
                     isBoosted={boostedMap.get(hall.id) === ps.slot.id}
                     hallSpan={span}

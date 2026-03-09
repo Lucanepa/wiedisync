@@ -89,4 +89,8 @@ export default {
   overlapDetected: 'Overlap detected:',
   tryAdjustingFilter: 'Try adjusting the team filter.',
   approved: 'Approved',
+  all: 'All',
+  none: 'None',
+  selectAll: 'Select all',
+  selectNone: 'Deselect all',
 } as const

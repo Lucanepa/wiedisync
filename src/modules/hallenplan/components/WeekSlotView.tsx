@@ -17,6 +17,7 @@ interface WeekSlotViewProps {
   selectedHallIds: string[]
   isAdmin: boolean
   isCoach?: boolean
+  coachTeamIds?: string[]
   onSlotClick: (slot: HallSlot) => void
   onEmptyCellClick: (dayOfWeek: number, time: string, hallId: string) => void
 }
@@ -29,6 +30,7 @@ export default function WeekSlotView({
   selectedHallIds,
   isAdmin,
   isCoach = false,
+  coachTeamIds = [],
   onSlotClick,
   onEmptyCellClick,
 }: WeekSlotViewProps) {
@@ -274,7 +276,7 @@ export default function WeekSlotView({
     : visibleDays.length
 
   function handleCellClick(dayIndex: number, hallId: string, e: React.MouseEvent<HTMLDivElement>) {
-    if (!isAdmin) return
+    if (!isAdmin && !isCoach) return
     const rect = e.currentTarget.getBoundingClientRect()
     const y = e.clientY - rect.top
     const minutes = topToMinutes(y, baseMinute)
@@ -435,7 +437,7 @@ export default function WeekSlotView({
                 return (
                   <div
                     key={dayHallKey}
-                    className={`relative overflow-visible ${isLastInDay ? 'border-r-2 border-gray-300 dark:border-gray-600' : 'border-r border-gray-100 dark:border-r-gray-800'} ${isAdmin ? 'cursor-cell' : ''}`}
+                    className={`relative overflow-visible ${isLastInDay ? 'border-r-2 border-gray-300 dark:border-gray-600' : 'border-r border-gray-100 dark:border-r-gray-800'} ${(isAdmin || isCoach) ? 'cursor-cell' : ''}`}
                     style={{ height: gridHeight }}
                     onClick={(e) => handleCellClick(dayIndex, hall.id, e)}
                   >
@@ -488,6 +490,7 @@ export default function WeekSlotView({
                           hasConflict={conflictSet.has(ps.slot.id)}
                           isAdmin={isAdmin}
                           isCoach={isCoach}
+                          coachTeamIds={coachTeamIds}
                           compact={true}
                           isBoosted={boostedMap.get(dayHallKey) === ps.slot.id}
                           hallSpan={span}
@@ -507,7 +510,7 @@ export default function WeekSlotView({
             return (
               <div
                 key={dayIndex}
-                className={`relative border-r-2 border-gray-300 last:border-r-0 dark:border-gray-600 ${isAdmin ? 'cursor-cell' : ''}`}
+                className={`relative border-r-2 border-gray-300 last:border-r-0 dark:border-gray-600 ${(isAdmin || isCoach) ? 'cursor-cell' : ''}`}
                 style={{ height: gridHeight }}
                 onClick={(e) => handleCellClick(dayIndex, visibleHalls[0]?.id ?? '', e)}
               >
@@ -557,6 +560,7 @@ export default function WeekSlotView({
                           hasConflict={conflictSet.has(ps.slot.id)}
                           isAdmin={isAdmin}
                           isCoach={isCoach}
+                          coachTeamIds={coachTeamIds}
                           compact={false}
                           isBoosted={boostedMap.get(singleHallKey) === ps.slot.id}
                           onClick={() => onSlotClick(ps.slot)}

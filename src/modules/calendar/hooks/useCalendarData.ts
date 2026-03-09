@@ -119,7 +119,7 @@ function closureToEntry(closure: HallClosure): CalendarEntry {
   return {
     id: closure.id,
     type: 'closure',
-    title: `Hall closure: ${hallName}`,
+    title: closure.reason || `Hall closure: ${hallName}`,
     date: start,
     endDate: isMultiDay ? end : undefined,
     startTime: null,
@@ -127,7 +127,7 @@ function closureToEntry(closure: HallClosure): CalendarEntry {
     allDay: true,
     location: hallName,
     teamNames: [],
-    description: closure.reason ?? '',
+    description: hallName,
     source: closure,
   }
 }
@@ -194,8 +194,9 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
     all: true,
   })
 
+  // Always fetch closures when hall events are fetched (needed to suppress duplicate GCal closures)
   const { data: closuresRaw, isLoading: closuresLoading } = usePB<HallClosure>('hall_closures', {
-    enabled: fetchClosures,
+    enabled: fetchClosures || fetchHallEvents,
     filter: `start_date <= "${fetchRange.end}" && end_date >= "${fetchRange.start}"`,
     expand: 'hall',
     all: true,
@@ -232,8 +233,40 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
     }
     if (fetchTrainings) all.push(...trainings.map(trainingToEntry))
     if (fetchEvents) all.push(...events.map(eventToEntry))
-    if (fetchClosures) all.push(...closuresRaw.map(closureToEntry))
-    if (fetchHallEvents) all.push(...hallEvents.map(hallEventToEntry))
+    // Always compute closure-covered dates from hall_closures (even if not displayed)
+    // so GCal "Halle geschlossen" entries can be suppressed when a named closure exists
+    const closureSeen = new Set<string>()
+    const closureCoveredDates = new Set<string>()
+    for (const closure of closuresRaw) {
+      const ce = closureToEntry(closure)
+      const endDate = ce.endDate ?? ce.date
+      for (const d of eachDayOfInterval(ce.date, endDate)) {
+        closureCoveredDates.add(toDateKey(d))
+      }
+      if (fetchClosures) {
+        const dedupeKey = `${ce.title}|${toDateKey(ce.date)}|${ce.endDate ? toDateKey(ce.endDate) : ''}`
+        if (!closureSeen.has(dedupeKey)) {
+          closureSeen.add(dedupeKey)
+          all.push(ce)
+        }
+      }
+    }
+    if (fetchHallEvents) {
+      for (const he of hallEvents.map(hallEventToEntry)) {
+        if (he.type === 'closure') {
+          // Skip GCal closure events when a hall_closures record covers that date
+          if (closureCoveredDates.has(toDateKey(he.date))) continue
+          // Deduplicate remaining GCal closure entries (same title + date)
+          const dedupeKey = `${he.title}|${toDateKey(he.date)}|${he.endDate ? toDateKey(he.endDate) : ''}`
+          if (!closureSeen.has(dedupeKey)) {
+            closureSeen.add(dedupeKey)
+            all.push(he)
+          }
+        } else {
+          all.push(he)
+        }
+      }
+    }
 
     // Filter to visible range
     const filtered = all.filter((entry) => entryOverlapsRange(entry, rangeStart, rangeEnd))

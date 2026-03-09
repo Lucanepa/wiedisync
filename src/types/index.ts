@@ -78,6 +78,8 @@ export interface VirtualSlotMeta {
   isFreed?: boolean
   isClaimed?: boolean
   claimRecord?: SlotClaim
+  /** Spielhalle slot that is free (no game scheduled) */
+  isSpielhalleFreed?: boolean
   /** When a slot spans multiple halls (e.g. BB game in A+B), lists all hall IDs */
   spanHallIds?: string[]
 }
@@ -92,6 +94,7 @@ export interface HallSlot extends RecordModel {
   recurring: boolean
   valid_from: string
   valid_until: string
+  indefinite: boolean
   label: string
   notes: string
   _virtual?: VirtualSlotMeta
@@ -172,6 +175,7 @@ export interface Training extends RecordModel {
   start_time: string
   end_time: string
   hall: string
+  hall_name: string
   coach: string
   notes: string
   cancelled: boolean
@@ -232,4 +236,12 @@ export interface Participation extends RecordModel {
   activity_id: string
   status: 'confirmed' | 'declined' | 'tentative'
   note: string
+}
+
+export interface UserLog extends RecordModel {
+  user: string
+  action: 'create' | 'update' | 'delete'
+  collection_name: string
+  record_id: string
+  data: Record<string, unknown> | null
 }

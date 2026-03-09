@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import pb from '../../pb'
+import { logActivity } from '../../utils/logActivity'
 import StatusBadge from '../../components/StatusBadge'
 import { getFileUrl } from '../../utils/pbFile'
 import type { ExpandedMemberTeam } from '../../hooks/useTeamMembers'
@@ -70,6 +71,7 @@ export default function MemberRow({ memberTeam, teamId, teamSlug, team, canEdit,
   async function saveField(field: string, value: string | number) {
     try {
       await pb.collection('members').update(member!.id, { [field]: value })
+      logActivity('update', 'members', member!.id, { [field]: value })
       // Update the local expand to reflect change immediately
       if (memberTeam.expand?.member) {
         ;(memberTeam.expand.member as Record<string, unknown>)[field] = value
@@ -88,6 +90,7 @@ export default function MemberRow({ memberTeam, teamId, teamSlug, team, canEdit,
       : [...current, member!.id]
     try {
       await pb.collection('teams').update(team.id, { [roleKey]: next })
+      logActivity('update', 'teams', team.id, { [roleKey]: next })
       onTeamUpdate({ [roleKey]: next })
     } catch {
       // ignore

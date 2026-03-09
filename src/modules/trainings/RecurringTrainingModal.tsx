@@ -5,7 +5,8 @@ import { useAuth } from '../../hooks/useAuth'
 import { usePB } from '../../hooks/usePB'
 import { formatDate, toISODate } from '../../utils/dateHelpers'
 import pb from '../../pb'
-import type { HallSlot, Team, Hall } from '../../types'
+import { logActivity } from '../../utils/logActivity'
+import type { HallSlot, HallClosure, Team, Hall } from '../../types'
 
 type SlotExpanded = HallSlot & { expand?: { team?: Team; hall?: Hall } }
 
@@ -13,6 +14,7 @@ interface RecurringTrainingModalProps {
   open: boolean
   onClose: () => void
   onGenerated: () => void
+  selectedTeamId?: string | null
 }
 
 function getSeasonEndDate(): string {
@@ -21,7 +23,7 @@ function getSeasonEndDate(): string {
   return `${year}-05-31`
 }
 
-export default function RecurringTrainingModal({ open, onClose, onGenerated }: RecurringTrainingModalProps) {
+export default function RecurringTrainingModal({ open, onClose, onGenerated, selectedTeamId }: RecurringTrainingModalProps) {
   const { t } = useTranslation('trainings')
   const { t: tc } = useTranslation('common')
 
@@ -33,13 +35,15 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated }: R
     perPage: 100,
   })
 
-  // Non-admin coaches only see their own teams' slots
-  const slots = useMemo(
-    () => isAdmin ? allSlots : allSlots.filter((s) => coachTeamIds.includes(s.team)),
-    [isAdmin, allSlots, coachTeamIds],
-  )
+  // Filter by selected team, or fall back to coach's teams (non-admin)
+  const slots = useMemo(() => {
+    if (selectedTeamId) return allSlots.filter((s) => s.team === selectedTeamId)
+    if (isAdmin) return allSlots
+    return allSlots.filter((s) => coachTeamIds.includes(s.team))
+  }, [selectedTeamId, isAdmin, allSlots, coachTeamIds])
 
   const { data: halls } = usePB<Hall>('halls', { sort: 'name', perPage: 50 })
+  const { data: closures } = usePB<HallClosure>('hall_closures', { perPage: 500 })
 
   const [selectedSlot, setSelectedSlot] = useState('')
   const [startDate, setStartDate] = useState('')
@@ -68,6 +72,7 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated }: R
     const end = new Date(effectiveEndDate)
     // DB: 0=Mon..6=Sun → convert to JS: 0=Sun..6=Sat
     const targetJsDay = (slot.day_of_week + 1) % 7
+    const closureHallId = effectiveHallId || slot.hall || ''
 
     const current = new Date(start)
     // Advance to first matching day
@@ -76,11 +81,16 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated }: R
     }
 
     while (current <= end) {
-      dates.push(toISODate(current))
+      const dateStr = toISODate(current)
+      // Skip dates where the hall is closed
+      const isClosed = closures.some(
+        (c) => c.hall === closureHallId && c.start_date <= dateStr && c.end_date >= dateStr,
+      )
+      if (!isClosed) dates.push(dateStr)
       current.setDate(current.getDate() + 7)
     }
     return dates
-  }, [slot, startDate, effectiveEndDate])
+  }, [slot, startDate, effectiveEndDate, effectiveHallId, closures])
 
   async function handleGenerate() {
     if (!slot || previewDates.length === 0) return
@@ -91,7 +101,7 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated }: R
     try {
       let count = 0
       for (const date of previewDates) {
-        await pb.collection('trainings').create({
+        const rec = await pb.collection('trainings').create({
           team: slot.team,
           hall_slot: slot.id,
           date,
@@ -104,6 +114,7 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated }: R
           min_participants: minParticipants ? Number(minParticipants) : null,
           max_participants: maxParticipants ? Number(maxParticipants) : null,
         })
+        logActivity('create', 'trainings', rec.id, { team: slot.team, date, hall: effectiveHallId })
         count++
       }
       setGenerated(count)
@@ -126,15 +137,27 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated }: R
           <select
             value={selectedSlot}
             onChange={(e) => {
-              setSelectedSlot(e.target.value)
+              const id = e.target.value
+              setSelectedSlot(id)
               setHallId('')
+              const picked = slots.find((s) => s.id === id)
+              if (picked) {
+                if (picked.valid_from) setStartDate(picked.valid_from.slice(0, 10))
+                if (picked.indefinite) {
+                  setUntilSeasonEnd(true)
+                  setEndDate(getSeasonEndDate())
+                } else if (picked.valid_until) {
+                  setEndDate(picked.valid_until.slice(0, 10))
+                  setUntilSeasonEnd(false)
+                }
+              }
             }}
             className={inputCls}
           >
             <option value="">{tc('select')}</option>
             {slots.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.expand?.team?.name ?? '?'} — {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'][s.day_of_week]} {s.start_time}–{s.end_time} ({s.expand?.hall?.name ?? '?'})
+                {s.expand?.team?.name ?? '?'} — {tc(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'][s.day_of_week])} {s.start_time}–{s.end_time} ({s.expand?.hall?.name ?? '?'})
               </option>
             ))}
           </select>
@@ -187,7 +210,7 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated }: R
             }}
             className="rounded border-gray-300 dark:border-gray-600"
           />
-          {t('untilSeasonEnd', { date: formatDate(getSeasonEndDate()) })}
+          {t('untilSeasonEnd')}
         </label>
 
         <div className="grid grid-cols-2 gap-4">

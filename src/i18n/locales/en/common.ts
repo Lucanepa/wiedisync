@@ -57,6 +57,8 @@ export default {
   player: 'Player',
   team: 'Team',
   hall: 'Hall',
+  otherHall: 'Other hall',
+  hallNamePlaceholder: 'Enter hall name',
   notes: 'Notes',
   type: 'Type',
   name: 'Name',

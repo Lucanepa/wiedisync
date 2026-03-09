@@ -1,4 +1,5 @@
 import { useMemo, useState, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { HallSlot, HallClosure, Hall } from '../../../types'
 import { toISODate, minutesToTime, timeToMinutes } from '../../../utils/dateHelpers'
 import { positionSlotsMultiHall, generateTimeLabels, SLOT_HEIGHT, topToMinutes, SLOT_MINUTES, getDayRange, getSmartStartHour, getSmartEndHour } from '../utils/timeGrid'
@@ -69,6 +70,7 @@ export default function WeekSlotView({
     return filtered.length > 0 ? filtered : halls.slice(0, 1)
   }, [halls, slots, closures, selectedHallIds])
 
+  const { t } = useTranslation('hallenplan')
   const multiHall = visibleHalls.length > 1
 
   // Position slots using multi-hall grouping when multiple halls visible
@@ -173,7 +175,8 @@ export default function WeekSlotView({
     return Array.from(daysWithContent).sort((a, b) => a - b)
   }, [multiHall, positioned, closures, weekDays])
 
-  // Per-day visible halls: only show halls that have slots or closures on that day
+  // Per-day visible halls: only show halls that have slots on that day
+  // Closure-only halls are excluded — they're handled by allClosedDays (collapsed column)
   const hallsByDay = useMemo(() => {
     if (!multiHall) return new Map<number, Hall[]>()
     const map = new Map<number, Hall[]>()
@@ -181,7 +184,7 @@ export default function WeekSlotView({
       const activeHallIds = new Set<string>()
       for (const hall of visibleHalls) {
         const key = `${dayIndex}:${hall.id}`
-        if ((slotsByDayHall.get(key)?.length ?? 0) > 0 || (closuresByDayHall.get(key)?.length ?? 0) > 0) {
+        if ((slotsByDayHall.get(key)?.length ?? 0) > 0) {
           activeHallIds.add(hall.id)
         }
       }
@@ -196,7 +199,64 @@ export default function WeekSlotView({
       map.set(dayIndex, dayHalls.length > 0 ? dayHalls : [visibleHalls[0]])
     }
     return map
-  }, [multiHall, visibleDays, visibleHalls, slotsByDayHall, closuresByDayHall, positioned])
+  }, [multiHall, visibleDays, visibleHalls, slotsByDayHall, positioned])
+
+  // Detect days where ALL visible halls are closed and no slots exist → collapse to 1 column
+  const allClosedDays = useMemo(() => {
+    if (!multiHall) return new Map<number, HallClosure>()
+    const map = new Map<number, HallClosure>()
+    for (const dayIndex of visibleDays) {
+      // Check if there are any slots on this day
+      const hasSlots = positioned.some((ps) => ps.dayIndex === dayIndex)
+      if (hasSlots) continue
+      // Check if every visible hall is closed on this day
+      const dayClosures: HallClosure[] = []
+      let allClosed = true
+      for (const hall of visibleHalls) {
+        const key = `${dayIndex}:${hall.id}`
+        const closures = closuresByDayHall.get(key)
+        if (!closures || closures.length === 0) {
+          allClosed = false
+          break
+        }
+        dayClosures.push(closures[0])
+      }
+      if (allClosed && dayClosures.length > 0) {
+        // Use the first closure's reason as representative
+        map.set(dayIndex, dayClosures[0])
+      }
+    }
+    return map
+  }, [multiHall, visibleDays, visibleHalls, closuresByDayHall, positioned])
+
+  // Merge consecutive all-closed days with the same reason into single spans
+  // Returns a map: first dayIndex of run → { span: number of merged days, closure }
+  // Days that are part of a merged run (but not the first) are in mergedSkipDays
+  const { mergedClosureRuns, mergedSkipDays } = useMemo(() => {
+    const runs = new Map<number, { span: number; closure: HallClosure }>()
+    const skip = new Set<number>()
+    if (!multiHall) return { mergedClosureRuns: runs, mergedSkipDays: skip }
+
+    let i = 0
+    while (i < visibleDays.length) {
+      const dayIndex = visibleDays[i]
+      const closure = allClosedDays.get(dayIndex)
+      if (!closure) { i++; continue }
+
+      // Find consecutive all-closed days with the same reason
+      let span = 1
+      while (i + span < visibleDays.length) {
+        const nextDay = visibleDays[i + span]
+        const nextClosure = allClosedDays.get(nextDay)
+        if (!nextClosure || nextClosure.reason !== closure.reason) break
+        skip.add(nextDay)
+        span++
+      }
+      runs.set(dayIndex, { span, closure })
+      i += span
+    }
+    return { mergedClosureRuns: runs, mergedSkipDays: skip }
+  }, [multiHall, visibleDays, allClosedDays])
 
   const todayIndex = useMemo(() => {
     const today = toISODate(new Date())
@@ -204,8 +264,13 @@ export default function WeekSlotView({
   }, [weekDays])
 
   // Grid template: time label + per-day hall columns (variable width per day)
+  // Merged closure runs count as 1 column, skipped days contribute 0
   const totalDataCols = multiHall
-    ? visibleDays.reduce((sum, d) => sum + (hallsByDay.get(d)?.length ?? 1), 0)
+    ? visibleDays.reduce((sum, d) => {
+        if (mergedSkipDays.has(d)) return sum
+        if (mergedClosureRuns.has(d)) return sum + 1
+        return sum + (hallsByDay.get(d)?.length ?? 1)
+      }, 0)
     : visibleDays.length
 
   function handleCellClick(dayIndex: number, hallId: string, e: React.MouseEvent<HTMLDivElement>) {
@@ -234,9 +299,27 @@ export default function WeekSlotView({
         >
           <div className="border-r border-gray-200 bg-gray-50 p-2 dark:border-gray-700 dark:bg-gray-900" />
           {visibleDays.map((dayIndex) => {
+            if (mergedSkipDays.has(dayIndex)) return null
+            const mergedRun = mergedClosureRuns.get(dayIndex)
+            if (mergedRun && mergedRun.span > 1) {
+              // Merged closure header spanning multiple days
+              const firstDay = weekDays[dayIndex]
+              const lastDay = weekDays[visibleDays[visibleDays.indexOf(dayIndex) + mergedRun.span - 1]]
+              const firstStr = `${String(firstDay.getDate()).padStart(2, '0')}.${String(firstDay.getMonth() + 1).padStart(2, '0')}.`
+              const lastStr = `${String(lastDay.getDate()).padStart(2, '0')}.${String(lastDay.getMonth() + 1).padStart(2, '0')}.`
+              return (
+                <div
+                  key={dayIndex}
+                  className="border-r-2 border-gray-300 p-1 text-center text-sm last:border-r-0 dark:border-gray-600 text-gray-700 dark:text-gray-300"
+                >
+                  <div className="font-medium">{DAY_HEADERS[dayIndex]} – {DAY_HEADERS[visibleDays[visibleDays.indexOf(dayIndex) + mergedRun.span - 1]]}</div>
+                  <div className="text-xs">{firstStr} – {lastStr}</div>
+                </div>
+              )
+            }
             const day = weekDays[dayIndex]
             const dateStr = `${String(day.getDate()).padStart(2, '0')}.${String(day.getMonth() + 1).padStart(2, '0')}.`
-            const colSpan = multiHall ? (hallsByDay.get(dayIndex)?.length ?? 1) : 1
+            const colSpan = multiHall ? (mergedRun ? 1 : (hallsByDay.get(dayIndex)?.length ?? 1)) : 1
             return (
               <div
                 key={dayIndex}
@@ -260,6 +343,17 @@ export default function WeekSlotView({
           >
             <div className="border-r border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900" />
             {visibleDays.map((dayIndex) => {
+              if (mergedSkipDays.has(dayIndex)) return null
+              if (allClosedDays.has(dayIndex)) {
+                return (
+                  <div
+                    key={`${dayIndex}-allclosed`}
+                    className="border-r-2 border-gray-300 px-0.5 py-0.5 text-center text-[10px] font-medium text-gray-500 dark:border-gray-600 dark:text-gray-400"
+                  >
+                    {t('allHalls')}
+                  </div>
+                )
+              }
               const dayHalls = hallsByDay.get(dayIndex) ?? [visibleHalls[0]]
               return dayHalls.map((hall, hi) => (
                 <div
@@ -297,12 +391,40 @@ export default function WeekSlotView({
 
           {/* Day × Hall columns */}
           {visibleDays.map((dayIndex) => {
+            // Skip days merged into a previous closure run
+            if (mergedSkipDays.has(dayIndex)) return null
+
             const { startMin, endMin } = getDayRange(dayIndex)
             const inactiveTopH = Math.max(0, ((startMin - baseMinute) / SLOT_MINUTES) * SLOT_HEIGHT)
             const inactiveBottomTop = ((endMin - baseMinute) / SLOT_MINUTES) * SLOT_HEIGHT
             const inactiveBottomH = Math.max(0, gridHeight - inactiveBottomTop)
 
             if (multiHall) {
+              // All halls closed on this day → single collapsed column (possibly merged with adjacent days)
+              const allClosedClosure = allClosedDays.get(dayIndex)
+              if (allClosedClosure) {
+                return (
+                  <div
+                    key={`${dayIndex}-allclosed`}
+                    className="relative border-r-2 border-gray-300 dark:border-gray-600"
+                    style={{ height: gridHeight }}
+                  >
+                    {timeLabels.map(({ time, isFullHour }, rowIndex) => (
+                      <div
+                        key={time}
+                        className={`absolute inset-x-0 ${
+                          isFullHour
+                            ? 'border-b border-gray-200 dark:border-gray-700'
+                            : 'border-b border-dashed border-gray-100 dark:border-gray-800'
+                        }`}
+                        style={{ top: rowIndex * SLOT_HEIGHT }}
+                      />
+                    ))}
+                    <ClosureOverlay reason={allClosedClosure.reason} hallName={t('allHalls')} />
+                  </div>
+                )
+              }
+
               const dayHalls = hallsByDay.get(dayIndex) ?? [visibleHalls[0]]
               return dayHalls.map((hall, hi) => {
                 const dayHallKey = `${dayIndex}:${hall.id}`

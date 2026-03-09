@@ -14,8 +14,8 @@ import ClosureManager from '../hallenplan/components/ClosureManager'
 import VirtualSlotDetailModal from '../hallenplan/components/VirtualSlotDetailModal'
 import SummaryView from '../hallenplan/components/SummaryView'
 import LoadingSpinner from '../../components/LoadingSpinner'
-import type { HallSlot, HallClosure, Game, Training, HallEvent, Hall } from '../../types'
-import type { FreedSlotInfo } from '../hallenplan/HallenplanPage'
+import type { HallSlot, HallClosure, Game, Training, HallEvent, Hall, Team } from '../../types'
+import type { FreedSlotInfo, SportFilter } from '../hallenplan/HallenplanPage'
 
 function getTodayDayIndex(): number {
   const dow = new Date().getDay()
@@ -36,6 +36,7 @@ export default function HallenplanView() {
   const [closureManagerOpen, setClosureManagerOpen] = useState(false)
   const [virtualDetailSlot, setVirtualDetailSlot] = useState<HallSlot | null>(null)
   const [showSummary, setShowSummary] = useState(false)
+  const [sportFilter, setSportFilter] = useState<SportFilter>('vb')
 
   function handleToggleSummary() {
     const next = !showSummary
@@ -78,18 +79,36 @@ export default function HallenplanView() {
     weekDays,
   )
 
+  // Filter slots by sport
+  const teamsBySport = useMemo(() => {
+    const vb = new Set(teams.filter((t: Team) => t.sport === 'volleyball').map((t: Team) => t.id))
+    const bb = new Set(teams.filter((t: Team) => t.sport === 'basketball').map((t: Team) => t.id))
+    return { vb, bb }
+  }, [teams])
+  const filteredSlots = useMemo(() => {
+    if (sportFilter === 'all') return slots
+    const allowedTeams = sportFilter === 'vb' ? teamsBySport.vb : teamsBySport.bb
+    return slots.filter((s) => {
+      if (!s.team) return true
+      if (!allowedTeams.has(s.team)) return false
+      if (sportFilter === 'vb' && s._virtual?.source === 'hall_event' && s.slot_type === 'game') return false
+      return true
+    })
+  }, [slots, sportFilter, teamsBySport])
+
   const DAY_KEYS = ['dayMonday', 'dayTuesday', 'dayWednesday', 'dayThursday', 'dayFriday', 'daySaturday', 'daySunday'] as const
   const freedSlotInfos = useMemo(() => {
     const hallMap = new Map<string, Hall>(halls.map((h) => [h.id, h]))
-    return slots
+    return filteredSlots
       .filter((s) => s._virtual?.isFreed || (!s._virtual && !s.team))
       .map((s): FreedSlotInfo => ({
         hallName: hallMap.get(s.hall)?.name || '?',
         dayLabel: t(DAY_KEYS[s.day_of_week] ?? 'dayMonday'),
         startTime: s.start_time,
         endTime: s.end_time,
+        slot: s,
       }))
-  }, [slots, halls, t])
+  }, [filteredSlots, halls, t])
 
   const handleRealtimeUpdate = useCallback(() => {
     refetch()
@@ -156,16 +175,19 @@ export default function HallenplanView() {
             onOpenClosureManager={() => setClosureManagerOpen(true)}
             showSummary={showSummary}
             onToggleSummary={handleToggleSummary}
+            sportFilter={sportFilter}
+            onSetSportFilter={setSportFilter}
             freedSlots={freedSlotInfos}
+            onFreedSlotClick={handleSlotClick}
           />
 
           {isLoading ? (
             <LoadingSpinner />
           ) : showSummary ? (
-            <SummaryView slots={slots} closures={closures} weekDays={weekDays} halls={halls} />
+            <SummaryView slots={filteredSlots} closures={closures} weekDays={weekDays} halls={halls} />
           ) : (
             <DaySlotView
-              slots={slots}
+              slots={filteredSlots}
               closures={closures}
               day={weekDays[selectedDayIndex]}
               dayIndex={selectedDayIndex}
@@ -189,18 +211,17 @@ export default function HallenplanView() {
             onSelectHalls={setSelectedHallIds}
             isAdmin={isAdmin}
             onOpenClosureManager={() => setClosureManagerOpen(true)}
-            showSummary={showSummary}
-            onToggleSummary={handleToggleSummary}
+            sportFilter={sportFilter}
+            onSetSportFilter={setSportFilter}
             freedSlots={freedSlotInfos}
+            onFreedSlotClick={handleSlotClick}
           />
 
           {isLoading ? (
             <LoadingSpinner />
-          ) : showSummary ? (
-            <SummaryView slots={slots} closures={closures} weekDays={weekDays} halls={halls} />
           ) : (
             <WeekSlotView
-              slots={slots}
+              slots={filteredSlots}
               closures={closures}
               weekDays={weekDays}
               halls={halls}

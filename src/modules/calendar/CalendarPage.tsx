@@ -25,19 +25,61 @@ import LoadingSpinner from '../../components/LoadingSpinner'
 import type { CalendarViewMode, CalendarFilterState, SourceFilter, CalendarEntry } from '../../types/calendar'
 import type { Game } from '../../types'
 
-const dotColors: Record<string, string> = {
-  game: 'bg-brand-500',
-  'game-home': 'bg-brand-500',
-  'game-away': 'bg-amber-500',
-  training: 'bg-green-500',
-  closure: 'bg-red-500',
-  event: 'bg-purple-500',
-  hall: 'bg-cyan-500',
+/** Inline type icon for the overflow modal */
+const TypeIcon = ({ type, className = '' }: { type: string; className?: string }) => {
+  if (type === 'training') {
+    return (
+      <svg className={`h-3 w-3 shrink-0 ${className}`} viewBox="0 0 24 24" fill="currentColor">
+        <path d="M6 20h12l-1.5-5H7.5L6 20zM7 13h10l-1.5-5h-7L7 13zM9 6h6l-.75-2.5a1 1 0 00-.96-.72h-2.58a1 1 0 00-.96.72L9 6z" />
+      </svg>
+    )
+  }
+  if (type === 'game') {
+    return (
+      <svg className={`h-3 w-3 shrink-0 ${className}`} viewBox="0 0 24 24" fill="currentColor">
+        <path d="M7 4V2h10v2h3a1 1 0 011 1v3c0 2.21-1.79 4-4 4h-.54A5.98 5.98 0 0113 14.92V17h3v2h1v2H7v-2h1v-2h3v-2.08A5.98 5.98 0 017.54 12H7c-2.21 0-4-1.79-4-4V5a1 1 0 011-1h3zm0 2H5v2c0 1.1.9 2 2 2h.2A6.03 6.03 0 017 8V6zm10 0v2c0 .7-.08 1.38-.2 2H17c1.1 0 2-.9 2-2V6h-2z" />
+      </svg>
+    )
+  }
+  if (type === 'event') {
+    return (
+      <svg className={`h-3 w-3 shrink-0 ${className}`} viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" />
+      </svg>
+    )
+  }
+  if (type === 'closure') {
+    return (
+      <svg className={`h-3 w-3 shrink-0 ${className}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+        <circle cx="12" cy="12" r="10" />
+        <path strokeLinecap="round" d="M15 9l-6 6M9 9l6 6" />
+      </svg>
+    )
+  }
+  if (type === 'hall') {
+    // Trophy / cup (hall events are mostly basketball games from GCal)
+    return (
+      <svg className={`h-3 w-3 shrink-0 ${className}`} viewBox="0 0 24 24" fill="currentColor">
+        <path d="M7 4V2h10v2h3a1 1 0 011 1v3c0 2.21-1.79 4-4 4h-.54A5.98 5.98 0 0113 14.92V17h3v2h1v2H7v-2h1v-2h3v-2.08A5.98 5.98 0 017.54 12H7c-2.21 0-4-1.79-4-4V5a1 1 0 011-1h3zm0 2H5v2c0 1.1.9 2 2 2h.2A6.03 6.03 0 017 8V6zm10 0v2c0 .7-.08 1.38-.2 2H17c1.1 0 2-.9 2-2V6h-2z" />
+      </svg>
+    )
+  }
+  return <span className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-current ${className}`} />
 }
 
-function entryDotColor(entry: CalendarEntry): string {
-  if (entry.type === 'game' && entry.gameType) return dotColors[`game-${entry.gameType}`]
-  return dotColors[entry.type]
+const iconColors: Record<string, string> = {
+  game: 'text-brand-500',
+  'game-home': 'text-brand-500',
+  'game-away': 'text-amber-500',
+  training: 'text-green-500',
+  closure: 'text-red-500',
+  event: 'text-purple-500',
+  hall: 'text-cyan-500',
+}
+
+function entryIconColor(entry: CalendarEntry): string {
+  if (entry.type === 'game' && entry.gameType) return iconColors[`game-${entry.gameType}`] || 'text-brand-500'
+  return iconColors[entry.type] || 'text-gray-500'
 }
 
 export default function CalendarPage() {
@@ -55,19 +97,36 @@ export default function CalendarPage() {
   const [selectedEntry, setSelectedEntry] = useState<CalendarEntry | null>(null)
   const [dayOverflow, setDayOverflow] = useState<{ entries: CalendarEntry[]; date: Date } | null>(null)
   const [icalMode, setIcalMode] = useState<'subscribe' | 'download' | null>(null)
+  const [showTrainings, setShowTrainings] = useState(true)
 
-  // Logged out: only games. Logged in: games + trainings + events + closures
+  // Logged out: only games. Logged in: games + events + closures (trainings via toggle)
   const allowedSources: SourceFilter[] = user
-    ? ['game-home', 'game-away', 'training', 'event', 'closure', 'hall']
+    ? ['game-home', 'game-away', 'event', 'closure', 'hall']
     : ['game-home', 'game-away', 'hall']
 
   // When logged out, force games only; when logged in, empty = all allowed
-  const effectiveFilters: CalendarFilterState = {
-    ...filters,
-    sources: user
-      ? filters.sources
-      : ['game-home', 'game-away', 'hall'],
-  }
+  // Training inclusion is controlled by the toggle, not by filter chips
+  const effectiveFilters: CalendarFilterState = useMemo(() => {
+    const base: CalendarFilterState = {
+      ...filters,
+      sources: user ? filters.sources : ['game-home', 'game-away', 'hall'],
+    }
+    // If showTrainings is on and no source filter is active (or training should be included),
+    // inject 'training' into the effective sources
+    if (user && showTrainings) {
+      if (base.sources.length === 0) {
+        // No filter = show all, training is already included
+        return base
+      }
+      // Add training to the active source filters
+      return { ...base, sources: [...base.sources, 'training'] }
+    }
+    // If showTrainings is off and no source filter, exclude training explicitly
+    if (user && !showTrainings && base.sources.length === 0) {
+      return { ...base, sources: ['game-home', 'game-away', 'event', 'closure', 'hall'] }
+    }
+    return base
+  }, [filters, user, showTrainings])
 
   // Compute visible range based on view mode
   const { rangeStart, rangeEnd } = useMemo(() => {
@@ -212,12 +271,34 @@ export default function CalendarPage() {
       {/* Filters — below the calendar, compact */}
       {needsData && !showSpinner && (
         <div className="border-t border-gray-200 pt-3 dark:border-gray-700">
-          <CalendarFilters
-            filters={filters}
-            onChange={setFilters}
-            allowedSources={allowedSources}
-            compact
-          />
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+            <CalendarFilters
+              filters={filters}
+              onChange={setFilters}
+              allowedSources={allowedSources}
+              compact
+            />
+            {user && (
+              <div className="flex items-center gap-2 border-t border-gray-200 pt-2 sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0 dark:border-gray-700">
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={showTrainings}
+                  aria-label={t('sourceTrainings')}
+                  onClick={() => setShowTrainings(!showTrainings)}
+                  className="flex items-center gap-1.5"
+                >
+                  <div className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors ${showTrainings ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}>
+                    <span
+                      className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-white shadow-sm transition-transform"
+                      style={{ transform: `translateX(${showTrainings ? '1rem' : '0.125rem'})` }}
+                    />
+                  </div>
+                  <span className="text-xs text-gray-600 dark:text-gray-400">{t('sourceTrainings')}</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -240,7 +321,7 @@ export default function CalendarPage() {
                 }}
                 className="flex w-full items-center gap-3 rounded-lg p-3 text-left transition-colors hover:bg-gray-50 active:bg-gray-100 dark:hover:bg-gray-700 dark:active:bg-gray-600"
               >
-                <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${entryDotColor(entry)}`} />
+                <TypeIcon type={entry.type} className={entryIconColor(entry)} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
                     {entry.title}

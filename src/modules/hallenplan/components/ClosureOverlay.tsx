@@ -1,22 +1,30 @@
+import { useTranslation } from 'react-i18next'
+
 interface ClosureOverlayProps {
   reason: string
   hallName?: string
 }
 
 export default function ClosureOverlay({ reason, hallName }: ClosureOverlayProps) {
+  const { t } = useTranslation('hallenplan')
   const label = hallName ? `${hallName}: ${reason}` : reason
 
   return (
     <div
       className="pointer-events-none absolute inset-0 z-10 flex items-start justify-center pt-2"
       style={{
-        backgroundColor: 'rgba(156, 163, 175, 0.15)',
+        backgroundColor: 'rgba(31, 41, 55, 0.25)',
         backgroundImage:
-          'repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(156, 163, 175, 0.2) 8px, rgba(156, 163, 175, 0.2) 16px)',
+          'repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(31, 41, 55, 0.2) 8px, rgba(31, 41, 55, 0.2) 16px)',
+        borderLeft: '3px dashed #991b1b',
+        borderRight: '3px dashed #991b1b',
       }}
     >
-      <span className="rounded bg-gray-200/80 px-2 py-0.5 text-xs italic text-gray-600 dark:text-gray-400">
-        Gesperrt: {label}
+      <span
+        className="rounded px-2 py-0.5 text-xs font-medium italic"
+        style={{ backgroundColor: '#1f2937', color: '#f87171' }}
+      >
+        {t('closed')}: {label}
       </span>
     </div>
   )

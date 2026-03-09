@@ -1,6 +1,10 @@
 import { useState, useCallback } from 'react'
 import type { RecordModel } from 'pocketbase'
 import pb from '../pb'
+import { logActivity } from '../utils/logActivity'
+
+/** Collections where we skip logging (to avoid infinite loops or noise) */
+const SKIP_LOG = new Set(['user_logs', 'scorer_edit_log'])
 
 export function useMutation<T extends RecordModel>(collection: string) {
   const [isLoading, setIsLoading] = useState(false)
@@ -12,6 +16,9 @@ export function useMutation<T extends RecordModel>(collection: string) {
       setError(null)
       try {
         const record = await pb.collection(collection).create<T>(data)
+        if (!SKIP_LOG.has(collection)) {
+          logActivity('create', collection, record.id, data)
+        }
         return record
       } catch (err) {
         const e = err instanceof Error ? err : new Error(String(err))
@@ -30,6 +37,9 @@ export function useMutation<T extends RecordModel>(collection: string) {
       setError(null)
       try {
         const record = await pb.collection(collection).update<T>(id, data)
+        if (!SKIP_LOG.has(collection)) {
+          logActivity('update', collection, id, data)
+        }
         return record
       } catch (err) {
         const e = err instanceof Error ? err : new Error(String(err))
@@ -48,6 +58,9 @@ export function useMutation<T extends RecordModel>(collection: string) {
       setError(null)
       try {
         await pb.collection(collection).delete(id)
+        if (!SKIP_LOG.has(collection)) {
+          logActivity('delete', collection, id)
+        }
         return true
       } catch (err) {
         const e = err instanceof Error ? err : new Error(String(err))

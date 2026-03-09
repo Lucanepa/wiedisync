@@ -5,6 +5,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { getFileUrl } from '../../utils/pbFile'
 import { pbLangToI18n } from '../../utils/languageMap'
 import pb from '../../pb'
+import { logActivity } from '../../utils/logActivity'
 
 interface ProfileEditModalProps {
   open: boolean
@@ -124,6 +125,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
       }
 
       await pb.collection('members').update(user.id, formData)
+      logActivity('update', 'members', user.id, { first_name: firstName, last_name: lastName, email, phone, language })
       // Persist language to localStorage
       localStorage.setItem('kscw-lang', pbLangToI18n(language))
       await pb.collection('members').authRefresh()

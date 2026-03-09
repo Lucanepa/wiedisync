@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import Modal from '../../../components/Modal'
 import pb from '../../../pb'
+import { logActivity } from '../../../utils/logActivity'
 import type { Hall, HallClosure } from '../../../types'
 
 interface ClosureManagerProps {
@@ -139,9 +140,11 @@ export default function ClosureManager({ halls, closures, onClose, onChanged }: 
             ...form,
             hall: rec.hall, // Keep each record's original hall
           })
+          logActivity('update', 'hall_closures', rec.id, form)
         }
       } else {
-        await pb.collection('hall_closures').create(form)
+        const rec = await pb.collection('hall_closures').create(form)
+        logActivity('create', 'hall_closures', rec.id, form)
       }
       setForm(emptyForm)
       setEditingGroup(null)
@@ -161,6 +164,7 @@ export default function ClosureManager({ halls, closures, onClose, onChanged }: 
     try {
       for (const rec of group.records) {
         await pb.collection('hall_closures').delete(rec.id)
+        logActivity('delete', 'hall_closures', rec.id)
       }
       if (editingGroup?.key === group.key) cancelEdit()
       onChanged()

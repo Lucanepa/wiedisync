@@ -4,6 +4,20 @@ import { getTeamColor } from '../../../utils/teamColors'
 import ConflictBadge from './ConflictBadge'
 import type { PositionedSlot } from '../utils/timeGrid'
 
+/** Training cone SVG — occupies most of the slot as a watermark */
+const TrainingIcon = () => (
+  <svg className="absolute inset-0 m-auto h-[60%] w-[60%] opacity-15" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M6 20h12l-1.5-5H7.5L6 20zM7 13h10l-1.5-5h-7L7 13zM9 6h6l-.75-2.5a1 1 0 00-.96-.72h-2.58a1 1 0 00-.96.72L9 6z" />
+  </svg>
+)
+
+/** Trophy/cup SVG — occupies most of the slot as a watermark */
+const GameIcon = () => (
+  <svg className="absolute inset-0 m-auto h-[60%] w-[60%] opacity-15" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M7 4V2h10v2h3a1 1 0 011 1v3c0 2.21-1.79 4-4 4h-.54A5.98 5.98 0 0113 14.92V17h3v2h1v2H7v-2h1v-2h3v-2.08A5.98 5.98 0 017.54 12H7c-2.21 0-4-1.79-4-4V5a1 1 0 011-1h3zm0 2H5v2c0 1.1.9 2 2 2h.2A6.03 6.03 0 017 8V6zm10 0v2c0 .7-.08 1.38-.2 2H17c1.1 0 2-.9 2-2V6h-2z" />
+  </svg>
+)
+
 const FREED_COLOR = { bg: '#a7f3d0', text: '#064e3b', border: '#10b981' }
 const CLOSURE_COLOR = { bg: '#1f2937', text: '#f87171', border: '#991b1b' }
 const CLOSURE_PATTERN = /geschlossen|gesperrt|closed/i
@@ -107,16 +121,18 @@ export default function SlotBlock({ positioned, teamName, hasConflict, isAdmin, 
         title={`${teamName || slot.label} — ${slot.start_time}–${slot.end_time}${slot.label ? ` — ${slot.label}` : ''}`}
       >
         {hasConflict && <ConflictBadge />}
-        <span className={`truncate font-semibold ${isCancelled && !isFreed ? 'line-through' : ''}`}>
+        {slot.slot_type === 'training' && <TrainingIcon />}
+        {slot.slot_type === 'game' && <GameIcon />}
+        <span className={`relative truncate font-semibold ${isCancelled && !isFreed ? 'line-through' : ''}`}>
           {(isFreed || isManuallyFree) ? t('slotFreed') : isClaimed ? t('slotClaimed') : teamName || slot.label || typeLabels[slot.slot_type]}
         </span>
         {compactShowType && (
-          <div className={`truncate opacity-80 ${isCancelled && !isFreed ? 'line-through' : ''}`}>
+          <div className={`relative truncate opacity-80 ${isCancelled && !isFreed ? 'line-through' : ''}`}>
             {isFreed || isClaimed ? (teamName || '') : typeLabels[slot.slot_type]}
           </div>
         )}
         {compactShowTime && (
-          <div className="opacity-70">
+          <div className="relative opacity-70">
             <div>{slot.start_time} -</div>
             <div>{slot.end_time}</div>
           </div>
@@ -171,39 +187,41 @@ export default function SlotBlock({ positioned, teamName, hasConflict, isAdmin, 
             </svg>
           </span>
         )}
+        {slot.slot_type === 'training' && <TrainingIcon />}
+        {slot.slot_type === 'game' && <GameIcon />}
         {(isFreed || isManuallyFree) ? (
           <>
-            <div className="flex items-center gap-1">
+            <div className="relative flex items-center gap-1">
               <span className="font-bold uppercase">{t('slotFreed')}</span>
             </div>
             {showTime && (
-              <div className="mt-0.5 opacity-80">
+              <div className="relative mt-0.5 opacity-80">
                 <div>{slot.start_time} -</div>
                 <div>{slot.end_time}</div>
               </div>
             )}
             {showDetails && slot.label && (
-              <div className="mt-0.5 truncate text-[10px] opacity-70">{slot.label}</div>
+              <div className="relative mt-0.5 truncate text-[10px] opacity-70">{slot.label}</div>
             )}
           </>
         ) : isClaimed ? (
           <>
-            <div className="flex items-center gap-1">
+            <div className="relative flex items-center gap-1">
               <span className="truncate font-medium">{t('slotClaimed')}</span>
             </div>
             {showTime && (
-              <div className="mt-0.5 opacity-80">
+              <div className="relative mt-0.5 opacity-80">
                 <div>{slot.start_time} -</div>
                 <div>{slot.end_time}</div>
               </div>
             )}
             {showDetails && teamName && (
-              <div className="mt-0.5 truncate text-[10px] opacity-70">{teamName}</div>
+              <div className="relative mt-0.5 truncate text-[10px] opacity-70">{teamName}</div>
             )}
           </>
         ) : (
           <>
-            <div className="flex items-center gap-1">
+            <div className="relative flex items-center gap-1">
               {teamName ? (
                 <TeamChip team={teamName} size="sm" />
               ) : (
@@ -216,13 +234,13 @@ export default function SlotBlock({ positioned, teamName, hasConflict, isAdmin, 
               )}
             </div>
             {showTime && (
-              <div className={`mt-0.5 opacity-80 ${isCancelled ? 'line-through' : ''}`}>
+              <div className={`relative mt-0.5 opacity-80 ${isCancelled ? 'line-through' : ''}`}>
                 <div>{slot.start_time} -</div>
                 <div>{slot.end_time}</div>
               </div>
             )}
             {showDetails && slot.label && teamName && (
-              <div className={`mt-0.5 truncate font-medium ${isCancelled ? 'line-through text-gray-500' : ''}`}>
+              <div className={`relative mt-0.5 truncate font-medium ${isCancelled ? 'line-through text-gray-500' : ''}`}>
                 {slot.label}
               </div>
             )}

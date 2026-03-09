@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams, Link, Navigate } from 'react-router-dom'
 import pb from '../../pb'
+import { logActivity } from '../../utils/logActivity'
 import { useAuth } from '../../hooks/useAuth'
 import { useTeamMembers } from '../../hooks/useTeamMembers'
 import { useMutation } from '../../hooks/useMutation'
@@ -111,6 +112,7 @@ export default function RosterEditor() {
       : [...current, memberId]
     try {
       await pb.collection('teams').update(team.id, { [role]: next })
+      logActivity('update', 'teams', team.id, { [role]: next })
       setTeam((prev) => prev ? { ...prev, [role]: next } : prev)
     } catch {
       // ignore
@@ -121,6 +123,7 @@ export default function RosterEditor() {
     const num = numberValue ? parseInt(numberValue, 10) : 0
     try {
       await pb.collection('members').update(memberId, { number: num })
+      logActivity('update', 'members', memberId, { number: num })
       // Update local state
       const mt = members.find((m) => m.expand?.member?.id === memberId)
       if (mt?.expand?.member) {

@@ -2,7 +2,7 @@ import type { Game, Training, HallEvent, HallSlot, HallClosure, Hall, Team, Slot
 import { toISODate, timeToMinutes, minutesToTime } from '../../../utils/dateHelpers'
 
 /** Hall events matching this pattern are treated as closures */
-const CLOSURE_PATTERN = /geschlossen|gesperrt|closed/i
+export const CLOSURE_PATTERN = /geschlossen|gesperrt|closed/i
 
 /** Hall events matching this pattern are basketball games */
 const BB_GAME_PATTERN = /^BB\s/i
@@ -123,7 +123,7 @@ export function trainingToVirtualSlot(
 /** Resolves which hall IDs a GCal event belongs to.
  *  Uses the hall relation array if populated (set by GCal sync hook),
  *  otherwise falls back to regex on title/location for legacy data. */
-function resolveHallEventHalls(event: HallEvent, halls: Hall[]): string[] {
+export function resolveHallEventHalls(event: HallEvent, halls: Hall[]): string[] {
   // Prefer the relation field if populated
   if (event.hall && event.hall.length > 0) {
     return event.hall
@@ -167,10 +167,12 @@ export function hallEventToVirtualSlots(
   if (hallIds.length === 0) return []
 
   const isBBGame = BB_GAME_PATTERN.test(event.title)
+  const isClosure = CLOSURE_PATTERN.test(event.title)
 
+  // Closures are treated as full-day regardless of actual event times
   // BB games get warmup padding like regular games
-  const rawStart = event.all_day || !event.start_time ? '10:00' : event.start_time.slice(0, 5)
-  const rawEnd = event.all_day || !event.end_time ? '22:00' : event.end_time.slice(0, 5)
+  const rawStart = isClosure || event.all_day || !event.start_time ? '10:00' : event.start_time.slice(0, 5)
+  const rawEnd = isClosure || event.all_day || !event.end_time ? '22:00' : event.end_time.slice(0, 5)
   const startTime = isBBGame
     ? minutesToTime(Math.max(timeToMinutes(rawStart) - GAME_WARMUP_MINUTES, 0))
     : rawStart
@@ -415,6 +417,18 @@ export function mergeVirtualSlots(
     }
   }
 
+  // Suppress recurring slots on days when their hall has a hall_closures record
+  for (const slot of realSlots) {
+    if (!slot.recurring) continue
+    for (let dayIdx = 0; dayIdx < weekDays.length; dayIdx++) {
+      if (slot.day_of_week !== dayIdx) continue
+      const dateStr = toISODate(weekDays[dayIdx])
+      if (isClosedOnDate(slot.hall, dateStr, closures)) {
+        suppressedSlotDays.add(`${slot.id}-${dayIdx}`)
+      }
+    }
+  }
+
   const filteredReal = realSlots
     .filter((slot) => {
       if (!slot.recurring) return true
@@ -499,6 +513,7 @@ export function mergeVirtualSlots(
           isFreed: !claim,
           isClaimed: !!claim,
           claimRecord: claim,
+          isSpielhalleFreed: true,
         },
         expand: expanded,
       } as HallSlot)
@@ -559,17 +574,32 @@ export function mergeVirtualSlots(
     })
   }
 
-  // Remove virtual training slots that overlap with a home game or closure in the same hall
+  // Remove virtual slots that are redundant or overlap with closures/games
   const filteredAnnotated = annotated.filter((vs) => {
-    if (vs._virtual?.source !== 'training') return true
-    const vsStart = timeToMinutes(vs.start_time)
-    const vsEnd = timeToMinutes(vs.end_time)
-    if (homeGameRanges.some(
-      (g) => g.dayIndex === vs.day_of_week && g.hall === vs.hall && vsStart < g.endMin && vsEnd > g.startMin,
-    )) return false
-    if (closureRanges.some(
-      (c) => c.dayIndex === vs.day_of_week && c.hallIds.includes(vs.hall) && vsStart < c.endMin && vsEnd > c.startMin,
-    )) return false
+    const dateStr = toISODate(weekDays[vs.day_of_week])
+
+    // Suppress GCal "Halle geschlossen" events when a hall_closures record covers the same hall+date
+    if (vs._virtual?.source === 'hall_event') {
+      const he = vs._virtual.sourceRecord as HallEvent
+      if (CLOSURE_PATTERN.test(he.title)) {
+        const hallIds = vs._virtual.spanHallIds ?? [vs.hall]
+        if (hallIds.every((hid) => isClosedOnDate(hid, dateStr, closures))) return false
+      }
+    }
+
+    // Remove virtual trainings that overlap with a home game, closure event, or hall_closures record
+    if (vs._virtual?.source === 'training') {
+      if (dateStr && isClosedOnDate(vs.hall, dateStr, closures)) return false
+      const vsStart = timeToMinutes(vs.start_time)
+      const vsEnd = timeToMinutes(vs.end_time)
+      if (homeGameRanges.some(
+        (g) => g.dayIndex === vs.day_of_week && g.hall === vs.hall && vsStart < g.endMin && vsEnd > g.startMin,
+      )) return false
+      if (closureRanges.some(
+        (c) => c.dayIndex === vs.day_of_week && c.hallIds.includes(vs.hall) && vsStart < c.endMin && vsEnd > c.startMin,
+      )) return false
+    }
+
     return true
   })
 

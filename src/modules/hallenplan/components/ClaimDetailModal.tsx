@@ -5,6 +5,7 @@ import TeamChip from '../../../components/TeamChip'
 import { useAuth } from '../../../hooks/useAuth'
 import { formatDate } from '../../../utils/dateHelpers'
 import pb from '../../../pb'
+import { logActivity } from '../../../utils/logActivity'
 import type { HallSlot, Hall, Team, SlotClaim } from '../../../types'
 
 interface Props {
@@ -51,6 +52,7 @@ export default function ClaimDetailModal({ slot, claim, halls, teams, onClose, o
     setReleasing(true)
     try {
       await pb.collection('slot_claims').update(claim.id, { status: 'revoked' })
+      logActivity('update', 'slot_claims', claim.id, { status: 'revoked' })
       onReleased()
     } catch {
       setReleasing(false)

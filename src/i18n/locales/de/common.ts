@@ -57,6 +57,8 @@ export default {
   player: 'Spieler',
   team: 'Team',
   hall: 'Halle',
+  otherHall: 'Andere Halle',
+  hallNamePlaceholder: 'Name der Halle eingeben',
   notes: 'Notizen',
   type: 'Typ',
   name: 'Name',

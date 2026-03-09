@@ -15,6 +15,54 @@ import {
   DAY_HEADERS,
 } from '../../../utils/dateUtils'
 
+/* ── type icons (inline SVGs matching hallenplan) ────────── */
+
+const TypeIcon = ({ type, className = '' }: { type: string; className?: string }) => {
+  if (type === 'training') {
+    // Training cone
+    return (
+      <svg className={`inline-block h-2.5 w-2.5 shrink-0 ${className}`} viewBox="0 0 24 24" fill="currentColor">
+        <path d="M6 20h12l-1.5-5H7.5L6 20zM7 13h10l-1.5-5h-7L7 13zM9 6h6l-.75-2.5a1 1 0 00-.96-.72h-2.58a1 1 0 00-.96.72L9 6z" />
+      </svg>
+    )
+  }
+  if (type === 'closure') {
+    // X-circle for closures
+    return (
+      <svg className={`inline-block h-2.5 w-2.5 shrink-0 ${className}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+        <circle cx="12" cy="12" r="10" />
+        <path strokeLinecap="round" d="M15 9l-6 6M9 9l6 6" />
+      </svg>
+    )
+  }
+  if (type === 'game' || type === 'game-home' || type === 'game-away') {
+    // Trophy / cup
+    return (
+      <svg className={`inline-block h-2.5 w-2.5 shrink-0 ${className}`} viewBox="0 0 24 24" fill="currentColor">
+        <path d="M7 4V2h10v2h3a1 1 0 011 1v3c0 2.21-1.79 4-4 4h-.54A5.98 5.98 0 0113 14.92V17h3v2h1v2H7v-2h1v-2h3v-2.08A5.98 5.98 0 017.54 12H7c-2.21 0-4-1.79-4-4V5a1 1 0 011-1h3zm0 2H5v2c0 1.1.9 2 2 2h.2A6.03 6.03 0 017 8V6zm10 0v2c0 .7-.08 1.38-.2 2H17c1.1 0 2-.9 2-2V6h-2z" />
+      </svg>
+    )
+  }
+  if (type === 'event') {
+    // Star
+    return (
+      <svg className={`inline-block h-2.5 w-2.5 shrink-0 ${className}`} viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" />
+      </svg>
+    )
+  }
+  if (type === 'hall') {
+    // Trophy / cup (same as game — hall events are mostly basketball games from GCal)
+    return (
+      <svg className={`inline-block h-2.5 w-2.5 shrink-0 ${className}`} viewBox="0 0 24 24" fill="currentColor">
+        <path d="M7 4V2h10v2h3a1 1 0 011 1v3c0 2.21-1.79 4-4 4h-.54A5.98 5.98 0 0113 14.92V17h3v2h1v2H7v-2h1v-2h3v-2.08A5.98 5.98 0 017.54 12H7c-2.21 0-4-1.79-4-4V5a1 1 0 011-1h3zm0 2H5v2c0 1.1.9 2 2 2h.2A6.03 6.03 0 017 8V6zm10 0v2c0 .7-.08 1.38-.2 2H17c1.1 0 2-.9 2-2V6h-2z" />
+      </svg>
+    )
+  }
+  // Fallback dot
+  return <span className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-current ${className}`} />
+}
+
 /* ── colour helpers ──────────────────────────────────────── */
 
 const barColors: Record<string, { bg: string; text: string; darkBg: string; darkText: string }> = {
@@ -187,7 +235,7 @@ export default function MonthGrid({
   )
 
   const MAX_VISIBLE_BARS = 2
-  const MAX_VISIBLE_TIMED = 2
+  const MAX_VISIBLE_TIMED = 5
 
   return (
     <div className="flex flex-1 flex-col">
@@ -328,7 +376,7 @@ export default function MonthGrid({
                                 bgColor ? `${bgColor.text} ${bgColor.darkText}` : 'text-gray-800 dark:text-gray-200'
                               }`}
                             >
-                              <span className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${dotColors[colorKey(entry)]}`} />
+                              <TypeIcon type={colorKey(entry)} className={dotColors[colorKey(entry)].replace('bg-', 'text-')} />
                               <span className="truncate">
                                 {entry.startTime && (
                                   <span className="font-medium">{entry.startTime} </span>

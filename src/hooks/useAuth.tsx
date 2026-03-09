@@ -17,6 +17,8 @@ interface AuthContextValue {
   coachTeamIds: string[]
   memberTeamIds: string[]
   memberTeamNames: string[]
+  memberSports: Set<'volleyball' | 'basketball'>
+  primarySport: 'volleyball' | 'basketball' | 'both'
   canViewTeam: (teamId: string) => boolean
   isVorstand: boolean
   isLoading: boolean
@@ -34,6 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [coachTeamIds, setCoachTeamIds] = useState<string[]>([])
   const [memberTeamIds, setMemberTeamIds] = useState<string[]>([])
   const [memberTeamNames, setMemberTeamNames] = useState<string[]>([])
+  const [memberSports, setMemberSports] = useState<Set<'volleyball' | 'basketball'>>(new Set())
 
   // Auth refresh — skip if token was just issued (within last 5s, e.g. right after login)
   useEffect(() => {
@@ -100,6 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!user?.id) {
       setMemberTeamIds([])
       setMemberTeamNames([])
+      setMemberSports(new Set())
       return
     }
     const season = getCurrentSeason()
@@ -111,10 +115,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .then((mts) => {
         setMemberTeamIds(mts.map((mt) => mt.team))
         setMemberTeamNames(mts.map((mt) => mt.expand?.team?.name).filter((n): n is string => !!n))
+        const sports = new Set<'volleyball' | 'basketball'>()
+        for (const mt of mts) {
+          const s = mt.expand?.team?.sport
+          if (s === 'volleyball' || s === 'basketball') sports.add(s)
+        }
+        setMemberSports(sports)
       })
       .catch(() => {
         setMemberTeamIds([])
         setMemberTeamNames([])
+        setMemberSports(new Set())
       })
   }, [user?.id])
 
@@ -133,6 +144,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isProfileComplete = !!user?.language
   const isVorstand = roles.includes('vorstand') || isAdmin
 
+  const primarySport: 'volleyball' | 'basketball' | 'both' =
+    memberSports.size === 1 ? [...memberSports][0] : 'both'
+
   const isCoach = coachTeamIds.length > 0 || isAdmin
 
   const isCoachOf = useCallback(
@@ -146,7 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   return (
-    <AuthContext.Provider value={{ user, isSuperAdmin, isAdmin, isApproved, isProfileComplete, isCoach, isCoachOf, coachTeamIds, memberTeamIds, memberTeamNames, canViewTeam, isVorstand, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isSuperAdmin, isAdmin, isApproved, isProfileComplete, isCoach, isCoachOf, coachTeamIds, memberTeamIds, memberTeamNames, memberSports, primarySport, canViewTeam, isVorstand, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   )

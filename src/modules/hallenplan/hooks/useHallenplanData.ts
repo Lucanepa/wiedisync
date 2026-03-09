@@ -7,6 +7,7 @@ import {
   hallEventToVirtualSlots,
   mergeVirtualSlots,
   CLOSURE_PATTERN,
+  BB_GAME_PATTERN,
   resolveHallEventHalls,
 } from '../utils/virtualSlots'
 
@@ -133,9 +134,21 @@ export function useHallenplanData(
       if (vs) virtualSlots.push(vs)
     }
 
+    // Build a set of basketplan game date keys for BB GCal dedup
+    const bpGameDateKeys = new Set(
+      games
+        .filter((g) => g.source === 'basketplan')
+        .map((g) => `${g.date?.slice(0, 10)}-${g.time?.slice(0, 5)}`),
+    )
+
     for (const he of hallEvents) {
       // Skip closure events — they're handled as ClosureOverlay via mergedClosures
       if (CLOSURE_PATTERN.test(he.title)) continue
+      // Skip BB GCal events when a basketplan game already covers that slot
+      if (BB_GAME_PATTERN.test(he.title) && bpGameDateKeys.size > 0) {
+        const heKey = `${he.date?.slice(0, 10)}-${he.start_time?.slice(0, 5)}`
+        if (bpGameDateKeys.has(heKey)) continue
+      }
       virtualSlots.push(...hallEventToVirtualSlots(he, weekDays, halls))
     }
 

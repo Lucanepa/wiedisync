@@ -1,9 +1,11 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
+import { useSportPreference } from '../../hooks/useSportPreference'
 import type { Game, SvRanking } from '../../types'
 import { usePB } from '../../hooks/usePB'
 import { svTeamIds } from '../../utils/teamColors'
+import SportToggle from '../../components/SportToggle'
 import TeamFilterBar from './components/TeamFilterBar'
 import GameTabs from './components/GameTabs'
 import type { TabKey } from './components/GameTabs'
@@ -24,6 +26,7 @@ function buildTeamFilter(teams: string[]): string {
 export default function GamesPage() {
   const { t } = useTranslation('games')
   const { memberTeamNames } = useAuth()
+  const { sport, setSport } = useSportPreference()
   const [activeTab, setActiveTab] = useState<TabKey>('upcoming')
   const [selectedTeams, setSelectedTeams] = useState<string[]>([])
   const [selectedGame, setSelectedGame] = useState<Game | null>(null)
@@ -43,6 +46,13 @@ export default function GamesPage() {
   const today = useMemo(() => new Date().toISOString().split('T')[0], [])
   const teamFilter = buildTeamFilter(selectedTeams)
 
+  // Sport filter clause for PB queries
+  const sportFilter = useMemo(() => {
+    if (sport === 'vb') return 'kscw_team.sport = "volleyball"'
+    if (sport === 'bb') return 'kscw_team.sport = "basketball"'
+    return ''
+  }, [sport])
+
   // Build game filter/sort based on active tab
   const gameQuery = useMemo(() => {
     if (activeTab === 'rankings') return null
@@ -57,12 +67,13 @@ export default function GamesPage() {
         break
     }
     if (teamFilter) parts.push(teamFilter)
+    if (sportFilter) parts.push(sportFilter)
 
     return {
       filter: parts.join(' && '),
       sort: activeTab === 'upcoming' ? '+date,+time' : '-date,-time',
     }
-  }, [activeTab, teamFilter, today])
+  }, [activeTab, teamFilter, sportFilter, today])
 
   const perPage = showAll ? 500 : INITIAL_LIMIT
 
@@ -117,7 +128,10 @@ export default function GamesPage() {
       <h1 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-gray-100">{t('title')}</h1>
 
       <div className="mt-6 space-y-4">
-        <TeamFilterBar selected={selectedTeams} onChange={setSelectedTeams} />
+        <div className="flex items-center gap-4">
+          <SportToggle value={sport} onChange={setSport} />
+        </div>
+        <TeamFilterBar selected={selectedTeams} onChange={setSelectedTeams} sport={sport} />
         <GameTabs activeTab={activeTab} onChange={(tab) => { setActiveTab(tab); setShowAll(false) }} />
       </div>
 
@@ -177,7 +191,11 @@ export default function GamesPage() {
         {/* Rankings */}
         {activeTab === 'rankings' && !rankingsLoading && (
           <>
-            {leagueGroups.size === 0 ? (
+            {sport === 'bb' ? (
+              <div className="py-12 text-center text-gray-500 dark:text-gray-400">
+                <p>{t('noRankingsBB')}</p>
+              </div>
+            ) : leagueGroups.size === 0 ? (
               <EmptyState tab="rankings" />
             ) : (
               <div className="grid gap-6 lg:grid-cols-2">

@@ -1,13 +1,15 @@
 import TeamChip from '../../../components/TeamChip'
-import { teamColors } from '../../../utils/teamColors'
+import { teamColors, teamSport } from '../../../utils/teamColors'
+import type { SportView } from '../../../hooks/useSportPreference'
 
-const TEAM_ORDER = Object.keys(teamColors)
+const TEAM_ORDER = Object.keys(teamColors).filter((k) => k !== 'Other')
 
 interface TeamFilterBarProps {
   selected: string[]
   onChange: (selected: string[]) => void
   multiSelect?: boolean
   showAll?: boolean
+  sport?: SportView
 }
 
 export default function TeamFilterBar({
@@ -15,8 +17,17 @@ export default function TeamFilterBar({
   onChange,
   multiSelect = true,
   showAll = true,
+  sport = 'all',
 }: TeamFilterBarProps) {
   const allSelected = selected.length === 0
+
+  // Filter team chips by sport
+  const visibleTeams = TEAM_ORDER.filter((team) => {
+    if (sport === 'all') return true
+    const s = teamSport[team]
+    if (!s) return false
+    return sport === 'vb' ? s === 'volleyball' : s === 'basketball'
+  })
 
   function handleClick(team: string) {
     if (multiSelect) {
@@ -44,7 +55,7 @@ export default function TeamFilterBar({
           Alle
         </button>
       )}
-      {TEAM_ORDER.map((team) => (
+      {visibleTeams.map((team) => (
         <button
           key={team}
           onClick={() => handleClick(team)}

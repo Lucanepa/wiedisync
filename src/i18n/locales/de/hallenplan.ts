@@ -33,6 +33,7 @@ export default {
   daySunday: 'Sonntag',
 
   // Slot editor
+  editSlot: 'Slot bearbeiten',
   editSlotTitle: 'Slot bearbeiten',
   newSlotTitle: 'Neuer Slot',
   deleteSlotConfirm: 'Bist du sicher, dass du diesen Slot löschen willst?',

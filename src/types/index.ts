@@ -141,14 +141,6 @@ export interface Game extends RecordModel {
   respond_by: string
 }
 
-export interface ScorerEditLog extends RecordModel {
-  action: string
-  game: string
-  field_name: string
-  old_value: string
-  new_value: string
-  changed_by: string
-}
 
 export interface SvRanking extends RecordModel {
   sv_team_id: string

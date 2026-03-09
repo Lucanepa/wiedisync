@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react'
+import { useState, useRef, useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import ViewToggle from '../../components/ViewToggle'
 import Modal from '../../components/Modal'
@@ -87,46 +87,40 @@ export default function CalendarPage() {
   const { user } = useAuth()
   const isMobile = useIsMobile()
   const [viewMode, setViewMode] = useState<CalendarViewMode>('month')
-  const [filters, setFilters] = useState<CalendarFilterState>({
-    sources: [],
+  const allSources: SourceFilter[] = user
+    ? ['game-home', 'game-away', 'training', 'event', 'closure', 'hall']
+    : ['game-home', 'game-away', 'hall']
+
+  const [filters, setFilters] = useState<CalendarFilterState>(() => ({
+    sources: [...allSources],
     selectedTeamIds: [],
-  })
+  }))
+  // Sync sources when auth state changes (e.g., user logs in → training/event/closure become available)
+  const prevUserRef = useRef(user)
+  useEffect(() => {
+    if (user && !prevUserRef.current) {
+      setFilters((f) => ({ ...f, sources: [...allSources] }))
+    }
+    prevUserRef.current = user
+  }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
   const [month, setMonth] = useState<Date>(() => startOfMonth(new Date()))
   const [weekStart, setWeekStart] = useState<Date>(() => startOfWeek(new Date()))
   const [mobileDay, setMobileDay] = useState<Date>(() => new Date())
   const [selectedEntry, setSelectedEntry] = useState<CalendarEntry | null>(null)
   const [dayOverflow, setDayOverflow] = useState<{ entries: CalendarEntry[]; date: Date } | null>(null)
   const [icalMode, setIcalMode] = useState<'subscribe' | 'download' | null>(null)
-  const [showTrainings, setShowTrainings] = useState(true)
 
-  // Logged out: only games. Logged in: games + events + closures (trainings via toggle)
-  const allowedSources: SourceFilter[] = user
-    ? ['game-home', 'game-away', 'event', 'closure', 'hall']
-    : ['game-home', 'game-away', 'hall']
+  // Allowed sources for the filter chips (all visible options)
+  const allowedSources = allSources
 
-  // When logged out, force games only; when logged in, empty = all allowed
-  // Training inclusion is controlled by the toggle, not by filter chips
+  // Active chips = what's selected. Pass directly to data hook.
+  // Empty selectedTeamIds = all teams (no team filter).
   const effectiveFilters: CalendarFilterState = useMemo(() => {
-    const base: CalendarFilterState = {
-      ...filters,
-      sources: user ? filters.sources : ['game-home', 'game-away', 'hall'],
+    if (!user) {
+      return { sources: ['game-home', 'game-away', 'hall'], selectedTeamIds: [] }
     }
-    // If showTrainings is on and no source filter is active (or training should be included),
-    // inject 'training' into the effective sources
-    if (user && showTrainings) {
-      if (base.sources.length === 0) {
-        // No filter = show all, training is already included
-        return base
-      }
-      // Add training to the active source filters
-      return { ...base, sources: [...base.sources, 'training'] }
-    }
-    // If showTrainings is off and no source filter, exclude training explicitly
-    if (user && !showTrainings && base.sources.length === 0) {
-      return { ...base, sources: ['game-home', 'game-away', 'event', 'closure', 'hall'] }
-    }
-    return base
-  }, [filters, user, showTrainings])
+    return filters
+  }, [filters, user])
 
   // Compute visible range based on view mode
   const { rangeStart, rangeEnd } = useMemo(() => {
@@ -216,6 +210,19 @@ export default function CalendarPage() {
         </div>
       </div>
 
+      {/* Filters — above the calendar views */}
+      {needsData && (
+        <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-gray-800">
+          <CalendarFilters
+            filters={filters}
+            onChange={setFilters}
+            allowedSources={allowedSources}
+            compact
+            showBulkToggle
+          />
+        </div>
+      )}
+
       {/* Views */}
       {viewMode === 'hallenplan' && <HallenplanView />}
 
@@ -265,40 +272,6 @@ export default function CalendarPage() {
               />
             )
           )}
-        </div>
-      )}
-
-      {/* Filters — below the calendar, compact */}
-      {needsData && !showSpinner && (
-        <div className="border-t border-gray-200 pt-3 dark:border-gray-700">
-          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
-            <CalendarFilters
-              filters={filters}
-              onChange={setFilters}
-              allowedSources={allowedSources}
-              compact
-            />
-            {user && (
-              <div className="flex items-center gap-2 border-t border-gray-200 pt-2 sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0 dark:border-gray-700">
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={showTrainings}
-                  aria-label={t('sourceTrainings')}
-                  onClick={() => setShowTrainings(!showTrainings)}
-                  className="flex items-center gap-1.5"
-                >
-                  <div className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors ${showTrainings ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}>
-                    <span
-                      className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-white shadow-sm transition-transform"
-                      style={{ transform: `translateX(${showTrainings ? '1rem' : '0.125rem'})` }}
-                    />
-                  </div>
-                  <span className="text-xs text-gray-600 dark:text-gray-400">{t('sourceTrainings')}</span>
-                </button>
-              </div>
-            )}
-          </div>
         </div>
       )}
 

@@ -35,7 +35,7 @@ function getTodayDayIndex(): number {
 
 export default function HallenplanPage() {
   const { t } = useTranslation('hallenplan')
-  const { isAdmin, isCoach } = useAuth()
+  const { isAdmin, isCoach, coachTeamIds } = useAuth()
   const isMobile = useIsMobile()
   const { weekDays, goNext, goPrev, goToday, weekLabel, mondayStr, sundayStr } = useWeekNavigation()
 
@@ -135,8 +135,8 @@ export default function HallenplanPage() {
       return
     }
 
-    // Admin: real slots → open slot editor
-    if (isAdmin && !meta) {
+    // Admin or coach (own team): real slots → open slot editor
+    if ((isAdmin || (isCoach && coachTeamIds.includes(slot.team))) && !meta) {
       setEditingSlot(slot)
       setPrefill(null)
       setEditorOpen(true)
@@ -150,7 +150,7 @@ export default function HallenplanPage() {
   }
 
   function handleEmptyCellClick(dayOfWeek: number, time: string, hallId: string) {
-    if (!isAdmin) return
+    if (!isAdmin && !isCoach) return
     setPrefill({ day: dayOfWeek, time, hall: hallId })
     setEditingSlot(null)
     setEditorOpen(true)
@@ -225,6 +225,7 @@ export default function HallenplanPage() {
               selectedHallIds={selectedHallIds}
               isAdmin={isAdmin}
               isCoach={isCoach}
+              coachTeamIds={coachTeamIds}
               onSlotClick={handleSlotClick}
               onEmptyCellClick={handleEmptyCellClick}
             />
@@ -259,6 +260,7 @@ export default function HallenplanPage() {
               selectedHallIds={selectedHallIds}
               isAdmin={isAdmin}
               isCoach={isCoach}
+              coachTeamIds={coachTeamIds}
               onSlotClick={handleSlotClick}
               onEmptyCellClick={handleEmptyCellClick}
             />
@@ -273,6 +275,8 @@ export default function HallenplanPage() {
           halls={halls}
           teams={teams}
           allSlots={slots}
+          isAdmin={isAdmin}
+          coachTeamIds={coachTeamIds}
           onClose={handleEditorClose}
           onSaved={refetch}
         />
@@ -305,6 +309,12 @@ export default function HallenplanPage() {
           weekDays={weekDays}
           onClose={() => setClaimSlot(null)}
           onClaimed={handleClaimed}
+          onEditSlot={(s) => {
+            setClaimSlot(null)
+            setEditingSlot(s)
+            setPrefill(null)
+            setEditorOpen(true)
+          }}
         />
       )}
 

@@ -22,4 +22,31 @@ test.describe('Admin pages (admin user)', () => {
     const body = page.locator('body')
     await expect(body).not.toContainText('Error')
   })
+
+  test('Scorer Assign loads', async ({ page }) => {
+    await page.goto('/admin/scorer-assign')
+    await page.waitForLoadState('domcontentloaded')
+
+    await expect(page).toHaveURL('/admin/scorer-assign')
+    const body = page.locator('body')
+    await expect(body).not.toContainText('Error')
+  })
+
+  test('Terminplanung Setup loads', async ({ page }) => {
+    await page.goto('/admin/terminplanung')
+    await page.waitForLoadState('domcontentloaded')
+
+    await expect(page).toHaveURL('/admin/terminplanung')
+    const body = page.locator('body')
+    await expect(body).not.toContainText('Error')
+  })
+
+  test('Terminplanung Dashboard loads', async ({ page }) => {
+    await page.goto('/admin/terminplanung/dashboard')
+    await page.waitForLoadState('domcontentloaded')
+
+    await expect(page).toHaveURL('/admin/terminplanung/dashboard')
+    const body = page.locator('body')
+    await expect(body).not.toContainText('Error')
+  })
 })

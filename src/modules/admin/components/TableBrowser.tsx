@@ -108,6 +108,96 @@ export default function TableBrowser() {
     return records.map((rec) => columns.map((col) => rec[col]))
   }, [records, columns])
 
+  // ── Resolve relation fields to display labels ──
+  const [relationLabels, setRelationLabels] = useState<Record<number, Record<string, string>>>({})
+
+  useEffect(() => {
+    if (!selectedCol || records.length === 0) {
+      setRelationLabels({})
+      return
+    }
+    // Find relation columns with their index in `columns`
+    const relationCols: { colIdx: number; field: SchemaField; collectionId: string }[] = []
+    for (const f of selectedCol.schema) {
+      if (f.type === 'relation' && f.options?.collectionId) {
+        const idx = columns.indexOf(f.name)
+        if (idx >= 0) {
+          relationCols.push({ colIdx: idx, field: f, collectionId: String(f.options.collectionId) })
+        }
+      }
+    }
+    if (relationCols.length === 0) {
+      setRelationLabels({})
+      return
+    }
+
+    // Group by target collection, collecting all unique IDs
+    const byCollection: Record<string, { ids: Set<string>; colIdxs: number[] }> = {}
+    for (const rc of relationCols) {
+      if (!byCollection[rc.collectionId]) {
+        byCollection[rc.collectionId] = { ids: new Set(), colIdxs: [] }
+      }
+      byCollection[rc.collectionId].colIdxs.push(rc.colIdx)
+      // Collect IDs from rows
+      for (const row of rows) {
+        const val = row[rc.colIdx]
+        if (!val) continue
+        if (Array.isArray(val)) {
+          val.forEach((v) => { if (v) byCollection[rc.collectionId].ids.add(String(v)) })
+        } else {
+          byCollection[rc.collectionId].ids.add(String(val))
+        }
+      }
+    }
+
+    // Resolve collection names (collectionId → collectionName)
+    const colIdToName: Record<string, string> = {}
+    for (const c of collections) colIdToName[c.id] = c.name
+
+    // Fetch display labels for each target collection
+    let cancelled = false
+    const labels: Record<number, Record<string, string>> = {}
+
+    async function resolve() {
+      for (const [colId, { ids, colIdxs }] of Object.entries(byCollection)) {
+        const colName = colIdToName[colId]
+        if (!colName || ids.size === 0) continue
+        const idArr = [...ids]
+        const idMap: Record<string, string> = {}
+
+        // Fetch in batches of 50
+        for (let i = 0; i < idArr.length; i += 50) {
+          if (cancelled) return
+          const batch = idArr.slice(i, i + 50)
+          const filter = batch.map((id) => `id="${id}"`).join('||')
+          try {
+            const res = await pb.collection(colName).getList(1, 50, { filter, fields: 'id,name,first_name,last_name,full_name,title,email' })
+            for (const rec of res.items) {
+              // Try multiple display name strategies
+              const label =
+                [rec.last_name, rec.first_name].filter(Boolean).join(' ') ||
+                rec.full_name ||
+                rec.name ||
+                rec.title ||
+                rec.email ||
+                rec.id
+              idMap[rec.id] = label
+            }
+          } catch {
+            // Collection might not have those fields, fall back to id
+          }
+        }
+        for (const idx of colIdxs) {
+          labels[idx] = idMap
+        }
+      }
+      if (!cancelled) setRelationLabels(labels)
+    }
+
+    resolve()
+    return () => { cancelled = true }
+  }, [selectedCol, records, columns, rows, collections])
+
   // Group collections by type
   const grouped = useMemo(() => {
     const groups: Record<string, CollectionInfo[]> = { auth: [], base: [], view: [] }
@@ -286,7 +376,7 @@ export default function TableBrowser() {
                   }
                 }}
               >
-                <ResultsTable columns={columns} rows={rows} />
+                <ResultsTable columns={columns} rows={rows} relationLabels={relationLabels} />
               </div>
             )}
 

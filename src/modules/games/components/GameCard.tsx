@@ -11,6 +11,14 @@ import ParticipationSummary from '../../../components/ParticipationSummary'
 import { useAuth } from '../../../hooks/useAuth'
 import { useParticipation } from '../../../hooks/useParticipation'
 
+function parseSets(json: unknown): Array<{ home: number; away: number }> {
+  if (!Array.isArray(json)) return []
+  return json.filter(
+    (s): s is { home: number; away: number } =>
+      typeof s === 'object' && s !== null && 'home' in s && 'away' in s,
+  )
+}
+
 interface GameCardProps {
   game: Game
   onClick?: (game: Game) => void
@@ -54,8 +62,8 @@ function StatusBadge({ status }: { status: Game['status'] }) {
 
 export default function GameCard({ game, onClick, variant = 'card' }: GameCardProps) {
   const { t } = useTranslation('games')
-  const { user, memberTeamIds } = useAuth()
-  const canParticipate = !!user && !!game.kscw_team && memberTeamIds.includes(game.kscw_team)
+  const { user, canParticipateIn } = useAuth()
+  const canParticipate = !!user && !!game.kscw_team && canParticipateIn(game.kscw_team)
   const expanded = game as ExpandedGame
   const expandedHall = expanded.expand?.hall
   const hallInfo = expandedHall
@@ -72,48 +80,120 @@ export default function GameCard({ game, onClick, variant = 'card' }: GameCardPr
     const hasScore = game.status === 'completed' || game.status === 'live'
     const homeWon = Number(game.home_score) > Number(game.away_score)
     const awayWon = Number(game.away_score) > Number(game.home_score)
+    const sets = parseSets(game.sets_json)
 
     return (
-      <div
-        onClick={() => onClick?.(game)}
-        className={`flex items-center gap-3 border-b border-gray-100 px-4 py-2 dark:border-gray-700 ${onClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700' : ''}`}
-      >
-        {/* Date + time */}
-        <div className="w-16 shrink-0 text-xs text-gray-500 dark:text-gray-400">
-          <div>{short}</div>
-          {game.time && <div>{formatTime(game.time)}</div>}
-        </div>
-
-        {/* Sport icon */}
-        {expanded.expand?.kscw_team?.sport === 'basketball'
-          ? <BasketballIcon className="h-5 w-5 shrink-0" filled />
-          : <VolleyballIcon className="h-5 w-5 shrink-0" filled />}
-
-        {/* Team names — stacked */}
-        <div className="min-w-0 flex-1">
-          <p className={`truncate text-sm text-gray-900 dark:text-gray-100 ${game.type === 'home' ? 'font-bold' : ''}`}>
-            {game.home_team}
-          </p>
-          <p className={`truncate text-sm text-gray-900 dark:text-gray-100 ${game.type === 'away' ? 'font-bold' : ''}`}>
-            {game.away_team}
-          </p>
-        </div>
-
-        {/* Vertical score: green for winner, red for loser */}
-        {hasScore && (
-          <div className="shrink-0 text-right font-mono text-sm font-bold leading-snug">
-            <div className={homeWon ? 'text-green-500' : awayWon ? 'text-red-500' : 'text-gray-400'}>
-              {game.home_score}
+      <>
+        {/* Mobile: flex row */}
+        <div
+          onClick={() => onClick?.(game)}
+          className={`border-b border-gray-100 dark:border-gray-700 md:hidden ${onClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700' : ''}`}
+        >
+          <div className="flex items-center gap-2 px-4 py-2.5">
+            <div className="w-16 shrink-0 text-xs text-gray-500 dark:text-gray-400">
+              <div>{short}</div>
+              {game.time && <div>{formatTime(game.time)}</div>}
             </div>
-            <div className={awayWon ? 'text-green-500' : homeWon ? 'text-red-500' : 'text-gray-400'}>
-              {game.away_score}
+            {expanded.expand?.kscw_team?.sport === 'basketball'
+              ? <BasketballIcon className="h-5 w-5 shrink-0" filled />
+              : <VolleyballIcon className="h-5 w-5 shrink-0" filled />}
+            <div className="min-w-0 flex-1">
+              <p className={`truncate text-sm text-gray-900 dark:text-gray-100 ${game.type === 'home' ? 'font-bold' : ''}`}>
+                {game.home_team}
+              </p>
+              <p className={`truncate text-sm text-gray-900 dark:text-gray-100 ${game.type === 'away' ? 'font-bold' : ''}`}>
+                {game.away_team}
+              </p>
             </div>
+            {hasScore && (
+              <div className="shrink-0 text-right font-mono text-sm font-bold leading-snug">
+                <div className={homeWon ? 'text-green-500' : awayWon ? 'text-red-500' : 'text-gray-400'}>{game.home_score}</div>
+                <div className={awayWon ? 'text-green-500' : homeWon ? 'text-red-500' : 'text-gray-400'}>{game.away_score}</div>
+              </div>
+            )}
+            {game.status !== 'completed' && <StatusBadge status={game.status} />}
           </div>
-        )}
+        </div>
 
-        {/* Only show badge for non-completed states (live, postponed) */}
-        {game.status !== 'completed' && <StatusBadge status={game.status} />}
-      </div>
+        {/* Desktop: uses display:contents so cells participate in parent grid */}
+        <div
+          onClick={() => onClick?.(game)}
+          className={`col-span-full hidden md:grid md:grid-cols-subgrid items-center gap-x-3 border-b border-gray-100 px-5 py-3 dark:border-gray-700 ${onClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700' : ''}`}
+        >
+          {/* Col 1: Date + time */}
+          <div className="text-xs text-gray-500 dark:text-gray-400">
+            <div>{short}</div>
+            {game.time && <div>{formatTime(game.time)}</div>}
+          </div>
+
+          {/* Col 2: Sport icon */}
+          <div>
+            {expanded.expand?.kscw_team?.sport === 'basketball'
+              ? <BasketballIcon className="h-5 w-5" filled />
+              : <VolleyballIcon className="h-5 w-5" filled />}
+          </div>
+
+          {/* Col 3: Team chip */}
+          <div>
+            {kscwTeamName ? <TeamChip team={kscwTeamName} size="xs" /> : null}
+          </div>
+
+          {/* Col 4: Total score (left of team names) */}
+          <div className="text-right font-mono text-sm font-bold">
+            {hasScore ? (
+              <>
+                <p className={`leading-5 ${homeWon ? 'text-green-500' : awayWon ? 'text-red-500' : 'text-gray-400'}`}>{game.home_score}</p>
+                <p className={`leading-5 ${awayWon ? 'text-green-500' : homeWon ? 'text-red-500' : 'text-gray-400'}`}>{game.away_score}</p>
+              </>
+            ) : (
+              game.status !== 'completed' && <StatusBadge status={game.status} />
+            )}
+          </div>
+
+          {/* Col 5: Team names */}
+          <div className="min-w-0">
+            <p className={`truncate text-sm leading-5 text-gray-900 dark:text-gray-100 ${game.type === 'home' ? 'font-bold' : ''}`}>
+              {game.home_team}
+            </p>
+            <p className={`truncate text-sm leading-5 text-gray-900 dark:text-gray-100 ${game.type === 'away' ? 'font-bold' : ''}`}>
+              {game.away_team}
+            </p>
+          </div>
+
+          {/* Col 6: Set scores */}
+          <div className="flex items-center gap-1">
+            {hasScore && sets.length > 0 && sets.map((s, i) => {
+              const homeSetWon = s.home > s.away
+              return (
+                <span
+                  key={i}
+                  className={`rounded px-1.5 py-0.5 text-xs font-mono tabular-nums ${
+                    homeSetWon === (game.type === 'home')
+                      ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                      : 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                  }`}
+                >
+                  {s.home}:{s.away}
+                </span>
+              )
+            })}
+          </div>
+
+          {/* Col 7: League */}
+          <div>
+            {game.league && (
+              <span className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500 dark:bg-gray-700 dark:text-gray-400">
+                {leagueShort(game.league)}
+              </span>
+            )}
+          </div>
+
+          {/* Col 8: Hall */}
+          <div className="truncate text-xs text-gray-500 dark:text-gray-400">
+            {hallInfo}
+          </div>
+        </div>
+      </>
     )
   }
 
@@ -177,7 +257,9 @@ export default function GameCard({ game, onClick, variant = 'card' }: GameCardPr
 
 function GameCardParticipation({ game }: { game: Game }) {
   const { t } = useTranslation('participation')
-  const { effectiveStatus, hasAbsence, setStatus } = useParticipation('game', game.id, game.date)
+  const { isStaffOnly } = useAuth()
+  const staffOnly = !!game.kscw_team && isStaffOnly(game.kscw_team)
+  const { effectiveStatus, hasAbsence, setStatus } = useParticipation('game', game.id, game.date, undefined, staffOnly)
 
   if (hasAbsence) {
     return <span className="text-xs text-gray-500 dark:text-gray-400">{t('absent')}</span>

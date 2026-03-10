@@ -6,9 +6,10 @@ import { getCurrentSeason, getSeasonDateRange, formatDateCompact, formatTime } f
 import { logActivity } from '../../utils/logActivity'
 import pb from '../../pb'
 import Button from '../../components/ui/Button'
-import { Select } from '../../components/ui/Input'
 import LoadingSpinner from '../../components/LoadingSpinner'
-import { runAssignment, getTeamCounts, type GameAssignment, type ConflictEntry } from './components/AssignmentAlgorithm'
+import TeamSelect from '../../components/TeamSelect'
+import TeamChip from '../../components/TeamChip'
+import { runAssignment, getTeamCounts, type GameAssignment } from './components/AssignmentAlgorithm'
 
 type ExpandedGame = Game & {
   expand?: {
@@ -45,7 +46,7 @@ export default function ScorerAssignPage() {
 
   const { data: members } = usePB<Member>('members', {
     filter: 'active=true',
-    fields: 'id,name,first_name,last_name,scorer_licence',
+    fields: 'id,name,first_name,last_name,licences',
     perPage: 500,
   })
 
@@ -251,44 +252,35 @@ export default function ScorerAssignPage() {
                         <td className="px-2 py-2" colSpan={2}>
                           <div className="flex items-center gap-1">
                             <span className="rounded bg-purple-100 px-1 py-0.5 text-[10px] font-medium text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">S/T</span>
-                            <Select
+                            <TeamSelect
                               value={a.combinedTeamId ?? ''}
-                              onChange={(e) => handleOverride(a.gameId, 'combined', e.target.value)}
-                              className="!min-h-0 !py-1 !text-xs"
-                            >
-                              <option value="">{t('selectTeam')}</option>
-                              {teams.map((team) => (
-                                <option key={team.id} value={team.id}>{team.name}</option>
-                              ))}
-                            </Select>
+                              onChange={(v) => handleOverride(a.gameId, 'combined', v)}
+                              teams={teams}
+                              placeholder={t('selectTeam')}
+                              compact
+                            />
                           </div>
                         </td>
                       </>
                     ) : (
                       <>
                         <td className="px-2 py-2">
-                          <Select
+                          <TeamSelect
                             value={a.scorerTeamId ?? ''}
-                            onChange={(e) => handleOverride(a.gameId, 'scorer', e.target.value)}
-                            className="!min-h-0 !py-1 !text-xs"
-                          >
-                            <option value="">{t('selectTeam')}</option>
-                            {teams.map((team) => (
-                              <option key={team.id} value={team.id}>{team.name}</option>
-                            ))}
-                          </Select>
+                            onChange={(v) => handleOverride(a.gameId, 'scorer', v)}
+                            teams={teams}
+                            placeholder={t('selectTeam')}
+                            compact
+                          />
                         </td>
                         <td className="px-2 py-2">
-                          <Select
+                          <TeamSelect
                             value={a.taefelerTeamId ?? ''}
-                            onChange={(e) => handleOverride(a.gameId, 'taefeler', e.target.value)}
-                            className="!min-h-0 !py-1 !text-xs"
-                          >
-                            <option value="">{t('selectTeam')}</option>
-                            {teams.map((team) => (
-                              <option key={team.id} value={team.id}>{team.name}</option>
-                            ))}
-                          </Select>
+                            onChange={(v) => handleOverride(a.gameId, 'taefeler', v)}
+                            teams={teams}
+                            placeholder={t('selectTeam')}
+                            compact
+                          />
                         </td>
                       </>
                     )}
@@ -336,7 +328,7 @@ export default function ScorerAssignPage() {
                   .sort(([a], [b]) => a.localeCompare(b))
                   .map(([name, counts]) => (
                     <tr key={name} className="border-b border-gray-100 dark:border-gray-700/50">
-                      <td className="px-3 py-2 font-medium text-gray-900 dark:text-gray-100">{name}</td>
+                      <td className="px-3 py-2"><TeamChip team={name} size="sm" /></td>
                       <td className="px-3 py-2 text-center text-gray-500 dark:text-gray-400">{counts.ownGames}</td>
                       <td className="px-3 py-2 text-center text-gray-600 dark:text-gray-400">{counts.scorer || '—'}</td>
                       <td className="px-3 py-2 text-center text-gray-600 dark:text-gray-400">{counts.taefeler || '—'}</td>

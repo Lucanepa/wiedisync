@@ -14,6 +14,7 @@ import VolleyballIcon from '../../components/VolleyballIcon'
 import BasketballIcon from '../../components/BasketballIcon'
 import NotificationPanel from '../../components/NotificationPanel'
 import GameDetailModal from '../games/components/GameDetailModal'
+import TrainingDetailModal from '../trainings/TrainingDetailModal'
 import type { Game, Event, Team, Training, Hall, Member, MemberTeam, Notification } from '../../types'
 import type { RecordModel } from 'pocketbase'
 import { ClipboardList, Clock, AlertTriangle, Trophy, Bell } from 'lucide-react'
@@ -40,6 +41,7 @@ export default function HomePage() {
   // Hide sport toggle for logged-in users who play only one sport
   const showSportToggle = !user || primarySport === 'both'
   const [selectedGame, setSelectedGame] = useState<ExpandedGame | null>(null)
+  const [selectedTraining, setSelectedTraining] = useState<TrainingExpanded | null>(null)
   const [showAllGames, setShowAllGames] = useState(false)
   const [showAllResults, setShowAllResults] = useState(false)
   const [notifPanelOpen, setNotifPanelOpen] = useState(false)
@@ -242,7 +244,7 @@ export default function HomePage() {
               <SectionHeader title={t('nextTrainings')} linkTo="/trainings" linkLabel={t('allTrainings')} />
               <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
                 {nextTrainings.map((tr) => (
-                  <CompactTrainingRow key={tr.id} training={tr} />
+                  <CompactTrainingRow key={tr.id} training={tr} onClick={() => setSelectedTraining(tr)} />
                 ))}
               </div>
             </div>
@@ -293,6 +295,7 @@ export default function HomePage() {
       </div>
 
       <GameDetailModal game={selectedGame} onClose={() => setSelectedGame(null)} />
+      <TrainingDetailModal training={selectedTraining} onClose={() => setSelectedTraining(null)} />
 
       {notifPanelOpen && (
         <NotificationPanel
@@ -443,14 +446,17 @@ function CompactGameRow({ game, showScore, onClick }: { game: ExpandedGame; show
   )
 }
 
-function CompactTrainingRow({ training }: { training: TrainingExpanded }) {
+function CompactTrainingRow({ training, onClick }: { training: TrainingExpanded; onClick?: () => void }) {
   const team = training.expand?.team
   const hall = training.expand?.hall
   const dateStr = training.date ? formatDate(training.date) : ''
   const weekday = training.date ? formatWeekday(training.date) : ''
 
   return (
-    <div className="flex items-center gap-3 border-b border-gray-100 px-4 py-3 last:border-b-0 dark:border-gray-700">
+    <div
+      className="flex cursor-pointer items-center gap-3 border-b border-gray-100 px-4 py-3 last:border-b-0 hover:bg-gray-50 active:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-700/50 dark:active:bg-gray-700"
+      onClick={onClick}
+    >
       {/* Date & time */}
       <div className="w-24 shrink-0 text-xs text-gray-500 dark:text-gray-400">
         <div>{weekday}, {dateStr}</div>
@@ -474,7 +480,7 @@ function CompactTrainingRow({ training }: { training: TrainingExpanded }) {
 function EventRow({ event }: { event: EventExpanded }) {
   const teams = event.expand?.teams ?? []
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-card dark:border-gray-700 dark:bg-gray-800">
+    <Link to="/events" className="block overflow-hidden rounded-xl border border-gray-200 bg-white shadow-card transition-shadow hover:shadow-card-hover dark:border-gray-700 dark:bg-gray-800">
       <div className="flex items-start gap-3 p-4">
         {/* Date badge */}
         <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg bg-brand-50 dark:bg-brand-900/40">
@@ -510,6 +516,6 @@ function EventRow({ event }: { event: EventExpanded }) {
           )}
         </div>
       </div>
-    </div>
+    </Link>
   )
 }

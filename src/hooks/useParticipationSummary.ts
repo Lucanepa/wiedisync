@@ -18,12 +18,14 @@ export function useParticipationSummary(
   const confirmed = confirmedParts.length
   const tentative = tentativeParts.length
   const declined = data.filter(p => p.status === 'declined').length
+  const waitlisted = data.filter(p => p.status === 'waitlisted').length
   const guests = data.reduce((sum, p) => sum + (p.guest_count ?? 0), 0)
 
   return {
     confirmed,
     tentative,
     declined,
+    waitlisted,
     guests,
     total: data.length,
     totalWithGuests: data.length + guests,

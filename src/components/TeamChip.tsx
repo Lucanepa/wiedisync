@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { getTeamColor } from '../utils/teamColors'
+import { getTeamColor, trimBBTeamName } from '../utils/teamColors'
 
 interface TeamChipProps {
   team: string
@@ -26,7 +26,7 @@ export default function TeamChip({ team, label, icon, size = 'md', className = '
       }}
     >
       {icon}
-      {label ?? team}
+      {label ?? trimBBTeamName(team)}
     </span>
   )
 }

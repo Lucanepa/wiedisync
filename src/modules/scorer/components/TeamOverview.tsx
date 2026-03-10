@@ -9,11 +9,14 @@ import { formatTime } from '../../../utils/dateHelpers'
 interface TeamOverviewProps {
   games: Game[]
   members: Member[]
+  sport: 'volleyball' | 'basketball'
 }
+
+type DutyType = 'scorer' | 'taefeler' | 'scorer_taefeler' | 'bb_anschreiber' | 'bb_zeitnehmer' | 'bb_24s_official'
 
 interface DutyEntry {
   game: ExpandedGame
-  dutyType: 'scorer' | 'taefeler' | 'scorer_taefeler'
+  dutyType: DutyType
   teamName: string
   memberName: string | null
 }
@@ -23,7 +26,7 @@ function getDateFormatter(locale: string) {
   return new Intl.DateTimeFormat(loc, { weekday: 'short', day: 'numeric', month: 'short' })
 }
 
-export default function TeamOverview({ games, members }: TeamOverviewProps) {
+export default function TeamOverview({ games, members, sport }: TeamOverviewProps) {
   const { t, i18n } = useTranslation('scorer')
   const dateFormatter = useMemo(() => getDateFormatter(i18n.language), [i18n.language])
 
@@ -33,64 +36,55 @@ export default function TeamOverview({ games, members }: TeamOverviewProps) {
     return map
   }, [members])
 
+  const getMemberName = (id: string | undefined): string | null => {
+    if (!id) return null
+    const m = memberMap.get(id)
+    return m ? `${m.first_name} ${m.last_name}` : null
+  }
+
   // Group duties by team
   const teamDuties = useMemo(() => {
     const map = new Map<string, DutyEntry[]>()
 
+    const addEntry = (teamName: string, entry: DutyEntry) => {
+      if (!map.has(teamName)) map.set(teamName, [])
+      map.get(teamName)!.push(entry)
+    }
+
     for (const game of games) {
       const eg = game as ExpandedGame
 
-      // Combined mode
-      if (game.scorer_taefeler_duty_team) {
-        const teamName = eg.expand?.scorer_taefeler_duty_team?.name ?? '?'
-        const member = game.scorer_taefeler_member ? memberMap.get(game.scorer_taefeler_member) : null
-        const entry: DutyEntry = {
-          game: eg,
-          dutyType: 'scorer_taefeler',
-          teamName,
-          memberName: member ? `${member.first_name} ${member.last_name}` : null,
+      if (sport === 'volleyball') {
+        if (game.scorer_taefeler_duty_team) {
+          const teamName = eg.expand?.scorer_taefeler_duty_team?.name ?? '?'
+          addEntry(teamName, { game: eg, dutyType: 'scorer_taefeler', teamName, memberName: getMemberName(game.scorer_taefeler_member) })
         }
-        if (!map.has(teamName)) map.set(teamName, [])
-        map.get(teamName)!.push(entry)
-      }
-
-      // Separate: scorer
-      if (game.scorer_duty_team) {
-        const teamName = eg.expand?.scorer_duty_team?.name ?? '?'
-        const member = game.scorer_member ? memberMap.get(game.scorer_member) : null
-        const entry: DutyEntry = {
-          game: eg,
-          dutyType: 'scorer',
-          teamName,
-          memberName: member ? `${member.first_name} ${member.last_name}` : null,
+        if (game.scorer_duty_team) {
+          const teamName = eg.expand?.scorer_duty_team?.name ?? '?'
+          addEntry(teamName, { game: eg, dutyType: 'scorer', teamName, memberName: getMemberName(game.scorer_member) })
         }
-        if (!map.has(teamName)) map.set(teamName, [])
-        map.get(teamName)!.push(entry)
-      }
-
-      // Separate: taefeler
-      if (game.taefeler_duty_team) {
-        const teamName = eg.expand?.taefeler_duty_team?.name ?? '?'
-        const member = game.taefeler_member ? memberMap.get(game.taefeler_member) : null
-        const entry: DutyEntry = {
-          game: eg,
-          dutyType: 'taefeler',
-          teamName,
-          memberName: member ? `${member.first_name} ${member.last_name}` : null,
+        if (game.taefeler_duty_team) {
+          const teamName = eg.expand?.taefeler_duty_team?.name ?? '?'
+          addEntry(teamName, { game: eg, dutyType: 'taefeler', teamName, memberName: getMemberName(game.taefeler_member) })
         }
-        if (!map.has(teamName)) map.set(teamName, [])
-        map.get(teamName)!.push(entry)
+      } else {
+        if (game.bb_duty_team) {
+          const teamName = eg.expand?.bb_duty_team?.name ?? '?'
+          addEntry(teamName, { game: eg, dutyType: 'bb_anschreiber', teamName, memberName: getMemberName(game.bb_anschreiber) })
+          addEntry(teamName, { game: eg, dutyType: 'bb_zeitnehmer', teamName, memberName: getMemberName(game.bb_zeitnehmer) })
+          if (game.bb_24s_official) {
+            addEntry(teamName, { game: eg, dutyType: 'bb_24s_official', teamName, memberName: getMemberName(game.bb_24s_official) })
+          }
+        }
       }
     }
 
-    // Sort entries within each team by date
     for (const entries of map.values()) {
       entries.sort((a, b) => a.game.date.localeCompare(b.game.date) || a.game.time.localeCompare(b.game.time))
     }
 
-    // Sort teams alphabetically
     return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b, 'de'))
-  }, [games, memberMap])
+  }, [games, memberMap, sport])
 
   if (teamDuties.length === 0) {
     return (
@@ -100,10 +94,13 @@ export default function TeamOverview({ games, members }: TeamOverviewProps) {
     )
   }
 
-  const dutyLabel: Record<string, string> = {
+  const dutyLabel: Record<DutyType, string> = {
     scorer: t('scorer'),
     taefeler: t('scoreboard'),
     scorer_taefeler: t('scorerTaefeler'),
+    bb_anschreiber: t('bbAnschreiber'),
+    bb_zeitnehmer: t('bbZeitnehmer'),
+    bb_24s_official: t('bb24sOfficial'),
   }
 
   return (
@@ -133,7 +130,7 @@ export default function TeamOverview({ games, members }: TeamOverviewProps) {
                     {entry.memberName ?? t('unassigned')}
                   </span>
                 </div>
-                <DutyStatus game={entry.game} />
+                <DutyStatus game={entry.game} sport={sport} />
               </div>
             ))}
           </div>

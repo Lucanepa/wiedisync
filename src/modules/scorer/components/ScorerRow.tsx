@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { RecordModel } from 'pocketbase'
-import type { Game, Member, Team, Hall } from '../../../types'
+import type { Game, Member, Team, Hall, LicenceType } from '../../../types'
 import TeamChip from '../../../components/TeamChip'
 import AssignmentEditor from './AssignmentEditor'
 import { downloadICal } from '../../../utils/icalGenerator'
 import type { CalendarEntry } from '../../../types/calendar'
 import { formatTime } from '../../../utils/dateHelpers'
+import { Calendar } from 'lucide-react'
+import TeamSelect from '../../../components/TeamSelect'
 
 interface ScorerRowProps {
   game: Game
@@ -18,19 +20,26 @@ interface ScorerRowProps {
   showContact: boolean
   userId?: string
   userTeamIds?: string[]
-  userHasLicence?: boolean
+  userLicences?: LicenceType[]
+  sport: 'volleyball' | 'basketball'
 }
 
 export type ExpandedGame = Game & {
   expand?: {
     kscw_team?: Team & RecordModel
     hall?: Hall & RecordModel
+    // VB duty relations
     scorer_member?: Member & RecordModel
     taefeler_member?: Member & RecordModel
     scorer_taefeler_member?: Member & RecordModel
     scorer_duty_team?: Team & RecordModel
     taefeler_duty_team?: Team & RecordModel
     scorer_taefeler_duty_team?: Team & RecordModel
+    // BB duty relations
+    bb_anschreiber?: Member & RecordModel
+    bb_zeitnehmer?: Member & RecordModel
+    bb_24s_official?: Member & RecordModel
+    bb_duty_team?: Team & RecordModel
   }
 }
 
@@ -39,32 +48,48 @@ function getDateFormatter(locale: string) {
   return new Intl.DateTimeFormat(loc, { weekday: 'short', day: 'numeric', month: 'short' })
 }
 
-/** Game has scorer+taefeler (separate) assignments */
-function isSeparateMode(game: Game): boolean {
+// ── VB helpers ──
+
+function isVbSeparateMode(game: Game): boolean {
   return !!(game.scorer_duty_team || game.scorer_member || game.taefeler_duty_team || game.taefeler_member)
 }
 
-/** Game has a combined scorer_taefeler assignment */
-function isCombinedMode(game: Game): boolean {
+function isVbCombinedMode(game: Game): boolean {
   return !!(game.scorer_taefeler_duty_team || game.scorer_taefeler_member)
 }
 
-export function hasAnyAssignment(game: Game): boolean {
+export function hasAnyVbAssignment(game: Game): boolean {
   return !!(game.scorer_member || game.taefeler_member || game.scorer_taefeler_member)
 }
 
-/** All required slots for this game are filled */
-export function isFullyAssigned(game: Game): boolean {
-  if (isCombinedMode(game)) {
-    return !!game.scorer_taefeler_member
-  }
-  if (isSeparateMode(game)) {
-    return !!(game.scorer_member && game.taefeler_member)
-  }
+function isVbFullyAssigned(game: Game): boolean {
+  if (isVbCombinedMode(game)) return !!game.scorer_taefeler_member
+  if (isVbSeparateMode(game)) return !!(game.scorer_member && game.taefeler_member)
   return false
 }
 
-export function DutyStatus({ game }: { game: Game }) {
+// ── BB helpers ──
+
+export function hasAnyBbAssignment(game: Game): boolean {
+  return !!(game.bb_anschreiber || game.bb_zeitnehmer || game.bb_24s_official)
+}
+
+function isBbFullyAssigned(game: Game): boolean {
+  // OTR2 (24s) is optional, so only OTR1 roles are required
+  return !!(game.bb_anschreiber && game.bb_zeitnehmer)
+}
+
+// ── Generic helpers ──
+
+export function hasAnyAssignment(game: Game): boolean {
+  return hasAnyVbAssignment(game) || hasAnyBbAssignment(game)
+}
+
+export function isFullyAssigned(game: Game, sport: 'volleyball' | 'basketball'): boolean {
+  return sport === 'basketball' ? isBbFullyAssigned(game) : isVbFullyAssigned(game)
+}
+
+export function DutyStatus({ game, sport }: { game: Game; sport: 'volleyball' | 'basketball' }) {
   const { t } = useTranslation('scorer')
   if (game.duty_confirmed) {
     return (
@@ -76,7 +101,8 @@ export function DutyStatus({ game }: { game: Game }) {
       </span>
     )
   }
-  if (hasAnyAssignment(game)) {
+  const hasAssignment = sport === 'basketball' ? hasAnyBbAssignment(game) : hasAnyVbAssignment(game)
+  if (hasAssignment) {
     return (
       <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
         {t('statusAssigned')}
@@ -108,7 +134,9 @@ function handleExportICal(game: ExpandedGame, title: string) {
   downloadICal([entry], `scorer-duty-${game.date}.ics`)
 }
 
-type AssignRole = 'scorer' | 'taefeler' | 'scorer_taefeler'
+type VbAssignRole = 'scorer' | 'taefeler' | 'scorer_taefeler'
+type BbAssignRole = 'bb_anschreiber' | 'bb_zeitnehmer' | 'bb_24s_official'
+type AssignRole = VbAssignRole | BbAssignRole
 
 export default function ScorerRow({
   game,
@@ -120,15 +148,16 @@ export default function ScorerRow({
   showContact,
   userId,
   userTeamIds = [],
-  userHasLicence = false,
+  userLicences = [],
+  sport,
 }: ScorerRowProps) {
   const { t, i18n } = useTranslation('scorer')
   const expanded = game as ExpandedGame
   const kscwTeam = expanded.expand?.kscw_team?.name ?? ''
   const dateStr = game.date ? getDateFormatter(i18n.language).format(new Date(game.date)) : ''
 
-  const separate = isSeparateMode(game)
-  const combined = isCombinedMode(game)
+  const vbSeparate = isVbSeparateMode(game)
+  const vbCombined = isVbCombinedMode(game)
 
   // Self-assign confirmation state
   const [confirmRole, setConfirmRole] = useState<AssignRole | null>(null)
@@ -136,139 +165,235 @@ export default function ScorerRow({
   // Can this user self-assign to a role?
   function canSelfAssign(role: AssignRole): boolean {
     if (!userId || game.duty_confirmed) return false
-    // scorer and scorer_taefeler need licence
-    if ((role === 'scorer' || role === 'scorer_taefeler') && !userHasLicence) return false
-    let dutyTeamId: string | undefined
-    let currentPerson: string | undefined
-    if (role === 'scorer') {
-      dutyTeamId = game.scorer_duty_team
-      currentPerson = game.scorer_member
-    } else if (role === 'taefeler') {
-      dutyTeamId = game.taefeler_duty_team
-      currentPerson = game.taefeler_member
+
+    if (sport === 'volleyball') {
+      const vbRole = role as VbAssignRole
+      if ((vbRole === 'scorer' || vbRole === 'scorer_taefeler') && !userLicences.includes('scorer_vb')) return false
+      let dutyTeamId: string | undefined
+      let currentPerson: string | undefined
+      if (vbRole === 'scorer') {
+        dutyTeamId = game.scorer_duty_team
+        currentPerson = game.scorer_member
+      } else if (vbRole === 'taefeler') {
+        dutyTeamId = game.taefeler_duty_team
+        currentPerson = game.taefeler_member
+      } else {
+        dutyTeamId = game.scorer_taefeler_duty_team
+        currentPerson = game.scorer_taefeler_member
+      }
+      if (currentPerson) return false
+      if (!dutyTeamId) return false
+      return userTeamIds.includes(dutyTeamId)
     } else {
-      dutyTeamId = game.scorer_taefeler_duty_team
-      currentPerson = game.scorer_taefeler_member
+      const bbRole = role as BbAssignRole
+      if (bbRole === 'bb_anschreiber' && !userLicences.includes('otr1_bb')) return false
+      if (bbRole === 'bb_zeitnehmer' && !userLicences.includes('otr1_bb')) return false
+      if (bbRole === 'bb_24s_official' && !userLicences.includes('otr2_bb') && !userLicences.includes('otn_bb')) return false
+      const currentPerson = game[bbRole]
+      if (currentPerson) return false
+      if (!game.bb_duty_team) return false
+      return userTeamIds.includes(game.bb_duty_team)
     }
-    if (currentPerson) return false
-    if (!dutyTeamId) return false
-    return userTeamIds.includes(dutyTeamId)
   }
 
   function handleSelfAssign(role: AssignRole) {
     if (!userId) return
     const fields: Partial<Game> = {}
-    if (role === 'scorer') fields.scorer_member = userId
-    else if (role === 'taefeler') fields.taefeler_member = userId
-    else fields.scorer_taefeler_member = userId
 
-    // Auto-confirm if all slots will be filled
-    if (role === 'scorer' && game.taefeler_member) fields.duty_confirmed = true
-    if (role === 'taefeler' && game.scorer_member) fields.duty_confirmed = true
-    if (role === 'scorer_taefeler') fields.duty_confirmed = true
+    if (sport === 'volleyball') {
+      const vbRole = role as VbAssignRole
+      if (vbRole === 'scorer') fields.scorer_member = userId
+      else if (vbRole === 'taefeler') fields.taefeler_member = userId
+      else fields.scorer_taefeler_member = userId
+
+      if (vbRole === 'scorer' && game.taefeler_member) fields.duty_confirmed = true
+      if (vbRole === 'taefeler' && game.scorer_member) fields.duty_confirmed = true
+      if (vbRole === 'scorer_taefeler') fields.duty_confirmed = true
+    } else {
+      const bbRole = role as BbAssignRole
+      fields[bbRole] = userId
+
+      const nextAnschreiber = bbRole === 'bb_anschreiber' ? userId : game.bb_anschreiber
+      const nextZeitnehmer = bbRole === 'bb_zeitnehmer' ? userId : game.bb_zeitnehmer
+      if (nextAnschreiber && nextZeitnehmer) fields.duty_confirmed = true
+    }
 
     onUpdate(game.id, fields)
     setConfirmRole(null)
   }
 
-  // Admin update with auto-confirm
   function handleAdminUpdate(gameId: string, fields: Partial<Game>) {
-    if (separate) {
-      const nextScorer = 'scorer_member' in fields ? fields.scorer_member : game.scorer_member
-      const nextTaefeler = 'taefeler_member' in fields ? fields.taefeler_member : game.taefeler_member
-      if (nextScorer && nextTaefeler && !game.duty_confirmed) {
-        fields.duty_confirmed = true
+    if (sport === 'volleyball') {
+      if (vbSeparate) {
+        const nextScorer = 'scorer_member' in fields ? fields.scorer_member : game.scorer_member
+        const nextTaefeler = 'taefeler_member' in fields ? fields.taefeler_member : game.taefeler_member
+        if (nextScorer && nextTaefeler && !game.duty_confirmed) {
+          fields.duty_confirmed = true
+        }
+      } else if (vbCombined) {
+        const nextMember = 'scorer_taefeler_member' in fields ? fields.scorer_taefeler_member : game.scorer_taefeler_member
+        if (nextMember && !game.duty_confirmed) {
+          fields.duty_confirmed = true
+        }
       }
-    } else if (combined) {
-      const nextMember = 'scorer_taefeler_member' in fields ? fields.scorer_taefeler_member : game.scorer_taefeler_member
-      if (nextMember && !game.duty_confirmed) {
+    } else {
+      const nextAnschreiber = 'bb_anschreiber' in fields ? fields.bb_anschreiber : game.bb_anschreiber
+      const nextZeitnehmer = 'bb_zeitnehmer' in fields ? fields.bb_zeitnehmer : game.bb_zeitnehmer
+      if (nextAnschreiber && nextZeitnehmer && !game.duty_confirmed) {
         fields.duty_confirmed = true
       }
     }
     onUpdate(gameId, fields)
   }
 
-  const roleLabel = (role: AssignRole) =>
-    role === 'scorer' ? t('scorer') : role === 'taefeler' ? t('scoreboard') : t('scorerTaefeler')
+  const roleLabel = (role: AssignRole) => {
+    if (role === 'scorer') return t('scorer')
+    if (role === 'taefeler') return t('scoreboard')
+    if (role === 'scorer_taefeler') return t('scorerTaefeler')
+    if (role === 'bb_anschreiber') return t('bbAnschreiber')
+    if (role === 'bb_zeitnehmer') return t('bbZeitnehmer')
+    if (role === 'bb_24s_official') return t('bb24sOfficial')
+    return role
+  }
+
+  const sportBorder = sport === 'basketball'
+    ? 'border-l-orange-400 dark:border-l-orange-500'
+    : 'border-l-brand-400 dark:border-l-brand-500'
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+    <div className={`rounded-lg border border-gray-200 border-l-4 ${sportBorder} bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800`}>
       {/* Game info */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="text-sm text-gray-500 dark:text-gray-400">
+        <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
           {dateStr} · {game.time ? formatTime(game.time) : ''}
         </div>
         {kscwTeam && <TeamChip team={kscwTeam} size="sm" />}
-        <div className="text-sm font-medium dark:text-gray-200">
+        <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">
           {game.home_team} – {game.away_team}
         </div>
-        <span className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-500 dark:bg-gray-700 dark:text-gray-400">
+        <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-500 dark:bg-gray-700 dark:text-gray-400">
           {game.league}
         </span>
-        <DutyStatus game={game} />
+        <DutyStatus game={game} sport={sport} />
         <button
           onClick={() => handleExportICal(expanded, t('scorerDutyIcal', { home: game.home_team, away: game.away_team }))}
           title={t('exportICal')}
           aria-label={t('exportICal')}
-          className="ml-auto rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+          className="ml-auto rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
         >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
+          <Calendar className="h-4 w-4" />
         </button>
       </div>
 
       {/* Assignment editors */}
       <div className="mt-3 space-y-3">
-        {combined ? (
-          /* Combined mode: single scorer/taefeler slot */
-          <AssignmentEditor
-            label={t('scorerTaefeler')}
-            requireLicence
-            teamValue={game.scorer_taefeler_duty_team ?? ''}
-            personValue={game.scorer_taefeler_member ?? ''}
-            members={members}
-            teams={teams}
-            teamMemberIds={teamMemberIds}
-            onTeamChange={(v) => handleAdminUpdate(game.id, { scorer_taefeler_duty_team: v })}
-            onPersonChange={(v) => handleAdminUpdate(game.id, { scorer_taefeler_member: v })}
-            disabled={!canEdit || game.duty_confirmed}
-            showContact={showContact}
-            selfAssignButton={canSelfAssign('scorer_taefeler')}
-            onSelfAssign={() => setConfirmRole('scorer_taefeler')}
-          />
-        ) : (
-          /* Separate mode (default): scorer + taefeler */
-          <>
+        {sport === 'volleyball' ? (
+          vbCombined ? (
             <AssignmentEditor
-              label={t('scorer')}
-              requireLicence
-              teamValue={game.scorer_duty_team ?? ''}
-              personValue={game.scorer_member ?? ''}
+              label={t('scorerTaefeler')}
+              requiredLicence="scorer_vb"
+              teamValue={game.scorer_taefeler_duty_team ?? ''}
+              personValue={game.scorer_taefeler_member ?? ''}
               members={members}
               teams={teams}
               teamMemberIds={teamMemberIds}
-              onTeamChange={(v) => handleAdminUpdate(game.id, { scorer_duty_team: v })}
-              onPersonChange={(v) => handleAdminUpdate(game.id, { scorer_member: v })}
+              onTeamChange={(v) => handleAdminUpdate(game.id, { scorer_taefeler_duty_team: v })}
+              onPersonChange={(v) => handleAdminUpdate(game.id, { scorer_taefeler_member: v })}
               disabled={!canEdit || game.duty_confirmed}
               showContact={showContact}
-              selfAssignButton={canSelfAssign('scorer')}
-              onSelfAssign={() => setConfirmRole('scorer')}
+              selfAssignButton={canSelfAssign('scorer_taefeler')}
+              onSelfAssign={() => setConfirmRole('scorer_taefeler')}
+            />
+          ) : (
+            <>
+              <AssignmentEditor
+                label={t('scorer')}
+                requiredLicence="scorer_vb"
+                teamValue={game.scorer_duty_team ?? ''}
+                personValue={game.scorer_member ?? ''}
+                members={members}
+                teams={teams}
+                teamMemberIds={teamMemberIds}
+                onTeamChange={(v) => handleAdminUpdate(game.id, { scorer_duty_team: v })}
+                onPersonChange={(v) => handleAdminUpdate(game.id, { scorer_member: v })}
+                disabled={!canEdit || game.duty_confirmed}
+                showContact={showContact}
+                selfAssignButton={canSelfAssign('scorer')}
+                onSelfAssign={() => setConfirmRole('scorer')}
+              />
+              <AssignmentEditor
+                label={t('scoreboard')}
+                teamValue={game.taefeler_duty_team ?? ''}
+                personValue={game.taefeler_member ?? ''}
+                members={members}
+                teams={teams}
+                teamMemberIds={teamMemberIds}
+                onTeamChange={(v) => handleAdminUpdate(game.id, { taefeler_duty_team: v })}
+                onPersonChange={(v) => handleAdminUpdate(game.id, { taefeler_member: v })}
+                disabled={!canEdit || game.duty_confirmed}
+                showContact={showContact}
+                selfAssignButton={canSelfAssign('taefeler')}
+                onSelfAssign={() => setConfirmRole('taefeler')}
+              />
+            </>
+          )
+        ) : (
+          <>
+            <div className="space-y-1.5">
+              <span className="block text-xs font-medium text-gray-500 dark:text-gray-400">{t('bbDutyTeam')}</span>
+              <TeamSelect
+                value={game.bb_duty_team ?? ''}
+                onChange={(v) => handleAdminUpdate(game.id, { bb_duty_team: v })}
+                teams={teams}
+                disabled={!canEdit || game.duty_confirmed}
+                aria-label={t('bbDutyTeam')}
+                placeholder={t('selectTeam')}
+              />
+            </div>
+            <AssignmentEditor
+              label={t('bbAnschreiber')}
+              requiredLicence="otr1_bb"
+              teamValue={game.bb_duty_team ?? ''}
+              personValue={game.bb_anschreiber ?? ''}
+              members={members}
+              teams={teams}
+              teamMemberIds={teamMemberIds}
+              onTeamChange={(v) => handleAdminUpdate(game.id, { bb_duty_team: v })}
+              onPersonChange={(v) => handleAdminUpdate(game.id, { bb_anschreiber: v })}
+              disabled={!canEdit || game.duty_confirmed}
+              showContact={showContact}
+              selfAssignButton={canSelfAssign('bb_anschreiber')}
+              onSelfAssign={() => setConfirmRole('bb_anschreiber')}
             />
             <AssignmentEditor
-              label={t('scoreboard')}
-              requireLicence={false}
-              teamValue={game.taefeler_duty_team ?? ''}
-              personValue={game.taefeler_member ?? ''}
+              label={t('bbZeitnehmer')}
+              requiredLicence="otr1_bb"
+              teamValue={game.bb_duty_team ?? ''}
+              personValue={game.bb_zeitnehmer ?? ''}
               members={members}
               teams={teams}
               teamMemberIds={teamMemberIds}
-              onTeamChange={(v) => handleAdminUpdate(game.id, { taefeler_duty_team: v })}
-              onPersonChange={(v) => handleAdminUpdate(game.id, { taefeler_member: v })}
+              onTeamChange={(v) => handleAdminUpdate(game.id, { bb_duty_team: v })}
+              onPersonChange={(v) => handleAdminUpdate(game.id, { bb_zeitnehmer: v })}
               disabled={!canEdit || game.duty_confirmed}
               showContact={showContact}
-              selfAssignButton={canSelfAssign('taefeler')}
-              onSelfAssign={() => setConfirmRole('taefeler')}
+              selfAssignButton={canSelfAssign('bb_zeitnehmer')}
+              onSelfAssign={() => setConfirmRole('bb_zeitnehmer')}
+            />
+            <AssignmentEditor
+              label={t('bb24sOfficial')}
+              requiredLicence={['otr2_bb', 'otn_bb']}
+              teamValue={game.bb_duty_team ?? ''}
+              personValue={game.bb_24s_official ?? ''}
+              members={members}
+              teams={teams}
+              teamMemberIds={teamMemberIds}
+              onTeamChange={(v) => handleAdminUpdate(game.id, { bb_duty_team: v })}
+              onPersonChange={(v) => handleAdminUpdate(game.id, { bb_24s_official: v })}
+              disabled={!canEdit || game.duty_confirmed}
+              showContact={showContact}
+              selfAssignButton={canSelfAssign('bb_24s_official')}
+              onSelfAssign={() => setConfirmRole('bb_24s_official')}
             />
           </>
         )}

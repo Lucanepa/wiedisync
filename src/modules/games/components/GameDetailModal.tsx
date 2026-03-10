@@ -14,7 +14,7 @@ import pb from '../../../pb'
 import { sanitizeUrl } from '../../../utils/sanitizeUrl'
 import { formatDate, formatTime } from '../../../utils/dateHelpers'
 
-const GAME_EXPAND = 'kscw_team,hall,scorer_member,taefeler_member,scorer_taefeler_member,scorer_duty_team,taefeler_duty_team,scorer_taefeler_duty_team'
+const GAME_EXPAND = 'kscw_team,hall,scorer_member,taefeler_member,scorer_taefeler_member,scorer_duty_team,taefeler_duty_team,scorer_taefeler_duty_team,bb_anschreiber,bb_zeitnehmer,bb_24s_official,bb_duty_team'
 
 interface GameDetailModalProps {
   game: Game | null
@@ -32,6 +32,10 @@ type ExpandedGame = Game & {
     scorer_duty_team?: Team & RecordModel
     taefeler_duty_team?: Team & RecordModel
     scorer_taefeler_duty_team?: Team & RecordModel
+    bb_anschreiber?: Member & RecordModel
+    bb_zeitnehmer?: Member & RecordModel
+    bb_24s_official?: Member & RecordModel
+    bb_duty_team?: Team & RecordModel
   }
 }
 
@@ -52,17 +56,20 @@ const dateFormatter = new Intl.DateTimeFormat('en-US', {
 
 export default function GameDetailModal({ game, onClose, readOnly }: GameDetailModalProps) {
   const { t } = useTranslation('games')
-  const { user, isCoachOf, memberTeamIds } = useAuth()
+  const { user, isCoachOf, canParticipateIn, isStaffOnly } = useAuth()
   const [rosterOpen, setRosterOpen] = useState(false)
   const [editingDeadline, setEditingDeadline] = useState(false)
   const [deadlineValue, setDeadlineValue] = useState(game?.respond_by?.split(' ')[0] ?? '')
   const [fullGame, setFullGame] = useState<Game | null>(null)
   const { update: updateGame } = useMutation<Game>('games')
-  const canParticipate = !!user && !!game?.kscw_team && memberTeamIds.includes(game.kscw_team)
+  const canParticipate = !!user && !!game?.kscw_team && canParticipateIn(game.kscw_team)
+  const staffOnly = !!game?.kscw_team && isStaffOnly(game.kscw_team)
   const { effectiveStatus, hasAbsence, setStatus } = useParticipation(
     'game',
     game?.id ?? '',
     game?.date,
+    undefined,
+    staffOnly,
   )
 
   // Re-fetch with full expand when opened from calendar (which only expands kscw_team,hall)
@@ -76,7 +83,11 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
       (game.scorer_taefeler_member && !exp?.scorer_taefeler_member) ||
       (game.scorer_duty_team && !exp?.scorer_duty_team) ||
       (game.taefeler_duty_team && !exp?.taefeler_duty_team) ||
-      (game.scorer_taefeler_duty_team && !exp?.scorer_taefeler_duty_team)
+      (game.scorer_taefeler_duty_team && !exp?.scorer_taefeler_duty_team) ||
+      (game.bb_anschreiber && !exp?.bb_anschreiber) ||
+      (game.bb_zeitnehmer && !exp?.bb_zeitnehmer) ||
+      (game.bb_24s_official && !exp?.bb_24s_official) ||
+      (game.bb_duty_team && !exp?.bb_duty_team)
     if (needsExpand) {
       pb.collection('games').getOne(game.id, { expand: GAME_EXPAND }).then(setFullGame).catch(() => {})
     }
@@ -309,21 +320,21 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
               {t('referees')}
             </h4>
             {game.referees_json.map((ref, i) => (
-              <DetailRow key={i} label={t(i === 0 ? 'referee1st' : 'referee2nd')} value={ref.name} />
+              <DetailRow key={i} label={t((['referee1st', 'referee2nd', 'referee3rd'] as const)[i] ?? 'referee')} value={ref.name} />
             ))}
           </div>
         )}
 
-        {/* Scorer / Täfeler — volleyball only */}
-        {expanded.expand?.kscw_team?.sport !== 'basketball' &&
+        {/* Scorer duties — Volleyball */}
+        {kscwSport !== 'basketball' &&
         (game.scorer_member || game.taefeler_member || game.scorer_taefeler_member ||
-          game.scorer_team || game.scorer_person || game.taefeler_team || game.taefeler_person) && (
+          game.scorer_person || game.taefeler_person) && (
           <div className="space-y-3 border-t dark:border-gray-700 px-6 py-4">
             <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
               {t('scorerDuties')}
             </h4>
             {expanded.expand?.scorer_taefeler_member ? (
-              <ScorerRow
+              <DutyPersonRow
                 label={t('scorerTaefeler')}
                 member={expanded.expand.scorer_taefeler_member}
                 dutyTeam={expanded.expand.scorer_taefeler_duty_team}
@@ -332,7 +343,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
             ) : (
               <>
                 {(expanded.expand?.scorer_member || game.scorer_person) && (
-                  <ScorerRow
+                  <DutyPersonRow
                     label={t('scorer')}
                     member={expanded.expand?.scorer_member}
                     fallbackName={game.scorer_person}
@@ -341,7 +352,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
                   />
                 )}
                 {(expanded.expand?.taefeler_member || game.taefeler_person) && (
-                  <ScorerRow
+                  <DutyPersonRow
                     label={t('taefeler')}
                     member={expanded.expand?.taefeler_member}
                     fallbackName={game.taefeler_person}
@@ -350,6 +361,43 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
                   />
                 )}
               </>
+            )}
+          </div>
+        )}
+
+        {/* Scorer duties — Basketball */}
+        {kscwSport === 'basketball' &&
+        (game.bb_anschreiber || game.bb_zeitnehmer || game.bb_24s_official || game.bb_duty_team) && (
+          <div className="space-y-3 border-t dark:border-gray-700 px-6 py-4">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              {t('officialsDuties')}
+            </h4>
+            {expanded.expand?.bb_duty_team && (
+              <div className="flex items-start gap-3 text-sm">
+                <span className="w-28 shrink-0 text-gray-500 dark:text-gray-400">{t('dutyTeam')}</span>
+                <TeamChip team={expanded.expand.bb_duty_team.name} size="sm" />
+              </div>
+            )}
+            {(expanded.expand?.bb_anschreiber || game.bb_anschreiber) && (
+              <DutyPersonRow
+                label={t('bbAnschreiber')}
+                member={expanded.expand?.bb_anschreiber}
+                showContact={showScorerContact}
+              />
+            )}
+            {(expanded.expand?.bb_zeitnehmer || game.bb_zeitnehmer) && (
+              <DutyPersonRow
+                label={t('bbZeitnehmer')}
+                member={expanded.expand?.bb_zeitnehmer}
+                showContact={showScorerContact}
+              />
+            )}
+            {(expanded.expand?.bb_24s_official || game.bb_24s_official) && (
+              <DutyPersonRow
+                label={t('bb24sOfficial')}
+                member={expanded.expand?.bb_24s_official}
+                showContact={showScorerContact}
+              />
             )}
           </div>
         )}
@@ -433,7 +481,7 @@ function DetailRow({ label, value }: { label: string; value: string }) {
   )
 }
 
-function ScorerRow({ label, member, fallbackName, dutyTeam, showContact }: {
+function DutyPersonRow({ label, member, fallbackName, dutyTeam, showContact }: {
   label: string
   member?: (Member & RecordModel) | null
   fallbackName?: string
@@ -446,25 +494,23 @@ function ScorerRow({ label, member, fallbackName, dutyTeam, showContact }: {
   const teamName = dutyTeam?.name
 
   return (
-    <div className="text-sm">
-      <div className="flex items-start gap-3">
-        <span className="w-28 shrink-0 text-gray-500 dark:text-gray-400">{label}</span>
-        <div>
-          <span className="text-gray-900 dark:text-gray-100">
-            {name}
-            {teamName && <span className="ml-1 text-xs text-gray-400 dark:text-gray-500">({teamName})</span>}
-          </span>
-          {showContact && member && (member.phone || member.email) && (
-            <div className="mt-0.5 flex flex-wrap gap-x-3 text-xs text-gray-500 dark:text-gray-400">
-              {member.phone && (
-                <a href={`tel:${member.phone}`} className="hover:text-brand-600 dark:hover:text-brand-400">{member.phone}</a>
-              )}
-              {member.email && (
-                <a href={`mailto:${member.email}`} className="hover:text-brand-600 dark:hover:text-brand-400">{member.email}</a>
-              )}
-            </div>
-          )}
-        </div>
+    <div className="flex items-start gap-3 text-sm">
+      <span className="w-28 shrink-0 text-gray-500 dark:text-gray-400">{label}</span>
+      <div>
+        <span className="flex items-center gap-1.5 text-gray-900 dark:text-gray-100">
+          {name}
+          {teamName && <TeamChip team={teamName} size="xs" />}
+        </span>
+        {showContact && member && (member.phone || member.email) && (
+          <div className="mt-0.5 flex flex-wrap gap-x-3 text-xs text-gray-500 dark:text-gray-400">
+            {member.phone && (
+              <a href={`tel:${member.phone}`} className="hover:text-brand-600 dark:hover:text-brand-400">{member.phone}</a>
+            )}
+            {member.email && (
+              <a href={`mailto:${member.email}`} className="hover:text-brand-600 dark:hover:text-brand-400">{member.email}</a>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

@@ -14,6 +14,7 @@ export default {
   contact: 'Contact',
   phone: 'Phone',
   licenseNr: 'License Nr.',
+  licences: 'Licences',
   upcomingActivities: 'Upcoming Activities',
   activeAbsences: 'Active Absences',
   showAll: 'Show all',
@@ -21,6 +22,8 @@ export default {
   noActiveAbsences: 'No active absences.',
   teams: 'Teams',
   roles: 'Roles',
+
+  contactPrivacyNotice: 'Your email and phone number are only visible to the coach and team responsible of teams where you have an official duty (e.g. scorekeeper).',
 
   // Profile Edit
   firstName: 'First Name',
@@ -79,4 +82,8 @@ export default {
   languageEnglish: 'English',
   completeProfile: 'Confirm Profile',
   birthdate: 'Birthdate',
+
+  // Guest registration
+  isGuest: 'I am a guest player',
+  guestExplanation: 'Guests have lower priority than licenced players when trainings are full.',
 } as const

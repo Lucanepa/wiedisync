@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParticipation } from '../hooks/useParticipation'
+import { useAuth } from '../hooks/useAuth'
 import type { Participation, EventSession } from '../types'
 import SessionParticipationSheet from './SessionParticipationSheet'
 
@@ -22,6 +23,7 @@ const statusStyles = {
   confirmed: { icon: '✓', bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-700 dark:text-green-400' },
   declined: { icon: '✗', bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-700 dark:text-red-400' },
   tentative: { icon: '?', bg: 'bg-yellow-100 dark:bg-yellow-900/30', text: 'text-yellow-700 dark:text-yellow-400' },
+  waitlisted: { icon: '⏳', bg: 'bg-orange-100 dark:bg-orange-900/30', text: 'text-orange-700 dark:text-orange-400' },
   absent: { icon: '—', bg: 'bg-gray-100 dark:bg-gray-700', text: 'text-gray-500 dark:text-gray-400' },
 } as const
 
@@ -38,6 +40,7 @@ export default function ParticipationButton({
   eventSessions,
 }: ParticipationButtonProps) {
   const { t } = useTranslation('participation')
+  const { isGuest } = useAuth()
   const { participation, effectiveStatus, hasAbsence, setStatus } = useParticipation(
     activityType,
     activityId,
@@ -59,6 +62,7 @@ export default function ParticipationButton({
     confirmed: t('confirmed'),
     declined: t('declined'),
     tentative: t('tentative'),
+    waitlisted: t('waitlisted'),
     absent: t('absent'),
   }
 
@@ -146,7 +150,9 @@ export default function ParticipationButton({
           <div className="absolute right-0 top-full z-20 mt-1 w-40 rounded-lg border bg-white py-1 shadow-lg dark:border-gray-600 dark:bg-gray-800">
             {(['confirmed', 'tentative', 'declined'] as const).map((status) => {
               const style = statusStyles[status]
-              const isDisabledConfirmed = status === 'confirmed' && isFull && effectiveStatus !== 'confirmed'
+              // Guests can't confirm when full (they'll be waitlisted server-side)
+              // Licenced players CAN confirm when full (server bumps a guest)
+              const isDisabledConfirmed = status === 'confirmed' && isFull && isGuest && effectiveStatus !== 'confirmed'
 
               return (
                 <button
@@ -162,6 +168,9 @@ export default function ParticipationButton({
                   } ${style.text}`}
                 >
                   {style.icon} {statusLabels[status]}
+                  {isDisabledConfirmed && (
+                    <span className="text-[10px] opacity-60">({t('waitlistHint')})</span>
+                  )}
                 </button>
               )
             })}

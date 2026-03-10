@@ -54,12 +54,20 @@ test.describe('Signup flow', () => {
 
 test.describe('Unapproved user redirect', () => {
   test('unapproved user is redirected to /pending on protected routes', async ({ page }) => {
-    // Use PocketBase REST API to login (avoids UI rate limiting)
+    // Use PocketBase REST API to login — retry once if rate-limited
     const pbUrl = process.env.VITE_PB_URL!
-    const response = await page.request.post(
+    let response = await page.request.post(
       `${pbUrl}/api/collections/members/auth-with-password`,
       { data: { identity: 'test_unapproved@test.ch', password: process.env.TEST_USER_PASSWORD! } },
     )
+    if (!response.ok()) {
+      // PB rate limit (2 req/3s) — wait and retry
+      await page.waitForTimeout(4_000)
+      response = await page.request.post(
+        `${pbUrl}/api/collections/members/auth-with-password`,
+        { data: { identity: 'test_unapproved@test.ch', password: process.env.TEST_USER_PASSWORD! } },
+      )
+    }
     expect(response.ok()).toBeTruthy()
 
     const authData = await response.json()

@@ -51,6 +51,7 @@ export default {
   referee: 'Schiri',
   referee1st: '1. Schiri',
   referee2nd: '2. Schiri',
+  referee3rd: '3. Schiri',
   gameNumber: 'Spiel-Nr.',
   taefeler: 'Täfeler',
   scorerTaefeler: 'Schreiber/Schiri',

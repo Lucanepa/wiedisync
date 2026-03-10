@@ -40,7 +40,7 @@ Already contains scorer data with these collections:
 ## Modules (8 total)
 
 ### 1. 🏆 Games & Results
-**Source**: Migrating from `swiss_volley_data` repo (Supabase → PocketBase)
+**Source**: Migrated from `swiss_volley_data` repo
 **Purpose**: Swiss Volley API data — next games, past results, rankings, league tables
 
 Features:
@@ -132,7 +132,7 @@ Features (already built, needs React port):
 - Embedded views for ClubDesk
 
 ### 7. 📅 Calendar
-**Source**: Migrating from `kscw_kalendar` repo (Supabase → PocketBase)
+**Source**: Migrated from `kscw_kalendar` repo
 **Purpose**: Unified calendar showing everything
 
 Features:
@@ -144,7 +144,7 @@ Features:
 - Export .ics per team
 
 Current iCal source: `calendar.google.com/calendar/ical/cdnom1h6cu6b0753l110q9nh50f4sdg7@import.calendar.google.com/public/basic.ics`
-Currently proxied via Supabase Edge Function.
+Now served via PocketBase iCal hook.
 
 ### 8. 👥 Teams & Members
 **Source**: New (+ content from `kscw_h3`, `coaching_kscw`)
@@ -335,7 +335,7 @@ kscw/
 │   ├── deploy-hooks.sh        # rsync hooks to Synology
 │   ├── backup.sh
 │   ├── import-sheets.ts       # One-time Google Sheets import
-│   └── import-supabase.ts     # One-time Supabase import
+│   └── import-data.ts         # One-time data import
 └── wrangler.toml              # Cloudflare Pages config (if needed)
 ```
 
@@ -376,14 +376,8 @@ PocketBase Settings → Application → Allowed origins:
 These repos contain logic to port (all will be deleted after migration):
 - `kscw_schreibereinsaetze` — PocketBase scorer app (vanilla JS + HTML)
 - `kscw_spielplanung` — Google Sheets calendar (vanilla JS + HTML)
-- `swiss_volley_data` — Swiss Volley API consumer (jQuery + Supabase)
-- `kscw_kalendar` — Calendar with Supabase + Google iCal proxy
-- `kscw_matcher` — Match scheduling tool (Supabase Edge Functions)
+- `swiss_volley_data` — Swiss Volley API consumer (jQuery, legacy)
+- `kscw_kalendar` — Calendar with Google iCal proxy (legacy)
+- `kscw_matcher` — Match scheduling tool (legacy)
 - `kscw_h3` — Team page for H3 (static HTML)
 - `coaching_kscw` — Coaching tool with AI integration (Groq/OpenRouter)
-
-## Supabase (LEGACY — to be migrated away)
-- URL: `https://wilrrlwqgvzjdhmnwmte.supabase.co`
-- Anon key: `sb_publishable_smrIIJd_DJofe68QRJmB1w_qiASLbqE`
-- Tables: `rankings_complete`, `calendar_user_events`, `calendar_edit_logs`
-- Edge Functions: `calendar-proxy`, `matcher/validate`, `matcher/accept`

@@ -7,6 +7,7 @@ import { formatDate, formatDateCompact, toISODate } from '../../utils/dateHelper
 import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
 import type { HallSlot, HallClosure, Team, Hall } from '../../types'
+import TeamChip from '../../components/TeamChip'
 
 type SlotExpanded = HallSlot & { expand?: { team?: Team; hall?: Hall } }
 
@@ -197,7 +198,7 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
             {t('trainingsGenerated', { count: generated })}
           </p>
           <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
-            {teamName && <p>{teamName}</p>}
+            {teamName && <div className="flex justify-center"><TeamChip team={teamName} size="sm" /></div>}
             {hallName && <p>{hallName}</p>}
             {previewDates.length > 0 && (
               <p>{formatDate(previewDates[0])} — {formatDate(previewDates[previewDates.length - 1])}</p>

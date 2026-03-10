@@ -4,9 +4,11 @@ interface ResultsTableProps {
   columns: string[]
   rows: unknown[][]
   maxHeight?: string
+  /** Map of column index → (id → display label) for relation fields */
+  relationLabels?: Record<number, Record<string, string>>
 }
 
-function formatCell(value: unknown): React.ReactNode {
+function formatCell(value: unknown, labelMap?: Record<string, string>): React.ReactNode {
   if (value === null || value === undefined)
     return <span className="text-gray-400 italic">NULL</span>
   if (typeof value === 'boolean')
@@ -15,13 +17,27 @@ function formatCell(value: unknown): React.ReactNode {
         {String(value)}
       </span>
     )
+  // Resolve relation IDs to display labels
+  if (labelMap) {
+    const str = String(value)
+    // Could be a single ID or JSON array of IDs
+    if (Array.isArray(value)) {
+      const labels = value.map((id) => labelMap[String(id)] || String(id))
+      const display = labels.join(', ')
+      if (display.length > 120) return <span title={display}>{display.slice(0, 120)}…</span>
+      return display
+    }
+    if (labelMap[str]) {
+      return <span title={str}>{labelMap[str]}</span>
+    }
+  }
   const str = typeof value === 'object' ? JSON.stringify(value) : String(value)
   if (str.length > 120)
     return <span title={str}>{str.slice(0, 120)}…</span>
   return str
 }
 
-export default function ResultsTable({ columns, rows, maxHeight = 'max-h-[60vh]' }: ResultsTableProps) {
+export default function ResultsTable({ columns, rows, maxHeight = 'max-h-[60vh]', relationLabels }: ResultsTableProps) {
   const { t } = useTranslation('admin')
 
   if (columns.length === 0)
@@ -51,7 +67,7 @@ export default function ResultsTable({ columns, rows, maxHeight = 'max-h-[60vh]'
                     key={j}
                     className="whitespace-nowrap px-3 py-1.5 font-mono text-gray-900 dark:text-gray-100"
                   >
-                    {formatCell(cell)}
+                    {formatCell(cell, relationLabels?.[j])}
                   </td>
                 ))}
               </tr>

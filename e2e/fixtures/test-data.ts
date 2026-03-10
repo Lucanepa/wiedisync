@@ -21,6 +21,9 @@ export const AUTH_ROUTES = [
 export const ADMIN_ROUTES = [
   { path: '/admin/spielplanung', name: 'Game Planning' },
   { path: '/admin/hallenplan', name: 'Hall Slots' },
+  { path: '/admin/scorer-assign', name: 'Scorer Assign' },
+  { path: '/admin/terminplanung', name: 'Terminplanung Setup' },
+  { path: '/admin/terminplanung/dashboard', name: 'Terminplanung Dashboard' },
 ] as const
 
 /** Superadmin-only routes */

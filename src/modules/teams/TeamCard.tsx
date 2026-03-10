@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import TeamChip from '../../components/TeamChip'
+import { getTeamColor, trimBBTeamName } from '../../utils/teamColors'
 import { getFileUrl } from '../../utils/pbFile'
 import type { Team } from '../../types'
 
@@ -13,20 +14,21 @@ export default function TeamCard({ team, memberCount }: TeamCardProps) {
     <Link
       to={`/teams/${team.name}`}
       className="relative block overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-card transition-shadow hover:shadow-card-hover"
-      style={{ borderLeftWidth: '4px', borderLeftColor: team.color || '#6b7280' }}
+      style={{ borderLeftWidth: '4px', borderLeftColor: getTeamColor(team.name).bg }}
     >
       {team.team_picture && (
         <img
           src={getFileUrl('teams', team.id, team.team_picture)}
           alt=""
           className="absolute inset-0 h-full w-full object-cover opacity-10"
+          style={team.team_picture_pos ? { objectPosition: team.team_picture_pos } : undefined}
         />
       )}
       <div className="relative">
         <div className="flex items-start justify-between">
           <div>
             <TeamChip team={team.name} />
-            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{team.full_name}</p>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{trimBBTeamName(team.full_name)}</p>
           </div>
         </div>
         <div className="mt-4 flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">

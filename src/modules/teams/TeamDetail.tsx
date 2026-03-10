@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams, Link } from 'react-router-dom'
+import { Move, Check, X as XIcon } from 'lucide-react'
 import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
 import { useTeamMembers } from '../../hooks/useTeamMembers'
@@ -15,6 +16,7 @@ import BasketballIcon from '../../components/BasketballIcon'
 import MemberRow, { getMemberRole } from './MemberRow'
 import { getFileUrl } from '../../utils/pbFile'
 import { getCurrentSeason } from '../../utils/dateHelpers'
+import ImageLightbox from '../../components/ImageLightbox'
 import type { Team, Member } from '../../types'
 
 type SortKey = 'name' | 'number' | 'position' | 'email' | 'phone' | 'birthdate' | 'role'
@@ -32,6 +34,65 @@ export default function TeamDetail() {
   const { data: pendingMembers, refetch: refetchPending } = usePendingMembers(canManage ? teamId : undefined)
   const [sortKey, setSortKey] = useState<SortKey>('name')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [adjustingCrop, setAdjustingCrop] = useState(false)
+  const [cropPos, setCropPos] = useState({ x: 50, y: 50 })
+  const cropContainerRef = useRef<HTMLDivElement>(null)
+  const draggingCrop = useRef(false)
+
+  // Initialize crop position from team data
+  useEffect(() => {
+    if (team?.team_picture_pos) {
+      const [x, y] = team.team_picture_pos.split(' ').map((v) => parseFloat(v))
+      if (!isNaN(x) && !isNaN(y)) setCropPos({ x, y })
+    }
+  }, [team?.team_picture_pos])
+
+  const handleCropPointerDown = useCallback((e: React.PointerEvent) => {
+    if (!adjustingCrop) return
+    e.preventDefault()
+    draggingCrop.current = true
+    ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+    updateCropFromPointer(e.clientX, e.clientY)
+  }, [adjustingCrop])
+
+  const handleCropPointerMove = useCallback((e: React.PointerEvent) => {
+    if (!draggingCrop.current) return
+    updateCropFromPointer(e.clientX, e.clientY)
+  }, [])
+
+  const handleCropPointerUp = useCallback(() => {
+    draggingCrop.current = false
+  }, [])
+
+  function updateCropFromPointer(clientX: number, clientY: number) {
+    const rect = cropContainerRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const x = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100))
+    const y = Math.max(0, Math.min(100, ((clientY - rect.top) / rect.height) * 100))
+    setCropPos({ x: Math.round(x), y: Math.round(y) })
+  }
+
+  async function saveCropPosition() {
+    if (!team) return
+    const pos = `${cropPos.x}% ${cropPos.y}%`
+    try {
+      await pb.collection('teams').update(team.id, { team_picture_pos: pos })
+      logActivity('update', 'teams', team.id, { team_picture_pos: pos })
+      setTeam((prev) => prev ? { ...prev, team_picture_pos: pos } : prev)
+    } catch { /* ignore */ }
+    setAdjustingCrop(false)
+  }
+
+  function cancelCropAdjust() {
+    if (team?.team_picture_pos) {
+      const [x, y] = team.team_picture_pos.split(' ').map((v) => parseFloat(v))
+      if (!isNaN(x) && !isNaN(y)) setCropPos({ x, y })
+    } else {
+      setCropPos({ x: 50, y: 50 })
+    }
+    setAdjustingCrop(false)
+  }
 
   function handleSort(key: SortKey) {
     if (sortKey === key) {
@@ -134,13 +195,71 @@ export default function TeamDetail() {
       </div>
 
       {team.team_picture && (
-        <div className="mb-6 overflow-hidden rounded-lg">
-          <img
+        <>
+          <div
+            ref={cropContainerRef}
+            className="group relative mb-6 overflow-hidden rounded-lg"
+            onPointerDown={handleCropPointerDown}
+            onPointerMove={handleCropPointerMove}
+            onPointerUp={handleCropPointerUp}
+            style={{ touchAction: adjustingCrop ? 'none' : 'auto' }}
+          >
+            <img
+              src={getFileUrl('teams', team.id, team.team_picture)}
+              alt={team.full_name}
+              className={`h-48 w-full object-cover sm:h-64 ${adjustingCrop ? 'cursor-crosshair' : 'cursor-pointer'}`}
+              style={{ objectPosition: `${cropPos.x}% ${cropPos.y}%` }}
+              onClick={adjustingCrop ? undefined : () => setLightboxOpen(true)}
+              draggable={false}
+            />
+            {adjustingCrop && (
+              <div className="absolute inset-0 border-2 border-dashed border-white/60 bg-black/10">
+                <div
+                  className="absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-brand-500 shadow"
+                  style={{ left: `${cropPos.x}%`, top: `${cropPos.y}%` }}
+                />
+              </div>
+            )}
+            {/* Crop controls for coaches */}
+            {canManage && !adjustingCrop && (
+              <button
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => { e.stopPropagation(); setAdjustingCrop(true) }}
+                className="absolute bottom-2 right-2 flex items-center gap-1.5 rounded-lg bg-black/50 px-3 py-1.5 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100"
+              >
+                <Move className="h-3.5 w-3.5" />
+                {t('adjustCrop')}
+              </button>
+            )}
+            {adjustingCrop && (
+              <div
+                className="absolute bottom-2 right-2 flex gap-2"
+                onPointerDown={(e) => e.stopPropagation()}
+              >
+                <button
+                  onClick={saveCropPosition}
+                  className="flex items-center gap-1 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700"
+                >
+                  <Check className="h-3.5 w-3.5" />
+                  {t('common:save')}
+                </button>
+                <button
+                  onClick={cancelCropAdjust}
+                  className="flex items-center gap-1 rounded-lg bg-gray-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-700"
+                >
+                  <XIcon className="h-3.5 w-3.5" />
+                  {t('common:cancel')}
+                </button>
+              </div>
+            )}
+          </div>
+          <ImageLightbox
             src={getFileUrl('teams', team.id, team.team_picture)}
             alt={team.full_name}
-            className="h-48 w-full object-cover sm:h-64"
+            open={lightboxOpen}
+            onClose={() => setLightboxOpen(false)}
           />
-        </div>
+        </>
       )}
 
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -242,16 +361,16 @@ export default function TeamDetail() {
             }
           />
         ) : (
-          <div className="mt-4 overflow-x-auto rounded-lg border bg-white dark:bg-gray-800 w-fit max-w-full">
-            <table>
+          <div className="mt-4 overflow-x-auto rounded-lg border bg-white dark:bg-gray-800">
+            <table className="w-full">
               <thead>
                 <tr className="border-b bg-gray-50 dark:bg-gray-900 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                   <SortHeader label={t('playerCol')} sortKey="name" current={sortKey} dir={sortDir} onClick={handleSort} />
                   <SortHeader label={t('numberCol')} sortKey="number" current={sortKey} dir={sortDir} onClick={handleSort} />
                   <SortHeader label={t('positionCol')} sortKey="position" current={sortKey} dir={sortDir} onClick={handleSort} className="hidden sm:table-cell" />
-                  <SortHeader label={t('emailCol')} sortKey="email" current={sortKey} dir={sortDir} onClick={handleSort} className="hidden md:table-cell" />
-                  <SortHeader label={t('phoneCol')} sortKey="phone" current={sortKey} dir={sortDir} onClick={handleSort} className="hidden md:table-cell" />
-                  <SortHeader label={t('birthdateCol')} sortKey="birthdate" current={sortKey} dir={sortDir} onClick={handleSort} className="hidden lg:table-cell" />
+                  {canManage && <SortHeader label={t('emailCol')} sortKey="email" current={sortKey} dir={sortDir} onClick={handleSort} className="hidden md:table-cell" />}
+                  {canManage && <SortHeader label={t('phoneCol')} sortKey="phone" current={sortKey} dir={sortDir} onClick={handleSort} className="hidden md:table-cell" />}
+                  {canManage && <SortHeader label={t('birthdateCol')} sortKey="birthdate" current={sortKey} dir={sortDir} onClick={handleSort} className="hidden lg:table-cell" />}
                   <SortHeader label={t('roleCol')} sortKey="role" current={sortKey} dir={sortDir} onClick={handleSort} />
                 </tr>
               </thead>
@@ -265,6 +384,7 @@ export default function TeamDetail() {
                     team={team}
                     canEdit={canManage}
                     isAdmin={isAdmin}
+                    showContact={canManage}
                     onTeamUpdate={(updated) => setTeam((prev) => prev ? { ...prev, ...updated } : prev)}
                   />
                 ))}

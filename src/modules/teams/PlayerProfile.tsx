@@ -10,6 +10,7 @@ import StatusBadge from '../../components/StatusBadge'
 import EmptyState from '../../components/EmptyState'
 import { getFileUrl } from '../../utils/pbFile'
 import { formatDate, getCurrentSeason, getSeasonDateRange } from '../../utils/dateHelpers'
+import ImageLightbox from '../../components/ImageLightbox'
 import type { Member, MemberTeam, Team, Absence, TrainingAttendance } from '../../types'
 
 type ExpandedMemberTeam = MemberTeam & { expand?: { team?: Team } }
@@ -20,6 +21,7 @@ export default function PlayerProfile() {
   const { isCoachOf } = useAuth()
   const [member, setMember] = useState<Member | null>(null)
   const [loading, setLoading] = useState(true)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
 
   const { data: memberTeams } = usePB<ExpandedMemberTeam>('member_teams', {
     filter: memberId ? `member="${memberId}"` : '',
@@ -87,11 +89,20 @@ export default function PlayerProfile() {
       {/* Header */}
       <div className="flex items-start gap-6">
         {member.photo ? (
-          <img
-            src={getFileUrl('members', member.id, member.photo)}
-            alt={member.name}
-            className="h-24 w-24 rounded-full object-cover"
-          />
+          <>
+            <img
+              src={getFileUrl('members', member.id, member.photo)}
+              alt={member.name}
+              className="h-24 w-24 cursor-pointer rounded-full object-cover"
+              onClick={() => setLightboxOpen(true)}
+            />
+            <ImageLightbox
+              src={getFileUrl('members', member.id, member.photo)}
+              alt={member.name}
+              open={lightboxOpen}
+              onClose={() => setLightboxOpen(false)}
+            />
+          </>
         ) : (
           <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gray-200 text-2xl font-bold text-gray-500 dark:text-gray-400">
             {initials}

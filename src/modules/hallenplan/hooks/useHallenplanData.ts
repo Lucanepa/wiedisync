@@ -138,7 +138,10 @@ export function useHallenplanData(
     const bpGameDateKeys = new Set(
       games
         .filter((g) => g.source === 'basketplan')
-        .map((g) => `${g.date?.slice(0, 10)}-${g.time?.slice(0, 5)}`),
+        .map((g) => {
+          const t = g.time ? (g.time.includes(' ') ? g.time.split(' ')[1].slice(0, 5) : g.time.slice(0, 5)) : ''
+          return `${g.date?.slice(0, 10)}-${t}`
+        }),
     )
 
     for (const he of hallEvents) {

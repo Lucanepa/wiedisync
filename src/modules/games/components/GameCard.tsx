@@ -1,10 +1,12 @@
 import { useTranslation } from 'react-i18next'
 import type { RecordModel } from 'pocketbase'
 import type { Game, Team, Hall } from '../../../types'
-import { formatDateCompact } from '../../../utils/dateHelpers'
+import { formatDateCompact, formatTime } from '../../../utils/dateHelpers'
 import { leagueShort } from '../../../utils/leagueShort'
 import TeamChip from '../../../components/TeamChip'
-import { VolleyballIcon, BasketballIcon } from '../../../components/SportToggle'
+import { pbNameToColorKey } from '../../../utils/teamColors'
+import VolleyballIcon from '../../../components/VolleyballIcon'
+import BasketballIcon from '../../../components/BasketballIcon'
 import ParticipationSummary from '../../../components/ParticipationSummary'
 import { useAuth } from '../../../hooks/useAuth'
 import { useParticipation } from '../../../hooks/useParticipation'
@@ -61,7 +63,9 @@ export default function GameCard({ game, onClick, variant = 'card' }: GameCardPr
     : game.away_hall_json
       ? [game.away_hall_json.name, game.away_hall_json.city].filter(Boolean).join(', ')
       : ''
-  const kscwTeamName = expanded.expand?.kscw_team?.name ?? ''
+  const rawTeamName = expanded.expand?.kscw_team?.name ?? ''
+  const teamSport = expanded.expand?.kscw_team?.sport as 'volleyball' | 'basketball' | undefined
+  const kscwTeamName = rawTeamName && teamSport ? pbNameToColorKey(rawTeamName, teamSport) : rawTeamName
 
   if (variant === 'compact') {
     const short = game.date ? formatDateCompact(game.date) : ''
@@ -77,13 +81,13 @@ export default function GameCard({ game, onClick, variant = 'card' }: GameCardPr
         {/* Date + time */}
         <div className="w-16 shrink-0 text-xs text-gray-500 dark:text-gray-400">
           <div>{short}</div>
-          {game.time && <div>{game.time}</div>}
+          {game.time && <div>{formatTime(game.time)}</div>}
         </div>
 
         {/* Sport icon */}
         {expanded.expand?.kscw_team?.sport === 'basketball'
-          ? <BasketballIcon className="h-5 w-5 shrink-0 text-orange-500 dark:text-orange-400" />
-          : <VolleyballIcon className="h-5 w-5 shrink-0 text-amber-400 dark:text-amber-300" />}
+          ? <BasketballIcon className="h-5 w-5 shrink-0" filled />
+          : <VolleyballIcon className="h-5 w-5 shrink-0" filled />}
 
         {/* Team names — stacked */}
         <div className="min-w-0 flex-1">
@@ -133,13 +137,13 @@ export default function GameCard({ game, onClick, variant = 'card' }: GameCardPr
         {/* Left: date, time, league, chip */}
         <div className="w-20 shrink-0 space-y-0.5 text-xs text-gray-500 dark:text-gray-400">
           <div className="font-medium text-gray-700 dark:text-gray-300">{game.date ? formatDateCompact(game.date) : ''}</div>
-          {game.time && <div>{game.time}</div>}
+          {game.time && <div>{formatTime(game.time)}</div>}
           <div className="truncate">{leagueShort(game.league)}</div>
           {kscwTeamName && (
             <div className="flex items-center gap-1 pt-0.5">
               {expanded.expand?.kscw_team?.sport === 'basketball'
-                ? <BasketballIcon className="h-3.5 w-3.5 text-orange-500 dark:text-orange-400" />
-                : <VolleyballIcon className="h-3.5 w-3.5 text-amber-400 dark:text-amber-300" />}
+                ? <BasketballIcon className="h-3.5 w-3.5" filled />
+                : <VolleyballIcon className="h-3.5 w-3.5" filled />}
               <TeamChip team={kscwTeamName} size="xs" />
             </div>
           )}

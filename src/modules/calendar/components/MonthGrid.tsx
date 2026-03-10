@@ -1,6 +1,8 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { CalendarEntry } from '../../../types/calendar'
+import BasketballIcon from '../../../components/BasketballIcon'
+import VolleyballIcon from '../../../components/VolleyballIcon'
 import {
   startOfMonth,
   endOfMonth,
@@ -17,7 +19,7 @@ import {
 
 /* ── type icons (inline SVGs matching hallenplan) ────────── */
 
-const TypeIcon = ({ type, className = '' }: { type: string; className?: string }) => {
+const TypeIcon = ({ type, sport, className = '' }: { type: string; sport?: 'volleyball' | 'basketball'; className?: string }) => {
   if (type === 'training') {
     // Training cone
     return (
@@ -36,12 +38,9 @@ const TypeIcon = ({ type, className = '' }: { type: string; className?: string }
     )
   }
   if (type === 'game' || type === 'game-home' || type === 'game-away') {
-    // Trophy / cup
-    return (
-      <svg className={`inline-block h-2.5 w-2.5 shrink-0 ${className}`} viewBox="0 0 24 24" fill="currentColor">
-        <path d="M7 4V2h10v2h3a1 1 0 011 1v3c0 2.21-1.79 4-4 4h-.54A5.98 5.98 0 0113 14.92V17h3v2h1v2H7v-2h1v-2h3v-2.08A5.98 5.98 0 017.54 12H7c-2.21 0-4-1.79-4-4V5a1 1 0 011-1h3zm0 2H5v2c0 1.1.9 2 2 2h.2A6.03 6.03 0 017 8V6zm10 0v2c0 .7-.08 1.38-.2 2H17c1.1 0 2-.9 2-2V6h-2z" />
-      </svg>
-    )
+    return sport === 'basketball'
+      ? <BasketballIcon className="inline-block h-2.5 w-2.5 shrink-0" filled />
+      : <VolleyballIcon className="inline-block h-2.5 w-2.5 shrink-0" filled />
   }
   if (type === 'event') {
     // Star
@@ -52,12 +51,8 @@ const TypeIcon = ({ type, className = '' }: { type: string; className?: string }
     )
   }
   if (type === 'hall') {
-    // Trophy / cup (same as game — hall events are mostly basketball games from GCal)
-    return (
-      <svg className={`inline-block h-2.5 w-2.5 shrink-0 ${className}`} viewBox="0 0 24 24" fill="currentColor">
-        <path d="M7 4V2h10v2h3a1 1 0 011 1v3c0 2.21-1.79 4-4 4h-.54A5.98 5.98 0 0113 14.92V17h3v2h1v2H7v-2h1v-2h3v-2.08A5.98 5.98 0 017.54 12H7c-2.21 0-4-1.79-4-4V5a1 1 0 011-1h3zm0 2H5v2c0 1.1.9 2 2 2h.2A6.03 6.03 0 017 8V6zm10 0v2c0 .7-.08 1.38-.2 2H17c1.1 0 2-.9 2-2V6h-2z" />
-      </svg>
-    )
+    // Hall events — default to basketball ball (most GCal hall events are BB games)
+    return <BasketballIcon className="inline-block h-2.5 w-2.5 shrink-0" filled />
   }
   // Fallback dot
   return <span className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-current ${className}`} />
@@ -333,7 +328,7 @@ export default function MonthGrid({
                         <span
                           className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium ${
                             isToday
-                              ? 'bg-brand-500 font-bold text-white'
+                              ? 'bg-gold-400 font-bold text-brand-900'
                               : bgColor
                                 ? `${bgColor.text} ${bgColor.darkText}`
                                 : !inMonth
@@ -376,7 +371,7 @@ export default function MonthGrid({
                                 bgColor ? `${bgColor.text} ${bgColor.darkText}` : 'text-gray-800 dark:text-gray-200'
                               }`}
                             >
-                              <TypeIcon type={colorKey(entry)} className={dotColors[colorKey(entry)].replace('bg-', 'text-')} />
+                              <TypeIcon type={colorKey(entry)} sport={entry.sport} className={dotColors[colorKey(entry)].replace('bg-', 'text-')} />
                               <span className="truncate">
                                 {entry.startTime && (
                                   <span className="font-medium">{entry.startTime} </span>

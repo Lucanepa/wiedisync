@@ -30,7 +30,7 @@ export function gameToVirtualSlots(
   // Hallenplan is home-only — skip away games entirely
   if (game.type === 'away') return []
 
-  const gameTime = game.time?.slice(0, 5)
+  const gameTime = game.time ? (game.time.includes(' ') ? game.time.split(' ')[1].slice(0, 5) : game.time.slice(0, 5)) : undefined
   if (!gameTime) return []
 
   const gameMinutes = timeToMinutes(gameTime)
@@ -321,7 +321,7 @@ export function mergeVirtualSlots(
     } else {
       // Home game → shorten preceding slot or suppress overlapping slots
       // BB games span KWI A + KWI B
-      const gameTime = game.time?.slice(0, 5)
+      const gameTime = game.time ? (game.time.includes(' ') ? game.time.split(' ')[1].slice(0, 5) : game.time.slice(0, 5)) : undefined
       if (!gameTime) continue
       const gameStartMin = Math.max(timeToMinutes(gameTime) - GAME_WARMUP_MINUTES, 0)
       const gameEndMin = Math.min(gameStartMin + GAME_TOTAL_DURATION, 22 * 60)
@@ -532,7 +532,7 @@ export function mergeVirtualSlots(
     const gameDate = game.date.slice(0, 10)
     const dayIndex = weekDays.findIndex((d) => toISODate(d) === gameDate)
     if (dayIndex === -1) continue
-    const gameTime = game.time?.slice(0, 5)
+    const gameTime = game.time ? (game.time.includes(' ') ? game.time.split(' ')[1].slice(0, 5) : game.time.slice(0, 5)) : undefined
     if (!gameTime || !game.hall) continue
     const gStart = Math.max(timeToMinutes(gameTime) - GAME_WARMUP_MINUTES, 0)
     const gEnd = Math.min(gStart + GAME_TOTAL_DURATION, 22 * 60)

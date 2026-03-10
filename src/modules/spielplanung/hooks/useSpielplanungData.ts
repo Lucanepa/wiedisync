@@ -3,6 +3,7 @@ import { usePB } from '../../../hooks/usePB'
 import type { Game, HallClosure, Team } from '../../../types'
 import type { CalendarEntry, SpielplanungFilterState } from '../../../types/calendar'
 import { parseDate, toDateKey, eachDayOfInterval } from '../../../utils/dateUtils'
+import { formatTime } from '../../../utils/dateHelpers'
 
 interface UseSpielplanungDataOptions {
   filters: SpielplanungFilterState
@@ -45,7 +46,7 @@ function gameToCalendarEntry(game: Game): CalendarEntry {
     type: 'game',
     title: `${game.home_team} - ${game.away_team}`,
     date: parseDate(game.date),
-    startTime: game.time || null,
+    startTime: game.time ? formatTime(game.time) : null,
     endTime: null,
     allDay: false,
     location: expandedHall?.name ?? '',

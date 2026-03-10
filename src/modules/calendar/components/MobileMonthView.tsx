@@ -175,7 +175,7 @@ export default function MobileMonthView({
               <span
                 className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium ${
                   isToday
-                    ? 'bg-brand-500 font-bold text-white'
+                    ? 'bg-gold-400 font-bold text-brand-900'
                     : !inMonth
                       ? 'text-gray-300 dark:text-gray-600'
                       : 'text-gray-800 dark:text-gray-200'

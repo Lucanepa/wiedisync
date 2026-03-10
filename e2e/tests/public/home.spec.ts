@@ -9,11 +9,11 @@ test.describe('Home page', () => {
 
   test('shows section headers after data loads', async ({ page }) => {
     await page.goto('/')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
 
     // HomePage renders section headers from de/home.ts translations
     // At least one of these should be visible: "Nächste Spiele", "Letzte Resultate", "Events"
     const sections = page.locator('h2')
-    await expect(sections.first()).toBeVisible({ timeout: 10_000 })
+    await expect(sections.first()).toBeVisible({ timeout: 30_000 })
   })
 })

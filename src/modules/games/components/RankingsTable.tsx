@@ -53,12 +53,12 @@ export default function RankingsTable({ league, rankings }: RankingsTableProps) 
                   className={`${isKscw ? 'bg-brand-50 dark:bg-brand-900/20 font-semibold' : ''} ${promoBorder}`}
                 >
                   <td className="px-2 py-2 text-center text-gray-500 dark:text-gray-400">{row.rank}</td>
-                  <td className="truncate px-2 py-2">
-                    <div className="flex items-center gap-2">
-                      {isKscw && <TeamChip team={kscwTeam} size="sm" />}
+                  <td className="max-w-0 px-2 py-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
                       <span className={`truncate ${isKscw ? 'text-brand-900 dark:text-brand-200' : 'text-gray-700 dark:text-gray-300'}`}>
                         {isKscw ? `KSC Wiedikon ${kscwTeam}` : (row.team_name || `Team ${row.sv_team_id}`)}
                       </span>
+                      {isKscw && <TeamChip team={kscwTeam} size="sm" />}
                     </div>
                   </td>
                   <td className="px-2 py-2 text-center text-gray-700 dark:text-gray-300">{row.played}</td>

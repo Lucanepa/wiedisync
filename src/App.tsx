@@ -57,7 +57,7 @@ export default function App() {
             <Route path="teams" element={<AuthRoute><TeamsPage /></AuthRoute>} />
             <Route path="teams/:teamSlug" element={<AuthRoute><TeamDetail /></AuthRoute>} />
             <Route path="teams/:teamSlug/roster/edit" element={<AuthRoute><RosterEditor /></AuthRoute>} />
-            <Route path="teams/player/:memberId" element={<PlayerProfile />} />
+            <Route path="teams/player/:memberId" element={<AuthRoute><PlayerProfile /></AuthRoute>} />
             <Route path="events" element={<EventsPage />} />
             <Route path="datenschutz" element={<DatenschutzPage />} />
             <Route path="impressum" element={<ImpressumPage />} />

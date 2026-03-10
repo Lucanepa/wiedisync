@@ -58,6 +58,11 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
       setError(t('fileTooLarge'))
       return
     }
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+    if (!validTypes.includes(file.type)) {
+      setError(t('invalidImageType'))
+      return
+    }
     setPhotoFile(file)
     setPhotoPreview(URL.createObjectURL(file))
   }

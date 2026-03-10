@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Game, Team, Training, Member, MemberTeam, Hall } from '../../types'
 import { usePB } from '../../hooks/usePB'
-import { getCurrentSeason, getSeasonDateRange, formatDateCompact } from '../../utils/dateHelpers'
+import { getCurrentSeason, getSeasonDateRange, formatDateCompact, formatTime } from '../../utils/dateHelpers'
 import { logActivity } from '../../utils/logActivity'
 import pb from '../../pb'
 import Button from '../../components/ui/Button'
@@ -239,7 +239,7 @@ export default function ScorerAssignPage() {
                     <td className="whitespace-nowrap px-2 py-2 text-gray-700 dark:text-gray-300">
                       {formatDateCompact(game.date)}
                     </td>
-                    <td className="px-2 py-2 text-gray-600 dark:text-gray-400">{game.time}</td>
+                    <td className="px-2 py-2 text-gray-600 dark:text-gray-400">{game.time ? formatTime(game.time) : '–'}</td>
                     <td className="px-2 py-2 text-gray-600 dark:text-gray-400">{hallName}</td>
                     <td className="px-2 py-2 font-medium text-gray-900 dark:text-gray-100">{game.home_team}</td>
                     <td className="px-2 py-2 text-gray-700 dark:text-gray-300">{game.away_team}</td>

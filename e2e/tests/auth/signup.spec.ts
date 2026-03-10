@@ -58,7 +58,7 @@ test.describe('Unapproved user redirect', () => {
     const pbUrl = process.env.VITE_PB_URL!
     const response = await page.request.post(
       `${pbUrl}/api/collections/members/auth-with-password`,
-      { data: { identity: 'test_unapproved@test.ch', password: 'REDACTED_ROTATE_ME' } },
+      { data: { identity: 'test_unapproved@test.ch', password: process.env.TEST_USER_PASSWORD! } },
     )
     expect(response.ok()).toBeTruthy()
 

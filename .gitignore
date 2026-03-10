@@ -28,6 +28,9 @@ test-results/
 e2e/.auth/
 .env.test
 
+# Planning
+.planning/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

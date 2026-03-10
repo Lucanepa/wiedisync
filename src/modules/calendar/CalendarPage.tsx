@@ -22,11 +22,13 @@ import {
   formatDate,
 } from '../../utils/dateUtils'
 import LoadingSpinner from '../../components/LoadingSpinner'
+import BasketballIcon from '../../components/BasketballIcon'
+import VolleyballIcon from '../../components/VolleyballIcon'
 import type { CalendarViewMode, CalendarFilterState, SourceFilter, CalendarEntry } from '../../types/calendar'
 import type { Game } from '../../types'
 
 /** Inline type icon for the overflow modal */
-const TypeIcon = ({ type, className = '' }: { type: string; className?: string }) => {
+const TypeIcon = ({ type, sport, className = '' }: { type: string; sport?: 'volleyball' | 'basketball'; className?: string }) => {
   if (type === 'training') {
     return (
       <svg className={`h-3 w-3 shrink-0 ${className}`} viewBox="0 0 24 24" fill="currentColor">
@@ -35,11 +37,9 @@ const TypeIcon = ({ type, className = '' }: { type: string; className?: string }
     )
   }
   if (type === 'game') {
-    return (
-      <svg className={`h-3 w-3 shrink-0 ${className}`} viewBox="0 0 24 24" fill="currentColor">
-        <path d="M7 4V2h10v2h3a1 1 0 011 1v3c0 2.21-1.79 4-4 4h-.54A5.98 5.98 0 0113 14.92V17h3v2h1v2H7v-2h1v-2h3v-2.08A5.98 5.98 0 017.54 12H7c-2.21 0-4-1.79-4-4V5a1 1 0 011-1h3zm0 2H5v2c0 1.1.9 2 2 2h.2A6.03 6.03 0 017 8V6zm10 0v2c0 .7-.08 1.38-.2 2H17c1.1 0 2-.9 2-2V6h-2z" />
-      </svg>
-    )
+    return sport === 'basketball'
+      ? <BasketballIcon className="h-3 w-3 shrink-0" filled />
+      : <VolleyballIcon className="h-3 w-3 shrink-0" filled />
   }
   if (type === 'event') {
     return (
@@ -57,12 +57,7 @@ const TypeIcon = ({ type, className = '' }: { type: string; className?: string }
     )
   }
   if (type === 'hall') {
-    // Trophy / cup (hall events are mostly basketball games from GCal)
-    return (
-      <svg className={`h-3 w-3 shrink-0 ${className}`} viewBox="0 0 24 24" fill="currentColor">
-        <path d="M7 4V2h10v2h3a1 1 0 011 1v3c0 2.21-1.79 4-4 4h-.54A5.98 5.98 0 0113 14.92V17h3v2h1v2H7v-2h1v-2h3v-2.08A5.98 5.98 0 017.54 12H7c-2.21 0-4-1.79-4-4V5a1 1 0 011-1h3zm0 2H5v2c0 1.1.9 2 2 2h.2A6.03 6.03 0 017 8V6zm10 0v2c0 .7-.08 1.38-.2 2H17c1.1 0 2-.9 2-2V6h-2z" />
-      </svg>
-    )
+    return <BasketballIcon className="h-3 w-3 shrink-0" filled />
   }
   return <span className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-current ${className}`} />
 }
@@ -294,7 +289,7 @@ export default function CalendarPage() {
                 }}
                 className="flex w-full items-center gap-3 rounded-lg p-3 text-left transition-colors hover:bg-gray-50 active:bg-gray-100 dark:hover:bg-gray-700 dark:active:bg-gray-600"
               >
-                <TypeIcon type={entry.type} className={entryIconColor(entry)} />
+                <TypeIcon type={entry.type} sport={entry.sport} className={entryIconColor(entry)} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
                     {entry.title}

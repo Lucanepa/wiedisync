@@ -1,5 +1,6 @@
 export default {
   title: 'Absenzen',
+  subtitle: 'Zentrale Absenzverwaltung',
 
   // Tabs
   tabMyAbsences: 'Meine Absenzen',

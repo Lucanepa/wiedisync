@@ -3,11 +3,12 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
+import { coercePositions, getPositionI18nKey, getSelectablePositions } from '../../utils/memberPositions'
 import StatusBadge from '../../components/StatusBadge'
 import { getFileUrl } from '../../utils/pbFile'
 import ImageLightbox from '../../components/ImageLightbox'
 import type { ExpandedMemberTeam } from '../../hooks/useTeamMembers'
-import type { Team, Member } from '../../types'
+import type { Team } from '../../types'
 
 interface MemberRowProps {
   memberTeam: ExpandedMemberTeam
@@ -18,18 +19,6 @@ interface MemberRowProps {
   isAdmin?: boolean
   showContact?: boolean
   onTeamUpdate?: (updated: Partial<Team>) => void
-}
-
-const POSITIONS: Member['position'][] = ['setter', 'outside', 'middle', 'opposite', 'libero', 'coach', 'other']
-
-const positionKeys: Record<string, string> = {
-  setter: 'positionSetter',
-  outside: 'positionOutside',
-  middle: 'positionMiddle',
-  opposite: 'positionOpposite',
-  libero: 'positionLibero',
-  coach: 'positionCoach',
-  other: 'positionOther',
 }
 
 export const roleColors: Record<string, { bg: string; text: string }> = {
@@ -64,6 +53,8 @@ export default function MemberRow({ memberTeam, teamId: _teamId, teamSlug, team,
   if (!member) return null
 
   const displayName = [member.last_name, member.first_name].filter(Boolean).join(' ') || member.name || '—'
+  const memberPositions = coercePositions(member.position)
+  const selectablePositions = getSelectablePositions(team?.sport, memberPositions)
   const initials = `${member.first_name?.[0] ?? ''}${member.last_name?.[0] ?? ''}`.toUpperCase()
   const role = getMemberRole(member.id, team)
 
@@ -71,7 +62,7 @@ export default function MemberRow({ memberTeam, teamId: _teamId, teamSlug, team,
     ? new Date(member.birthdate).toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric' })
     : null
 
-  async function saveField(field: string, value: string | number) {
+  async function saveField(field: string, value: string | number | string[]) {
     try {
       await pb.collection('members').update(member!.id, { [field]: value })
       logActivity('update', 'members', member!.id, { [field]: value })
@@ -103,6 +94,13 @@ export default function MemberRow({ memberTeam, teamId: _teamId, teamSlug, team,
   function startEdit(field: string, currentValue: string | number) {
     setEditingField(field)
     setEditValue(String(currentValue ?? ''))
+  }
+
+  function getPositionLabelList(positions: string[]) {
+    if (positions.length === 0) return '—'
+    return positions
+      .map((p) => (getPositionI18nKey(p) ? t(getPositionI18nKey(p)!) : p))
+      .join(', ')
   }
 
   function handleKeyDown(e: React.KeyboardEvent, field: string) {
@@ -178,22 +176,27 @@ export default function MemberRow({ memberTeam, teamId: _teamId, teamSlug, team,
       <td className="hidden px-4 py-3 text-sm text-gray-500 sm:table-cell dark:text-gray-400">
         {canEdit && editingField === 'position' ? (
           <select
-            value={editValue}
-            onChange={(e) => { saveField('position', e.target.value) }}
+            value={memberPositions}
+            multiple
+            size={Math.min(4, selectablePositions.length)}
+            onChange={(e) => {
+              const next = Array.from(e.target.selectedOptions).map((opt) => opt.value)
+              saveField('position', next.length > 0 ? next : ['other'])
+            }}
             onBlur={() => setEditingField(null)}
-            className="rounded border px-1.5 py-0.5 text-sm dark:bg-gray-700 dark:border-gray-600"
+            className="min-h-[88px] rounded border px-1.5 py-0.5 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
             autoFocus
           >
-            {POSITIONS.map((p) => (
-              <option key={p} value={p}>{positionKeys[p] ? t(positionKeys[p]) : p}</option>
+            {selectablePositions.map((p) => (
+              <option key={p} value={p}>{getPositionI18nKey(p) ? t(getPositionI18nKey(p)!) : p}</option>
             ))}
           </select>
         ) : (
           <span
             className={canEdit ? 'cursor-pointer hover:text-brand-600' : ''}
-            onClick={canEdit ? () => startEdit('position', member.position) : undefined}
+            onClick={canEdit ? () => setEditingField('position') : undefined}
           >
-            {positionKeys[member.position] ? t(positionKeys[member.position]) : (member.position || '—')}
+            {getPositionLabelList(memberPositions)}
           </span>
         )}
       </td>

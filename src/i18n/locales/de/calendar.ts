@@ -5,11 +5,13 @@ export default {
   viewHall: 'Halle',
   viewWeek: 'Woche',
   viewMonth: 'Kalender',
+  viewList: 'Liste',
 
   // Subtitles
   subtitleHall: 'Hallenbelegungsplan',
   subtitleWeek: 'Wochenübersicht aller Termine',
   subtitleMonth: 'Monatsübersicht aller Termine',
+  subtitleList: 'Alle Termine in chronologischer Reihenfolge',
 
   // Source filters
   sourceGames: 'Spiele',

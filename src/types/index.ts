@@ -1,6 +1,19 @@
 import type { RecordModel } from 'pocketbase'
 
 export type LicenceType = 'scorer_vb' | 'referee_vb' | 'otr1_bb' | 'otr2_bb' | 'otn_bb' | 'referee_bb'
+export type MemberPosition =
+  | 'setter'
+  | 'outside'
+  | 'middle'
+  | 'opposite'
+  | 'libero'
+  | 'point_guard'
+  | 'shooting_guard'
+  | 'small_forward'
+  | 'power_forward'
+  | 'center'
+  | 'coach'
+  | 'other'
 
 export interface Team extends RecordModel {
   name: string
@@ -30,9 +43,9 @@ export interface Member extends RecordModel {
   phone: string
   license_nr: string
   number: number
-  position: 'setter' | 'outside' | 'middle' | 'opposite' | 'libero' | 'coach' | 'other'
+  position: MemberPosition[]
   photo: string
-  role: ('user' | 'vorstand' | 'admin' | 'superuser')[]
+  role: ('user' | 'vorstand' | 'admin' | 'vb_admin' | 'bb_admin' | 'superuser')[]
   active: boolean
   birthdate: string
   yob: number

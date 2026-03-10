@@ -35,7 +35,7 @@ function getTodayDayIndex(): number {
 
 export default function HallenplanPage() {
   const { t } = useTranslation('hallenplan')
-  const { isAdmin, isCoach, coachTeamIds } = useAuth()
+  const { isAdmin, isCoach, coachTeamIds, hasAdminAccessToTeam, hasAdminAccessToSport } = useAuth()
   const isMobile = useIsMobile()
   const { weekDays, goNext, goPrev, goToday, weekLabel, mondayStr, sundayStr } = useWeekNavigation()
 
@@ -68,6 +68,10 @@ export default function HallenplanPage() {
     const bb = new Set(teams.filter((t: Team) => t.sport === 'basketball').map((t: Team) => t.id))
     return { vb, bb }
   }, [teams])
+  const adminTeamIds = useMemo(
+    () => teams.filter((team) => hasAdminAccessToTeam(team.id)).map((team) => team.id),
+    [teams, hasAdminAccessToTeam],
+  )
   const filteredSlots = useMemo(
     () => {
       if (sportFilter === 'all') return slots
@@ -113,11 +117,15 @@ export default function HallenplanPage() {
 
   function handleSlotClick(slot: HallSlot) {
     const meta = slot._virtual
+    const canAdminTeam = !!slot.team && hasAdminAccessToTeam(slot.team)
+    const canAdminCurrentSport = sportFilter === 'all'
+      ? hasAdminAccessToSport('volleyball') || hasAdminAccessToSport('basketball')
+      : hasAdminAccessToSport(sportFilter === 'vb' ? 'volleyball' : 'basketball')
     // A real slot with no team = manually created "free" slot
     const isManuallyFree = !meta && !slot.team
 
     // Freed slot (virtual or manual) → open claim modal (for coaches/admins)
-    if ((meta?.isFreed || isManuallyFree) && (isCoach || isAdmin)) {
+    if ((meta?.isFreed || isManuallyFree) && (isCoach || canAdminTeam || canAdminCurrentSport)) {
       setClaimSlot(slot)
       return
     }
@@ -130,13 +138,13 @@ export default function HallenplanPage() {
     }
 
     // Virtual slot (non-freed, non-claimed) → open read-only detail modal
-    if (meta && !isAdmin) {
+    if (meta && !canAdminTeam) {
       setVirtualDetailSlot(slot)
       return
     }
 
     // Admin or coach (own team): real slots → open slot editor
-    if ((isAdmin || (isCoach && coachTeamIds.includes(slot.team))) && !meta) {
+    if ((canAdminTeam || (isCoach && coachTeamIds.includes(slot.team))) && !meta) {
       setEditingSlot(slot)
       setPrefill(null)
       setEditorOpen(true)
@@ -144,7 +152,7 @@ export default function HallenplanPage() {
     }
 
     // Admin: virtual slots → open virtual detail modal
-    if (isAdmin && meta) {
+    if (canAdminTeam && meta) {
       setVirtualDetailSlot(slot)
     }
   }
@@ -277,6 +285,7 @@ export default function HallenplanPage() {
           allSlots={slots}
           isAdmin={isAdmin}
           coachTeamIds={coachTeamIds}
+          adminTeamIds={adminTeamIds}
           onClose={handleEditorClose}
           onSaved={refetch}
         />

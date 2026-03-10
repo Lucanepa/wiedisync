@@ -42,15 +42,15 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
   const { t } = useTranslation('trainings')
   const { t: tc } = useTranslation('common')
   const { create, update, isLoading: isMutating } = useMutation<Training>('trainings')
-  const { isAdmin, coachTeamIds } = useAuth()
+  const { hasAdminAccessToTeam, coachTeamIds } = useAuth()
 
   const { data: allTeams } = usePB<Team>('teams', { filter: 'active=true', sort: 'name', perPage: 50 })
   const { data: halls } = usePB<Hall>('halls', { sort: 'name', perPage: 50 })
 
   // Non-admin coaches only see their own teams
   const teams = useMemo(
-    () => isAdmin ? allTeams : allTeams.filter((t) => coachTeamIds.includes(t.id)),
-    [isAdmin, allTeams, coachTeamIds],
+    () => allTeams.filter((t) => hasAdminAccessToTeam(t.id) || coachTeamIds.includes(t.id)),
+    [allTeams, hasAdminAccessToTeam, coachTeamIds],
   )
 
   const [teamId, setTeamId] = useState('')

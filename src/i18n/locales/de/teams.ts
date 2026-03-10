@@ -8,6 +8,11 @@ export default {
   positionMiddle: 'Mittelblocker/in',
   positionOpposite: 'Diagonal',
   positionLibero: 'Libero',
+  positionPointGuard: 'Point Guard',
+  positionShootingGuard: 'Shooting Guard',
+  positionSmallForward: 'Small Forward',
+  positionPowerForward: 'Power Forward',
+  positionCenter: 'Center',
   positionCoach: 'Trainer/in',
   positionOther: 'Andere',
 

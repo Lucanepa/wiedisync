@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import pb from '../pb'
-import type { Member, MemberTeam } from '../types'
+import { coercePositions, normalizePositionsForSport } from '../utils/memberPositions'
+import type { Member, MemberTeam, Team } from '../types'
 
 export type ExpandedMemberTeam = MemberTeam & { expand?: { member?: Member } }
 
@@ -19,6 +20,7 @@ export function useTeamMembers(teamId: string | undefined, season?: string) {
     setIsLoading(true)
     setError(null)
     try {
+      const team = await pb.collection('teams').getOne<Team>(teamId, { fields: 'id,sport' })
       const filter = season
         ? `team="${teamId}" && season="${season}"`
         : `team="${teamId}"`
@@ -27,7 +29,28 @@ export function useTeamMembers(teamId: string | undefined, season?: string) {
         expand: 'member',
         sort: 'member',
       })
-      setMembers(result)
+      const updates: Promise<unknown>[] = []
+      const normalized = result.map((mt) => {
+        const member = mt.expand?.member
+        if (!member) return mt
+        const originalPositions = coercePositions(member.position)
+        const safePositions = normalizePositionsForSport(member.position, team.sport)
+        if (originalPositions.join('|') !== safePositions.join('|')) {
+          updates.push(pb.collection('members').update(member.id, { position: safePositions }))
+          return {
+            ...mt,
+            expand: {
+              ...mt.expand,
+              member: { ...member, position: safePositions },
+            },
+          }
+        }
+        return mt
+      })
+      setMembers(normalized)
+      if (updates.length > 0) {
+        void Promise.allSettled(updates)
+      }
     } catch (err) {
       setError(err instanceof Error ? err : new Error(String(err)))
     } finally {

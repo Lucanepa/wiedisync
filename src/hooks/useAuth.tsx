@@ -10,6 +10,11 @@ interface AuthContextValue {
   user: (RecordModel & Member) | null
   isSuperAdmin: boolean
   isAdmin: boolean
+  isGlobalAdmin: boolean
+  isVbAdmin: boolean
+  isBbAdmin: boolean
+  hasAdminAccessToSport: (sport: 'volleyball' | 'basketball') => boolean
+  hasAdminAccessToTeam: (teamId: string) => boolean
   isApproved: boolean
   isProfileComplete: boolean
   isCoach: boolean
@@ -40,6 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [memberTeamIds, setMemberTeamIds] = useState<string[]>([])
   const [memberTeamNames, setMemberTeamNames] = useState<string[]>([])
   const [memberSports, setMemberSports] = useState<Set<'volleyball' | 'basketball'>>(new Set())
+  const [teamSportById, setTeamSportById] = useState<Record<string, 'volleyball' | 'basketball'>>({})
 
   // Auth refresh — skip if token was just issued (within last 5s, e.g. right after login)
   useEffect(() => {
@@ -101,6 +107,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .catch(() => setCoachTeamIds([]))
   }, [user?.id])
 
+  // Team sport lookup map (used for scoped admin checks by teamId)
+  useEffect(() => {
+    if (!user?.id) {
+      setTeamSportById({})
+      return
+    }
+
+    pb.collection('teams')
+      .getFullList<Team>({
+        filter: 'active=true',
+        fields: 'id,sport',
+      })
+      .then((allTeams) => {
+        const next: Record<string, 'volleyball' | 'basketball'> = {}
+        for (const t of allTeams) {
+          if (t.sport === 'volleyball' || t.sport === 'basketball') {
+            next[t.id] = t.sport
+          }
+        }
+        setTeamSportById(next)
+      })
+      .catch(() => setTeamSportById({}))
+  }, [user?.id])
+
   // Fetch teams the user is a member of (current season)
   useEffect(() => {
     if (!user?.id) {
@@ -142,20 +172,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const roles = user?.role ?? []
   const isSuperAdmin = roles.includes('superuser')
-  const isAdmin = roles.includes('admin') || isSuperAdmin
+  const isGlobalAdmin = roles.includes('admin') || isSuperAdmin
+  const isVbAdmin = roles.includes('vb_admin')
+  const isBbAdmin = roles.includes('bb_admin')
+  const hasAdminAccessToSport = useCallback(
+    (sport: 'volleyball' | 'basketball') =>
+      isGlobalAdmin || (sport === 'volleyball' ? isVbAdmin : isBbAdmin),
+    [isGlobalAdmin, isVbAdmin, isBbAdmin],
+  )
+  const hasAdminAccessToTeam = useCallback(
+    (teamId: string) => {
+      if (!teamId) return false
+      const sport = teamSportById[teamId]
+      if (!sport) return isGlobalAdmin
+      return hasAdminAccessToSport(sport)
+    },
+    [teamSportById, isGlobalAdmin, hasAdminAccessToSport],
+  )
+  const isAdmin = isGlobalAdmin || isVbAdmin || isBbAdmin
   const isApproved = user?.approved === true || isAdmin
   const isProfileComplete = !!user?.language
-  const isVorstand = roles.includes('vorstand') || isAdmin
+  const isVorstand = roles.includes('vorstand') || isGlobalAdmin
   const isGuest = user?.is_guest === true
 
   const primarySport: 'volleyball' | 'basketball' | 'both' =
     memberSports.size === 1 ? [...memberSports][0] : 'both'
 
-  const isCoach = coachTeamIds.length > 0 || isAdmin
+  const isCoach = coachTeamIds.length > 0 || isGlobalAdmin
 
   const isCoachOf = useCallback(
-    (teamId: string) => isAdmin || coachTeamIds.includes(teamId),
-    [isAdmin, coachTeamIds],
+    (teamId: string) => hasAdminAccessToTeam(teamId) || coachTeamIds.includes(teamId),
+    [hasAdminAccessToTeam, coachTeamIds],
   )
 
   /** Coach/team_responsible can participate (for attendance tracking) even if not a player */
@@ -171,12 +218,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   const canViewTeam = useCallback(
-    (teamId: string) => isAdmin || isVorstand || coachTeamIds.includes(teamId) || memberTeamIds.includes(teamId),
-    [isAdmin, isVorstand, coachTeamIds, memberTeamIds],
+    (teamId: string) =>
+      hasAdminAccessToTeam(teamId) ||
+      isVorstand ||
+      coachTeamIds.includes(teamId) ||
+      memberTeamIds.includes(teamId),
+    [hasAdminAccessToTeam, isVorstand, coachTeamIds, memberTeamIds],
   )
 
   return (
-    <AuthContext.Provider value={{ user, isSuperAdmin, isAdmin, isApproved, isProfileComplete, isCoach, isCoachOf, canParticipateIn, isStaffOnly, coachTeamIds, memberTeamIds, memberTeamNames, memberSports, primarySport, canViewTeam, isVorstand, isGuest, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isSuperAdmin, isAdmin, isGlobalAdmin, isVbAdmin, isBbAdmin, hasAdminAccessToSport, hasAdminAccessToTeam, isApproved, isProfileComplete, isCoach, isCoachOf, canParticipateIn, isStaffOnly, coachTeamIds, memberTeamIds, memberTeamNames, memberSports, primarySport, canViewTeam, isVorstand, isGuest, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   )

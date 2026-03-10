@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Navigate } from 'react-router-dom'
+import { useAuth } from '../../../hooks/useAuth'
 import { useGameSchedulingSeason } from '../hooks/useGameSchedulingSeason'
 import { useAdminBookings } from '../hooks/useAdminBookings'
 import { useTeams } from '../../../hooks/useTeams'
@@ -13,11 +15,16 @@ import type { SpielsamstagConfig, TeamSlotConfig } from '../../../types'
 
 export default function AdminSetupPage() {
   const { t } = useTranslation('gameScheduling')
+  const { hasAdminAccessToSport } = useAuth()
   const { season, allSeasons, isLoading, createSeason, updateSeason, setSeason } = useGameSchedulingSeason()
   const { generateSlots } = useAdminBookings(season?.id)
   const { data: teams } = useTeams()
   const [generating, setGenerating] = useState(false)
   const [genResult, setGenResult] = useState<{ total_created: number } | null>(null)
+
+  if (!hasAdminAccessToSport('volleyball')) {
+    return <Navigate to="/" replace />
+  }
 
   if (isLoading) return <LoadingSpinner />
 

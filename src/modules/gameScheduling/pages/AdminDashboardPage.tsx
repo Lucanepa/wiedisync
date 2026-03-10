@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Navigate } from 'react-router-dom'
+import { useAuth } from '../../../hooks/useAuth'
 import { useGameSchedulingSeason } from '../hooks/useGameSchedulingSeason'
 import { useAdminBookings } from '../hooks/useAdminBookings'
 import { useTeams } from '../../../hooks/useTeams'
@@ -12,10 +14,15 @@ import type { ExpandedBooking } from '../hooks/useAdminBookings'
 
 export default function AdminDashboardPage() {
   const { t } = useTranslation('gameScheduling')
+  const { hasAdminAccessToSport } = useAuth()
   const { season, isLoading: seasonLoading } = useGameSchedulingSeason()
   const { bookings, opponents, slots, isLoading, confirmAwayProposal, blockSlot } = useAdminBookings(season?.id)
   const { data: teams } = useTeams()
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null)
+
+  if (!hasAdminAccessToSport('volleyball')) {
+    return <Navigate to="/" replace />
+  }
 
   if (seasonLoading || isLoading) return <LoadingSpinner />
 

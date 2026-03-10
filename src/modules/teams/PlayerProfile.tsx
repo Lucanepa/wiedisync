@@ -9,6 +9,7 @@ import TeamChip from '../../components/TeamChip'
 import StatusBadge from '../../components/StatusBadge'
 import EmptyState from '../../components/EmptyState'
 import { getFileUrl } from '../../utils/pbFile'
+import { coercePositions, getPositionI18nKey } from '../../utils/memberPositions'
 import { formatDate, getCurrentSeason, getSeasonDateRange } from '../../utils/dateHelpers'
 import ImageLightbox from '../../components/ImageLightbox'
 import type { Member, MemberTeam, Team, Absence, TrainingAttendance } from '../../types'
@@ -74,6 +75,7 @@ export default function PlayerProfile() {
   }
 
   const initials = `${member.first_name?.[0] ?? ''}${member.last_name?.[0] ?? ''}`.toUpperCase()
+  const positions = coercePositions(member.position)
   const attendancePct = attendanceStats && attendanceStats.total > 0
     ? Math.round((attendanceStats.present / attendanceStats.total) * 100)
     : null
@@ -112,7 +114,9 @@ export default function PlayerProfile() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{member.name}</h1>
           <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
             {member.number && <span>#{member.number}</span>}
-            <span className="capitalize">{member.position}</span>
+            {positions.length > 0 && (
+              <span>{positions.map((p) => (getPositionI18nKey(p) ? t(getPositionI18nKey(p)!) : p)).join(', ')}</span>
+            )}
             {member.role.map((r) => <StatusBadge key={r} status={r} />)}
           </div>
           {memberTeams.some((mt) => isCoachOf(mt.team)) && (

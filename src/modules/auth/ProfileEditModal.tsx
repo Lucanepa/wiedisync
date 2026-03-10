@@ -5,6 +5,7 @@ import Button from '../../components/ui/Button'
 import { Input, Select } from '../../components/ui/Input'
 import { useAuth } from '../../hooks/useAuth'
 import { getFileUrl } from '../../utils/pbFile'
+import { coercePositions, getPositionI18nKey } from '../../utils/memberPositions'
 import { pbLangToI18n } from '../../utils/languageMap'
 import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
@@ -160,6 +161,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
   const initials = `${firstName?.[0] ?? ''}${lastName?.[0] ?? ''}`.toUpperCase()
   const currentPhoto = photoPreview
     ?? (user.photo ? getFileUrl('members', user.id, user.photo) : null)
+  const positions = coercePositions(user.position)
 
   // In onboarding mode, data is pre-populated if the member was imported from Clubdesk
   const hasExistingData = onboarding && !!user.first_name
@@ -312,7 +314,11 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
             </p>
             <div className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
               {user.license_nr && <span>{t('licenseNr')}: {user.license_nr}</span>}
-              <span className="capitalize">{t('position')}: {user.position}</span>
+              <span>
+                {t('position')}: {positions.length > 0
+                  ? positions.map((p) => (getPositionI18nKey(p) ? tt(getPositionI18nKey(p)!) : p)).join(', ')
+                  : '—'}
+              </span>
             </div>
             {user.licences?.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1.5">

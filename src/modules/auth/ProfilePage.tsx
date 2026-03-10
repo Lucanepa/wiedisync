@@ -8,6 +8,7 @@ import StatusBadge from '../../components/StatusBadge'
 import TeamChip from '../../components/TeamChip'
 import ParticipationButton from '../../components/ParticipationButton'
 import { getFileUrl } from '../../utils/pbFile'
+import { coercePositions, getPositionI18nKey } from '../../utils/memberPositions'
 import { formatDate, getCurrentSeason, toISODate } from '../../utils/dateHelpers'
 import ProfileEditModal from './ProfileEditModal'
 import type { MemberTeam, Team, Absence, Training, Game, Event, LicenceType } from '../../types'
@@ -79,6 +80,7 @@ export default function ProfilePage() {
   if (!user) return <Navigate to="/login" replace />
 
   const initials = `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''}`.toUpperCase()
+  const positions = coercePositions(user.position)
   const season = getCurrentSeason()
 
   return (
@@ -100,13 +102,13 @@ export default function ProfilePage() {
           )}
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-xl font-bold text-gray-900 dark:text-gray-100">{user.name}</h1>
-            {(user.number > 0 || user.position) && (
+            {(user.number > 0 || positions.length > 0) && (
               <div className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
                 {user.number > 0 && (
                   <p className="font-semibold text-gray-700 dark:text-gray-300">#{user.number}</p>
                 )}
-                {user.position && (
-                  <p className="capitalize">{user.position}</p>
+                {positions.length > 0 && (
+                  <p>{positions.map((p) => (getPositionI18nKey(p) ? tt(getPositionI18nKey(p)!) : p)).join(', ')}</p>
                 )}
               </div>
             )}
@@ -162,7 +164,7 @@ export default function ProfilePage() {
               <div className={`flex items-center gap-1.5 ${memberTeams.length > 0 ? 'mt-2 border-t border-gray-100 pt-2 dark:border-gray-700' : ''}`}>
                 <span className="shrink-0 text-xs leading-none text-gray-400 dark:text-gray-500">{t('roles')}</span>
                 {[...user.role].sort((a, b) => {
-                  const order = ['user', 'coach', 'vorstand', 'admin', 'superuser', 'superadmin']
+                  const order = ['user', 'coach', 'team_responsible', 'vb_admin', 'bb_admin', 'vorstand', 'admin', 'superuser', 'superadmin']
                   return (order.indexOf(a) === -1 ? 99 : order.indexOf(a)) - (order.indexOf(b) === -1 ? 99 : order.indexOf(b))
                 }).map((r) => <StatusBadge key={r} status={r} />)}
               </div>

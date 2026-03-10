@@ -1,7 +1,9 @@
 import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Navigate } from 'react-router-dom'
 import type { Game, Team, Training, Member, MemberTeam, Hall } from '../../types'
 import { usePB } from '../../hooks/usePB'
+import { useAuth } from '../../hooks/useAuth'
 import { getCurrentSeason, getSeasonDateRange, formatDateCompact, formatTime } from '../../utils/dateHelpers'
 import { logActivity } from '../../utils/logActivity'
 import pb from '../../pb'
@@ -20,9 +22,14 @@ type ExpandedGame = Game & {
 
 export default function ScorerAssignPage() {
   const { t } = useTranslation('scorerAssign')
+  const { hasAdminAccessToSport } = useAuth()
 
   const season = getCurrentSeason()
   const { start: seasonStart, end: seasonEnd } = getSeasonDateRange(season)
+
+  if (!hasAdminAccessToSport('volleyball')) {
+    return <Navigate to="/" replace />
+  }
 
   // Data loading
   const { data: allGames, isLoading: gamesLoading } = usePB<ExpandedGame>('games', {

@@ -24,5 +24,7 @@ export default {
   privacy: 'Privacy',
   impressum: 'Imprint',
   clubdeskSync: 'ClubDesk Sync',
+  adminMode: 'Admin Mode',
+  memberMode: 'Member Mode',
   notifications: 'Notifications',
 } as const

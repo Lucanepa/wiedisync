@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import Modal from '../../components/Modal'
 import { useAuth } from '../../hooks/useAuth'
+import { useAdminMode } from '../../hooks/useAdminMode'
 import { usePB } from '../../hooks/usePB'
 import { formatDate, formatDateCompact, toISODate } from '../../utils/dateHelpers'
 import pb from '../../pb'
@@ -29,6 +30,7 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
   const { t: tc } = useTranslation('common')
 
   const { hasAdminAccessToTeam, coachTeamIds } = useAuth()
+  const { effectiveIsAdmin } = useAdminMode()
   const { data: allSlots } = usePB<SlotExpanded>('hall_slots', {
     filter: 'slot_type="training"',
     sort: 'day_of_week,start_time',
@@ -41,7 +43,7 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
   const slots = useMemo(() => {
     const filtered = selectedTeamId
       ? allSlots.filter((s) => s.team === selectedTeamId)
-      : allSlots.filter((s) => hasAdminAccessToTeam(s.team) || coachTeamIds.includes(s.team))
+      : allSlots.filter((s) => (effectiveIsAdmin && hasAdminAccessToTeam(s.team)) || coachTeamIds.includes(s.team))
     const today = new Date().toISOString().slice(0, 10)
     return [...filtered].sort((a, b) => {
       if (a.day_of_week !== b.day_of_week) return a.day_of_week - b.day_of_week
@@ -51,7 +53,7 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
       if (aFuture !== bFuture) return aFuture - bFuture
       return (a.valid_from || '').localeCompare(b.valid_from || '')
     })
-  }, [selectedTeamId, allSlots, hasAdminAccessToTeam, coachTeamIds])
+  }, [selectedTeamId, allSlots, effectiveIsAdmin, hasAdminAccessToTeam, coachTeamIds])
 
   const { data: halls } = usePB<Hall>('halls', { sort: 'name', perPage: 50 })
   const { data: closures } = usePB<HallClosure>('hall_closures', { perPage: 500 })

@@ -24,5 +24,7 @@ export default {
   privacy: 'Datenschutz',
   impressum: 'Impressum',
   clubdeskSync: 'ClubDesk Sync',
+  adminMode: 'Admin-Modus',
+  memberMode: 'Mitglied-Modus',
   notifications: 'Benachrichtigungen',
 } as const

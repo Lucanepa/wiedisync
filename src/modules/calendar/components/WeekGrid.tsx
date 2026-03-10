@@ -279,7 +279,7 @@ export default function WeekGrid({
               <span
                 className={`mt-0.5 flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold ${
                   isToday
-                    ? 'bg-brand-500 text-white'
+                    ? 'bg-gold-400 text-brand-900'
                     : 'text-gray-900 dark:text-gray-100'
                 }`}
               >

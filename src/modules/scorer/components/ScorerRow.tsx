@@ -6,6 +6,7 @@ import TeamChip from '../../../components/TeamChip'
 import AssignmentEditor from './AssignmentEditor'
 import { downloadICal } from '../../../utils/icalGenerator'
 import type { CalendarEntry } from '../../../types/calendar'
+import { formatTime } from '../../../utils/dateHelpers'
 
 interface ScorerRowProps {
   game: Game
@@ -96,7 +97,7 @@ function handleExportICal(game: ExpandedGame, title: string) {
     type: 'game',
     title,
     date: new Date(game.date),
-    startTime: game.time,
+    startTime: game.time ? formatTime(game.time) : null,
     endTime: null,
     allDay: false,
     location: hallName,
@@ -195,7 +196,7 @@ export default function ScorerRow({
       {/* Game info */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="text-sm text-gray-500 dark:text-gray-400">
-          {dateStr} · {game.time}
+          {dateStr} · {game.time ? formatTime(game.time) : ''}
         </div>
         {kscwTeam && <TeamChip team={kscwTeam} size="sm" />}
         <div className="text-sm font-medium dark:text-gray-200">

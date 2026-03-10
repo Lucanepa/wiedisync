@@ -14,29 +14,18 @@ test.describe('Calendar page', () => {
     await page.goto('/calendar')
     await page.waitForLoadState('domcontentloaded')
 
-    // Three view options: "Halle", "Monat", "Woche" (de)
+    // Two view options: "Halle", "Kalender" (de)
     await expect(page.getByRole('button', { name: 'Halle', exact: true })).toBeVisible({ timeout: 10_000 })
-    await expect(page.getByRole('button', { name: 'Monat' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Woche' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Kalender', exact: true })).toBeVisible()
   })
 
   test('can switch to month view', async ({ page }) => {
     await page.goto('/calendar')
     await page.waitForLoadState('domcontentloaded')
 
-    await page.getByRole('button', { name: 'Monat' }).click()
+    await page.getByRole('button', { name: 'Kalender', exact: true }).click()
 
     // Should not crash after switching views
-    const body = page.locator('body')
-    await expect(body).not.toContainText('Error boundary')
-  })
-
-  test('can switch to week view', async ({ page }) => {
-    await page.goto('/calendar')
-    await page.waitForLoadState('domcontentloaded')
-
-    await page.getByRole('button', { name: 'Woche' }).click()
-
     const body = page.locator('body')
     await expect(body).not.toContainText('Error boundary')
   })
@@ -45,12 +34,12 @@ test.describe('Calendar page', () => {
     await page.goto('/calendar')
     await page.waitForLoadState('domcontentloaded')
 
-    // Switch to month view to see filters
-    await page.getByRole('button', { name: 'Monat' }).click()
+    // Switch to month/calendar view to see filters
+    await page.getByRole('button', { name: 'Kalender', exact: true }).click()
 
-    // Unauthenticated user should see at least game source filters
-    // German: "Heim", "Auswärts"
-    await expect(page.getByRole('button', { name: 'Heim' })).toBeVisible({ timeout: 10_000 })
-    await expect(page.getByRole('button', { name: 'Auswärts' })).toBeVisible()
+    // Unauthenticated user should see filter chips
+    // German: "Heimspiele", "Auswärtsspiele"
+    await expect(page.getByRole('button', { name: 'Heimspiele' })).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('button', { name: 'Auswärtsspiele' })).toBeVisible()
   })
 })

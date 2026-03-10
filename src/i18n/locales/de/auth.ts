@@ -34,6 +34,7 @@ export default {
   numberTaken: 'Diese Nummer wird bereits von {{name}} verwendet',
   errorSaving: 'Fehler beim Speichern',
   fileTooLarge: 'Datei ist zu gross (max. 5 MB)',
+  invalidImageType: 'Ungültiger Dateityp. Erlaubt: JPEG, PNG, WebP, GIF',
 
   // Training label
   training: 'Training',

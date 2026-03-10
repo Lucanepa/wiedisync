@@ -24,7 +24,9 @@ export function formatWeekday(date: string): string {
 }
 
 export function formatTime(time: string): string {
-  return time.slice(0, 5)
+  // Handle full datetime strings like "2026-03-06 20:00:00"
+  const timePart = time.includes(' ') ? time.split(' ')[1] : time
+  return timePart.slice(0, 5)
 }
 
 export function isDateInRange(date: string, start: string, end: string): boolean {

@@ -60,7 +60,7 @@ test.describe('Overflow — More sheet', () => {
     await expect(page.getByRole('link', { name: /Scorer/ })).toBeVisible({ timeout: 5_000 })
 
     // Sheet should not exceed viewport height
-    const sheet = page.locator('.rounded-t-2xl')
+    const sheet = page.locator('.rounded-t-2xl').first()
     const sheetBox = await sheet.boundingBox()
     const viewport = page.viewportSize()!
 

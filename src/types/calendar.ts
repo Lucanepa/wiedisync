@@ -17,6 +17,8 @@ export interface CalendarEntry {
   source: Game | Training | Event | HallClosure | HallEvent
   /** Only set for game entries */
   gameType?: 'home' | 'away'
+  /** Sport type — set for game entries to show correct ball icon */
+  sport?: 'volleyball' | 'basketball'
 }
 
 export type ViewMode = 'calendar' | 'list-date' | 'list-team'

@@ -1,6 +1,8 @@
 import { useTranslation } from 'react-i18next'
 import FilterChips from '../../components/FilterChips'
+import TeamMultiSelect from '../../components/TeamMultiSelect'
 import { useTeams } from '../../hooks/useTeams'
+import { pbNameToColorKey } from '../../utils/teamColors'
 import type { CalendarFilterState, SourceFilter } from '../../types/calendar'
 
 interface CalendarFiltersProps {
@@ -15,6 +17,7 @@ interface CalendarFiltersProps {
 
 export default function CalendarFilters({ filters, onChange, allowedSources, compact, showBulkToggle }: CalendarFiltersProps) {
   const { t } = useTranslation('calendar')
+  const { t: tc } = useTranslation('common')
 
   const allSourceOptions = [
     { value: 'game-home', label: t('gameTypeHome'), colorClasses: 'bg-brand-100 text-brand-800 border-brand-200' },
@@ -29,22 +32,32 @@ export default function CalendarFilters({ filters, onChange, allowedSources, com
     : allSourceOptions
   const { data: teams } = useTeams()
 
-  const teamChipOptions = teams.map((t) => ({
-    value: t.id,
-    label: t.name,
-  }))
+  // Check if we have both volleyball and basketball teams
+  const hasVB = teams.some((t) => t.sport === 'volleyball')
+  const hasBB = teams.some((t) => t.sport === 'basketball')
+  const showGroups = hasVB && hasBB
+
+  const teamOptions = teams
+    .filter((team) => team.sport === 'volleyball' || team.sport === 'basketball')
+    .map((team) => {
+      const colorKey = pbNameToColorKey(team.name, team.sport)
+      const sportLabel = team.sport === 'volleyball' ? tc('volleyball') : tc('basketball')
+      // When both sports shown, prefix VB-/BB- for clarity
+      const label = showGroups
+        ? (team.sport === 'volleyball' ? `VB-${team.name}` : `BB-${team.name}`)
+        : team.name
+
+      return {
+        value: team.id,
+        label,
+        colorKey,
+        group: showGroups ? sportLabel : undefined,
+      }
+    })
 
   // For teams: empty selectedTeamIds means "all teams" in the data layer.
-  // In the UI, we show all as active when empty, and convert between the two models.
-  const allTeamIds = teamChipOptions.map((t) => t.value)
-  const teamSelected = filters.selectedTeamIds.length === 0 ? allTeamIds : filters.selectedTeamIds
   function handleTeamChange(ids: string[]) {
-    // If all teams are selected (or re-selected), reset to empty (= all)
-    if (ids.length === allTeamIds.length) {
-      onChange({ ...filters, selectedTeamIds: [] })
-    } else {
-      onChange({ ...filters, selectedTeamIds: ids })
-    }
+    onChange({ ...filters, selectedTeamIds: ids })
   }
 
   return (
@@ -57,15 +70,16 @@ export default function CalendarFilters({ filters, onChange, allowedSources, com
         showBulkToggle={showBulkToggle}
       />
 
-      {teamChipOptions.length > 0 && (
+      {teamOptions.length > 0 && (
         <div className={`${compact ? 'border-t border-gray-200 pt-2 sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0 dark:border-gray-700' : 'border-t border-gray-200 pt-3 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0 dark:border-gray-700'}`}>
-          <FilterChips
-            options={teamChipOptions}
-            selected={teamSelected}
-            onChange={handleTeamChange}
-            compact={compact}
-            showBulkToggle={showBulkToggle}
-          />
+          <div className={compact ? 'w-48' : 'w-64'}>
+            <TeamMultiSelect
+              options={teamOptions}
+              selected={filters.selectedTeamIds}
+              onChange={handleTeamChange}
+              placeholder={tc('allTeams')}
+            />
+          </div>
         </div>
       )}
     </div>

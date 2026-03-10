@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import TeamChip from '../../components/TeamChip'
 import type { Game, Team } from '../../types'
 import { parseDate, formatDate } from '../../utils/dateUtils'
+import { formatTime } from '../../utils/dateHelpers'
 
 interface ListViewProps {
   games: Game[]
@@ -61,7 +62,7 @@ function GameRow({ game, teams, showTeam }: { game: Game; teams: Team[]; showTea
     <div className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700">
       {/* Time */}
       <div className="w-14 shrink-0 text-sm font-medium text-gray-700 dark:text-gray-300">
-        {game.time || '–'}
+        {game.time ? formatTime(game.time) : '–'}
       </div>
 
       {/* Team chip */}
@@ -189,7 +190,7 @@ function ByTeamView({ games, teams }: { games: Game[]; teams: Team[] }) {
                 </div>
                 {/* Time */}
                 <div className="w-14 shrink-0 text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {game.time || '–'}
+                  {game.time ? formatTime(game.time) : '–'}
                 </div>
                 {/* Matchup */}
                 <div className="min-w-0 flex-1 text-sm text-gray-900 dark:text-gray-100">

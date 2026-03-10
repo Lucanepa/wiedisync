@@ -18,6 +18,7 @@ const store = new AsyncAuthStore({
   clear: async () => {
     localStorage.removeItem(AUTH_KEY)
     sessionStorage.removeItem(AUTH_KEY)
+    localStorage.removeItem('kscw-sql-history')
   },
   initial: getStorage().getItem(AUTH_KEY) || '',
 })

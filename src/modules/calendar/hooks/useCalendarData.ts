@@ -8,6 +8,7 @@ import {
   eachDayOfInterval,
 } from '../../../utils/dateUtils'
 import { format, isBefore, isAfter, isSameDay } from 'date-fns'
+import { formatTime } from '../../../utils/dateHelpers'
 
 interface UseCalendarDataOptions {
   filters: CalendarFilterState
@@ -55,7 +56,7 @@ function gameToEntry(game: Game): CalendarEntry {
     type: 'game',
     title: `${game.home_team} - ${game.away_team}`,
     date: parseDate(game.date),
-    startTime: game.time || null,
+    startTime: game.time ? formatTime(game.time) : null,
     endTime: null,
     allDay: false,
     location: expandedHall?.name ?? game.away_hall_json?.name ?? '',
@@ -63,6 +64,7 @@ function gameToEntry(game: Game): CalendarEntry {
     description: [game.league, game.round].filter(Boolean).join(' | '),
     source: game,
     gameType: game.type,
+    sport: expandedTeam?.sport ?? (game.source === 'basketplan' ? 'basketball' : 'volleyball'),
   }
 }
 
@@ -134,6 +136,9 @@ function closureToEntry(closure: HallClosure): CalendarEntry {
 
 /** Detect hall events that are actually closures (e.g. "Halle geschlossen") */
 const CLOSURE_PATTERN = /geschlossen|gesperrt|closed/i
+
+/** Hall events matching this pattern are basketball games from GCal */
+const BB_GAME_PATTERN = /^BB\s/i
 
 function hallEventToEntry(he: HallEvent): CalendarEntry {
   const isClosure = CLOSURE_PATTERN.test(he.title)
@@ -251,18 +256,31 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
       }
     }
     if (fetchHallEvents) {
-      for (const he of hallEvents.map(hallEventToEntry)) {
-        if (he.type === 'closure') {
+      // Build a set of basketplan game date-time keys for BB GCal dedup
+      const bpGameDateKeys = new Set(
+        games
+          .filter((g) => g.source === 'basketplan')
+          .map((g) => `${g.date?.slice(0, 10)}-${g.time ? formatTime(g.time) : ''}`),
+      )
+
+      for (const he of hallEvents) {
+        const entry = hallEventToEntry(he)
+        if (entry.type === 'closure') {
           // Skip GCal closure events when a hall_closures record covers that date
-          if (closureCoveredDates.has(toDateKey(he.date))) continue
+          if (closureCoveredDates.has(toDateKey(entry.date))) continue
           // Deduplicate remaining GCal closure entries (same title + date)
-          const dedupeKey = `${he.title}|${toDateKey(he.date)}|${he.endDate ? toDateKey(he.endDate) : ''}`
+          const dedupeKey = `${entry.title}|${toDateKey(entry.date)}|${entry.endDate ? toDateKey(entry.endDate) : ''}`
           if (!closureSeen.has(dedupeKey)) {
             closureSeen.add(dedupeKey)
-            all.push(he)
+            all.push(entry)
           }
         } else {
-          all.push(he)
+          // Skip BB GCal events when a basketplan game already covers that slot
+          if (BB_GAME_PATTERN.test(he.title) && bpGameDateKeys.size > 0) {
+            const heKey = `${he.date?.slice(0, 10)}-${he.start_time?.slice(0, 5)}`
+            if (bpGameDateKeys.has(heKey)) continue
+          }
+          all.push(entry)
         }
       }
     }

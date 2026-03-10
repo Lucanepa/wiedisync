@@ -18,13 +18,9 @@ function parseLeagueLevel(league: string): number | null {
   // Skip youth, classics, cup, turnier, plausch, etc.
   if (/U\d|Jugend|Junior|Classics|Cup|Turnier|Plausch|Mini/i.test(league)) return null
 
-  // Volleyball: "3. Liga" or "3.Liga" etc.
+  // Volleyball only: "3. Liga" or "3.Liga" etc.
   const vbMatch = league.match(/(\d)\.\s*Liga/i)
   if (vbMatch) return parseInt(vbMatch[1], 10)
-
-  // Basketball: league codes like "H1L", "D2L", "H3LRA" etc.
-  const bbMatch = league.match(/[HDM](\d)L/i)
-  if (bbMatch) return parseInt(bbMatch[1], 10)
 
   return null
 }

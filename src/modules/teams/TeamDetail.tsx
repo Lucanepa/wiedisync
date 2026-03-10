@@ -10,6 +10,8 @@ import Button from '../../components/ui/Button'
 import TeamChip from '../../components/TeamChip'
 import EmptyState from '../../components/EmptyState'
 import { sanitizeUrl } from '../../utils/sanitizeUrl'
+import VolleyballIcon from '../../components/VolleyballIcon'
+import BasketballIcon from '../../components/BasketballIcon'
 import MemberRow, { getMemberRole } from './MemberRow'
 import { getFileUrl } from '../../utils/pbFile'
 import { getCurrentSeason } from '../../utils/dateHelpers'
@@ -163,7 +165,12 @@ export default function TeamDetail() {
           <div className="mt-2 flex gap-4 text-sm text-gray-500 dark:text-gray-400">
             <span>{team.league}</span>
             <span>{team.season}</span>
-            <span>{team.sport === 'volleyball' ? 'Volleyball' : 'Basketball'}</span>
+            <span className="inline-flex items-center gap-1">
+              {team.sport === 'basketball'
+                ? <BasketballIcon className="h-4 w-4" filled />
+                : <VolleyballIcon className="h-4 w-4" filled />}
+              {team.sport === 'volleyball' ? 'Volleyball' : 'Basketball'}
+            </span>
           </div>
         </div>
 

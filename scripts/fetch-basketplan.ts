@@ -14,12 +14,16 @@ import PocketBase from 'pocketbase'
 
 const BASE = 'https://www.basketplan.ch'
 const CLUB_ID = 166
-const USERNAME = 'Ksc Wiedikon'
-const PASSWORD = '1224'
+const USERNAME = process.env.BP_USERNAME ?? 'Ksc Wiedikon'
+const PASSWORD = process.env.BP_PASSWORD
+if (!PASSWORD) throw new Error('BP_PASSWORD env var required')
 
-const PB_URL = process.env.PB_URL ?? 'https://kscw-api.lucanepa.com'
-const PB_EMAIL = process.env.PB_EMAIL ?? 'admin@kscw.ch'
-const PB_PASSWORD = process.env.PB_PASSWORD ?? 'REDACTED_ROTATE_ME'
+const PB_URL = process.env.PB_URL
+const PB_EMAIL = process.env.PB_EMAIL
+const PB_PASSWORD = process.env.PB_PASSWORD
+if (!PB_URL || !PB_EMAIL || !PB_PASSWORD) {
+  throw new Error('PB_URL, PB_EMAIL, and PB_PASSWORD env vars required')
+}
 
 const args = process.argv.slice(2)
 const MODE = args.includes('--sync') ? 'sync'

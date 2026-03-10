@@ -8,8 +8,10 @@ import { useNotifications } from '../../hooks/useNotifications'
 import { useSportPreference } from '../../hooks/useSportPreference'
 import { formatDate, formatDateCompact, formatTime, formatWeekday } from '../../utils/dateHelpers'
 import TeamChip from '../../components/TeamChip'
+import { pbNameToColorKey } from '../../utils/teamColors'
 import StatusBadge from '../../components/StatusBadge'
-import { VolleyballIcon, BasketballIcon } from '../../components/SportToggle'
+import VolleyballIcon from '../../components/VolleyballIcon'
+import BasketballIcon from '../../components/BasketballIcon'
 import NotificationPanel from '../../components/NotificationPanel'
 import GameDetailModal from '../games/components/GameDetailModal'
 import type { Game, Event, Team, Training, Hall, Member, MemberTeam, Notification } from '../../types'
@@ -153,7 +155,7 @@ export default function HomePage() {
               }`}
               aria-label="Volleyball"
             >
-              <VolleyballIcon className="h-7 w-7 sm:h-8 sm:w-8" />
+              <VolleyballIcon className="h-7 w-7 sm:h-8 sm:w-8" filled />
             </button>
           )}
           {showSportToggle ? (
@@ -185,7 +187,7 @@ export default function HomePage() {
               }`}
               aria-label="Basketball"
             >
-              <BasketballIcon className="h-7 w-7 sm:h-8 sm:w-8" />
+              <BasketballIcon className="h-7 w-7 sm:h-8 sm:w-8" filled />
             </button>
           )}
         </div>
@@ -321,9 +323,9 @@ function SectionHeader({
   onLinkClick?: (e: React.MouseEvent) => void
 }) {
   return (
-    <div className="mb-3 flex items-center justify-between">
-      <div className="flex items-center gap-2">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{title}</h2>
+    <div className="mb-3 flex items-center justify-between gap-2">
+      <div className="flex min-w-0 items-center gap-2">
+        <h2 className="truncate text-lg font-semibold text-gray-900 dark:text-gray-100">{title}</h2>
         {filterToggle && (
           <button
             onClick={filterToggle.onToggle}
@@ -340,7 +342,7 @@ function SectionHeader({
       <Link
         to={linkTo}
         onClick={onLinkClick}
-        className="text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
+        className="shrink-0 whitespace-nowrap text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
       >
         {linkLabel} →
       </Link>
@@ -387,7 +389,9 @@ function NewsRow({ notification }: { notification: Notification }) {
 }
 
 function CompactGameRow({ game, showScore, onClick }: { game: ExpandedGame; showScore: boolean; onClick?: () => void }) {
-  const kscwTeam = game.expand?.kscw_team?.name ?? ''
+  const teamName = game.expand?.kscw_team?.name ?? ''
+  const teamSport = game.expand?.kscw_team?.sport as 'volleyball' | 'basketball' | undefined
+  const chipKey = teamName && teamSport ? pbNameToColorKey(teamName, teamSport) : teamName
   const dateStr = game.date ? formatDateCompact(game.date) : ''
   const homeWon = Number(game.home_score) > Number(game.away_score)
   const awayWon = Number(game.away_score) > Number(game.home_score)
@@ -405,20 +409,23 @@ function CompactGameRow({ game, showScore, onClick }: { game: ExpandedGame; show
 
       {/* Sport icon */}
       {game.expand?.kscw_team?.sport === 'basketball'
-        ? <BasketballIcon className="h-5 w-5 shrink-0 text-orange-500 dark:text-orange-400" />
-        : <VolleyballIcon className="h-5 w-5 shrink-0 text-amber-400 dark:text-amber-300" />}
+        ? <BasketballIcon className="h-5 w-5 shrink-0" filled />
+        : <VolleyballIcon className="h-5 w-5 shrink-0" filled />}
 
       {/* Team names — stacked, Wiedikon team bold */}
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
+      <div className="min-w-0 flex-1 overflow-hidden">
+        <div className="flex items-center gap-1.5">
           <p className={`min-w-0 truncate text-sm text-gray-900 dark:text-gray-100 ${game.type === 'home' ? 'font-bold' : ''}`}>
             {game.home_team}
           </p>
-          {kscwTeam && <TeamChip team={kscwTeam} size="sm" className="shrink-0" />}
+          {chipKey && game.type === 'home' && <TeamChip team={chipKey} size="sm" className="shrink-0" />}
         </div>
-        <p className={`truncate text-sm text-gray-900 dark:text-gray-100 ${game.type === 'away' ? 'font-bold' : ''}`}>
-          {game.away_team}
-        </p>
+        <div className="flex items-center gap-1.5">
+          <p className={`min-w-0 truncate text-sm text-gray-900 dark:text-gray-100 ${game.type === 'away' ? 'font-bold' : ''}`}>
+            {game.away_team}
+          </p>
+          {chipKey && game.type === 'away' && <TeamChip team={chipKey} size="sm" className="shrink-0" />}
+        </div>
       </div>
 
       {/* Vertical score: green=winner, red=loser, bold=Wiedikon */}

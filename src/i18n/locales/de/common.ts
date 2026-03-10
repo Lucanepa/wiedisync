@@ -90,7 +90,10 @@ export default {
   tryAdjustingFilter: 'Versuche den Teamfilter anzupassen.',
   approved: 'Genehmigt',
   all: 'Alle',
+  allTeams: 'Alle Teams',
   none: 'Keine',
   selectAll: 'Alle auswählen',
   selectNone: 'Alle abwählen',
+  volleyball: 'Volleyball',
+  basketball: 'Basketball',
 } as const

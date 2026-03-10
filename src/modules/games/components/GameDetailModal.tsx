@@ -4,13 +4,17 @@ import type { RecordModel } from 'pocketbase'
 import type { Game, Team, Hall, Member } from '../../../types'
 import Button from '../../../components/ui/Button'
 import TeamChip from '../../../components/TeamChip'
+import { pbNameToColorKey } from '../../../utils/teamColors'
 import ParticipationSummary from '../../../components/ParticipationSummary'
 import ParticipationRosterModal from '../../../components/ParticipationRosterModal'
 import { useAuth } from '../../../hooks/useAuth'
 import { useParticipation } from '../../../hooks/useParticipation'
 import { useMutation } from '../../../hooks/useMutation'
+import pb from '../../../pb'
 import { sanitizeUrl } from '../../../utils/sanitizeUrl'
-import { formatDate } from '../../../utils/dateHelpers'
+import { formatDate, formatTime } from '../../../utils/dateHelpers'
+
+const GAME_EXPAND = 'kscw_team,hall,scorer_member,taefeler_member,scorer_taefeler_member,scorer_duty_team,taefeler_duty_team,scorer_taefeler_duty_team'
 
 interface GameDetailModalProps {
   game: Game | null
@@ -52,6 +56,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
   const [rosterOpen, setRosterOpen] = useState(false)
   const [editingDeadline, setEditingDeadline] = useState(false)
   const [deadlineValue, setDeadlineValue] = useState(game?.respond_by?.split(' ')[0] ?? '')
+  const [fullGame, setFullGame] = useState<Game | null>(null)
   const { update: updateGame } = useMutation<Game>('games')
   const canParticipate = !!user && !!game?.kscw_team && memberTeamIds.includes(game.kscw_team)
   const { effectiveStatus, hasAbsence, setStatus } = useParticipation(
@@ -59,6 +64,23 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
     game?.id ?? '',
     game?.date,
   )
+
+  // Re-fetch with full expand when opened from calendar (which only expands kscw_team,hall)
+  useEffect(() => {
+    setFullGame(null)
+    if (!game) return
+    const exp = (game as ExpandedGame).expand
+    const needsExpand =
+      (game.scorer_member && !exp?.scorer_member) ||
+      (game.taefeler_member && !exp?.taefeler_member) ||
+      (game.scorer_taefeler_member && !exp?.scorer_taefeler_member) ||
+      (game.scorer_duty_team && !exp?.scorer_duty_team) ||
+      (game.taefeler_duty_team && !exp?.taefeler_duty_team) ||
+      (game.scorer_taefeler_duty_team && !exp?.scorer_taefeler_duty_team)
+    if (needsExpand) {
+      pb.collection('games').getOne(game.id, { expand: GAME_EXPAND }).then(setFullGame).catch(() => {})
+    }
+  }, [game])
 
   useEffect(() => {
     if (!game) return
@@ -71,7 +93,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
 
   if (!game) return null
 
-  const expanded = game as ExpandedGame
+  const expanded = (fullGame ?? game) as ExpandedGame
   const expandedHall = expanded.expand?.hall
   const awayHall = game.away_hall_json
   const awayMapsUrl = awayHall
@@ -82,7 +104,9 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
         : ''
     : ''
   const hall = expandedHall ?? (awayHall ? { name: awayHall.name, address: awayHall.address, city: awayHall.city, maps_url: awayMapsUrl } : null)
-  const kscwTeam = expanded.expand?.kscw_team?.name ?? ''
+  const rawKscwTeam = expanded.expand?.kscw_team?.name ?? ''
+  const kscwSport = expanded.expand?.kscw_team?.sport as 'volleyball' | 'basketball' | undefined
+  const kscwTeam = rawKscwTeam && kscwSport ? pbNameToColorKey(rawKscwTeam, kscwSport) : rawKscwTeam
   const sets = parseSets(game.sets_json)
   const dateStr = game.date ? dateFormatter.format(new Date(game.date)) : ''
   const showScorerContact = isCoachOf(game.kscw_team)
@@ -246,9 +270,9 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
             {t('gameInfo')}
           </h4>
           <DetailRow label={t('date')} value={dateStr} />
-          <DetailRow label={t('kickoff')} value={game.time || '–'} />
+          <DetailRow label={t('kickoff')} value={game.time ? formatTime(game.time) : '–'} />
           <DetailRow label={t('gameType')} value={game.type === 'home' ? t('typeHome') : t('typeAway')} />
-          {game.sv_game_id && <DetailRow label={t('gameNumber')} value={game.sv_game_id} />}
+          {game.sv_game_id && <DetailRow label={t('gameNumber')} value={game.sv_game_id.replace(/^bp-/, '')} />}
           {game.season && <DetailRow label={t('season')} value={game.season} />}
         </div>
 

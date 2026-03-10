@@ -57,7 +57,7 @@ export default function AssignmentEditor({
     return members.find((m) => m.id === personValue) ?? null
   }, [members, personValue])
 
-  const selectClass = 'min-h-[44px] w-full rounded border border-gray-300 px-2 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 disabled:bg-gray-50 disabled:text-gray-500 dark:disabled:bg-gray-900 dark:disabled:text-gray-400'
+  const selectClass = 'h-[44px] w-full rounded border border-gray-300 px-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 disabled:bg-gray-50 disabled:text-gray-500 dark:disabled:bg-gray-900 dark:disabled:text-gray-400'
 
   return (
     <div className="space-y-1.5">

@@ -12,3 +12,4 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
   X-Frame-Options: DENY
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https://kscw-api.lucanepa.com data: blob:; connect-src 'self' https://kscw-api.lucanepa.com wss://kscw-api.lucanepa.com https://challenges.cloudflare.com; font-src 'self'; frame-src https://challenges.cloudflare.com

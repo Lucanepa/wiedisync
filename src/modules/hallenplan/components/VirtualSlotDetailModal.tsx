@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import Modal from '../../../components/Modal'
 import TeamChip from '../../../components/TeamChip'
 import type { HallSlot, Hall, Team, Game, Training, HallEvent } from '../../../types'
+import { formatTime } from '../../../utils/dateHelpers'
 
 interface Props {
   slot: HallSlot
@@ -47,7 +48,7 @@ export default function VirtualSlotDetailModal({ slot, halls, teams, onClose }: 
           </div>
         )}
         <DetailRow label={t('league')} value={game.league || ''} />
-        <DetailRow label={t('start')} value={game.time?.slice(0, 5) || ''} />
+        <DetailRow label={t('start')} value={game.time ? formatTime(game.time) : ''} />
         <DetailRow label={t('slot')} value={`${slot.start_time}–${slot.end_time}`} />
         {game.status && (
           <DetailRow label={t('common:status')} value={statusLabels[game.status] || game.status} />

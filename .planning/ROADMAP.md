@@ -45,7 +45,7 @@ Plans:
 **Plans:** 1/1 plans complete
 
 Plans:
-- [ ] 02-01-PLAN.md — AdminToggle component, Layout/MoreSheet integration, nav gating, visual indicator, auto-activation
+- [x] 02-01-PLAN.md — AdminToggle component, Layout/MoreSheet integration, nav gating, visual indicator, auto-activation
 
 ### Phase 3: Page Migration
 **Goal**: Regular pages show a clean member experience with no admin noise, while coach features remain untouched
@@ -57,10 +57,11 @@ Plans:
   3. A coach user sees training CRUD, attendance management, and roster editing for their own teams regardless of admin mode state
   4. Admin nav links (e.g. /admin/database, /admin/terminplanung) are hidden from the sidebar and MoreSheet when admin mode is OFF
   5. An admin user in admin mode sees all teams and all inline admin controls — the current full-access behavior is preserved
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 03-01: TBD
+- [ ] 03-01-PLAN.md — Migrate Hallenplan module and Calendar HallenplanView to respect admin mode
+- [ ] 03-02-PLAN.md — Migrate Teams, Scorer, and Trainings modules to respect admin mode
 
 ### Phase 4: Testing
 **Goal**: E2E tests confirm the admin/member separation works correctly across roles and modes
@@ -84,5 +85,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 |-------|----------------|--------|-----------|
 | 1. Foundation | 1/1 | Complete    | 2026-03-10 |
 | 2. Toggle UI | 1/1 | Complete   | 2026-03-10 |
-| 3. Page Migration | 0/? | Not started | - |
+| 3. Page Migration | 0/2 | In progress | - |
 | 4. Testing | 0/? | Not started | - |

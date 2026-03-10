@@ -275,12 +275,9 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
             all.push(entry)
           }
         } else {
-          // Skip BB GCal events when a basketplan game already covers that slot
-          if (BB_GAME_PATTERN.test(he.title) && bpGameDateKeys.size > 0) {
-            const heKey = `${he.date?.slice(0, 10)}-${he.start_time?.slice(0, 5)}`
-            if (bpGameDateKeys.has(heKey)) continue
-          }
-          all.push(entry)
+          // Skip all non-closure GCal hall events — trainings and games
+          // are already shown from their own collections
+          continue
         }
       }
     }

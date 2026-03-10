@@ -6,11 +6,23 @@ export default {
   tabGames: 'Games',
   tabOverview: 'Overview',
 
-  // Labels
+  // Labels — Volleyball
   scorer: 'Scorer',
   scoreboard: 'Scoreboard',
   scorerTaefeler: 'Scorer/Scoreboard',
   confirmed: 'Confirmed',
+
+  // Labels — Basketball
+  bbAnschreiber: 'Scorer (OTR1)',
+  bbZeitnehmer: 'Timekeeper (OTR1)',
+  bb24sOfficial: '24" Official (OTR2)',
+  bbDutyTeam: 'Officials Team',
+
+  // Sport toggle
+  sportVolleyball: 'Volleyball',
+  sportBasketball: 'Basketball',
+  officialsDuties: 'Officials',
+  dutyTeam: 'Duty Team',
 
   // Status labels
   statusConfirmed: 'Confirmed',

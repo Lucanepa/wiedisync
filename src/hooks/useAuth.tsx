@@ -14,6 +14,8 @@ interface AuthContextValue {
   isProfileComplete: boolean
   isCoach: boolean
   isCoachOf: (teamId: string) => boolean
+  canParticipateIn: (teamId: string) => boolean
+  isStaffOnly: (teamId: string) => boolean
   coachTeamIds: string[]
   memberTeamIds: string[]
   memberTeamNames: string[]
@@ -21,6 +23,7 @@ interface AuthContextValue {
   primarySport: 'volleyball' | 'basketball' | 'both'
   canViewTeam: (teamId: string) => boolean
   isVorstand: boolean
+  isGuest: boolean
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
   logout: () => void
@@ -143,6 +146,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isApproved = user?.approved === true || isAdmin
   const isProfileComplete = !!user?.language
   const isVorstand = roles.includes('vorstand') || isAdmin
+  const isGuest = user?.is_guest === true
 
   const primarySport: 'volleyball' | 'basketball' | 'both' =
     memberSports.size === 1 ? [...memberSports][0] : 'both'
@@ -154,13 +158,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [isAdmin, coachTeamIds],
   )
 
+  /** Coach/team_responsible can participate (for attendance tracking) even if not a player */
+  const canParticipateIn = useCallback(
+    (teamId: string) => memberTeamIds.includes(teamId) || coachTeamIds.includes(teamId),
+    [memberTeamIds, coachTeamIds],
+  )
+
+  /** True if user is staff (coach/team_responsible) but NOT a player on this team */
+  const isStaffOnly = useCallback(
+    (teamId: string) => coachTeamIds.includes(teamId) && !memberTeamIds.includes(teamId),
+    [coachTeamIds, memberTeamIds],
+  )
+
   const canViewTeam = useCallback(
-    (teamId: string) => isAdmin || isVorstand || isCoach || memberTeamIds.includes(teamId),
-    [isAdmin, isVorstand, isCoach, memberTeamIds],
+    (teamId: string) => isAdmin || isVorstand || coachTeamIds.includes(teamId) || memberTeamIds.includes(teamId),
+    [isAdmin, isVorstand, coachTeamIds, memberTeamIds],
   )
 
   return (
-    <AuthContext.Provider value={{ user, isSuperAdmin, isAdmin, isApproved, isProfileComplete, isCoach, isCoachOf, coachTeamIds, memberTeamIds, memberTeamNames, memberSports, primarySport, canViewTeam, isVorstand, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isSuperAdmin, isAdmin, isApproved, isProfileComplete, isCoach, isCoachOf, canParticipateIn, isStaffOnly, coachTeamIds, memberTeamIds, memberTeamNames, memberSports, primarySport, canViewTeam, isVorstand, isGuest, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   )

@@ -86,7 +86,7 @@ export default function GamesPage() {
   const { data: games, isLoading: gamesLoading } = usePB<Game>(
     'games',
     gameQuery
-      ? { filter: gameQuery.filter, sort: gameQuery.sort, expand: 'kscw_team,hall,scorer_member,taefeler_member,scorer_taefeler_member,scorer_duty_team,taefeler_duty_team,scorer_taefeler_duty_team', perPage }
+      ? { filter: gameQuery.filter, sort: gameQuery.sort, expand: 'kscw_team,hall,scorer_member,taefeler_member,scorer_taefeler_member,scorer_duty_team,taefeler_duty_team,scorer_taefeler_duty_team,bb_anschreiber,bb_zeitnehmer,bb_24s_official,bb_duty_team', perPage }
       : { filter: 'id = ""', perPage: 1 },
   )
 
@@ -194,7 +194,7 @@ export default function GamesPage() {
               <EmptyState tab={activeTab} />
             ) : (
               <>
-                <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white md:mx-auto md:w-fit dark:bg-gray-800 md:grid md:grid-cols-[auto_auto_auto_auto_auto_auto_auto_1fr]">
                   {games.map((g) => (
                     <GameCard key={g.id} game={g} onClick={setSelectedGame} variant="compact" />
                   ))}

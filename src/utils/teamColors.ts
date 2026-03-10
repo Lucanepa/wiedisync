@@ -109,9 +109,32 @@ export const svTeamIds: Record<string, string> = {
   'bp-6724': 'BB-MU8',
 }
 
+const fallbackColor = { bg: '#6b7280', text: '#ffffff', border: '#4b5563' }
+
 export function getTeamColor(teamName: string) {
   const key = teamName.replace(/-\d+$/, '')
-  return teamColors[key] ?? { bg: '#6b7280', text: '#ffffff', border: '#4b5563' }
+  if (teamColors[key]) return teamColors[key]
+  if (teamColors[`BB-${key}`]) return teamColors[`BB-${key}`]
+
+  // Long basketball names like "Herren 1 H1", "Damen D-Classics 1LR"
+  // Match longest shortCode first to avoid partial matches
+  const bbKeys = Object.keys(teamColors).filter((k) => k.startsWith('BB-'))
+  bbKeys.sort((a, b) => b.length - a.length)
+  for (const k of bbKeys) {
+    const sc = k.slice(3) // e.g. "H1", "H-Classics", "Lions D1"
+    if (key === sc || key.endsWith(` ${sc}`) || key.startsWith(`${sc} `) || key.includes(` ${sc} `)) return teamColors[k]
+  }
+
+  return fallbackColor
+}
+
+/** Trim redundant Basketplan league suffix from BB men team display names.
+ *  "Herren 1 H1" → "Herren 1", "Herren 3 (Unicorns) H4" → "Herren 3 (Unicorns)",
+ *  "Damen D-Classics 1LR" → "Damen D-Classics", "H-Classics 1LR" → "H-Classics".
+ *  Short names like "DU12", "Lions D1" are returned unchanged. */
+export function trimBBTeamName(name: string): string {
+  // Remove trailing league codes like "H1", "H3", "H4", "1LR", "1LRA"
+  return name.replace(/\s+(?:H\d+|\dLR[A-Z]?)$/, '')
 }
 
 /**

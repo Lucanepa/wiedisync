@@ -39,6 +39,10 @@ test.describe('Scorer page', () => {
     // Wait for auth + page to render
     await expect(page.getByRole('heading', { name: /Scorer duty|Schreiberdienst/ })).toBeVisible({ timeout: 20_000 })
 
+    // Filters are collapsed by default — expand them
+    const filterToggle = page.locator('button', { hasText: /Date|Datum/ })
+    await filterToggle.click()
+
     // Filter section has date input and selects
     await expect(page.locator('input[type="date"]').first()).toBeVisible({ timeout: 10_000 })
   })

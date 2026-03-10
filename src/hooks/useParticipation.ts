@@ -9,6 +9,7 @@ export function useParticipation(
   activityId: string,
   activityDate?: string,
   sessionId?: string,
+  isStaff?: boolean,
 ) {
   const { user } = useAuth()
 
@@ -46,11 +47,12 @@ export function useParticipation(
         status,
         note,
         guest_count: guestCount,
+        is_staff: isStaff ?? false,
         ...(sessionId ? { session_id: sessionId } : {}),
       })
     }
     refetch()
-  }, [user, participation, activityType, activityId, create, update, refetch])
+  }, [user, participation, activityType, activityId, isStaff, create, update, refetch])
 
   const clearStatus = useCallback(async () => {
     if (participation) {

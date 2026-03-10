@@ -19,7 +19,7 @@ interface TrainingCardProps {
 
 export default function TrainingCard({ training, onOpenRoster, onEdit, onDelete }: TrainingCardProps) {
   const { t } = useTranslation('trainings')
-  const { user, memberTeamIds } = useAuth()
+  const { user, canParticipateIn } = useAuth()
   const team = training.expand?.team
   const hall = training.expand?.hall
   const coach = training.expand?.coach
@@ -59,7 +59,7 @@ export default function TrainingCard({ training, onOpenRoster, onEdit, onDelete 
       {!training.cancelled && (
         <div className="mt-2.5 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            {user && memberTeamIds.includes(training.team) && (
+            {user && canParticipateIn(training.team) && (
               <TrainingParticipation training={training} />
             )}
             <ParticipationSummary activityType="training" activityId={training.id} compact />
@@ -107,7 +107,9 @@ export default function TrainingCard({ training, onOpenRoster, onEdit, onDelete 
 
 function TrainingParticipation({ training }: { training: TrainingExpanded }) {
   const { t } = useTranslation('participation')
-  const { effectiveStatus, hasAbsence, setStatus } = useParticipation('training', training.id, training.date)
+  const { isStaffOnly } = useAuth()
+  const staffOnly = isStaffOnly(training.team)
+  const { effectiveStatus, hasAbsence, setStatus } = useParticipation('training', training.id, training.date, undefined, staffOnly)
 
   if (hasAbsence) {
     return <span className="text-xs text-gray-500 dark:text-gray-400">{t('absent')}</span>

@@ -10,7 +10,16 @@ import ParticipationButton from '../../components/ParticipationButton'
 import { getFileUrl } from '../../utils/pbFile'
 import { formatDate, getCurrentSeason, toISODate } from '../../utils/dateHelpers'
 import ProfileEditModal from './ProfileEditModal'
-import type { MemberTeam, Team, Absence, Training, Game, Event } from '../../types'
+import type { MemberTeam, Team, Absence, Training, Game, Event, LicenceType } from '../../types'
+
+const LICENCE_LABELS: Record<LicenceType, string> = {
+  scorer_vb: 'licenceScorer',
+  referee_vb: 'licenceReferee',
+  otr1_bb: 'licenceOTR1',
+  otr2_bb: 'licenceOTR2',
+  otn_bb: 'licenceOTN',
+  referee_bb: 'licenceRefereeBB',
+}
 
 type ExpandedMemberTeam = MemberTeam & { expand?: { team?: Team } }
 type ExpandedTraining = Training & { expand?: { team?: Team } }
@@ -20,6 +29,7 @@ export default function ProfilePage() {
   const { user } = useAuth()
   const { t } = useTranslation('auth')
   const { t: tc } = useTranslation('common')
+  const { t: tt } = useTranslation('teams')
   const [editOpen, setEditOpen] = useState(false)
 
   const { data: memberTeams } = usePB<ExpandedMemberTeam>('member_teams', {
@@ -113,19 +123,43 @@ export default function ProfilePage() {
 
         {/* Teams & Roles */}
         {(memberTeams.length > 0 || user.role.length > 0) && (
-          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-gray-100 pt-3 dark:border-gray-700">
+          <div className="mt-3 border-t border-gray-100 pt-3 dark:border-gray-700">
             {memberTeams.length > 0 && (
-              <div className="flex items-center gap-1.5">
-                <span className="shrink-0 text-xs leading-none text-gray-400 dark:text-gray-500">{t('teams')}</span>
-                {memberTeams.map((mt) => (
-                  <Link key={mt.id} to={`/teams/${mt.expand?.team?.name ?? mt.team}`} className="flex">
-                    <TeamChip team={mt.expand?.team?.name ?? '?'} size="sm" />
-                  </Link>
-                ))}
+              <div className="flex flex-col">
+                {memberTeams.map((mt, i) => {
+                  const team = mt.expand?.team
+                  const teamRoles: string[] = [tt('rolePlayer')]
+                  if (team) {
+                    if (team.coach?.includes(user.id)) teamRoles.push(tt('roleCoach'))
+                    if (team.captain?.includes(user.id)) teamRoles.push(tt('roleCaptain'))
+                    if (team.team_responsible?.includes(user.id)) teamRoles.push(tt('roleTeamResponsible'))
+                  }
+                  const isLast = i === memberTeams.length - 1
+                  return (
+                    <div key={mt.id} className="flex items-stretch">
+                      {/* Vertical connector line */}
+                      <div className="flex w-5 flex-col items-center">
+                        <div className={`w-px flex-1 ${i === 0 ? 'bg-transparent' : 'bg-gray-300 dark:bg-gray-600'}`} />
+                        <div className="h-2 w-2 shrink-0 rounded-full bg-gray-300 dark:bg-gray-500" />
+                        <div className={`w-px flex-1 ${isLast ? 'bg-transparent' : 'bg-gray-300 dark:bg-gray-600'}`} />
+                      </div>
+                      {/* Horizontal connector + content */}
+                      <div className="flex items-center gap-2.5 py-1.5">
+                        <div className="w-4 border-t border-gray-300 dark:border-gray-600" />
+                        <Link to={`/teams/${team?.name ?? mt.team}`} className="flex shrink-0">
+                          <TeamChip team={team?.name ?? '?'} size="sm" />
+                        </Link>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {teamRoles.join(' · ')}
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             )}
             {user.role.length > 0 && (
-              <div className="flex items-center gap-1.5">
+              <div className={`flex items-center gap-1.5 ${memberTeams.length > 0 ? 'mt-2 border-t border-gray-100 pt-2 dark:border-gray-700' : ''}`}>
                 <span className="shrink-0 text-xs leading-none text-gray-400 dark:text-gray-500">{t('roles')}</span>
                 {[...user.role].sort((a, b) => {
                   const order = ['user', 'coach', 'vorstand', 'admin', 'superuser', 'superadmin']
@@ -140,6 +174,7 @@ export default function ProfilePage() {
       {/* Contact Info */}
       <div className="mt-8">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('contact')}</h2>
+        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{t('contactPrivacyNotice')}</p>
         <div className="mt-3 grid gap-4 sm:grid-cols-2">
           <div className="rounded-lg border bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
             <p className="text-sm text-gray-500 dark:text-gray-400">{t('email')}</p>
@@ -154,8 +189,18 @@ export default function ProfilePage() {
             <p className="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">{user.license_nr || '—'}</p>
           </div>
           <div className="rounded-lg border bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-            <p className="text-sm text-gray-500 dark:text-gray-400">{tc('season')}</p>
-            <p className="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">{season}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{t('licences')}</p>
+            {user.licences?.length > 0 ? (
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                {user.licences.map((l) => (
+                  <span key={l} className="inline-flex rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-medium text-brand-700 dark:bg-brand-900/30 dark:text-brand-300">
+                    {tt(LICENCE_LABELS[l])}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">—</p>
+            )}
           </div>
         </div>
       </div>

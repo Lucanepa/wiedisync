@@ -64,6 +64,7 @@ interface BPGame {
   scoreGuest: number | null
   referee1: string
   referee2: string
+  referee3: string
   isHome: boolean
 }
 
@@ -201,6 +202,7 @@ function parseGames(teamXml: string, teamIds: Set<string>): BPGame[] {
 
     const ref1 = getAttr(fullBlock, 'referee1Name')
     const ref2 = getAttr(fullBlock, 'referee2Name')
+    const ref3 = getAttr(fullBlock, 'referee3Name')
 
     const rescheduleRequested = getAttr(fullBlock, 'rescheduleRequested') === 'true'
     const hasScore = scoreHome !== '' && scoreGuest !== ''
@@ -218,7 +220,7 @@ function parseGames(teamXml: string, teamIds: Set<string>): BPGame[] {
       league: leagueName.trim(), season: seasonName, category, status,
       scoreHome: scoreHome ? parseInt(scoreHome) : null,
       scoreGuest: scoreGuest ? parseInt(scoreGuest) : null,
-      referee1: ref1, referee2: ref2,
+      referee1: ref1, referee2: ref2, referee3: ref3,
       isHome: teamIds.has(homeTeamId),
     })
   }
@@ -427,7 +429,7 @@ async function syncGames(pb: PocketBase, bpGames: BPGame[]) {
       ? { name: g.location, address: g.locationAddress, city: g.locationCity }
       : null
 
-    const referees = [g.referee1, g.referee2].filter(Boolean).map(name => ({ name }))
+    const referees = [g.referee1, g.referee2, g.referee3].filter(Boolean).map(name => ({ name }))
 
     const gameData: Record<string, unknown> = {
       sv_game_id: svGameId,

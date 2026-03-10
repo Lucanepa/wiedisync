@@ -5,6 +5,7 @@ import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
 import StatusBadge from '../../components/StatusBadge'
 import { getFileUrl } from '../../utils/pbFile'
+import ImageLightbox from '../../components/ImageLightbox'
 import type { ExpandedMemberTeam } from '../../hooks/useTeamMembers'
 import type { Team, Member } from '../../types'
 
@@ -15,6 +16,7 @@ interface MemberRowProps {
   team?: Team | null
   canEdit?: boolean
   isAdmin?: boolean
+  showContact?: boolean
   onTeamUpdate?: (updated: Partial<Team>) => void
 }
 
@@ -52,11 +54,12 @@ export function getMemberRole(memberId: string, team?: Team | null): string | nu
   return null
 }
 
-export default function MemberRow({ memberTeam, teamId: _teamId, teamSlug, team, canEdit, isAdmin, onTeamUpdate }: MemberRowProps) {
+export default function MemberRow({ memberTeam, teamId: _teamId, teamSlug, team, canEdit, isAdmin, showContact = true, onTeamUpdate }: MemberRowProps) {
   const { t } = useTranslation('teams')
   const member = memberTeam.expand?.member
   const [editingField, setEditingField] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
+  const [lightboxOpen, setLightboxOpen] = useState(false)
 
   if (!member) return null
 
@@ -116,11 +119,20 @@ export default function MemberRow({ memberTeam, teamId: _teamId, teamSlug, team,
       <td className="px-4 py-3">
         <div className="flex items-center gap-3">
           {member.photo ? (
-            <img
-              src={getFileUrl('members', member.id, member.photo)}
-              alt={displayName}
-              className="h-8 w-8 rounded-full object-cover"
-            />
+            <>
+              <img
+                src={getFileUrl('members', member.id, member.photo)}
+                alt={displayName}
+                className="h-8 w-8 cursor-pointer rounded-full object-cover"
+                onClick={() => setLightboxOpen(true)}
+              />
+              <ImageLightbox
+                src={getFileUrl('members', member.id, member.photo)}
+                alt={displayName}
+                open={lightboxOpen}
+                onClose={() => setLightboxOpen(false)}
+              />
+            </>
           ) : (
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-xs font-medium text-gray-600 dark:text-gray-400">
               {initials}
@@ -132,6 +144,11 @@ export default function MemberRow({ memberTeam, teamId: _teamId, teamSlug, team,
           >
             {displayName}
           </Link>
+          {member.is_guest && (
+            <span className="ml-1.5 rounded px-1.5 py-0.5 text-[10px] font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+              {t('guestBadge')}
+            </span>
+          )}
         </div>
       </td>
 
@@ -176,20 +193,26 @@ export default function MemberRow({ memberTeam, teamId: _teamId, teamSlug, team,
             className={canEdit ? 'cursor-pointer hover:text-brand-600' : ''}
             onClick={canEdit ? () => startEdit('position', member.position) : undefined}
           >
-            {positionKeys[member.position] ? t(positionKeys[member.position]) : member.position}
+            {positionKeys[member.position] ? t(positionKeys[member.position]) : (member.position || '—')}
           </span>
         )}
       </td>
 
-      <td className="hidden px-4 py-3 text-sm text-gray-500 md:table-cell dark:text-gray-400">
-        {member.email || '—'}
-      </td>
-      <td className="hidden px-4 py-3 text-sm text-gray-500 md:table-cell dark:text-gray-400">
-        {member.phone || '—'}
-      </td>
-      <td className="hidden px-4 py-3 text-sm text-gray-500 lg:table-cell dark:text-gray-400">
-        {birthdate || '—'}
-      </td>
+      {showContact && (
+        <td className="hidden px-4 py-3 text-sm text-gray-500 md:table-cell dark:text-gray-400">
+          {member.email || '—'}
+        </td>
+      )}
+      {showContact && (
+        <td className="hidden px-4 py-3 text-sm text-gray-500 md:table-cell dark:text-gray-400">
+          {member.phone || '—'}
+        </td>
+      )}
+      {showContact && (
+        <td className="hidden px-4 py-3 text-sm text-gray-500 lg:table-cell dark:text-gray-400">
+          {birthdate || '—'}
+        </td>
+      )}
 
       {/* Role — editable by admin only */}
       <td className="px-4 py-3">
@@ -208,7 +231,7 @@ export default function MemberRow({ memberTeam, teamId: _teamId, teamSlug, team,
             {editingField === 'role' && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setEditingField(null)} />
-                <div className="absolute left-0 z-20 mt-1 w-44 rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-600 dark:bg-gray-800">
+                <div className="absolute right-0 z-20 mt-1 w-44 rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-600 dark:bg-gray-800">
                   {LEADERSHIP_ROLES.map((r) => {
                     const active = (team?.[r] ?? []).includes(member.id)
                     return (

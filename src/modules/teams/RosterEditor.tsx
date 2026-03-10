@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams, Link, Navigate } from 'react-router-dom'
 import pb from '../../pb'
@@ -12,10 +12,36 @@ import ConfirmDialog from '../../components/ConfirmDialog'
 import EmptyState from '../../components/EmptyState'
 import { getFileUrl } from '../../utils/pbFile'
 import { getCurrentSeason } from '../../utils/dateHelpers'
-import type { Team, Member, MemberTeam } from '../../types'
+import type { Team, Member, MemberTeam, LicenceType } from '../../types'
+
+const POSITIONS: Member['position'][] = ['setter', 'outside', 'middle', 'opposite', 'libero', 'coach', 'other']
+const positionKeys: Record<string, string> = {
+  setter: 'positionSetter',
+  outside: 'positionOutside',
+  middle: 'positionMiddle',
+  opposite: 'positionOpposite',
+  libero: 'positionLibero',
+  coach: 'positionCoach',
+  other: 'positionOther',
+}
 
 type LeadershipRole = 'coach' | 'captain' | 'team_responsible'
 const ROLES: LeadershipRole[] = ['coach', 'captain', 'team_responsible']
+
+const VB_LICENCES: { key: LicenceType; label: string; i18n: string }[] = [
+  { key: 'scorer_vb', label: 'S', i18n: 'licenceScorer' },
+  { key: 'referee_vb', label: 'R', i18n: 'licenceReferee' },
+]
+
+const BB_LICENCES: { key: LicenceType; label: string; i18n: string }[] = [
+  { key: 'otr1_bb', label: 'OTR1', i18n: 'licenceOTR1' },
+  { key: 'otr2_bb', label: 'OTR2', i18n: 'licenceOTR2' },
+  { key: 'otn_bb', label: 'OTN', i18n: 'licenceOTN' },
+  { key: 'referee_bb', label: 'R', i18n: 'licenceRefereeBB' },
+]
+
+const LICENCE_ACTIVE = 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
+const LICENCE_INACTIVE = 'bg-gray-100 text-gray-400 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-500 dark:hover:bg-gray-600'
 
 function displayName(m: Member): string {
   return [m.last_name, m.first_name].filter(Boolean).join(' ') || '—'
@@ -48,7 +74,7 @@ export default function RosterEditor() {
   const { teamSlug } = useParams<{ teamSlug: string }>()
   const { isCoachOf } = useAuth()
   const season = getCurrentSeason()
-  const { data: allMembers } = usePB<Member>('members', { filter: 'active=true', perPage: 500, sort: 'last_name', fields: 'id,name,first_name,last_name,photo,number,position' })
+  const { data: allMembers } = usePB<Member>('members', { filter: 'active=true', perPage: 500, sort: 'last_name', fields: 'id,name,first_name,last_name,photo,number,position,licences' })
   const { create, remove } = useMutation<MemberTeam>('member_teams')
 
   const [team, setTeam] = useState<Team | null>(null)
@@ -56,6 +82,8 @@ export default function RosterEditor() {
   const [removingId, setRemovingId] = useState<string | null>(null)
   const [editingNumber, setEditingNumber] = useState<string | null>(null)
   const [numberValue, setNumberValue] = useState('')
+  const [uploadingPicture, setUploadingPicture] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const teamId = team?.id
   const { members, isLoading, refetch } = useTeamMembers(teamId, season)
 
@@ -119,12 +147,29 @@ export default function RosterEditor() {
     }
   }, [team])
 
+  const licenceOptions = team?.sport === 'basketball' ? BB_LICENCES : VB_LICENCES
+
+  const toggleLicence = useCallback(async (memberId: string, licence: LicenceType, currentLicences: LicenceType[]) => {
+    const has = currentLicences.includes(licence)
+    const next = has ? currentLicences.filter((l) => l !== licence) : [...currentLicences, licence]
+    try {
+      await pb.collection('members').update(memberId, { licences: next })
+      logActivity('update', 'members', memberId, { licences: next })
+      // Update local state
+      const mt = members.find((m) => m.expand?.member?.id === memberId)
+      if (mt?.expand?.member) {
+        ;(mt.expand.member as Record<string, unknown>).licences = next
+      }
+    } catch {
+      // ignore
+    }
+  }, [members])
+
   async function saveNumber(memberId: string) {
     const num = numberValue ? parseInt(numberValue, 10) : 0
     try {
       await pb.collection('members').update(memberId, { number: num })
       logActivity('update', 'members', memberId, { number: num })
-      // Update local state
       const mt = members.find((m) => m.expand?.member?.id === memberId)
       if (mt?.expand?.member) {
         ;(mt.expand.member as Record<string, unknown>).number = num
@@ -133,6 +178,54 @@ export default function RosterEditor() {
       // ignore
     }
     setEditingNumber(null)
+  }
+
+  async function savePosition(memberId: string, position: string) {
+    try {
+      await pb.collection('members').update(memberId, { position })
+      logActivity('update', 'members', memberId, { position })
+      const mt = members.find((m) => m.expand?.member?.id === memberId)
+      if (mt?.expand?.member) {
+        ;(mt.expand.member as Record<string, unknown>).position = position
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  async function handlePictureUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !team) return
+    if (file.size > 10 * 1024 * 1024) {
+      alert(t('pictureTooLarge'))
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
+    setUploadingPicture(true)
+    try {
+      const formData = new FormData()
+      formData.append('team_picture', file)
+      const updated = await pb.collection('teams').update<Team>(team.id, formData)
+      logActivity('update', 'teams', team.id, { team_picture: updated.team_picture })
+      setTeam((prev) => prev ? { ...prev, team_picture: updated.team_picture } : prev)
+    } catch {
+      // ignore
+    }
+    setUploadingPicture(false)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  async function handlePictureRemove() {
+    if (!team) return
+    setUploadingPicture(true)
+    try {
+      await pb.collection('teams').update(team.id, { team_picture: null })
+      logActivity('update', 'teams', team.id, { team_picture: null })
+      setTeam((prev) => prev ? { ...prev, team_picture: '' } : prev)
+    } catch {
+      // ignore
+    }
+    setUploadingPicture(false)
   }
 
   if (isLoading) {
@@ -154,6 +247,47 @@ export default function RosterEditor() {
       <div className="flex items-center gap-3">
         {team && <TeamChip team={team.name} />}
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('editRoster')}</h1>
+      </div>
+
+      {/* Team picture */}
+      <div className="mt-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('teamPicture')}</h2>
+        <div className="mt-3 flex items-center gap-4">
+          {team?.team_picture ? (
+            <img
+              src={getFileUrl('teams', team.id, team.team_picture)}
+              alt={team.full_name}
+              className="h-24 w-36 rounded-lg object-cover border dark:border-gray-700"
+            />
+          ) : (
+            <div className="flex h-24 w-36 items-center justify-center rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500 text-sm">
+              {t('teamPicture')}
+            </div>
+          )}
+          <div className="flex flex-col gap-2">
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-brand-500 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-brand-600">
+              {uploadingPicture ? '...' : t('uploadPicture')}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png"
+                onChange={handlePictureUpload}
+                className="hidden"
+                disabled={uploadingPicture}
+              />
+            </label>
+            {team?.team_picture && (
+              <button
+                onClick={handlePictureRemove}
+                disabled={uploadingPicture}
+                className="text-sm text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+              >
+                {t('removePicture')}
+              </button>
+            )}
+            <span className="text-xs text-gray-400 dark:text-gray-500">{t('pictureHint')}</span>
+          </div>
+        </div>
       </div>
 
       {/* Current roster */}
@@ -214,6 +348,19 @@ export default function RosterEditor() {
                     </button>
                   )}
 
+                  {/* Position dropdown */}
+                  <select
+                    value={member.position || ''}
+                    onChange={(e) => savePosition(member.id, e.target.value)}
+                    className="hidden sm:block w-28 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-1.5 py-0.5 text-xs text-gray-700 dark:text-gray-200"
+                    title={t('positionCol')}
+                  >
+                    <option value="">{t('positionCol')}</option>
+                    {POSITIONS.map((p) => (
+                      <option key={p} value={p}>{t(positionKeys[p])}</option>
+                    ))}
+                  </select>
+
                   {/* Role toggles */}
                   <div className="hidden sm:flex gap-1">
                     {ROLES.map((r) => {
@@ -230,6 +377,48 @@ export default function RosterEditor() {
                           }`}
                         >
                           {ROLE_SHORT[r]}
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  {/* Guest toggle */}
+                  <button
+                    onClick={async () => {
+                      const next = !member.is_guest
+                      try {
+                        await pb.collection('members').update(member.id, { is_guest: next })
+                        logActivity('update', 'members', member.id, { is_guest: next })
+                        if (mt.expand?.member) {
+                          ;(mt.expand.member as Record<string, unknown>).is_guest = next
+                        }
+                      } catch { /* ignore */ }
+                    }}
+                    title={t('toggleGuest')}
+                    className={`rounded px-1.5 py-0.5 text-xs font-medium transition-colors ${
+                      member.is_guest
+                        ? 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300'
+                        : 'bg-gray-100 text-gray-400 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-500 dark:hover:bg-gray-600'
+                    }`}
+                  >
+                    {t('guestBadge')}
+                  </button>
+
+                  {/* Licence toggles */}
+                  <div className="hidden sm:flex gap-1">
+                    {licenceOptions.map((lic) => {
+                      const memberLicences = (member.licences ?? []) as LicenceType[]
+                      const active = memberLicences.includes(lic.key)
+                      return (
+                        <button
+                          key={lic.key}
+                          onClick={() => toggleLicence(member.id, lic.key, memberLicences)}
+                          title={t(lic.i18n)}
+                          className={`rounded px-1.5 py-0.5 text-xs font-medium transition-colors ${
+                            active ? LICENCE_ACTIVE : LICENCE_INACTIVE
+                          }`}
+                        >
+                          {lic.label}
                         </button>
                       )
                     })}

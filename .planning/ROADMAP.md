@@ -28,7 +28,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. After toggling admin mode ON, refreshing the browser retains the mode state
   3. Opening the app in a new session starts in member mode (toggle OFF)
   4. A regular user (non-admin) has no access to admin mode state or toggle functionality — the context reports member mode unconditionally
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
 - [x] 01-01-PLAN.md — AdminModeProvider context, useAdminMode hook, AdminOnly wrapper, App.tsx wiring
@@ -42,10 +42,10 @@ Plans:
   2. When admin mode is active, a visual indicator (e.g. gold accent bar or badge) is visible on screen to clearly distinguish the mode
   3. Navigating to any `/admin/*` route automatically activates admin mode if it was off
   4. A regular user sees no toggle, no indicator, and no admin mode UI in sidebar or MoreSheet
-**Plans**: TBD
+**Plans:** 1 plan
 
 Plans:
-- [ ] 02-01: TBD
+- [ ] 02-01-PLAN.md — AdminToggle component, Layout/MoreSheet integration, nav gating, visual indicator, auto-activation
 
 ### Phase 3: Page Migration
 **Goal**: Regular pages show a clean member experience with no admin noise, while coach features remain untouched
@@ -82,7 +82,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 1/1 | Complete | 2026-03-10 |
-| 2. Toggle UI | 0/? | Not started | - |
+| 1. Foundation | 1/1 | Complete    | 2026-03-10 |
+| 2. Toggle UI | 0/1 | Not started | - |
 | 3. Page Migration | 0/? | Not started | - |
 | 4. Testing | 0/? | Not started | - |

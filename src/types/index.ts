@@ -1,5 +1,7 @@
 import type { RecordModel } from 'pocketbase'
 
+export type LicenceType = 'scorer_vb' | 'referee_vb' | 'otr1_bb' | 'otr2_bb' | 'otn_bb' | 'referee_bb'
+
 export interface Team extends RecordModel {
   name: string
   full_name: string
@@ -13,6 +15,7 @@ export interface Team extends RecordModel {
   team_responsible: string[]
   active: boolean
   team_picture: string
+  team_picture_pos: string
   social_url: string
   sponsors: string[]
   sponsors_logos: string[]
@@ -33,10 +36,11 @@ export interface Member extends RecordModel {
   active: boolean
   birthdate: string
   yob: number
-  scorer_licence: boolean
+  licences: LicenceType[]
   approved: boolean
   requested_team: string
   language: 'english' | 'german' | ''
+  is_guest: boolean
 }
 
 export interface MemberTeam extends RecordModel {
@@ -126,16 +130,23 @@ export interface Game extends RecordModel {
   home_score: number
   away_score: number
   sets_json: unknown
+  // Legacy text fields (from Swiss Volley sync)
   scorer_team: string
   scorer_person: string
   taefeler_team: string
   taefeler_person: string
+  // Volleyball duty assignments (PB field names)
   scorer_member: string
   taefeler_member: string
   scorer_taefeler_member: string
   scorer_duty_team: string
   taefeler_duty_team: string
   scorer_taefeler_duty_team: string
+  // Basketball duty assignments (to be added in PB)
+  bb_anschreiber: string
+  bb_zeitnehmer: string
+  bb_24s_official: string
+  bb_duty_team: string
   duty_confirmed: boolean
   referees_json: Array<{ name: string; id?: number }>
   source: 'swiss_volley' | 'manual' | 'basketplan'
@@ -237,10 +248,12 @@ export interface Participation extends RecordModel {
   member: string
   activity_type: 'training' | 'game' | 'event'
   activity_id: string
-  status: 'confirmed' | 'declined' | 'tentative'
+  status: 'confirmed' | 'declined' | 'tentative' | 'waitlisted'
   note: string
   session_id: string
   guest_count: number
+  is_staff: boolean
+  waitlisted_at: string
 }
 
 export interface UserLog extends RecordModel {

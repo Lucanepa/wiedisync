@@ -23,14 +23,21 @@ export default function ParticipationSummary({
     enabled: !!activityId,
   })
 
-  const confirmedParts = data.filter(p => p.status === 'confirmed')
+  // Separate player and staff participations — staff don't count towards totals
+  const playerData = data.filter(p => !p.is_staff)
+  const staffData = data.filter(p => p.is_staff)
+
+  const confirmedParts = playerData.filter(p => p.status === 'confirmed')
   const confirmed = confirmedParts.length
   const confirmedGuests = confirmedParts.reduce((sum, p) => sum + (p.guest_count ?? 0), 0)
-  const tentativeParts = data.filter(p => p.status === 'tentative')
+  const tentativeParts = playerData.filter(p => p.status === 'tentative')
   const tentative = tentativeParts.length
   const tentativeGuests = tentativeParts.reduce((sum, p) => sum + (p.guest_count ?? 0), 0)
-  const declined = data.filter(p => p.status === 'declined').length
+  const declined = playerData.filter(p => p.status === 'declined').length
+  const waitlisted = playerData.filter(p => p.status === 'waitlisted').length
   const totalGuests = confirmedGuests + tentativeGuests
+
+  const staffConfirmed = staffData.filter(p => p.status === 'confirmed').length
 
   if (data.length === 0) return null
 
@@ -55,9 +62,21 @@ export default function ParticipationSummary({
             <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold leading-none text-white dark:bg-red-500">✗</span>
           </span>
         )}
+        {waitlisted > 0 && (
+          <span className="inline-flex items-center gap-1 text-orange-600 dark:text-orange-400">
+            {waitlisted}
+            <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold leading-none text-white">⏳</span>
+          </span>
+        )}
         {totalGuests > 0 && (
           <span className="text-gray-500 dark:text-gray-400">
             ({confirmed + tentative + totalGuests})
+          </span>
+        )}
+        {staffConfirmed > 0 && (
+          <span className="inline-flex items-center gap-1 text-brand-600 dark:text-brand-400" title={t('staffPresent')}>
+            {staffConfirmed}
+            <span className="text-[10px]">🏅</span>
           </span>
         )}
       </span>
@@ -73,6 +92,14 @@ export default function ParticipationSummary({
         {tentative}{tentativeGuests > 0 && `+${tentativeGuests}`} {t('tentative')}
       </span>
       <span className="text-red-600 dark:text-red-400">{declined} {t('declined')}</span>
+      {waitlisted > 0 && (
+        <span className="text-orange-600 dark:text-orange-400">{waitlisted} {t('waitlisted')}</span>
+      )}
+      {staffConfirmed > 0 && (
+        <span className="text-brand-600 dark:text-brand-400">
+          {staffConfirmed} {t('staffPresent')}
+        </span>
+      )}
     </div>
   )
 }

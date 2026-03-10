@@ -10,7 +10,10 @@ const defaultColors: Record<string, string> = {
   other: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
   // Roles
   user: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+  player: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400',
   coach: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+  captain: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+  team_responsible: 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-400',
   vorstand: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
   admin: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
   superadmin: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
@@ -34,6 +37,7 @@ const labelMap: Record<string, string> = {
   other: 'Other',
   // Roles
   user: 'User',
+  player: 'Player',
   coach: 'Coach',
   captain: 'Captain',
   team_responsible: 'Team Resp.',

@@ -14,6 +14,7 @@ export default {
   contact: 'Kontakt',
   phone: 'Telefon',
   licenseNr: 'Lizenz Nr.',
+  licences: 'Lizenzen',
   upcomingActivities: 'Nächste Aktivitäten',
   activeAbsences: 'Aktive Absenzen',
   showAll: 'Alle anzeigen',
@@ -21,6 +22,8 @@ export default {
   noActiveAbsences: 'Keine aktiven Absenzen.',
   teams: 'Teams',
   roles: 'Rollen',
+
+  contactPrivacyNotice: 'Deine E-Mail und Telefonnummer sind nur für den Trainer und Teamverantwortlichen der Teams sichtbar, bei denen du einen offiziellen Dienst hast (z.B. Schreiber).',
 
   // Profile Edit
   firstName: 'Vorname',
@@ -79,4 +82,8 @@ export default {
   languageEnglish: 'English',
   completeProfile: 'Profil bestätigen',
   birthdate: 'Geburtsdatum',
+
+  // Guest registration
+  isGuest: 'Ich bin Gast-Spieler/in',
+  guestExplanation: 'Gäste haben bei vollen Trainings eine niedrigere Priorität als lizenzierte Spieler.',
 } as const

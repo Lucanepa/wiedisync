@@ -22,4 +22,12 @@ export default {
   guests: 'Gäste',
   guestsCount_one: '{{count}} Gast',
   guestsCount_other: '{{count}} Gäste',
+  staffPresent: 'Staff dabei',
+  staff: 'Staff',
+  yourStatus: 'Dein Status',
+  waitlisted: 'Warteliste',
+  waitlistedPosition: 'Warteliste Position {{position}}',
+  bumpedToWaitlist: 'Du wurdest auf die Warteliste verschoben',
+  promotedFromWaitlist: 'Du wurdest von der Warteliste bestätigt',
+  waitlistHint: 'Training voll — du wirst auf die Warteliste gesetzt',
 } as const

@@ -6,6 +6,7 @@ import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
 import { useTeamMembers } from '../../hooks/useTeamMembers'
 import { useAuth } from '../../hooks/useAuth'
+import { useAdminMode } from '../../hooks/useAdminMode'
 import { usePendingMembers } from '../../hooks/usePendingMembers'
 import Button from '../../components/ui/Button'
 import TeamChip from '../../components/TeamChip'
@@ -27,11 +28,12 @@ export default function TeamDetail() {
   const { t } = useTranslation('teams')
   const { teamSlug } = useParams<{ teamSlug: string }>()
   const { isCoachOf, hasAdminAccessToTeam, canViewTeam } = useAuth()
+  const { effectiveIsAdmin } = useAdminMode()
   const [team, setTeam] = useState<Team | null>(null)
   const [loading, setLoading] = useState(true)
   const teamId = team?.id
   const { members, isLoading: membersLoading } = useTeamMembers(teamId)
-  const canManage = isCoachOf(teamId ?? '') || hasAdminAccessToTeam(teamId ?? '')
+  const canManage = isCoachOf(teamId ?? '') || (effectiveIsAdmin && hasAdminAccessToTeam(teamId ?? ''))
   const { data: pendingMembers, refetch: refetchPending } = usePendingMembers(canManage ? teamId : undefined)
   const [sortKey, setSortKey] = useState<SortKey>('name')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
@@ -384,7 +386,7 @@ export default function TeamDetail() {
                     teamSlug={team.name}
                     team={team}
                     canEdit={canManage}
-                    isAdmin={hasAdminAccessToTeam(team.id)}
+                    isAdmin={effectiveIsAdmin && hasAdminAccessToTeam(team.id)}
                     showContact={canManage}
                     onTeamUpdate={(updated) => setTeam((prev) => prev ? { ...prev, ...updated } : prev)}
                   />

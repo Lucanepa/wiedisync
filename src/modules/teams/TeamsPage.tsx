@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { usePB } from '../../hooks/usePB'
 import { useAuth } from '../../hooks/useAuth'
+import { useAdminMode } from '../../hooks/useAdminMode'
 import EmptyState from '../../components/EmptyState'
 import TeamCard from './TeamCard'
 import type { Team, MemberTeam } from '../../types'
@@ -10,7 +11,8 @@ import { getCurrentSeason } from '../../utils/dateHelpers'
 
 export default function TeamsPage() {
   const { t } = useTranslation('teams')
-  const { isAdmin, isVorstand, canViewTeam } = useAuth()
+  const { canViewTeam, memberTeamIds, coachTeamIds } = useAuth()
+  const { effectiveIsAdmin } = useAdminMode()
   const { data: teams, isLoading } = usePB<Team>('teams', {
     filter: 'active=true',
     sort: 'name',
@@ -22,8 +24,10 @@ export default function TeamsPage() {
     perPage: 500,
   })
 
-  const hasElevatedAccess = isAdmin || isVorstand
-  const visibleTeams = teams.filter((team) => canViewTeam(team.id))
+  const hasElevatedAccess = effectiveIsAdmin
+  const effectiveCanViewTeam = (teamId: string) =>
+    effectiveIsAdmin ? canViewTeam(teamId) : (memberTeamIds.includes(teamId) || coachTeamIds.includes(teamId))
+  const visibleTeams = teams.filter((team) => effectiveCanViewTeam(team.id))
 
   const countByTeam = memberTeams.reduce<Record<string, number>>((acc, mt) => {
     acc[mt.team] = (acc[mt.team] ?? 0) + 1

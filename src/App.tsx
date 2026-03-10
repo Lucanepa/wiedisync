@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './hooks/useAuth'
 import { ThemeProvider } from './hooks/useTheme'
+import { AdminModeProvider } from './hooks/useAdminMode'
 import Layout from './components/Layout'
 import AdminRoute from './components/AdminRoute'
 import SuperAdminRoute from './components/SuperAdminRoute'
@@ -37,6 +38,7 @@ export default function App() {
   return (
     <ThemeProvider>
     <AuthProvider>
+      <AdminModeProvider>
       <BrowserRouter>
         <Routes>
           {/* Standalone routes — no layout wrapper */}
@@ -72,6 +74,7 @@ export default function App() {
           </Route>
         </Routes>
       </BrowserRouter>
+      </AdminModeProvider>
     </AuthProvider>
     </ThemeProvider>
   )

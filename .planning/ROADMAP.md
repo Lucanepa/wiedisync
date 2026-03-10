@@ -13,7 +13,7 @@ This milestone separates the admin experience from the member experience across 
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation** - AdminModeProvider context, useAdminMode hook, AdminOnly wrapper, persistence
-- [ ] **Phase 2: Toggle UI** - Admin mode toggle in navigation, visual indicator, auto-activation on admin routes
+- [x] **Phase 2: Toggle UI** - Admin mode toggle in navigation, visual indicator, auto-activation on admin routes (completed 2026-03-10)
 - [ ] **Phase 3: Page Migration** - Audit and migrate all isAdmin conditionals to respect admin mode across ~14 files
 - [ ] **Phase 4: Testing** - E2E tests validating toggle visibility, member mode filtering, and admin mode controls
 
@@ -42,7 +42,7 @@ Plans:
   2. When admin mode is active, a visual indicator (e.g. gold accent bar or badge) is visible on screen to clearly distinguish the mode
   3. Navigating to any `/admin/*` route automatically activates admin mode if it was off
   4. A regular user sees no toggle, no indicator, and no admin mode UI in sidebar or MoreSheet
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
 - [ ] 02-01-PLAN.md — AdminToggle component, Layout/MoreSheet integration, nav gating, visual indicator, auto-activation
@@ -83,6 +83,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 1/1 | Complete    | 2026-03-10 |
-| 2. Toggle UI | 0/1 | Not started | - |
+| 2. Toggle UI | 1/1 | Complete   | 2026-03-10 |
 | 3. Page Migration | 0/? | Not started | - |
 | 4. Testing | 0/? | Not started | - |

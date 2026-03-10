@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 01-01-PLAN.md (Admin Mode Infrastructure)
-last_updated: "2026-03-10T17:12:39.389Z"
-last_activity: 2026-03-10 — Completed 01-01-PLAN.md (Admin Mode Infrastructure)
+stopped_at: Completed 02-01-PLAN.md (Toggle UI)
+last_updated: "2026-03-10T22:42:25Z"
+last_activity: 2026-03-10 — Completed 02-01-PLAN.md (Toggle UI)
 progress:
   total_phases: 4
-  completed_phases: 1
-  total_plans: 1
-  completed_plans: 1
-  percent: 25
+  completed_phases: 2
+  total_plans: 2
+  completed_plans: 2
+  percent: 50
 ---
 
 # Project State
@@ -21,33 +21,34 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-10)
 
 **Core value:** Club members can see their upcoming games, trainings, and hall schedules at a glance — and coaches/admins can manage everything from one place.
-**Current focus:** Phase 1: Foundation (Admin Mode Infrastructure)
+**Current focus:** Phase 2: Toggle UI
 
 ## Current Position
 
-Phase: 1 of 4 (Foundation)
+Phase: 2 of 4 (Toggle UI)
 Plan: 1 of 1 in current phase
-Status: Phase 1 complete
-Last activity: 2026-03-10 — Completed 01-01-PLAN.md (Admin Mode Infrastructure)
+Status: Phase 2 complete
+Last activity: 2026-03-10 — Completed 02-01-PLAN.md (Toggle UI)
 
-Progress: [###░░░░░░░] 25%
+Progress: [##########] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
+- Total plans completed: 2
 - Average duration: 2min
-- Total execution time: 0.03 hours
+- Total execution time: 0.07 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-foundation | 1 | 2min | 2min |
+| 02-toggle-ui | 1 | 2min | 2min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (2min)
-- Trend: Starting
+- Last 5 plans: 01-01 (2min), 02-01 (2min)
+- Trend: Consistent
 
 *Updated after each plan completion*
 
@@ -63,6 +64,8 @@ Recent decisions affecting current work:
 - [Research]: AdminModeProvider as separate context from AuthContext to avoid re-render cascade
 - [01-01]: Followed useTheme.tsx pattern exactly for context provider consistency
 - [01-01]: No unit test framework added -- verified via tsc --noEmit and existing E2E tests
+- [02-01]: AdminToggle renders null for non-admins; MoreSheet needs no conditional wrapper
+- [02-01]: Added terminplanung to MoreSheet adminItems for nav parity with Layout sidebar
 
 ### Pending Todos
 
@@ -80,5 +83,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Completed 01-01-PLAN.md (Admin Mode Infrastructure)
+Stopped at: Completed 02-01-PLAN.md (Toggle UI)
 Resume file: None

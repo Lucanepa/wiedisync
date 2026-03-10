@@ -16,9 +16,9 @@ Requirements for admin/member separation. Each maps to roadmap phases.
 
 ### Toggle UI
 
-- [ ] **TOGGLE-01**: Admin mode toggle is visible in sidebar (desktop) and MoreSheet (mobile) for admin/superuser only
-- [ ] **TOGGLE-02**: Visual indicator (e.g. gold accent bar) clearly shows when admin mode is active
-- [ ] **TOGGLE-03**: Admin mode auto-activates when navigating to `/admin/*` routes
+- [x] **TOGGLE-01**: Admin mode toggle is visible in sidebar (desktop) and MoreSheet (mobile) for admin/superuser only
+- [x] **TOGGLE-02**: Visual indicator (e.g. gold accent bar) clearly shows when admin mode is active
+- [x] **TOGGLE-03**: Admin mode auto-activates when navigating to `/admin/*` routes
 
 ### Page Migration
 
@@ -59,9 +59,9 @@ Requirements for admin/member separation. Each maps to roadmap phases.
 | MODE-02 | Phase 1: Foundation | Complete |
 | MODE-03 | Phase 1: Foundation | Complete |
 | MODE-04 | Phase 1: Foundation | Complete |
-| TOGGLE-01 | Phase 2: Toggle UI | Pending |
-| TOGGLE-02 | Phase 2: Toggle UI | Pending |
-| TOGGLE-03 | Phase 2: Toggle UI | Pending |
+| TOGGLE-01 | Phase 2: Toggle UI | Complete |
+| TOGGLE-02 | Phase 2: Toggle UI | Complete |
+| TOGGLE-03 | Phase 2: Toggle UI | Complete |
 | PAGE-01 | Phase 3: Page Migration | Pending |
 | PAGE-02 | Phase 3: Page Migration | Pending |
 | PAGE-03 | Phase 3: Page Migration | Pending |

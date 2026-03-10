@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
+import { useAdminMode } from '../../hooks/useAdminMode'
 import { useRealtime } from '../../hooks/useRealtime'
 import { useIsMobile } from '../../hooks/useMediaQuery'
 import { useWeekNavigation } from '../hallenplan/hooks/useWeekNavigation'
@@ -26,7 +27,8 @@ function getTodayDayIndex(): number {
 
 export default function HallenplanView() {
   const { t } = useTranslation('hallenplan')
-  const { isAdmin, isCoach } = useAuth()
+  const { isCoach } = useAuth()
+  const { effectiveIsAdmin: isAdmin } = useAdminMode()
   const isMobile = useIsMobile()
   const { weekDays, goNext, goPrev, goToday, weekLabel, mondayStr, sundayStr } = useWeekNavigation()
 

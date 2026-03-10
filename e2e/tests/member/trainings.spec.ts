@@ -7,7 +7,7 @@ async function gotoTrainings(page: import('@playwright/test').Page) {
   await page.goto('/trainings')
   await page.waitForLoadState('domcontentloaded')
 
-  const heading = page.getByRole('heading', { name: 'Trainings' })
+  const heading = page.getByRole('heading', { name: 'Trainings', exact: true })
 
   // First attempt: wait up to 10s for the heading
   try {
@@ -24,7 +24,7 @@ async function gotoTrainings(page: import('@playwright/test').Page) {
 test.describe('Trainings page', () => {
   test('loads and shows page title', async ({ page }) => {
     await gotoTrainings(page)
-    await expect(page.getByRole('heading', { name: 'Trainings' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Trainings', exact: true })).toBeVisible()
   })
 
   test('shows content after loading', async ({ page }) => {
@@ -43,7 +43,7 @@ test.describe('Trainings page', () => {
     await page.goto('/trainings')
     await page.waitForLoadState('domcontentloaded')
 
-    await expect(page.getByRole('heading', { name: 'Trainings' })).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByRole('heading', { name: 'Trainings', exact: true })).toBeVisible({ timeout: 20_000 })
     const body = page.locator('body')
     await expect(body).not.toContainText('Error boundary')
   })

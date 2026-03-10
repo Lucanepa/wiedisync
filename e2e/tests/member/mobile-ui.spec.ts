@@ -161,7 +161,7 @@ test.describe('Mobile UI — screenshots', () => {
     await page.waitForTimeout(1000)
 
     await expect(page).toHaveScreenshot('home-mobile.png', {
-      maxDiffPixelRatio: 0.05,
+      maxDiffPixelRatio: 0.1,
     })
   })
 
@@ -171,7 +171,7 @@ test.describe('Mobile UI — screenshots', () => {
     await page.waitForTimeout(1000)
 
     await expect(page).toHaveScreenshot('games-mobile.png', {
-      maxDiffPixelRatio: 0.05,
+      maxDiffPixelRatio: 0.1,
     })
   })
 

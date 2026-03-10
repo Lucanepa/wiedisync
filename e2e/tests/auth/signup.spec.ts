@@ -2,6 +2,8 @@ import { test, expect } from '@playwright/test'
 
 // Runs in 'unauthenticated' project — signup page uses German labels by default
 test.describe('Signup flow', () => {
+  test.describe.configure({ mode: 'serial' })
+
   test('shows signup page with email step', async ({ page }) => {
     await page.goto('/signup')
 
@@ -30,10 +32,19 @@ test.describe('Signup flow', () => {
 
     // Enter an existing test account email
     await page.getByPlaceholder('name@beispiel.ch').fill('test_user@test.ch')
-    await page.getByRole('button', { name: 'Weiter' }).click()
+    const continueBtn = page.getByRole('button', { name: 'Weiter' })
 
-    // Should show "Konto gefunden" (account exists) step
-    await expect(page.getByText('Konto gefunden')).toBeVisible({ timeout: 10_000 })
+    // Retry transition in case check-email endpoint is briefly rate-limited.
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      await continueBtn.click()
+      try {
+        await expect(page.getByText('Konto gefunden')).toBeVisible({ timeout: 4_000 })
+        return
+      } catch {
+        if (attempt === 3) throw new Error('Could not reach account-claim step from signup page')
+        await page.waitForTimeout(3_500)
+      }
+    }
   })
 
   test('shows registration form for new email', async ({ page }) => {
@@ -41,10 +52,19 @@ test.describe('Signup flow', () => {
 
     // Enter a non-existing email
     await page.getByPlaceholder('name@beispiel.ch').fill('new_user_e2e_test@nonexistent.local')
-    await page.getByRole('button', { name: 'Weiter' }).click()
+    const continueBtn = page.getByRole('button', { name: 'Weiter' })
 
-    // Should show registration form with name fields, team selector, password
-    await expect(page.getByPlaceholder('Passwort eingeben')).toBeVisible({ timeout: 10_000 })
+    // Retry transition in case check-email endpoint is briefly rate-limited.
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      await continueBtn.click()
+      try {
+        await expect(page.getByPlaceholder('Passwort eingeben')).toBeVisible({ timeout: 4_000 })
+        break
+      } catch {
+        if (attempt === 3) throw new Error('Could not reach registration step from signup page')
+        await page.waitForTimeout(3_500)
+      }
+    }
 
     // Team selector should be visible
     const teamSelect = page.locator('select')

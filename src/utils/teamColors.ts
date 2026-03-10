@@ -1,37 +1,61 @@
+/**
+ * Team color scheme — systematic hierarchy:
+ *   Sport → Gender → Age → Team (darker = higher rank / older)
+ *
+ * Volleyball Men:   Blue family    (#1e40af → #93c5fd)
+ * Volleyball Women: Rose family    (#be123c → #fda4af)
+ * Basketball Men:   Orange family  (#9a3412 → #fb923c)
+ * Basketball Women: Purple family  (#7e22ce → #d8b4fe)
+ * Basketball Mixed: Teal family    (#0d9488)
+ * Sub-brands:       Lions=Violet, Rhinos=Emerald
+ */
 export const teamColors: Record<string, { bg: string; text: string; border: string }> = {
-  // Herren VB: shades of blue, brown, green
-  H1: { bg: '#1d4ed8', text: '#ffffff', border: '#1e40af' },
-  H2: { bg: '#2563eb', text: '#ffffff', border: '#1d4ed8' },
-  H3: { bg: '#3b82f6', text: '#ffffff', border: '#2563eb' },
-  'HU20': { bg: '#0ea5e9', text: '#ffffff', border: '#0284c7' },
-  'HU23': { bg: '#38bdf8', text: '#ffffff', border: '#0ea5e9' },
-  Legends: { bg: '#92400e', text: '#ffffff', border: '#78350f' },
-  // Damen VB: shades of red, yellow, orange
-  D1: { bg: '#dc2626', text: '#ffffff', border: '#b91c1c' },
-  D2: { bg: '#ea580c', text: '#ffffff', border: '#c2410c' },
-  D3: { bg: '#d97706', text: '#ffffff', border: '#b45309' },
-  D4: { bg: '#ca8a04', text: '#ffffff', border: '#a16207' },
-  'DU23': { bg: '#e11d48', text: '#ffffff', border: '#be123c' },
-  // Basketball Herren
-  'BB-H1': { bg: '#c2410c', text: '#ffffff', border: '#9a3412' },
-  'BB-H3': { bg: '#ea580c', text: '#ffffff', border: '#c2410c' },
-  // Basketball Damen
-  'BB-D1': { bg: '#a21caf', text: '#ffffff', border: '#86198f' },
-  'BB-D3': { bg: '#c026d3', text: '#ffffff', border: '#a21caf' },
-  // Basketball Jugend
-  'BB-HU16': { bg: '#0d9488', text: '#ffffff', border: '#0f766e' },
-  'BB-HU14': { bg: '#14b8a6', text: '#ffffff', border: '#0d9488' },
-  'BB-DU16': { bg: '#f472b6', text: '#ffffff', border: '#ec4899' },
-  'BB-DU14': { bg: '#e879f9', text: '#ffffff', border: '#d946ef' },
-  'BB-DU12': { bg: '#fb923c', text: '#ffffff', border: '#f97316' },
-  'BB-DU10': { bg: '#fbbf24', text: '#1f2937', border: '#f59e0b' },
-  'BB-MU8': { bg: '#a3e635', text: '#1f2937', border: '#84cc16' },
-  // Basketball Lions / Rhinos
-  'BB-Lions D1': { bg: '#7c3aed', text: '#ffffff', border: '#6d28d9' },
-  'BB-Lions D3': { bg: '#8b5cf6', text: '#ffffff', border: '#7c3aed' },
-  'BB-Rhinos D1': { bg: '#059669', text: '#ffffff', border: '#047857' },
-  'BB-Rhinos D3': { bg: '#10b981', text: '#ffffff', border: '#059669' },
-  // Other (KWI, Lehrer TV, TV Wiedikon): grey
+  // ── Volleyball Men (Blue) ─────────────────────
+  H1:      { bg: '#1e40af', text: '#ffffff', border: '#1e3a8a' },  // blue-800
+  H2:      { bg: '#2563eb', text: '#ffffff', border: '#1d4ed8' },  // blue-600
+  H3:      { bg: '#3b82f6', text: '#ffffff', border: '#2563eb' },  // blue-500
+  HU23:    { bg: '#60a5fa', text: '#ffffff', border: '#3b82f6' },  // blue-400 (youth)
+  HU20:    { bg: '#93c5fd', text: '#1e3a8a', border: '#60a5fa' },  // blue-300 (youngest)
+  Legends: { bg: '#1e3a5f', text: '#ffffff', border: '#162d4d' },  // slate-blue (veterans)
+
+  // ── Volleyball Women (Rose) ───────────────────
+  D1:      { bg: '#be123c', text: '#ffffff', border: '#9f1239' },  // rose-700
+  D2:      { bg: '#e11d48', text: '#ffffff', border: '#be123c' },  // rose-600
+  D3:      { bg: '#f43f5e', text: '#ffffff', border: '#e11d48' },  // rose-500
+  D4:      { bg: '#fb7185', text: '#ffffff', border: '#f43f5e' },  // rose-400
+  DU23:    { bg: '#fda4af', text: '#881337', border: '#fb7185' },  // rose-300 (youth)
+
+  // ── Basketball Men (Orange) ───────────────────
+  'BB-H1':   { bg: '#9a3412', text: '#ffffff', border: '#7c2d12' },  // orange-800
+  'BB-H3':   { bg: '#c2410c', text: '#ffffff', border: '#9a3412' },  // orange-700
+  'BB-H4':   { bg: '#ea580c', text: '#ffffff', border: '#c2410c' },  // orange-600
+  'BB-HU18': { bg: '#f97316', text: '#ffffff', border: '#ea580c' },  // orange-500
+  'BB-HU16': { bg: '#fb923c', text: '#7c2d12', border: '#f97316' },  // orange-400 (youth)
+  'BB-HU14': { bg: '#fdba74', text: '#7c2d12', border: '#fb923c' },  // orange-300 (younger)
+  'BB-HU12': { bg: '#fed7aa', text: '#7c2d12', border: '#fdba74' },  // orange-200 (youngest)
+  'BB-H-Classics': { bg: '#78350f', text: '#ffffff', border: '#451a03' },  // amber-900 (veterans)
+
+  // ── Basketball Women (Purple) ─────────────────
+  'BB-D1':   { bg: '#7e22ce', text: '#ffffff', border: '#6b21a8' },  // purple-700
+  'BB-D3':   { bg: '#a855f7', text: '#ffffff', border: '#9333ea' },  // purple-500
+  'BB-DU18': { bg: '#c084fc', text: '#ffffff', border: '#a855f7' },  // purple-400
+  'BB-DU16': { bg: '#d8b4fe', text: '#581c87', border: '#c084fc' },  // purple-300
+  'BB-DU14': { bg: '#e9d5ff', text: '#581c87', border: '#d8b4fe' },  // purple-200
+  'BB-DU12': { bg: '#f3e8ff', text: '#581c87', border: '#e9d5ff' },  // purple-100
+  'BB-DU10': { bg: '#faf5ff', text: '#581c87', border: '#f3e8ff' },  // purple-50
+  'BB-D-Classics': { bg: '#581c87', text: '#ffffff', border: '#3b0764' },  // purple-900 (veterans)
+
+  // ── Basketball Mixed (Teal) ───────────────────
+  'BB-MU10': { bg: '#14b8a6', text: '#ffffff', border: '#0d9488' },  // teal-500
+  'BB-MU8':  { bg: '#0d9488', text: '#ffffff', border: '#0f766e' },  // teal-600
+
+  // ── Sub-brands ────────────────────────────────
+  'BB-Lions D1':  { bg: '#6d28d9', text: '#ffffff', border: '#5b21b6' },  // violet-700
+  'BB-Lions D3':  { bg: '#8b5cf6', text: '#ffffff', border: '#7c3aed' },  // violet-500
+  'BB-Rhinos D1': { bg: '#059669', text: '#ffffff', border: '#047857' },  // emerald-600
+  'BB-Rhinos D3': { bg: '#34d399', text: '#064e3b', border: '#10b981' },  // emerald-400
+
+  // ── Fallback ──────────────────────────────────
   Other: { bg: '#6b7280', text: '#ffffff', border: '#4b5563' },
 }
 
@@ -41,16 +65,19 @@ export const teamSport: Record<string, 'volleyball' | 'basketball'> = {
   HU20: 'volleyball', HU23: 'volleyball', Legends: 'volleyball',
   D1: 'volleyball', D2: 'volleyball', D3: 'volleyball', D4: 'volleyball',
   DU23: 'volleyball',
-  'BB-H1': 'basketball', 'BB-H3': 'basketball',
-  'BB-D1': 'basketball', 'BB-D3': 'basketball',
-  'BB-HU16': 'basketball', 'BB-HU14': 'basketball',
-  'BB-DU16': 'basketball', 'BB-DU14': 'basketball',
-  'BB-DU12': 'basketball', 'BB-DU10': 'basketball', 'BB-MU8': 'basketball',
+  'BB-H1': 'basketball', 'BB-H3': 'basketball', 'BB-H4': 'basketball',
+  'BB-H-Classics': 'basketball',
+  'BB-D1': 'basketball', 'BB-D3': 'basketball', 'BB-D-Classics': 'basketball',
+  'BB-HU18': 'basketball', 'BB-HU16': 'basketball', 'BB-HU14': 'basketball', 'BB-HU12': 'basketball',
+  'BB-DU18': 'basketball', 'BB-DU16': 'basketball', 'BB-DU14': 'basketball',
+  'BB-DU12': 'basketball', 'BB-DU10': 'basketball',
+  'BB-MU10': 'basketball', 'BB-MU8': 'basketball',
   'BB-Lions D1': 'basketball', 'BB-Lions D3': 'basketball',
   'BB-Rhinos D1': 'basketball', 'BB-Rhinos D3': 'basketball',
 }
 
 export const svTeamIds: Record<string, string> = {
+  // Volleyball (Swiss Volley numeric IDs)
   '12747': 'H3',
   '1394': 'D4',
   '14040': 'DU23-2',
@@ -62,6 +89,24 @@ export const svTeamIds: Record<string, string> = {
   '2743': 'H1',
   '1395': 'D1',
   '2301': 'DU23-1',
+  // Basketball (Basketplan bp-{id})
+  'bp-1348': 'BB-H1',
+  'bp-4829': 'BB-H3',
+  'bp-7183': 'BB-H4',
+  'bp-4934': 'BB-D-Classics',
+  'bp-4935': 'BB-H-Classics',
+  'bp-4445': 'BB-Lions D1',
+  'bp-1077': 'BB-Rhinos D3',
+  'bp-5104': 'BB-DU12',
+  'bp-5441': 'BB-DU14',
+  'bp-7182': 'BB-DU16',
+  'bp-5697': 'BB-DU18',
+  'bp-5791': 'BB-HU12',
+  'bp-5790': 'BB-HU14',
+  'bp-5498': 'BB-HU16',
+  'bp-5789': 'BB-HU18',
+  'bp-5287': 'BB-MU10',
+  'bp-6724': 'BB-MU8',
 }
 
 export function getTeamColor(teamName: string) {

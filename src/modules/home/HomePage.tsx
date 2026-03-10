@@ -156,11 +156,25 @@ export default function HomePage() {
               <VolleyballIcon className="h-7 w-7 sm:h-8 sm:w-8" />
             </button>
           )}
-          <img
-            src={theme === 'light' ? '/kscw_blau.png' : '/kscw_weiss.png'}
-            alt="KSC Wiedikon"
-            className="h-20 w-auto sm:h-24"
-          />
+          {showSportToggle ? (
+            <button
+              onClick={() => setSport('all')}
+              className={`rounded-xl p-1 transition-opacity ${sport === 'all' ? '' : 'opacity-60 hover:opacity-80'}`}
+              aria-label="Show all sports"
+            >
+              <img
+                src={theme === 'light' ? '/kscw_blau.png' : '/kscw_weiss.png'}
+                alt="KSC Wiedikon"
+                className="h-20 w-auto sm:h-24"
+              />
+            </button>
+          ) : (
+            <img
+              src={theme === 'light' ? '/kscw_blau.png' : '/kscw_weiss.png'}
+              alt="KSC Wiedikon"
+              className="h-20 w-auto sm:h-24"
+            />
+          )}
           {showSportToggle && (
             <button
               onClick={() => setSport('bb')}
@@ -181,18 +195,6 @@ export default function HomePage() {
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           {t('subtitle')}
         </p>
-        {showSportToggle && (
-          <button
-            onClick={() => setSport('all')}
-            className={`mt-2 text-xs font-medium transition-colors ${
-              sport === 'all'
-                ? 'text-brand-600 dark:text-brand-400'
-                : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
-            }`}
-          >
-            {t('all')}
-          </button>
-        )}
       </div>
 
       {/* News section — latest notifications */}
@@ -400,6 +402,11 @@ function CompactGameRow({ game, showScore, onClick }: { game: ExpandedGame; show
         <div>{dateStr}</div>
         {game.time && <div>{formatTime(game.time)}</div>}
       </div>
+
+      {/* Sport icon */}
+      {game.expand?.kscw_team?.sport === 'basketball'
+        ? <BasketballIcon className="h-5 w-5 shrink-0 text-orange-500 dark:text-orange-400" />
+        : <VolleyballIcon className="h-5 w-5 shrink-0 text-amber-400 dark:text-amber-300" />}
 
       {/* Team names — stacked, Wiedikon team bold */}
       <div className="min-w-0 flex-1">

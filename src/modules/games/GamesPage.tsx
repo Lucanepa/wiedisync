@@ -42,6 +42,11 @@ export default function GamesPage() {
     }
   }, [memberTeamNames, autoSelected])
 
+  // Clear team selection when sport changes (old selections may not match new sport)
+  useEffect(() => {
+    setSelectedTeams([])
+  }, [sport])
+
   const INITIAL_LIMIT = 20
 
   const today = useMemo(() => new Date().toISOString().split('T')[0], [])
@@ -96,9 +101,25 @@ export default function GamesPage() {
     for (const r of allRankings) {
       // Skip individual match groups (e.g. "Group 28007") — not real league standings
       if (/^Group \d+$/.test(r.league)) continue
+
+      // Sport filter: bp- prefix = basketball, numeric = volleyball
+      const isBpRanking = r.sv_team_id.startsWith('bp-')
+      if (sport === 'vb' && isBpRanking) continue
+      if (sport === 'bb' && !isBpRanking) continue
+
       const existing = grouped.get(r.league) ?? []
       existing.push(r)
       grouped.set(r.league, existing)
+    }
+
+    // For basketball: only show leagues that contain at least one KSCW team
+    if (sport === 'bb' || sport === 'all') {
+      for (const [league, rows] of grouped) {
+        const isBbLeague = rows.some((r) => r.sv_team_id.startsWith('bp-'))
+        if (isBbLeague && !rows.some((r) => svTeamIds[r.sv_team_id])) {
+          grouped.delete(league)
+        }
+      }
     }
 
     if (selectedTeams.length === 0) return grouped
@@ -119,7 +140,7 @@ export default function GamesPage() {
       }
     }
     return filtered
-  }, [allRankings, selectedTeams])
+  }, [allRankings, selectedTeams, sport])
 
   const isLoading = activeTab === 'rankings' ? rankingsLoading : gamesLoading
   const showGames = activeTab !== 'rankings' && !isLoading
@@ -194,11 +215,7 @@ export default function GamesPage() {
         {/* Rankings */}
         {activeTab === 'rankings' && !rankingsLoading && (
           <>
-            {sport === 'bb' ? (
-              <div className="py-12 text-center text-gray-500 dark:text-gray-400">
-                <p>{t('noRankingsBB')}</p>
-              </div>
-            ) : leagueGroups.size === 0 ? (
+            {leagueGroups.size === 0 ? (
               <EmptyState tab="rankings" />
             ) : (
               <div className="grid gap-6 lg:grid-cols-2">

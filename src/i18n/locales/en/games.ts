@@ -20,6 +20,8 @@ export default {
   won: 'W',
   lost: 'L',
   sets: 'Sets',
+  pointsFor: 'PF',
+  pointsAgainst: 'PA',
   points: 'Pts',
 
   // Detail modal
@@ -60,7 +62,6 @@ export default {
   noRecent: 'No recent games',
   noResults: 'No results',
   noRankings: 'No rankings',
-  noRankingsBB: 'Basketball rankings are not yet available.',
   showMore: 'Show more games',
   participation: 'Participation',
   participationRoster: 'View roster',

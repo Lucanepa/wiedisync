@@ -21,6 +21,8 @@ export default {
   won: 'S',
   lost: 'N',
   sets: 'Sätze',
+  pointsFor: 'PF',
+  pointsAgainst: 'PA',
   points: 'Pkt',
 
   // Detail modal
@@ -61,7 +63,6 @@ export default {
   noRecent: 'Keine letzten Spiele',
   noResults: 'Keine Resultate',
   noRankings: 'Keine Rangliste',
-  noRankingsBB: 'Basketball-Ranglisten sind noch nicht verfügbar.',
   showMore: 'Mehr Spiele anzeigen',
   participation: 'Teilnahme',
   participationRoster: 'Aufgebot anzeigen',

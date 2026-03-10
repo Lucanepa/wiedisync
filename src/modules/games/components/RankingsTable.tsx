@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import type { SvRanking } from '../../../types'
 import TeamChip from '../../../components/TeamChip'
 import { svTeamIds } from '../../../utils/teamColors'
+import { getPromotionColor, promotionBorderColors } from '../../../utils/leaguePromotion'
 
 interface RankingsTableProps {
   league: string
@@ -11,6 +12,8 @@ interface RankingsTableProps {
 export default function RankingsTable({ league, rankings }: RankingsTableProps) {
   const { t } = useTranslation('games')
   const sorted = [...rankings].sort((a, b) => a.rank - b.rank)
+  const isBasketball = rankings.some((r) => r.sv_team_id.startsWith('bp-'))
+  const totalTeams = sorted.length
 
   return (
     <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-card overflow-hidden">
@@ -26,7 +29,14 @@ export default function RankingsTable({ league, rankings }: RankingsTableProps) 
               <th className="w-10 px-2 py-2.5 text-center">{t('played')}</th>
               <th className="hidden w-10 px-2 py-2.5 text-center sm:table-cell">{t('won')}</th>
               <th className="hidden w-10 px-2 py-2.5 text-center sm:table-cell">{t('lost')}</th>
-              <th className="w-14 px-2 py-2.5 text-center">{t('sets')}</th>
+              {isBasketball ? (
+                <>
+                  <th className="w-14 px-2 py-2.5 text-center">{t('pointsFor')}</th>
+                  <th className="w-14 px-2 py-2.5 text-center">{t('pointsAgainst')}</th>
+                </>
+              ) : (
+                <th className="w-14 px-2 py-2.5 text-center">{t('sets')}</th>
+              )}
               <th className="w-10 px-2 py-2.5 text-center">{t('points')}</th>
             </tr>
           </thead>
@@ -34,11 +44,13 @@ export default function RankingsTable({ league, rankings }: RankingsTableProps) 
             {sorted.map((row) => {
               const kscwTeam = svTeamIds[row.sv_team_id]
               const isKscw = !!kscwTeam
+              const promoColor = getPromotionColor(league, row.rank, totalTeams, row.team_name)
+              const promoBorder = promoColor ? promotionBorderColors[promoColor] : ''
 
               return (
                 <tr
                   key={row.id}
-                  className={isKscw ? 'bg-brand-50 dark:bg-brand-900/20 font-semibold' : ''}
+                  className={`${isKscw ? 'bg-brand-50 dark:bg-brand-900/20 font-semibold' : ''} ${promoBorder}`}
                 >
                   <td className="px-2 py-2 text-center text-gray-500 dark:text-gray-400">{row.rank}</td>
                   <td className="truncate px-2 py-2">
@@ -52,9 +64,16 @@ export default function RankingsTable({ league, rankings }: RankingsTableProps) 
                   <td className="px-2 py-2 text-center text-gray-700 dark:text-gray-300">{row.played}</td>
                   <td className="hidden px-2 py-2 text-center text-green-600 dark:text-green-400 sm:table-cell">{row.won}</td>
                   <td className="hidden px-2 py-2 text-center text-red-500 dark:text-red-400 sm:table-cell">{row.lost}</td>
-                  <td className="px-2 py-2 text-center text-gray-700 dark:text-gray-300">
-                    {row.sets_won}:{row.sets_lost}
-                  </td>
+                  {isBasketball ? (
+                    <>
+                      <td className="px-2 py-2 text-center text-gray-700 dark:text-gray-300">{row.points_won}</td>
+                      <td className="px-2 py-2 text-center text-gray-700 dark:text-gray-300">{row.points_lost}</td>
+                    </>
+                  ) : (
+                    <td className="px-2 py-2 text-center text-gray-700 dark:text-gray-300">
+                      {row.sets_won}:{row.sets_lost}
+                    </td>
+                  )}
                   <td className="px-2 py-2 text-center font-bold text-gray-900 dark:text-gray-100">{row.points}</td>
                 </tr>
               )

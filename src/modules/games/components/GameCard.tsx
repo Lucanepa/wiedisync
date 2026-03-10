@@ -4,6 +4,7 @@ import type { Game, Team, Hall } from '../../../types'
 import { formatDateCompact } from '../../../utils/dateHelpers'
 import { leagueShort } from '../../../utils/leagueShort'
 import TeamChip from '../../../components/TeamChip'
+import { VolleyballIcon, BasketballIcon } from '../../../components/SportToggle'
 import ParticipationSummary from '../../../components/ParticipationSummary'
 import { useAuth } from '../../../hooks/useAuth'
 import { useParticipation } from '../../../hooks/useParticipation'
@@ -79,6 +80,11 @@ export default function GameCard({ game, onClick, variant = 'card' }: GameCardPr
           {game.time && <div>{game.time}</div>}
         </div>
 
+        {/* Sport icon */}
+        {expanded.expand?.kscw_team?.sport === 'basketball'
+          ? <BasketballIcon className="h-5 w-5 shrink-0 text-orange-500 dark:text-orange-400" />
+          : <VolleyballIcon className="h-5 w-5 shrink-0 text-amber-400 dark:text-amber-300" />}
+
         {/* Team names — stacked */}
         <div className="min-w-0 flex-1">
           <p className={`truncate text-sm text-gray-900 dark:text-gray-100 ${game.type === 'home' ? 'font-bold' : ''}`}>
@@ -129,7 +135,14 @@ export default function GameCard({ game, onClick, variant = 'card' }: GameCardPr
           <div className="font-medium text-gray-700 dark:text-gray-300">{game.date ? formatDateCompact(game.date) : ''}</div>
           {game.time && <div>{game.time}</div>}
           <div className="truncate">{leagueShort(game.league)}</div>
-          {kscwTeamName && <div className="pt-0.5"><TeamChip team={kscwTeamName} size="xs" /></div>}
+          {kscwTeamName && (
+            <div className="flex items-center gap-1 pt-0.5">
+              {expanded.expand?.kscw_team?.sport === 'basketball'
+                ? <BasketballIcon className="h-3.5 w-3.5 text-orange-500 dark:text-orange-400" />
+                : <VolleyballIcon className="h-3.5 w-3.5 text-amber-400 dark:text-amber-300" />}
+              <TeamChip team={kscwTeamName} size="xs" />
+            </div>
+          )}
         </div>
 
         {/* Right: teams stacked + hall */}

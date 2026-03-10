@@ -27,6 +27,7 @@ import EventsPage from './modules/events/EventsPage'
 import DatenschutzPage from './modules/legal/DatenschutzPage'
 import ImpressumPage from './modules/legal/ImpressumPage'
 import AuthRoute from './components/AuthRoute'
+import ScorerAssignPage from './modules/scorer/ScorerAssignPage'
 import AdminSetupPage from './modules/gameScheduling/pages/AdminSetupPage'
 import AdminDashboardPage from './modules/gameScheduling/pages/AdminDashboardPage'
 import PublicTerminplanungPage from './modules/gameScheduling/pages/PublicTerminplanungPage'
@@ -65,6 +66,7 @@ export default function App() {
             <Route path="admin/hallenplan" element={<AdminRoute><HallenplanPage /></AdminRoute>} />
             <Route path="admin/terminplanung" element={<AdminRoute><AdminSetupPage /></AdminRoute>} />
             <Route path="admin/terminplanung/dashboard" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
+            <Route path="admin/scorer-assign" element={<AdminRoute><ScorerAssignPage /></AdminRoute>} />
             <Route path="admin/database" element={<SuperAdminRoute><DatabasePage /></SuperAdminRoute>} />
             <Route path="admin/clubdesk-sync" element={<SuperAdminRoute><ClubDeskSyncPage /></SuperAdminRoute>} />
           </Route>

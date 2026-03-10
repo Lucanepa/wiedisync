@@ -1,4 +1,4 @@
-import { useTranslation } from 'react-i18next'
+import { Volleyball } from 'lucide-react'
 import type { SportView } from '../hooks/useSportPreference'
 
 interface SportToggleProps {
@@ -9,26 +9,17 @@ interface SportToggleProps {
 }
 
 function VolleyballIcon({ className = 'h-5 w-5' }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" />
-      <path d="M12 2C12 2 8 6 8 12s4 10 4 10" />
-      <path d="M12 2c0 0 4 4 4 10s-4 10-4 10" />
-      <path d="M2 12h20" />
-      <path d="M4.5 5.5C7 8 9.5 9.5 12 10c2.5.5 5 .5 7.5-1.5" />
-      <path d="M4.5 18.5C7 16 9.5 14.5 12 14c2.5-.5 5-.5 7.5 1.5" />
-    </svg>
-  )
+  return <Volleyball className={className} />
 }
 
 function BasketballIcon({ className = 'h-5 w-5' }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="10" />
-      <path d="M12 2v20" />
-      <path d="M2 12h20" />
       <path d="M4.93 4.93c4.08 2.64 8.74 3.2 14.14 0" />
       <path d="M4.93 19.07c4.08-2.64 8.74-3.2 14.14 0" />
+      <line x1="12" y1="2" x2="12" y2="22" />
+      <line x1="2" y1="12" x2="22" y2="12" />
     </svg>
   )
 }
@@ -48,7 +39,6 @@ function SportIcon({ sport }: { sport: SportView }) {
 }
 
 export default function SportToggle({ value, onChange, showAll = true, className = '' }: SportToggleProps) {
-  const { t } = useTranslation('common')
   const items = showAll ? OPTIONS : OPTIONS.filter((o) => o.value !== 'all')
 
   return (
@@ -63,7 +53,12 @@ export default function SportToggle({ value, onChange, showAll = true, className
               : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700'
           } ${i > 0 ? 'border-l border-gray-300 dark:border-gray-600' : ''}`}
         >
-          {opt.value === 'all' ? t('all') : <SportIcon sport={opt.value} />}
+          {opt.value === 'all' ? (
+            <span className="flex items-center gap-1">
+              <VolleyballIcon className="h-4 w-4" />
+              <BasketballIcon className="h-4 w-4" />
+            </span>
+          ) : <SportIcon sport={opt.value} />}
         </button>
       ))}
     </div>

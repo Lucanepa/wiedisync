@@ -19,6 +19,7 @@ import admin from './locales/en/admin'
 import participation from './locales/en/participation'
 import notifications from './locales/en/notifications'
 import gameScheduling from './locales/en/gameScheduling'
+import scorerAssign from './locales/en/scorerAssign'
 
 import deCommon from './locales/de/common'
 import deNav from './locales/de/nav'
@@ -38,6 +39,7 @@ import deAdmin from './locales/de/admin'
 import deParticipation from './locales/de/participation'
 import deNotifications from './locales/de/notifications'
 import deGameScheduling from './locales/de/gameScheduling'
+import deScorerAssign from './locales/de/scorerAssign'
 
 const savedLng = typeof window !== 'undefined'
   ? localStorage.getItem('kscw-lang') ?? 'de'
@@ -65,6 +67,7 @@ i18n.use(initReactI18next).init({
     'participation',
     'notifications',
     'gameScheduling',
+    'scorerAssign',
   ],
   defaultNS: 'common',
   resources: {
@@ -87,6 +90,7 @@ i18n.use(initReactI18next).init({
       participation,
       notifications,
       gameScheduling,
+      scorerAssign,
     },
     de: {
       common: deCommon,
@@ -107,6 +111,7 @@ i18n.use(initReactI18next).init({
       participation: deParticipation,
       notifications: deNotifications,
       gameScheduling: deGameScheduling,
+      scorerAssign: deScorerAssign,
     },
   },
   interpolation: {

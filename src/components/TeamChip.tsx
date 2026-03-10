@@ -1,17 +1,20 @@
+import type { ReactNode } from 'react'
 import { getTeamColor } from '../utils/teamColors'
 
 interface TeamChipProps {
   team: string
+  label?: string
+  icon?: ReactNode
   size?: 'xs' | 'sm' | 'md'
   className?: string
 }
 
-export default function TeamChip({ team, size = 'md', className = '' }: TeamChipProps) {
+export default function TeamChip({ team, label, icon, size = 'md', className = '' }: TeamChipProps) {
   const color = getTeamColor(team)
 
   return (
     <span
-      className={`inline-flex items-center rounded-full font-semibold ${
+      className={`inline-flex items-center gap-1 rounded-full font-semibold ${
         size === 'xs' ? 'px-1.5 py-0 text-[10px]' : size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-3 py-1 text-sm'
       } ${className}`}
       style={{
@@ -22,7 +25,8 @@ export default function TeamChip({ team, size = 'md', className = '' }: TeamChip
         borderStyle: 'solid',
       }}
     >
-      {team}
+      {icon}
+      {label ?? team}
     </span>
   )
 }

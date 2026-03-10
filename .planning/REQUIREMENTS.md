@@ -22,11 +22,11 @@ Requirements for admin/member separation. Each maps to roadmap phases.
 
 ### Page Migration
 
-- [ ] **PAGE-01**: In member mode, pages filter data to user's own teams only
-- [ ] **PAGE-02**: In member mode, admin inline controls (edit buttons, management UI) are hidden
-- [ ] **PAGE-03**: Coach features (training CRUD, attendance, roster for own teams) remain visible regardless of admin mode
-- [ ] **PAGE-04**: Admin nav links (/admin/*) are hidden in member mode
-- [ ] **PAGE-05**: In admin mode, all teams and inline admin controls are visible (current behavior)
+- [x] **PAGE-01**: In member mode, pages filter data to user's own teams only
+- [x] **PAGE-02**: In member mode, admin inline controls (edit buttons, management UI) are hidden
+- [x] **PAGE-03**: Coach features (training CRUD, attendance, roster for own teams) remain visible regardless of admin mode
+- [x] **PAGE-04**: Admin nav links (/admin/*) are hidden in member mode
+- [x] **PAGE-05**: In admin mode, all teams and inline admin controls are visible (current behavior)
 
 ### Testing
 
@@ -62,11 +62,11 @@ Requirements for admin/member separation. Each maps to roadmap phases.
 | TOGGLE-01 | Phase 2: Toggle UI | Complete |
 | TOGGLE-02 | Phase 2: Toggle UI | Complete |
 | TOGGLE-03 | Phase 2: Toggle UI | Complete |
-| PAGE-01 | Phase 3: Page Migration | Pending |
-| PAGE-02 | Phase 3: Page Migration | Pending |
-| PAGE-03 | Phase 3: Page Migration | Pending |
-| PAGE-04 | Phase 3: Page Migration | Pending |
-| PAGE-05 | Phase 3: Page Migration | Pending |
+| PAGE-01 | Phase 3: Page Migration | Complete |
+| PAGE-02 | Phase 3: Page Migration | Complete |
+| PAGE-03 | Phase 3: Page Migration | Complete |
+| PAGE-04 | Phase 3: Page Migration | Complete |
+| PAGE-05 | Phase 3: Page Migration | Complete |
 | TEST-01 | Phase 4: Testing | Pending |
 | TEST-02 | Phase 4: Testing | Pending |
 | TEST-03 | Phase 4: Testing | Pending |

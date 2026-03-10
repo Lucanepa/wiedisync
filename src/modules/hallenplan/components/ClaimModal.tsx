@@ -31,8 +31,7 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 
 export default function ClaimModal({ slot, halls, teams, rawSlots, weekDays, onClose, onClaimed, onEditSlot }: Props) {
   const { t } = useTranslation('hallenplan')
-  const { user, coachTeamIds, isAdmin } = useAuth()
-  const [selectedTeamId, setSelectedTeamId] = useState(coachTeamIds[0] || '')
+  const { user, coachTeamIds, isAdmin, hasAdminAccessToTeam } = useAuth()
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -41,7 +40,8 @@ export default function ClaimModal({ slot, halls, teams, rawSlots, weekDays, onC
   const isManuallyFree = !meta && !slot.team
   const hallName = halls.find((h) => h.id === slot.hall)?.name ?? ''
   const originalTeam = teams.find((tm) => tm.id === slot.team)
-  const coachTeams = teams.filter((tm) => coachTeamIds.includes(tm.id))
+  const coachTeams = teams.filter((tm) => coachTeamIds.includes(tm.id) || hasAdminAccessToTeam(tm.id))
+  const [selectedTeamId, setSelectedTeamId] = useState(coachTeams[0]?.id || '')
 
   // Determine freed reason and source
   const isCancelledTraining = meta?.source === 'training' && meta.isCancelled

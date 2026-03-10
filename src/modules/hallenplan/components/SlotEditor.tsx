@@ -17,6 +17,7 @@ interface SlotEditorProps {
   allSlots: HallSlot[]
   isAdmin?: boolean
   coachTeamIds?: string[]
+  adminTeamIds?: string[]
   onClose: () => void
   onSaved: () => void
 }
@@ -29,6 +30,7 @@ export default function SlotEditor({
   allSlots,
   isAdmin = true,
   coachTeamIds = [],
+  adminTeamIds = [],
   onClose,
   onSaved,
 }: SlotEditorProps) {
@@ -57,10 +59,14 @@ export default function SlotEditor({
 
   const todayStr = new Date().toISOString().slice(0, 10)
 
-  // Filter teams for coaches (own teams only) vs admins (all teams)
-  const visibleTeams = isAdmin ? teams : teams.filter((tm) => coachTeamIds.includes(tm.id))
+  // Filter teams for coaches (own teams only) vs scoped admins
+  const visibleTeams = isAdmin
+    ? teams.filter((tm) => adminTeamIds.length === 0 || adminTeamIds.includes(tm.id))
+    : teams.filter((tm) => coachTeamIds.includes(tm.id))
   const defaultTeam = slot?.team ?? (!isAdmin && coachTeamIds.length === 1 ? coachTeamIds[0] : '')
-  const canDelete = isAdmin || (slot?.team ? coachTeamIds.includes(slot.team) : false)
+  const canDelete = isAdmin
+    ? (slot?.team ? adminTeamIds.length === 0 || adminTeamIds.includes(slot.team) : true)
+    : (slot?.team ? coachTeamIds.includes(slot.team) : false)
 
   // Build a synthetic "KWI A+B" option
   const kwiA = halls.find((h) => h.name === 'KWI A')
@@ -279,7 +285,7 @@ export default function SlotEditor({
                     onChange={(e) => {
                       setIndefinitely(e.target.checked)
                       if (e.target.checked) {
-                        update('valid_until', indefiniteDate)
+                        update('valid_until', '')
                       } else {
                         update('valid_until', '')
                       }

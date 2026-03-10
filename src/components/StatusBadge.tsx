@@ -16,6 +16,8 @@ const defaultColors: Record<string, string> = {
   team_responsible: 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-400',
   vorstand: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
   admin: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+  vb_admin: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+  bb_admin: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
   superadmin: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
   superuser: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
   // Event types
@@ -43,6 +45,8 @@ const labelMap: Record<string, string> = {
   team_responsible: 'Team Resp.',
   vorstand: 'Board',
   admin: 'Admin',
+  vb_admin: 'VB Admin',
+  bb_admin: 'BB Admin',
   superadmin: 'SuperAdmin',
   superuser: 'Superuser',
   // Event types

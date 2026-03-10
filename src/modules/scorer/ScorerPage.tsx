@@ -32,9 +32,7 @@ const PAST_PAGE_SIZE = 5
 
 export default function ScorerPage() {
   const { t } = useTranslation('scorer')
-  const { user, isAdmin, isSuperAdmin, isCoach } = useAuth()
-  const canEdit = isAdmin || isCoach
-  const showContact = isAdmin || isCoach || isSuperAdmin
+  const { user, isSuperAdmin, isCoach, hasAdminAccessToSport } = useAuth()
 
   const [tab, setTab] = useState<Tab>('games')
   const [sportTab, setSportTab] = useState<SportTab>('volleyball')
@@ -50,6 +48,8 @@ export default function ScorerPage() {
   // Past games
   const [showPast, setShowPast] = useState(false)
   const [pastVisible, setPastVisible] = useState(PAST_PAGE_SIZE)
+  const canEdit = hasAdminAccessToSport(sportTab) || isCoach
+  const showContact = hasAdminAccessToSport(sportTab) || isCoach || isSuperAdmin
 
   const today = useMemo(() => new Date().toISOString().split('T')[0], [])
 

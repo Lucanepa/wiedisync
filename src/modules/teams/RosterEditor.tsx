@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useParams, Link, Navigate } from 'react-router-dom'
 import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
+import { coercePositions, getPositionI18nKey, getSelectablePositions } from '../../utils/memberPositions'
 import { useAuth } from '../../hooks/useAuth'
 import { useTeamMembers } from '../../hooks/useTeamMembers'
 import { useMutation } from '../../hooks/useMutation'
@@ -12,18 +13,7 @@ import ConfirmDialog from '../../components/ConfirmDialog'
 import EmptyState from '../../components/EmptyState'
 import { getFileUrl } from '../../utils/pbFile'
 import { getCurrentSeason } from '../../utils/dateHelpers'
-import type { Team, Member, MemberTeam, LicenceType } from '../../types'
-
-const POSITIONS: Member['position'][] = ['setter', 'outside', 'middle', 'opposite', 'libero', 'coach', 'other']
-const positionKeys: Record<string, string> = {
-  setter: 'positionSetter',
-  outside: 'positionOutside',
-  middle: 'positionMiddle',
-  opposite: 'positionOpposite',
-  libero: 'positionLibero',
-  coach: 'positionCoach',
-  other: 'positionOther',
-}
+import type { Team, Member, MemberPosition, MemberTeam, LicenceType } from '../../types'
 
 type LeadershipRole = 'coach' | 'captain' | 'team_responsible'
 const ROLES: LeadershipRole[] = ['coach', 'captain', 'team_responsible']
@@ -180,13 +170,13 @@ export default function RosterEditor() {
     setEditingNumber(null)
   }
 
-  async function savePosition(memberId: string, position: string) {
+  async function savePosition(memberId: string, positions: MemberPosition[]) {
     try {
-      await pb.collection('members').update(memberId, { position })
-      logActivity('update', 'members', memberId, { position })
+      await pb.collection('members').update(memberId, { position: positions })
+      logActivity('update', 'members', memberId, { position: positions })
       const mt = members.find((m) => m.expand?.member?.id === memberId)
       if (mt?.expand?.member) {
-        ;(mt.expand.member as Record<string, unknown>).position = position
+        ;(mt.expand.member as Record<string, unknown>).position = positions
       }
     } catch {
       // ignore
@@ -305,7 +295,8 @@ export default function RosterEditor() {
               if (!member) return null
               const initials = `${member.first_name?.[0] ?? ''}${member.last_name?.[0] ?? ''}`.toUpperCase()
               const roles = team ? getMemberRoles(member.id, team) : []
-
+              const memberPositions = coercePositions(member.position)
+              const selectablePositions = getSelectablePositions(team?.sport, memberPositions)
               return (
                 <div key={mt.id} className="flex items-center gap-3 rounded-lg border bg-white dark:bg-gray-800 dark:border-gray-700 px-4 py-2.5">
                   {member.photo ? (
@@ -350,14 +341,18 @@ export default function RosterEditor() {
 
                   {/* Position dropdown */}
                   <select
-                    value={member.position || ''}
-                    onChange={(e) => savePosition(member.id, e.target.value)}
-                    className="hidden sm:block w-28 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-1.5 py-0.5 text-xs text-gray-700 dark:text-gray-200"
+                    value={memberPositions}
+                    multiple
+                    size={Math.min(3, selectablePositions.length)}
+                    onChange={(e) => {
+                      const next = Array.from(e.target.selectedOptions).map((opt) => opt.value) as MemberPosition[]
+                      savePosition(member.id, next.length > 0 ? next : ['other'])
+                    }}
+                    className="hidden sm:block w-40 min-h-[68px] rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-1.5 py-0.5 text-xs text-gray-700 dark:text-gray-100"
                     title={t('positionCol')}
                   >
-                    <option value="">{t('positionCol')}</option>
-                    {POSITIONS.map((p) => (
-                      <option key={p} value={p}>{t(positionKeys[p])}</option>
+                    {selectablePositions.map((p) => (
+                      <option key={p} value={p}>{getPositionI18nKey(p) ? t(getPositionI18nKey(p)!) : p}</option>
                     ))}
                   </select>
 

@@ -10,7 +10,7 @@ import { getCurrentSeason } from '../../utils/dateHelpers'
 
 export default function TeamsPage() {
   const { t } = useTranslation('teams')
-  const { isAdmin, isVorstand, coachTeamIds, memberTeamIds } = useAuth()
+  const { isAdmin, isVorstand, canViewTeam } = useAuth()
   const { data: teams, isLoading } = usePB<Team>('teams', {
     filter: 'active=true',
     sort: 'name',
@@ -23,9 +23,7 @@ export default function TeamsPage() {
   })
 
   const hasElevatedAccess = isAdmin || isVorstand
-  const visibleTeams = hasElevatedAccess
-    ? teams
-    : teams.filter((t) => memberTeamIds.includes(t.id) || coachTeamIds.includes(t.id))
+  const visibleTeams = teams.filter((team) => canViewTeam(team.id))
 
   const countByTeam = memberTeams.reduce<Record<string, number>>((acc, mt) => {
     acc[mt.team] = (acc[mt.team] ?? 0) + 1

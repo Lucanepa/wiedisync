@@ -7,7 +7,9 @@ import { usePB } from '../hooks/usePB'
 import TeamChip from './TeamChip'
 import SwitchToggle from './SwitchToggle'
 import { getFileUrl } from '../utils/pbFile'
-import { Bell, UserX, PenSquare, CalendarDays, ClipboardList, Building2, Database, RefreshCcw, LogIn, User } from 'lucide-react'
+import AdminToggle from './AdminToggle'
+import { useAdminMode } from '../hooks/useAdminMode'
+import { Bell, UserX, PenSquare, CalendarDays, ClipboardList, Building2, CalendarClock, Database, RefreshCcw, LogIn, User } from 'lucide-react'
 import type { MemberTeam, Team } from '../types'
 
 type ExpandedMemberTeam = MemberTeam & { expand?: { team?: Team } }
@@ -23,6 +25,7 @@ const secondaryItems = [
 const adminItems = [
   { to: '/admin/spielplanung', labelKey: 'gameplan', icon: <ClipboardList className={iconClass} /> },
   { to: '/admin/hallenplan', labelKey: 'hallenplan', icon: <Building2 className={iconClass} /> },
+  { to: '/admin/terminplanung', labelKey: 'terminplanung', icon: <CalendarClock className={iconClass} /> },
 ]
 
 interface MoreSheetProps {
@@ -33,6 +36,7 @@ interface MoreSheetProps {
 
 export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNotifications }: MoreSheetProps) {
   const { user, isAdmin, isApproved, isSuperAdmin, logout } = useAuth()
+  const { isAdminMode } = useAdminMode()
   const { theme, toggleTheme } = useTheme()
   const { t, i18n } = useTranslation('nav')
 
@@ -105,7 +109,7 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
             </NavLink>
           ))}
 
-          {isAdmin && (
+          {isAdminMode && (
             <>
               <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
               <p className="mb-1 px-4 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
@@ -131,7 +135,7 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
             </>
           )}
 
-          {isSuperAdmin && (
+          {isAdminMode && isSuperAdmin && (
             <>
               <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
               <p className="mb-1 px-4 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
@@ -262,6 +266,7 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
                 {t('options', 'Options')}
               </span>
               <div className="flex items-center gap-4">
+                <AdminToggle size="sm" />
                 <SwitchToggle
                   enabled={theme === 'dark'}
                   onChange={toggleTheme}

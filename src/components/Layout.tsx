@@ -1,11 +1,13 @@
-import { useState } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../hooks/useAuth'
 import { useTheme } from '../hooks/useTheme'
 import { useIsDesktop } from '../hooks/useMediaQuery'
 import { useNotifications } from '../hooks/useNotifications'
 import { getFileUrl } from '../utils/pbFile'
+import AdminToggle from './AdminToggle'
+import { useAdminMode } from '../hooks/useAdminMode'
 import BottomTabBar from './BottomTabBar'
 import MoreSheet from './MoreSheet'
 import NotificationBell from './NotificationBell'
@@ -72,7 +74,16 @@ export default function Layout() {
   const { theme, toggleTheme } = useTheme()
   const { t, i18n } = useTranslation('nav')
   const isDesktop = useIsDesktop()
+  const location = useLocation()
+  const { isAdminMode, setAdminMode } = useAdminMode()
   const { navItems, adminItems, superadminItems } = useNavItems(!!user, isApproved)
+
+  // Auto-activate admin mode when navigating to /admin/* routes
+  useEffect(() => {
+    if (isAdmin && location.pathname.startsWith('/admin') && !isAdminMode) {
+      setAdminMode(true)
+    }
+  }, [location.pathname, isAdmin, isAdminMode, setAdminMode])
   const { data: memberTeams } = usePB<ExpandedMemberTeam>('member_teams', {
     filter: user ? `member="${user.id}"` : '',
     expand: 'team',
@@ -165,7 +176,7 @@ export default function Layout() {
                 ))}
               </ul>
 
-              {isAdmin && (
+              {isAdminMode && (
                 <>
                   <div className={`my-3 border-t ${
                     theme === 'light' ? 'border-gray-200' : 'border-brand-800'
@@ -202,7 +213,7 @@ export default function Layout() {
                 </>
               )}
 
-              {isSuperAdmin && (
+              {isAdminMode && isSuperAdmin && (
                 <>
                   <div className={`my-3 border-t ${
                     theme === 'light' ? 'border-gray-200' : 'border-brand-800'
@@ -243,6 +254,11 @@ export default function Layout() {
             <div className={`space-y-3 border-t p-4 ${
               theme === 'light' ? 'border-gray-200' : 'border-brand-800'
             }`}>
+              {isAdmin && (
+                <div className="flex items-center justify-between rounded-lg px-3 py-2">
+                  <AdminToggle />
+                </div>
+              )}
               <div className="flex items-center justify-between rounded-lg px-3 py-2">
                 <SwitchToggle
                   enabled={theme === 'dark'}
@@ -366,7 +382,7 @@ export default function Layout() {
       <div className="flex flex-1 flex-col overflow-hidden">
         <main className={`flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8 ${
           !isDesktop ? 'pb-24' : ''
-        }`}>
+        } ${isAdminMode ? 'border-t-2 border-gold-400' : ''}`}>
           <Outlet />
         </main>
       </div>

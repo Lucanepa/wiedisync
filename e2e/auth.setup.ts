@@ -1,7 +1,11 @@
 import { test as setup, expect } from '@playwright/test'
 
+setup.describe.configure({ mode: 'serial' })
+
 const USER_FILE = 'e2e/.auth/user.json'
 const ADMIN_FILE = 'e2e/.auth/admin.json'
+const VB_ADMIN_FILE = 'e2e/.auth/vb-admin.json'
+const BB_ADMIN_FILE = 'e2e/.auth/bb-admin.json'
 
 const PB_URL = process.env.VITE_PB_URL!
 
@@ -16,17 +20,23 @@ async function loginViaAPI(
   password: string,
   storageStatePath: string,
 ) {
-  // Call the PocketBase auth endpoint directly
-  const response = await page.request.post(
-    `${PB_URL}/api/collections/members/auth-with-password`,
-    {
-      data: { identity: email, password },
-    },
-  )
+  // Call the PocketBase auth endpoint directly with retry for strict rate limits.
+  let response: import('@playwright/test').APIResponse | null = null
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    response = await page.request.post(
+      `${PB_URL}/api/collections/members/auth-with-password`,
+      {
+        data: { identity: email, password },
+      },
+    )
+    if (response.ok()) break
+    if (response.status() !== 429 || attempt === 4) break
+    await page.waitForTimeout(2_000)
+  }
 
-  expect(response.ok(), `Login API failed for ${email}: ${response.status()}`).toBeTruthy()
+  expect(response?.ok(), `Login API failed for ${email}: ${response?.status()}`).toBeTruthy()
 
-  const authData = await response.json()
+  const authData = await response!.json()
 
   // Navigate to the app so we can set localStorage on the correct origin
   await page.goto('/')
@@ -66,5 +76,23 @@ setup('authenticate as admin', async ({ page }) => {
     process.env.TEST_ADMIN_EMAIL!,
     process.env.TEST_ADMIN_PASSWORD!,
     ADMIN_FILE,
+  )
+})
+
+setup('authenticate as vb_admin', async ({ page }) => {
+  await loginViaAPI(
+    page,
+    process.env.TEST_VB_ADMIN_EMAIL!,
+    process.env.TEST_VB_ADMIN_PASSWORD!,
+    VB_ADMIN_FILE,
+  )
+})
+
+setup('authenticate as bb_admin', async ({ page }) => {
+  await loginViaAPI(
+    page,
+    process.env.TEST_BB_ADMIN_EMAIL!,
+    process.env.TEST_BB_ADMIN_PASSWORD!,
+    BB_ADMIN_FILE,
   )
 })

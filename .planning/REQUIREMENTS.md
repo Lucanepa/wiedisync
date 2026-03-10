@@ -30,9 +30,9 @@ Requirements for admin/member separation. Each maps to roadmap phases.
 
 ### Testing
 
-- [ ] **TEST-01**: E2E test for admin toggle visibility (admin sees it, regular user does not)
-- [ ] **TEST-02**: E2E test for member mode filtering (admin with toggle OFF sees only own teams)
-- [ ] **TEST-03**: E2E test for admin mode inline controls (admin with toggle ON sees edit controls)
+- [x] **TEST-01**: E2E test for admin toggle visibility (admin sees it, regular user does not)
+- [x] **TEST-02**: E2E test for member mode filtering (admin with toggle OFF sees only own teams)
+- [x] **TEST-03**: E2E test for admin mode inline controls (admin with toggle ON sees edit controls)
 
 ## Future Requirements
 
@@ -67,9 +67,9 @@ Requirements for admin/member separation. Each maps to roadmap phases.
 | PAGE-03 | Phase 3: Page Migration | Complete |
 | PAGE-04 | Phase 3: Page Migration | Complete |
 | PAGE-05 | Phase 3: Page Migration | Complete |
-| TEST-01 | Phase 4: Testing | Pending |
-| TEST-02 | Phase 4: Testing | Pending |
-| TEST-03 | Phase 4: Testing | Pending |
+| TEST-01 | Phase 4: Testing | Complete |
+| TEST-02 | Phase 4: Testing | Complete |
+| TEST-03 | Phase 4: Testing | Complete |
 
 **Coverage:**
 
@@ -79,4 +79,4 @@ Requirements for admin/member separation. Each maps to roadmap phases.
 
 ---
 *Requirements defined: 2026-03-10*
-*Last updated: 2026-03-10 after roadmap creation*
+*Last updated: 2026-03-11 after Phase 4 completion*

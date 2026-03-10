@@ -14,8 +14,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation** - AdminModeProvider context, useAdminMode hook, AdminOnly wrapper, persistence
 - [x] **Phase 2: Toggle UI** - Admin mode toggle in navigation, visual indicator, auto-activation on admin routes (completed 2026-03-10)
-- [ ] **Phase 3: Page Migration** - Audit and migrate all isAdmin conditionals to respect admin mode across ~14 files
-- [ ] **Phase 4: Testing** - E2E tests validating toggle visibility, member mode filtering, and admin mode controls
+- [x] **Phase 3: Page Migration** - Audit and migrate all isAdmin conditionals to respect admin mode across ~14 files (completed 2026-03-10)
+- [x] **Phase 4: Testing** - E2E tests validating toggle visibility, member mode filtering, and admin mode controls (completed 2026-03-11)
 
 ## Phase Details
 
@@ -57,11 +57,11 @@ Plans:
   3. A coach user sees training CRUD, attendance management, and roster editing for their own teams regardless of admin mode state
   4. Admin nav links (e.g. /admin/database, /admin/terminplanung) are hidden from the sidebar and MoreSheet when admin mode is OFF
   5. An admin user in admin mode sees all teams and all inline admin controls — the current full-access behavior is preserved
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
-- [ ] 03-01-PLAN.md — Migrate Hallenplan module and Calendar HallenplanView to respect admin mode
-- [ ] 03-02-PLAN.md — Migrate Teams, Scorer, and Trainings modules to respect admin mode
+- [x] 03-01-PLAN.md — Migrate Hallenplan module and Calendar HallenplanView to respect admin mode
+- [x] 03-02-PLAN.md — Migrate Teams, Scorer, and Trainings modules to respect admin mode
 
 ### Phase 4: Testing
 **Goal**: E2E tests confirm the admin/member separation works correctly across roles and modes
@@ -71,10 +71,10 @@ Plans:
   1. An E2E test verifies that an admin user sees the admin toggle and a regular user does not
   2. An E2E test verifies that an admin with toggle OFF sees only their own teams (member-filtered view)
   3. An E2E test verifies that an admin with toggle ON sees edit controls and management UI on pages
-**Plans**: TBD
+**Plans:** 1/1 plans complete
 
 Plans:
-- [ ] 04-01: TBD
+- [x] 04-01-PLAN.md — E2E tests for admin toggle visibility, member mode team filtering, and admin mode UI controls
 
 ## Progress
 
@@ -85,5 +85,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 |-------|----------------|--------|-----------|
 | 1. Foundation | 1/1 | Complete    | 2026-03-10 |
 | 2. Toggle UI | 1/1 | Complete   | 2026-03-10 |
-| 3. Page Migration | 0/2 | In progress | - |
-| 4. Testing | 0/? | Not started | - |
+| 3. Page Migration | 2/2 | Complete | 2026-03-10 |
+| 4. Testing | 1/1 | Complete | 2026-03-11 |

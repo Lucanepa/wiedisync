@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import Modal from '../../components/Modal'
 import { useAuth } from '../../hooks/useAuth'
+import { useAdminMode } from '../../hooks/useAdminMode'
 import { useMutation } from '../../hooks/useMutation'
 import { usePB } from '../../hooks/usePB'
 import pb from '../../pb'
@@ -43,14 +44,15 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
   const { t: tc } = useTranslation('common')
   const { create, update, isLoading: isMutating } = useMutation<Training>('trainings')
   const { hasAdminAccessToTeam, coachTeamIds } = useAuth()
+  const { effectiveIsAdmin } = useAdminMode()
 
   const { data: allTeams } = usePB<Team>('teams', { filter: 'active=true', sort: 'name', perPage: 50 })
   const { data: halls } = usePB<Hall>('halls', { sort: 'name', perPage: 50 })
 
-  // Non-admin coaches only see their own teams
+  // Non-admin coaches only see their own teams; admins in admin mode see all teams they have access to
   const teams = useMemo(
-    () => allTeams.filter((t) => hasAdminAccessToTeam(t.id) || coachTeamIds.includes(t.id)),
-    [allTeams, hasAdminAccessToTeam, coachTeamIds],
+    () => allTeams.filter((t) => (effectiveIsAdmin && hasAdminAccessToTeam(t.id)) || coachTeamIds.includes(t.id)),
+    [allTeams, effectiveIsAdmin, hasAdminAccessToTeam, coachTeamIds],
   )
 
   const [teamId, setTeamId] = useState('')

@@ -4,6 +4,7 @@ import type { Game, Member, Team, MemberTeam } from '../../types'
 import { usePB } from '../../hooks/usePB'
 import { useRealtime } from '../../hooks/useRealtime'
 import { useAuth } from '../../hooks/useAuth'
+import { useAdminMode } from '../../hooks/useAdminMode'
 import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
 import Button from '../../components/ui/Button'
@@ -33,6 +34,7 @@ const PAST_PAGE_SIZE = 5
 export default function ScorerPage() {
   const { t } = useTranslation('scorer')
   const { user, isSuperAdmin, isCoach, hasAdminAccessToSport } = useAuth()
+  const { effectiveIsAdmin } = useAdminMode()
 
   const [tab, setTab] = useState<Tab>('games')
   const [sportTab, setSportTab] = useState<SportTab>('volleyball')
@@ -48,8 +50,8 @@ export default function ScorerPage() {
   // Past games
   const [showPast, setShowPast] = useState(false)
   const [pastVisible, setPastVisible] = useState(PAST_PAGE_SIZE)
-  const canEdit = hasAdminAccessToSport(sportTab) || isCoach
-  const showContact = hasAdminAccessToSport(sportTab) || isCoach || isSuperAdmin
+  const canEdit = (effectiveIsAdmin && hasAdminAccessToSport(sportTab)) || isCoach
+  const showContact = (effectiveIsAdmin && hasAdminAccessToSport(sportTab)) || isCoach || isSuperAdmin
 
   const today = useMemo(() => new Date().toISOString().split('T')[0], [])
 

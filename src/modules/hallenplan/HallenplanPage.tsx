@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
+import { useAdminMode } from '../../hooks/useAdminMode'
 import { useRealtime } from '../../hooks/useRealtime'
 import { useIsMobile } from '../../hooks/useMediaQuery'
 import { useWeekNavigation } from './hooks/useWeekNavigation'
@@ -35,7 +36,8 @@ function getTodayDayIndex(): number {
 
 export default function HallenplanPage() {
   const { t } = useTranslation('hallenplan')
-  const { isAdmin, isCoach, coachTeamIds, hasAdminAccessToTeam, hasAdminAccessToSport } = useAuth()
+  const { isCoach, coachTeamIds, hasAdminAccessToTeam, hasAdminAccessToSport } = useAuth()
+  const { effectiveIsAdmin } = useAdminMode()
   const isMobile = useIsMobile()
   const { weekDays, goNext, goPrev, goToday, weekLabel, mondayStr, sundayStr } = useWeekNavigation()
 
@@ -158,7 +160,7 @@ export default function HallenplanPage() {
   }
 
   function handleEmptyCellClick(dayOfWeek: number, time: string, hallId: string) {
-    if (!isAdmin && !isCoach) return
+    if (!effectiveIsAdmin && !isCoach) return
     setPrefill({ day: dayOfWeek, time, hall: hallId })
     setEditingSlot(null)
     setEditorOpen(true)
@@ -209,7 +211,7 @@ export default function HallenplanPage() {
             halls={halls}
             selectedHallIds={selectedHallIds}
             onSelectHalls={setSelectedHallIds}
-            isAdmin={isAdmin}
+            isAdmin={effectiveIsAdmin}
             onOpenClosureManager={() => setClosureManagerOpen(true)}
             showSummary={showSummary}
             onToggleSummary={() => setShowSummary((v) => !v)}
@@ -231,7 +233,7 @@ export default function HallenplanPage() {
               dayIndex={selectedDayIndex}
               halls={halls}
               selectedHallIds={selectedHallIds}
-              isAdmin={isAdmin}
+              isAdmin={effectiveIsAdmin}
               isCoach={isCoach}
               coachTeamIds={coachTeamIds}
               onSlotClick={handleSlotClick}
@@ -249,7 +251,7 @@ export default function HallenplanPage() {
             halls={halls}
             selectedHallIds={selectedHallIds}
             onSelectHalls={setSelectedHallIds}
-            isAdmin={isAdmin}
+            isAdmin={effectiveIsAdmin}
             onOpenClosureManager={() => setClosureManagerOpen(true)}
             sportFilter={sportFilter}
             onSetSportFilter={setSportFilter}
@@ -266,7 +268,7 @@ export default function HallenplanPage() {
               weekDays={weekDays}
               halls={halls}
               selectedHallIds={selectedHallIds}
-              isAdmin={isAdmin}
+              isAdmin={effectiveIsAdmin}
               isCoach={isCoach}
               coachTeamIds={coachTeamIds}
               onSlotClick={handleSlotClick}
@@ -283,7 +285,7 @@ export default function HallenplanPage() {
           halls={halls}
           teams={teams}
           allSlots={slots}
-          isAdmin={isAdmin}
+          isAdmin={effectiveIsAdmin}
           coachTeamIds={coachTeamIds}
           adminTeamIds={adminTeamIds}
           onClose={handleEditorClose}

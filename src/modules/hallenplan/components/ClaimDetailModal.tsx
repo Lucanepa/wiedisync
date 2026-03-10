@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import Modal from '../../../components/Modal'
 import TeamChip from '../../../components/TeamChip'
 import { useAuth } from '../../../hooks/useAuth'
+import { useAdminMode } from '../../../hooks/useAdminMode'
 import { formatDate } from '../../../utils/dateHelpers'
 import pb from '../../../pb'
 import { logActivity } from '../../../utils/logActivity'
@@ -29,7 +30,8 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 
 export default function ClaimDetailModal({ slot, claim, halls, teams, onClose, onReleased }: Props) {
   const { t } = useTranslation('hallenplan')
-  const { isAdmin, isCoachOf } = useAuth()
+  const { isCoachOf } = useAuth()
+  const { effectiveIsAdmin: isAdmin } = useAdminMode()
   const [releasing, setReleasing] = useState(false)
   const [confirmRelease, setConfirmRelease] = useState(false)
 

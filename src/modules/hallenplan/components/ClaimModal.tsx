@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import Modal from '../../../components/Modal'
 import TeamChip from '../../../components/TeamChip'
 import { useAuth } from '../../../hooks/useAuth'
+import { useAdminMode } from '../../../hooks/useAdminMode'
 import { formatDate, toISODate } from '../../../utils/dateHelpers'
 import pb from '../../../pb'
 import { logActivity } from '../../../utils/logActivity'
@@ -31,7 +32,8 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 
 export default function ClaimModal({ slot, halls, teams, rawSlots, weekDays, onClose, onClaimed, onEditSlot }: Props) {
   const { t } = useTranslation('hallenplan')
-  const { user, coachTeamIds, isAdmin, hasAdminAccessToTeam } = useAuth()
+  const { user, coachTeamIds, hasAdminAccessToTeam } = useAuth()
+  const { effectiveIsAdmin: isAdmin } = useAdminMode()
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')

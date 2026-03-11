@@ -21,7 +21,6 @@ interface TrainingDetailModalProps {
 
 export default function TrainingDetailModal({ training, onClose }: TrainingDetailModalProps) {
   const { t } = useTranslation('trainings')
-  const { t: tp } = useTranslation('participation')
   const { user, canParticipateIn, isStaffOnly } = useAuth()
   const [rosterOpen, setRosterOpen] = useState(false)
 

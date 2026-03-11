@@ -35,7 +35,7 @@ interface MoreSheetProps {
 }
 
 export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNotifications }: MoreSheetProps) {
-  const { user, isAdmin, isApproved, isSuperAdmin, logout } = useAuth()
+  const { user, isApproved, isSuperAdmin, logout } = useAuth()
   const { isAdminMode } = useAdminMode()
   const { theme, toggleTheme } = useTheme()
   const { t, i18n } = useTranslation('nav')

@@ -115,20 +115,6 @@ function buildGamesByDateHall(games: Game[]): Map<string, Game[]> {
   return map
 }
 
-/** Build lookup: date → all home games sorted by time (across all halls) */
-function buildGamesByDate(games: Game[]): Map<string, Game[]> {
-  const map = new Map<string, Game[]>()
-  for (const g of games) {
-    if (!g.date || g.type !== 'home') continue
-    if (!map.has(g.date)) map.set(g.date, [])
-    map.get(g.date)!.push(g)
-  }
-  for (const arr of map.values()) {
-    arr.sort((a, b) => (a.time ?? '').localeCompare(b.time ?? ''))
-  }
-  return map
-}
-
 /** Get teams that play immediately before/after this game at the same hall */
 function getAdjacentTeams(game: Game, gamesByDateHall: Map<string, Game[]>): Set<string> {
   const adjacent = new Set<string>()

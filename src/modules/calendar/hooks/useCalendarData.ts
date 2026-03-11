@@ -137,9 +137,6 @@ function closureToEntry(closure: HallClosure): CalendarEntry {
 /** Detect hall events that are actually closures (e.g. "Halle geschlossen") */
 const CLOSURE_PATTERN = /geschlossen|gesperrt|closed/i
 
-/** Hall events matching this pattern are basketball games from GCal */
-const BB_GAME_PATTERN = /^BB\s/i
-
 function hallEventToEntry(he: HallEvent): CalendarEntry {
   const isClosure = CLOSURE_PATTERN.test(he.title)
   return {
@@ -256,13 +253,6 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
       }
     }
     if (fetchHallEvents) {
-      // Build a set of basketplan game date-time keys for BB GCal dedup
-      const bpGameDateKeys = new Set(
-        games
-          .filter((g) => g.source === 'basketplan')
-          .map((g) => `${g.date?.slice(0, 10)}-${g.time ? formatTime(g.time) : ''}`),
-      )
-
       for (const he of hallEvents) {
         const entry = hallEventToEntry(he)
         if (entry.type === 'closure') {

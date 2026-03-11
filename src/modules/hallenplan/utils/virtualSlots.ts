@@ -63,6 +63,7 @@ export function gameToVirtualSlots(
     end_time: minutesToTime(endMinutes),
     slot_type: 'game',
     recurring: false,
+    indefinite: false,
     valid_from: gameDate,
     valid_until: gameDate,
     label: `${game.home_team} vs ${game.away_team}`,
@@ -104,6 +105,7 @@ export function trainingToVirtualSlot(
     end_time: training.end_time.slice(0, 5),
     slot_type: 'training',
     recurring: false,
+    indefinite: false,
     valid_from: trainingDate,
     valid_until: trainingDate,
     label: training.cancelled
@@ -192,6 +194,7 @@ export function hallEventToVirtualSlots(
     end_time: endTime,
     slot_type: isBBGame ? 'game' as const : 'event' as const,
     recurring: false,
+    indefinite: false,
     valid_from: eventDate,
     valid_until: eventDate,
     label: event.title,

@@ -9,7 +9,7 @@ import TeamChip from '../../components/TeamChip'
 import ParticipationButton from '../../components/ParticipationButton'
 import { getFileUrl } from '../../utils/pbFile'
 import { coercePositions, getPositionI18nKey } from '../../utils/memberPositions'
-import { formatDate, getCurrentSeason, toISODate } from '../../utils/dateHelpers'
+import { formatDate, toISODate } from '../../utils/dateHelpers'
 import ProfileEditModal from './ProfileEditModal'
 import type { MemberTeam, Team, Absence, Training, Game, Event, LicenceType } from '../../types'
 
@@ -29,7 +29,6 @@ type ExpandedGame = Game & { expand?: { kscw_team?: Team } }
 export default function ProfilePage() {
   const { user } = useAuth()
   const { t } = useTranslation('auth')
-  const { t: tc } = useTranslation('common')
   const { t: tt } = useTranslation('teams')
   const [editOpen, setEditOpen] = useState(false)
 
@@ -81,7 +80,6 @@ export default function ProfilePage() {
 
   const initials = `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''}`.toUpperCase()
   const positions = coercePositions(user.position)
-  const season = getCurrentSeason()
 
   return (
     <div>

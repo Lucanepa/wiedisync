@@ -89,7 +89,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
       (game.bb_24s_official && !exp?.bb_24s_official) ||
       (game.bb_duty_team && !exp?.bb_duty_team)
     if (needsExpand) {
-      pb.collection('games').getOne(game.id, { expand: GAME_EXPAND }).then(setFullGame).catch(() => {})
+      pb.collection('games').getOne(game.id, { expand: GAME_EXPAND }).then(r => setFullGame(r as unknown as Game)).catch(() => {})
     }
   }, [game])
 

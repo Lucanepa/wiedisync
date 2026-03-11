@@ -8,6 +8,9 @@ export default {
   signingIn: 'Signing in...',
   invalidCredentials: 'Invalid email or password',
   rememberMe: 'Remember me',
+  orContinueWith: 'or continue with',
+  signInWithGoogle: 'Sign in with Google',
+  oauthError: 'Sign in failed. Please try again.',
 
   // Profile
   editProfile: 'Edit Profile',

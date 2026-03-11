@@ -31,6 +31,7 @@ interface AuthContextValue {
   isGuest: boolean
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
+  loginWithOAuth: (provider: string) => Promise<void>
   logout: () => void
 }
 
@@ -166,6 +167,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await pb.collection('members').authWithPassword(email, password)
   }, [])
 
+  const loginWithOAuth = useCallback(async (provider: string) => {
+    await pb.collection('members').authWithOAuth2({ provider })
+  }, [])
+
   const logout = useCallback(() => {
     pb.authStore.clear()
   }, [])
@@ -227,7 +232,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   return (
-    <AuthContext.Provider value={{ user, isSuperAdmin, isAdmin, isGlobalAdmin, isVbAdmin, isBbAdmin, hasAdminAccessToSport, hasAdminAccessToTeam, isApproved, isProfileComplete, isCoach, isCoachOf, canParticipateIn, isStaffOnly, coachTeamIds, memberTeamIds, memberTeamNames, memberSports, primarySport, canViewTeam, isVorstand, isGuest, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isSuperAdmin, isAdmin, isGlobalAdmin, isVbAdmin, isBbAdmin, hasAdminAccessToSport, hasAdminAccessToTeam, isApproved, isProfileComplete, isCoach, isCoachOf, canParticipateIn, isStaffOnly, coachTeamIds, memberTeamIds, memberTeamNames, memberSports, primarySport, canViewTeam, isVorstand, isGuest, isLoading, login, loginWithOAuth, logout }}>
       {children}
     </AuthContext.Provider>
   )

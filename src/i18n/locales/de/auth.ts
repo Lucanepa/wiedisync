@@ -8,6 +8,9 @@ export default {
   signingIn: 'Anmelden...',
   invalidCredentials: 'Ungültige E-Mail oder Passwort',
   rememberMe: 'Angemeldet bleiben',
+  orContinueWith: 'oder weiter mit',
+  signInWithGoogle: 'Mit Google anmelden',
+  oauthError: 'Anmeldung fehlgeschlagen. Bitte versuche es erneut.',
 
   // Profile
   editProfile: 'Profil bearbeiten',

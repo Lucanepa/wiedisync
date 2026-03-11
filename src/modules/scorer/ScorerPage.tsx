@@ -15,7 +15,8 @@ import type { SportView } from '../../hooks/useSportPreference'
 import ScorerRow, { hasAnyVbAssignment, hasAnyBbAssignment } from './components/ScorerRow'
 import TeamOverview from './components/TeamOverview'
 import LoadingSpinner from '../../components/LoadingSpinner'
-import { ChevronDown, ChevronUp, Filter } from 'lucide-react'
+import { ChevronDown, ChevronUp, Filter, Upload } from 'lucide-react'
+import BbScorerImportPanel from './components/BbScorerImportPanel'
 
 type Tab = 'games' | 'overview'
 type SportTab = 'volleyball' | 'basketball'
@@ -39,6 +40,7 @@ export default function ScorerPage() {
   const [tab, setTab] = useState<Tab>('games')
   const [sportTab, setSportTab] = useState<SportTab>('volleyball')
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [showImport, setShowImport] = useState(false)
 
   // Filters
   const [dateFilter, setDateFilter] = useState('')
@@ -306,6 +308,31 @@ export default function ScorerPage() {
           ))}
         </div>
       </div>
+
+      {/* BB Import panel */}
+      {sportTab === 'basketball' && canEdit && (
+        <div className="mt-4">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setShowImport(!showImport)}
+            className="rounded-full"
+          >
+            <Upload className="mr-1.5 h-4 w-4" />
+            {t('bbImportButton')}
+          </Button>
+          {showImport && (
+            <div className="mt-3">
+              <BbScorerImportPanel
+                members={members}
+                teams={teams}
+                memberTeams={allMemberTeams}
+                onImportComplete={refetch}
+              />
+            </div>
+          )}
+        </div>
+      )}
 
       {tab === 'games' && (
         <>

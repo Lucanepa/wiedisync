@@ -1,18 +1,18 @@
 import { useTranslation } from 'react-i18next'
-import type { SvRanking } from '../../../types'
+import type { Ranking } from '../../../types'
 import TeamChip from '../../../components/TeamChip'
-import { svTeamIds } from '../../../utils/teamColors'
+import { teamIds } from '../../../utils/teamColors'
 import { getPromotionColor, promotionBorderColors } from '../../../utils/leaguePromotion'
 
 interface RankingsTableProps {
   league: string
-  rankings: SvRanking[]
+  rankings: Ranking[]
 }
 
 export default function RankingsTable({ league, rankings }: RankingsTableProps) {
   const { t } = useTranslation('games')
   const sorted = [...rankings].sort((a, b) => a.rank - b.rank)
-  const isBasketball = rankings.some((r) => r.sv_team_id.startsWith('bp-'))
+  const isBasketball = rankings.some((r) => r.team_id.startsWith('bb_'))
   const totalTeams = sorted.length
 
   return (
@@ -42,7 +42,7 @@ export default function RankingsTable({ league, rankings }: RankingsTableProps) 
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
             {sorted.map((row) => {
-              const kscwTeam = svTeamIds[row.sv_team_id]
+              const kscwTeam = teamIds[row.team_id]
               const isKscw = !!kscwTeam
               const promoColor = getPromotionColor(league, row.rank, totalTeams, row.team_name)
               const promoBorder = promoColor ? promotionBorderColors[promoColor] : ''
@@ -56,7 +56,7 @@ export default function RankingsTable({ league, rankings }: RankingsTableProps) 
                   <td className="max-w-0 px-2 py-2">
                     <div className="flex items-center gap-1.5 min-w-0">
                       <span className={`truncate ${isKscw ? 'text-brand-900 dark:text-brand-200' : 'text-gray-700 dark:text-gray-300'}`}>
-                        {isKscw ? `KSC Wiedikon ${kscwTeam}` : (row.team_name || `Team ${row.sv_team_id}`)}
+                        {isKscw ? `KSC Wiedikon ${kscwTeam}` : (row.team_name || `Team ${row.team_id}`)}
                       </span>
                       {isKscw && <TeamChip team={kscwTeam} size="sm" />}
                     </div>

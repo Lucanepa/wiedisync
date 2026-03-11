@@ -76,4 +76,25 @@ export default {
 
   // iCal export
   scorerDutyIcal: 'Schreiberdienst: {{home}} vs {{away}}',
+
+  // BB TOON Import
+  bbImportTitle: 'BB Offiziellen importieren',
+  bbImportDescription: 'TOON-Datei mit Spalten: Tag, Datum, Zeit, SpielNr, Team, OTR1, OTR2, OTR3',
+  bbImportButton: 'TOON importieren',
+  bbImportPaste: 'TOON einfügen oder Datei hochladen',
+  bbImportParsing: 'Datei wird verarbeitet...',
+  bbImportSummary: '{{matched}} von {{total}} Spielen zugeordnet',
+  bbImportUnmatchedGames: '{{count}} Spiel(e) nicht gefunden',
+  bbImportUnmatchedPersons: '{{count}} Person(en) nicht gefunden',
+  bbImportConfirm: 'Importieren ({{count}})',
+  bbImportSuccess: '{{updated}} aktualisiert, {{skipped}} übersprungen, {{errors}} Fehler',
+  bbImportNoRows: 'Keine Spiele in der Datei gefunden.',
+  bbImportGameNotFound: 'Spiel nicht gefunden',
+  bbImportPersonNotFound: 'Nicht gefunden',
+  bbImportTeamNotFound: 'Team nicht gefunden',
+  bbImportAmbiguous: 'Mehrdeutig',
+  bbImportLicenceWarn: 'Fehlende Lizenz',
+  bbImportNo24s: 'Keine 24s',
+  bbImportEmpty: 'Leer',
+  bbImportAlreadyAssigned: 'Bereits zugeteilt',
 } as const

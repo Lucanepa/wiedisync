@@ -75,7 +75,7 @@ const collections: CollectionDef[] = [
     fields: [
       text('name', { required: true }),
       text('full_name'),
-      text('sv_team_id'),
+      text('team_id'),
       select('sport', ['volleyball', 'basketball']),
       text('league'),
       text('season'),
@@ -205,7 +205,7 @@ const dependentCollections: CollectionDef[] = [
     name: 'games',
     type: 'base',
     fields: [
-      text('sv_game_id'),
+      text('game_id'),
       text('home_team'),
       text('away_team'),
       relation('kscw_team', teamsId),
@@ -229,12 +229,12 @@ const dependentCollections: CollectionDef[] = [
     ],
   },
 
-  // sv_rankings
+  // rankings
   {
-    name: 'sv_rankings',
+    name: 'rankings',
     type: 'base',
     fields: [
-      text('sv_team_id'),
+      text('team_id'),
       text('league'),
       number('rank'),
       number('played'),

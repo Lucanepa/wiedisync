@@ -326,16 +326,16 @@ async function fetchAllData() {
 async function setupTeams(pb: PocketBase, bpTeams: BPTeam[]) {
   console.log('\n=== Setting up basketball teams in PocketBase ===')
 
-  // Ensure bp_team_id field exists on teams collection
+  // Ensure bb_source_id field exists on teams collection
   try {
     const col = await pb.collections.getOne('teams')
-    const hasField = col.fields?.some((f: { name: string }) => f.name === 'bp_team_id')
+    const hasField = col.fields?.some((f: { name: string }) => f.name === 'bb_source_id')
     if (!hasField) {
-      console.log('Adding bp_team_id field to teams collection...')
+      console.log('Adding bb_source_id field to teams collection...')
       await pb.collections.update('teams', {
         fields: [
           ...col.fields,
-          { name: 'bp_team_id', type: 'text' },
+          { name: 'bb_source_id', type: 'text' },
         ],
       })
       console.log('Field added.')
@@ -355,7 +355,7 @@ async function setupTeams(pb: PocketBase, bpTeams: BPTeam[]) {
 
     // Check if team already exists
     try {
-      const existing = await pb.collection('teams').getFirstListItem(`bp_team_id="${t.id}"`)
+      const existing = await pb.collection('teams').getFirstListItem(`bb_source_id="${t.id}"`)
       console.log(`  [exists] ${name} (${existing.id})`)
       await pb.collection('teams').update(existing.id, {
         name,
@@ -372,7 +372,7 @@ async function setupTeams(pb: PocketBase, bpTeams: BPTeam[]) {
         name,
         full_name: t.name,
         sport: 'basketball',
-        bp_team_id: t.id,
+        bb_source_id: t.id,
         league: t.league,
         season: t.season,
         active: isActive,
@@ -387,11 +387,11 @@ async function setupTeams(pb: PocketBase, bpTeams: BPTeam[]) {
 async function syncGames(pb: PocketBase, bpGames: BPGame[]) {
   console.log('\n=== Syncing basketball games to PocketBase ===')
 
-  // Build bp_team_id → PB team ID lookup
+  // Build bb_source_id → PB team ID lookup
   const pbTeams = await pb.collection('teams').getFullList({ filter: 'sport="basketball"' })
   const bpToPbTeam = new Map<string, string>()
   for (const pt of pbTeams) {
-    if (pt.bp_team_id) bpToPbTeam.set(pt.bp_team_id, pt.id)
+    if (pt.bb_source_id) bpToPbTeam.set(pt.bb_source_id, pt.id)
   }
 
   // Build hall name → PB hall ID lookup
@@ -409,7 +409,7 @@ async function syncGames(pb: PocketBase, bpGames: BPGame[]) {
   let created = 0, updated = 0, skipped = 0
 
   for (const g of bpGames) {
-    const svGameId = `bp-${g.id}`
+    const gameId = `bb_${g.gameNumber}`
     const kscwTeamBpId = g.isHome ? g.homeTeamId : g.guestTeamId
     const pbTeamId = bpToPbTeam.get(kscwTeamBpId)
 
@@ -432,7 +432,7 @@ async function syncGames(pb: PocketBase, bpGames: BPGame[]) {
     const referees = [g.referee1, g.referee2, g.referee3].filter(Boolean).map(name => ({ name }))
 
     const gameData: Record<string, unknown> = {
-      sv_game_id: svGameId,
+      game_id: gameId,
       source: 'basketplan',
       kscw_team: pbTeamId,
       home_team: g.homeTeam,
@@ -457,7 +457,7 @@ async function syncGames(pb: PocketBase, bpGames: BPGame[]) {
     }
 
     try {
-      const existing = await pb.collection('games').getFirstListItem(`sv_game_id="${svGameId}"`)
+      const existing = await pb.collection('games').getFirstListItem(`game_id="${gameId}"`)
       await pb.collection('games').update(existing.id, gameData)
       updated++
     } catch {
@@ -465,7 +465,7 @@ async function syncGames(pb: PocketBase, bpGames: BPGame[]) {
         await pb.collection('games').create(gameData)
         created++
       } catch (err) {
-        console.error(`  [error] ${svGameId}:`, err)
+        console.error(`  [error] ${gameId}:`, err)
         skipped++
       }
     }

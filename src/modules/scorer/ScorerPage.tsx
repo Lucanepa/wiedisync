@@ -375,7 +375,7 @@ export default function ScorerPage() {
             <button
               key={key}
               onClick={() => setTab(key)}
-              className={`px-4 py-3 text-sm font-medium transition-colors ${
+              className={`min-h-[44px] px-4 py-3 text-sm font-medium transition-colors ${
                 tab === key
                   ? 'border-b-2 border-brand-600 text-brand-700 dark:text-brand-400'
                   : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'

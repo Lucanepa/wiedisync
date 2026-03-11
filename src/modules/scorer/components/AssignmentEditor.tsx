@@ -137,7 +137,7 @@ export default function AssignmentEditor({
               {isCurrentUserAssigned && onDelegate && (
                 <button
                   onClick={onDelegate}
-                  className="flex shrink-0 items-center gap-1.5 rounded-lg bg-brand-50 px-3 py-3 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-100 dark:bg-brand-900/20 dark:text-brand-400 dark:hover:bg-brand-900/40"
+                  className="flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-lg bg-brand-50 px-3 py-3 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-100 dark:bg-brand-900/20 dark:text-brand-400 dark:hover:bg-brand-900/40"
                 >
                   <ArrowRightLeft className="h-4 w-4" />
                   {t('delegate')}
@@ -182,7 +182,7 @@ export default function AssignmentEditor({
       {selfAssignButton && !personValue && (
         <button
           onClick={onSelfAssign}
-          className="mt-1 flex w-full items-center justify-center gap-2 rounded-lg bg-brand-50 px-3 py-2.5 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-100 dark:bg-brand-900/20 dark:text-brand-400 dark:hover:bg-brand-900/40"
+          className="mt-1 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg bg-brand-50 px-3 py-2.5 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-100 dark:bg-brand-900/20 dark:text-brand-400 dark:hover:bg-brand-900/40"
         >
           <Hand className="h-4 w-4" />
           {t('selfAssign')}

@@ -349,7 +349,7 @@ export default function ScorerPage() {
         <button
           onClick={toggleReminders}
           disabled={reminderToggling}
-          className={`mt-3 flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+          className={`mt-3 flex items-center gap-2 rounded-lg border px-3 py-2.5 text-xs font-medium transition-colors ${
             remindersEnabled
               ? 'border-green-300 bg-green-50 text-green-700 hover:bg-green-100 dark:border-green-700 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50'
               : 'border-gray-300 bg-gray-50 text-gray-500 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
@@ -375,7 +375,7 @@ export default function ScorerPage() {
             <button
               key={key}
               onClick={() => setTab(key)}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${
+              className={`px-4 py-3 text-sm font-medium transition-colors ${
                 tab === key
                   ? 'border-b-2 border-brand-600 text-brand-700 dark:text-brand-400'
                   : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
@@ -406,7 +406,7 @@ export default function ScorerPage() {
           <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
             <button
               onClick={() => setFiltersOpen(!filtersOpen)}
-              className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300"
+              className="flex w-full items-center justify-between px-4 py-3.5 text-sm font-medium text-gray-700 dark:text-gray-300"
             >
               <span className="flex items-center gap-2">
                 <Filter className="h-4 w-4" />

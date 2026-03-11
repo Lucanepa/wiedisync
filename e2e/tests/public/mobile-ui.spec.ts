@@ -62,7 +62,7 @@ test.describe('Mobile UI — public pages (unauthenticated)', () => {
     await page.waitForTimeout(1000)
 
     await expect(page).toHaveScreenshot('home-mobile-public.png', {
-      maxDiffPixelRatio: 0.05,
+      maxDiffPixelRatio: 0.10, // homepage has dynamic game/event data that changes daily
     })
   })
 

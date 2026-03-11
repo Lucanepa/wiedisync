@@ -36,29 +36,29 @@ export default function ScorerAssignPage() {
     filter: `date>="${seasonStart}" && date<="${seasonEnd}" && status!="cancelled"`,
     sort: '+date,+time',
     expand: 'kscw_team,hall',
-    perPage: 500,
+    all: true,
   })
 
   const { data: teams } = usePB<Team>('teams', {
     filter: 'sport="volleyball" && active=true',
     sort: '+name',
-    perPage: 50,
+    all: true,
   })
 
   const { data: trainings } = usePB<Training>('trainings', {
     filter: `date>="${seasonStart}" && date<="${seasonEnd}" && cancelled=false`,
     fields: 'id,team,date,start_time,end_time',
-    perPage: 1000,
+    all: true,
   })
 
   const { data: members } = usePB<Member>('members', {
     filter: 'active=true',
     fields: 'id,name,first_name,last_name,licences',
-    perPage: 500,
+    all: true,
   })
 
   const { data: memberTeams } = usePB<MemberTeam>('member_teams', {
-    perPage: 500,
+    all: true,
   })
 
   // State

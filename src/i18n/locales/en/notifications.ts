@@ -32,6 +32,12 @@ export default {
   deadline_game: 'RSVP deadline tomorrow: {{home_team}} vs {{away_team}}',
   deadline_training: 'RSVP deadline tomorrow: Training on {{date}}',
   deadline_event: 'RSVP deadline tomorrow: {{title}}',
+  // Push notifications
+  pushNotifications: 'Push Notifications',
+  pushEnable: 'Enable',
+  pushDisable: 'Disable',
+  pushDenied: 'Push notifications are blocked in your browser settings.',
+  pushNotSupported: 'Push notifications are not supported by this browser.',
   // Time helpers
   justNow: 'just now',
   minutesAgo: '{{count}}m ago',

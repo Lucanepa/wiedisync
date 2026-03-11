@@ -22,7 +22,7 @@ export default function AbsenceForm({ open, absence, onSave, onCancel }: Absence
   const { data: allMembers } = usePB<Member>('members', {
     filter: 'active=true',
     sort: 'last_name',
-    perPage: 500,
+    all: true,
     fields: 'id,first_name,last_name',
   })
 

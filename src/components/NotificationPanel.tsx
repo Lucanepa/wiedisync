@@ -1,8 +1,9 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ClipboardList, Clock, AlertTriangle, Trophy, Bell, ArrowRightLeft } from 'lucide-react'
+import { ClipboardList, Clock, AlertTriangle, Trophy, Bell, ArrowRightLeft, BellRing, BellOff } from 'lucide-react'
 import type { Notification } from '../types'
+import { usePushNotifications } from '../hooks/usePushNotifications'
 
 interface NotificationPanelProps {
   notifications: Notification[]
@@ -58,6 +59,7 @@ export default function NotificationPanel({
 }: NotificationPanelProps) {
   const { t } = useTranslation('notifications')
   const navigate = useNavigate()
+  const push = usePushNotifications()
 
   // Prevent body scroll
   useEffect(() => {
@@ -152,6 +154,33 @@ export default function NotificationPanel({
                 </div>
               </button>
             ))}
+          </div>
+        )}
+
+        {/* Push notification toggle */}
+        {push.supported && (
+          <div className="border-t border-gray-200 px-4 py-3 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                {push.subscribed ? <BellRing className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
+                <span>{t('pushNotifications')}</span>
+              </div>
+              {push.permission === 'denied' ? (
+                <span className="text-xs text-red-500">{t('pushDenied')}</span>
+              ) : (
+                <button
+                  onClick={() => push.subscribed ? push.unsubscribe() : push.subscribe()}
+                  disabled={push.loading}
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                    push.subscribed
+                      ? 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                      : 'bg-brand-600 text-white hover:bg-brand-700'
+                  } disabled:opacity-50`}
+                >
+                  {push.loading ? '...' : push.subscribed ? t('pushDisable') : t('pushEnable')}
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>

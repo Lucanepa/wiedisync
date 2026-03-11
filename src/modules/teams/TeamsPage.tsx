@@ -21,7 +21,7 @@ export default function TeamsPage() {
   const season = getCurrentSeason()
   const { data: memberTeams } = usePB<MemberTeam>('member_teams', {
     filter: `season="${season}"`,
-    perPage: 500,
+    all: true,
   })
 
   const hasElevatedAccess = effectiveIsAdmin

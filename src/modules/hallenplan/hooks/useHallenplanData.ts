@@ -40,7 +40,7 @@ export function useHallenplanData(
   } = usePB<HallSlot>('hall_slots', {
     filter: `${hallFilter}${dateFilter}`,
     expand: 'team,hall',
-    perPage: 200,
+    all: true,
     sort: 'day_of_week,start_time',
   })
 
@@ -68,7 +68,7 @@ export function useHallenplanData(
   const { data: trainings, isLoading: trainingsLoading } = usePB<Training>('trainings', {
     filter: `date >= "${mondayStr}" && date <= "${sundayStr}"`,
     expand: 'team',
-    perPage: 200,
+    all: true,
     sort: 'date,start_time',
   })
 

@@ -103,18 +103,18 @@ export default function ScorerPage() {
   const { data: members } = usePB<Member>('members', {
     filter: 'active = true',
     sort: '+last_name,+first_name',
-    perPage: 500,
+    all: true,
     fields: 'id,name,first_name,last_name,licences,active,phone,email,is_guest',
   })
 
   const { data: teams } = usePB<Team>('teams', {
     filter: 'active = true',
     sort: '+name',
-    perPage: 50,
+    all: true,
   })
 
   const { data: allMemberTeams } = usePB<MemberTeam>('member_teams', {
-    perPage: 500,
+    all: true,
   })
   const teamMemberIds = useMemo(() => {
     const map = new Map<string, Set<string>>()

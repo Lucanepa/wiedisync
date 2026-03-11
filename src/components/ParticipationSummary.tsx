@@ -19,7 +19,7 @@ export default function ParticipationSummary({
     filter: activityId
       ? `activity_type="${activityType}" && activity_id="${activityId}"`
       : '',
-    perPage: 200,
+    all: true,
     enabled: !!activityId,
   })
 

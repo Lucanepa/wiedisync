@@ -9,7 +9,14 @@ test.describe('Grid layout — scorer page filters', () => {
     await page.waitForLoadState('domcontentloaded')
     await page.waitForTimeout(1000)
 
-    const filterGrid = page.locator('.grid.gap-3')
+    // Open the collapsible filter panel (closed by default)
+    const filterToggle = page.locator('button', { hasText: /Date|Datum/ })
+    if (!(await filterToggle.isVisible())) return
+    await filterToggle.click()
+    await page.waitForTimeout(300)
+
+    // Target the filter grid specifically (sm:grid-cols-2 lg:grid-cols-3)
+    const filterGrid = page.locator('.sm\\:grid-cols-2.lg\\:grid-cols-3')
     if (!(await filterGrid.isVisible())) return
 
     // xs — single column

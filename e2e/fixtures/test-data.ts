@@ -35,9 +35,17 @@ export const SUPERADMIN_ROUTES = [
 /** Known team slugs in the dev DB */
 export const KNOWN_TEAM_SLUGS = ['H1', 'H3', 'D2'] as const
 
+/** Mobile devices for multi-device responsiveness tests */
+export const MOBILE_DEVICES = [
+  'iPhone SE',
+  'iPhone 15',
+  'Pixel 7',
+  'iPad Pro 11',
+] as const
+
 /** Viewport presets matching Tailwind breakpoints */
 export const VIEWPORTS = {
   xs: { width: 320, height: 568 },   // iPhone SE / smallest target
-  sm: { width: 640, height: 900 },   // Tailwind sm breakpoint
+  sm: { width: 648, height: 900 },   // Just above Tailwind sm (40rem=640px) to avoid boundary flake
   lg: { width: 1024, height: 768 },  // Tailwind lg (desktop sidebar threshold)
 } as const

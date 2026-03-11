@@ -52,10 +52,12 @@ export default function PlayerProfile() {
   }, [memberId])
 
   useEffect(() => {
-    if (!memberId) return
+    if (!memberId || !memberTeams?.length) return
+    const teamIds = memberTeams.map((mt) => mt.team)
+    const teamFilter = teamIds.map((id) => `team="${id}"`).join(' || ')
     Promise.all([
       pb.collection('trainings').getFullList<{ id: string; date: string }>({
-        filter: `team.member_teams.member="${memberId}" && date>="${start}" && date<="${end}" && cancelled=false`,
+        filter: `(${teamFilter}) && date>="${start}" && date<="${end}" && cancelled=false`,
         fields: 'id,date',
       }),
       pb.collection('participations').getFullList<Participation>({
@@ -84,7 +86,7 @@ export default function PlayerProfile() {
         setAttendanceStats({ total: countable, present })
       })
       .catch(() => setAttendanceStats(null))
-  }, [memberId, start, end])
+  }, [memberId, memberTeams, start, end])
 
   if (loading) {
     return <div className="py-12 text-center text-gray-500 dark:text-gray-400">Loading...</div>

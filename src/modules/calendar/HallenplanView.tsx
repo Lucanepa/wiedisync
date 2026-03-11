@@ -57,7 +57,7 @@ export default function HallenplanView() {
         ?? (el as HTMLElement & { webkitRequestFullscreen?: () => Promise<void> }).webkitRequestFullscreen?.bind(el)
       if (requestFs) {
         requestFs()
-          .then(() => screen.orientation?.lock?.('landscape'))
+          .then(() => (screen.orientation as unknown as { lock?: (o: string) => Promise<void> })?.lock?.('landscape'))
           .catch(() => {})
       }
     } else {

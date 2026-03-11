@@ -75,11 +75,6 @@ function colorKey(e: CalendarEntry): string {
   return e.type
 }
 
-function barClasses(e: CalendarEntry): string {
-  const c = barColors[colorKey(e)] ?? barColors.game
-  return `${c.bg} ${c.text} ${c.darkBg} ${c.darkText}`
-}
-
 const dotColors: Record<string, string> = {
   'game-home': 'bg-brand-500',
   'game-away': 'bg-amber-500',
@@ -280,8 +275,6 @@ export default function MonthGrid({
       <div className="flex flex-1 flex-col border-l border-gray-200 dark:border-gray-700">
         {weekRows.map((week, wi) => {
           const { bars, timedByCol } = weekLayouts[wi]
-          const maxLane = bars.length > 0 ? Math.max(...bars.map((b) => b.lane)) + 1 : 0
-          const visibleLanes = Math.min(maxLane, MAX_VISIBLE_BARS)
 
           return (
             <div key={wi} className="flex flex-1 flex-col">

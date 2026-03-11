@@ -39,9 +39,6 @@ export default function AdminDashboardPage() {
   const getTeamOpponents = (teamId: string) =>
     opponents.filter(o => o.kscw_team === teamId)
 
-  const getOpponentBookings = (opponentId: string) =>
-    bookings.filter(b => b.opponent === opponentId)
-
   const getTeamSlots = (teamId: string) =>
     slots.filter(s => s.kscw_team === teamId)
 
@@ -118,12 +115,9 @@ export default function AdminDashboardPage() {
 }
 
 function TeamBookingsContent({
-  team,
   opponents: teamOpponents,
   bookings: allBookings,
-  slots: teamSlots,
   onConfirmAway,
-  onBlockSlot,
 }: {
   team: Team
   opponents: ReturnType<typeof Array.prototype.filter>

@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import type { Game, SvRanking } from '../../types'
+import type { Game, Ranking } from '../../types'
 import { usePB } from '../../hooks/usePB'
-import { svTeamIds } from '../../utils/teamColors'
+import { teamIds } from '../../utils/teamColors'
 import GameTabs from './components/GameTabs'
 import type { TabKey } from './components/GameTabs'
 import GameCard from './components/GameCard'
@@ -51,13 +51,13 @@ export default function EmbedGamesPage() {
       : { filter: 'id = ""', perPage: 1 },
   )
 
-  const { data: allRankings, isLoading: rankingsLoading } = usePB<SvRanking>('sv_rankings', {
+  const { data: allRankings, isLoading: rankingsLoading } = usePB<Ranking>('rankings', {
     sort: '+league,+rank',
     perPage: 2000,
   })
 
   const leagueGroups = useMemo(() => {
-    const grouped = new Map<string, SvRanking[]>()
+    const grouped = new Map<string, Ranking[]>()
     for (const r of allRankings) {
       const existing = grouped.get(r.league) ?? []
       existing.push(r)
@@ -68,14 +68,14 @@ export default function EmbedGamesPage() {
 
     // Filter to leagues containing the selected team
     const selectedSvIds = new Set(
-      Object.entries(svTeamIds)
+      Object.entries(teamIds)
         .filter(([, code]) => code.replace(/-\d+$/, '') === teamParam)
         .map(([id]) => id),
     )
 
-    const filtered = new Map<string, SvRanking[]>()
+    const filtered = new Map<string, Ranking[]>()
     for (const [league, rows] of grouped) {
-      if (rows.some((r) => selectedSvIds.has(r.sv_team_id))) {
+      if (rows.some((r) => selectedSvIds.has(r.team_id))) {
         filtered.set(league, rows)
       }
     }

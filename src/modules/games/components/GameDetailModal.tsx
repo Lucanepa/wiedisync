@@ -283,7 +283,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
           <DetailRow label={t('date')} value={dateStr} />
           <DetailRow label={t('kickoff')} value={game.time ? formatTime(game.time) : '–'} />
           <DetailRow label={t('gameType')} value={game.type === 'home' ? t('typeHome') : t('typeAway')} />
-          {game.sv_game_id && <DetailRow label={t('gameNumber')} value={game.sv_game_id.replace(/^bp-/, '')} />}
+          {game.game_id && <DetailRow label={t('gameNumber')} value={game.game_id.replace(/^(vb_|bb_)/, '')} />}
           {game.season && <DetailRow label={t('season')} value={game.season} />}
         </div>
 

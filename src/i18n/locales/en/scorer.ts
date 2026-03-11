@@ -76,4 +76,25 @@ export default {
 
   // iCal export
   scorerDutyIcal: 'Scorer duty: {{home}} vs {{away}}',
+
+  // BB TOON Import
+  bbImportTitle: 'Import BB Officials',
+  bbImportDescription: 'TOON file with columns: Tag, Datum, Zeit, SpielNr, Team, OTR1, OTR2, OTR3',
+  bbImportButton: 'Import TOON',
+  bbImportPaste: 'Paste TOON or upload file',
+  bbImportParsing: 'Processing file...',
+  bbImportSummary: '{{matched}} of {{total}} games matched',
+  bbImportUnmatchedGames: '{{count}} game(s) not found',
+  bbImportUnmatchedPersons: '{{count}} person(s) not found',
+  bbImportConfirm: 'Import ({{count}})',
+  bbImportSuccess: '{{updated}} updated, {{skipped}} skipped, {{errors}} errors',
+  bbImportNoRows: 'No games found in file.',
+  bbImportGameNotFound: 'Game not found',
+  bbImportPersonNotFound: 'Not found',
+  bbImportTeamNotFound: 'Team not found',
+  bbImportAmbiguous: 'Ambiguous',
+  bbImportLicenceWarn: 'Missing licence',
+  bbImportNo24s: 'No 24s',
+  bbImportEmpty: 'Empty',
+  bbImportAlreadyAssigned: 'Already assigned',
 } as const

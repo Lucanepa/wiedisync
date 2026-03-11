@@ -18,7 +18,7 @@ export type MemberPosition =
 export interface Team extends RecordModel {
   name: string
   full_name: string
-  sv_team_id: string
+  team_id: string
   sport: 'volleyball' | 'basketball'
   league: string
   season: string
@@ -32,7 +32,7 @@ export interface Team extends RecordModel {
   social_url: string
   sponsors: string[]
   sponsors_logos: string[]
-  bp_team_id: string
+  bb_source_id: string
 }
 
 export interface Member extends RecordModel {
@@ -127,7 +127,7 @@ export interface HallClosure extends RecordModel {
 }
 
 export interface Game extends RecordModel {
-  sv_game_id: string
+  game_id: string
   home_team: string
   away_team: string
   kscw_team: string
@@ -167,8 +167,8 @@ export interface Game extends RecordModel {
 }
 
 
-export interface SvRanking extends RecordModel {
-  sv_team_id: string
+export interface Ranking extends RecordModel {
+  team_id: string
   team: string
   team_name: string
   league: string

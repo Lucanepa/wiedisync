@@ -2,9 +2,9 @@ import { useEffect, useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
 import { useSportPreference } from '../../hooks/useSportPreference'
-import type { Game, SvRanking } from '../../types'
+import type { Game, Ranking } from '../../types'
 import { usePB } from '../../hooks/usePB'
-import { svTeamIds } from '../../utils/teamColors'
+import { teamIds } from '../../utils/teamColors'
 import SportToggle from '../../components/SportToggle'
 import TeamFilterBar from './components/TeamFilterBar'
 import GameTabs from './components/GameTabs'
@@ -91,21 +91,22 @@ export default function GamesPage() {
   )
 
   // Rankings — always fetch (small dataset), group client-side
-  const { data: allRankings, isLoading: rankingsLoading } = usePB<SvRanking>('sv_rankings', {
+  const { data: allRankings, isLoading: rankingsLoading } = usePB<Ranking>('rankings', {
     sort: '+league,+rank',
     perPage: 2000,
   })
 
   const leagueGroups = useMemo(() => {
-    const grouped = new Map<string, SvRanking[]>()
+    const grouped = new Map<string, Ranking[]>()
     for (const r of allRankings) {
       // Skip individual match groups (e.g. "Group 28007") — not real league standings
       if (/^Group \d+$/.test(r.league)) continue
 
-      // Sport filter: bp- prefix = basketball, numeric = volleyball
-      const isBpRanking = r.sv_team_id.startsWith('bp-')
-      if (sport === 'vb' && isBpRanking) continue
-      if (sport === 'bb' && !isBpRanking) continue
+      // Sport filter: bb_ prefix = basketball, vb_ = volleyball
+      if (!r.team_id) continue
+      const isBbRanking = r.team_id.startsWith('bb_')
+      if (sport === 'vb' && isBbRanking) continue
+      if (sport === 'bb' && !isBbRanking) continue
 
       const existing = grouped.get(r.league) ?? []
       existing.push(r)
@@ -115,8 +116,8 @@ export default function GamesPage() {
     // For basketball: only show leagues that contain at least one KSCW team
     if (sport === 'bb' || sport === 'all') {
       for (const [league, rows] of grouped) {
-        const isBbLeague = rows.some((r) => r.sv_team_id.startsWith('bp-'))
-        if (isBbLeague && !rows.some((r) => svTeamIds[r.sv_team_id])) {
+        const isBbLeague = rows.some((r) => r.team_id.startsWith('bb_'))
+        if (isBbLeague && !rows.some((r) => teamIds[r.team_id])) {
           grouped.delete(league)
         }
       }
@@ -127,15 +128,15 @@ export default function GamesPage() {
     // Filter to leagues containing a selected team
     const selectedSvIds = new Set(
       selectedTeams.flatMap((t) =>
-        Object.entries(svTeamIds)
+        Object.entries(teamIds)
           .filter(([, code]) => code.replace(/-\d+$/, '') === t)
           .map(([id]) => id),
       ),
     )
 
-    const filtered = new Map<string, SvRanking[]>()
+    const filtered = new Map<string, Ranking[]>()
     for (const [league, rows] of grouped) {
-      if (rows.some((r) => selectedSvIds.has(r.sv_team_id))) {
+      if (rows.some((r) => selectedSvIds.has(r.team_id))) {
         filtered.set(league, rows)
       }
     }

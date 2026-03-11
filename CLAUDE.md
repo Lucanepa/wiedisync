@@ -9,6 +9,33 @@ All infrastructure details (IPs, URLs, ports, credentials, deploy commands) are 
 - Hosting: Cloudflare Pages (frontend), Synology NAS + Cloudflare Tunnel (backend)
 - Language: German UI (Swiss German context), code in English
 
+## Data Format: TOON
+
+This project uses TOON (Token-Oriented Object Notation) for passing structured data to LLMs.
+TOON combines YAML-style indentation with CSV-style tabular arrays.
+
+### Syntax rules
+- Scalar: `key: value`
+- Primitive array: `tags[3]: a,b,c`
+- Object array: `users[2]{id,name,role}:\n  1,Alice,admin\n  2,Bob,user`
+- Nested objects use indentation (like YAML)
+- Strings with commas/spaces must be quoted
+- Use `encode(data)` from `@toon-format/toon` to convert JSON → TOON
+
+### When to use it
+- When passing uniform arrays of objects to LLM prompts (saves ~40% tokens vs JSON)
+- NOT for deeply nested/non-uniform data (use JSON-compact there)
+
+### Example
+\`\`\`toon
+context:
+  task: portfolio analysis
+positions[3]{ticker,shares,costBasis}:
+  AAPL,100,150.25
+  MSFT,50,280.00
+  NVDA,75,420.50
+\`\`\`
+
 ## Key Patterns
 - **Mobile-first**: All UI must be designed mobile-first — responsive layout, touch-friendly targets (min 44px), and tested on small screens before desktop
 - **Dark mode contrast**: Always ensure text/bg contrast in both light and dark mode. Every input, select, textarea must have explicit `dark:bg-gray-700 dark:text-gray-100` (or equivalent). Never leave default browser colors — they break in dark mode.
@@ -33,9 +60,10 @@ All infrastructure details (IPs, URLs, ports, credentials, deploy commands) are 
 
 ## Changelog
 <!-- Grouped by feature domain. Overwrite when stale. -->
+- **2026-03-11** — ID standardization: Renamed `sv_game_id` → `game_id`, `sv_team_id` → `team_id`, `bp_team_id` → `bb_source_id` across PB collections, hooks, and frontend. Added `vb_`/`bb_` prefixes to all IDs (stored in DB, stripped in UI). Renamed `sv_rankings` collection → `rankings`, `SvRanking` type → `Ranking`, `svTeamIds` → `teamIds`. Fixed BB game numbers (`g.id` → `g.gameNumber`). Convention: `vb_` for volleyball, `bb_` for basketball.
 - **2026-03-11** — Repo cleanup: deleted duplicate root logos, unused assets (`kscw_gelb.png`, `kscw_trio.png`), dead code (`CoachRoute`, `LanguageToggle`, `useEventSessions`, `useParticipationSummary`, `swiss-volley.ts`), completed migration scripts, stale `PROJECT_SPEC.md`, `scorer_email_preview.html`, `clubdesk-theme.css`. Consolidated changelog. Updated CONTINGENCY.md and INFRA.md. Fixed a11y violations (color contrast, heading order, empty headings, scrollable regions, TeamChip readability) and login test strict mode (`exact: true`).
 - **2026-03-10** — Auth & roles: Google OAuth login via Authentik. Sport-scoped admin roles (`vb_admin`, `bb_admin`) with `hasAdminAccessToSport`/`hasAdminAccessToTeam` in `useAuth`. Profile onboarding modal with per-user language preference. Two-branch signup + approval system with PendingPage. Role hierarchy: user → coach/team_responsible → vb_admin/bb_admin → admin → superuser. Team leadership (coach, captain, team_responsible) as multi-relations on `teams`.
-- **2026-03-10** — Basketball: Basketplan sync via public XML API (`bp_sync.pb.js`, cron 06:05 UTC). 19 BB teams, 196 games, rankings. `bp_team_id` on teams, `basketplan` game source. Sport-scoped positions (VB: setter/libero/etc, BB: point_guard/center/etc) with array values, normalization guard, and sport-aware option filtering.
+- **2026-03-10** — Basketball: Basketplan sync via public XML API (`bp_sync.pb.js`, cron 06:05 UTC). 19 BB teams, 196 games, rankings. `bb_source_id` on teams (raw Basketplan ID), `basketplan` game source. Sport-scoped positions (VB: setter/libero/etc, BB: point_guard/center/etc) with array values, normalization guard, and sport-aware option filtering.
 - **2026-03-09** — Terminplanung: game scheduling module with 4 PB collections, 7 API endpoints, conflict detection (same-day, gaps, cross-team, closures). Admin UI (`/admin/terminplanung` + dashboard), public opponent flow with Turnstile CAPTCHA. Excel import/export. Email notifications on booking confirmation.
 - **2026-03-09** — Notifications & logging: `notifications` collection with PB hooks for activity changes, results, cancellations, reminders (cron 06:30 UTC). `user_logs` audit trail with `logActivity()` and `useMutation` auto-logging. NotificationBell, NotificationPanel, HomePage news section.
 - **2026-03-06** — Hallenplan: virtual slots (games, trainings, GCal events), slot claims (FREI/claimed), hall closures (Schulferien + GCal + manual), pre-game shortening, Spielhalle shared slots. ClosureManager with grouped view. PB hooks for claim validation + auto-revocation.

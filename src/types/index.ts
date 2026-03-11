@@ -202,14 +202,6 @@ export interface Training extends RecordModel {
   max_participants: number
 }
 
-export interface TrainingAttendance extends RecordModel {
-  training: string
-  member: string
-  status: 'present' | 'absent' | 'late' | 'excused'
-  absence: string
-  noted_by: string
-}
-
 export interface Absence extends RecordModel {
   member: string
   start_date: string
@@ -340,12 +332,23 @@ export interface GameSchedulingBooking extends RecordModel {
   admin_notes: string
 }
 
+export interface ScorerDelegation extends RecordModel {
+  game: string
+  role: 'scorer' | 'taefeler' | 'scorer_taefeler' | 'bb_anschreiber' | 'bb_zeitnehmer' | 'bb_24s_official'
+  from_member: string
+  to_member: string
+  from_team: string
+  to_team: string
+  same_team: boolean
+  status: 'pending' | 'accepted' | 'declined' | 'expired'
+}
+
 export interface Notification extends RecordModel {
   member: string
-  type: 'activity_change' | 'upcoming_activity' | 'deadline_reminder' | 'result_available'
+  type: 'activity_change' | 'upcoming_activity' | 'deadline_reminder' | 'result_available' | 'duty_delegation_request'
   title: string
   body: string
-  activity_type: 'game' | 'training' | 'event' | ''
+  activity_type: 'game' | 'training' | 'event' | 'scorer_duty' | ''
   activity_id: string
   team: string
   read: boolean

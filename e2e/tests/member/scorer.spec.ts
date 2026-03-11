@@ -56,4 +56,19 @@ test.describe('Scorer page', () => {
       page.getByText(/can only be managed|kann nur von/),
     ).toBeVisible({ timeout: 20_000 })
   })
+
+  test('normal user does not see admin dropdowns on scorer page', async ({ page }) => {
+    await page.goto('/scorer')
+
+    // Wait for page to fully load
+    await expect(page.getByRole('heading', { name: /Scorer duty|Schreiberdienst/ })).toBeVisible({ timeout: 20_000 })
+
+    // Normal user should NOT see any team/person select dropdowns inside game cards
+    // Admin dropdowns use "— Select team —" / "— Team wählen —" placeholders
+    const teamDropdowns = page.locator('select').filter({ hasText: /Select team|Team wählen/ })
+    await expect(teamDropdowns).toHaveCount(0)
+
+    const personDropdowns = page.locator('select').filter({ hasText: /Select person|Person wählen/ })
+    await expect(personDropdowns).toHaveCount(0)
+  })
 })

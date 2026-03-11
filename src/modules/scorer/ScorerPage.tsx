@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Game, Member, Team, MemberTeam } from '../../types'
+import type { Game, Member, Team, MemberTeam, ScorerDelegation } from '../../types'
 import { usePB } from '../../hooks/usePB'
 import { useRealtime } from '../../hooks/useRealtime'
 import { useAuth } from '../../hooks/useAuth'
@@ -14,9 +14,10 @@ import SportToggle from '../../components/SportToggle'
 import type { SportView } from '../../hooks/useSportPreference'
 import ScorerRow, { hasAnyVbAssignment, hasAnyBbAssignment } from './components/ScorerRow'
 import TeamOverview from './components/TeamOverview'
+import DelegationRequestBanner from './components/DelegationRequestBanner'
+import { useScorerDelegations } from './hooks/useScorerDelegations'
 import LoadingSpinner from '../../components/LoadingSpinner'
-import { ChevronDown, ChevronUp, Filter, Upload } from 'lucide-react'
-import BbScorerImportPanel from './components/BbScorerImportPanel'
+import { Bell, BellOff, ChevronDown, ChevronUp, Filter } from 'lucide-react'
 
 type Tab = 'games' | 'overview'
 type SportTab = 'volleyball' | 'basketball'
@@ -40,7 +41,6 @@ export default function ScorerPage() {
   const [tab, setTab] = useState<Tab>('games')
   const [sportTab, setSportTab] = useState<SportTab>('volleyball')
   const [filtersOpen, setFiltersOpen] = useState(false)
-  const [showImport, setShowImport] = useState(false)
 
   // Filters
   const [dateFilter, setDateFilter] = useState('')
@@ -52,12 +52,12 @@ export default function ScorerPage() {
   // Past games
   const [showPast, setShowPast] = useState(false)
   const [pastVisible, setPastVisible] = useState(PAST_PAGE_SIZE)
+  const [reminderToggling, setReminderToggling] = useState(false)
   const canEdit = (effectiveIsAdmin && hasAdminAccessToSport(sportTab)) || isCoach
   const showContact = (effectiveIsAdmin && hasAdminAccessToSport(sportTab)) || isCoach || isSuperAdmin
 
   const today = useMemo(() => new Date().toISOString().split('T')[0], [])
 
-  // Upcoming home games (all, filter client-side)
   const {
     data: upcomingGames,
     isLoading: gamesLoading,
@@ -69,7 +69,6 @@ export default function ScorerPage() {
     perPage: 200,
   })
 
-  // Past home games
   const { data: allPastGames, isLoading: pastLoading, total: pastTotal } = usePB<Game>('games', {
     filter: `type = "home" && date < "${today}"`,
     sort: '-date,-time',
@@ -78,11 +77,34 @@ export default function ScorerPage() {
     enabled: showPast,
   })
 
+  // Reminder email toggle (superuser only)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: appSettings, refetch: refetchSettings } = usePB<any>('app_settings', {
+    filter: 'key = "scorer_reminders_enabled"',
+    perPage: 1,
+    enabled: isSuperAdmin,
+  })
+  const reminderSetting = appSettings[0] as { id: string; enabled: boolean } | undefined
+  const remindersEnabled = reminderSetting?.enabled ?? false
+
+  async function toggleReminders() {
+    if (!reminderSetting) return
+    setReminderToggling(true)
+    try {
+      await pb.collection('app_settings').update(reminderSetting.id, { enabled: !remindersEnabled }, { requestKey: null })
+      refetchSettings()
+    } catch (err) {
+      console.error('Failed to toggle reminders:', err)
+    } finally {
+      setReminderToggling(false)
+    }
+  }
+
   const { data: members } = usePB<Member>('members', {
     filter: 'active = true',
     sort: '+last_name,+first_name',
     perPage: 500,
-    fields: 'id,name,first_name,last_name,licences,active,phone,email',
+    fields: 'id,name,first_name,last_name,licences,active,phone,email,is_guest',
   })
 
   const { data: teams } = usePB<Team>('teams', {
@@ -91,7 +113,6 @@ export default function ScorerPage() {
     perPage: 50,
   })
 
-  // All member-team relationships (for filtering persons by team)
   const { data: allMemberTeams } = usePB<MemberTeam>('member_teams', {
     perPage: 500,
   })
@@ -104,7 +125,6 @@ export default function ScorerPage() {
     return map
   }, [allMemberTeams])
 
-  // User's team memberships (for self-assign)
   const userTeamIds = useMemo(() => {
     if (!user) return []
     const ids: string[] = []
@@ -114,14 +134,22 @@ export default function ScorerPage() {
     return ids
   }, [allMemberTeams, user])
 
-  // Member lookup for search
   const memberMap = useMemo(() => {
     const map = new Map<string, Member>()
     for (const m of members) map.set(m.id, m)
     return map
   }, [members])
 
-  // Determine sport for each game based on expanded team
+  // Delegation hook
+  const {
+    pendingIncoming,
+    createDelegation,
+    acceptDelegation,
+    declineDelegation,
+    getPendingForRole,
+    getDelegationTargetName,
+  } = useScorerDelegations()
+
   const getGameSport = (g: Game): 'volleyball' | 'basketball' => {
     const expandedTeam = (g as { expand?: { kscw_team?: Team } }).expand?.kscw_team
     return expandedTeam?.sport ?? (g.source === 'basketplan' ? 'basketball' : 'volleyball')
@@ -129,16 +157,11 @@ export default function ScorerPage() {
 
   useRealtime<Game>('games', () => { refetch() }, ['update'])
 
-  // Filter games by sport + client-side filters
   const filteredGames = useMemo(() => {
     return upcomingGames.filter((g) => {
-      // Sport filter
       if (getGameSport(g) !== sportTab) return false
-
-      // Date filter
       if (dateFilter && g.date !== dateFilter) return false
 
-      // Duty team filter
       if (dutyTeamFilter) {
         if (sportTab === 'volleyball') {
           const matchesTeam =
@@ -151,7 +174,6 @@ export default function ScorerPage() {
         }
       }
 
-      // VB-specific duty type filter
       if (sportTab === 'volleyball' && dutyTypeFilter !== 'all') {
         if (dutyTypeFilter === 'scorer_taefeler') {
           if (!g.scorer_taefeler_duty_team && !g.scorer_taefeler_member) return false
@@ -162,7 +184,6 @@ export default function ScorerPage() {
         }
       }
 
-      // Unassigned filter
       if (unassignedFilter !== 'all') {
         if (sportTab === 'volleyball') {
           const vbFilter = unassignedFilter as VbUnassignedFilter
@@ -204,7 +225,6 @@ export default function ScorerPage() {
         }
       }
 
-      // Search assignee
       if (searchAssignee.trim()) {
         const q = searchAssignee.toLowerCase()
         const ids = sportTab === 'volleyball'
@@ -222,7 +242,6 @@ export default function ScorerPage() {
     })
   }, [upcomingGames, sportTab, dateFilter, dutyTeamFilter, dutyTypeFilter, unassignedFilter, searchAssignee, memberMap])
 
-  // Past games filtered by sport
   const filteredPastGames = useMemo(() => allPastGames.filter((g) => getGameSport(g) === sportTab), [allPastGames, sportTab])
   const visiblePastGames = useMemo(() => filteredPastGames.slice(0, pastVisible), [filteredPastGames, pastVisible])
 
@@ -258,6 +277,45 @@ export default function ScorerPage() {
     }
   }
 
+  const handleDelegate = useCallback(
+    async (gameId: string, role: ScorerDelegation['role'], toMemberId: string, fromTeamId: string, toTeamId: string) => {
+      try {
+        const delegation = await createDelegation(gameId, role, toMemberId, fromTeamId, toTeamId)
+        if (delegation.same_team) {
+          refetch()
+        }
+      } catch (err) {
+        console.error('Failed to create delegation:', err)
+      }
+    },
+    [createDelegation, refetch],
+  )
+
+  const handleAcceptDelegation = useCallback(
+    async (delegationId: string) => {
+      try {
+        await acceptDelegation(delegationId)
+        refetch()
+      } catch (err) {
+        console.error('Failed to accept delegation:', err)
+      }
+    },
+    [acceptDelegation, refetch],
+  )
+
+  const handleDeclineDelegation = useCallback(
+    async (delegationId: string) => {
+      try {
+        await declineDelegation(delegationId)
+      } catch (err) {
+        console.error('Failed to decline delegation:', err)
+      }
+    },
+    [declineDelegation],
+  )
+
+  const allGames = useMemo(() => [...upcomingGames, ...allPastGames], [upcomingGames, allPastGames])
+
   const filterLabelClass = 'mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400'
 
   const renderScorerRow = (g: Game) => (
@@ -267,6 +325,7 @@ export default function ScorerPage() {
       members={members}
       teams={teams}
       teamMemberIds={teamMemberIds}
+      memberTeams={allMemberTeams}
       onUpdate={handleUpdate}
       canEdit={canEdit}
       showContact={showContact}
@@ -274,6 +333,9 @@ export default function ScorerPage() {
       userTeamIds={userTeamIds}
       userLicences={user?.licences ?? []}
       sport={sportTab}
+      onDelegate={handleDelegate}
+      getPendingForRole={getPendingForRole}
+      getDelegationTargetName={getDelegationTargetName}
     />
   )
 
@@ -281,6 +343,22 @@ export default function ScorerPage() {
     <div>
       <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 sm:text-2xl">{t('title')}</h1>
       <p className="mt-1 text-gray-600 dark:text-gray-400">{t('subtitle')}</p>
+
+      {/* Reminder email toggle (superuser only) */}
+      {isSuperAdmin && reminderSetting && (
+        <button
+          onClick={toggleReminders}
+          disabled={reminderToggling}
+          className={`mt-3 flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+            remindersEnabled
+              ? 'border-green-300 bg-green-50 text-green-700 hover:bg-green-100 dark:border-green-700 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50'
+              : 'border-gray-300 bg-gray-50 text-gray-500 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
+          }`}
+        >
+          {remindersEnabled ? <Bell className="h-3.5 w-3.5" /> : <BellOff className="h-3.5 w-3.5" />}
+          {t('reminderEmails')}: {remindersEnabled ? t('reminderEmailsOn') : t('reminderEmailsOff')}
+        </button>
+      )}
 
       {/* Sport toggle + Tab bar */}
       <div className="mt-4 flex items-center justify-between gap-4">
@@ -309,33 +387,21 @@ export default function ScorerPage() {
         </div>
       </div>
 
-      {/* BB Import panel */}
-      {sportTab === 'basketball' && canEdit && (
-        <div className="mt-4">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setShowImport(!showImport)}
-            className="rounded-full"
-          >
-            <Upload className="mr-1.5 h-4 w-4" />
-            {t('bbImportButton')}
-          </Button>
-          {showImport && (
-            <div className="mt-3">
-              <BbScorerImportPanel
+      {tab === 'games' && (
+        <>
+          {/* Pending incoming delegation requests */}
+          {pendingIncoming.length > 0 && (
+            <div className="mt-4">
+              <DelegationRequestBanner
+                delegations={pendingIncoming}
                 members={members}
-                teams={teams}
-                memberTeams={allMemberTeams}
-                onImportComplete={refetch}
+                games={allGames}
+                onAccept={handleAcceptDelegation}
+                onDecline={handleDeclineDelegation}
               />
             </div>
           )}
-        </div>
-      )}
 
-      {tab === 'games' && (
-        <>
           {/* Filters */}
           <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
             <button
@@ -354,39 +420,17 @@ export default function ScorerPage() {
             {filtersOpen && (
               <div className="border-t border-gray-200 p-4 dark:border-gray-700">
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {/* Date */}
                   <div>
-                    <label htmlFor="scorer-date" className={filterLabelClass}>
-                      {t('filterDate')}
-                    </label>
-                    <Input
-                      id="scorer-date"
-                      type="date"
-                      value={dateFilter}
-                      onChange={(e) => setDateFilter(e.target.value)}
-                    />
+                    <label htmlFor="scorer-date" className={filterLabelClass}>{t('filterDate')}</label>
+                    <Input id="scorer-date" type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} />
                   </div>
-
-                  {/* Duty Team */}
                   <div>
-                    <label htmlFor="scorer-duty-team" className={filterLabelClass}>
-                      {t('filterDutyTeam')}
-                    </label>
-                    <TeamSelect
-                      value={dutyTeamFilter}
-                      onChange={setDutyTeamFilter}
-                      teams={teams}
-                      placeholder={t('filterAllTeams')}
-                      aria-label={t('filterDutyTeam')}
-                    />
+                    <label htmlFor="scorer-duty-team" className={filterLabelClass}>{t('filterDutyTeam')}</label>
+                    <TeamSelect value={dutyTeamFilter} onChange={setDutyTeamFilter} teams={teams} placeholder={t('filterAllTeams')} aria-label={t('filterDutyTeam')} />
                   </div>
-
-                  {/* Duty Type (VB only) */}
                   {sportTab === 'volleyball' && (
                     <div>
-                      <label htmlFor="scorer-duty-type" className={filterLabelClass}>
-                        {t('filterDutyType')}
-                      </label>
+                      <label htmlFor="scorer-duty-type" className={filterLabelClass}>{t('filterDutyType')}</label>
                       <Select id="scorer-duty-type" value={dutyTypeFilter} onChange={(e) => setDutyTypeFilter(e.target.value as VbDutyTypeFilter)}>
                         <option value="all">{t('filterAllTypes')}</option>
                         <option value="scorer">{t('scorer')}</option>
@@ -395,12 +439,8 @@ export default function ScorerPage() {
                       </Select>
                     </div>
                   )}
-
-                  {/* Unassigned Duty */}
                   <div>
-                    <label htmlFor="scorer-unassigned" className={filterLabelClass}>
-                      {t('filterUnassigned')}
-                    </label>
+                    <label htmlFor="scorer-unassigned" className={filterLabelClass}>{t('filterUnassigned')}</label>
                     <Select id="scorer-unassigned" value={unassignedFilter} onChange={(e) => setUnassignedFilter(e.target.value as VbUnassignedFilter | BbUnassignedFilter)}>
                       <option value="all">{t('filterAllDuties')}</option>
                       <option value="any">{t('filterAnyUnassigned')}</option>
@@ -419,28 +459,14 @@ export default function ScorerPage() {
                       )}
                     </Select>
                   </div>
-
-                  {/* Search Assignee */}
                   <div>
-                    <label htmlFor="scorer-search" className={filterLabelClass}>
-                      {t('filterSearchAssignee')}
-                    </label>
-                    <Input
-                      id="scorer-search"
-                      type="text"
-                      value={searchAssignee}
-                      onChange={(e) => setSearchAssignee(e.target.value)}
-                      placeholder={t('searchAssigneePlaceholder')}
-                    />
+                    <label htmlFor="scorer-search" className={filterLabelClass}>{t('filterSearchAssignee')}</label>
+                    <Input id="scorer-search" type="text" value={searchAssignee} onChange={(e) => setSearchAssignee(e.target.value)} placeholder={t('searchAssigneePlaceholder')} />
                   </div>
                 </div>
-
-                {/* Clear filters */}
                 {hasActiveFilters && (
                   <div className="mt-3 flex justify-center">
-                    <Button variant="secondary" size="sm" onClick={clearFilters} className="rounded-full">
-                      {t('clearFilters')}
-                    </Button>
+                    <Button variant="secondary" size="sm" onClick={clearFilters} className="rounded-full">{t('clearFilters')}</Button>
                   </div>
                 )}
               </div>
@@ -450,29 +476,21 @@ export default function ScorerPage() {
           {/* Upcoming games */}
           <div className="mt-6">
             {gamesLoading && <LoadingSpinner />}
-
             {!gamesLoading && filteredGames.length === 0 && (
               <div className="py-12 text-center text-gray-500 dark:text-gray-400">
                 <p>{t('noGames')}</p>
                 <p className="mt-1 text-sm">{t('noGamesDescription')}</p>
               </div>
             )}
-
             {!gamesLoading && filteredGames.length > 0 && (
-              <div className="space-y-3">
-                {filteredGames.map(renderScorerRow)}
-              </div>
+              <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">{filteredGames.map(renderScorerRow)}</div>
             )}
           </div>
 
           {/* Past games */}
           <div className="mt-8">
             {!showPast ? (
-              <Button
-                variant="secondary"
-                onClick={() => { setShowPast(true); setPastVisible(PAST_PAGE_SIZE) }}
-                className="mx-auto rounded-full"
-              >
+              <Button variant="secondary" onClick={() => { setShowPast(true); setPastVisible(PAST_PAGE_SIZE) }} className="mx-auto rounded-full">
                 {t('showOlderGames', { count: pastTotal || 0 })}
               </Button>
             ) : (
@@ -483,30 +501,16 @@ export default function ScorerPage() {
                 )}
                 {!pastLoading && visiblePastGames.length > 0 && (
                   <>
-                    <div className="space-y-3 opacity-75">
-                      {visiblePastGames.map(renderScorerRow)}
-                    </div>
+                    <div className="grid gap-3 opacity-75 lg:grid-cols-2 2xl:grid-cols-3">{visiblePastGames.map(renderScorerRow)}</div>
                     {pastVisible < filteredPastGames.length && (
                       <div className="mt-4 flex justify-center">
-                        <Button
-                          variant="secondary"
-                          onClick={() => setPastVisible((v) => v + PAST_PAGE_SIZE)}
-                          className="rounded-full"
-                        >
-                          {t('loadMore')}
-                        </Button>
+                        <Button variant="secondary" onClick={() => setPastVisible((v) => v + PAST_PAGE_SIZE)} className="rounded-full">{t('loadMore')}</Button>
                       </div>
                     )}
                   </>
                 )}
                 <div className="mt-3 flex justify-center">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowPast(false)}
-                  >
-                    {t('hidePast')}
-                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setShowPast(false)}>{t('hidePast')}</Button>
                 </div>
               </div>
             )}

@@ -11,7 +11,6 @@ interface CoachDashboardProps {
 const trendColors: Record<string, string> = {
   present: 'bg-green-500',
   absent: 'bg-red-500',
-  late: 'bg-amber-500',
   excused: 'bg-brand-500',
 }
 

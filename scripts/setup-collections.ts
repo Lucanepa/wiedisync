@@ -250,7 +250,7 @@ const dependentCollections: CollectionDef[] = [
     ],
   },
 
-  // absences (needed before training_attendance)
+  // absences
   {
     name: 'absences',
     type: 'base',
@@ -340,21 +340,30 @@ for (const def of phase3Collections) {
   await createCollection(def)
 }
 
-const trainingsId = await getCollectionId('trainings')
+// Phase 4: scorer delegations (depends on games, members, teams)
+console.log('\n=== Phase 4: Create scorer_delegations ===')
 
-// training_attendance (depends on trainings + absences)
-const trainingAttendance: CollectionDef = {
-  name: 'training_attendance',
-  type: 'base',
-  fields: [
-    relation('training', trainingsId, { required: true }),
-    relation('member', membersId, { required: true }),
-    select('status', ['present', 'absent', 'late', 'excused']),
-    relation('absence', absencesId),
-    relation('noted_by', membersId),
-  ],
+const gamesId = await getCollectionId('games')
+
+const phase4Collections: CollectionDef[] = [
+  {
+    name: 'scorer_delegations',
+    type: 'base',
+    fields: [
+      relation('game', gamesId, { required: true }),
+      text('role', { required: true }),
+      relation('from_member', membersId, { required: true }),
+      relation('to_member', membersId, { required: true }),
+      relation('from_team', teamsId, { required: true }),
+      relation('to_team', teamsId, { required: true }),
+      bool('same_team'),
+      select('status', ['pending', 'accepted', 'declined', 'expired'], { required: true }),
+    ],
+  },
+]
+
+for (const def of phase4Collections) {
+  await createCollection(def)
 }
-
-await createCollection(trainingAttendance)
 
 console.log('\n=== All collections created successfully! ===')

@@ -9,6 +9,11 @@ export default {
   upcomingActivity: 'Upcoming',
   deadlineReminder: 'Deadline',
   resultAvailable: 'Result',
+  dutyDelegation: 'Scorer duty',
+  // Delegation notification messages
+  duty_delegation_request: '{{from}} wants to delegate the {{role}} duty for {{game}} on {{date}} to you.',
+  duty_delegation_accepted: '{{to}} accepted the {{role}} duty for {{game}}.',
+  duty_delegation_declined: '{{to}} declined the duty request for {{game}}.',
   // Notification messages (keys stored in DB title field, interpolated with body JSON)
   game_created: 'New game: {{home_team}} vs {{away_team}} on {{date}}',
   game_updated: 'Game updated: {{home_team}} vs {{away_team}} on {{date}}',

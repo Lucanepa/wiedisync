@@ -46,8 +46,16 @@ positions[3]{ticker,shares,costBasis}:
 
 ## PocketBase Admin API
 
+- **Use MCP tools, not curl**: Two PocketBase MCP servers are configured (`pocketbase-kscw-prod`, `pocketbase-kscw-dev`). Authenticate once with `auth_admin` per session, then use `list_collections`, `list_records`, `create_record`, etc. See `INFRA.md → MCP Servers` for details.
 - **Adding columns/fields and creating records**: Can be done automatically via the API (no confirmation needed)
+- **Creating collections**: ALWAYS create via the PB REST API using superuser auth (see INFRA.md for credentials and examples). Never create collections manually in the admin UI. Also update `scripts/setup-collections.ts` for reproducibility.
 - **Deleting columns, collections, or records**: Must be confirmed with the user first, but can be executed by the agent
+
+## SSH to NAS
+
+- **Use `ssh nas-ts`** (not `ssh lucanepa@100.64.212.125`). SSH multiplexing is enabled for fast repeated connections.
+- Docker needs sudo: `echo '***REDACTED***' | sudo -S /usr/local/bin/docker ...`
+- See `INFRA.md → SSH to NAS` for common patterns (deploy hooks, read logs, restart PB).
 
 ## Branches
 - `main` → production (`kscw.lucanepa.com`)
@@ -60,6 +68,8 @@ positions[3]{ticker,shares,costBasis}:
 
 ## Changelog
 <!-- Grouped by feature domain. Overwrite when stale. -->
+- **2026-03-11** — Schreibereinsätze delegation: duty delegation feature (`scorer_delegations` collection). Assigned members can delegate duties — same-team instant transfer, cross-team requires confirmation (updates both `*_member` and `*_duty_team`). DelegationModal with member search (split by team), DelegationRequestBanner for incoming requests, `useScorerDelegations` hook. AssignmentEditor split: admin gets dropdowns, regular users get read-only + "Weitergeben" button. PB hook (`scorer_delegation.pb.js`) handles validation, transfer, notifications, daily expiry cron. NotificationPanel extended with `duty_delegation_request` type.
+- **2026-03-11** — Scorer reminders: fixed date filter bug (PB datetime vs plain date mismatch — used range filter), added `app_settings` collection with `scorer_reminders_enabled` toggle (default: off), superuser-only toggle in ScorerPage UI. Added dry-run endpoints (`/api/scorer-reminders/dry-run` for fake data, `/api/scorer-reminders/dry-run-game` for real game data). Currently VB-only (`source = "swiss_volley"`).
 - **2026-03-11** — ID standardization: Renamed `sv_game_id` → `game_id`, `sv_team_id` → `team_id`, `bp_team_id` → `bb_source_id` across PB collections, hooks, and frontend. Added `vb_`/`bb_` prefixes to all IDs (stored in DB, stripped in UI). Renamed `sv_rankings` collection → `rankings`, `SvRanking` type → `Ranking`, `svTeamIds` → `teamIds`. Fixed BB game numbers (`g.id` → `g.gameNumber`). Convention: `vb_` for volleyball, `bb_` for basketball.
 - **2026-03-11** — Repo cleanup: deleted duplicate root logos, unused assets (`kscw_gelb.png`, `kscw_trio.png`), dead code (`CoachRoute`, `LanguageToggle`, `useEventSessions`, `useParticipationSummary`, `swiss-volley.ts`), completed migration scripts, stale `PROJECT_SPEC.md`, `scorer_email_preview.html`, `clubdesk-theme.css`. Consolidated changelog. Updated CONTINGENCY.md and INFRA.md. Fixed a11y violations (color contrast, heading order, empty headings, scrollable regions, TeamChip readability) and login test strict mode (`exact: true`).
 - **2026-03-10** — Auth & roles: Google OAuth login via Authentik. Sport-scoped admin roles (`vb_admin`, `bb_admin`) with `hasAdminAccessToSport`/`hasAdminAccessToTeam` in `useAuth`. Profile onboarding modal with per-user language preference. Two-branch signup + approval system with PendingPage. Role hierarchy: user → coach/team_responsible → vb_admin/bb_admin → admin → superuser. Team leadership (coach, captain, team_responsible) as multi-relations on `teams`.

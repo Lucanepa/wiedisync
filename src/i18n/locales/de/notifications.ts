@@ -9,6 +9,11 @@ export default {
   upcomingActivity: 'Bevorstehend',
   deadlineReminder: 'Frist',
   resultAvailable: 'Resultat',
+  dutyDelegation: 'Schreiberdienst',
+  // Delegation notification messages
+  duty_delegation_request: '{{from}} möchte dir den {{role}}-Einsatz für {{game}} am {{date}} übergeben.',
+  duty_delegation_accepted: '{{to}} hat den {{role}}-Einsatz für {{game}} übernommen.',
+  duty_delegation_declined: '{{to}} hat die Einsatz-Anfrage für {{game}} abgelehnt.',
   // Notification messages (keys stored in DB title field, interpolated with body JSON)
   game_created: 'Neues Spiel: {{home_team}} vs {{away_team}} am {{date}}',
   game_updated: 'Spiel aktualisiert: {{home_team}} vs {{away_team}} am {{date}}',

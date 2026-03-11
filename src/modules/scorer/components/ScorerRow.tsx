@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { RecordModel } from 'pocketbase'
-import type { Game, Member, Team, Hall, LicenceType } from '../../../types'
+import type { Game, Member, Team, Hall, LicenceType, MemberTeam, ScorerDelegation } from '../../../types'
 import TeamChip from '../../../components/TeamChip'
 import AssignmentEditor from './AssignmentEditor'
+import DelegationModal from './DelegationModal'
 import { downloadICal } from '../../../utils/icalGenerator'
 import type { CalendarEntry } from '../../../types/calendar'
 import { formatTime } from '../../../utils/dateHelpers'
@@ -15,6 +16,7 @@ interface ScorerRowProps {
   members: Member[]
   teams: Team[]
   teamMemberIds: Map<string, Set<string>>
+  memberTeams: MemberTeam[]
   onUpdate: (gameId: string, fields: Partial<Game>) => void
   canEdit: boolean
   showContact: boolean
@@ -22,6 +24,9 @@ interface ScorerRowProps {
   userTeamIds?: string[]
   userLicences?: LicenceType[]
   sport: 'volleyball' | 'basketball'
+  onDelegate: (gameId: string, role: ScorerDelegation['role'], toMemberId: string, fromTeamId: string, toTeamId: string) => void
+  getPendingForRole: (gameId: string, role: string) => ScorerDelegation | undefined
+  getDelegationTargetName: (delegation: ScorerDelegation, members: Member[]) => string
 }
 
 export type ExpandedGame = Game & {
@@ -75,7 +80,6 @@ export function hasAnyBbAssignment(game: Game): boolean {
 }
 
 function isBbFullyAssigned(game: Game): boolean {
-  // OTR2 (24s) is optional, so only OTR1 roles are required
   return !!(game.bb_anschreiber && game.bb_zeitnehmer)
 }
 
@@ -143,6 +147,7 @@ export default function ScorerRow({
   members,
   teams,
   teamMemberIds,
+  memberTeams,
   onUpdate,
   canEdit,
   showContact,
@@ -150,6 +155,9 @@ export default function ScorerRow({
   userTeamIds = [],
   userLicences = [],
   sport,
+  onDelegate,
+  getPendingForRole,
+  getDelegationTargetName,
 }: ScorerRowProps) {
   const { t, i18n } = useTranslation('scorer')
   const expanded = game as ExpandedGame
@@ -161,6 +169,8 @@ export default function ScorerRow({
 
   // Self-assign confirmation state
   const [confirmRole, setConfirmRole] = useState<AssignRole | null>(null)
+  // Delegation modal state
+  const [delegateRole, setDelegateRole] = useState<AssignRole | null>(null)
 
   // Can this user self-assign to a role?
   function canSelfAssign(role: AssignRole): boolean {
@@ -256,12 +266,72 @@ export default function ScorerRow({
     return role
   }
 
+  // Get the duty team ID for a role
+  function getDutyTeamForRole(role: AssignRole): string {
+    if (sport === 'volleyball') {
+      if (role === 'scorer') return game.scorer_duty_team ?? ''
+      if (role === 'taefeler') return game.taefeler_duty_team ?? ''
+      return game.scorer_taefeler_duty_team ?? ''
+    }
+    return game.bb_duty_team ?? ''
+  }
+
+  // Check if current user is the assigned member for a role
+  function isUserAssigned(role: AssignRole): boolean {
+    if (!userId) return false
+    if (sport === 'volleyball') {
+      if (role === 'scorer') return game.scorer_member === userId
+      if (role === 'taefeler') return game.taefeler_member === userId
+      return game.scorer_taefeler_member === userId
+    }
+    return game[role as BbAssignRole] === userId
+  }
+
+  // Get pending delegation name for a role
+  function pendingNameForRole(role: AssignRole): string | undefined {
+    const pending = getPendingForRole(game.id, role)
+    if (!pending) return undefined
+    return getDelegationTargetName(pending, members)
+  }
+
+  function handleDelegateConfirm(toMemberId: string, toTeamId: string) {
+    if (!delegateRole) return
+    const fromTeamId = getDutyTeamForRole(delegateRole)
+    onDelegate(game.id, delegateRole as ScorerDelegation['role'], toMemberId, fromTeamId, toTeamId)
+    setDelegateRole(null)
+  }
+
+  const gameLabel = `${game.home_team} – ${game.away_team}`
+
   const sportBorder = sport === 'basketball'
     ? 'border-l-orange-400 dark:border-l-orange-500'
     : 'border-l-brand-400 dark:border-l-brand-500'
 
+  // Helper to render a VB assignment editor
+  const renderVbEditor = (role: VbAssignRole, labelKey: string, requiredLicence: LicenceType | undefined, teamField: keyof Game, personField: keyof Game) => (
+    <AssignmentEditor
+      label={t(labelKey)}
+      requiredLicence={requiredLicence}
+      teamValue={(game[teamField] as string) ?? ''}
+      personValue={(game[personField] as string) ?? ''}
+      members={members}
+      teams={teams}
+      teamMemberIds={teamMemberIds}
+      onTeamChange={(v) => handleAdminUpdate(game.id, { [teamField]: v })}
+      onPersonChange={(v) => handleAdminUpdate(game.id, { [personField]: v })}
+      disabled={!canEdit || game.duty_confirmed}
+      showContact={showContact}
+      selfAssignButton={canSelfAssign(role)}
+      onSelfAssign={() => setConfirmRole(role)}
+      canEdit={canEdit}
+      isCurrentUserAssigned={isUserAssigned(role)}
+      onDelegate={() => setDelegateRole(role)}
+      pendingDelegationName={pendingNameForRole(role)}
+    />
+  )
+
   return (
-    <div className={`rounded-lg border border-gray-200 border-l-4 ${sportBorder} bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800`}>
+    <div className={`flex h-full flex-col rounded-lg border border-gray-200 border-l-4 ${sportBorder} bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800`}>
       {/* Game info */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="text-sm font-medium text-gray-700 dark:text-gray-400">
@@ -269,7 +339,7 @@ export default function ScorerRow({
         </div>
         {kscwTeam && <TeamChip team={kscwTeam} size="sm" />}
         <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-          {game.home_team} – {game.away_team}
+          {gameLabel}
         </div>
         <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-400">
           {game.league}
@@ -286,69 +356,34 @@ export default function ScorerRow({
       </div>
 
       {/* Assignment editors */}
-      <div className="mt-3 space-y-3">
+      <div className="mt-3 flex-1 space-y-3">
         {sport === 'volleyball' ? (
           vbCombined ? (
-            <AssignmentEditor
-              label={t('scorerTaefeler')}
-              requiredLicence="scorer_vb"
-              teamValue={game.scorer_taefeler_duty_team ?? ''}
-              personValue={game.scorer_taefeler_member ?? ''}
-              members={members}
-              teams={teams}
-              teamMemberIds={teamMemberIds}
-              onTeamChange={(v) => handleAdminUpdate(game.id, { scorer_taefeler_duty_team: v })}
-              onPersonChange={(v) => handleAdminUpdate(game.id, { scorer_taefeler_member: v })}
-              disabled={!canEdit || game.duty_confirmed}
-              showContact={showContact}
-              selfAssignButton={canSelfAssign('scorer_taefeler')}
-              onSelfAssign={() => setConfirmRole('scorer_taefeler')}
-            />
+            renderVbEditor('scorer_taefeler', 'scorerTaefeler', 'scorer_vb', 'scorer_taefeler_duty_team', 'scorer_taefeler_member')
           ) : (
             <>
-              <AssignmentEditor
-                label={t('scorer')}
-                requiredLicence="scorer_vb"
-                teamValue={game.scorer_duty_team ?? ''}
-                personValue={game.scorer_member ?? ''}
-                members={members}
-                teams={teams}
-                teamMemberIds={teamMemberIds}
-                onTeamChange={(v) => handleAdminUpdate(game.id, { scorer_duty_team: v })}
-                onPersonChange={(v) => handleAdminUpdate(game.id, { scorer_member: v })}
-                disabled={!canEdit || game.duty_confirmed}
-                showContact={showContact}
-                selfAssignButton={canSelfAssign('scorer')}
-                onSelfAssign={() => setConfirmRole('scorer')}
-              />
-              <AssignmentEditor
-                label={t('scoreboard')}
-                teamValue={game.taefeler_duty_team ?? ''}
-                personValue={game.taefeler_member ?? ''}
-                members={members}
-                teams={teams}
-                teamMemberIds={teamMemberIds}
-                onTeamChange={(v) => handleAdminUpdate(game.id, { taefeler_duty_team: v })}
-                onPersonChange={(v) => handleAdminUpdate(game.id, { taefeler_member: v })}
-                disabled={!canEdit || game.duty_confirmed}
-                showContact={showContact}
-                selfAssignButton={canSelfAssign('taefeler')}
-                onSelfAssign={() => setConfirmRole('taefeler')}
-              />
+              {renderVbEditor('scorer', 'scorer', 'scorer_vb', 'scorer_duty_team', 'scorer_member')}
+              {renderVbEditor('taefeler', 'scoreboard', undefined, 'taefeler_duty_team', 'taefeler_member')}
             </>
           )
         ) : (
           <>
             <div className="space-y-1.5">
               <span className="block text-xs font-medium text-gray-500 dark:text-gray-400">{t('bbDutyTeam')}</span>
-              <TeamSelect
-                value={game.bb_duty_team ?? ''}
-                onChange={(v) => handleAdminUpdate(game.id, { bb_duty_team: v })}
-                teams={teams}
-                disabled={!canEdit || game.duty_confirmed}
-                aria-label={t('bbDutyTeam')}
-                placeholder={t('selectTeam')}
-              />
+              {canEdit ? (
+                <TeamSelect
+                  value={game.bb_duty_team ?? ''}
+                  onChange={(v) => handleAdminUpdate(game.id, { bb_duty_team: v })}
+                  teams={teams}
+                  disabled={!canEdit || game.duty_confirmed}
+                  aria-label={t('bbDutyTeam')}
+                  placeholder={t('selectTeam')}
+                />
+              ) : (
+                <div className="rounded-lg bg-gray-50 px-3 py-2.5 text-sm text-gray-900 dark:bg-gray-750 dark:text-gray-100">
+                  {teams.find((t) => t.id === game.bb_duty_team)?.name ?? t('unassigned')}
+                </div>
+              )}
             </div>
             <AssignmentEditor
               label={t('bbAnschreiber')}
@@ -364,6 +399,10 @@ export default function ScorerRow({
               showContact={showContact}
               selfAssignButton={canSelfAssign('bb_anschreiber')}
               onSelfAssign={() => setConfirmRole('bb_anschreiber')}
+              canEdit={canEdit}
+              isCurrentUserAssigned={isUserAssigned('bb_anschreiber')}
+              onDelegate={() => setDelegateRole('bb_anschreiber')}
+              pendingDelegationName={pendingNameForRole('bb_anschreiber')}
             />
             <AssignmentEditor
               label={t('bbZeitnehmer')}
@@ -379,6 +418,10 @@ export default function ScorerRow({
               showContact={showContact}
               selfAssignButton={canSelfAssign('bb_zeitnehmer')}
               onSelfAssign={() => setConfirmRole('bb_zeitnehmer')}
+              canEdit={canEdit}
+              isCurrentUserAssigned={isUserAssigned('bb_zeitnehmer')}
+              onDelegate={() => setDelegateRole('bb_zeitnehmer')}
+              pendingDelegationName={pendingNameForRole('bb_zeitnehmer')}
             />
             <AssignmentEditor
               label={t('bb24sOfficial')}
@@ -394,6 +437,10 @@ export default function ScorerRow({
               showContact={showContact}
               selfAssignButton={canSelfAssign('bb_24s_official')}
               onSelfAssign={() => setConfirmRole('bb_24s_official')}
+              canEdit={canEdit}
+              isCurrentUserAssigned={isUserAssigned('bb_24s_official')}
+              onDelegate={() => setDelegateRole('bb_24s_official')}
+              pendingDelegationName={pendingNameForRole('bb_24s_official')}
             />
           </>
         )}
@@ -437,7 +484,7 @@ export default function ScorerRow({
             <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
               {t('confirmSelfAssignMessage', {
                 role: roleLabel(confirmRole),
-                game: `${game.home_team} – ${game.away_team}`,
+                game: gameLabel,
                 date: dateStr,
               })}
             </p>
@@ -457,6 +504,22 @@ export default function ScorerRow({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Delegation modal */}
+      {delegateRole && (
+        <DelegationModal
+          role={delegateRole as ScorerDelegation['role']}
+          roleLabel={roleLabel(delegateRole)}
+          gameLabel={`${gameLabel} · ${dateStr}`}
+          dutyTeamId={getDutyTeamForRole(delegateRole)}
+          members={members}
+          teams={teams}
+          memberTeams={memberTeams}
+          currentUserId={userId ?? ''}
+          onDelegate={handleDelegateConfirm}
+          onClose={() => setDelegateRole(null)}
+        />
       )}
     </div>
   )

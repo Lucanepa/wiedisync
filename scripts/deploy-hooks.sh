@@ -4,14 +4,20 @@
 
 set -euo pipefail
 
-SYNOLOGY="lucanepa@DS923Luca"
+NAS="nas-ts"
 HOOKS_PATH="/volume1/docker/pocketbase-dev/pb_hooks/"
 CONTAINER="pocketbase-kscw"
+SUDO_PASS="***REDACTED***"
 
-echo "Deploying pb_hooks to Synology..."
-scp pb_hooks/* "$SYNOLOGY:$HOOKS_PATH"
+echo "Deploying pb_hooks to Synology (via $NAS)..."
+for f in pb_hooks/*; do
+  BASENAME=$(basename "$f")
+  echo "  $BASENAME"
+  ssh "$NAS" "cat > /tmp/$BASENAME" < "$f"
+  ssh "$NAS" "echo '$SUDO_PASS' | sudo -S cp /tmp/$BASENAME $HOOKS_PATH$BASENAME"
+done
 
 echo "Restarting $CONTAINER..."
-ssh "$SYNOLOGY" "sudo docker restart $CONTAINER"
+ssh "$NAS" "echo '$SUDO_PASS' | sudo -S /usr/local/bin/docker restart $CONTAINER"
 
 echo "Done. Hooks deployed and $CONTAINER restarted."

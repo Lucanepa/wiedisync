@@ -12,7 +12,7 @@ import { getFileUrl } from '../../utils/pbFile'
 import { coercePositions, getPositionI18nKey } from '../../utils/memberPositions'
 import { formatDate, getCurrentSeason, getSeasonDateRange } from '../../utils/dateHelpers'
 import ImageLightbox from '../../components/ImageLightbox'
-import type { Member, MemberTeam, Team, Absence, TrainingAttendance } from '../../types'
+import type { Member, MemberTeam, Team, Absence, Participation } from '../../types'
 
 type ExpandedMemberTeam = MemberTeam & { expand?: { team?: Team } }
 
@@ -53,15 +53,35 @@ export default function PlayerProfile() {
 
   useEffect(() => {
     if (!memberId) return
-    pb.collection('training_attendance')
-      .getFullList<TrainingAttendance>({
-        filter: `member="${memberId}" && training.date>="${start}" && training.date<="${end}"`,
-      })
-      .then((records) => {
-        setAttendanceStats({
-          total: records.length,
-          present: records.filter((r) => r.status === 'present' || r.status === 'late').length,
-        })
+    Promise.all([
+      pb.collection('trainings').getFullList<{ id: string; date: string }>({
+        filter: `team.member_teams.member="${memberId}" && date>="${start}" && date<="${end}" && cancelled=false`,
+        fields: 'id,date',
+      }),
+      pb.collection('participations').getFullList<Participation>({
+        filter: `member="${memberId}" && activity_type="training"`,
+      }),
+      pb.collection('absences').getFullList<Absence>({
+        filter: `member="${memberId}" && end_date>="${start}" && start_date<="${end}"`,
+      }),
+    ])
+      .then(([trainings, participations, seasonAbsences]) => {
+        let present = 0
+        let excused = 0
+        for (const training of trainings) {
+          const trainingDate = training.date.split(' ')[0]
+          const hasAbsence = seasonAbsences.some(
+            (a) => a.start_date <= trainingDate && a.end_date >= trainingDate,
+          )
+          if (hasAbsence) {
+            excused++
+          } else {
+            const p = participations.find((p) => p.activity_id === training.id)
+            if (p?.status === 'confirmed') present++
+          }
+        }
+        const countable = trainings.length - excused
+        setAttendanceStats({ total: countable, present })
       })
       .catch(() => setAttendanceStats(null))
   }, [memberId, start, end])

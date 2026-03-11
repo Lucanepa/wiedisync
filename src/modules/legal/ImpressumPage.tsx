@@ -62,7 +62,7 @@ function Section({ title, children }: { title?: string; children: React.ReactNod
           {title}
         </h2>
       )}
-      <div className="text-sm leading-relaxed text-gray-600 dark:text-gray-300">
+      <div className="text-sm leading-relaxed text-gray-700 dark:text-gray-300">
         {children}
       </div>
     </section>

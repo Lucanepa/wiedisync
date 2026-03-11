@@ -273,7 +273,7 @@ export default function WeekGrid({
           const isToday = isSameDay(date, today)
           return (
             <div key={i} className="flex flex-col items-center py-1.5">
-              <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">
+              <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">
                 {DAY_HEADERS[i]}
               </span>
               <span

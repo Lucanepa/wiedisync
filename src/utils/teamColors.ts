@@ -14,15 +14,15 @@ export const teamColors: Record<string, { bg: string; text: string; border: stri
   H1:      { bg: '#1e40af', text: '#ffffff', border: '#1e3a8a' },  // blue-800
   H2:      { bg: '#2563eb', text: '#ffffff', border: '#1d4ed8' },  // blue-600
   H3:      { bg: '#3b82f6', text: '#ffffff', border: '#2563eb' },  // blue-500
-  HU23:    { bg: '#60a5fa', text: '#ffffff', border: '#3b82f6' },  // blue-400 (youth)
+  HU23:    { bg: '#60a5fa', text: '#1e3a8a', border: '#3b82f6' },  // blue-400 (youth)
   HU20:    { bg: '#93c5fd', text: '#1e3a8a', border: '#60a5fa' },  // blue-300 (youngest)
   Legends: { bg: '#1e3a5f', text: '#ffffff', border: '#162d4d' },  // slate-blue (veterans)
 
   // ── Volleyball Women (Rose) ───────────────────
   D1:      { bg: '#be123c', text: '#ffffff', border: '#9f1239' },  // rose-700
   D2:      { bg: '#e11d48', text: '#ffffff', border: '#be123c' },  // rose-600
-  D3:      { bg: '#f43f5e', text: '#ffffff', border: '#e11d48' },  // rose-500
-  D4:      { bg: '#fb7185', text: '#ffffff', border: '#f43f5e' },  // rose-400
+  D3:      { bg: '#f43f5e', text: '#881337', border: '#e11d48' },  // rose-500
+  D4:      { bg: '#fb7185', text: '#881337', border: '#f43f5e' },  // rose-400
   DU23:    { bg: '#fda4af', text: '#881337', border: '#fb7185' },  // rose-300 (youth)
 
   // ── Basketball Men (Orange) ───────────────────
@@ -38,7 +38,7 @@ export const teamColors: Record<string, { bg: string; text: string; border: stri
   // ── Basketball Women (Purple) ─────────────────
   'BB-D1':   { bg: '#7e22ce', text: '#ffffff', border: '#6b21a8' },  // purple-700
   'BB-D3':   { bg: '#a855f7', text: '#ffffff', border: '#9333ea' },  // purple-500
-  'BB-DU18': { bg: '#c084fc', text: '#ffffff', border: '#a855f7' },  // purple-400
+  'BB-DU18': { bg: '#c084fc', text: '#581c87', border: '#a855f7' },  // purple-400
   'BB-DU16': { bg: '#d8b4fe', text: '#581c87', border: '#c084fc' },  // purple-300
   'BB-DU14': { bg: '#e9d5ff', text: '#581c87', border: '#d8b4fe' },  // purple-200
   'BB-DU12': { bg: '#f3e8ff', text: '#581c87', border: '#e9d5ff' },  // purple-100
@@ -46,7 +46,7 @@ export const teamColors: Record<string, { bg: string; text: string; border: stri
   'BB-D-Classics': { bg: '#581c87', text: '#ffffff', border: '#3b0764' },  // purple-900 (veterans)
 
   // ── Basketball Mixed (Teal) ───────────────────
-  'BB-MU10': { bg: '#14b8a6', text: '#ffffff', border: '#0d9488' },  // teal-500
+  'BB-MU10': { bg: '#14b8a6', text: '#042f2e', border: '#0d9488' },  // teal-500
   'BB-MU8':  { bg: '#0d9488', text: '#ffffff', border: '#0f766e' },  // teal-600
 
   // ── Sub-brands ────────────────────────────────

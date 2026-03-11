@@ -270,7 +270,7 @@ export default function MonthGrid({
       {/* Day-of-week headers */}
       <div className="grid grid-cols-7 border-b border-gray-200 dark:border-gray-700">
         {DAY_HEADERS.map((d) => (
-          <div key={d} className="py-1.5 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
+          <div key={d} className="py-1.5 text-center text-xs font-medium text-gray-600 dark:text-gray-400">
             {d}
           </div>
         ))}

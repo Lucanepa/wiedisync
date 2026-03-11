@@ -35,7 +35,7 @@ export default function EventCard({ event, onEdit, onDelete, onOpenRoster }: Eve
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <StatusBadge status={event.event_type} colorMap={eventTypeColors} />
-            <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">{event.title}</h3>
+            <h2 className="text-sm font-medium text-gray-900 dark:text-gray-100">{event.title}</h2>
           </div>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             {formatDate(event.start_date)}
@@ -43,7 +43,7 @@ export default function EventCard({ event, onEdit, onDelete, onOpenRoster }: Eve
             {event.all_day && ` · ${t('allDay')}`}
           </p>
           {event.location && (
-            <p className="mt-0.5 text-sm text-gray-400">{event.location}</p>
+            <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{event.location}</p>
           )}
           {event.description && (
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{event.description}</p>

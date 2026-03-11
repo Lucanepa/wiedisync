@@ -101,7 +101,7 @@ export default function ProfilePage() {
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <h1 className="truncate text-xl font-bold text-gray-900 dark:text-gray-100">{user.name}</h1>
+            <h1 className="truncate text-xl font-bold text-gray-900 dark:text-gray-100">{user.name || `${user.first_name} ${user.last_name}`.trim() || '—'}</h1>
             {(user.number > 0 || positions.length > 0) && (
               <div className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
                 {user.number > 0 && (
@@ -151,7 +151,7 @@ export default function ProfilePage() {
                         <Link to={`/teams/${team?.name ?? mt.team}`} className="flex shrink-0">
                           <TeamChip team={team?.name ?? '?'} size="sm" />
                         </Link>
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                        <span className="text-xs text-gray-600 dark:text-gray-400">
                           {teamRoles.join(' · ')}
                         </span>
                       </div>
@@ -162,7 +162,7 @@ export default function ProfilePage() {
             )}
             {user.role.length > 0 && (
               <div className={`flex items-center gap-1.5 ${memberTeams.length > 0 ? 'mt-2 border-t border-gray-100 pt-2 dark:border-gray-700' : ''}`}>
-                <span className="shrink-0 text-xs leading-none text-gray-400 dark:text-gray-500">{t('roles')}</span>
+                <span className="shrink-0 text-xs leading-none text-gray-500 dark:text-gray-400">{t('roles')}</span>
                 {[...user.role].sort((a, b) => {
                   const order = ['user', 'coach', 'team_responsible', 'vb_admin', 'bb_admin', 'vorstand', 'admin', 'superuser', 'superadmin']
                   return (order.indexOf(a) === -1 ? 99 : order.indexOf(a)) - (order.indexOf(b) === -1 ? 99 : order.indexOf(b))
@@ -299,7 +299,7 @@ export default function ProfilePage() {
                   {a.start_date !== a.end_date && ` — ${formatDate(a.end_date)}`}
                 </span>
                 {a.reason_detail && (
-                  <span className="text-sm text-gray-400">{a.reason_detail}</span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">{a.reason_detail}</span>
                 )}
               </div>
             ))}

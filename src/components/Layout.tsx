@@ -254,12 +254,8 @@ export default function Layout() {
             <div className={`space-y-3 border-t p-4 ${
               theme === 'light' ? 'border-gray-200' : 'border-brand-800'
             }`}>
-              {isAdmin && (
-                <div className="flex items-center justify-between rounded-lg px-3 py-2">
-                  <AdminToggle />
-                </div>
-              )}
               <div className="flex items-center justify-between rounded-lg px-3 py-2">
+                {isAdmin && <AdminToggle />}
                 <SwitchToggle
                   enabled={theme === 'dark'}
                   onChange={toggleTheme}

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { RecordModel } from 'pocketbase'
 import type { Game, Member, Team, Hall, LicenceType, MemberTeam, ScorerDelegation } from '../../../types'

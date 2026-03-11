@@ -171,7 +171,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
       open={open}
       onClose={onClose}
       title={onboarding ? t('onboardingTitle') : t('editProfile')}
-      size="lg"
+      size="md"
       hideClose={onboarding}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -232,7 +232,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4">
           <Input
             label={`${t('firstName')}${onboarding ? ' *' : ''}`}
             type="text"
@@ -264,7 +264,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
           onChange={(e) => setPhone(e.target.value)}
         />
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4">
           <Input
             label={t('number')}
             type="number"

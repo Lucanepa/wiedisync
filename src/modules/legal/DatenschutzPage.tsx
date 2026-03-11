@@ -4,7 +4,7 @@ export default function DatenschutzPage() {
   const { t } = useTranslation('legal')
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-3xl" role="region" aria-label={t('privacyTitle')} tabIndex={0}>
       <h1 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">
         {t('privacyTitle')}
       </h1>
@@ -89,7 +89,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <h2 className="mb-3 text-lg font-semibold text-gray-900 dark:text-white">
         {title}
       </h2>
-      <div className="text-sm leading-relaxed text-gray-600 dark:text-gray-300">
+      <div className="text-sm leading-relaxed text-gray-700 dark:text-gray-300">
         {children}
       </div>
     </section>

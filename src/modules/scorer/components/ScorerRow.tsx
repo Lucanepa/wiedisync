@@ -264,14 +264,14 @@ export default function ScorerRow({
     <div className={`rounded-lg border border-gray-200 border-l-4 ${sportBorder} bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800`}>
       {/* Game info */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
+        <div className="text-sm font-medium text-gray-700 dark:text-gray-400">
           {dateStr} · {game.time ? formatTime(game.time) : ''}
         </div>
         {kscwTeam && <TeamChip team={kscwTeam} size="sm" />}
         <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">
           {game.home_team} – {game.away_team}
         </div>
-        <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-500 dark:bg-gray-700 dark:text-gray-400">
+        <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-400">
           {game.league}
         </span>
         <DutyStatus game={game} sport={sport} />

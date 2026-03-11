@@ -57,7 +57,7 @@ export default function CoachDashboard({ teamId }: CoachDashboardProps) {
         <div className="overflow-x-auto rounded-lg border dark:border-gray-700 bg-white dark:bg-gray-800">
           <table className="w-full">
             <thead>
-              <tr className="border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              <tr className="border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-left text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-400">
                 <th className="px-4 py-3">{t('playerCol')}</th>
                 <th className="hidden px-4 py-3 text-center sm:table-cell">{t('numberCol')}</th>
                 <th className="px-4 py-3 text-center">{t('trainingsCol')}</th>
@@ -73,10 +73,10 @@ export default function CoachDashboard({ teamId }: CoachDashboardProps) {
                   <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
                     {player.memberName}
                   </td>
-                  <td className="hidden px-4 py-3 text-center text-sm text-gray-500 sm:table-cell dark:text-gray-400">
+                  <td className="hidden px-4 py-3 text-center text-sm text-gray-600 sm:table-cell dark:text-gray-400">
                     {player.jerseyNumber || '—'}
                   </td>
-                  <td className="px-4 py-3 text-center text-sm text-gray-500 dark:text-gray-400">
+                  <td className="px-4 py-3 text-center text-sm text-gray-600 dark:text-gray-400">
                     {player.total}
                   </td>
                   <td className="px-4 py-3 text-center text-sm text-green-600">

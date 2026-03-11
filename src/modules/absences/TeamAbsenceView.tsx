@@ -73,7 +73,7 @@ export default function TeamAbsenceView({ teamId }: TeamAbsenceViewProps) {
             const member = memberMap[memberId]
             return (
               <div key={memberId} className="rounded-lg border dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-                <h3 className="font-medium text-gray-900 dark:text-gray-100">{member?.name ?? t('common:unknown')}</h3>
+                <h2 className="font-medium text-gray-900 dark:text-gray-100">{member?.name ?? t('common:unknown')}</h2>
                 <div className="mt-2 space-y-2">
                   {memberAbsences.map((a) => (
                     <div key={a.id} className="flex flex-wrap items-center gap-2 text-sm">
@@ -95,7 +95,7 @@ export default function TeamAbsenceView({ teamId }: TeamAbsenceViewProps) {
           {/* Members without absences */}
           {availableMembers.length > 0 && (
             <div className="rounded-lg border dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-              <h3 className="text-sm font-medium text-green-700">{t('common:available')}</h3>
+              <h2 className="text-sm font-medium text-green-700">{t('common:available')}</h2>
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 {availableMembers.map((id) => memberMap[id]?.name).filter(Boolean).join(', ')}
               </p>

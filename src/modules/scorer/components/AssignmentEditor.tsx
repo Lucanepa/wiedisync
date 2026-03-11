@@ -63,7 +63,7 @@ export default function AssignmentEditor({
 
   return (
     <div className="space-y-1.5">
-      <span className="block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{label}</span>
+      <span className="block text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">{label}</span>
       <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-2">
         <TeamSelect
           value={teamValue}
@@ -93,7 +93,7 @@ export default function AssignmentEditor({
 
       {/* Contact info */}
       {showContact && assignedPerson && (assignedPerson.phone || assignedPerson.email) && (
-        <div className="flex flex-wrap gap-x-4 gap-y-1 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-500 dark:bg-gray-750 dark:text-gray-400">
+        <div className="flex flex-wrap gap-x-4 gap-y-1 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600 dark:bg-gray-750 dark:text-gray-400">
           {assignedPerson.phone && (
             <a href={`tel:${assignedPerson.phone}`} className="flex items-center gap-1.5 transition-colors hover:text-brand-600 dark:hover:text-brand-400">
               <Phone className="h-3 w-3" />

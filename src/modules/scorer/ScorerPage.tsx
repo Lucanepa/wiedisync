@@ -256,7 +256,7 @@ export default function ScorerPage() {
     }
   }
 
-  const filterLabelClass = 'mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400'
+  const filterLabelClass = 'mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400'
 
   const renderScorerRow = (g: Game) => (
     <ScorerRow

@@ -19,7 +19,7 @@ export class LoginPage {
     // so we target inputs by placeholder text (from de/auth.ts)
     this.emailInput = page.getByPlaceholder('name@beispiel.ch')
     this.passwordInput = page.getByPlaceholder('Passwort eingeben')
-    this.submitButton = page.getByRole('button', { name: 'Anmelden' })
+    this.submitButton = page.getByRole('button', { name: 'Anmelden', exact: true })
     this.errorMessage = page.locator('p').filter({ hasText: /Ungültige|Invalid/ })
     this.logo = page.getByAltText('KSC Wiedikon')
     this.rememberMeCheckbox = page.getByRole('checkbox', { name: /Angemeldet bleiben/ })

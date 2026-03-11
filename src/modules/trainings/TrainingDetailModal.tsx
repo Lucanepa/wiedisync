@@ -51,22 +51,22 @@ export default function TrainingDetailModal({ training, onClose }: TrainingDetai
           {/* Details */}
           <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
             <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 shrink-0 text-gray-400" />
+              <Calendar className="h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400" />
               <span>{formatWeekday(training.date)}, {formatDate(training.date)}</span>
             </div>
             <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 shrink-0 text-gray-400" />
+              <Clock className="h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400" />
               <span>{formatTime(training.start_time)} – {formatTime(training.end_time)}</span>
             </div>
             {(hall || training.hall_name) && (
               <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 shrink-0 text-gray-400" />
+                <MapPin className="h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400" />
                 <span>{hall?.name || training.hall_name}</span>
               </div>
             )}
             {coach && (
               <div className="flex items-center gap-2">
-                <User className="h-4 w-4 shrink-0 text-gray-400" />
+                <User className="h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400" />
                 <span>{coach.first_name} {coach.last_name}</span>
               </div>
             )}

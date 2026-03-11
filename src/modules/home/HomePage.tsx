@@ -196,7 +196,7 @@ export default function HomePage() {
         <h1 className="mt-3 text-2xl font-bold text-gray-900 sm:text-3xl dark:text-gray-100">
           KSC Wiedikon
         </h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
           {t('subtitle')}
         </p>
       </div>
@@ -386,7 +386,7 @@ function NewsRow({ notification }: { notification: Notification }) {
     <div className="flex items-center gap-3 border-b border-gray-100 px-4 py-2.5 last:border-b-0 dark:border-gray-700">
       <span className="shrink-0 text-gray-500 dark:text-gray-400">{newsTypeIcons[notification.type] ?? <Bell className="h-4 w-4" />}</span>
       <p className="min-w-0 flex-1 truncate text-sm text-gray-900 dark:text-gray-100">{String(message)}</p>
-      <span className="shrink-0 text-xs text-gray-400 dark:text-gray-500">{timeAgo}</span>
+      <span className="shrink-0 text-xs text-gray-500 dark:text-gray-400">{timeAgo}</span>
     </div>
   )
 }
@@ -434,10 +434,10 @@ function CompactGameRow({ game, showScore, onClick }: { game: ExpandedGame; show
       {/* Vertical score: green=winner, red=loser, bold=Wiedikon */}
       {showScore && game.status === 'completed' && (
         <div className="shrink-0 text-right font-mono text-sm leading-snug">
-          <div className={`${homeWon ? 'text-green-600 dark:text-green-400' : awayWon ? 'text-red-500' : 'text-gray-400'} ${game.type === 'home' ? 'font-bold' : 'font-medium'}`}>
+          <div className={`${homeWon ? 'text-green-600 dark:text-green-400' : awayWon ? 'text-red-500' : 'text-gray-500'} ${game.type === 'home' ? 'font-bold' : 'font-medium'}`}>
             {game.home_score}
           </div>
-          <div className={`${awayWon ? 'text-green-600 dark:text-green-400' : homeWon ? 'text-red-500' : 'text-gray-400'} ${game.type === 'away' ? 'font-bold' : 'font-medium'}`}>
+          <div className={`${awayWon ? 'text-green-600 dark:text-green-400' : homeWon ? 'text-red-500' : 'text-gray-500'} ${game.type === 'away' ? 'font-bold' : 'font-medium'}`}>
             {game.away_score}
           </div>
         </div>
@@ -470,7 +470,7 @@ function CompactTrainingRow({ training, onClick }: { training: TrainingExpanded;
           {hall && <span className="text-sm text-gray-700 dark:text-gray-300">{hall.name}</span>}
         </div>
         {training.notes && (
-          <p className="mt-0.5 truncate text-xs text-gray-400 dark:text-gray-500">{training.notes}</p>
+          <p className="mt-0.5 truncate text-xs text-gray-500 dark:text-gray-400">{training.notes}</p>
         )}
       </div>
     </div>
@@ -495,12 +495,12 @@ function EventRow({ event }: { event: EventExpanded }) {
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <StatusBadge status={event.event_type} />
-            <h3 className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
+            <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
               {event.title}
-            </h3>
+            </p>
           </div>
           {event.location && (
-            <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">{event.location}</p>
+            <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{event.location}</p>
           )}
           {event.description && (
             <p className="mt-1 line-clamp-2 text-xs text-gray-500 dark:text-gray-400">

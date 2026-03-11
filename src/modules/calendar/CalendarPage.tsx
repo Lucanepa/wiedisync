@@ -167,7 +167,7 @@ export default function CalendarPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-gray-100">{t('title')}</h1>
-          <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{subtitles[viewMode]}</p>
+          <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400">{subtitles[viewMode]}</p>
         </div>
         <div className="flex items-center gap-2">
           {needsData && (
@@ -294,7 +294,7 @@ export default function CalendarPage() {
                   <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
                     {entry.title}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
                     {entry.startTime ?? ''}{entry.location ? ` · ${entry.location}` : ''}
                   </p>
                 </div>

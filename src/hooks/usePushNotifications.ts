@@ -61,7 +61,7 @@ export function usePushNotifications() {
       }
 
       // Get VAPID public key from PB
-      const vapidResp = await fetch(`${PB_URL}/api/push/vapid-public-key`)
+      const vapidResp = await fetch(`${PB_URL}/api/web-push/vapid-public-key`)
       const { publicKey } = await vapidResp.json()
 
       // Subscribe via PushManager
@@ -74,7 +74,7 @@ export function usePushNotifications() {
       const subJson = subscription.toJSON()
 
       // Register with PB
-      await fetch(`${PB_URL}/api/push/subscribe`, {
+      await fetch(`${PB_URL}/api/web-push/subscribe`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -113,7 +113,7 @@ export function usePushNotifications() {
         await subscription.unsubscribe()
 
         // Remove from PB
-        await fetch(`${PB_URL}/api/push/unsubscribe`, {
+        await fetch(`${PB_URL}/api/web-push/unsubscribe`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

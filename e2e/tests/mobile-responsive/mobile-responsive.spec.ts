@@ -122,7 +122,8 @@ test.describe('@mobile — touch targets', () => {
       if (!(await buttons.nth(i).isVisible())) continue
       const box = await buttons.nth(i).boundingBox()
       if (!box) continue
-      expect(box.height).toBeGreaterThanOrEqual(44)
+      const label = await buttons.nth(i).evaluate(el => el.getAttribute('aria-label') || el.textContent?.trim().slice(0, 40) || `button[${i}]`)
+      expect(box.height, `Button "${label}" at index ${i} is too small`).toBeGreaterThanOrEqual(44)
     }
   })
 })

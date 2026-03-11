@@ -32,6 +32,12 @@ export default {
   deadline_game: 'Anmeldefrist morgen: {{home_team}} vs {{away_team}}',
   deadline_training: 'Anmeldefrist morgen: Training am {{date}}',
   deadline_event: 'Anmeldefrist morgen: {{title}}',
+  // Push notifications
+  pushNotifications: 'Push-Benachrichtigungen',
+  pushEnable: 'Aktivieren',
+  pushDisable: 'Deaktivieren',
+  pushDenied: 'Push-Benachrichtigungen wurden im Browser blockiert.',
+  pushNotSupported: 'Push-Benachrichtigungen werden von diesem Browser nicht unterstützt.',
   // Time helpers
   justNow: 'gerade eben',
   minutesAgo: 'vor {{count}} Min.',

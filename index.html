@@ -8,16 +8,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&display=swap" rel="stylesheet" />
     <title>KSCWiedisync</title>
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#4A55A2" />
     <script>
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function(rs) {
-          rs.forEach(function(r) { r.unregister(); });
-        });
-      }
-      if ('caches' in window) {
-        caches.keys().then(function(names) {
-          names.forEach(function(n) { caches.delete(n); });
-        });
+        navigator.serviceWorker.register('/sw.js').catch(function() {});
       }
     </script>
   </head>

@@ -64,7 +64,7 @@ export default function RosterEditor() {
   const { teamSlug } = useParams<{ teamSlug: string }>()
   const { isCoachOf } = useAuth()
   const season = getCurrentSeason()
-  const { data: allMembers } = usePB<Member>('members', { filter: 'active=true', perPage: 500, sort: 'last_name', fields: 'id,name,first_name,last_name,photo,number,position,licences' })
+  const { data: allMembers } = usePB<Member>('members', { filter: 'active=true', all: true, sort: 'last_name', fields: 'id,name,first_name,last_name,photo,number,position,licences' })
   const { create, remove } = useMutation<MemberTeam>('member_teams')
 
   const [team, setTeam] = useState<Team | null>(null)

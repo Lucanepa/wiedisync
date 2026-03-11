@@ -86,7 +86,7 @@ export function useTeamParticipations(
     filter: activityId
       ? `(${memberFilter}) && activity_type="${activityType}" && activity_id="${activityId}"${sessionFilter}`
       : '',
-    perPage: 200,
+    all: true,
     enabled: !!activityId && memberIds.length > 0,
   })
 
@@ -106,7 +106,7 @@ export function useAllEventParticipations(
     filter: activityId
       ? `(${memberFilter}) && activity_type="event" && activity_id="${activityId}"`
       : '',
-    perPage: 500,
+    all: true,
     enabled: !!activityId && memberIds.length > 0,
   })
 

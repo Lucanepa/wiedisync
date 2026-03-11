@@ -54,6 +54,44 @@ export default defineConfig({
       dependencies: ['setup'],
     },
 
+    // Multi-device mobile responsiveness tests (@mobile tag)
+    {
+      name: 'mobile-iphone-se',
+      testDir: './e2e/tests/mobile-responsive',
+      use: {
+        ...devices['iPhone SE'],
+        storageState: 'e2e/.auth/user.json',
+      },
+      dependencies: ['setup'],
+    },
+    {
+      name: 'mobile-iphone-15',
+      testDir: './e2e/tests/mobile-responsive',
+      use: {
+        ...devices['iPhone 15'],
+        storageState: 'e2e/.auth/user.json',
+      },
+      dependencies: ['setup'],
+    },
+    {
+      name: 'mobile-pixel-7',
+      testDir: './e2e/tests/mobile-responsive',
+      use: {
+        ...devices['Pixel 7'],
+        storageState: 'e2e/.auth/user.json',
+      },
+      dependencies: ['setup'],
+    },
+    {
+      name: 'mobile-ipad-pro-11',
+      testDir: './e2e/tests/mobile-responsive',
+      use: {
+        ...devices['iPad Pro 11'],
+        storageState: 'e2e/.auth/user.json',
+      },
+      dependencies: ['setup'],
+    },
+
     // Unauthenticated tests — public/ and auth/ tests only
     // Depends on setup to avoid rate-limiting from concurrent auth requests
     {

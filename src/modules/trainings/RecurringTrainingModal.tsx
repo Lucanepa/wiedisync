@@ -56,7 +56,7 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
   }, [selectedTeamId, allSlots, effectiveIsAdmin, hasAdminAccessToTeam, coachTeamIds])
 
   const { data: halls } = usePB<Hall>('halls', { sort: 'name', perPage: 50 })
-  const { data: closures } = usePB<HallClosure>('hall_closures', { perPage: 500 })
+  const { data: closures } = usePB<HallClosure>('hall_closures', { all: true })
 
   const [selectedSlot, setSelectedSlot] = useState('')
   const [startDate, setStartDate] = useState('')

@@ -33,7 +33,7 @@ export default function SportToggle({ value, onChange, showAll = true, className
           key={opt.value}
           onClick={() => onChange(opt.value)}
           aria-label={opt.label}
-          className={`flex items-center justify-center px-3 py-1.5 text-sm font-medium transition-colors ${
+          className={`flex items-center justify-center px-3 py-3.5 text-sm font-medium transition-colors ${
             value === opt.value
               ? 'bg-brand-100 text-brand-800 dark:bg-brand-700 dark:text-white'
               : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700'

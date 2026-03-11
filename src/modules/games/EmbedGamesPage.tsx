@@ -53,7 +53,7 @@ export default function EmbedGamesPage() {
 
   const { data: allRankings, isLoading: rankingsLoading } = usePB<SvRanking>('sv_rankings', {
     sort: '+league,+rank',
-    perPage: 200,
+    perPage: 2000,
   })
 
   const leagueGroups = useMemo(() => {

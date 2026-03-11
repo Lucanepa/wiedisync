@@ -32,7 +32,7 @@ jobs:
         run: npx playwright install --with-deps chromium webkit
 
       - name: Run E2E tests
-        run: npx playwright test
+        run: npx playwright test --update-snapshots
         env:
           VITE_PB_URL: ${{ secrets.VITE_PB_URL }}
           TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
@@ -53,4 +53,12 @@ jobs:
           path: |
             playwright-report/
             test-results/
+          retention-days: 7
+
+      - name: Upload updated snapshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-snapshots
+          path: e2e/tests/mobile-responsive/mobile-responsive.spec.ts-snapshots/
           retention-days: 7

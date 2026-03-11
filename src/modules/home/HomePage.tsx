@@ -152,12 +152,12 @@ export default function HomePage() {
               onClick={() => setSport('vb')}
               className={`rounded-full p-2 transition-all ${
                 sport === 'vb' || sport === 'all'
-                  ? 'scale-110 text-brand-600 dark:text-brand-400'
-                  : 'text-gray-300 hover:text-gray-400 dark:text-gray-600 dark:hover:text-gray-500'
+                  ? 'scale-110'
+                  : 'opacity-30 hover:opacity-50'
               }`}
               aria-label="Volleyball"
             >
-              <VolleyballIcon className="h-7 w-7 sm:h-8 sm:w-8" filled />
+              <VolleyballIcon className="h-9 w-9 sm:h-10 sm:w-10" filled />
             </button>
           )}
           {showSportToggle ? (
@@ -167,14 +167,14 @@ export default function HomePage() {
               aria-label="Show all sports"
             >
               <img
-                src={theme === 'light' ? '/kscw_blau.png' : '/kscw_weiss.png'}
+                src="/kscw_logo_vektoren.svg"
                 alt="KSC Wiedikon"
                 className="h-20 w-auto sm:h-24"
               />
             </button>
           ) : (
             <img
-              src={theme === 'light' ? '/kscw_blau.png' : '/kscw_weiss.png'}
+              src="/kscw_logo_vektoren.svg"
               alt="KSC Wiedikon"
               className="h-20 w-auto sm:h-24"
             />
@@ -184,12 +184,12 @@ export default function HomePage() {
               onClick={() => setSport('bb')}
               className={`rounded-full p-2 transition-all ${
                 sport === 'bb' || sport === 'all'
-                  ? 'scale-110 text-orange-500 dark:text-orange-400'
-                  : 'text-gray-300 hover:text-gray-400 dark:text-gray-600 dark:hover:text-gray-500'
+                  ? 'scale-110'
+                  : 'opacity-30 hover:opacity-50'
               }`}
               aria-label="Basketball"
             >
-              <BasketballIcon className="h-7 w-7 sm:h-8 sm:w-8" filled />
+              <BasketballIcon className="h-9 w-9 sm:h-10 sm:w-10" filled />
             </button>
           )}
         </div>

@@ -27,7 +27,7 @@ export default function SportToggle({ value, onChange, showAll = true, className
   const items = showAll ? OPTIONS : OPTIONS.filter((o) => o.value !== 'all')
 
   return (
-    <div className={`flex items-center overflow-hidden rounded-md border border-gray-300 dark:border-gray-600 ${className}`}>
+    <div className={`flex overflow-hidden rounded-md border border-gray-300 dark:border-gray-600 ${className}`}>
       {items.map((opt, i) => (
         <button
           key={opt.value}

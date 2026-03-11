@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useTheme } from '../../hooks/useTheme'
 import { useAuth } from '../../hooks/useAuth'
 import { usePB } from '../../hooks/usePB'
 import { useNotifications } from '../../hooks/useNotifications'
@@ -35,7 +34,7 @@ type MemberTeamExpanded = MemberTeam & { expand?: { team?: Team } }
 export default function HomePage() {
   const { t } = useTranslation('home')
   const { t: tn } = useTranslation('notifications')
-  const { theme } = useTheme()
+
   const { user, isApproved, primarySport } = useAuth()
   const { sport, setSport } = useSportPreference()
   // Hide sport toggle for logged-in users who play only one sport

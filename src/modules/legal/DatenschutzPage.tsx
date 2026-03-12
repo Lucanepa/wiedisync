@@ -48,11 +48,16 @@ export default function DatenschutzPage() {
       </Section>
 
       <Section title={t('thirdPartyTitle')}>
+        <p className="mb-3">{t('thirdPartyIntro')}</p>
         <ul className="list-disc space-y-2 pl-5">
           <li>{t('thirdPartyCloudflare')}</li>
           <li>{t('thirdPartySwissVolley')}</li>
           <li>{t('thirdPartyGCal')}</li>
         </ul>
+      </Section>
+
+      <Section title={t('retentionTitle')}>
+        <p>{t('retentionText')}</p>
       </Section>
 
       <Section title={t('storageTitle')}>
@@ -68,8 +73,10 @@ export default function DatenschutzPage() {
           <li>{t('rightsCorrection')}</li>
           <li>{t('rightsDeletion')}</li>
           <li>{t('rightsPortability')}</li>
+          <li>{t('rightsObject')}</li>
         </ul>
         <p className="mt-4">{t('rightsContact')}</p>
+        <p className="mt-2">{t('rightsFDPIC')}</p>
       </Section>
 
       <Section title={t('photosTitle')}>

@@ -1,11 +1,11 @@
 export default {
   // Datenschutz page
   privacyTitle: 'Datenschutzerklärung',
-  lastUpdated: 'Stand: 28. Februar 2026',
+  lastUpdated: 'Stand: 12. März 2026',
 
   controllerTitle: '1. Verantwortliche Stelle',
   controllerText:
-    'KSC Wiedikon\nSchrennengasse 7\n8003 Zürich\nE-Mail: vorstand@kscw.ch',
+    'Luca Canepa\nZürich, Schweiz\nE-Mail: luca.canepa@gmail.com',
 
   dataCollectedTitle: '2. Welche Daten wir erheben',
   dataAccountTitle: 'Kontodaten (bei Registrierung)',
@@ -31,15 +31,20 @@ export default {
   legalBasisConsent:
     'Einwilligung — Mitglieder laden ihr Profilfoto selbst hoch und können es jederzeit ändern oder entfernen.',
 
-  thirdPartyTitle: '4. Drittanbieter',
+  thirdPartyTitle: '4. Auftragsverarbeiter',
+  thirdPartyIntro: 'Folgende Dienstleister werden als Auftragsverarbeiter eingesetzt:',
   thirdPartyCloudflare:
-    'Cloudflare, Inc. — Hosting und CDN der Website. Cloudflare kann technisch notwendige Cookies setzen (z.B. __cf_bm). Cloudflare verfügt über EU-Standardvertragsklauseln.',
+    'Cloudflare, Inc. — Frontend-Hosting (Cloudflare Pages) | Global (USA) | DPA, EU-Standardvertragsklauseln, Swiss-US Data Privacy Framework',
   thirdPartySwissVolley:
     'Swiss Volley API (api.volleyball.ch) — Wir rufen öffentlich verfügbare Spieldaten und Ranglisten ab. Es werden keine personenbezogenen Daten an Swiss Volley übermittelt.',
   thirdPartyGCal:
     'Google Calendar — Wir rufen einen öffentlichen Kalender-Feed ab, um Hallenbelegungen anzuzeigen. Es werden keine personenbezogenen Daten an Google übermittelt.',
 
-  storageTitle: '5. Datenspeicherung',
+  retentionTitle: '5. Aufbewahrungsfristen',
+  retentionText:
+    'Ihre personenbezogenen Daten werden so lange gespeichert, wie Sie ein aktives Konto auf der Plattform haben. Nach einer Löschanfrage oder bei Beendigung der Mitgliedschaft werden Ihre Daten innerhalb von 30 Tagen gelöscht, sofern keine gesetzlichen Aufbewahrungspflichten entgegenstehen. Sie können Ihr Konto jederzeit selbst in den Profileinstellungen löschen.',
+
+  storageTitle: '6. Datenspeicherung',
   storageServer:
     'Die Daten werden auf einem selbst betriebenen Server in der Schweiz gespeichert (PocketBase). Das Frontend wird über Cloudflare Pages bereitgestellt.',
   storageLocal:
@@ -47,21 +52,24 @@ export default {
   storageNoCookies:
     'Die Website selbst setzt keine Cookies. Cloudflare kann technisch notwendige Cookies setzen, die keiner Einwilligung bedürfen.',
 
-  rightsTitle: '6. Ihre Rechte',
+  rightsTitle: '7. Ihre Rechte',
   rightsText:
     'Gemäss dem Schweizer Datenschutzgesetz (nDSG) haben Sie folgende Rechte:',
   rightsAccess: 'Auskunftsrecht — Sie können Auskunft über Ihre gespeicherten Daten verlangen.',
-  rightsCorrection: 'Berichtigungsrecht — Sie können die Berichtigung unrichtiger Daten verlangen.',
-  rightsDeletion: 'Recht auf Löschung — Sie können die Löschung Ihrer Daten verlangen.',
+  rightsCorrection: 'Berichtigungsrecht — Sie können die Berichtigung unrichtiger Daten verlangen. Viele Daten können Sie direkt in Ihrem Profil anpassen.',
+  rightsDeletion: 'Recht auf Löschung — Sie können die Löschung Ihrer Daten verlangen oder Ihr Konto selbst löschen.',
   rightsPortability: 'Recht auf Datenherausgabe — Sie können Ihre Daten in einem gängigen Format erhalten.',
+  rightsObject: 'Widerspruchsrecht — Sie können der Verarbeitung Ihrer Daten jederzeit widersprechen.',
   rightsContact:
-    'Für Anfragen zu Ihren Rechten wenden Sie sich bitte an: vorstand@kscw.ch',
+    'Für Anfragen zu Ihren Rechten wenden Sie sich bitte an: luca.canepa@gmail.com',
+  rightsFDPIC:
+    'Sie haben zudem das Recht, eine Beschwerde beim Eidgenössischen Datenschutz- und Öffentlichkeitsbeauftragten (EDÖB) einzureichen: www.edoeb.admin.ch',
 
-  photosTitle: '7. Fotos',
+  photosTitle: '8. Fotos',
   photosText:
     'Spielerfotos werden von den Mitgliedern selbst über ihr Profil hochgeladen und können jederzeit geändert oder entfernt werden. Hochgeladene Fotos sind auf den öffentlichen Teamseiten sichtbar.',
 
-  changesTitle: '8. Änderungen',
+  changesTitle: '9. Änderungen',
   changesText:
     'Wir behalten uns vor, diese Datenschutzerklärung bei Bedarf anzupassen. Die aktuelle Version ist auf dieser Seite verfügbar.',
 

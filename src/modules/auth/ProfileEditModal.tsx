@@ -38,6 +38,8 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
   const [phone, setPhone] = useState('')
   const [number, setNumber] = useState<number>(0)
   const [birthdate, setBirthdate] = useState('')
+  const [hidePhone, setHidePhone] = useState(false)
+  const [birthdateVisibility, setBirthdateVisibility] = useState<'full' | 'year_only' | 'hidden'>('full')
   const [language, setLanguage] = useState<'german' | 'english'>('german')
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
@@ -54,6 +56,8 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
       setPhone(user.phone ?? '')
       setNumber(user.number ?? 0)
       setBirthdate(user.birthdate ? user.birthdate.slice(0, 10) : '')
+      setHidePhone(user.hide_phone ?? false)
+      setBirthdateVisibility((user.birthdate_visibility as 'full' | 'year_only' | 'hidden') || 'full')
       setLanguage((user.language as 'german' | 'english') || 'german')
       setPhotoFile(null)
       setPhotoPreview(null)
@@ -135,6 +139,8 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
       formData.append('email', email)
       formData.append('phone', phone)
       formData.append('number', String(number))
+      formData.append('hide_phone', String(hidePhone))
+      formData.append('birthdate_visibility', birthdateVisibility)
       formData.append('language', language)
       if (birthdate) {
         formData.append('birthdate', birthdate)
@@ -281,6 +287,38 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
             onChange={(e) => setBirthdate(e.target.value)}
           />
         </div>
+
+        {/* Privacy — hidden in onboarding */}
+        {!onboarding && (
+          <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-800">
+            <p className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+              {t('privacySection')}
+            </p>
+            <div className="space-y-3">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={hidePhone}
+                  onChange={(e) => setHidePhone(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 dark:border-gray-500 dark:bg-gray-700"
+                />
+                <div>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">{t('hidePhone')}</span>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('hidePhoneHint')}</p>
+                </div>
+              </label>
+              <Select
+                label={t('birthdateVisibility')}
+                value={birthdateVisibility}
+                onChange={(e) => setBirthdateVisibility(e.target.value as 'full' | 'year_only' | 'hidden')}
+              >
+                <option value="full">{t('birthdateVisibilityFull')}</option>
+                <option value="year_only">{t('birthdateVisibilityYearOnly')}</option>
+                <option value="hidden">{t('birthdateVisibilityHidden')}</option>
+              </Select>
+            </div>
+          </div>
+        )}
 
         {/* Change Password — hidden in onboarding */}
         {!onboarding && (

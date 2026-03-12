@@ -143,14 +143,14 @@ export default function PlayerProfile() {
           </div>
           {memberTeams.some((mt) => isCoachOf(mt.team)) && (
             <div className="mt-2 flex flex-wrap gap-3 text-sm text-gray-500 dark:text-gray-400">
-              {member.birthdate && (
+              {member.birthdate_visibility !== 'hidden' && member.birthdate && (
                 <span>{t('age', { years: differenceInYears(new Date(), new Date(member.birthdate)) })}</span>
               )}
-              {!member.birthdate && member.yob > 0 && (
+              {member.birthdate_visibility !== 'hidden' && !member.birthdate && member.yob > 0 && (
                 <span>{t('age', { years: new Date().getFullYear() - member.yob })}</span>
               )}
               {member.email && <span>{member.email}</span>}
-              {member.phone && <span>{member.phone}</span>}
+              {!member.hide_phone && member.phone && <span>{member.phone}</span>}
               {member.license_nr && <span>License: {member.license_nr}</span>}
             </div>
           )}

@@ -171,7 +171,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
       open={open}
       onClose={onClose}
       title={onboarding ? t('onboardingTitle') : t('editProfile')}
-      size="md"
+      size="lg"
       hideClose={onboarding}
     >
       <form onSubmit={handleSubmit} className="space-y-4">

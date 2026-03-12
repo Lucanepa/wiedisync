@@ -86,7 +86,27 @@ export default {
   completeProfile: 'Profil bestätigen',
   birthdate: 'Geburtsdatum',
 
+  // Privacy
+  privacySection: 'Datenschutz',
+  hidePhone: 'Telefonnummer verbergen',
+  hidePhoneHint: 'Deine Telefonnummer wird für andere Mitglieder nicht angezeigt.',
+  birthdateVisibility: 'Geburtsdatum-Sichtbarkeit',
+  birthdateVisibilityFull: 'Vollständig anzeigen',
+  birthdateVisibilityYearOnly: 'Nur Jahrgang',
+  birthdateVisibilityHidden: 'Verbergen',
+  hidden: 'Verborgen',
+  yearOnly: 'Nur Jahrgang',
+
   // Guest registration
   isGuest: 'Ich bin Gast-Spieler/in',
   guestExplanation: 'Gäste haben bei vollen Trainings eine niedrigere Priorität als lizenzierte Spieler.',
+
+  // Danger Zone
+  dangerZone: 'Gefahrenbereich',
+  deleteAccount: 'Konto löschen',
+  deleteAccountDescription: 'Dein Konto und alle damit verbundenen Daten werden dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.',
+  deleteAccountConfirm: 'Konto endgültig löschen',
+  deleteAccountEmailPrompt: 'Gib deine E-Mail-Adresse ein, um zu bestätigen:',
+  deleteAccountEmailPlaceholder: 'E-Mail zur Bestätigung',
+  deleteAccountError: 'Konto konnte nicht gelöscht werden. Bitte versuche es erneut.',
 } as const

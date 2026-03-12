@@ -58,9 +58,11 @@ export default function MemberRow({ memberTeam, teamId: _teamId, teamSlug, team,
   const initials = `${member.first_name?.[0] ?? ''}${member.last_name?.[0] ?? ''}`.toUpperCase()
   const role = getMemberRole(member.id, team)
 
-  const birthdate = member.birthdate
-    ? new Date(member.birthdate).toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric' })
-    : null
+  const birthdateDisplay = (() => {
+    if (member.birthdate_visibility === 'hidden' || !member.birthdate) return null
+    if (member.birthdate_visibility === 'year_only') return new Date(member.birthdate).getFullYear().toString()
+    return new Date(member.birthdate).toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  })()
 
   async function saveField(field: string, value: string | number | string[]) {
     try {
@@ -208,12 +210,12 @@ export default function MemberRow({ memberTeam, teamId: _teamId, teamSlug, team,
       )}
       {showContact && (
         <td className="hidden px-4 py-3 text-sm text-gray-500 md:table-cell dark:text-gray-400">
-          {member.phone || '—'}
+          {member.hide_phone ? '—' : (member.phone || '—')}
         </td>
       )}
       {showContact && (
         <td className="hidden px-4 py-3 text-sm text-gray-500 lg:table-cell dark:text-gray-400">
-          {birthdate || '—'}
+          {birthdateDisplay || '—'}
         </td>
       )}
 

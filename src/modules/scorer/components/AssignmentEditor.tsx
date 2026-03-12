@@ -161,9 +161,9 @@ export default function AssignmentEditor({
       )}
 
       {/* Contact info */}
-      {showContact && assignedPerson && (assignedPerson.phone || assignedPerson.email) && (
+      {showContact && assignedPerson && ((!assignedPerson.hide_phone && assignedPerson.phone) || assignedPerson.email) && (
         <div className="flex flex-wrap gap-x-4 gap-y-1 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600 dark:bg-gray-750 dark:text-gray-400">
-          {assignedPerson.phone && (
+          {!assignedPerson.hide_phone && assignedPerson.phone && (
             <a href={`tel:${assignedPerson.phone}`} className="flex items-center gap-1.5 transition-colors hover:text-brand-600 dark:hover:text-brand-400">
               <Phone className="h-3 w-3" />
               {assignedPerson.phone}

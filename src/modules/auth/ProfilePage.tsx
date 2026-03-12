@@ -11,6 +11,7 @@ import { getFileUrl } from '../../utils/pbFile'
 import { coercePositions, getPositionI18nKey } from '../../utils/memberPositions'
 import { formatDate, toISODate } from '../../utils/dateHelpers'
 import ProfileEditModal from './ProfileEditModal'
+import DeleteAccountModal from './DeleteAccountModal'
 import type { MemberTeam, Team, Absence, Training, Game, Event, LicenceType } from '../../types'
 
 const LICENCE_LABELS: Record<LicenceType, string> = {
@@ -31,6 +32,7 @@ export default function ProfilePage() {
   const { t } = useTranslation('auth')
   const { t: tt } = useTranslation('teams')
   const [editOpen, setEditOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
 
   const { data: memberTeams } = usePB<ExpandedMemberTeam>('member_teams', {
     filter: user ? `member="${user.id}"` : '',
@@ -181,8 +183,27 @@ export default function ProfilePage() {
             <p className="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">{user.email || '—'}</p>
           </div>
           <div className="rounded-lg border bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-            <p className="text-sm text-gray-500 dark:text-gray-400">{t('phone')}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('phone')}</p>
+              {user.hide_phone && (
+                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">{t('hidden')}</span>
+              )}
+            </div>
             <p className="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">{user.phone || '—'}</p>
+          </div>
+          <div className="rounded-lg border bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+            <div className="flex items-center gap-2">
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('birthdate')}</p>
+              {user.birthdate_visibility === 'hidden' && (
+                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">{t('hidden')}</span>
+              )}
+              {user.birthdate_visibility === 'year_only' && (
+                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">{t('yearOnly')}</span>
+              )}
+            </div>
+            <p className="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">
+              {user.birthdate ? new Date(user.birthdate).toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'}
+            </p>
           </div>
           <div className="rounded-lg border bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
             <p className="text-sm text-gray-500 dark:text-gray-400">{t('licenseNr')}</p>
@@ -307,9 +328,25 @@ export default function ProfilePage() {
         )}
       </div>
 
+      {/* Danger Zone */}
+      <div className="mt-8 rounded-2xl border border-red-200 bg-red-50/30 p-5 dark:border-red-900/40 dark:bg-red-950/10">
+        <h2 className="text-base font-semibold text-red-600 dark:text-red-400">{t('dangerZone')}</h2>
+        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{t('deleteAccountDescription')}</p>
+        <div className="mt-4">
+          <Button variant="danger" size="sm" onClick={() => setDeleteOpen(true)}>
+            {t('deleteAccount')}
+          </Button>
+        </div>
+      </div>
+
       <ProfileEditModal
         open={editOpen}
         onClose={() => setEditOpen(false)}
+      />
+      <DeleteAccountModal
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        userEmail={user.email}
       />
     </div>
   )

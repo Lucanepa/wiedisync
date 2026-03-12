@@ -54,6 +54,8 @@ export interface Member extends RecordModel {
   requested_team: string
   language: 'english' | 'german' | ''
   is_guest: boolean
+  hide_phone: boolean
+  birthdate_visibility: 'full' | 'year_only' | 'hidden'
 }
 
 export interface MemberTeam extends RecordModel {

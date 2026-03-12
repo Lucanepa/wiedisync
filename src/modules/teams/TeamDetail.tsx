@@ -128,10 +128,10 @@ export default function TeamDetail() {
           cmp = (ma.email ?? '').localeCompare(mb.email ?? '')
           break
         case 'phone':
-          cmp = (ma.phone ?? '').localeCompare(mb.phone ?? '')
+          cmp = (ma.hide_phone ? '' : ma.phone ?? '').localeCompare(mb.hide_phone ? '' : mb.phone ?? '')
           break
         case 'birthdate':
-          cmp = (ma.birthdate ?? '').localeCompare(mb.birthdate ?? '')
+          cmp = (ma.birthdate_visibility === 'hidden' ? '' : ma.birthdate ?? '').localeCompare(mb.birthdate_visibility === 'hidden' ? '' : mb.birthdate ?? '')
           break
         case 'role': {
           const ra = getMemberRole(ma.id, team) ?? ''

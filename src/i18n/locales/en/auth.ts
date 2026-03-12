@@ -86,7 +86,27 @@ export default {
   completeProfile: 'Confirm Profile',
   birthdate: 'Birthdate',
 
+  // Privacy
+  privacySection: 'Privacy',
+  hidePhone: 'Hide phone number',
+  hidePhoneHint: 'Your phone number will not be shown to other members.',
+  birthdateVisibility: 'Birthdate visibility',
+  birthdateVisibilityFull: 'Show full date',
+  birthdateVisibilityYearOnly: 'Year only',
+  birthdateVisibilityHidden: 'Hide',
+  hidden: 'Hidden',
+  yearOnly: 'Year only',
+
   // Guest registration
   isGuest: 'I am a guest player',
   guestExplanation: 'Guests have lower priority than licenced players when trainings are full.',
+
+  // Danger Zone
+  dangerZone: 'Danger Zone',
+  deleteAccount: 'Delete Account',
+  deleteAccountDescription: 'Your account and all associated data will be permanently deleted. This action cannot be undone.',
+  deleteAccountConfirm: 'Permanently delete account',
+  deleteAccountEmailPrompt: 'Type your email address to confirm:',
+  deleteAccountEmailPlaceholder: 'Email to confirm',
+  deleteAccountError: 'Could not delete account. Please try again.',
 } as const

@@ -501,9 +501,9 @@ function DutyPersonRow({ label, member, fallbackName, dutyTeam, showContact }: {
           {name}
           {teamName && <TeamChip team={teamName} size="xs" />}
         </span>
-        {showContact && member && (member.phone || member.email) && (
+        {showContact && member && ((!member.hide_phone && member.phone) || member.email) && (
           <div className="mt-0.5 flex flex-wrap gap-x-3 text-xs text-gray-500 dark:text-gray-400">
-            {member.phone && (
+            {!member.hide_phone && member.phone && (
               <a href={`tel:${member.phone}`} className="hover:text-brand-600 dark:hover:text-brand-400">{member.phone}</a>
             )}
             {member.email && (

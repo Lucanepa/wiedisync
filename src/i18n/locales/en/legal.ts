@@ -1,11 +1,11 @@
 export default {
   // Privacy Policy page
   privacyTitle: 'Privacy Policy',
-  lastUpdated: 'Last updated: February 28, 2026',
+  lastUpdated: 'Last updated: March 12, 2026',
 
   controllerTitle: '1. Data Controller',
   controllerText:
-    'KSC Wiedikon\nSchrennengasse 7\n8003 Zürich\nEmail: vorstand@kscw.ch',
+    'Luca Canepa\nZurich, Switzerland\nEmail: luca.canepa@gmail.com',
 
   dataCollectedTitle: '2. Data We Collect',
   dataAccountTitle: 'Account data (upon registration)',
@@ -31,15 +31,20 @@ export default {
   legalBasisConsent:
     'Consent — Members upload their own profile photo and can change or remove it at any time.',
 
-  thirdPartyTitle: '4. Third-Party Services',
+  thirdPartyTitle: '4. Sub-Processors',
+  thirdPartyIntro: 'The following service providers are used as sub-processors:',
   thirdPartyCloudflare:
-    'Cloudflare, Inc. — Website hosting and CDN. Cloudflare may set technically necessary cookies (e.g., __cf_bm). Cloudflare maintains EU Standard Contractual Clauses.',
+    'Cloudflare, Inc. — Frontend hosting (Cloudflare Pages) | Global (US-based) | DPA, Standard Contractual Clauses, Swiss-US Data Privacy Framework',
   thirdPartySwissVolley:
     'Swiss Volley API (api.volleyball.ch) — We retrieve publicly available game data and rankings. No personal data is transmitted to Swiss Volley.',
   thirdPartyGCal:
     'Google Calendar — We retrieve a public calendar feed to display hall schedules. No personal data is transmitted to Google.',
 
-  storageTitle: '5. Data Storage',
+  retentionTitle: '5. Data Retention',
+  retentionText:
+    'Your personal data is retained for as long as you have an active account on the Platform. Upon request or when your membership ends, your data will be deleted within 30 days, unless a longer retention period is required by law. You can also delete your account at any time directly in your profile settings.',
+
+  storageTitle: '6. Data Storage',
   storageServer:
     'Data is stored on a self-hosted server in Switzerland (PocketBase). The frontend is served via Cloudflare Pages.',
   storageLocal:
@@ -47,21 +52,24 @@ export default {
   storageNoCookies:
     'The website itself does not set any cookies. Cloudflare may set technically necessary cookies that do not require consent.',
 
-  rightsTitle: '6. Your Rights',
+  rightsTitle: '7. Your Rights',
   rightsText:
     'Under the Swiss Data Protection Act (nDSG), you have the following rights:',
   rightsAccess: 'Right of access — You can request information about your stored data.',
-  rightsCorrection: 'Right to rectification — You can request the correction of inaccurate data.',
-  rightsDeletion: 'Right to deletion — You can request the deletion of your data.',
-  rightsPortability: 'Right to data portability — You can receive your data in a common format.',
+  rightsCorrection: 'Right to rectification — You can request the correction of inaccurate data. Most data can be updated directly in your profile.',
+  rightsDeletion: 'Right to deletion — You can request deletion of your data, or delete your account yourself.',
+  rightsPortability: 'Right to data portability — You can receive your data in a commonly used format.',
+  rightsObject: 'Right to object — You may object to the processing of your data at any time.',
   rightsContact:
-    'For requests regarding your rights, please contact: vorstand@kscw.ch',
+    'For requests regarding your rights, please contact: luca.canepa@gmail.com',
+  rightsFDPIC:
+    'You also have the right to file a complaint with the Swiss Federal Data Protection and Information Commissioner (FDPIC): www.edoeb.admin.ch',
 
-  photosTitle: '7. Photos',
+  photosTitle: '8. Photos',
   photosText:
     'Player photos are uploaded by members themselves via their profile and can be changed or removed at any time. Uploaded photos are visible on the public team pages.',
 
-  changesTitle: '8. Changes',
+  changesTitle: '9. Changes',
   changesText:
     'We reserve the right to update this privacy policy as needed. The current version is available on this page.',
 

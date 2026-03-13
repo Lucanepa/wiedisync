@@ -7,6 +7,7 @@ import { usePB } from '../../hooks/usePB'
 import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
 import Button from '../../components/ui/Button'
+import PrivacyNotice from '../../components/PrivacyNotice'
 import { Input, Select } from '../../components/ui/Input'
 import type { Team } from '../../types'
 
@@ -92,6 +93,7 @@ export default function SignUpPage() {
         last_name: lastName,
         name: `${firstName} ${lastName}`,
         email: email.trim().toLowerCase(),
+        emailVisibility: true,
         password,
         passwordConfirm,
         role: ['user'],
@@ -305,6 +307,7 @@ export default function SignUpPage() {
           )}
         </div>
       </div>
+      <PrivacyNotice />
     </div>
   )
 }

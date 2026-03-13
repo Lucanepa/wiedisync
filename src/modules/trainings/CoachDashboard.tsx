@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { BarChart3 } from 'lucide-react'
 import { useAttendanceStats } from './useAttendanceStats'
 import EmptyState from '../../components/EmptyState'
 import { getCurrentSeason } from '../../utils/dateHelpers'
@@ -48,16 +49,16 @@ export default function CoachDashboard({ teamId }: CoachDashboardProps) {
 
       {stats.length === 0 ? (
         <EmptyState
-          icon="📊"
+          icon={<BarChart3 className="h-10 w-10" />}
           title={t('noDataAvailable')}
           description={t('noDataDescription')}
         />
       ) : (
-        <div className="overflow-x-auto rounded-lg border dark:border-gray-700 bg-white dark:bg-gray-800">
-          <table className="w-full">
+        <div className="mx-auto w-fit max-w-full overflow-x-auto rounded-lg border dark:border-gray-700 bg-white dark:bg-gray-800">
+          <table>
             <thead>
               <tr className="border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-left text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-400">
-                <th className="px-4 py-3">{t('playerCol')}</th>
+                <th className="min-w-[150px] px-4 py-3">{t('playerCol')}</th>
                 <th className="hidden px-4 py-3 text-center sm:table-cell">{t('numberCol')}</th>
                 <th className="px-4 py-3 text-center">{t('trainingsCol')}</th>
                 <th className="px-4 py-3 text-center">{t('presentCol')}</th>
@@ -69,8 +70,8 @@ export default function CoachDashboard({ teamId }: CoachDashboardProps) {
             <tbody>
               {stats.map((player) => (
                 <tr key={player.memberId} className="border-b dark:border-gray-700 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-700">
-                  <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {player.memberName}
+                  <td className="min-w-[150px] whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
+                    {player.memberName || '—'}
                   </td>
                   <td className="hidden px-4 py-3 text-center text-sm text-gray-600 sm:table-cell dark:text-gray-400">
                     {player.jerseyNumber || '—'}

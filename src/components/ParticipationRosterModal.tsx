@@ -46,7 +46,7 @@ export default function ParticipationRosterModal({
 }: ParticipationRosterModalProps) {
   const { t } = useTranslation('participation')
   const { t: te } = useTranslation('events')
-  const { members } = useTeamMembers(teamId ?? undefined)
+  const { members, isLoading: membersLoading } = useTeamMembers(teamId ?? undefined)
   const [absences, setAbsences] = useState<Absence[]>([])
   const [staffMembers, setStaffMembers] = useState<Member[]>([])
   const [activeSessionTab, setActiveSessionTab] = useState<string | null>(null) // null = overall
@@ -75,7 +75,8 @@ export default function ParticipationRosterModal({
   )
 
   const participations = hasSessionMode && activeSessionTab === null ? allParticipations : regularParticipations
-  const isLoading = hasSessionMode && activeSessionTab === null ? allLoading : regularLoading
+  const participationsLoading = hasSessionMode && activeSessionTab === null ? allLoading : regularLoading
+  const isLoading = membersLoading || participationsLoading
 
   // Fetch staff participations (coaches/team_responsible who aren't in member_teams)
   useEffect(() => {
@@ -221,6 +222,9 @@ export default function ParticipationRosterModal({
         </div>
       )}
 
+      {isLoading ? (
+        <div className="py-8 text-center text-gray-500 dark:text-gray-400">...</div>
+      ) : (<>
       {/* Summary header */}
       <div className="mb-4 flex flex-wrap gap-3 text-sm">
         <span className="text-green-600 dark:text-green-400">
@@ -276,9 +280,7 @@ export default function ParticipationRosterModal({
       })()}
 
       {/* Member list */}
-      {isLoading ? (
-        <div className="py-8 text-center text-gray-500 dark:text-gray-400">...</div>
-      ) : memberList.length === 0 ? (
+      {memberList.length === 0 ? (
         <div className="py-8 text-center text-gray-500 dark:text-gray-400">{t('noResponses')}</div>
       ) : (
         <div className="max-h-[60vh] overflow-y-auto rounded-lg border dark:border-gray-700">
@@ -436,6 +438,7 @@ export default function ParticipationRosterModal({
           )}
         </div>
       )}
+      </>)}
     </Modal>
   )
 }

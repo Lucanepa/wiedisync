@@ -9,6 +9,7 @@ import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
 import type { HallSlot, HallClosure, Team, Hall } from '../../types'
 import TeamChip from '../../components/TeamChip'
+import DatePicker from '../../components/ui/DatePicker'
 
 type SlotExpanded = HallSlot & { expand?: { team?: Team; hall?: Hall } }
 
@@ -74,6 +75,30 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
   const [skipped, setSkipped] = useState(0)
   const [existingDates, setExistingDates] = useState<Set<string>>(new Set())
   const [done, setDone] = useState(false)
+
+  function resetModalState() {
+    setSelectedSlot('')
+    setStartDate('')
+    setEndDate('')
+    setUntilSeasonEnd(false)
+    setHallId('')
+    setNotes('')
+    setRespondByAmount('')
+    setRespondByUnit('days')
+    setMinParticipants('')
+    setMaxParticipants('')
+    setLoading(false)
+    setError('')
+    setGenerated(0)
+    setSkipped(0)
+    setExistingDates(new Set())
+    setDone(false)
+  }
+
+  function handleClose() {
+    resetModalState()
+    onClose()
+  }
 
   const slot = slots.find((s) => s.id === selectedSlot)
 
@@ -187,7 +212,7 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
     const teamName = slot?.expand?.team?.name ?? ''
     const hallName = halls.find((h) => h.id === effectiveHallId)?.name ?? ''
     return (
-      <Modal open={open} onClose={onClose} title={t('recurringTitle')} size="sm">
+      <Modal open={open} onClose={handleClose} title={t('recurringTitle')} size="sm">
         <div className="space-y-4 text-center">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
             <svg className="h-6 w-6 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -211,7 +236,7 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
           )}
           <div className="pt-2">
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="rounded-lg bg-brand-500 px-6 py-2 text-sm font-medium text-white hover:bg-brand-600"
             >
               {tc('close')}
@@ -223,7 +248,7 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={t('recurringTitle')} size="md">
+    <Modal open={open} onClose={handleClose} title={t('recurringTitle')} size="md">
       <div className="space-y-4">
         <div>
           <label className={labelCls}>{t('selectSlot')}</label>
@@ -284,57 +309,34 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
           </select>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className={labelCls}>{tc('from')}</label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className={inputCls}
+        <div className={`grid grid-cols-1 items-end gap-4 ${untilSeasonEnd ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
+          <DatePicker
+            label={tc('from')}
+            value={startDate}
+            onChange={setStartDate}
+          />
+          {!untilSeasonEnd && (
+            <DatePicker
+              label={tc('to')}
+              value={endDate}
+              onChange={(v) => { setEndDate(v); setUntilSeasonEnd(false) }}
+              min={startDate}
             />
-          </div>
-          {untilSeasonEnd ? (
-            <div className="flex items-end">
-              <label className="flex items-center gap-2 pb-2 text-sm text-gray-700 dark:text-gray-300">
-                <input
-                  type="checkbox"
-                  checked={untilSeasonEnd}
-                  onChange={(e) => {
-                    setUntilSeasonEnd(e.target.checked)
-                    if (e.target.checked) setEndDate(getSeasonEndDate())
-                  }}
-                  className="rounded border-gray-300 dark:border-gray-600"
-                />
-                {t('untilSeasonEnd')}
-              </label>
-            </div>
-          ) : (
-            <div>
-              <div className="flex items-center justify-between">
-                <label className={labelCls}>{tc('to')}</label>
-                <label className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                  <input
-                    type="checkbox"
-                    checked={untilSeasonEnd}
-                    onChange={(e) => {
-                      setUntilSeasonEnd(e.target.checked)
-                      if (e.target.checked) setEndDate(getSeasonEndDate())
-                    }}
-                    className="rounded border-gray-300 dark:border-gray-600"
-                  />
-                  {t('untilSeasonEnd')}
-                </label>
-              </div>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => { setEndDate(e.target.value); setUntilSeasonEnd(false) }}
-                min={startDate}
-                className={inputCls}
-              />
-            </div>
           )}
+          <div className="flex items-end">
+            <label className="flex min-h-[44px] w-full items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300">
+              <input
+                type="checkbox"
+                checked={untilSeasonEnd}
+                onChange={(e) => {
+                  setUntilSeasonEnd(e.target.checked)
+                  if (e.target.checked) setEndDate(getSeasonEndDate())
+                }}
+                className="rounded border-gray-300 dark:border-gray-600"
+              />
+              {t('untilSeasonEnd')}
+            </label>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -413,7 +415,7 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
         <div className="flex justify-end gap-3 pt-2">
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
           >
             {tc('close')}

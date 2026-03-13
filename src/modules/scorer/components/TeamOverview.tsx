@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Game, Member } from '../../../types'
+import type { Game, Member, Team } from '../../../types'
 import type { ExpandedGame } from './ScorerRow'
 import { DutyStatus } from './ScorerRow'
 import TeamChip from '../../../components/TeamChip'
@@ -12,7 +12,7 @@ interface TeamOverviewProps {
   sport: 'volleyball' | 'basketball'
 }
 
-type DutyType = 'scorer' | 'taefeler' | 'scorer_taefeler' | 'bb_anschreiber' | 'bb_zeitnehmer' | 'bb_24s_official'
+type DutyType = 'scorer' | 'scoreboard' | 'scorer_scoreboard' | 'bb_scorer' | 'bb_timekeeper' | 'bb_24s_official'
 
 interface DutyEntry {
   game: ExpandedGame
@@ -55,26 +55,33 @@ export default function TeamOverview({ games, members, sport }: TeamOverviewProp
       const eg = game as ExpandedGame
 
       if (sport === 'volleyball') {
-        if (game.scorer_taefeler_duty_team) {
-          const teamName = eg.expand?.scorer_taefeler_duty_team?.name ?? '?'
-          addEntry(teamName, { game: eg, dutyType: 'scorer_taefeler', teamName, memberName: getMemberName(game.scorer_taefeler_member) })
+        if (game.scorer_scoreboard_duty_team) {
+          const teamName = eg.expand?.scorer_scoreboard_duty_team?.name ?? '?'
+          addEntry(teamName, { game: eg, dutyType: 'scorer_scoreboard', teamName, memberName: getMemberName(game.scorer_scoreboard_member) })
         }
         if (game.scorer_duty_team) {
           const teamName = eg.expand?.scorer_duty_team?.name ?? '?'
           addEntry(teamName, { game: eg, dutyType: 'scorer', teamName, memberName: getMemberName(game.scorer_member) })
         }
-        if (game.taefeler_duty_team) {
-          const teamName = eg.expand?.taefeler_duty_team?.name ?? '?'
-          addEntry(teamName, { game: eg, dutyType: 'taefeler', teamName, memberName: getMemberName(game.taefeler_member) })
+        if (game.scoreboard_duty_team) {
+          const teamName = eg.expand?.scoreboard_duty_team?.name ?? '?'
+          addEntry(teamName, { game: eg, dutyType: 'scoreboard', teamName, memberName: getMemberName(game.scoreboard_member) })
         }
       } else {
-        if (game.bb_duty_team) {
-          const teamName = eg.expand?.bb_duty_team?.name ?? '?'
-          addEntry(teamName, { game: eg, dutyType: 'bb_anschreiber', teamName, memberName: getMemberName(game.bb_anschreiber) })
-          addEntry(teamName, { game: eg, dutyType: 'bb_zeitnehmer', teamName, memberName: getMemberName(game.bb_zeitnehmer) })
-          if (game.bb_24s_official) {
-            addEntry(teamName, { game: eg, dutyType: 'bb_24s_official', teamName, memberName: getMemberName(game.bb_24s_official) })
-          }
+        const scorerTeam = game.bb_scorer_duty_team || game.bb_duty_team
+        const timekeeperTeam = game.bb_timekeeper_duty_team || game.bb_duty_team
+        const _24sTeam = game.bb_24s_duty_team || game.bb_duty_team
+        if (scorerTeam) {
+          const teamName = (eg.expand as Record<string, Team | undefined>)?.bb_scorer_duty_team?.name ?? eg.expand?.bb_duty_team?.name ?? '?'
+          addEntry(teamName, { game: eg, dutyType: 'bb_scorer', teamName, memberName: getMemberName(game.bb_scorer_member) })
+        }
+        if (timekeeperTeam) {
+          const teamName = (eg.expand as Record<string, Team | undefined>)?.bb_timekeeper_duty_team?.name ?? eg.expand?.bb_duty_team?.name ?? '?'
+          addEntry(teamName, { game: eg, dutyType: 'bb_timekeeper', teamName, memberName: getMemberName(game.bb_timekeeper_member) })
+        }
+        if (_24sTeam && game.bb_24s_official) {
+          const teamName = (eg.expand as Record<string, Team | undefined>)?.bb_24s_duty_team?.name ?? eg.expand?.bb_duty_team?.name ?? '?'
+          addEntry(teamName, { game: eg, dutyType: 'bb_24s_official', teamName, memberName: getMemberName(game.bb_24s_official) })
         }
       }
     }
@@ -96,10 +103,10 @@ export default function TeamOverview({ games, members, sport }: TeamOverviewProp
 
   const dutyLabel: Record<DutyType, string> = {
     scorer: t('scorer'),
-    taefeler: t('scoreboard'),
-    scorer_taefeler: t('scorerTaefeler'),
-    bb_anschreiber: t('bbAnschreiber'),
-    bb_zeitnehmer: t('bbZeitnehmer'),
+    scoreboard: t('scoreboard'),
+    scorer_scoreboard: t('scorerTaefeler'),
+    bb_scorer: t('bbScorer'),
+    bb_timekeeper: t('bbTimekeeper'),
     bb_24s_official: t('bb24sOfficial'),
   }
 

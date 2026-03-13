@@ -81,18 +81,23 @@ export default function TeamMultiSelect({ options, selected, onChange, placehold
             </span>
           )}
         </div>
-        {!allSelected && selected.length > 0 && (
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); handleSelectAll() }}
-            className="shrink-0 rounded-full p-0.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-            title={t('selectNone')}
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-        )}
         <ChevronDown className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
+
+      {!allSelected && selected.length > 0 && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            handleSelectAll()
+          }}
+          className="absolute right-8 top-1/2 z-10 -translate-y-1/2 rounded-full p-0.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+          title={t('selectNone')}
+          aria-label={t('selectNone')}
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      )}
 
       {/* Dropdown */}
       {open && (

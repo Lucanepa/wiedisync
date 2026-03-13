@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Check, X, HelpCircle, Hourglass, Minus } from 'lucide-react'
 import { useParticipation } from '../hooks/useParticipation'
 import { useAuth } from '../hooks/useAuth'
 import type { Participation, EventSession } from '../types'
@@ -20,12 +21,12 @@ interface ParticipationButtonProps {
 }
 
 const statusStyles = {
-  confirmed: { icon: '✓', bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-700 dark:text-green-400' },
-  declined: { icon: '✗', bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-700 dark:text-red-400' },
-  tentative: { icon: '?', bg: 'bg-yellow-100 dark:bg-yellow-900/30', text: 'text-yellow-700 dark:text-yellow-400' },
-  waitlisted: { icon: '⏳', bg: 'bg-orange-100 dark:bg-orange-900/30', text: 'text-orange-700 dark:text-orange-400' },
-  absent: { icon: '—', bg: 'bg-gray-100 dark:bg-gray-700', text: 'text-gray-500 dark:text-gray-400' },
-} as const
+  confirmed: { icon: <Check className="h-3.5 w-3.5" />, bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-700 dark:text-green-400' },
+  declined: { icon: <X className="h-3.5 w-3.5" />, bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-700 dark:text-red-400' },
+  tentative: { icon: <HelpCircle className="h-3.5 w-3.5" />, bg: 'bg-yellow-100 dark:bg-yellow-900/30', text: 'text-yellow-700 dark:text-yellow-400' },
+  waitlisted: { icon: <Hourglass className="h-3.5 w-3.5" />, bg: 'bg-orange-100 dark:bg-orange-900/30', text: 'text-orange-700 dark:text-orange-400' },
+  absent: { icon: <Minus className="h-3.5 w-3.5" />, bg: 'bg-gray-100 dark:bg-gray-700', text: 'text-gray-500 dark:text-gray-400' },
+}
 
 export default function ParticipationButton({
   activityType,

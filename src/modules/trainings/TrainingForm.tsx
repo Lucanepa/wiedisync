@@ -9,6 +9,7 @@ import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
 import Button from '../../components/ui/Button'
 import { Input, Textarea, Select } from '../../components/ui/Input'
+import DatePicker from '../../components/ui/DatePicker'
 import type { Training, Team, Hall, HallSlot, SlotClaim } from '../../types'
 import type { RecurringEditScope } from './RecurringEditDialog'
 
@@ -337,12 +338,10 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
           ))}
         </Select>
 
-        <Input
+        <DatePicker
           label={tc('date')}
-          type="date"
           value={date}
-          onChange={(e) => setDate(e.target.value)}
-          required
+          onChange={setDate}
         />
 
         {/* Slot mode indicator */}
@@ -481,11 +480,10 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
           rows={2}
         />
 
-        <Input
+        <DatePicker
           label={t('respondBy')}
-          type="date"
           value={respondBy}
-          onChange={(e) => setRespondBy(e.target.value)}
+          onChange={setRespondBy}
           max={date}
           helperText={t('respondByHint')}
         />

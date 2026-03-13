@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams, Link } from 'react-router-dom'
-import { Move, Check, X as XIcon } from 'lucide-react'
+import { Move, Check, X as XIcon, XCircle, User } from 'lucide-react'
 import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
 import { useTeamMembers } from '../../hooks/useTeamMembers'
@@ -186,7 +186,7 @@ export default function TeamDetail() {
   }
 
   if (!team || !canViewTeam(team.id)) {
-    return <EmptyState icon="❌" title={t('noTeams')} />
+    return <EmptyState icon={<XCircle className="h-10 w-10" />} title={t('noTeams')} />
   }
 
   return (
@@ -349,7 +349,7 @@ export default function TeamDetail() {
 
         {members.length === 0 ? (
           <EmptyState
-            icon="👤"
+            icon={<User className="h-10 w-10" />}
             title={t('noMembers')}
             description={t('noMembersDescription')}
             action={

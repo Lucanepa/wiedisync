@@ -107,17 +107,30 @@ export default function HallenplanView() {
 
   const DAY_KEYS = ['dayMonday', 'dayTuesday', 'dayWednesday', 'dayThursday', 'dayFriday', 'daySaturday', 'daySunday'] as const
   const freedSlotInfos = useMemo(() => {
+    const now = new Date()
     const hallMap = new Map<string, Hall>(halls.map((h) => [h.id, h]))
     return filteredSlots
       .filter((s) => s._virtual?.isFreed || (!s._virtual && !s.team))
-      .map((s): FreedSlotInfo => ({
-        hallName: hallMap.get(s.hall)?.name || '?',
-        dayLabel: t(DAY_KEYS[s.day_of_week] ?? 'dayMonday'),
-        startTime: s.start_time,
-        endTime: s.end_time,
-        slot: s,
-      }))
-  }, [filteredSlots, halls, t])
+      .filter((s) => {
+        const slotDate = weekDays[s.day_of_week]
+        if (!slotDate) return true
+        const [h, m] = (s.end_time || '23:59').split(':').map(Number)
+        const slotEnd = new Date(slotDate)
+        slotEnd.setHours(h, m, 0, 0)
+        return slotEnd > now
+      })
+      .map((s): FreedSlotInfo => {
+        const slotDate = weekDays[s.day_of_week]
+        return {
+          hallName: hallMap.get(s.hall)?.name || '?',
+          dayLabel: t(DAY_KEYS[s.day_of_week] ?? 'dayMonday'),
+          dateStr: slotDate ? `${slotDate.getDate()}.${slotDate.getMonth() + 1}.` : '',
+          startTime: s.start_time,
+          endTime: s.end_time,
+          slot: s,
+        }
+      })
+  }, [filteredSlots, halls, t, weekDays])
 
   // Debounce realtime refetch
   const refetchTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import pb from '../../../pb'
-import type { Hall } from '../../../types'
-import type { SpielsamstagConfig } from '../../../types'
+import type { Hall, SpielsamstagConfig } from '../../../types'
+import DatePicker from '../../../components/ui/DatePicker'
 
 const DEFAULT_TIMES = ['11:00', '13:30', '16:00']
 
@@ -83,11 +83,9 @@ export default function SpielsamstageEditor({ spielsamstage, onUpdate }: Props) 
         {localData.map((ss, sIdx) => (
           <div key={sIdx} className="rounded-md border border-gray-100 bg-gray-50 p-3 dark:border-gray-600 dark:bg-gray-700">
             <div className="mb-3 flex items-center gap-3">
-              <input
-                type="date"
+              <DatePicker
                 value={ss.date}
-                onChange={e => updateDate(sIdx, e.target.value)}
-                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm dark:border-gray-500 dark:bg-gray-600 dark:text-gray-100"
+                onChange={(v) => updateDate(sIdx, v)}
               />
               <button
                 onClick={() => removeSamstag(sIdx)}

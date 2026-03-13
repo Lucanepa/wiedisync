@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Hall, HallSlot } from '../../../types'
+import Modal from '../../../components/Modal'
 import type { FreedSlotInfo, SportFilter } from '../HallenplanPage'
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const
@@ -46,6 +48,7 @@ export default function DayNavigation({
   // Hall filter chips are rendered separately below content by HallenplanView
   void _halls; void _selectedHallIds; void _onSelectHalls
   const { t } = useTranslation('hallenplan')
+  const [showSlotsModal, setShowSlotsModal] = useState(false)
 
   const DAY_FULL = [
     t('dayMonday'),
@@ -165,25 +168,35 @@ export default function DayNavigation({
         )}
       </div>
 
-      {/* Available slots summary */}
+      {/* Available slots button + modal */}
       {freedSlots.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 border-t border-gray-200 pt-3 dark:border-gray-700">
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
-            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            {t('slotsAvailable', { count: freedSlots.length })}
-          </span>
-          {freedSlots.map((fs, i) => (
+        <>
+          <div className="border-t border-gray-200 pt-3 dark:border-gray-700">
             <button
-              key={i}
-              onClick={() => onFreedSlotClick?.(fs.slot)}
-              className="cursor-pointer rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] text-emerald-700 hover:bg-emerald-100 dark:border-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300 dark:hover:bg-emerald-900/40"
+              onClick={() => setShowSlotsModal(true)}
+              className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800 transition-colors hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:hover:bg-emerald-900/50"
             >
-              {fs.dayLabel} {fs.startTime}–{fs.endTime} · {fs.hallName}
+              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              {t('slotsAvailable', { count: freedSlots.length })}
             </button>
-          ))}
-        </div>
+          </div>
+          <Modal open={showSlotsModal} onClose={() => setShowSlotsModal(false)} title={t('slotsAvailableTitle')} size="sm">
+            <div className="space-y-1.5">
+              {freedSlots.map((fs, i) => (
+                <button
+                  key={i}
+                  onClick={() => { onFreedSlotClick?.(fs.slot); setShowSlotsModal(false) }}
+                  className="flex w-full items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-700 transition-colors hover:bg-emerald-100 dark:border-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300 dark:hover:bg-emerald-900/40"
+                >
+                  <span className="font-medium">{fs.dayLabel} {fs.dateStr} {fs.startTime}–{fs.endTime}</span>
+                  <span className="text-xs text-emerald-600 dark:text-emerald-400">{fs.hallName}</span>
+                </button>
+              ))}
+            </div>
+          </Modal>
+        </>
       )}
 
       {/* Hall filter chips — hidden, rendered separately below content by HallenplanView */}

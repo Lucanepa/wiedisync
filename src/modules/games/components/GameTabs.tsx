@@ -1,11 +1,12 @@
 import { useTranslation } from 'react-i18next'
 
-export type TabKey = 'upcoming' | 'results' | 'rankings'
+export type TabKey = 'upcoming' | 'results' | 'rankings' | 'scoreboard'
 
 const TAB_KEYS: { key: TabKey; labelKey: string }[] = [
   { key: 'upcoming', labelKey: 'tabUpcoming' },
   { key: 'results', labelKey: 'tabResults' },
   { key: 'rankings', labelKey: 'tabRankings' },
+  { key: 'scoreboard', labelKey: 'tabScoreboard' },
 ]
 
 interface GameTabsProps {

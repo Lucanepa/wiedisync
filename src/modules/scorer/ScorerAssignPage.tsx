@@ -118,12 +118,12 @@ export default function ScorerAssignPage() {
     try {
       for (const a of assignments) {
         if (a.conflicts.some((c) => c.key === 'existingKept')) continue
-        if (!a.scorerTeamId && !a.taefelerTeamId && !a.combinedTeamId) continue
+        if (!a.scorerTeamId && !a.scoreboardTeamId && !a.combinedTeamId) continue
 
         const fields: Partial<Game> = {}
         if (a.scorerTeamId) fields.scorer_duty_team = a.scorerTeamId
-        if (a.taefelerTeamId) fields.taefeler_duty_team = a.taefelerTeamId
-        if (a.combinedTeamId) fields.scorer_taefeler_duty_team = a.combinedTeamId
+        if (a.scoreboardTeamId) fields.scoreboard_duty_team = a.scoreboardTeamId
+        if (a.combinedTeamId) fields.scorer_scoreboard_duty_team = a.combinedTeamId
 
         await pb.collection('games').update(a.gameId, fields)
         logActivity('update', 'games', a.gameId, fields)
@@ -137,7 +137,7 @@ export default function ScorerAssignPage() {
     }
   }
 
-  function handleOverride(gameId: string, role: 'scorer' | 'taefeler' | 'combined', teamId: string) {
+  function handleOverride(gameId: string, role: 'scorer' | 'scoreboard' | 'combined', teamId: string) {
     setAssignments((prev) =>
       prev.map((a) => {
         if (a.gameId !== gameId) return a
@@ -148,13 +148,13 @@ export default function ScorerAssignPage() {
         if (role === 'scorer') {
           return { ...a, scorerTeamId: teamId || null, scorerTeamName: teamName }
         }
-        return { ...a, taefelerTeamId: teamId || null, taefelerTeamName: teamName }
+        return { ...a, scoreboardTeamId: teamId || null, scoreboardTeamName: teamName }
       }),
     )
   }
 
   const assignedCount = assignments.filter(
-    (a) => a.scorerTeamId || a.taefelerTeamId || a.combinedTeamId,
+    (a) => a.scorerTeamId || a.scoreboardTeamId || a.combinedTeamId,
   ).length
 
   return (
@@ -234,7 +234,7 @@ export default function ScorerAssignPage() {
                 const hallName = expanded.expand?.hall?.name ?? ''
 
                 const isExisting = a.conflicts.some((c) => c.key === 'existingKept')
-                const hasNoAssignment = !a.scorerTeamId && !a.taefelerTeamId && !a.combinedTeamId
+                const hasNoAssignment = !a.scorerTeamId && !a.scoreboardTeamId && !a.combinedTeamId
 
                 return (
                   <tr
@@ -282,8 +282,8 @@ export default function ScorerAssignPage() {
                         </td>
                         <td className="px-2 py-2">
                           <TeamSelect
-                            value={a.taefelerTeamId ?? ''}
-                            onChange={(v) => handleOverride(a.gameId, 'taefeler', v)}
+                            value={a.scoreboardTeamId ?? ''}
+                            onChange={(v) => handleOverride(a.gameId, 'scoreboard', v)}
                             teams={teams}
                             placeholder={t('selectTeam')}
                             compact
@@ -292,7 +292,7 @@ export default function ScorerAssignPage() {
                       </>
                     )}
                     <td className="px-2 py-2 text-xs text-gray-500 dark:text-gray-400">
-                      {a.scorerScore !== 0 || a.taefelerScore !== 0 ? (
+                      {a.scorerScore !== 0 || a.scoreboardScore !== 0 ? (
                         <span>{a.scorerScore}</span>
                       ) : '—'}
                     </td>
@@ -325,7 +325,7 @@ export default function ScorerAssignPage() {
                   <th className="px-3 py-2">{t('teamName')}</th>
                   <th className="px-3 py-2 text-center">{t('ownGames')}</th>
                   <th className="px-3 py-2 text-center">{t('scorerCount')}</th>
-                  <th className="px-3 py-2 text-center">{t('taefelerCount')}</th>
+                  <th className="px-3 py-2 text-center">{t('scoreboardCount')}</th>
                   <th className="px-3 py-2 text-center">{t('combinedCount')}</th>
                   <th className="px-3 py-2 text-center">{t('totalCount')}</th>
                 </tr>
@@ -338,7 +338,7 @@ export default function ScorerAssignPage() {
                       <td className="px-3 py-2"><TeamChip team={name} size="sm" /></td>
                       <td className="px-3 py-2 text-center text-gray-500 dark:text-gray-400">{counts.ownGames}</td>
                       <td className="px-3 py-2 text-center text-gray-600 dark:text-gray-400">{counts.scorer || '—'}</td>
-                      <td className="px-3 py-2 text-center text-gray-600 dark:text-gray-400">{counts.taefeler || '—'}</td>
+                      <td className="px-3 py-2 text-center text-gray-600 dark:text-gray-400">{counts.scoreboard || '—'}</td>
                       <td className="px-3 py-2 text-center text-gray-600 dark:text-gray-400">{counts.combined || '—'}</td>
                       <td className="px-3 py-2 text-center font-medium text-gray-900 dark:text-gray-100">{counts.totalDuties || '—'}</td>
                     </tr>

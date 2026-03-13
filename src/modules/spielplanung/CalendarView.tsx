@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { Trophy, Medal } from 'lucide-react'
 import CalendarGrid from '../../components/CalendarGrid'
 import TeamChip from '../../components/TeamChip'
 import type { CalendarEntry } from '../../types/calendar'
@@ -19,10 +20,10 @@ function getOpponent(game: Game): string {
   return game.home_team
 }
 
-function isCupMatch(game: Game): '🏆' | '🥈' | null {
+function isCupMatch(game: Game): 'gold' | 'silver' | null {
   const league = (game.league ?? '').toLowerCase()
-  if (league.includes('swiss volley cup') || league.includes('schweizer cup')) return '🏆'
-  if (league.includes('züri cup') || league.includes('zueri cup') || league.includes('zuri cup')) return '🥈'
+  if (league.includes('swiss volley cup') || league.includes('schweizer cup')) return 'gold'
+  if (league.includes('züri cup') || league.includes('zueri cup') || league.includes('zuri cup')) return 'silver'
   return null
 }
 
@@ -103,7 +104,8 @@ export default function CalendarView({ entries, closedDates, month, onMonthChang
                     <span className="truncate text-gray-600 dark:text-gray-400">
                       {opponent.length > 12 ? opponent.slice(0, 12) + '…' : opponent}
                     </span>
-                    {cup && <span className="shrink-0">{cup}</span>}
+                    {cup === 'gold' && <Trophy className="h-3 w-3 shrink-0 text-yellow-500" />}
+                    {cup === 'silver' && <Medal className="h-3 w-3 shrink-0 text-gray-400" />}
                   </div>
                 )
               })}

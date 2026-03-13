@@ -40,11 +40,11 @@ test.describe('Scorer page', () => {
     await expect(page.getByRole('heading', { name: /Scorer duty|Schreiberdienst/ })).toBeVisible({ timeout: 20_000 })
 
     // Filters are collapsed by default — expand them
-    const filterToggle = page.locator('button', { hasText: /Date|Datum/ })
+    const filterToggle = page.locator('button', { hasText: /Filter|Filter/ })
     await filterToggle.click()
 
     // Filter section has date input and selects
-    await expect(page.locator('input[type="date"]').first()).toBeVisible({ timeout: 10_000 })
+    await expect(page.locator('[data-testid="datepicker-trigger"]').first()).toBeVisible({ timeout: 10_000 })
   })
 
   test('shows permissions notice for non-coach user', async ({ page }) => {

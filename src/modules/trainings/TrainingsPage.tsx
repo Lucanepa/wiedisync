@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
+import { useAdminMode } from '../../hooks/useAdminMode'
 import { usePB } from '../../hooks/usePB'
 import { useRealtime } from '../../hooks/useRealtime'
 import { useMutation } from '../../hooks/useMutation'
@@ -25,6 +26,7 @@ type TrainingExpanded = Training & {
 export default function TrainingsPage() {
   const { t } = useTranslation('trainings')
   const { isCoach, isCoachOf, memberTeamIds } = useAuth()
+  const { effectiveIsAdmin } = useAdminMode()
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null)
   const [autoSelected, setAutoSelected] = useState(false)
 
@@ -94,7 +96,7 @@ export default function TrainingsPage() {
           <h1 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-gray-100">{t('title')}</h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('subtitle')}</p>
         </div>
-        {isCoach && (
+        {(isCoach || effectiveIsAdmin) && (
           <div className="flex gap-2">
             <Button
               variant="secondary"
@@ -116,11 +118,11 @@ export default function TrainingsPage() {
       </div>
 
       <div className="mt-6">
-        <TeamFilter selected={selectedTeam} onChange={setSelectedTeam} />
+        <TeamFilter selected={selectedTeam} onChange={setSelectedTeam} limitToTeamIds={effectiveIsAdmin ? undefined : memberTeamIds} groupBySport={effectiveIsAdmin} />
       </div>
 
       {/* Tabs (coach view) */}
-      {isCoach && selectedTeam && (
+      {(isCoach || effectiveIsAdmin) && selectedTeam && (
         <div className="mt-4">
           <div className="flex gap-1 rounded-lg bg-gray-100 dark:bg-gray-700 p-1">
             <button
@@ -169,8 +171,8 @@ export default function TrainingsPage() {
                 key={training.id}
                 training={training}
                 onOpenRoster={(id, teamId, date) => setRosterTraining({ id, teamId, date })}
-                onEdit={isCoachOf(training.team) ? handleEdit : undefined}
-                onDelete={isCoachOf(training.team) ? setDeletingId : undefined}
+                onEdit={(effectiveIsAdmin || isCoachOf(training.team)) ? handleEdit : undefined}
+                onDelete={(effectiveIsAdmin || isCoachOf(training.team)) ? setDeletingId : undefined}
               />
             ))}
           </div>

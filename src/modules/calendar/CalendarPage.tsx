@@ -2,7 +2,7 @@ import { useState, useRef, useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import ViewToggle from '../../components/ViewToggle'
 import Modal from '../../components/Modal'
-import CalendarFilters from './CalendarFilters'
+import CalendarFilters, { getActiveFilterCount } from './CalendarFilters'
 import MonthGrid from './components/MonthGrid'
 import WeekGrid from './components/WeekGrid'
 import MobileMonthView from './components/MobileMonthView'
@@ -21,6 +21,7 @@ import {
   endOfWeek,
   formatDate,
 } from '../../utils/dateUtils'
+import { SlidersHorizontal } from 'lucide-react'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import BasketballIcon from '../../components/BasketballIcon'
 import VolleyballIcon from '../../components/VolleyballIcon'
@@ -104,6 +105,7 @@ export default function CalendarPage() {
   const [selectedEntry, setSelectedEntry] = useState<CalendarEntry | null>(null)
   const [dayOverflow, setDayOverflow] = useState<{ entries: CalendarEntry[]; date: Date } | null>(null)
   const [icalMode, setIcalMode] = useState<'subscribe' | 'download' | null>(null)
+  const [filterOpen, setFilterOpen] = useState(false)
 
   // Allowed sources for the filter chips (all visible options)
   const allowedSources = allSources
@@ -173,6 +175,18 @@ export default function CalendarPage() {
           {needsData && (
             <>
               <button
+                onClick={() => setFilterOpen(true)}
+                className="relative inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">{t('filterTitle')}</span>
+                {getActiveFilterCount(filters, allowedSources.length) > 0 && (
+                  <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-brand-500 text-[10px] font-bold text-white">
+                    {getActiveFilterCount(filters, allowedSources.length)}
+                  </span>
+                )}
+              </button>
+              <button
                 onClick={() => setIcalMode('subscribe')}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
                 title={t('subscribeICal')}
@@ -205,17 +219,15 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      {/* Filters — above the calendar views */}
+      {/* Filter modal */}
       {needsData && (
-        <div className="rounded-xl bg-white p-3 shadow-card dark:bg-gray-800">
-          <CalendarFilters
-            filters={filters}
-            onChange={setFilters}
-            allowedSources={allowedSources}
-            compact
-            showBulkToggle
-          />
-        </div>
+        <CalendarFilters
+          open={filterOpen}
+          onClose={() => setFilterOpen(false)}
+          filters={filters}
+          onChange={setFilters}
+          allowedSources={allowedSources}
+        />
       )}
 
       {/* Views */}

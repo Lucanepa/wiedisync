@@ -93,9 +93,9 @@ await createCollection({
   ],
   listRule: '',   // public read
   viewRule: '',   // public read
-  createRule: null, // admin only (null = admin only in PB)
-  updateRule: null,
-  deleteRule: null,
+  createRule: "@request.auth.role = 'superuser' || @request.auth.role = 'admin'",
+  updateRule: "@request.auth.role = 'superuser' || @request.auth.role = 'admin'",
+  deleteRule: "@request.auth.role = 'superuser' || @request.auth.role = 'admin'",
 })
 
 const seasonsId = await getCollectionId('game_scheduling_seasons')

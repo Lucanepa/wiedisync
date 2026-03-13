@@ -286,6 +286,14 @@ export function mergeVirtualSlots(
   halls: Hall[],
   teams: Team[],
 ): HallSlot[] {
+  const overlaps = (aStart: string, aEnd: string, bStart: string, bEnd: string): boolean => {
+    const as = timeToMinutes(aStart)
+    const ae = timeToMinutes(aEnd)
+    const bs = timeToMinutes(bStart)
+    const be = timeToMinutes(bEnd)
+    return as < be && ae > bs
+  }
+
   // Find training virtuals linked to a recurring hall_slot → suppress the template
   const suppressedSlotDays = new Set<string>()
   for (const vs of virtualSlots) {
@@ -293,6 +301,25 @@ export function mergeVirtualSlots(
       const training = vs._virtual.sourceRecord as Training
       if (training.hall_slot) {
         suppressedSlotDays.add(`${training.hall_slot}-${vs.day_of_week}`)
+      }
+    }
+  }
+
+  // Also suppress recurring templates when a concrete (non-cancelled) training
+  // overlaps in the same hall/day, even if the training is not linked via hall_slot.
+  for (const vs of virtualSlots) {
+    if (vs._virtual?.source !== 'training') continue
+    const training = vs._virtual.sourceRecord as Training
+    if (training.cancelled) continue
+    for (const slot of realSlots) {
+      if (
+        !slot.recurring ||
+        slot.slot_type !== 'training' ||
+        slot.day_of_week !== vs.day_of_week ||
+        slot.hall !== vs.hall
+      ) continue
+      if (overlaps(slot.start_time, slot.end_time, vs.start_time, vs.end_time)) {
+        suppressedSlotDays.add(`${slot.id}-${slot.day_of_week}`)
       }
     }
   }
@@ -492,39 +519,6 @@ export function mergeVirtualSlots(
     }
   }
 
-  // Spielhalle slots: when no home game occupies them, show as FREI/claimable
-  // When a game IS scheduled, the normal suppression logic already removes them.
-  const freedSpielhalleSlots: HallSlot[] = []
-  for (const slot of realSlots) {
-    if (!slot.recurring || !slot.label?.toLowerCase().includes('spielhalle')) continue
-    for (let dayIdx = 0; dayIdx < weekDays.length; dayIdx++) {
-      if (slot.day_of_week !== dayIdx) continue
-      const dateStr = toISODate(weekDays[dayIdx])
-      // Already suppressed by a game? Then game replaces it — don't also show as freed
-      if (suppressedSlotDays.has(`${slot.id}-${dayIdx}`)) continue
-      if (isClosedOnDate(slot.hall, dateStr, closures)) continue
-      const claim = claimsByKey.get(`${slot.id}-${dateStr}`)
-      const expanded = (slot as Record<string, unknown>).expand as Record<string, unknown> | undefined
-      freedSpielhalleSlots.push({
-        ...slot,
-        id: `freed-spielhalle-${slot.id}-${dayIdx}`,
-        collectionName: 'virtual',
-        _virtual: {
-          source: 'game' as const,
-          sourceId: '',
-          sourceRecord: {} as Game,
-          isFreed: !claim,
-          isClaimed: !!claim,
-          claimRecord: claim,
-          isSpielhalleFreed: true,
-        },
-        expand: expanded,
-      } as HallSlot)
-      // Suppress the original recurring slot so it doesn't also appear
-      suppressedSlotDays.add(`${slot.id}-${dayIdx}`)
-    }
-  }
-
   // Annotate virtual slots with freed/claimed metadata
   const annotated = annotateFreedSlots(virtualSlots, claims, closures)
 
@@ -606,5 +600,37 @@ export function mergeVirtualSlots(
     return true
   })
 
-  return [...filteredReal, ...filteredAnnotated, ...freedFromAway, ...freedSpielhalleSlots]
+  // Any recurring training template that survives suppression has no concrete
+  // training/home-game replacement for that day → present it as available.
+  const freedRecurringSlots: HallSlot[] = []
+  const recurringFreedKeys = new Set<string>()
+  for (const slot of filteredReal) {
+    if (!slot.recurring || slot.slot_type !== 'training') continue
+    const dayIdx = slot.day_of_week
+    const dateStr = weekDays[dayIdx] ? toISODate(weekDays[dayIdx]) : ''
+    if (!dateStr) continue
+    if (isClosedOnDate(slot.hall, dateStr, closures)) continue
+    const claim = claimsByKey.get(`${slot.id}-${dateStr}`)
+    const expanded = (slot as Record<string, unknown>).expand as Record<string, unknown> | undefined
+    recurringFreedKeys.add(`${slot.id}-${dayIdx}`)
+    freedRecurringSlots.push({
+      ...slot,
+      id: `freed-recurring-${slot.id}-${dayIdx}`,
+      collectionName: 'virtual',
+      _virtual: {
+        source: 'training',
+        sourceId: slot.id,
+        sourceRecord: {} as Training,
+        isFreed: !claim,
+        isClaimed: !!claim,
+        claimRecord: claim,
+        isTemplateFreed: true,
+      },
+      expand: expanded,
+    } as HallSlot)
+  }
+
+  const filteredRealWithoutFreed = filteredReal.filter((slot) => !recurringFreedKeys.has(`${slot.id}-${slot.day_of_week}`))
+
+  return [...filteredRealWithoutFreed, ...filteredAnnotated, ...freedFromAway, ...freedRecurringSlots]
 }

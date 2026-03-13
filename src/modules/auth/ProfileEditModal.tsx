@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import Modal from '../../components/Modal'
 import Button from '../../components/ui/Button'
 import { Input, Select } from '../../components/ui/Input'
+import DatePicker from '../../components/ui/DatePicker'
 import { useAuth } from '../../hooks/useAuth'
 import { getFileUrl } from '../../utils/pbFile'
 import { coercePositions, getPositionI18nKey } from '../../utils/memberPositions'
@@ -280,11 +281,10 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
             onChange={(e) => setNumber(parseInt(e.target.value) || 0)}
             placeholder="#"
           />
-          <Input
+          <DatePicker
             label={t('birthdate')}
-            type="date"
             value={birthdate}
-            onChange={(e) => setBirthdate(e.target.value)}
+            onChange={setBirthdate}
           />
         </div>
 

@@ -24,6 +24,7 @@ export type SportFilter = 'all' | 'vb' | 'bb'
 export interface FreedSlotInfo {
   hallName: string
   dayLabel: string
+  dateStr: string
   startTime: string
   endTime: string
   slot: HallSlot
@@ -79,8 +80,16 @@ export default function HallenplanPage() {
       if (sportFilter === 'all') return slots
       const allowedTeams = sportFilter === 'vb' ? teamsBySport.vb : teamsBySport.bb
       return slots.filter((s) => {
-        // Keep slots with no team (free/spielhalle)
-        if (!s.team) return true
+        // Slots with no team: need sport context to filter
+        if (!s.team) {
+          // Virtual slots from a known team: check source team's sport
+          if (s._virtual?.sourceRecord) {
+            const sourceTeam = (s._virtual.sourceRecord as { team?: string }).team
+            if (sourceTeam) return allowedTeams.has(sourceTeam)
+          }
+          // Teamless slots (real free slots, Spielhalle, etc.): only show in "All" view
+          return false
+        }
         // Filter by sport
         if (!allowedTeams.has(s.team)) return false
         // VB mode: filter out BB game hall events (GCal basketball games)
@@ -93,17 +102,31 @@ export default function HallenplanPage() {
 
   const DAY_KEYS = ['dayMonday', 'dayTuesday', 'dayWednesday', 'dayThursday', 'dayFriday', 'daySaturday', 'daySunday'] as const
   const freedSlotInfos = useMemo(() => {
+    const now = new Date()
     const hallMap = new Map<string, Hall>(halls.map((h) => [h.id, h]))
     return filteredSlots
       .filter((s) => s._virtual?.isFreed || (!s._virtual && !s.team))
-      .map((s): FreedSlotInfo => ({
-        hallName: hallMap.get(s.hall)?.name || '?',
-        dayLabel: t(DAY_KEYS[s.day_of_week] ?? 'dayMonday'),
-        startTime: s.start_time,
-        endTime: s.end_time,
-        slot: s,
-      }))
-  }, [filteredSlots, halls, t])
+      .filter((s) => {
+        // Hide past slots that can no longer be claimed
+        const slotDate = weekDays[s.day_of_week]
+        if (!slotDate) return true
+        const [h, m] = (s.end_time || '23:59').split(':').map(Number)
+        const slotEnd = new Date(slotDate)
+        slotEnd.setHours(h, m, 0, 0)
+        return slotEnd > now
+      })
+      .map((s): FreedSlotInfo => {
+        const slotDate = weekDays[s.day_of_week]
+        return {
+          hallName: hallMap.get(s.hall)?.name || '?',
+          dayLabel: t(DAY_KEYS[s.day_of_week] ?? 'dayMonday'),
+          dateStr: slotDate ? `${slotDate.getDate()}.${slotDate.getMonth() + 1}.` : '',
+          startTime: s.start_time,
+          endTime: s.end_time,
+          slot: s,
+        }
+      })
+  }, [filteredSlots, halls, t, weekDays])
 
   // Debounce realtime refetch to avoid request storms (multiple subscriptions firing at once)
   const refetchTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)

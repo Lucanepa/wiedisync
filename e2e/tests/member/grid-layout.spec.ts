@@ -10,7 +10,7 @@ test.describe('Grid layout — scorer page filters', () => {
     await page.waitForTimeout(1000)
 
     // Open the collapsible filter panel (closed by default)
-    const filterToggle = page.locator('button', { hasText: /Date|Datum/ })
+    const filterToggle = page.locator('button', { hasText: /Filter|Filter/ })
     if (!(await filterToggle.isVisible())) return
     await filterToggle.click()
     await page.waitForTimeout(300)

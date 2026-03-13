@@ -89,7 +89,7 @@ export default function SchemaViewer({ schema, collectionType }: SchemaViewerPro
             <tr key={field.id}>
               <td className="px-3 py-1.5 font-mono text-gray-900 dark:text-gray-100">{field.name}</td>
               <td className="px-3 py-1.5"><TypeBadge type={field.type} /></td>
-              <td className="px-3 py-1.5 text-gray-700 dark:text-gray-300">{field.required ? '✓' : '–'}</td>
+              <td className="px-3 py-1.5 text-gray-700 dark:text-gray-300">{field.required ? 'Yes' : '–'}</td>
               <td className="px-3 py-1.5 text-gray-500 dark:text-gray-400">{formatOptions(field)}</td>
             </tr>
           ))}

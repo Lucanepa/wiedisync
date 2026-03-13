@@ -1,9 +1,8 @@
-import { useEffect } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../hooks/useAuth'
 import { useTheme } from '../hooks/useTheme'
-import { usePB } from '../hooks/usePB'
 import TeamChip from './TeamChip'
 import SwitchToggle from './SwitchToggle'
 import { getFileUrl } from '../utils/pbFile'
@@ -13,6 +12,18 @@ import { Bell, UserX, PenSquare, CalendarDays, ClipboardList, Building2, Calenda
 import type { MemberTeam, Team } from '../types'
 
 type ExpandedMemberTeam = MemberTeam & { expand?: { team?: Team } }
+
+/** Animated close: plays exit animation, then calls onClose after it finishes */
+function useAnimatedClose(onClose: () => void) {
+  const [closing, setClosing] = useState(false)
+  const startClose = useCallback(() => {
+    setClosing(true)
+  }, [])
+  const onAnimEnd = useCallback(() => {
+    if (closing) onClose()
+  }, [closing, onClose])
+  return { closing, startClose, onAnimEnd }
+}
 
 const iconClass = 'h-5 w-5'
 
@@ -32,19 +43,15 @@ interface MoreSheetProps {
   onClose: () => void
   unreadNotifications?: number
   onOpenNotifications?: () => void
+  memberTeams?: ExpandedMemberTeam[]
 }
 
-export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNotifications }: MoreSheetProps) {
+export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNotifications, memberTeams = [] }: MoreSheetProps) {
   const { user, isApproved, isSuperAdmin, logout } = useAuth()
   const { isAdminMode } = useAdminMode()
   const { theme, toggleTheme } = useTheme()
   const { t, i18n } = useTranslation('nav')
-
-  const { data: memberTeams } = usePB<ExpandedMemberTeam>('member_teams', {
-    filter: user ? `member="${user.id}"` : '',
-    expand: 'team',
-    perPage: 10,
-  })
+  const { closing, startClose, onAnimEnd } = useAnimatedClose(onClose)
 
   // Prevent body scroll when sheet is open
   useEffect(() => {
@@ -55,14 +62,15 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
   }, [])
 
   return (
-    <div className="fixed inset-0 z-50" onClick={onClose}>
+    <div className="fixed inset-0 z-50" onClick={startClose}>
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50" />
+      <div className={`absolute inset-0 bg-black/50 ${closing ? 'animate-fade-out' : 'animate-fade-in'}`} />
 
       {/* Sheet */}
       <div
-        className="pb-safe absolute bottom-0 left-0 right-0 max-h-[85vh] overflow-y-auto overscroll-contain rounded-t-2xl bg-white dark:bg-gray-800"
+        className={`pb-safe absolute bottom-0 left-0 right-0 max-h-[85vh] overflow-y-auto overscroll-contain rounded-t-2xl bg-white dark:bg-gray-800 ${closing ? 'animate-sheet-down' : 'animate-sheet-up'}`}
         onClick={(e) => e.stopPropagation()}
+        onAnimationEnd={onAnimEnd}
       >
         {/* Handle — sticky so it's always visible */}
         <div className="sticky top-0 z-10 flex justify-center rounded-t-2xl bg-white pb-2 pt-3 dark:bg-gray-800">
@@ -95,7 +103,7 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
             <NavLink
               key={item.to}
               to={item.to}
-              onClick={onClose}
+              onClick={startClose}
               className={({ isActive }) =>
                 `flex min-h-[48px] items-center gap-4 rounded-lg px-4 py-3 text-base font-medium transition-colors ${
                   isActive
@@ -119,7 +127,7 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
                 <NavLink
                   key={item.to}
                   to={item.to}
-                  onClick={onClose}
+                  onClick={startClose}
                   className={({ isActive }) =>
                     `flex min-h-[48px] items-center gap-4 rounded-lg px-4 py-3 text-base font-medium transition-colors ${
                       isActive
@@ -143,7 +151,7 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
               </p>
               <NavLink
                 to="/admin/database"
-                onClick={onClose}
+                onClick={startClose}
                 className={({ isActive }) =>
                   `flex min-h-[48px] items-center gap-4 rounded-lg px-4 py-3 text-base font-medium transition-colors ${
                     isActive
@@ -157,7 +165,7 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
               </NavLink>
               <NavLink
                 to="/admin/clubdesk-sync"
-                onClick={onClose}
+                onClick={startClose}
                 className={({ isActive }) =>
                   `flex min-h-[48px] items-center gap-4 rounded-lg px-4 py-3 text-base font-medium transition-colors ${
                     isActive
@@ -221,7 +229,7 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
               <div className="flex items-center gap-3">
                 <NavLink
                   to="/profile"
-                  onClick={onClose}
+                  onClick={startClose}
                   className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-600 dark:bg-brand-900/30 dark:text-brand-400 overflow-hidden"
                   aria-label={t('myProfile')}
                 >
@@ -250,7 +258,7 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
                 <button
                   onClick={() => {
                     logout()
-                    onClose()
+                    startClose()
                   }}
                   className="rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
                 >
@@ -322,7 +330,7 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
               <div className="flex items-center justify-between">
                 <NavLink
                   to="/login"
-                  onClick={onClose}
+                  onClick={startClose}
                   className="flex min-h-[44px] items-center gap-3 rounded-lg px-3 py-2 text-base font-medium text-brand-600 transition-colors hover:bg-gray-100 dark:text-gold-400 dark:hover:bg-gray-700"
                 >
                   <LogIn className={iconClass} />
@@ -352,11 +360,11 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
         {/* Legal links */}
         <div className="mx-4 border-t border-gray-200 dark:border-gray-700" />
         <div className="flex items-center justify-center gap-3 px-4 py-3 text-xs text-gray-400 dark:text-gray-500">
-          <NavLink to="/datenschutz" onClick={onClose} className="hover:text-gray-600 dark:hover:text-gray-300">
+          <NavLink to="/datenschutz" onClick={startClose} className="hover:text-gray-600 dark:hover:text-gray-300">
             {t('privacy')}
           </NavLink>
           <span>·</span>
-          <NavLink to="/impressum" onClick={onClose} className="hover:text-gray-600 dark:hover:text-gray-300">
+          <NavLink to="/impressum" onClick={startClose} className="hover:text-gray-600 dark:hover:text-gray-300">
             {t('impressum')}
           </NavLink>
         </div>

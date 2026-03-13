@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams, Link, Navigate } from 'react-router-dom'
+import { User } from 'lucide-react'
 import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
 import { coercePositions, getPositionI18nKey, getSelectablePositions } from '../../utils/memberPositions'
@@ -287,7 +288,7 @@ export default function RosterEditor() {
         </h2>
 
         {members.length === 0 ? (
-          <EmptyState icon="👤" title={t('noMembers')} description={t('noMembersDescription')} />
+          <EmptyState icon={<User className="h-10 w-10" />} title={t('noMembers')} description={t('noMembersDescription')} />
         ) : (
           <div className="mt-4 space-y-2">
             {sortedMembers.map((mt) => {

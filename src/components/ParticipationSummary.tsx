@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { Check, X, HelpCircle, Hourglass, Award } from 'lucide-react'
 import { usePB } from '../hooks/usePB'
 import type { Participation } from '../types'
 
@@ -47,25 +48,25 @@ export default function ParticipationSummary({
         {confirmed > 0 && (
           <span className="inline-flex items-center gap-1 text-green-600 dark:text-green-400">
             {confirmed}{confirmedGuests > 0 && <span className="text-[10px] opacity-75">+{confirmedGuests}</span>}
-            <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-green-600 text-[10px] font-bold leading-none text-white dark:bg-green-500">✓</span>
+            <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-green-600 text-white dark:bg-green-500"><Check className="h-2.5 w-2.5" /></span>
           </span>
         )}
         {tentative > 0 && (
           <span className="inline-flex items-center gap-1 text-yellow-600 dark:text-yellow-400">
             {tentative}{tentativeGuests > 0 && <span className="text-[10px] opacity-75">+{tentativeGuests}</span>}
-            <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-yellow-500 text-[10px] font-bold leading-none text-white">?</span>
+            <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-yellow-500 text-white"><HelpCircle className="h-2.5 w-2.5" /></span>
           </span>
         )}
         {declined > 0 && (
           <span className="inline-flex items-center gap-1 text-red-600 dark:text-red-400">
             {declined}
-            <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold leading-none text-white dark:bg-red-500">✗</span>
+            <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-white dark:bg-red-500"><X className="h-2.5 w-2.5" /></span>
           </span>
         )}
         {waitlisted > 0 && (
           <span className="inline-flex items-center gap-1 text-orange-600 dark:text-orange-400">
             {waitlisted}
-            <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold leading-none text-white">⏳</span>
+            <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-white"><Hourglass className="h-2.5 w-2.5" /></span>
           </span>
         )}
         {totalGuests > 0 && (
@@ -76,7 +77,7 @@ export default function ParticipationSummary({
         {staffConfirmed > 0 && (
           <span className="inline-flex items-center gap-1 text-brand-600 dark:text-brand-400" title={t('staffPresent')}>
             {staffConfirmed}
-            <span className="text-[10px]">🏅</span>
+            <Award className="h-3.5 w-3.5" />
           </span>
         )}
       </span>

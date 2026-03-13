@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { ClipboardList, Users } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { usePB } from '../../hooks/usePB'
 import { useMutation } from '../../hooks/useMutation'
@@ -17,12 +18,18 @@ type AbsenceExpanded = Absence & { expand?: { member?: Member } }
 
 export default function AbsencesPage() {
   const { t } = useTranslation('absences')
-  const { user, isCoach } = useAuth()
+  const { user, isCoach, isAdmin, memberTeamIds, coachTeamIds } = useAuth()
   const [activeTab, setActiveTab] = useState<'mine' | 'team'>('mine')
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null)
   const [formOpen, setFormOpen] = useState(false)
   const [editingAbsence, setEditingAbsence] = useState<Absence | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  // Non-admin coaches: only their own + coached teams
+  const visibleTeamIds = useMemo(() => {
+    if (isAdmin) return undefined // admins see all teams
+    return [...new Set([...memberTeamIds, ...coachTeamIds])]
+  }, [isAdmin, memberTeamIds, coachTeamIds])
 
   const { data: myAbsences, refetch } = usePB<AbsenceExpanded>('absences', {
     filter: user ? `member="${user.id}"` : '',
@@ -99,7 +106,7 @@ export default function AbsencesPage() {
         <div className="mt-6">
           {myAbsences.length === 0 ? (
             <EmptyState
-              icon="📋"
+              icon={<ClipboardList className="h-10 w-10" />}
               title={t('noAbsences')}
               description={t('noAbsencesDescription')}
             />
@@ -119,7 +126,7 @@ export default function AbsencesPage() {
         </div>
       ) : (
         <div className="mt-6">
-          <TeamFilter selected={selectedTeam} onChange={setSelectedTeam} />
+          <TeamFilter selected={selectedTeam} onChange={setSelectedTeam} limitToTeamIds={visibleTeamIds} />
           {selectedTeam ? (
             <div className="mt-4">
               <TeamAbsenceView teamId={selectedTeam} />
@@ -127,7 +134,7 @@ export default function AbsencesPage() {
           ) : (
             <div className="mt-4">
               <EmptyState
-                icon="👥"
+                icon={<Users className="h-10 w-10" />}
                 title={t('noTeamAbsences')}
                 description={t('noTeamAbsencesDescription')}
               />

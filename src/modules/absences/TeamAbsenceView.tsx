@@ -1,9 +1,11 @@
 import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { CheckCircle } from 'lucide-react'
 import { useTeamAbsences } from '../../hooks/useTeamAbsences'
 import StatusBadge from '../../components/StatusBadge'
 import EmptyState from '../../components/EmptyState'
 import { formatDate, toISODate } from '../../utils/dateHelpers'
+import DatePicker from '../../components/ui/DatePicker'
 
 interface TeamAbsenceViewProps {
   teamId: string
@@ -40,29 +42,21 @@ export default function TeamAbsenceView({ teamId }: TeamAbsenceViewProps) {
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-end gap-4">
-        <div>
-          <label className="block text-xs font-medium text-gray-500 dark:text-gray-400">{t('fromTo')}</label>
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="rounded-lg border dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-3 py-1.5 text-sm"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-500 dark:text-gray-400">{t('until')}</label>
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className="rounded-lg border dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-3 py-1.5 text-sm"
-          />
-        </div>
+        <DatePicker
+          label={t('fromTo')}
+          value={startDate}
+          onChange={setStartDate}
+        />
+        <DatePicker
+          label={t('until')}
+          value={endDate}
+          onChange={setEndDate}
+        />
       </div>
 
       {absences.length === 0 && availableMembers.length === 0 ? (
         <EmptyState
-          icon="✅"
+          icon={<CheckCircle className="h-10 w-10" />}
           title={t('noTeamAbsences')}
           description={t('noTeamAbsencesDescription')}
         />

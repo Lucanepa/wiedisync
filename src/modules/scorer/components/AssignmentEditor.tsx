@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Member, Team, LicenceType } from '../../../types'
 import { Select } from '../../../components/ui/Input'
-import { Phone, Mail, Hand, ArrowRightLeft, Clock } from 'lucide-react'
+import { Phone, Mail, Hand, ArrowRightLeft, Clock, Check } from 'lucide-react'
 import TeamSelect from '../../../components/TeamSelect'
 
 interface AssignmentEditorProps {
@@ -27,6 +27,10 @@ interface AssignmentEditorProps {
   onDelegate?: () => void
   /** Pending outgoing delegation target name */
   pendingDelegationName?: string
+  /** Whether the game's duty is confirmed */
+  dutyConfirmed?: boolean
+  /** Callback to hide/collapse this assignment row */
+  onHide?: () => void
 }
 
 export default function AssignmentEditor({
@@ -47,6 +51,8 @@ export default function AssignmentEditor({
   isCurrentUserAssigned,
   onDelegate,
   pendingDelegationName,
+  dutyConfirmed,
+  onHide,
 }: AssignmentEditorProps) {
   const { t } = useTranslation('scorer')
 
@@ -81,14 +87,30 @@ export default function AssignmentEditor({
     ? `${assignedPerson.first_name} ${assignedPerson.last_name}`
     : ''
 
+  const teamName = teamValue ? teams.find((t) => t.id === teamValue)?.name ?? '' : ''
+
   return (
     <div className="space-y-1.5">
-      <span className="block text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">{label}</span>
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">{label}</span>
+        {onHide && (
+          <button
+            onClick={onHide}
+            className="rounded p-0.5 text-gray-300 transition-colors hover:text-gray-500 dark:text-gray-600 dark:hover:text-gray-400"
+            title={t('hide')}
+            aria-label={t('hide')}
+          >
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        )}
+      </div>
 
       {/* Admin view: full dropdowns */}
       {canEdit ? (
         <>
-          <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-2">
+          <div className={`grid gap-2 ${teamValue ? (personValue && onDelegate && !disabled ? 'grid-cols-[minmax(0,2fr)_minmax(0,3fr)_auto]' : 'grid-cols-[minmax(0,2fr)_minmax(0,3fr)]') : ''}`}>
             <TeamSelect
               value={teamValue}
               onChange={(v) => {
@@ -100,39 +122,48 @@ export default function AssignmentEditor({
               aria-label={`${label} – ${t('selectTeam')}`}
               placeholder={t('selectTeam')}
             />
-            <Select
-              value={personValue}
-              onChange={(e) => onPersonChange(e.target.value)}
-              disabled={disabled}
-              aria-label={`${label} – ${t('selectPerson')}`}
-            >
-              <option value="">{t('selectPerson')}</option>
-              {filteredMembers.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.first_name} {m.last_name}
-                </option>
-              ))}
-            </Select>
+            {teamValue && (
+              <Select
+                value={personValue}
+                onChange={(e) => onPersonChange(e.target.value)}
+                disabled={disabled}
+                aria-label={`${label} – ${t('selectPerson')}`}
+              >
+                <option value="">{t('selectPerson')}</option>
+                {filteredMembers.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.first_name} {m.last_name}
+                  </option>
+                ))}
+              </Select>
+            )}
+            {personValue && onDelegate && !disabled && (
+              <button
+                onClick={onDelegate}
+                className="flex min-h-[44px] items-center justify-center rounded-lg px-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+                title={t('delegate')}
+                aria-label={t('delegate')}
+              >
+                <ArrowRightLeft className="h-4 w-4" />
+              </button>
+            )}
           </div>
-
-          {/* Admin delegate button (when someone is assigned) */}
-          {personValue && onDelegate && !disabled && (
-            <button
-              onClick={onDelegate}
-              className="mt-1 flex items-center gap-1.5 rounded-lg px-2 py-3 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-            >
-              <ArrowRightLeft className="h-3.5 w-3.5" />
-              {t('delegate')}
-            </button>
-          )}
         </>
       ) : (
         /* Regular user view: read-only with action buttons */
         <>
           {personValue ? (
-            <div className="flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2.5 dark:bg-gray-750">
-              <span className="flex-1 text-sm font-medium text-gray-900 dark:text-gray-100">
+            <div className="flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2.5 dark:bg-gray-700">
+              {teamName && (
+                <span className="shrink-0 rounded bg-gray-200 px-1.5 py-0.5 text-xs font-semibold text-gray-700 dark:bg-gray-600 dark:text-gray-200">
+                  {teamName}
+                </span>
+              )}
+              <span className="flex flex-1 items-center gap-1.5 text-sm font-medium text-gray-900 dark:text-white">
                 {assignedName}
+                {dutyConfirmed && (
+                  <Check className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+                )}
               </span>
               {isCurrentUserAssigned && onDelegate && (
                 <button
@@ -145,8 +176,22 @@ export default function AssignmentEditor({
               )}
             </div>
           ) : (
-            <div className="rounded-lg bg-gray-50 px-3 py-2.5 text-sm text-gray-400 dark:bg-gray-750 dark:text-gray-500">
-              {t('unassigned')}
+            <div className="flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2.5 text-sm dark:bg-gray-700">
+              {teamName && (
+                <span className="shrink-0 rounded bg-gray-200 px-1.5 py-0.5 text-xs font-semibold text-gray-700 dark:bg-gray-600 dark:text-gray-200">
+                  {teamName}
+                </span>
+              )}
+              <span className="flex-1 text-gray-400 dark:text-gray-500">{t('unassigned')}</span>
+              {selfAssignButton && (
+                <button
+                  onClick={onSelfAssign}
+                  className="flex min-h-[44px] shrink-0 animate-pulse items-center gap-1.5 rounded-lg bg-green-50 px-3 py-2.5 text-sm font-medium text-green-700 transition-colors hover:animate-none hover:bg-green-100 dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/40"
+                >
+                  <Hand className="h-4 w-4" />
+                  {t('selfAssign')}
+                </button>
+              )}
             </div>
           )}
         </>
@@ -162,7 +207,7 @@ export default function AssignmentEditor({
 
       {/* Contact info */}
       {showContact && assignedPerson && ((!assignedPerson.hide_phone && assignedPerson.phone) || assignedPerson.email) && (
-        <div className="flex flex-wrap gap-x-4 gap-y-1 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600 dark:bg-gray-750 dark:text-gray-400">
+        <div className="flex flex-wrap gap-x-4 gap-y-1 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-400">
           {!assignedPerson.hide_phone && assignedPerson.phone && (
             <a href={`tel:${assignedPerson.phone}`} className="flex items-center gap-1.5 transition-colors hover:text-brand-600 dark:hover:text-brand-400">
               <Phone className="h-3 w-3" />
@@ -176,17 +221,6 @@ export default function AssignmentEditor({
             </a>
           )}
         </div>
-      )}
-
-      {/* Self-assign button for regular users */}
-      {selfAssignButton && !personValue && (
-        <button
-          onClick={onSelfAssign}
-          className="mt-1 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg bg-brand-50 px-3 py-2.5 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-100 dark:bg-brand-900/20 dark:text-brand-400 dark:hover:bg-brand-900/40"
-        >
-          <Hand className="h-4 w-4" />
-          {t('selfAssign')}
-        </button>
       )}
     </div>
   )

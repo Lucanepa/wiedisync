@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { X } from 'lucide-react'
 import type { RecordModel } from 'pocketbase'
 import type { Game, Team, Hall, Member } from '../../../types'
 import Button from '../../../components/ui/Button'
@@ -12,9 +13,10 @@ import { useParticipation } from '../../../hooks/useParticipation'
 import { useMutation } from '../../../hooks/useMutation'
 import pb from '../../../pb'
 import { sanitizeUrl } from '../../../utils/sanitizeUrl'
+import DatePicker from '../../../components/ui/DatePicker'
 import { formatDate, formatTime } from '../../../utils/dateHelpers'
 
-const GAME_EXPAND = 'kscw_team,hall,scorer_member,taefeler_member,scorer_taefeler_member,scorer_duty_team,taefeler_duty_team,scorer_taefeler_duty_team,bb_anschreiber,bb_zeitnehmer,bb_24s_official,bb_duty_team'
+const GAME_EXPAND = 'kscw_team,hall,scorer_member,scoreboard_member,scorer_scoreboard_member,scorer_duty_team,scoreboard_duty_team,scorer_scoreboard_duty_team,bb_scorer_member,bb_timekeeper_member,bb_24s_official,bb_duty_team,bb_scorer_duty_team,bb_timekeeper_duty_team,bb_24s_duty_team'
 
 interface GameDetailModalProps {
   game: Game | null
@@ -27,15 +29,18 @@ type ExpandedGame = Game & {
     kscw_team?: Team & RecordModel
     hall?: Hall & RecordModel
     scorer_member?: Member & RecordModel
-    taefeler_member?: Member & RecordModel
-    scorer_taefeler_member?: Member & RecordModel
+    scoreboard_member?: Member & RecordModel
+    scorer_scoreboard_member?: Member & RecordModel
     scorer_duty_team?: Team & RecordModel
-    taefeler_duty_team?: Team & RecordModel
-    scorer_taefeler_duty_team?: Team & RecordModel
-    bb_anschreiber?: Member & RecordModel
-    bb_zeitnehmer?: Member & RecordModel
+    scoreboard_duty_team?: Team & RecordModel
+    scorer_scoreboard_duty_team?: Team & RecordModel
+    bb_scorer_member?: Member & RecordModel
+    bb_timekeeper_member?: Member & RecordModel
     bb_24s_official?: Member & RecordModel
     bb_duty_team?: Team & RecordModel
+    bb_scorer_duty_team?: Team & RecordModel
+    bb_timekeeper_duty_team?: Team & RecordModel
+    bb_24s_duty_team?: Team & RecordModel
   }
 }
 
@@ -47,12 +52,12 @@ function parseSets(json: unknown): Array<{ home: number; away: number }> {
   )
 }
 
-const dateFormatter = new Intl.DateTimeFormat('en-US', {
+const dateFormatOptions: Intl.DateTimeFormatOptions = {
   weekday: 'long',
   day: 'numeric',
   month: 'long',
   year: 'numeric',
-})
+}
 
 export default function GameDetailModal({ game, onClose, readOnly }: GameDetailModalProps) {
   const { t } = useTranslation('games')
@@ -79,15 +84,18 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
     const exp = (game as ExpandedGame).expand
     const needsExpand =
       (game.scorer_member && !exp?.scorer_member) ||
-      (game.taefeler_member && !exp?.taefeler_member) ||
-      (game.scorer_taefeler_member && !exp?.scorer_taefeler_member) ||
+      (game.scoreboard_member && !exp?.scoreboard_member) ||
+      (game.scorer_scoreboard_member && !exp?.scorer_scoreboard_member) ||
       (game.scorer_duty_team && !exp?.scorer_duty_team) ||
-      (game.taefeler_duty_team && !exp?.taefeler_duty_team) ||
-      (game.scorer_taefeler_duty_team && !exp?.scorer_taefeler_duty_team) ||
-      (game.bb_anschreiber && !exp?.bb_anschreiber) ||
-      (game.bb_zeitnehmer && !exp?.bb_zeitnehmer) ||
+      (game.scoreboard_duty_team && !exp?.scoreboard_duty_team) ||
+      (game.scorer_scoreboard_duty_team && !exp?.scorer_scoreboard_duty_team) ||
+      (game.bb_scorer_member && !exp?.bb_scorer_member) ||
+      (game.bb_timekeeper_member && !exp?.bb_timekeeper_member) ||
       (game.bb_24s_official && !exp?.bb_24s_official) ||
-      (game.bb_duty_team && !exp?.bb_duty_team)
+      (game.bb_duty_team && !exp?.bb_duty_team) ||
+      (game.bb_scorer_duty_team && !exp?.bb_scorer_duty_team) ||
+      (game.bb_timekeeper_duty_team && !exp?.bb_timekeeper_duty_team) ||
+      (game.bb_24s_duty_team && !exp?.bb_24s_duty_team)
     if (needsExpand) {
       pb.collection('games').getOne(game.id, { expand: GAME_EXPAND }).then(r => setFullGame(r as unknown as Game)).catch(() => {})
     }
@@ -119,7 +127,8 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
   const kscwSport = expanded.expand?.kscw_team?.sport as 'volleyball' | 'basketball' | undefined
   const kscwTeam = rawKscwTeam && kscwSport ? pbNameToColorKey(rawKscwTeam, kscwSport) : rawKscwTeam
   const sets = parseSets(game.sets_json)
-  const dateStr = game.date ? dateFormatter.format(new Date(game.date)) : ''
+  const { i18n } = useTranslation()
+  const dateStr = game.date ? new Intl.DateTimeFormat(i18n.language, dateFormatOptions).format(new Date(game.date)) : ''
   const showScorerContact = isCoachOf(game.kscw_team)
 
   return (
@@ -327,17 +336,17 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
 
         {/* Scorer duties — Volleyball */}
         {kscwSport !== 'basketball' &&
-        (game.scorer_member || game.taefeler_member || game.scorer_taefeler_member ||
-          game.scorer_person || game.taefeler_person) && (
+        (game.scorer_member || game.scoreboard_member || game.scorer_scoreboard_member ||
+          game.scorer_person || game.scoreboard_person) && (
           <div className="space-y-3 border-t dark:border-gray-700 px-6 py-4">
             <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
               {t('scorerDuties')}
             </h4>
-            {expanded.expand?.scorer_taefeler_member ? (
+            {expanded.expand?.scorer_scoreboard_member ? (
               <DutyPersonRow
                 label={t('scorerTaefeler')}
-                member={expanded.expand.scorer_taefeler_member}
-                dutyTeam={expanded.expand.scorer_taefeler_duty_team}
+                member={expanded.expand.scorer_scoreboard_member}
+                dutyTeam={expanded.expand.scorer_scoreboard_duty_team}
                 showContact={showScorerContact}
               />
             ) : (
@@ -351,12 +360,12 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
                     showContact={showScorerContact}
                   />
                 )}
-                {(expanded.expand?.taefeler_member || game.taefeler_person) && (
+                {(expanded.expand?.scoreboard_member || game.scoreboard_person) && (
                   <DutyPersonRow
-                    label={t('taefeler')}
-                    member={expanded.expand?.taefeler_member}
-                    fallbackName={game.taefeler_person}
-                    dutyTeam={expanded.expand?.taefeler_duty_team}
+                    label={t('scoreboard')}
+                    member={expanded.expand?.scoreboard_member}
+                    fallbackName={game.scoreboard_person}
+                    dutyTeam={expanded.expand?.scoreboard_duty_team}
                     showContact={showScorerContact}
                   />
                 )}
@@ -367,28 +376,24 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
 
         {/* Scorer duties — Basketball */}
         {kscwSport === 'basketball' &&
-        (game.bb_anschreiber || game.bb_zeitnehmer || game.bb_24s_official || game.bb_duty_team) && (
+        (game.bb_scorer_member || game.bb_timekeeper_member || game.bb_24s_official || game.bb_duty_team || game.bb_scorer_duty_team || game.bb_timekeeper_duty_team || game.bb_24s_duty_team) && (
           <div className="space-y-3 border-t dark:border-gray-700 px-6 py-4">
             <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
               {t('officialsDuties')}
             </h4>
-            {expanded.expand?.bb_duty_team && (
-              <div className="flex items-start gap-3 text-sm">
-                <span className="w-28 shrink-0 text-gray-500 dark:text-gray-400">{t('dutyTeam')}</span>
-                <TeamChip team={expanded.expand.bb_duty_team.name} size="sm" />
-              </div>
-            )}
-            {(expanded.expand?.bb_anschreiber || game.bb_anschreiber) && (
+            {(expanded.expand?.bb_scorer_member || game.bb_scorer_member) && (
               <DutyPersonRow
-                label={t('bbAnschreiber')}
-                member={expanded.expand?.bb_anschreiber}
+                label={t('bbScorer')}
+                member={expanded.expand?.bb_scorer_member}
+                dutyTeam={expanded.expand?.bb_scorer_duty_team ?? expanded.expand?.bb_duty_team}
                 showContact={showScorerContact}
               />
             )}
-            {(expanded.expand?.bb_zeitnehmer || game.bb_zeitnehmer) && (
+            {(expanded.expand?.bb_timekeeper_member || game.bb_timekeeper_member) && (
               <DutyPersonRow
-                label={t('bbZeitnehmer')}
-                member={expanded.expand?.bb_zeitnehmer}
+                label={t('bbTimekeeper')}
+                member={expanded.expand?.bb_timekeeper_member}
+                dutyTeam={expanded.expand?.bb_timekeeper_duty_team ?? expanded.expand?.bb_duty_team}
                 showContact={showScorerContact}
               />
             )}
@@ -396,6 +401,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
               <DutyPersonRow
                 label={t('bb24sOfficial')}
                 member={expanded.expand?.bb_24s_official}
+                dutyTeam={expanded.expand?.bb_24s_duty_team ?? expanded.expand?.bb_duty_team}
                 showContact={showScorerContact}
               />
             )}
@@ -411,12 +417,10 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
             {!readOnly && isCoachOf(game.kscw_team) && (
               editingDeadline ? (
                 <div className="flex items-center gap-2">
-                  <input
-                    type="date"
+                  <DatePicker
                     value={deadlineValue}
-                    onChange={(e) => setDeadlineValue(e.target.value)}
+                    onChange={setDeadlineValue}
                     max={game.date?.split(' ')[0]}
-                    className="rounded-lg border px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                   />
                   <Button
                     variant="primary"
@@ -432,7 +436,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
                     onClick={() => setEditingDeadline(false)}
                     className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400"
                   >
-                    ✗
+                    <X className="h-3.5 w-3.5" />
                   </button>
                 </div>
               ) : (

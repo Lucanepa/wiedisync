@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import Modal from '../../../components/Modal'
 import Button from '../../../components/ui/Button'
 import { Input, Select } from '../../../components/ui/Input'
+import DatePicker from '../../../components/ui/DatePicker'
 import pb from '../../../pb'
 import { logActivity } from '../../../utils/logActivity'
 import type { Hall, HallClosure } from '../../../types'
@@ -39,7 +40,7 @@ const emptyForm: {
 }
 
 const SOURCE_COLORS: Record<string, string> = {
-  schulferien: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+  school_holidays: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
   gcal: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
   hauswart: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300',
   admin: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400',
@@ -54,7 +55,7 @@ export default function ClosureManager({ halls, closures, onClose, onChanged }: 
     { value: 'admin', label: t('sourceAdmin') },
     { value: 'auto', label: t('sourceAutomatic') },
     { value: 'gcal', label: t('sourceGcal') },
-    { value: 'schulferien', label: t('sourceSchulferien') },
+    { value: 'school_holidays', label: t('sourceSchoolHolidays') },
   ]
 
   const sourceLabel = (s: string) => SOURCE_OPTIONS.find((o) => o.value === s)?.label ?? s
@@ -270,17 +271,15 @@ export default function ClosureManager({ halls, closures, onClose, onChanged }: 
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Input
-              type="date"
+            <DatePicker
               label={t('common:from')}
               value={form.start_date}
-              onChange={(e) => update('start_date', e.target.value)}
+              onChange={(v) => update('start_date', v)}
             />
-            <Input
-              type="date"
+            <DatePicker
               label={t('common:to')}
               value={form.end_date}
-              onChange={(e) => update('end_date', e.target.value)}
+              onChange={(v) => update('end_date', v)}
             />
           </div>
 

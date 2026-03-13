@@ -15,6 +15,7 @@ export default {
   loading: 'Loading...',
   noData: 'No data',
   noResults: 'No results',
+  search: 'Search...',
 
   // Days (full)
   monday: 'Monday',
@@ -45,6 +46,7 @@ export default {
   season: 'Season',
   allDay: 'All day',
   date: 'Date',
+  selectDate: 'Select date',
 
   // Validation
   required: 'Required',

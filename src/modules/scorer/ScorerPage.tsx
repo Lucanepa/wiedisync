@@ -9,6 +9,7 @@ import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
 import Button from '../../components/ui/Button'
 import { Input, Select } from '../../components/ui/Input'
+import DatePicker from '../../components/ui/DatePicker'
 import TeamSelect from '../../components/TeamSelect'
 import SportToggle from '../../components/SportToggle'
 import type { SportView } from '../../hooks/useSportPreference'
@@ -17,25 +18,25 @@ import TeamOverview from './components/TeamOverview'
 import DelegationRequestBanner from './components/DelegationRequestBanner'
 import { useScorerDelegations } from './hooks/useScorerDelegations'
 import LoadingSpinner from '../../components/LoadingSpinner'
-import { Bell, BellOff, ChevronDown, ChevronUp, Filter } from 'lucide-react'
+import { Bell, BellOff, ChevronDown, ChevronUp, Filter, Info, Clock, AlertTriangle, ClipboardList, Lightbulb } from 'lucide-react'
 
 type Tab = 'games' | 'overview'
 type SportTab = 'volleyball' | 'basketball'
-type VbDutyTypeFilter = 'all' | 'scorer' | 'taefeler' | 'scorer_taefeler'
-type VbUnassignedFilter = 'all' | 'scorer' | 'taefeler' | 'scorer_taefeler' | 'any'
-type BbUnassignedFilter = 'all' | 'bb_anschreiber' | 'bb_zeitnehmer' | 'bb_24s_official' | 'any'
+type VbDutyTypeFilter = 'all' | 'scorer' | 'scoreboard' | 'scorer_scoreboard'
+type VbUnassignedFilter = 'all' | 'scorer' | 'scoreboard' | 'scorer_scoreboard' | 'any'
+type BbUnassignedFilter = 'all' | 'bb_scorer' | 'bb_timekeeper' | 'bb_24s_official' | 'any'
 
 const VB_EXPAND =
-  'kscw_team,hall,scorer_member,taefeler_member,scorer_taefeler_member,scorer_duty_team,taefeler_duty_team,scorer_taefeler_duty_team'
+  'kscw_team,hall,scorer_member,scoreboard_member,scorer_scoreboard_member,scorer_duty_team,scoreboard_duty_team,scorer_scoreboard_duty_team'
 const BB_EXPAND =
-  'kscw_team,hall,bb_anschreiber,bb_zeitnehmer,bb_24s_official,bb_duty_team'
+  'kscw_team,hall,bb_scorer_member,bb_timekeeper_member,bb_24s_official,bb_duty_team,bb_scorer_duty_team,bb_timekeeper_duty_team,bb_24s_duty_team'
 const EXPAND_FIELDS = `${VB_EXPAND},${BB_EXPAND}`
 
 const PAST_PAGE_SIZE = 5
 
 export default function ScorerPage() {
   const { t } = useTranslation('scorer')
-  const { user, isSuperAdmin, isCoach, hasAdminAccessToSport } = useAuth()
+  const { user, isSuperAdmin, hasAdminAccessToSport } = useAuth()
   const { effectiveIsAdmin } = useAdminMode()
 
   const [tab, setTab] = useState<Tab>('games')
@@ -53,8 +54,8 @@ export default function ScorerPage() {
   const [showPast, setShowPast] = useState(false)
   const [pastVisible, setPastVisible] = useState(PAST_PAGE_SIZE)
   const [reminderToggling, setReminderToggling] = useState(false)
-  const canEdit = (effectiveIsAdmin && hasAdminAccessToSport(sportTab)) || isCoach
-  const showContact = (effectiveIsAdmin && hasAdminAccessToSport(sportTab)) || isCoach || isSuperAdmin
+  const canEdit = effectiveIsAdmin && hasAdminAccessToSport(sportTab)
+  const showContact = effectiveIsAdmin && hasAdminAccessToSport(sportTab)
 
   const today = useMemo(() => new Date().toISOString().split('T')[0], [])
 
@@ -69,7 +70,7 @@ export default function ScorerPage() {
     perPage: 200,
   })
 
-  const { data: allPastGames, isLoading: pastLoading, total: pastTotal } = usePB<Game>('games', {
+  const { data: allPastGames, isLoading: pastLoading } = usePB<Game>('games', {
     filter: `type = "home" && date < "${today}"`,
     sort: '-date,-time',
     expand: EXPAND_FIELDS,
@@ -160,27 +161,43 @@ export default function ScorerPage() {
   const filteredGames = useMemo(() => {
     return upcomingGames.filter((g) => {
       if (getGameSport(g) !== sportTab) return false
+
+      // Non-admins: only show games where their team has duty or they are personally assigned
+      if (!effectiveIsAdmin && user) {
+        const isPersonallyAssigned = sportTab === 'volleyball'
+          ? [g.scorer_member, g.scoreboard_member, g.scorer_scoreboard_member].includes(user.id)
+          : [g.bb_scorer_member, g.bb_timekeeper_member, g.bb_24s_official].includes(user.id)
+        const teamHasDuty = sportTab === 'volleyball'
+          ? userTeamIds.some((tid) => tid === g.scorer_duty_team || tid === g.scoreboard_duty_team || tid === g.scorer_scoreboard_duty_team)
+          : userTeamIds.some((tid) => tid === (g.bb_scorer_duty_team || g.bb_duty_team) || tid === (g.bb_timekeeper_duty_team || g.bb_duty_team) || tid === (g.bb_24s_duty_team || g.bb_duty_team))
+        if (!isPersonallyAssigned && !teamHasDuty) return false
+      }
+
       if (dateFilter && g.date !== dateFilter) return false
 
       if (dutyTeamFilter) {
         if (sportTab === 'volleyball') {
           const matchesTeam =
             g.scorer_duty_team === dutyTeamFilter ||
-            g.taefeler_duty_team === dutyTeamFilter ||
-            g.scorer_taefeler_duty_team === dutyTeamFilter
+            g.scoreboard_duty_team === dutyTeamFilter ||
+            g.scorer_scoreboard_duty_team === dutyTeamFilter
           if (!matchesTeam) return false
         } else {
-          if (g.bb_duty_team !== dutyTeamFilter) return false
+          const matchesTeam =
+            (g.bb_scorer_duty_team || g.bb_duty_team) === dutyTeamFilter ||
+            (g.bb_timekeeper_duty_team || g.bb_duty_team) === dutyTeamFilter ||
+            (g.bb_24s_duty_team || g.bb_duty_team) === dutyTeamFilter
+          if (!matchesTeam) return false
         }
       }
 
       if (sportTab === 'volleyball' && dutyTypeFilter !== 'all') {
-        if (dutyTypeFilter === 'scorer_taefeler') {
-          if (!g.scorer_taefeler_duty_team && !g.scorer_taefeler_member) return false
+        if (dutyTypeFilter === 'scorer_scoreboard') {
+          if (!g.scorer_scoreboard_duty_team && !g.scorer_scoreboard_member) return false
         } else if (dutyTypeFilter === 'scorer') {
           if (!g.scorer_duty_team && !g.scorer_member) return false
-        } else if (dutyTypeFilter === 'taefeler') {
-          if (!g.taefeler_duty_team && !g.taefeler_member) return false
+        } else if (dutyTypeFilter === 'scoreboard') {
+          if (!g.scoreboard_duty_team && !g.scoreboard_member) return false
         }
       }
 
@@ -190,37 +207,37 @@ export default function ScorerPage() {
           if (vbFilter === 'any') {
             const hasUnassigned =
               ((g.scorer_duty_team || g.scorer_member) && !g.scorer_member) ||
-              ((g.taefeler_duty_team || g.taefeler_member) && !g.taefeler_member) ||
-              ((g.scorer_taefeler_duty_team || g.scorer_taefeler_member) && !g.scorer_taefeler_member)
+              ((g.scoreboard_duty_team || g.scoreboard_member) && !g.scoreboard_member) ||
+              ((g.scorer_scoreboard_duty_team || g.scorer_scoreboard_member) && !g.scorer_scoreboard_member)
             if (!hasUnassigned && hasAnyVbAssignment(g)) return false
             if (!hasUnassigned && !hasAnyVbAssignment(g)) return true
           } else if (vbFilter === 'scorer') {
             if (g.scorer_member) return false
             if (!g.scorer_duty_team) return false
-          } else if (vbFilter === 'taefeler') {
-            if (g.taefeler_member) return false
-            if (!g.taefeler_duty_team) return false
-          } else if (vbFilter === 'scorer_taefeler') {
-            if (g.scorer_taefeler_member) return false
-            if (!g.scorer_taefeler_duty_team) return false
+          } else if (vbFilter === 'scoreboard') {
+            if (g.scoreboard_member) return false
+            if (!g.scoreboard_duty_team) return false
+          } else if (vbFilter === 'scorer_scoreboard') {
+            if (g.scorer_scoreboard_member) return false
+            if (!g.scorer_scoreboard_duty_team) return false
           }
         } else {
           const bbFilter = unassignedFilter as BbUnassignedFilter
           if (bbFilter === 'any') {
             const hasUnassigned =
-              (g.bb_duty_team && !g.bb_anschreiber) ||
-              (g.bb_duty_team && !g.bb_zeitnehmer)
+              ((g.bb_scorer_duty_team || g.bb_duty_team) && !g.bb_scorer_member) ||
+              ((g.bb_timekeeper_duty_team || g.bb_duty_team) && !g.bb_timekeeper_member)
             if (!hasUnassigned && hasAnyBbAssignment(g)) return false
             if (!hasUnassigned && !hasAnyBbAssignment(g)) return true
-          } else if (bbFilter === 'bb_anschreiber') {
-            if (g.bb_anschreiber) return false
-            if (!g.bb_duty_team) return false
-          } else if (bbFilter === 'bb_zeitnehmer') {
-            if (g.bb_zeitnehmer) return false
-            if (!g.bb_duty_team) return false
+          } else if (bbFilter === 'bb_scorer') {
+            if (g.bb_scorer_member) return false
+            if (!(g.bb_scorer_duty_team || g.bb_duty_team)) return false
+          } else if (bbFilter === 'bb_timekeeper') {
+            if (g.bb_timekeeper_member) return false
+            if (!(g.bb_timekeeper_duty_team || g.bb_duty_team)) return false
           } else if (bbFilter === 'bb_24s_official') {
             if (g.bb_24s_official) return false
-            if (!g.bb_duty_team) return false
+            if (!(g.bb_24s_duty_team || g.bb_duty_team)) return false
           }
         }
       }
@@ -228,8 +245,8 @@ export default function ScorerPage() {
       if (searchAssignee.trim()) {
         const q = searchAssignee.toLowerCase()
         const ids = sportTab === 'volleyball'
-          ? [g.scorer_member, g.taefeler_member, g.scorer_taefeler_member].filter(Boolean) as string[]
-          : [g.bb_anschreiber, g.bb_zeitnehmer, g.bb_24s_official].filter(Boolean) as string[]
+          ? [g.scorer_member, g.scoreboard_member, g.scorer_scoreboard_member].filter(Boolean) as string[]
+          : [g.bb_scorer_member, g.bb_timekeeper_member, g.bb_24s_official].filter(Boolean) as string[]
         const matches = ids.some((id) => {
           const m = memberMap.get(id)
           if (!m) return false
@@ -239,10 +256,36 @@ export default function ScorerPage() {
       }
 
       return true
+    }).sort((a, b) => {
+      // Primary: sort by date ascending
+      if (a.date !== b.date) return a.date < b.date ? -1 : 1
+      // Secondary: unconfirmed games first
+      if (a.duty_confirmed !== b.duty_confirmed) return a.duty_confirmed ? 1 : -1
+      // Among unconfirmed: unassigned before partially assigned
+      if (!a.duty_confirmed && !b.duty_confirmed) {
+        const aAssigned = sportTab === 'volleyball' ? hasAnyVbAssignment(a) : hasAnyBbAssignment(a)
+        const bAssigned = sportTab === 'volleyball' ? hasAnyVbAssignment(b) : hasAnyBbAssignment(b)
+        if (aAssigned !== bAssigned) return aAssigned ? 1 : -1
+      }
+      // Tiebreaker: sort by time ascending
+      if (a.time !== b.time) return (a.time || '') < (b.time || '') ? -1 : 1
+      return 0
     })
-  }, [upcomingGames, sportTab, dateFilter, dutyTeamFilter, dutyTypeFilter, unassignedFilter, searchAssignee, memberMap])
+  }, [upcomingGames, sportTab, effectiveIsAdmin, user, userTeamIds, dateFilter, dutyTeamFilter, dutyTypeFilter, unassignedFilter, searchAssignee, memberMap])
 
-  const filteredPastGames = useMemo(() => allPastGames.filter((g) => getGameSport(g) === sportTab), [allPastGames, sportTab])
+  const filteredPastGames = useMemo(() => allPastGames.filter((g) => {
+    if (getGameSport(g) !== sportTab) return false
+    if (!effectiveIsAdmin && user) {
+      const isPersonallyAssigned = sportTab === 'volleyball'
+        ? [g.scorer_member, g.scoreboard_member, g.scorer_scoreboard_member].includes(user.id)
+        : [g.bb_scorer_member, g.bb_timekeeper_member, g.bb_24s_official].includes(user.id)
+      const teamHasDuty = sportTab === 'volleyball'
+        ? userTeamIds.some((tid) => tid === g.scorer_duty_team || tid === g.scoreboard_duty_team || tid === g.scorer_scoreboard_duty_team)
+        : userTeamIds.some((tid) => tid === (g.bb_scorer_duty_team || g.bb_duty_team) || tid === (g.bb_timekeeper_duty_team || g.bb_duty_team) || tid === (g.bb_24s_duty_team || g.bb_duty_team))
+      if (!isPersonallyAssigned && !teamHasDuty) return false
+    }
+    return true
+  }), [allPastGames, sportTab, effectiveIsAdmin, user, userTeamIds])
   const visiblePastGames = useMemo(() => filteredPastGames.slice(0, pastVisible), [filteredPastGames, pastVisible])
 
   const hasActiveFilters = !!(dateFilter || dutyTeamFilter || dutyTypeFilter !== 'all' || unassignedFilter !== 'all' || searchAssignee)
@@ -318,7 +361,7 @@ export default function ScorerPage() {
 
   const filterLabelClass = 'mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400'
 
-  const renderScorerRow = (g: Game) => (
+  const renderScorerRow = (g: Game, isPast = false) => (
     <ScorerRow
       key={g.id}
       game={g}
@@ -327,13 +370,13 @@ export default function ScorerPage() {
       teamMemberIds={teamMemberIds}
       memberTeams={allMemberTeams}
       onUpdate={handleUpdate}
-      canEdit={canEdit}
+      canEdit={isPast ? false : canEdit}
       showContact={showContact}
       userId={user?.id}
       userTeamIds={userTeamIds}
       userLicences={user?.licences ?? []}
       sport={sportTab}
-      onDelegate={handleDelegate}
+      onDelegate={isPast ? undefined : handleDelegate}
       getPendingForRole={getPendingForRole}
       getDelegationTargetName={getDelegationTargetName}
     />
@@ -344,8 +387,58 @@ export default function ScorerPage() {
       <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 sm:text-2xl">{t('title')}</h1>
       <p className="mt-1 text-gray-600 dark:text-gray-400">{t('subtitle')}</p>
 
+      {/* Expandable info panel (volleyball only) */}
+      {sportTab === 'volleyball' && (
+        <details className="mt-3 rounded-lg border border-brand-200 bg-brand-50/50 dark:border-brand-800 dark:bg-brand-900/20 [&[open]>summary_.chevron-down]:hidden [&:not([open])>summary_.chevron-up]:hidden">
+        <summary
+          className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-medium text-brand-700 dark:text-brand-400 [&::-webkit-details-marker]:hidden"
+        >
+          <span className="flex items-center gap-2">
+            <Info className="h-4 w-4" />
+            {t('infoTitle')}
+          </span>
+          <ChevronDown className="h-4 w-4" />
+        </summary>
+        <div className="space-y-4 border-t border-brand-200 px-4 py-4 text-sm text-gray-700 dark:border-brand-800 dark:text-gray-300">
+          <div className="flex gap-3">
+            <Clock className="mt-0.5 h-4 w-4 shrink-0 text-brand-500 dark:text-brand-400" />
+            <div>
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100">{t('infoArrivalTitle')}</h3>
+              {/* eslint-disable-next-line react/no-danger -- hardcoded i18n */}
+              <p className="mt-1 [&_strong]:font-semibold" dangerouslySetInnerHTML={{ __html: t('infoArrivalScorer') }} />
+              {/* eslint-disable-next-line react/no-danger -- hardcoded i18n */}
+              <p className="mt-1 [&_strong]:font-semibold" dangerouslySetInnerHTML={{ __html: t('infoArrivalTaefeler') }} />
+            </div>
+          </div>
+          <div className="flex gap-3 rounded-lg bg-red-50/80 px-3 py-2.5 dark:bg-red-900/10">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-500 dark:text-red-400" />
+            <div>
+              <h3 className="font-semibold text-red-600 dark:text-red-400">{t('infoWarningTitle')}</h3>
+              <p className="mt-1 text-red-600/80 dark:text-red-400/80">{t('infoWarningFine')}</p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <ClipboardList className="mt-0.5 h-4 w-4 shrink-0 text-brand-500 dark:text-brand-400" />
+            <div>
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100">{t('infoRequirementsTitle')}</h3>
+              <p className="mt-1">{t('infoRequirements')}</p>
+              {/* eslint-disable-next-line react/no-danger -- hardcoded i18n */}
+              <p className="mt-1 [&_strong]:font-semibold" dangerouslySetInnerHTML={{ __html: t('infoRequirementsArrival') }} />
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-brand-500 dark:text-brand-400" />
+            <div>
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100">{t('infoHowToTitle')}</h3>
+              <p className="mt-1">{t('infoHowTo')}</p>
+            </div>
+          </div>
+        </div>
+        </details>
+      )}
+
       {/* Reminder email toggle (superuser only) */}
-      {isSuperAdmin && reminderSetting && (
+      {isSuperAdmin && effectiveIsAdmin && reminderSetting && (
         <button
           onClick={toggleReminders}
           disabled={reminderToggling}
@@ -362,14 +455,16 @@ export default function ScorerPage() {
 
       {/* Sport toggle + Tab bar */}
       <div className="mt-4 flex items-center justify-between gap-4">
-        <SportToggle
-          value={sportTab === 'volleyball' ? 'vb' : 'bb'}
-          onChange={(v: SportView) => {
-            setSportTab(v === 'bb' ? 'basketball' : 'volleyball')
-            clearFilters()
-          }}
-          showAll={false}
-        />
+        {effectiveIsAdmin ? (
+          <SportToggle
+            value={sportTab === 'volleyball' ? 'vb' : 'bb'}
+            onChange={(v: SportView) => {
+              setSportTab(v === 'bb' ? 'basketball' : 'volleyball')
+              clearFilters()
+            }}
+            showAll={false}
+          />
+        ) : <div />}
         <div className="flex gap-1 border-b border-gray-200 dark:border-gray-700">
           {(['games', 'overview'] as Tab[]).map((key) => (
             <button
@@ -410,7 +505,7 @@ export default function ScorerPage() {
             >
               <span className="flex items-center gap-2">
                 <Filter className="h-4 w-4" />
-                {t('filterDate')}
+                {t('filters')}
                 {hasActiveFilters && (
                   <span className="rounded-full bg-brand-500 px-1.5 py-0.5 text-[10px] font-bold text-white">!</span>
                 )}
@@ -422,7 +517,7 @@ export default function ScorerPage() {
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   <div>
                     <label htmlFor="scorer-date" className={filterLabelClass}>{t('filterDate')}</label>
-                    <Input id="scorer-date" type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} />
+                    <DatePicker id="scorer-date" value={dateFilter} onChange={setDateFilter} />
                   </div>
                   <div>
                     <label htmlFor="scorer-duty-team" className={filterLabelClass}>{t('filterDutyTeam')}</label>
@@ -434,8 +529,8 @@ export default function ScorerPage() {
                       <Select id="scorer-duty-type" value={dutyTypeFilter} onChange={(e) => setDutyTypeFilter(e.target.value as VbDutyTypeFilter)}>
                         <option value="all">{t('filterAllTypes')}</option>
                         <option value="scorer">{t('scorer')}</option>
-                        <option value="taefeler">{t('scoreboard')}</option>
-                        <option value="scorer_taefeler">{t('scorerTaefeler')}</option>
+                        <option value="scoreboard">{t('scoreboard')}</option>
+                        <option value="scorer_scoreboard">{t('scorerTaefeler')}</option>
                       </Select>
                     </div>
                   )}
@@ -447,13 +542,13 @@ export default function ScorerPage() {
                       {sportTab === 'volleyball' ? (
                         <>
                           <option value="scorer">{t('scorer')}</option>
-                          <option value="taefeler">{t('scoreboard')}</option>
-                          <option value="scorer_taefeler">{t('scorerTaefeler')}</option>
+                          <option value="scoreboard">{t('scoreboard')}</option>
+                          <option value="scorer_scoreboard">{t('scorerTaefeler')}</option>
                         </>
                       ) : (
                         <>
-                          <option value="bb_anschreiber">{t('bbAnschreiber')}</option>
-                          <option value="bb_zeitnehmer">{t('bbZeitnehmer')}</option>
+                          <option value="bb_scorer">{t('bbScorer')}</option>
+                          <option value="bb_timekeeper">{t('bbTimekeeper')}</option>
                           <option value="bb_24s_official">{t('bb24sOfficial')}</option>
                         </>
                       )}
@@ -476,14 +571,14 @@ export default function ScorerPage() {
           {/* Upcoming games */}
           <div className="mt-6">
             {gamesLoading && <LoadingSpinner />}
-            {!gamesLoading && filteredGames.length === 0 && (
+            {!gamesLoading && filteredGames.length === 0 && !showPast && (
               <div className="py-12 text-center text-gray-500 dark:text-gray-400">
                 <p>{t('noGames')}</p>
                 <p className="mt-1 text-sm">{t('noGamesDescription')}</p>
               </div>
             )}
             {!gamesLoading && filteredGames.length > 0 && (
-              <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">{filteredGames.map(renderScorerRow)}</div>
+              <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">{filteredGames.map((g) => renderScorerRow(g))}</div>
             )}
           </div>
 
@@ -491,7 +586,7 @@ export default function ScorerPage() {
           <div className="mt-8">
             {!showPast ? (
               <Button variant="secondary" onClick={() => { setShowPast(true); setPastVisible(PAST_PAGE_SIZE) }} className="mx-auto rounded-full">
-                {t('showOlderGames', { count: pastTotal || 0 })}
+                {t('showOlderGames')}
               </Button>
             ) : (
               <div className="mt-4">
@@ -501,7 +596,7 @@ export default function ScorerPage() {
                 )}
                 {!pastLoading && visiblePastGames.length > 0 && (
                   <>
-                    <div className="grid gap-3 opacity-75 lg:grid-cols-2 2xl:grid-cols-3">{visiblePastGames.map(renderScorerRow)}</div>
+                    <div className="grid gap-3 opacity-75 lg:grid-cols-2 2xl:grid-cols-3">{visiblePastGames.map((g) => renderScorerRow(g, true))}</div>
                     {pastVisible < filteredPastGames.length && (
                       <div className="mt-4 flex justify-center">
                         <Button variant="secondary" onClick={() => setPastVisible((v) => v + PAST_PAGE_SIZE)} className="rounded-full">{t('loadMore')}</Button>
@@ -522,9 +617,6 @@ export default function ScorerPage() {
         <TeamOverview games={upcomingGames} members={members} sport={sportTab} />
       )}
 
-      {!canEdit && (
-        <p className="mt-6 text-sm text-gray-500 dark:text-gray-400">{t('permissionsNotice')}</p>
-      )}
     </div>
   )
 }

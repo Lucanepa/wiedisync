@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Users } from 'lucide-react'
 import { usePB } from '../../hooks/usePB'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
@@ -75,7 +76,7 @@ export default function TeamsPage() {
   if (visibleTeams.length === 0) {
     return (
       <EmptyState
-        icon="👥"
+        icon={<Users className="h-10 w-10" />}
         title={hasElevatedAccess ? t('noTeams') : t('noTeamMembership')}
         description={hasElevatedAccess ? t('noTeamsDescription') : t('noTeamMembershipDescription')}
       />

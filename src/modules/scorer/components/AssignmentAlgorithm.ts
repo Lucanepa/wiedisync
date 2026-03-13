@@ -3,7 +3,7 @@ import type { Game, Team, Training, Member, MemberTeam } from '../../../types'
 // Teams that can score at Döltschi venue
 const UNDER_TEAM_NAMES = ['HU20', 'HU23-1', 'DU23-1', 'DU23-2']
 
-// Teams/leagues that use combined mode (schreiber/täfeler = 1 team does both)
+// Teams/leagues that use combined mode (scorer/scoreboard = 1 team does both)
 // Based on sheet: Döltschi games, Legends (4L), D3 (5L), D4 (5L) all use combined
 const COMBINED_LEAGUES = ['4L', '5L']
 
@@ -26,12 +26,12 @@ export interface GameAssignment {
   mode: 'separate' | 'combined'
   scorerTeamId: string | null
   scorerTeamName: string | null
-  taefelerTeamId: string | null
-  taefelerTeamName: string | null
+  scoreboardTeamId: string | null
+  scoreboardTeamName: string | null
   combinedTeamId: string | null
   combinedTeamName: string | null
   scorerScore: number
-  taefelerScore: number
+  scoreboardScore: number
   conflicts: ConflictEntry[]
 }
 
@@ -141,7 +141,7 @@ function scoreTeam(
   teamId: string,
   teamName: string,
   game: Game,
-  role: 'scorer' | 'taefeler' | 'combined',
+  role: 'scorer' | 'scoreboard' | 'combined',
   hallName: string,
   teamGameDates: Map<string, Set<string>>,
   trainingDates: Set<string>,
@@ -206,8 +206,8 @@ function scoreTeam(
     reasons.push({ key: 'reason_rotation', params: { count, points: -penalty } })
   }
 
-  // HU20 täfeler preference: +15
-  if (role === 'taefeler' && teamName === 'HU20') {
+  // HU20 scoreboard preference: +15
+  if (role === 'scoreboard' && teamName === 'HU20') {
     score += 15
     reasons.push({ key: 'reason_hu20Taefeler', params: { points: 15 } })
   }
@@ -282,25 +282,25 @@ export function runAssignment(input: AssignmentInput): GameAssignment[] {
     const useCombined = shouldUseCombined(game, hallName)
 
     // Skip games that already have assignments
-    const alreadyHasSeparate = !!(game.scorer_duty_team || game.taefeler_duty_team)
-    const alreadyHasCombined = !!game.scorer_taefeler_duty_team
+    const alreadyHasSeparate = !!(game.scorer_duty_team || game.scoreboard_duty_team)
+    const alreadyHasCombined = !!game.scorer_scoreboard_duty_team
 
     if (alreadyHasSeparate || alreadyHasCombined) {
       if (game.scorer_duty_team) trackAssignment(game.scorer_duty_team, game.date, assignmentCounts, dayAssignments)
-      if (game.taefeler_duty_team) trackAssignment(game.taefeler_duty_team, game.date, assignmentCounts, dayAssignments)
-      if (game.scorer_taefeler_duty_team) trackAssignment(game.scorer_taefeler_duty_team, game.date, assignmentCounts, dayAssignments)
+      if (game.scoreboard_duty_team) trackAssignment(game.scoreboard_duty_team, game.date, assignmentCounts, dayAssignments)
+      if (game.scorer_scoreboard_duty_team) trackAssignment(game.scorer_scoreboard_duty_team, game.date, assignmentCounts, dayAssignments)
 
       results.push({
         gameId: game.id,
         mode: alreadyHasCombined ? 'combined' : 'separate',
         scorerTeamId: game.scorer_duty_team || null,
         scorerTeamName: game.scorer_duty_team ? vbTeams.find((t) => t.id === game.scorer_duty_team)?.name ?? null : null,
-        taefelerTeamId: game.taefeler_duty_team || null,
-        taefelerTeamName: game.taefeler_duty_team ? vbTeams.find((t) => t.id === game.taefeler_duty_team)?.name ?? null : null,
-        combinedTeamId: game.scorer_taefeler_duty_team || null,
-        combinedTeamName: game.scorer_taefeler_duty_team ? vbTeams.find((t) => t.id === game.scorer_taefeler_duty_team)?.name ?? null : null,
+        scoreboardTeamId: game.scoreboard_duty_team || null,
+        scoreboardTeamName: game.scoreboard_duty_team ? vbTeams.find((t) => t.id === game.scoreboard_duty_team)?.name ?? null : null,
+        combinedTeamId: game.scorer_scoreboard_duty_team || null,
+        combinedTeamName: game.scorer_scoreboard_duty_team ? vbTeams.find((t) => t.id === game.scorer_scoreboard_duty_team)?.name ?? null : null,
         scorerScore: 0,
-        taefelerScore: 0,
+        scoreboardScore: 0,
         conflicts: [{ key: 'existingKept' }],
       })
       continue
@@ -313,9 +313,9 @@ export function runAssignment(input: AssignmentInput): GameAssignment[] {
       const assignment: GameAssignment = {
         gameId: game.id, mode: 'combined',
         scorerTeamId: null, scorerTeamName: null,
-        taefelerTeamId: null, taefelerTeamName: null,
+        scoreboardTeamId: null, scoreboardTeamName: null,
         combinedTeamId: null, combinedTeamName: null,
-        scorerScore: 0, taefelerScore: 0, conflicts: [],
+        scorerScore: 0, scoreboardScore: 0, conflicts: [],
       }
 
       const scores = vbTeams
@@ -347,9 +347,9 @@ export function runAssignment(input: AssignmentInput): GameAssignment[] {
       const assignment: GameAssignment = {
         gameId: game.id, mode: 'separate',
         scorerTeamId: null, scorerTeamName: null,
-        taefelerTeamId: null, taefelerTeamName: null,
+        scoreboardTeamId: null, scoreboardTeamName: null,
         combinedTeamId: null, combinedTeamName: null,
-        scorerScore: 0, taefelerScore: 0, conflicts: [],
+        scorerScore: 0, scoreboardScore: 0, conflicts: [],
       }
 
       // Score all teams for SCORER
@@ -376,24 +376,24 @@ export function runAssignment(input: AssignmentInput): GameAssignment[] {
         assignment.conflicts.push({ key: 'noScorerAvailable' })
       }
 
-      // Score all teams for TÄFELER (exclude scorer team)
-      const taefelerScores = vbTeams
+      // Score all teams for SCOREBOARD (exclude scorer team)
+      const scoreboardScores = vbTeams
         .filter((t) => t.id !== playingTeamId && t.id !== assignment.scorerTeamId)
         .map((t) => scoreTeam(
-          t.id, t.name, game, 'taefeler', hallName,
+          t.id, t.name, game, 'scoreboard', hallName,
           teamGameDates, trainingDates, adjacentTeams,
           scorerTeams, underTeamIds, assignmentCounts, dayAssignments,
         ))
         .filter((s) => !s.disqualified)
         .sort((a, b) => b.score - a.score)
 
-      if (taefelerScores.length > 0) {
-        const best = taefelerScores[0]
-        assignment.taefelerTeamId = best.teamId
-        assignment.taefelerTeamName = best.teamName
-        assignment.taefelerScore = best.score
+      if (scoreboardScores.length > 0) {
+        const best = scoreboardScores[0]
+        assignment.scoreboardTeamId = best.teamId
+        assignment.scoreboardTeamName = best.teamName
+        assignment.scoreboardScore = best.score
         for (const r of best.reasons) {
-          assignment.conflicts.push({ ...r, params: { ...r.params, team: best.teamName, role: 'taefeler' } })
+          assignment.conflicts.push({ ...r, params: { ...r.params, team: best.teamName, role: 'scoreboard' } })
         }
         trackAssignment(best.teamId, game.date, assignmentCounts, dayAssignments)
       } else {
@@ -409,7 +409,7 @@ export function runAssignment(input: AssignmentInput): GameAssignment[] {
 
 export interface TeamCountRow {
   scorer: number
-  taefeler: number
+  scoreboard: number
   combined: number
   totalDuties: number
   ownGames: number
@@ -426,7 +426,7 @@ export function getTeamCounts(
   for (const t of allTeams) {
     if (t.sport === 'volleyball' && t.active) {
       const ownGames = allGames.filter((g) => g.kscw_team === t.id).length
-      counts.set(t.name, { scorer: 0, taefeler: 0, combined: 0, totalDuties: 0, ownGames })
+      counts.set(t.name, { scorer: 0, scoreboard: 0, combined: 0, totalDuties: 0, ownGames })
     }
   }
 
@@ -435,9 +435,9 @@ export function getTeamCounts(
       counts.get(r.scorerTeamName)!.scorer++
       counts.get(r.scorerTeamName)!.totalDuties++
     }
-    if (r.taefelerTeamName && counts.has(r.taefelerTeamName)) {
-      counts.get(r.taefelerTeamName)!.taefeler++
-      counts.get(r.taefelerTeamName)!.totalDuties++
+    if (r.scoreboardTeamName && counts.has(r.scoreboardTeamName)) {
+      counts.get(r.scoreboardTeamName)!.scoreboard++
+      counts.get(r.scoreboardTeamName)!.totalDuties++
     }
     if (r.combinedTeamName && counts.has(r.combinedTeamName)) {
       counts.get(r.combinedTeamName)!.combined++

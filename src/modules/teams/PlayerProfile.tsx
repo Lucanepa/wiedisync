@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams, Link } from 'react-router-dom'
+import { XCircle } from 'lucide-react'
 import { differenceInYears } from 'date-fns'
 import pb from '../../pb'
 import { usePB } from '../../hooks/usePB'
@@ -93,7 +94,7 @@ export default function PlayerProfile() {
   }
 
   if (!member) {
-    return <EmptyState icon="❌" title="Player not found" />
+    return <EmptyState icon={<XCircle className="h-10 w-10" />} title="Player not found" />
   }
 
   const initials = `${member.first_name?.[0] ?? ''}${member.last_name?.[0] ?? ''}`.toUpperCase()

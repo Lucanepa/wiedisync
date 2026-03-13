@@ -14,6 +14,8 @@ import {
   getDay as fnsGetDay,
 } from 'date-fns'
 import { enUS } from 'date-fns/locale'
+import { de } from 'date-fns/locale/de'
+import type { Locale } from 'date-fns'
 
 export function parseDate(isoString: string): Date {
   return parseISO(isoString)
@@ -95,3 +97,13 @@ export function getSeasonYear(date: Date): number {
 
 /** Day-of-week headers (Monday-start) */
 export const DAY_HEADERS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+/** Get date-fns locale from language code */
+export function getLocale(lang: string): Locale {
+  return lang === 'de' ? de : enUS
+}
+
+/** Format a date with locale awareness */
+export function formatDateLocale(date: Date, pattern: string, lang: string): string {
+  return format(date, pattern, { locale: getLocale(lang) })
+}

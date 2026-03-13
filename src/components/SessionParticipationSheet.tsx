@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { Check, X } from 'lucide-react'
 import Modal from './Modal'
 import { useParticipation } from '../hooks/useParticipation'
 import type { EventSession, Participation } from '../types'
@@ -19,9 +20,9 @@ function SessionRow({ activityId, session }: { activityId: string; session: Even
   const dateStr = session.date?.split(' ')[0] ?? ''
   const { effectiveStatus, setStatus } = useParticipation('event', activityId, dateStr, session.id)
 
-  const buttons: { status: Participation['status']; icon: string; activeClass: string }[] = [
-    { status: 'confirmed', icon: '✓', activeClass: 'bg-green-500 text-white' },
-    { status: 'declined', icon: '✗', activeClass: 'bg-red-500 text-white' },
+  const buttons: { status: Participation['status']; icon: React.ReactNode; activeClass: string }[] = [
+    { status: 'confirmed', icon: <Check className="h-4 w-4" />, activeClass: 'bg-green-500 text-white' },
+    { status: 'declined', icon: <X className="h-4 w-4" />, activeClass: 'bg-red-500 text-white' },
   ]
 
   return (

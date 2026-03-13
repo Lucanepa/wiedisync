@@ -1,12 +1,15 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import Modal from '../../components/Modal'
 import { useAuth } from '../../hooks/useAuth'
+import { useAdminMode } from '../../hooks/useAdminMode'
 import { useMutation } from '../../hooks/useMutation'
 import { usePB } from '../../hooks/usePB'
 import Button from '../../components/ui/Button'
-import { Input, Textarea, Select } from '../../components/ui/Input'
-import type { Absence, Member } from '../../types'
+import { Textarea } from '../../components/ui/Input'
+import DatePicker from '../../components/ui/DatePicker'
+import SearchableSelect from '../../components/ui/SearchableSelect'
+import type { Absence, Member, MemberTeam } from '../../types'
 
 interface AbsenceFormProps {
   open: boolean
@@ -17,14 +20,31 @@ interface AbsenceFormProps {
 
 export default function AbsenceForm({ open, absence, onSave, onCancel }: AbsenceFormProps) {
   const { t } = useTranslation('absences')
-  const { user, isCoach } = useAuth()
+  const { user, coachTeamIds } = useAuth()
+  const { effectiveIsCoach, effectiveIsAdmin } = useAdminMode()
   const { create, update, isLoading } = useMutation<Absence>('absences')
   const { data: allMembers } = usePB<Member>('members', {
     filter: 'active=true',
     sort: 'last_name',
     all: true,
-    fields: 'id,first_name,last_name',
+    fields: 'id,first_name,last_name,name',
   })
+
+  // Fetch member-team mappings to scope the dropdown for coaches
+  const { data: memberTeams } = usePB<MemberTeam>('member_teams', {
+    filter: coachTeamIds.length > 0 && !effectiveIsAdmin
+      ? coachTeamIds.map((id) => `team="${id}"`).join(' || ')
+      : '',
+    all: true,
+    enabled: effectiveIsCoach && !effectiveIsAdmin && coachTeamIds.length > 0,
+  })
+
+  // Admins see all members; coaches see only members from their teams
+  const visibleMembers = useMemo(() => {
+    if (effectiveIsAdmin) return allMembers
+    const teamMemberIds = new Set(memberTeams.map((mt) => mt.member))
+    return allMembers.filter((m) => teamMemberIds.has(m.id))
+  }, [allMembers, memberTeams, effectiveIsAdmin])
 
   const [memberId, setMemberId] = useState('')
   const [startDate, setStartDate] = useState('')
@@ -54,9 +74,21 @@ export default function AbsenceForm({ open, absence, onSave, onCancel }: Absence
   }, [absence, user, open])
 
   function toggleAffect(value: string) {
-    setAffects((prev) =>
-      prev.includes(value) ? prev.filter((a) => a !== value) : [...prev, value],
-    )
+    if (value === 'all') {
+      setAffects(['all'])
+    } else {
+      setAffects((prev) => {
+        const without = prev.filter((a) => a !== 'all')
+        const toggled = without.includes(value)
+          ? without.filter((a) => a !== value)
+          : [...without, value]
+        // both selected = all; none selected = all
+        if (toggled.length === 0 || (toggled.includes('trainings') && toggled.includes('games'))) {
+          return ['all']
+        }
+        return toggled
+      })
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -106,49 +138,45 @@ export default function AbsenceForm({ open, absence, onSave, onCancel }: Absence
       size="md"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        {isCoach && (
-          <Select
+        {effectiveIsCoach && (
+          <SearchableSelect
             label={t('member')}
+            placeholder={t('common:select')}
             value={memberId}
-            onChange={(e) => setMemberId(e.target.value)}
-          >
-            <option value="">{t('common:select')}</option>
-            {allMembers.map((m) => (
-              <option key={m.id} value={m.id}>{m.name}</option>
-            ))}
-          </Select>
+            onChange={setMemberId}
+            options={visibleMembers.map((m) => ({ value: m.id, label: m.name || `${m.first_name} ${m.last_name}` }))}
+          />
         )}
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Input
+          <DatePicker
             label={t('startDate')}
-            type="date"
             value={startDate}
-            onChange={(e) => {
-              setStartDate(e.target.value)
-              if (!endDate || endDate < e.target.value) setEndDate(e.target.value)
+            onChange={(v) => {
+              setStartDate(v)
+              if (!endDate || endDate < v) setEndDate(v)
             }}
           />
-          <Input
+          <DatePicker
             label={t('endDate')}
-            type="date"
             value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
+            onChange={setEndDate}
             min={startDate}
           />
         </div>
 
-        <Select
+        <SearchableSelect
           label={t('reason')}
           value={reason}
-          onChange={(e) => setReason(e.target.value as Absence['reason'])}
-        >
-          <option value="injury">{t('reasonInjury')}</option>
-          <option value="vacation">{t('reasonVacation')}</option>
-          <option value="work">{t('reasonWork')}</option>
-          <option value="personal">{t('reasonPersonal')}</option>
-          <option value="other">{t('reasonOther')}</option>
-        </Select>
+          onChange={(v) => setReason(v as Absence['reason'])}
+          options={[
+            { value: 'injury', label: t('reasonInjury') },
+            { value: 'vacation', label: t('reasonVacation') },
+            { value: 'work', label: t('reasonWork') },
+            { value: 'personal', label: t('reasonPersonal') },
+            { value: 'other', label: t('reasonOther') },
+          ]}
+        />
 
         <Textarea
           label={t('detailsOptional')}

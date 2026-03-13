@@ -59,7 +59,7 @@ export default {
   sourceAdmin: 'Admin',
   sourceAutomatic: 'Automatisch',
   sourceGcal: 'Google Kalender',
-  sourceSchulferien: 'Schulferien',
+  sourceSchoolHolidays: 'Schulferien',
   closed: 'Gesperrt',
   allHalls: 'Alle Hallen',
   halls: 'Hallen',
@@ -122,5 +122,6 @@ export default {
 
   // Available slots
   slotsAvailable: '{{count}} Halle(n) frei',
+  slotsAvailableTitle: 'Freie Hallen',
   slotsAvailableNone: 'Keine freien Hallen',
 } as const

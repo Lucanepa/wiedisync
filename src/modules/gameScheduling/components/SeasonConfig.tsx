@@ -12,15 +12,21 @@ interface Props {
 
 export default function SeasonConfig({ season, allSeasons, onCreateSeason, onSelectSeason, onStatusChange }: Props) {
   const { t } = useTranslation('gameScheduling')
-  const [newSeason, setNewSeason] = useState('')
   const [creating, setCreating] = useState(false)
 
+  const getNextSeasonName = () => {
+    const year = new Date().getFullYear()
+    return `${year}/${(year + 1).toString().slice(-2)}`
+  }
+
+  const nextSeason = getNextSeasonName()
+  const seasonExists = allSeasons.some(s => s.season === nextSeason)
+
   const handleCreate = async () => {
-    if (!newSeason.trim()) return
+    if (seasonExists) return
     setCreating(true)
     try {
-      await onCreateSeason(newSeason.trim())
-      setNewSeason('')
+      await onCreateSeason(nextSeason)
     } finally {
       setCreating(false)
     }
@@ -63,22 +69,15 @@ export default function SeasonConfig({ season, allSeasons, onCreateSeason, onSel
       </div>
 
       {/* Create new season */}
-      <div className="flex items-center gap-2">
-        <input
-          type="text"
-          value={newSeason}
-          onChange={e => setNewSeason(e.target.value)}
-          placeholder="2025/26"
-          className="w-32 rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-        />
+      {!seasonExists && (
         <button
           onClick={handleCreate}
-          disabled={creating || !newSeason.trim()}
+          disabled={creating}
           className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
         >
-          {t('createSeason')}
+          {creating ? '…' : `${t('createSeason')} ${nextSeason}`}
         </button>
-      </div>
+      )}
 
       {/* Status toggle */}
       {season && (

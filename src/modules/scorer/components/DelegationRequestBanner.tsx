@@ -18,10 +18,10 @@ function getDateFormatter(locale: string) {
 
 const ROLE_LABEL_KEYS: Record<string, string> = {
   scorer: 'scorer',
-  taefeler: 'scoreboard',
-  scorer_taefeler: 'scorerTaefeler',
-  bb_anschreiber: 'bbAnschreiber',
-  bb_zeitnehmer: 'bbZeitnehmer',
+  scoreboard: 'scoreboard',
+  scorer_scoreboard: 'scorerTaefeler',
+  bb_scorer: 'bbScorer',
+  bb_timekeeper: 'bbTimekeeper',
   bb_24s_official: 'bb24sOfficial',
 }
 

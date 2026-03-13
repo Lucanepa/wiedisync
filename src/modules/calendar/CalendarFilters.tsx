@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import Modal from '../../components/Modal'
 import FilterChips from '../../components/FilterChips'
 import TeamMultiSelect from '../../components/TeamMultiSelect'
 import { useTeams } from '../../hooks/useTeams'
@@ -6,16 +7,14 @@ import { pbNameToColorKey } from '../../utils/teamColors'
 import type { CalendarFilterState, SourceFilter } from '../../types/calendar'
 
 interface CalendarFiltersProps {
+  open: boolean
+  onClose: () => void
   filters: CalendarFilterState
   onChange: (filters: CalendarFilterState) => void
   allowedSources?: SourceFilter[]
-  /** Compact mode: smaller chips for use below the calendar */
-  compact?: boolean
-  /** Show All/None toggle for each section */
-  showBulkToggle?: boolean
 }
 
-export default function CalendarFilters({ filters, onChange, allowedSources, compact, showBulkToggle }: CalendarFiltersProps) {
+export default function CalendarFilters({ open, onClose, filters, onChange, allowedSources }: CalendarFiltersProps) {
   const { t } = useTranslation('calendar')
   const { t: tc } = useTranslation('common')
 
@@ -32,7 +31,6 @@ export default function CalendarFilters({ filters, onChange, allowedSources, com
     : allSourceOptions
   const { data: teams } = useTeams()
 
-  // Check if we have both volleyball and basketball teams
   const hasVB = teams.some((t) => t.sport === 'volleyball')
   const hasBB = teams.some((t) => t.sport === 'basketball')
   const showGroups = hasVB && hasBB
@@ -42,46 +40,54 @@ export default function CalendarFilters({ filters, onChange, allowedSources, com
     .map((team) => {
       const colorKey = pbNameToColorKey(team.name, team.sport)
       const sportLabel = team.sport === 'volleyball' ? tc('volleyball') : tc('basketball')
-      // When both sports shown, prefix VB-/BB- for clarity
       const label = showGroups
         ? (team.sport === 'volleyball' ? `VB-${team.name}` : `BB-${team.name}`)
         : team.name
-
-      return {
-        value: team.id,
-        label,
-        colorKey,
-        group: showGroups ? sportLabel : undefined,
-      }
+      return { value: team.id, label, colorKey, group: showGroups ? sportLabel : undefined }
     })
 
-  // For teams: empty selectedTeamIds means "all teams" in the data layer.
-  function handleTeamChange(ids: string[]) {
-    onChange({ ...filters, selectedTeamIds: ids })
-  }
-
   return (
-    <div className={`flex flex-col ${compact ? 'gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3' : 'gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4'}`}>
-      <FilterChips
-        options={sourceOptions}
-        selected={filters.sources}
-        onChange={(sources) => onChange({ ...filters, sources: sources as SourceFilter[] })}
-        compact={compact}
-        showBulkToggle={showBulkToggle}
-      />
+    <Modal open={open} onClose={onClose} title={t('filterTitle')} size="sm">
+      <div className="space-y-5">
+        {/* Source type chips */}
+        <div>
+          <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            {t('filterCategories')}
+          </label>
+          <FilterChips
+            options={sourceOptions}
+            selected={filters.sources}
+            onChange={(sources) => onChange({ ...filters, sources: sources as SourceFilter[] })}
+            showBulkToggle
+          />
+        </div>
 
-      {teamOptions.length > 0 && (
-        <div className={`${compact ? 'border-t border-gray-200 pt-2 sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0 dark:border-gray-700' : 'border-t border-gray-200 pt-3 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0 dark:border-gray-700'}`}>
-          <div className={compact ? 'w-48' : 'w-64'}>
+        {/* Team filter */}
+        {teamOptions.length > 0 && (
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              {tc('team')}
+            </label>
             <TeamMultiSelect
               options={teamOptions}
               selected={filters.selectedTeamIds}
-              onChange={handleTeamChange}
+              onChange={(ids) => onChange({ ...filters, selectedTeamIds: ids })}
               placeholder={tc('allTeams')}
             />
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </Modal>
   )
+}
+
+/** Count active filters (deselected sources + selected teams) */
+export function getActiveFilterCount(
+  filters: CalendarFilterState,
+  totalSources: number,
+): number {
+  let count = 0
+  if (filters.sources.length < totalSources) count += 1
+  if (filters.selectedTeamIds.length > 0) count += 1
+  return count
 }

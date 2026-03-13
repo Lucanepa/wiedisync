@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../hooks/useAuth'
-import { Home, Calendar, Trophy, CheckCircle, Users, Menu } from 'lucide-react'
+import { Home, Calendar, Trophy, Users, Menu } from 'lucide-react'
 
 interface TabItem {
   to: string
@@ -16,7 +16,14 @@ const primaryTabs: TabItem[] = [
   { to: '/', labelKey: 'home', icon: <Home className={iconClass} /> },
   { to: '/calendar', labelKey: 'calendar', icon: <Calendar className={iconClass} /> },
   { to: '/games', labelKey: 'gamesShort', icon: <Trophy className={iconClass} /> },
-  { to: '/trainings', labelKey: 'trainings', requiresAuth: true, icon: <CheckCircle className={iconClass} /> },
+  { to: '/trainings', labelKey: 'trainings', requiresAuth: true, icon: (
+    <svg className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M16.05 10.966a5 2.5 0 0 1-8.1 0" />
+      <path d="m16.923 14.049 4.48 2.04a1 1 0 0 1 .001 1.831l-8.574 3.9a2 2 0 0 1-1.66 0l-8.574-3.91a1 1 0 0 1 0-1.83l4.484-2.04" />
+      <path d="M16.949 14.14a5 2.5 0 1 1-9.9 0L10.063 3.5a2 2 0 0 1 3.874 0z" />
+      <path d="M9.194 6.57a5 2.5 0 0 0 5.61 0" />
+    </svg>
+  ) },
   { to: '/teams', labelKey: 'teams', requiresAuth: true, icon: <Users className={iconClass} /> },
 ]
 
@@ -28,7 +35,8 @@ interface BottomTabBarProps {
 
 export default function BottomTabBar({ onMoreTap, moreActive, unreadNotifications = 0 }: BottomTabBarProps) {
   const { t } = useTranslation('nav')
-  const { user, isApproved } = useAuth()
+  const { user, isApproved, isAdmin, isVorstand, memberTeamIds } = useAuth()
+  const showTeamsPlural = isAdmin || isVorstand || memberTeamIds.length !== 1
   const visibleTabs = primaryTabs.filter((tab) => !tab.requiresAuth || (user && isApproved))
   return (
     <nav className="pb-safe fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
@@ -47,7 +55,7 @@ export default function BottomTabBar({ onMoreTap, moreActive, unreadNotification
             }
           >
             {tab.icon}
-            {t(tab.labelKey)}
+            {t(tab.labelKey === 'teams' && !showTeamsPlural ? 'team' : tab.labelKey)}
           </NavLink>
         ))}
 

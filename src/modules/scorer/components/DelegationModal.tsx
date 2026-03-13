@@ -18,9 +18,9 @@ interface DelegationModalProps {
 
 const ROLE_LICENCE_MAP: Record<string, LicenceType | LicenceType[]> = {
   scorer: 'scorer_vb',
-  scorer_taefeler: 'scorer_vb',
-  bb_anschreiber: 'otr1_bb',
-  bb_zeitnehmer: 'otr1_bb',
+  scorer_scoreboard: 'scorer_vb',
+  bb_scorer: 'otr1_bb',
+  bb_timekeeper: 'otr1_bb',
   bb_24s_official: ['otr2_bb', 'otn_bb'],
 }
 

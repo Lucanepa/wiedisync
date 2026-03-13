@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { PartyPopper } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { usePB } from '../../hooks/usePB'
 import Button from '../../components/ui/Button'
 import StatusBadge from '../../components/StatusBadge'
 import TeamChip from '../../components/TeamChip'
 import ParticipationButton from '../../components/ParticipationButton'
+import VolleyballIcon from '../../components/VolleyballIcon'
 import { getFileUrl } from '../../utils/pbFile'
 import { coercePositions, getPositionI18nKey } from '../../utils/memberPositions'
 import { formatDate, toISODate } from '../../utils/dateHelpers'
@@ -256,7 +258,7 @@ export default function ProfilePage() {
           ))}
           {upcomingGames.map((g) => (
             <div key={g.id} className="flex items-center gap-3 rounded-lg border bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800">
-              <span className="text-lg">🏐</span>
+              <VolleyballIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
               <div className="flex-1">
                 <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                   {g.home_team} vs {g.away_team}
@@ -275,7 +277,7 @@ export default function ProfilePage() {
           ))}
           {upcomingEvents.map((ev) => (
             <div key={ev.id} className="flex items-center gap-3 rounded-lg border bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800">
-              <span className="text-lg">🎉</span>
+              <PartyPopper className="h-5 w-5 text-gray-500 dark:text-gray-400" />
               <div className="flex-1">
                 <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{ev.title}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">

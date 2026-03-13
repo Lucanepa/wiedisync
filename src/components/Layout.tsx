@@ -12,7 +12,7 @@ import BottomTabBar from './BottomTabBar'
 import MoreSheet from './MoreSheet'
 import NotificationBell from './NotificationBell'
 import NotificationPanel from './NotificationPanel'
-import PrivacyNotice from './PrivacyNotice'
+import SidebarNotifications from './SidebarNotifications'
 import SwitchToggle from './SwitchToggle'
 import TeamChip from './TeamChip'
 import { usePB } from '../hooks/usePB'
@@ -27,6 +27,8 @@ type ExpandedMemberTeam = MemberTeam & { expand?: { team?: Team } }
 
 function useNavItems(isLoggedIn: boolean, isApproved: boolean) {
   const { t } = useTranslation('nav')
+  const { memberTeamIds, isAdmin, isVorstand } = useAuth()
+  const showTeamsPlural = isAdmin || isVorstand || memberTeamIds.length > 1
   const iconClass = 'h-5 w-5'
   const publicItems = [
     { to: '/', label: t('home'), icon: <Home className={iconClass} /> },
@@ -49,7 +51,7 @@ function useNavItems(isLoggedIn: boolean, isApproved: boolean) {
     { to: '/absences', label: t('absences'), icon: <UserX className={iconClass} /> },
     { to: '/scorer', label: t('scorer'), icon: <PenSquare className={iconClass} /> },
     { to: '/events', label: t('events'), icon: <PartyPopper className={iconClass} /> },
-    { to: '/teams', label: t('teams'), icon: <Users className={iconClass} /> },
+    { to: '/teams', label: t(showTeamsPlural ? 'teams' : 'team'), icon: <Users className={iconClass} /> },
   ]
   return {
     navItems: isLoggedIn && isApproved ? [...publicItems, ...authItems] : publicItems,
@@ -65,10 +67,13 @@ function useNavItems(isLoggedIn: boolean, isApproved: boolean) {
   }
 }
 
+type SidebarView = 'closed' | 'nav' | 'notifications'
+
 export default function Layout() {
-  const [sidebarExpanded, setSidebarExpanded] = useState(false)
+  const [sidebarView, setSidebarView] = useState<SidebarView>('closed')
   const [moreOpen, setMoreOpen] = useState(false)
   const [notifPanelOpen, setNotifPanelOpen] = useState(false)
+  const sidebarExpanded = sidebarView !== 'closed'
   const { user, isAdmin, isApproved, isProfileComplete, isSuperAdmin, logout } = useAuth()
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications()
   const { theme, toggleTheme } = useTheme()
@@ -92,11 +97,13 @@ export default function Layout() {
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Backdrop overlay when sidebar is expanded */}
-      {isDesktop && sidebarExpanded && (
+      {/* Backdrop overlay when sidebar is expanded — fades in/out with sidebar */}
+      {isDesktop && (
         <div
-          className="fixed inset-0 z-30 bg-black/30"
-          onClick={() => setSidebarExpanded(false)}
+          className={`fixed inset-0 z-30 bg-black/30 transition-opacity duration-200 ${
+            sidebarExpanded ? 'opacity-100' : 'pointer-events-none opacity-0'
+          }`}
+          onClick={() => setSidebarView('closed')}
         />
       )}
 
@@ -110,7 +117,7 @@ export default function Layout() {
             }`}
           >
             <button
-              onClick={() => setSidebarExpanded(true)}
+              onClick={() => setSidebarView('nav')}
               className="rounded-lg p-1.5 transition-colors hover:bg-gray-100 dark:hover:bg-brand-800"
             >
               <img
@@ -122,7 +129,7 @@ export default function Layout() {
             {user && isApproved && (
               <NotificationBell
                 unreadCount={unreadCount}
-                onClick={() => setNotifPanelOpen(true)}
+                onClick={() => setSidebarView(sidebarView === 'notifications' ? 'closed' : 'notifications')}
                 className="mt-4"
               />
             )}
@@ -130,15 +137,27 @@ export default function Layout() {
 
           {/* Expanded sidebar — overlays on top */}
           <aside
-            className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col shadow-lg transition-transform duration-200 ${
+            className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col shadow-lg transition-transform duration-200 ease-out ${
               sidebarExpanded ? 'translate-x-0' : '-translate-x-full'
             } ${theme === 'light' ? 'bg-white' : 'bg-brand-900 dark:bg-brand-950'}`}
           >
+            {sidebarView === 'notifications' ? (
+              <SidebarNotifications
+                notifications={notifications}
+                unreadCount={unreadCount}
+                onMarkAsRead={markAsRead}
+                onMarkAllAsRead={markAllAsRead}
+                onBack={() => setSidebarView('nav')}
+                onCloseSidebar={() => setSidebarView('closed')}
+                theme={theme}
+              />
+            ) : (
+            <>
             <div className={`flex h-16 items-center gap-3 border-b px-6 ${
               theme === 'light' ? 'border-gray-200' : 'border-brand-800'
             }`}>
               <button
-                onClick={() => setSidebarExpanded(false)}
+                onClick={() => setSidebarView('closed')}
                 className="rounded-lg p-1.5 transition-colors hover:bg-gray-100 dark:hover:bg-brand-800"
               >
                 <img
@@ -155,7 +174,7 @@ export default function Layout() {
                   <li key={item.to}>
                     <NavLink
                       to={item.to}
-                      onClick={() => setSidebarExpanded(false)}
+                      onClick={() => setSidebarView('closed')}
                       className={({ isActive }) =>
                         `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                           theme === 'light'
@@ -191,7 +210,7 @@ export default function Layout() {
                       <li key={item.to}>
                         <NavLink
                           to={item.to}
-                          onClick={() => setSidebarExpanded(false)}
+                          onClick={() => setSidebarView('closed')}
                           className={({ isActive }) =>
                             `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                               theme === 'light'
@@ -228,7 +247,7 @@ export default function Layout() {
                       <li key={item.to}>
                         <NavLink
                           to={item.to}
-                          onClick={() => setSidebarExpanded(false)}
+                          onClick={() => setSidebarView('closed')}
                           className={({ isActive }) =>
                             `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                               theme === 'light'
@@ -306,7 +325,7 @@ export default function Layout() {
                 <div className="space-y-2">
                   <NavLink
                     to="/profile"
-                    onClick={() => setSidebarExpanded(false)}
+                    onClick={() => setSidebarView('closed')}
                     className={({ isActive }) =>
                       `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                         theme === 'light'
@@ -359,7 +378,7 @@ export default function Layout() {
               ) : (
                 <NavLink
                   to="/login"
-                  onClick={() => setSidebarExpanded(false)}
+                  onClick={() => setSidebarView('closed')}
                   className={`block rounded-lg px-3 py-2 text-center text-sm font-medium ${
                     theme === 'light'
                       ? 'text-brand-600 hover:bg-gray-100 hover:text-brand-800'
@@ -370,6 +389,8 @@ export default function Layout() {
                 </NavLink>
               )}
             </div>
+            </>
+            )}
           </aside>
         </>
       )}
@@ -378,7 +399,19 @@ export default function Layout() {
       <div className="flex flex-1 flex-col overflow-hidden">
         <main className={`flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8 ${
           !isDesktop ? 'pb-24' : ''
-        } ${isAdminMode ? 'border-t-2 border-gold-400' : ''}`}>
+        }`}>
+          {isAdminMode && (
+            <div
+              className="
+                -mx-4 -mt-4 mb-4 border-x border-b border-t-2 border-gold-400 bg-gold-50 px-4 py-1 text-center text-xs font-semibold uppercase tracking-wider text-gold-700
+                sm:-mx-6 sm:-mt-6
+                lg:-mx-8 lg:-mt-8
+                dark:bg-brand-900/50 dark:text-gold-300
+              "
+            >
+              {t('adminMode')}
+            </div>
+          )}
           <Outlet />
         </main>
       </div>
@@ -398,6 +431,7 @@ export default function Layout() {
           onClose={() => setMoreOpen(false)}
           unreadNotifications={unreadCount}
           onOpenNotifications={() => { setMoreOpen(false); setNotifPanelOpen(true) }}
+          memberTeams={memberTeams}
         />
       )}
 
@@ -411,8 +445,6 @@ export default function Layout() {
           onClose={() => setNotifPanelOpen(false)}
         />
       )}
-
-      <PrivacyNotice />
 
       {/* Onboarding modal — non-dismissable, shown once until profile is complete */}
       {user && isApproved && !isProfileComplete && (

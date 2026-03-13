@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { PartyPopper } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { usePB } from '../../hooks/usePB'
 import { useMutation } from '../../hooks/useMutation'
@@ -74,7 +75,7 @@ export default function EventsPage() {
           <LoadingSpinner />
         ) : events.length === 0 ? (
           <EmptyState
-            icon="🎉"
+            icon={<PartyPopper className="h-10 w-10" />}
             title={t('noEvents')}
             description={t('noEventsDescription')}
           />

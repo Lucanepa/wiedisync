@@ -83,7 +83,7 @@ export interface SlotClaim extends RecordModel {
   end_time: string
   claimed_by_team: string
   claimed_by_member: string
-  freed_reason: 'cancelled_training' | 'away_game'
+  freed_reason: 'cancelled_training' | 'away_game' | 'manual_free'
   freed_source_id: string
   notes: string
   status: 'active' | 'revoked'
@@ -100,6 +100,8 @@ export interface VirtualSlotMeta {
   claimRecord?: SlotClaim
   /** Spielhalle slot that is free (no game scheduled) */
   isSpielhalleFreed?: boolean
+  /** Recurring training template surfaced as free for this week/day */
+  isTemplateFreed?: boolean
   /** When a slot spans multiple halls (e.g. BB game in A+B), lists all hall IDs */
   spanHallIds?: string[]
 }
@@ -125,7 +127,7 @@ export interface HallClosure extends RecordModel {
   start_date: string
   end_date: string
   reason: string
-  source: 'hauswart' | 'admin' | 'auto' | 'gcal' | 'schulferien'
+  source: 'hauswart' | 'admin' | 'auto' | 'gcal' | 'school_holidays'
 }
 
 export interface Game extends RecordModel {
@@ -148,20 +150,23 @@ export interface Game extends RecordModel {
   // Legacy text fields (from Swiss Volley sync)
   scorer_team: string
   scorer_person: string
-  taefeler_team: string
-  taefeler_person: string
+  scoreboard_team: string
+  scoreboard_person: string
   // Volleyball duty assignments (PB field names)
   scorer_member: string
-  taefeler_member: string
-  scorer_taefeler_member: string
+  scoreboard_member: string
+  scorer_scoreboard_member: string
   scorer_duty_team: string
-  taefeler_duty_team: string
-  scorer_taefeler_duty_team: string
-  // Basketball duty assignments (to be added in PB)
-  bb_anschreiber: string
-  bb_zeitnehmer: string
+  scoreboard_duty_team: string
+  scorer_scoreboard_duty_team: string
+  // Basketball duty assignments
+  bb_scorer_member: string
+  bb_timekeeper_member: string
   bb_24s_official: string
   bb_duty_team: string
+  bb_scorer_duty_team: string
+  bb_timekeeper_duty_team: string
+  bb_24s_duty_team: string
   duty_confirmed: boolean
   referees_json: Array<{ name: string; id?: number }>
   source: 'swiss_volley' | 'manual' | 'basketplan'
@@ -178,6 +183,10 @@ export interface Ranking extends RecordModel {
   played: number
   won: number
   lost: number
+  wins_clear?: number
+  wins_narrow?: number
+  defeats_clear?: number
+  defeats_narrow?: number
   sets_won: number
   sets_lost: number
   points_won: number
@@ -336,7 +345,7 @@ export interface GameSchedulingBooking extends RecordModel {
 
 export interface ScorerDelegation extends RecordModel {
   game: string
-  role: 'scorer' | 'taefeler' | 'scorer_taefeler' | 'bb_anschreiber' | 'bb_zeitnehmer' | 'bb_24s_official'
+  role: 'scorer' | 'scoreboard' | 'scorer_scoreboard' | 'bb_scorer' | 'bb_timekeeper' | 'bb_24s_official'
   from_member: string
   to_member: string
   from_team: string

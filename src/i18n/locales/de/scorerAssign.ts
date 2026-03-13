@@ -27,7 +27,7 @@ export default {
   teamSummary: 'Team-Übersicht',
   teamName: 'Team',
   scorerCount: 'Schreiber',
-  taefelerCount: 'Täfeler',
+  scoreboardCount: 'Täfeler',
   combinedCount: 'Schreiber/Täfeler',
   ownGames: 'Spiele',
   totalCount: 'Total',

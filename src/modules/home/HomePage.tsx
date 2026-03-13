@@ -142,7 +142,7 @@ export default function HomePage() {
   })
 
   return (
-    <div className="min-w-0">
+    <div className="mx-auto min-w-0 max-w-5xl">
       {/* Hero with sport icons flanking logo */}
       <div className="flex flex-col items-center pb-6 pt-2 text-center">
         <div className="flex items-center gap-4">
@@ -218,7 +218,7 @@ export default function HomePage() {
       )}
 
       {/* Content grid: events left, games right */}
-      <div className="grid gap-6 lg:grid-cols-5">
+      <div className={`grid gap-6 ${!eventsLoading && events.length > 0 ? 'lg:grid-cols-5' : ''}`}>
         {/* Events — left column (wider) */}
         {!eventsLoading && events.length > 0 && (
           <div className="lg:col-span-2">
@@ -236,60 +236,62 @@ export default function HomePage() {
         )}
 
         {/* Games — right column */}
-        <div className="space-y-6 lg:col-span-3">
-          {/* Next trainings (logged-in only) */}
-          {hasTeams && !trainingsLoading && nextTrainings.length > 0 && (
-            <div>
-              <SectionHeader title={t('nextTrainings')} linkTo="/trainings" linkLabel={t('allTrainings')} />
-              <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-                {nextTrainings.map((tr) => (
-                  <CompactTrainingRow key={tr.id} training={tr} onClick={() => setSelectedTraining(tr)} />
-                ))}
+        <div className={`${!eventsLoading && events.length > 0 ? 'lg:col-span-3' : ''}`}>
+          {/* Trainings, results & upcoming games — side by side on xl */}
+          <div className="grid gap-6 xl:grid-cols-2">
+            {/* Next trainings (logged-in only) */}
+            {hasTeams && !trainingsLoading && nextTrainings.length > 0 && (
+              <div>
+                <SectionHeader title={t('nextTrainings')} linkTo="/trainings" linkLabel={t('allTrainings')} />
+                <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+                  {nextTrainings.map((tr) => (
+                    <CompactTrainingRow key={tr.id} training={tr} onClick={() => setSelectedTraining(tr)} />
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+            {/* Latest results */}
+            {!resultsLoading && latestResults.length > 0 && (
+              <div>
+                <SectionHeader
+                  title={t('latestResults')}
+                  linkTo="/games"
+                  linkLabel={t('allResults')}
+                  filterToggle={hasTeams ? {
+                    active: !showAllResults,
+                    label: t('myTeams'),
+                    onToggle: () => setShowAllResults((v) => !v),
+                  } : undefined}
+                />
+                <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+                  {latestResults.map((g) => (
+                    <CompactGameRow key={g.id} game={g} showScore onClick={() => setSelectedGame(g)} />
+                  ))}
+                </div>
+              </div>
+            )}
 
-          {/* Latest results */}
-          {!resultsLoading && latestResults.length > 0 && (
-            <div>
-              <SectionHeader
-                title={t('latestResults')}
-                linkTo="/games"
-                linkLabel={t('allResults')}
-                filterToggle={hasTeams ? {
-                  active: !showAllResults,
-                  label: t('myTeams'),
-                  onToggle: () => setShowAllResults((v) => !v),
-                } : undefined}
-              />
-              <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-                {latestResults.map((g) => (
-                  <CompactGameRow key={g.id} game={g} showScore onClick={() => setSelectedGame(g)} />
-                ))}
+            {/* Next games */}
+            {!gamesLoading && nextGames.length > 0 && (
+              <div>
+                <SectionHeader
+                  title={t('nextGames')}
+                  linkTo="/games"
+                  linkLabel={t('allGames')}
+                  filterToggle={hasTeams ? {
+                    active: !showAllGames,
+                    label: t('myTeams'),
+                    onToggle: () => setShowAllGames((v) => !v),
+                  } : undefined}
+                />
+                <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+                  {nextGames.map((g) => (
+                    <CompactGameRow key={g.id} game={g} showScore={false} onClick={() => setSelectedGame(g)} />
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-
-          {/* Next games */}
-          {!gamesLoading && nextGames.length > 0 && (
-            <div>
-              <SectionHeader
-                title={t('nextGames')}
-                linkTo="/games"
-                linkLabel={t('allGames')}
-                filterToggle={hasTeams ? {
-                  active: !showAllGames,
-                  label: t('myTeams'),
-                  onToggle: () => setShowAllGames((v) => !v),
-                } : undefined}
-              />
-              <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-                {nextGames.map((g) => (
-                  <CompactGameRow key={g.id} game={g} showScore={false} onClick={() => setSelectedGame(g)} />
-                ))}
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 

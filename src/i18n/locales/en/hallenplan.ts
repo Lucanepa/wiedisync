@@ -59,7 +59,7 @@ export default {
   sourceAdmin: 'Admin',
   sourceAutomatic: 'Automatic',
   sourceGcal: 'Google Calendar',
-  sourceSchulferien: 'School holidays',
+  sourceSchoolHolidays: 'School holidays',
   closed: 'Closed',
   allHalls: 'All halls',
   halls: 'halls',
@@ -122,5 +122,6 @@ export default {
 
   // Available slots
   slotsAvailable: '{{count}} slot(s) available',
+  slotsAvailableTitle: 'Available Slots',
   slotsAvailableNone: 'No available slots',
 } as const

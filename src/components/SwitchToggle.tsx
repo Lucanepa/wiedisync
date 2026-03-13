@@ -50,7 +50,7 @@ export default function SwitchToggle({
             transform: `translateX(${enabled ? (isMd ? '2.75rem' : '2.125rem') : '0.375rem'})`,
           }}
         >
-          <span className={`${isMd ? 'h-7 w-7' : 'h-5 w-5'} text-gray-600`}>
+          <span className={`flex items-center justify-center ${isMd ? 'h-7 w-7' : 'h-5 w-5'} text-gray-600`}>
             {enabled ? iconOn : iconOff}
           </span>
         </span>

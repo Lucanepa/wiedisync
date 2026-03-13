@@ -218,11 +218,16 @@ test.describe('@mobile — forms', () => {
     const viewportWidth = page.viewportSize()!.width
 
     for (let i = 0; i < count; i++) {
-      if (!(await inputs.nth(i).isVisible())) continue
-      const box = await inputs.nth(i).boundingBox()
+      const el = inputs.nth(i)
+      if (!(await el.isVisible())) continue
+      const box = await el.boundingBox()
       if (!box) continue
 
-      // Input should be at least 90% of viewport width (accounting for modal padding)
+      // Skip checkbox/radio inputs (e.g. privacy toggles) — they are intentionally small
+      const type = await el.getAttribute('type')
+      if (type === 'checkbox' || type === 'radio') continue
+
+      // Input should be at least 60% of viewport width (accounting for modal padding)
       expect(box.width).toBeGreaterThanOrEqual(viewportWidth * 0.6)
       // WCAG touch target
       expect(box.height).toBeGreaterThanOrEqual(44)

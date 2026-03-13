@@ -80,7 +80,7 @@ export function useAttendanceStats(teamId: string | null, season: string) {
       for (const member of members) {
         memberStats[member.id] = {
           memberId: member.id,
-          memberName: member.name,
+          memberName: member.name || `${member.first_name} ${member.last_name}`,
           jerseyNumber: member.number,
           total: trainings.length,
           present: 0,
@@ -91,9 +91,12 @@ export function useAttendanceStats(teamId: string | null, season: string) {
         }
       }
 
+      const today = new Date().toISOString().split('T')[0]
+
       // For each training, determine each member's status
       for (const training of trainings) {
         const trainingDate = training.date.split(' ')[0]
+        const isPast = trainingDate <= today
 
         for (const member of members) {
           const s = memberStats[member.id]
@@ -108,14 +111,19 @@ export function useAttendanceStats(teamId: string | null, season: string) {
             s.excused++
           } else if (participation?.status === 'confirmed') {
             s.present++
-          } else {
+          } else if (participation?.status === 'declined') {
+            s.absent++
+          } else if (isPast) {
+            // Past training with no response → count as absent
             s.absent++
           }
+          // Future training with no response → not counted
         }
       }
 
-      // Build trend (last 5 trainings)
-      const lastTrainings = trainings.slice(-5)
+      // Build trend (last 5 past trainings)
+      const pastTrainings = trainings.filter((t) => t.date.split(' ')[0] <= today)
+      const lastTrainings = pastTrainings.slice(-5)
       for (const member of members) {
         const trend: PlayerStats['trend'] = []
         for (const training of lastTrainings) {
@@ -134,12 +142,29 @@ export function useAttendanceStats(teamId: string | null, season: string) {
         memberStats[member.id].trend = trend
       }
 
-      // Calculate percentage and sort
-      const result = Object.values(memberStats).map((s) => ({
-        ...s,
-        percentage: s.total > 0 ? Math.round((s.present / (s.total - s.excused || 1)) * 100) : 0,
-      }))
-      result.sort((a, b) => b.percentage - a.percentage)
+      // Total = past trainings + future trainings where member explicitly responded
+      // (future non-responses are excluded from the denominator)
+      const futureTrainings = trainings.filter((t) => t.date.split(' ')[0] > today)
+      const result = Object.values(memberStats).map((s) => {
+        // Count future trainings where this member has an explicit response
+        const futureResponded = futureTrainings.filter((t) => {
+          const trainingDate = t.date.split(' ')[0]
+          const hasParticipation = participations.some(
+            (p) => p.member === s.memberId && p.activity_id === t.id,
+          )
+          const hasAbsence = absences.some(
+            (a) => a.member === s.memberId && a.start_date <= trainingDate && a.end_date >= trainingDate,
+          )
+          return hasParticipation || hasAbsence
+        }).length
+        const countable = pastTrainings.length + futureResponded
+        return {
+          ...s,
+          total: countable,
+          percentage: countable > 0 ? Math.round((s.present / (countable - s.excused || 1)) * 100) : 0,
+        }
+      })
+      result.sort((a, b) => b.percentage - a.percentage || a.memberName.localeCompare(b.memberName, 'de'))
 
       setStats(result)
     } catch (err) {

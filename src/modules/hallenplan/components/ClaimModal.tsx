@@ -49,12 +49,17 @@ export default function ClaimModal({ slot, halls, teams, rawSlots, weekDays, onC
   const isCancelledTraining = meta?.source === 'training' && meta.isCancelled
   const isAwayGame = meta?.source === 'game' && meta.isAway
   const isSpielhalleFreed = !!meta?.isSpielhalleFreed
-  const freedReason = isManuallyFree || isSpielhalleFreed ? 'manual_free' : isCancelledTraining ? 'cancelled_training' : 'away_game'
+  const isTemplateFreed = !!meta?.isTemplateFreed
+  const freedReason = (isManuallyFree || isSpielhalleFreed || isTemplateFreed)
+    ? 'manual_free'
+    : isCancelledTraining
+      ? 'cancelled_training'
+      : 'away_game'
   const freedSourceId = meta?.sourceId ?? ''
 
   // Determine the date and hall_slot ID
   let dateStr = ''
-  if (isManuallyFree || isSpielhalleFreed) {
+  if (isManuallyFree || isSpielhalleFreed || isTemplateFreed) {
     // For manually free or Spielhalle freed recurring slots, resolve date from weekDays + day_of_week
     dateStr = weekDays[slot.day_of_week] ? toISODate(weekDays[slot.day_of_week]) : ''
   } else if (isCancelledTraining) {
@@ -67,6 +72,8 @@ export default function ClaimModal({ slot, halls, teams, rawSlots, weekDays, onC
   let hallSlotId = ''
   if (isManuallyFree) {
     hallSlotId = slot.id
+  } else if (isTemplateFreed) {
+    hallSlotId = meta?.sourceId || slot.id
   } else if (isSpielhalleFreed) {
     // Spielhalle freed: the original slot ID is embedded in the virtual ID (freed-spielhalle-{slotId}-{dayIdx})
     const origId = slot.id.replace(/^freed-spielhalle-/, '').replace(/-\d+$/, '')
@@ -131,7 +138,7 @@ export default function ClaimModal({ slot, halls, teams, rawSlots, weekDays, onC
         {!isManuallyFree && (
           <DetailRow
             label={t('reason')}
-            value={isSpielhalleFreed ? t('claimReasonSpielhalle') : isCancelledTraining ? t('claimReasonCancelled') : t('claimReasonAway')}
+            value={isTemplateFreed ? t('slotFreed') : isSpielhalleFreed ? t('claimReasonSpielhalle') : isCancelledTraining ? t('claimReasonCancelled') : t('claimReasonAway')}
           />
         )}
         {originalTeam && (

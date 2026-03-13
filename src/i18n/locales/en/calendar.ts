@@ -13,6 +13,10 @@ export default {
   subtitleMonth: 'Monthly overview of all events',
   subtitleList: 'All events in chronological order',
 
+  // Filter modal
+  filterTitle: 'Filter',
+  filterCategories: 'Categories',
+
   // Source filters
   sourceGames: 'Games',
   sourceTrainings: 'Trainings',

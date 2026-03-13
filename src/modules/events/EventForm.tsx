@@ -7,6 +7,7 @@ import { usePB } from '../../hooks/usePB'
 import pb from '../../pb'
 import Button from '../../components/ui/Button'
 import { Input, Textarea, Select } from '../../components/ui/Input'
+import DatePicker from '../../components/ui/DatePicker'
 import type { Event, EventSession, Team } from '../../types'
 
 interface SessionDraft {
@@ -320,11 +321,10 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
           rows={3}
         />
 
-        <Input
+        <DatePicker
           label={t('respondBy')}
-          type="date"
           value={respondBy}
-          onChange={(e) => setRespondBy(e.target.value)}
+          onChange={setRespondBy}
           helperText={t('respondByHint')}
         />
 

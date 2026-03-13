@@ -118,25 +118,51 @@ export default function ICalModal({ open, mode, onClose, entries }: ICalModalPro
             <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
               {t('icalTeamFilter')}
             </p>
-            <div className="flex flex-wrap gap-2">
-              {teams.map((team) => {
-                const isSelected = selectedTeamIds.includes(team.id)
-                return (
-                  <button
-                    key={team.id}
-                    type="button"
-                    onClick={() => toggleTeam(team.id)}
-                    className={`min-h-[44px] rounded-full border px-3 py-2 text-sm font-medium transition-colors sm:min-h-0 sm:py-1 sm:text-xs ${
-                      isSelected
-                        ? 'border-brand-200 bg-brand-100 text-brand-800 dark:border-brand-700 dark:bg-brand-900/40 dark:text-brand-300'
-                        : 'border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-                    }`}
-                  >
-                    {team.name}
-                  </button>
-                )
-              })}
-            </div>
+            {(() => {
+              const vbTeams = teams.filter((t) => t.sport === 'volleyball')
+              const bbTeams = teams.filter((t) => t.sport === 'basketball')
+              const hasBoth = vbTeams.length > 0 && bbTeams.length > 0
+
+              const renderChips = (list: typeof teams) =>
+                list.map((team) => {
+                  const isSelected = selectedTeamIds.includes(team.id)
+                  return (
+                    <button
+                      key={team.id}
+                      type="button"
+                      onClick={() => toggleTeam(team.id)}
+                      className={`min-h-[44px] rounded-full border px-3 py-2 text-sm font-medium transition-colors sm:min-h-0 sm:py-1 sm:text-xs ${
+                        isSelected
+                          ? 'border-brand-200 bg-brand-100 text-brand-800 dark:border-brand-700 dark:bg-brand-900/40 dark:text-brand-300'
+                          : 'border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      {team.name}
+                    </button>
+                  )
+                })
+
+              if (!hasBoth) {
+                return <div className="flex flex-wrap gap-2">{renderChips(teams)}</div>
+              }
+
+              return (
+                <div className="space-y-3">
+                  <div>
+                    <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                      🏐 Volleyball
+                    </p>
+                    <div className="flex flex-wrap gap-2">{renderChips(vbTeams)}</div>
+                  </div>
+                  <div>
+                    <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                      🏀 Basketball
+                    </p>
+                    <div className="flex flex-wrap gap-2">{renderChips(bbTeams)}</div>
+                  </div>
+                </div>
+              )
+            })()}
             <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">{t('icalTeamHint')}</p>
           </div>
         )}

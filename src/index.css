@@ -42,6 +42,49 @@
   animation: game-pulse 2s ease-in-out infinite;
 }
 
+/* Sheet & overlay animations — GPU-accelerated (transform + opacity only) */
+@keyframes sheet-slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@keyframes sheet-slide-down {
+  from { transform: translateY(0); }
+  to { transform: translateY(100%); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes slide-in-left {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+@keyframes slide-out-left {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100%); }
+}
+@keyframes modal-enter {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes modal-exit {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(16px) scale(0.97); }
+}
+
+.animate-sheet-up { animation: sheet-slide-up 250ms ease-out both; }
+.animate-sheet-down { animation: sheet-slide-down 200ms ease-in both; }
+.animate-fade-in { animation: fade-in 200ms ease-out both; }
+.animate-fade-out { animation: fade-out 150ms ease-in both; }
+.animate-slide-in-left { animation: slide-in-left 200ms ease-out both; }
+.animate-slide-out-left { animation: slide-out-left 150ms ease-in both; }
+.animate-modal-enter { animation: modal-enter 250ms ease-out both; }
+.animate-modal-exit { animation: modal-exit 200ms ease-in both; }
+
 /* Hide number input spinners */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
@@ -50,6 +93,37 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 input[type="number"] {
   -moz-appearance: textfield;
+}
+
+/* Custom scrollbar — slim, brand-themed, light/dark aware */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-brand-300) transparent;
+}
+.dark * {
+  scrollbar-color: var(--color-brand-600) transparent;
+}
+
+/* Webkit (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-brand-300);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-brand-400);
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: var(--color-brand-600);
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: var(--color-brand-500);
 }
 
 /* Safe area utilities for notched phones */

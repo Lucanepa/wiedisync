@@ -27,7 +27,7 @@ export default {
   teamSummary: 'Team Summary',
   teamName: 'Team',
   scorerCount: 'Scorer',
-  taefelerCount: 'Scoreboard',
+  scoreboardCount: 'Scoreboard',
   combinedCount: 'Scorer/Scoreboard',
   ownGames: 'Games',
   totalCount: 'Total',

@@ -80,7 +80,13 @@ export default function ClaimDetailModal({ slot, claim, halls, teams, onClose, o
 
         <DetailRow
           label={t('reason')}
-          value={claim.freed_reason === 'cancelled_training' ? t('claimReasonCancelled') : t('claimReasonAway')}
+          value={
+            claim.freed_reason === 'cancelled_training'
+              ? t('claimReasonCancelled')
+              : claim.freed_reason === 'away_game'
+                ? t('claimReasonAway')
+                : t('slotFreed')
+          }
         />
       </div>
 

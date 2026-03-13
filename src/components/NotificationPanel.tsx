@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ClipboardList, Clock, AlertTriangle, Trophy, Bell, ArrowRightLeft, BellRing, BellOff } from 'lucide-react'
@@ -61,6 +61,11 @@ export default function NotificationPanel({
   const navigate = useNavigate()
   const push = usePushNotifications()
 
+  // Animated close
+  const [closing, setClosing] = useState(false)
+  const startClose = useCallback(() => setClosing(true), [])
+  const onAnimEnd = useCallback(() => { if (closing) onClose() }, [closing, onClose])
+
   // Prevent body scroll
   useEffect(() => {
     document.body.style.overflow = 'hidden'
@@ -83,14 +88,15 @@ export default function NotificationPanel({
   }
 
   return (
-    <div className="fixed inset-0 z-50" onClick={onClose}>
+    <div className="fixed inset-0 z-50" onClick={startClose}>
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50" />
+      <div className={`absolute inset-0 bg-black/50 ${closing ? 'animate-fade-out' : 'animate-fade-in'}`} />
 
       {/* Panel */}
       <div
-        className="pb-safe absolute bottom-0 left-0 right-0 max-h-[85vh] overflow-y-auto overscroll-contain rounded-t-2xl bg-white dark:bg-gray-800 lg:bottom-auto lg:left-auto lg:right-4 lg:top-4 lg:max-h-[80vh] lg:w-96 lg:rounded-2xl lg:shadow-2xl"
+        className={`pb-safe absolute bottom-0 left-0 right-0 max-h-[85vh] overflow-y-auto overscroll-contain rounded-t-2xl bg-white dark:bg-gray-800 lg:bottom-auto lg:left-auto lg:right-4 lg:top-4 lg:max-h-[80vh] lg:w-96 lg:rounded-2xl lg:shadow-2xl ${closing ? 'animate-sheet-down lg:animate-fade-out' : 'animate-sheet-up lg:animate-modal-enter'}`}
         onClick={(e) => e.stopPropagation()}
+        onAnimationEnd={onAnimEnd}
       >
         {/* Handle (mobile) */}
         <div className="sticky top-0 z-10 rounded-t-2xl bg-white dark:bg-gray-800 lg:rounded-t-2xl">

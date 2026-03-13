@@ -11,17 +11,21 @@ interface TeamFilterBarProps {
   multiSelect?: boolean
   showAll?: boolean
   sport?: SportView
+  /** When set, only show these team names (non-admin mode) */
+  limitToTeams?: string[]
 }
 
 export default function TeamFilterBar({
   selected,
   onChange,
   sport = 'all',
+  limitToTeams,
 }: TeamFilterBarProps) {
   const { t } = useTranslation('common')
 
-  // Filter team chips by sport
+  // Filter team chips by sport (and optionally by user's teams)
   const visibleTeams = TEAM_ORDER.filter((team) => {
+    if (limitToTeams && !limitToTeams.includes(team)) return false
     if (sport === 'all') return true
     const s = teamSport[team]
     if (!s) return false

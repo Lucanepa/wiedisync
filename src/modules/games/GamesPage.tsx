@@ -1,8 +1,9 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
+import { useAdminMode } from '../../hooks/useAdminMode'
 import { useSportPreference } from '../../hooks/useSportPreference'
-import type { Game, Ranking } from '../../types'
+import type { Game, Ranking, Team } from '../../types'
 import { usePB } from '../../hooks/usePB'
 import { teamIds } from '../../utils/teamColors'
 import SportToggle from '../../components/SportToggle'
@@ -11,23 +12,22 @@ import GameTabs from './components/GameTabs'
 import type { TabKey } from './components/GameTabs'
 import GameCard from './components/GameCard'
 import RankingsTable from './components/RankingsTable'
+import KscwScoreboard from './components/KscwScoreboard'
 import GameDetailModal from './components/GameDetailModal'
 import LoadingSpinner from '../../components/LoadingSpinner'
 
-function buildTeamFilter(teams: string[]): string {
-  if (teams.length === 0) return ''
-  // Match team code in home_team or away_team (e.g. "KSC Wiedikon H1", "KSC Wiedikon DU23-1")
-  const clauses = teams.map(
-    (t) => `(home_team ~ "Wiedikon ${t}" || away_team ~ "Wiedikon ${t}")`,
-  )
+function buildTeamFilter(teamPbIds: string[]): string {
+  if (teamPbIds.length === 0) return ''
+  const clauses = teamPbIds.map((id) => `kscw_team = "${id}"`)
   return `(${clauses.join(' || ')})`
 }
 
 export default function GamesPage() {
   const { t } = useTranslation('games')
-  const { user, memberTeamNames, primarySport } = useAuth()
+  const { user, memberTeamIds, memberTeamNames, primarySport } = useAuth()
+  const { effectiveIsAdmin } = useAdminMode()
   const { sport, setSport } = useSportPreference()
-  const showSportToggle = !user || primarySport === 'both'
+  const showSportToggle = effectiveIsAdmin || !user || primarySport === 'both'
   const [activeTab, setActiveTab] = useState<TabKey>('upcoming')
   const [selectedTeams, setSelectedTeams] = useState<string[]>([])
   const [selectedGame, setSelectedGame] = useState<Game | null>(null)
@@ -42,15 +42,36 @@ export default function GamesPage() {
     }
   }, [memberTeamNames, autoSelected])
 
-  // Clear team selection when sport changes (old selections may not match new sport)
+  // Reset team selection when sport changes (old selections may not match new sport)
   useEffect(() => {
-    setSelectedTeams([])
-  }, [sport])
+    // Non-admin users: reset to their own teams; admins: show all
+    setSelectedTeams(effectiveIsAdmin ? [] : memberTeamNames)
+  }, [sport]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const INITIAL_LIMIT = 20
 
+  // Fetch all KSCW teams to map name → PB id
+  const { data: allTeams } = usePB<Team>('teams', { sort: 'name', all: true, fields: 'id,name' })
+  const teamNameToId = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const t of allTeams) map.set(t.name, t.id)
+    return map
+  }, [allTeams])
+
   const today = useMemo(() => new Date().toISOString().split('T')[0], [])
-  const teamFilter = buildTeamFilter(selectedTeams)
+  // For non-admins, always scope to their teams (even if filter cleared)
+  const effectiveTeams = selectedTeams.length > 0
+    ? selectedTeams
+    : (!effectiveIsAdmin && memberTeamNames.length > 0 ? memberTeamNames : [])
+  // Convert name codes to PB record IDs for the kscw_team filter
+  const effectiveTeamIds = effectiveTeams
+    .map((name) => teamNameToId.get(name))
+    .filter((id): id is string => !!id)
+  // For non-admins, also include their memberTeamIds as fallback
+  const filterTeamIds = effectiveTeamIds.length > 0
+    ? effectiveTeamIds
+    : (!effectiveIsAdmin && memberTeamIds.length > 0 ? memberTeamIds : [])
+  const teamFilter = buildTeamFilter(filterTeamIds)
 
   // Sport filter clause for PB queries
   const sportFilter = useMemo(() => {
@@ -61,7 +82,7 @@ export default function GamesPage() {
 
   // Build game filter/sort based on active tab
   const gameQuery = useMemo(() => {
-    if (activeTab === 'rankings') return null
+    if (activeTab === 'rankings' || activeTab === 'scoreboard') return null
 
     const parts: string[] = []
     switch (activeTab) {
@@ -86,7 +107,7 @@ export default function GamesPage() {
   const { data: games, isLoading: gamesLoading } = usePB<Game>(
     'games',
     gameQuery
-      ? { filter: gameQuery.filter, sort: gameQuery.sort, expand: 'kscw_team,hall,scorer_member,taefeler_member,scorer_taefeler_member,scorer_duty_team,taefeler_duty_team,scorer_taefeler_duty_team,bb_anschreiber,bb_zeitnehmer,bb_24s_official,bb_duty_team', perPage }
+      ? { filter: gameQuery.filter, sort: gameQuery.sort, expand: 'kscw_team,hall,scorer_member,scoreboard_member,scorer_scoreboard_member,scorer_duty_team,scoreboard_duty_team,scorer_scoreboard_duty_team,bb_scorer_member,bb_timekeeper_member,bb_24s_official,bb_duty_team,bb_scorer_duty_team,bb_timekeeper_duty_team,bb_24s_duty_team', perPage }
       : { filter: 'id = ""', perPage: 1 },
   )
 
@@ -99,8 +120,8 @@ export default function GamesPage() {
   const leagueGroups = useMemo(() => {
     const grouped = new Map<string, Ranking[]>()
     for (const r of allRankings) {
-      // Skip individual match groups (e.g. "Group 28007") — not real league standings
-      if (/^Group \d+$/.test(r.league)) continue
+      // Skip cup/tournament/match-group leagues — not regular season standings
+      if (/^Group \d+$|Cup|Turnier|Pokal|Final|Runde \d|Spiel \d|Tour \d/i.test(r.league)) continue
 
       // Sport filter: bb_ prefix = basketball, vb_ = volleyball
       if (!r.team_id) continue
@@ -123,11 +144,11 @@ export default function GamesPage() {
       }
     }
 
-    if (selectedTeams.length === 0) return grouped
+    if (effectiveTeams.length === 0) return grouped
 
     // Filter to leagues containing a selected team
     const selectedSvIds = new Set(
-      selectedTeams.flatMap((t) =>
+      effectiveTeams.flatMap((t) =>
         Object.entries(teamIds)
           .filter(([, code]) => code.replace(/-\d+$/, '') === t)
           .map(([id]) => id),
@@ -141,10 +162,10 @@ export default function GamesPage() {
       }
     }
     return filtered
-  }, [allRankings, selectedTeams, sport])
+  }, [allRankings, effectiveTeams, sport])
 
-  const isLoading = activeTab === 'rankings' ? rankingsLoading : gamesLoading
-  const showGames = activeTab !== 'rankings' && !isLoading
+  const isLoading = (activeTab === 'rankings' || activeTab === 'scoreboard') ? rankingsLoading : gamesLoading
+  const showGames = activeTab !== 'rankings' && activeTab !== 'scoreboard' && !isLoading
 
   return (
     <div className="min-w-0">
@@ -156,7 +177,7 @@ export default function GamesPage() {
             <SportToggle value={sport} onChange={setSport} />
           </div>
         )}
-        <TeamFilterBar selected={selectedTeams} onChange={setSelectedTeams} sport={sport} />
+        <TeamFilterBar selected={selectedTeams} onChange={setSelectedTeams} sport={sport} limitToTeams={effectiveIsAdmin ? undefined : memberTeamNames} />
         <GameTabs activeTab={activeTab} onChange={(tab) => { setActiveTab(tab); setShowAll(false) }} />
       </div>
 
@@ -227,6 +248,11 @@ export default function GamesPage() {
             )}
           </>
         )}
+
+        {/* Scoreboard */}
+        {activeTab === 'scoreboard' && !rankingsLoading && (
+          <KscwScoreboard rankings={allRankings} />
+        )}
       </div>
 
       <GameDetailModal game={selectedGame} onClose={() => setSelectedGame(null)} />
@@ -241,6 +267,7 @@ function EmptyState({ tab }: { tab: string }) {
     upcoming: t('noUpcoming'),
     results: t('noResults'),
     rankings: t('noRankings'),
+    scoreboard: t('noScoreboard'),
   }
 
   return (

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import Modal from '../../../components/Modal'
 import Button from '../../../components/ui/Button'
 import { Input, Textarea, Select } from '../../../components/ui/Input'
+import DatePicker from '../../../components/ui/DatePicker'
 import pb from '../../../pb'
 import { logActivity } from '../../../utils/logActivity'
 import { useConflictChecker } from '../hooks/useConflictChecker'
@@ -249,34 +250,21 @@ export default function SlotEditor({
         {/* Row 5: Validity dates (only if recurring) */}
         {form.recurring && (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <DatePicker
+              label={t('validFrom')}
+              value={form.valid_from}
+              onChange={(v) => update('valid_from', v)}
+            />
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('validFrom')}</label>
-              <div className="flex gap-2">
-                <Input
-                  type="date"
-                  value={form.valid_from}
-                  onChange={(e) => update('valid_from', e.target.value)}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => update('valid_from', todayStr)}
-                  className="shrink-0"
-                >
-                  {t('today')}
-                </Button>
-              </div>
-            </div>
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('validTo')}</label>
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-end">
                 {!indefinitely && (
-                  <Input
-                    type="date"
-                    value={form.valid_until}
-                    onChange={(e) => update('valid_until', e.target.value)}
-                  />
+                  <div className="min-w-0 flex-1">
+                    <DatePicker
+                      label={t('validTo')}
+                      value={form.valid_until}
+                      onChange={(v) => update('valid_until', v)}
+                    />
+                  </div>
                 )}
                 <label className={`flex shrink-0 items-center gap-1.5 rounded-md border px-2 py-2 text-xs font-medium ${indefinitely ? 'border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 dark:border-brand-600' : 'border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700'}`}>
                   <input

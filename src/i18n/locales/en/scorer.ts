@@ -13,8 +13,8 @@ export default {
   confirmed: 'Confirmed',
 
   // Labels — Basketball
-  bbAnschreiber: 'Scorer (OTR1)',
-  bbZeitnehmer: 'Timekeeper (OTR1)',
+  bbScorer: 'Scorer (OTR1)',
+  bbTimekeeper: 'Timekeeper (OTR1)',
   bb24sOfficial: '24" Official (OTR2)',
   bbDutyTeam: 'Officials Team',
 
@@ -30,6 +30,7 @@ export default {
   statusOpen: 'Open',
 
   // Filters
+  filters: 'Filters',
   filterDate: 'Date',
   filterDutyTeam: 'Duty Team',
   filterDutyType: 'Duty Type',
@@ -47,7 +48,7 @@ export default {
   noGamesDescription: 'No games found for the selected filter.',
 
   // Past games
-  showOlderGames: 'Show older games ({{count}})',
+  showOlderGames: 'Show older games',
   loadMore: 'Load more',
   hidePast: 'Hide older games',
 
@@ -55,11 +56,17 @@ export default {
   exportICal: 'Add to calendar',
   unassigned: 'Unassigned',
   unconfirm: 'Undo confirmation',
+  hide: 'Hide',
 
   // Self-assign
   selfAssign: 'Sign me up',
   confirmSelfAssignTitle: 'Confirm assignment',
-  confirmSelfAssignMessage: 'Do you want to sign up as {{role}} for {{game}} on {{date}}?',
+  confirmSelfAssignMessage: 'You are signing up as <strong>{{role}}</strong> for <strong>{{game}}</strong> on <strong>{{date}}</strong>.',
+  confirmSelfAssignArrival_scorer: 'You must be in the hall at least <strong>30 minutes</strong> before the start of play.',
+  confirmSelfAssignArrival_scoreboard: 'You must be in the hall at least <strong>10 minutes</strong> before the start of play.',
+  confirmSelfAssignArrival_scorer_scoreboard: 'You must be in the hall at least <strong>30 minutes</strong> before the start of play.',
+  confirmSelfAssignArrival_bb: 'You must be in the hall at least <strong>15 minutes</strong> before the start of play.',
+  confirmSelfAssignWarning: 'Once confirmed, the assignment cannot be deleted, but it can be delegated to another member.',
   cancelAction: 'Cancel',
   confirmAction: 'Confirm',
 
@@ -106,4 +113,17 @@ export default {
   reminderEmails: 'Reminder emails',
   reminderEmailsOn: 'ON — Reminders will be sent the day before games',
   reminderEmailsOff: 'OFF — No reminder emails will be sent',
+
+  // Info panel
+  infoTitle: 'Scorer duty info',
+  infoArrivalTitle: 'Arrival times',
+  infoArrivalScorer: 'The Scorer must be in the hall at least <strong>30 minutes</strong> before the start of play.',
+  infoArrivalTaefeler: 'The Scoreboard operator must be in the hall at least <strong>10 minutes</strong> before the start of play.',
+  infoWarningTitle: 'Warning!',
+  infoWarningFine: 'Late arrival or failure to appear will result in a fine (CHF 50.–).',
+  infoRequirementsTitle: 'Game requirements',
+  infoRequirements: 'Games from 4th league and below only need a Scorer, without licence. It is indicated as the only "Scorer/Scoreboard" in the game details.',
+  infoRequirementsArrival: 'In this case, the Scorer/Scoreboard must be in the hall at least <strong>30 minutes</strong> before the start of play.',
+  infoHowToTitle: 'How to use',
+  infoHowTo: 'Click on the game, select your role, select yourself in the dropdown, and confirm. If you don\'t find yourself in the dropdown, contact Luca or Thamy.',
 } as const

@@ -7,13 +7,14 @@ import { useNotifications } from '../../hooks/useNotifications'
 import { useSportPreference } from '../../hooks/useSportPreference'
 import { formatDate, formatDateCompact, formatTime, formatWeekday } from '../../utils/dateHelpers'
 import TeamChip from '../../components/TeamChip'
-import { pbNameToColorKey } from '../../utils/teamColors'
 import StatusBadge from '../../components/StatusBadge'
 import VolleyballIcon from '../../components/VolleyballIcon'
 import BasketballIcon from '../../components/BasketballIcon'
 import NotificationPanel from '../../components/NotificationPanel'
 import GameDetailModal from '../games/components/GameDetailModal'
 import TrainingDetailModal from '../trainings/TrainingDetailModal'
+import ParticipationSummary from '../../components/ParticipationSummary'
+import { useParticipation } from '../../hooks/useParticipation'
 import type { Game, Event, Team, Training, Hall, Member, MemberTeam, Notification } from '../../types'
 import type { RecordModel } from 'pocketbase'
 import { ClipboardList, Clock, AlertTriangle, Trophy, Bell } from 'lucide-react'
@@ -218,7 +219,7 @@ export default function HomePage() {
       )}
 
       {/* Content grid: events left, games right */}
-      <div className={`grid gap-6 ${!eventsLoading && events.length > 0 ? 'lg:grid-cols-5' : ''}`}>
+      <div className={`grid min-w-0 gap-6 ${!eventsLoading && events.length > 0 ? 'lg:grid-cols-5' : ''}`}>
         {/* Events — left column (wider) */}
         {!eventsLoading && events.length > 0 && (
           <div className="lg:col-span-2">
@@ -236,12 +237,12 @@ export default function HomePage() {
         )}
 
         {/* Games — right column */}
-        <div className={`${!eventsLoading && events.length > 0 ? 'lg:col-span-3' : ''}`}>
+        <div className={`min-w-0 ${!eventsLoading && events.length > 0 ? 'lg:col-span-3' : ''}`}>
           {/* Trainings, results & upcoming games — side by side on xl */}
-          <div className="grid gap-6 xl:grid-cols-2">
+          <div className="grid min-w-0 gap-6 xl:grid-cols-2">
             {/* Next trainings (logged-in only) */}
             {hasTeams && !trainingsLoading && nextTrainings.length > 0 && (
-              <div>
+              <div className="min-w-0">
                 <SectionHeader title={t('nextTrainings')} linkTo="/trainings" linkLabel={t('allTrainings')} />
                 <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
                   {nextTrainings.map((tr) => (
@@ -252,7 +253,7 @@ export default function HomePage() {
             )}
             {/* Latest results */}
             {!resultsLoading && latestResults.length > 0 && (
-              <div>
+              <div className="min-w-0">
                 <SectionHeader
                   title={t('latestResults')}
                   linkTo="/games"
@@ -273,7 +274,7 @@ export default function HomePage() {
 
             {/* Next games */}
             {!gamesLoading && nextGames.length > 0 && (
-              <div>
+              <div className="min-w-0">
                 <SectionHeader
                   title={t('nextGames')}
                   linkTo="/games"
@@ -366,7 +367,7 @@ function NewsRow({ notification }: { notification: Notification }) {
   const message = (() => {
     try {
       const data = notification.body ? JSON.parse(notification.body) : {}
-      return t(notification.title, data)
+      return String(t(notification.title, data))
     } catch {
       return notification.title
     }
@@ -375,30 +376,29 @@ function NewsRow({ notification }: { notification: Notification }) {
   const timeAgo = (() => {
     const diff = Date.now() - new Date(notification.created).getTime()
     const minutes = Math.floor(diff / 60000)
-    if (minutes < 1) return t('justNow')
-    if (minutes < 60) return t('minutesAgo', { count: minutes })
+    if (minutes < 1) return String(t('justNow'))
+    if (minutes < 60) return String(t('minutesAgo', { count: minutes }))
     const hours = Math.floor(minutes / 60)
-    if (hours < 24) return t('hoursAgo', { count: hours })
+    if (hours < 24) return String(t('hoursAgo', { count: hours }))
     const days = Math.floor(hours / 24)
-    return t('daysAgo', { count: days })
+    return String(t('daysAgo', { count: days }))
   })()
 
   return (
     <div className="flex items-center gap-3 border-b border-gray-100 px-4 py-2.5 last:border-b-0 dark:border-gray-700">
       <span className="shrink-0 text-gray-500 dark:text-gray-400">{newsTypeIcons[notification.type] ?? <Bell className="h-4 w-4" />}</span>
-      <p className="min-w-0 flex-1 truncate text-sm text-gray-900 dark:text-gray-100">{String(message)}</p>
+      <p className="min-w-0 flex-1 truncate text-sm text-gray-900 dark:text-gray-100">{message}</p>
       <span className="shrink-0 text-xs text-gray-500 dark:text-gray-400">{timeAgo}</span>
     </div>
   )
 }
 
 function CompactGameRow({ game, showScore, onClick }: { game: ExpandedGame; showScore: boolean; onClick?: () => void }) {
-  const teamName = game.expand?.kscw_team?.name ?? ''
-  const teamSport = game.expand?.kscw_team?.sport as 'volleyball' | 'basketball' | undefined
-  const chipKey = teamName && teamSport ? pbNameToColorKey(teamName, teamSport) : teamName
   const dateStr = game.date ? formatDateCompact(game.date) : ''
   const homeWon = Number(game.home_score) > Number(game.away_score)
   const awayWon = Number(game.away_score) > Number(game.home_score)
+  const kscwWon = game.type === 'home' ? homeWon : awayWon
+  const kscwLost = game.type === 'home' ? awayWon : homeWon
 
   return (
     <div
@@ -417,28 +417,22 @@ function CompactGameRow({ game, showScore, onClick }: { game: ExpandedGame; show
         : <VolleyballIcon className="h-5 w-5 shrink-0" filled />}
 
       {/* Team names — stacked, Wiedikon team bold */}
-      <div className="min-w-0 flex-1 overflow-hidden">
-        <div className="flex items-center gap-1.5">
-          <p className={`min-w-0 truncate text-sm text-gray-900 dark:text-gray-100 ${game.type === 'home' ? 'font-bold' : ''}`}>
-            {game.home_team}
-          </p>
-          {chipKey && game.type === 'home' && <TeamChip team={chipKey} size="sm" className="shrink-0" />}
-        </div>
-        <div className="flex items-center gap-1.5">
-          <p className={`min-w-0 truncate text-sm text-gray-900 dark:text-gray-100 ${game.type === 'away' ? 'font-bold' : ''}`}>
-            {game.away_team}
-          </p>
-          {chipKey && game.type === 'away' && <TeamChip team={chipKey} size="sm" className="shrink-0" />}
-        </div>
+      <div className="min-w-0 flex-1">
+        <p className={`truncate text-sm text-gray-900 dark:text-gray-100 ${game.type === 'home' ? 'font-bold' : ''}`}>
+          {game.home_team}
+        </p>
+        <p className={`truncate text-sm text-gray-900 dark:text-gray-100 ${game.type === 'away' ? 'font-bold' : ''}`}>
+          {game.away_team}
+        </p>
       </div>
 
-      {/* Vertical score: green=winner, red=loser, bold=Wiedikon */}
+      {/* Vertical score: green=KSCW won, red=KSCW lost */}
       {showScore && game.status === 'completed' && (
         <div className="shrink-0 text-right font-mono text-sm leading-snug">
-          <div className={`${homeWon ? 'text-green-600 dark:text-green-400' : awayWon ? 'text-red-500' : 'text-gray-500'} ${game.type === 'home' ? 'font-bold' : 'font-medium'}`}>
+          <div className={`${kscwWon ? 'text-green-600 dark:text-green-400' : kscwLost ? 'text-red-500' : 'text-gray-500'} ${game.type === 'home' ? 'font-bold' : 'font-medium'}`}>
             {game.home_score}
           </div>
-          <div className={`${awayWon ? 'text-green-600 dark:text-green-400' : homeWon ? 'text-red-500' : 'text-gray-500'} ${game.type === 'away' ? 'font-bold' : 'font-medium'}`}>
+          <div className={`${kscwWon ? 'text-green-600 dark:text-green-400' : kscwLost ? 'text-red-500' : 'text-gray-500'} ${game.type === 'away' ? 'font-bold' : 'font-medium'}`}>
             {game.away_score}
           </div>
         </div>
@@ -448,31 +442,52 @@ function CompactGameRow({ game, showScore, onClick }: { game: ExpandedGame; show
 }
 
 function CompactTrainingRow({ training, onClick }: { training: TrainingExpanded; onClick?: () => void }) {
+  const { user } = useAuth()
   const team = training.expand?.team
   const hall = training.expand?.hall
   const dateStr = training.date ? formatDate(training.date) : ''
   const weekday = training.date ? formatWeekday(training.date) : ''
 
+  const { effectiveStatus } = useParticipation('training', training.id, training.date)
+
+  const statusBorderColor: Record<string, string> = {
+    confirmed: 'bg-green-500 dark:bg-green-400',
+    tentative: 'bg-yellow-500 dark:bg-yellow-400',
+    declined: 'bg-red-500 dark:bg-red-400',
+    waitlisted: 'bg-orange-500 dark:bg-orange-400',
+    absent: 'bg-gray-400 dark:bg-gray-500',
+  }
+
   return (
     <div
-      className="flex cursor-pointer items-center gap-3 border-b border-gray-100 px-4 py-3 last:border-b-0 hover:bg-gray-50 active:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-700/50 dark:active:bg-gray-700"
+      className="flex cursor-pointer items-stretch border-b border-gray-100 last:border-b-0 hover:bg-gray-50 active:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-700/50 dark:active:bg-gray-700"
       onClick={onClick}
     >
-      {/* Date & time */}
-      <div className="w-24 shrink-0 text-xs text-gray-500 dark:text-gray-400">
-        <div>{weekday}, {dateStr}</div>
-        <div>{formatTime(training.start_time)} – {formatTime(training.end_time)}</div>
-      </div>
+      {/* Participation status vertical banner */}
+      {user && effectiveStatus && (
+        <div className={`w-1 shrink-0 ${statusBorderColor[effectiveStatus] ?? ''}`} />
+      )}
 
-      {/* Info */}
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          {team && <TeamChip team={team.name} size="sm" />}
-          {hall && <span className="text-sm text-gray-700 dark:text-gray-300">{hall.name}</span>}
+      <div className="flex flex-1 items-center gap-3 px-4 py-3">
+        {/* Date & time */}
+        <div className="w-24 shrink-0 text-xs text-gray-500 dark:text-gray-400">
+          <div>{weekday}, {dateStr}</div>
+          <div>{formatTime(training.start_time)} – {formatTime(training.end_time)}</div>
         </div>
-        {training.notes && (
-          <p className="mt-0.5 truncate text-xs text-gray-500 dark:text-gray-400">{training.notes}</p>
-        )}
+
+        {/* Info */}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            {team && <TeamChip team={team.name} size="sm" />}
+            {hall && <span className="text-sm text-gray-700 dark:text-gray-300">{hall.name}</span>}
+          </div>
+          <div className="mt-0.5 flex items-center gap-2">
+            {training.notes && (
+              <p className="min-w-0 truncate text-xs text-gray-500 dark:text-gray-400">{training.notes}</p>
+            )}
+            <ParticipationSummary activityType="training" activityId={training.id} compact />
+          </div>
+        </div>
       </div>
     </div>
   )

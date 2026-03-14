@@ -60,7 +60,7 @@ const dateFormatOptions: Intl.DateTimeFormatOptions = {
 }
 
 export default function GameDetailModal({ game, onClose, readOnly }: GameDetailModalProps) {
-  const { t } = useTranslation('games')
+  const { t, i18n } = useTranslation('games')
   const { user, isCoachOf, canParticipateIn, isStaffOnly } = useAuth()
   const [rosterOpen, setRosterOpen] = useState(false)
   const [editingDeadline, setEditingDeadline] = useState(false)
@@ -127,7 +127,6 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
   const kscwSport = expanded.expand?.kscw_team?.sport as 'volleyball' | 'basketball' | undefined
   const kscwTeam = rawKscwTeam && kscwSport ? pbNameToColorKey(rawKscwTeam, kscwSport) : rawKscwTeam
   const sets = parseSets(game.sets_json)
-  const { i18n } = useTranslation()
   const dateStr = game.date ? new Intl.DateTimeFormat(i18n.language, dateFormatOptions).format(new Date(game.date)) : ''
   const showScorerContact = isCoachOf(game.kscw_team)
 
@@ -175,12 +174,20 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
             </div>
 
             <div className="shrink-0 text-center">
-              {game.status === 'completed' || game.status === 'live' ? (
-                <div className="font-mono text-3xl font-bold text-gray-900 dark:text-gray-100">
-                  {game.home_score}
-                  <span className="mx-1 text-gray-400 dark:text-gray-500">:</span>
-                  {game.away_score}
-                </div>
+              {game.status === 'completed' || game.status === 'live' ? (() => {
+                const homeWon = Number(game.home_score) > Number(game.away_score)
+                const awayWon = Number(game.away_score) > Number(game.home_score)
+                const won = game.type === 'home' ? homeWon : awayWon
+                const lost = game.type === 'home' ? awayWon : homeWon
+                const scoreColor = won ? 'text-green-600 dark:text-green-400' : lost ? 'text-red-500 dark:text-red-400' : 'text-gray-900 dark:text-gray-100'
+                return (
+                  <div className={`font-mono text-3xl font-bold ${scoreColor}`}>
+                    {game.home_score}
+                    <span className="mx-1 text-gray-400 dark:text-gray-500">:</span>
+                    {game.away_score}
+                  </div>
+                )
+              })()
               ) : (
                 <div className="text-base font-light text-gray-400 dark:text-gray-500">vs</div>
               )}
@@ -210,25 +217,31 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
                 <tbody>
                   <tr className="border-t dark:border-gray-700">
                     <td className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">{t('home')}</td>
-                    {sets.map((s, i) => (
-                      <td
-                        key={i}
-                        className={`px-3 py-2 ${s.home > s.away ? 'font-bold text-green-600 dark:text-green-400' : 'text-gray-700 dark:text-gray-300'}`}
-                      >
-                        {s.home}
-                      </td>
-                    ))}
+                    {sets.map((s, i) => {
+                      const kscwWonSet = (s.home > s.away) === (game.type === 'home')
+                      return (
+                        <td
+                          key={i}
+                          className={`px-3 py-2 font-bold ${kscwWonSet ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}
+                        >
+                          {s.home}
+                        </td>
+                      )
+                    })}
                   </tr>
                   <tr className="border-t dark:border-gray-700">
                     <td className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">{t('away')}</td>
-                    {sets.map((s, i) => (
-                      <td
-                        key={i}
-                        className={`px-3 py-2 ${s.away > s.home ? 'font-bold text-green-600 dark:text-green-400' : 'text-gray-700 dark:text-gray-300'}`}
-                      >
-                        {s.away}
-                      </td>
-                    ))}
+                    {sets.map((s, i) => {
+                      const kscwWonSet = (s.home > s.away) === (game.type === 'home')
+                      return (
+                        <td
+                          key={i}
+                          className={`px-3 py-2 font-bold ${kscwWonSet ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}
+                        >
+                          {s.away}
+                        </td>
+                      )
+                    })}
                   </tr>
                 </tbody>
               </table>

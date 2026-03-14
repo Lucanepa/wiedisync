@@ -80,6 +80,8 @@ export default function GameCard({ game, onClick, variant = 'card' }: GameCardPr
     const hasScore = game.status === 'completed' || game.status === 'live'
     const homeWon = Number(game.home_score) > Number(game.away_score)
     const awayWon = Number(game.away_score) > Number(game.home_score)
+    const kscwWon = game.type === 'home' ? homeWon : awayWon
+    const kscwLost = game.type === 'home' ? awayWon : homeWon
     const sets = parseSets(game.sets_json)
 
     return (
@@ -107,8 +109,8 @@ export default function GameCard({ game, onClick, variant = 'card' }: GameCardPr
             </div>
             {hasScore && (
               <div className="shrink-0 text-right font-mono text-sm font-bold leading-snug">
-                <div className={homeWon ? 'text-green-500' : awayWon ? 'text-red-500' : 'text-gray-400'}>{game.home_score}</div>
-                <div className={awayWon ? 'text-green-500' : homeWon ? 'text-red-500' : 'text-gray-400'}>{game.away_score}</div>
+                <div className={kscwWon ? 'text-green-500' : kscwLost ? 'text-red-500' : 'text-gray-400'}>{game.home_score}</div>
+                <div className={kscwWon ? 'text-green-500' : kscwLost ? 'text-red-500' : 'text-gray-400'}>{game.away_score}</div>
               </div>
             )}
             {game.status !== 'completed' && <StatusBadge status={game.status} />}
@@ -142,8 +144,8 @@ export default function GameCard({ game, onClick, variant = 'card' }: GameCardPr
           <div className="text-right font-mono text-sm font-bold">
             {hasScore ? (
               <>
-                <p className={`leading-5 ${homeWon ? 'text-green-500' : awayWon ? 'text-red-500' : 'text-gray-400'}`}>{game.home_score}</p>
-                <p className={`leading-5 ${awayWon ? 'text-green-500' : homeWon ? 'text-red-500' : 'text-gray-400'}`}>{game.away_score}</p>
+                <p className={`leading-5 ${kscwWon ? 'text-green-500' : kscwLost ? 'text-red-500' : 'text-gray-400'}`}>{game.home_score}</p>
+                <p className={`leading-5 ${kscwWon ? 'text-green-500' : kscwLost ? 'text-red-500' : 'text-gray-400'}`}>{game.away_score}</p>
               </>
             ) : (
               game.status !== 'completed' && <StatusBadge status={game.status} />

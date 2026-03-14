@@ -96,6 +96,7 @@ export default {
   none: 'None',
   selectAll: 'Select all',
   selectNone: 'Deselect all',
+  sport: 'Sport',
   volleyball: 'Volleyball',
   basketball: 'Basketball',
 } as const

@@ -17,6 +17,7 @@ export default function SignUpPage() {
   const { login, user, isApproved } = useAuth()
   const { theme } = useTheme()
   const { t } = useTranslation('auth')
+  const { t: tc } = useTranslation('common')
   const navigate = useNavigate()
 
   const [step, setStep] = useState<Step>('email')
@@ -26,6 +27,7 @@ export default function SignUpPage() {
   const [password, setPassword] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
   const [selectedTeam, setSelectedTeam] = useState('')
+  const [selectedSport, setSelectedSport] = useState<'volleyball' | 'basketball'>('volleyball')
   const [isGuest, setIsGuest] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -36,6 +38,8 @@ export default function SignUpPage() {
     sort: 'name',
     all: true,
   })
+
+  const filteredTeams = teams.filter((t) => t.sport === selectedSport)
 
   useEffect(() => {
     if (user && isApproved) navigate('/', { replace: true })
@@ -243,6 +247,29 @@ export default function SignUpPage() {
                 />
               </div>
 
+              {/* Sport toggle */}
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {tc('sport')}
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(['volleyball', 'basketball'] as const).map((sport) => (
+                    <button
+                      key={sport}
+                      type="button"
+                      onClick={() => { setSelectedSport(sport); setSelectedTeam('') }}
+                      className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                        selectedSport === sport
+                          ? 'border-brand-500 bg-brand-50 text-brand-700 dark:border-brand-400 dark:bg-brand-900/30 dark:text-brand-300'
+                          : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      {tc(sport)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <Select
                 label={t('selectTeam')}
                 value={selectedTeam}
@@ -250,9 +277,9 @@ export default function SignUpPage() {
                 required
               >
                 <option value="">{t('selectTeamPlaceholder')}</option>
-                {teams.map((team) => (
+                {filteredTeams.map((team) => (
                   <option key={team.id} value={team.id}>
-                    {team.name} — {team.league}
+                    {team.name}{team.league ? ` — ${team.league}` : ''}
                   </option>
                 ))}
               </Select>

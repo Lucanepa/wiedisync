@@ -52,11 +52,12 @@ positions[3]{ticker,shares,costBasis}:
 - **Creating collections**: ALWAYS create via the PB REST API using superuser auth (see INFRA.md for credentials and examples). Never create collections manually in the admin UI. Also update `scripts/setup-collections.ts` for reproducibility.
 - **Deleting columns, collections, or records**: Must be confirmed with the user first, but can be executed by the agent
 
-## SSH to NAS
+## SSH to VPS (PocketBase host)
 
-- **Use `ssh nas-ts`** (not `ssh lucanepa@100.64.212.125`). SSH multiplexing is enabled for fast repeated connections.
-- Docker needs sudo: `echo '***REDACTED***' | sudo -S /usr/local/bin/docker ...`
-- See `INFRA.md → SSH to NAS` for common patterns (deploy hooks, read logs, restart PB).
+- **Use `ssh -i ~/.ssh/id_ed25519 ubuntu@100.69.245.37`** to reach the Infomaniak VPS where KSCW PocketBase runs.
+- PocketBase is a systemd service: `sudo systemctl restart pocketbase-kscw`
+- Deploy hooks via `scp` + `sudo cp` to `/opt/pocketbase-kscw/pb_hooks/`
+- See `INFRA.md → SSH to VPS` for common patterns (deploy hooks, read logs, restart PB).
 
 ## Branches
 - `main` → production (`kscw.lucanepa.com`)
@@ -69,6 +70,7 @@ positions[3]{ticker,shares,costBasis}:
 
 ## Changelog
 <!-- Grouped by feature domain. Overwrite when stale. -->
+- **2026-03-13** — KSCW PocketBase migrated from Synology NAS (Docker) to Infomaniak VPS (native systemd service at `/opt/pocketbase-kscw/`, port 8091). New Cloudflare tunnel `kscw-vps` routes `kscw-api.lucanepa.com` → VPS. Removed MinIO container (unused S3) and old KSCW containers from NAS. Updated all deploy commands in INFRA.md from NAS Docker to VPS scp+systemd pattern.
 - **2026-03-12** — Scorer reminder routing refined on deployed NAS hooks: production sends go to the assigned duty member with `reminders@volleyball.lucanepa.com` in CC; dry-run endpoints now always send test emails directly to `reminders@volleyball.lucanepa.com`.
 - **2026-03-12** — Scorer reminder emails now route to `reminders@volleyball.lucanepa.com` for both real sends and dry-run endpoints (`/api/scorer-reminders/dry-run`, `/api/scorer-reminders/dry-run-game`) via deployed NAS hook updates.
 - **2026-03-12** — Scorer info panel is now volleyball-only in `ScorerPage`: the expandable duty-info block is hidden when the basketball tab is active to avoid showing volleyball-specific guidance in basketball context.

@@ -56,6 +56,7 @@ export interface Member extends RecordModel {
   is_guest: boolean
   hide_phone: boolean
   birthdate_visibility: 'full' | 'year_only' | 'hidden'
+  member_active: boolean
 }
 
 export interface MemberTeam extends RecordModel {

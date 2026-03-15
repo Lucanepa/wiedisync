@@ -31,6 +31,7 @@ import AuthRoute from './components/AuthRoute'
 import ScorerAssignPage from './modules/scorer/ScorerAssignPage'
 import AdminSetupPage from './modules/gameScheduling/pages/AdminSetupPage'
 import AdminDashboardPage from './modules/gameScheduling/pages/AdminDashboardPage'
+import ResetPasswordPage from './modules/auth/ResetPasswordPage'
 import PublicTerminplanungPage from './modules/gameScheduling/pages/PublicTerminplanungPage'
 import OpponentFlowPage from './modules/gameScheduling/pages/OpponentFlowPage'
 
@@ -46,6 +47,7 @@ export default function App() {
           <Route path="login" element={<LoginPage />} />
           <Route path="signup" element={<SignUpPage />} />
           <Route path="pending" element={<PendingPage />} />
+          <Route path="reset-password/:token" element={<ResetPasswordPage />} />
           <Route path="terminplanung" element={<PublicTerminplanungPage />} />
           <Route path="terminplanung/:token" element={<OpponentFlowPage />} />
 

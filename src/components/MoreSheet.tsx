@@ -184,43 +184,6 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
         {/* Divider */}
         <div className="mx-4 border-t border-gray-200 dark:border-gray-700" />
 
-        {/* Language toggle (only if user hasn't set language preference) */}
-        {(!user || !user.language) && (
-          <>
-            <div className="flex items-center justify-center px-8 py-3">
-              <SwitchToggle
-                enabled={i18n.language === 'de'}
-                onChange={() => {
-                  const next = i18n.language === 'de' ? 'en' : 'de'
-                  i18n.changeLanguage(next)
-                  localStorage.setItem('kscw-lang', next)
-                }}
-                size="md"
-                ariaLabel="Toggle language"
-                iconOff={
-                  <svg viewBox="0 0 60 60">
-                    <g transform="translate(0,12)">
-                      <rect width="60" height="36" fill="#012169"/>
-                      <path d="M0,0 L60,36 M60,0 L0,36" stroke="#fff" strokeWidth="7"/>
-                      <path d="M0,0 L60,36 M60,0 L0,36" stroke="#C8102E" strokeWidth="4.5"/>
-                      <path d="M30,0 V36 M0,18 H60" stroke="#fff" strokeWidth="12"/>
-                      <path d="M30,0 V36 M0,18 H60" stroke="#C8102E" strokeWidth="7"/>
-                    </g>
-                  </svg>
-                }
-                iconOn={
-                  <svg viewBox="0 0 32 32" className="rounded-sm">
-                    <rect width="32" height="32" fill="#D52B1E" rx="2"/>
-                    <rect x="13" y="6" width="6" height="20" fill="#fff"/>
-                    <rect x="6" y="13" width="20" height="6" fill="#fff"/>
-                  </svg>
-                }
-              />
-            </div>
-            <div className="mx-4 border-t border-gray-200 dark:border-gray-700" />
-          </>
-        )}
-
         {/* User section */}
         {user ? (
           <>
@@ -326,16 +289,49 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
           </>
         ) : (
           <>
-            <div className="px-4 py-3">
-              <div className="flex items-center justify-between">
-                <NavLink
-                  to="/login"
-                  onClick={startClose}
-                  className="flex min-h-[44px] items-center gap-3 rounded-lg px-3 py-2 text-base font-medium text-brand-600 transition-colors hover:bg-gray-100 dark:text-gold-400 dark:hover:bg-gray-700"
-                >
-                  <LogIn className={iconClass} />
-                  {t('signIn')}
-                </NavLink>
+            <div className="px-4 py-3 space-y-3">
+              {/* Sign in — own row */}
+              <NavLink
+                to="/login"
+                onClick={startClose}
+                className="flex min-h-[44px] items-center gap-3 rounded-lg px-3 py-2 text-base font-medium text-brand-600 transition-colors hover:bg-gray-100 dark:text-gold-400 dark:hover:bg-gray-700"
+              >
+                <LogIn className={iconClass} />
+                {t('signIn')}
+              </NavLink>
+
+              {/* Toggles — same row */}
+              <div className="flex items-center justify-center gap-4">
+                {(!user || !user.language) && (
+                  <SwitchToggle
+                    enabled={i18n.language === 'de'}
+                    onChange={() => {
+                      const next = i18n.language === 'de' ? 'en' : 'de'
+                      i18n.changeLanguage(next)
+                      localStorage.setItem('kscw-lang', next)
+                    }}
+                    size="md"
+                    ariaLabel="Toggle language"
+                    iconOff={
+                      <svg viewBox="0 0 60 60">
+                        <g transform="translate(0,12)">
+                          <rect width="60" height="36" fill="#012169"/>
+                          <path d="M0,0 L60,36 M60,0 L0,36" stroke="#fff" strokeWidth="7"/>
+                          <path d="M0,0 L60,36 M60,0 L0,36" stroke="#C8102E" strokeWidth="4.5"/>
+                          <path d="M30,0 V36 M0,18 H60" stroke="#fff" strokeWidth="12"/>
+                          <path d="M30,0 V36 M0,18 H60" stroke="#C8102E" strokeWidth="7"/>
+                        </g>
+                      </svg>
+                    }
+                    iconOn={
+                      <svg viewBox="0 0 32 32" className="rounded-sm">
+                        <rect width="32" height="32" fill="#D52B1E" rx="2"/>
+                        <rect x="13" y="6" width="6" height="20" fill="#fff"/>
+                        <rect x="6" y="13" width="20" height="6" fill="#fff"/>
+                      </svg>
+                    }
+                  />
+                )}
                 <SwitchToggle
                   enabled={theme === 'dark'}
                   onChange={toggleTheme}

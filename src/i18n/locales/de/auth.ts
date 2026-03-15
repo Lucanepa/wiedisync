@@ -105,6 +105,14 @@ export default {
   isGuest: 'Ich bin Gast-Spieler/in',
   guestExplanation: 'Gäste haben bei vollen Trainings eine niedrigere Priorität als lizenzierte Spieler.',
 
+  // Password reset
+  resetPasswordTitle: 'Passwort zurücksetzen',
+  newPassword: 'Neues Passwort',
+  resetPasswordButton: 'Passwort speichern',
+  resettingPassword: 'Wird gespeichert...',
+  resetSuccess: 'Dein Passwort wurde erfolgreich geändert. Du kannst dich jetzt anmelden.',
+  resetError: 'Der Link ist ungültig oder abgelaufen. Bitte fordere einen neuen Link an.',
+
   // Danger Zone
   dangerZone: 'Gefahrenbereich',
   deleteAccount: 'Konto löschen',

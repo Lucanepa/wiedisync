@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { Ranking } from '../../../types'
 import TeamChip from '../../../components/TeamChip'
 import { teamIds } from '../../../utils/teamColors'
+import { formatNumberSwiss } from '../../../utils/formatNumber'
 
 type SportKey = 'volleyball' | 'basketball'
 
@@ -301,12 +302,6 @@ function optionalNumber(value: number | undefined): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null
 }
 
-function formatNumberSwiss(value: number): string {
-  const rounded = Math.round(value)
-  const sign = rounded < 0 ? '-' : ''
-  const abs = Math.abs(rounded).toString()
-  return `${sign}${abs.replace(/\B(?=(\d{3})+(?!\d))/g, "'")}`
-}
 
 const VOLLEYBALL_METRICS: MetricDef[] = [
   { key: 'points', labelKey: 'scoreboardRankingPoints', getValue: (row) => safeNumber(row.points) },

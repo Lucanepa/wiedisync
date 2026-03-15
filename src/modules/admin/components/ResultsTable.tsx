@@ -17,6 +17,17 @@ function formatCell(value: unknown, labelMap?: Record<string, string>): React.Re
         {String(value)}
       </span>
     )
+  // Format ISO datetime strings
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(value)) {
+    const d = new Date(value)
+    if (!isNaN(d.getTime())) {
+      return (
+        <span className="text-gray-500 dark:text-gray-400" title={value}>
+          {d.toLocaleString('de-CH', { dateStyle: 'short', timeStyle: 'short' })}
+        </span>
+      )
+    }
+  }
   // Resolve relation IDs to display labels
   if (labelMap) {
     const str = String(value)

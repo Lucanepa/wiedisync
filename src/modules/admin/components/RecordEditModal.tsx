@@ -308,6 +308,14 @@ export default function RecordEditModal({
         size="lg"
       >
         <div className="space-y-4">
+          {isEdit && record && (
+            <div className="flex flex-wrap gap-x-6 gap-y-1 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+              <span>ID: <code className="font-mono">{record.id}</code></span>
+              <span>Created: {new Date(record.created).toLocaleString('de-CH')}</span>
+              <span>Updated: {new Date(record.updated).toLocaleString('de-CH')}</span>
+            </div>
+          )}
+
           {schema.map((field) => (
             <div key={field.id}>
               <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">

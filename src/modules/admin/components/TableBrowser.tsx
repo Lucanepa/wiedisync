@@ -100,7 +100,7 @@ export default function TableBrowser() {
   // Column names for the results table
   const columns = useMemo(() => {
     if (!selectedCol) return []
-    return ['id', ...selectedCol.schema.map((f) => f.name), 'created', 'updated']
+    return ['id', 'created', 'updated', ...selectedCol.schema.map((f) => f.name)]
   }, [selectedCol])
 
   // Convert records to rows for ResultsTable

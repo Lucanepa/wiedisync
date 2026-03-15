@@ -180,10 +180,10 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
 
             <div className="shrink-0 text-center">
               {game.status === 'completed' || game.status === 'live' ? (
-                <div className={`font-mono text-3xl font-bold ${scoreColor}`}>
-                  {game.home_score}
+                <div className="font-mono text-3xl font-bold">
+                  <span className={game.type === 'home' ? scoreColor : 'text-gray-500 dark:text-gray-400'}>{game.home_score}</span>
                   <span className="mx-1 text-gray-400 dark:text-gray-500">:</span>
-                  {game.away_score}
+                  <span className={game.type === 'away' ? scoreColor : 'text-gray-500 dark:text-gray-400'}>{game.away_score}</span>
                 </div>
               ) : (
                 <div className="text-base font-light text-gray-400 dark:text-gray-500">vs</div>

@@ -426,13 +426,13 @@ function CompactGameRow({ game, showScore, onClick }: { game: ExpandedGame; show
         </p>
       </div>
 
-      {/* Vertical score: green=KSCW won, red=KSCW lost */}
+      {/* Vertical score: KSCW line colored, opponent neutral */}
       {showScore && game.status === 'completed' && (
         <div className="shrink-0 text-right font-mono text-sm leading-snug">
-          <div className={`${kscwWon ? 'text-green-600 dark:text-green-400' : kscwLost ? 'text-red-500' : 'text-gray-500'} ${game.type === 'home' ? 'font-bold' : 'font-medium'}`}>
+          <div className={`${game.type === 'home' ? (kscwWon ? 'text-green-600 dark:text-green-400' : kscwLost ? 'text-red-500' : 'text-gray-500') : 'text-gray-500 dark:text-gray-400'} ${game.type === 'home' ? 'font-bold' : 'font-medium'}`}>
             {game.home_score}
           </div>
-          <div className={`${kscwWon ? 'text-green-600 dark:text-green-400' : kscwLost ? 'text-red-500' : 'text-gray-500'} ${game.type === 'away' ? 'font-bold' : 'font-medium'}`}>
+          <div className={`${game.type === 'away' ? (kscwWon ? 'text-green-600 dark:text-green-400' : kscwLost ? 'text-red-500' : 'text-gray-500') : 'text-gray-500 dark:text-gray-400'} ${game.type === 'away' ? 'font-bold' : 'font-medium'}`}>
             {game.away_score}
           </div>
         </div>

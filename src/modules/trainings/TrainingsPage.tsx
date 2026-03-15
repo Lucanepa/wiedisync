@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
@@ -45,6 +45,7 @@ export default function TrainingsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [recurringOpen, setRecurringOpen] = useState(false)
   const [rosterTraining, setRosterTraining] = useState<{ id: string; teamId: string; date: string } | null>(null)
+  const recurringSelectionMade = useRef(false)
 
   const { data: trainings, isLoading, refetch } = usePB<TrainingExpanded>('trainings', {
     filter: selectedTeam ? `team="${selectedTeam}"` : '',
@@ -70,6 +71,7 @@ export default function TrainingsPage() {
   }
 
   function handleRecurringEditSelect(scope: RecurringEditScope) {
+    recurringSelectionMade.current = true
     setEditScope(scope)
     setRecurringEditDialogOpen(false)
     setFormOpen(true)
@@ -183,7 +185,12 @@ export default function TrainingsPage() {
         open={recurringEditDialogOpen}
         onClose={() => {
           setRecurringEditDialogOpen(false)
-          setEditingTraining(null)
+          // Only clear editingTraining if user cancelled (not when a scope was selected)
+          if (recurringSelectionMade.current) {
+            recurringSelectionMade.current = false
+          } else {
+            setEditingTraining(null)
+          }
         }}
         onSelect={handleRecurringEditSelect}
       />

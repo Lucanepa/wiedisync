@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { RecordModel, ListResult, RecordListOptions } from 'pocketbase'
 import pb from '../pb'
+import { useAuth } from './useAuth'
+import { CLUB_COLLECTIONS } from '../clubConfig'
 
 export function usePB<T extends RecordModel>(
   collection: string,
@@ -9,6 +11,7 @@ export function usePB<T extends RecordModel>(
     perPage?: number
     enabled?: boolean
     all?: boolean
+    skipClubFilter?: boolean
   },
 ) {
   const [data, setData] = useState<T[]>([])
@@ -16,14 +19,23 @@ export function usePB<T extends RecordModel>(
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
 
+  const { clubId } = useAuth()
   const enabled = options?.enabled ?? true
   const all = options?.all ?? false
   const page = options?.page ?? 1
   const perPage = options?.perPage ?? 50
   const sort = options?.sort ?? ''
-  const filter = options?.filter ?? ''
+  const rawFilter = options?.filter ?? ''
   const expand = options?.expand ?? ''
   const fields = options?.fields ?? ''
+  const skipClubFilter = options?.skipClubFilter ?? false
+
+  // Auto-inject club filter for domain collections
+  const filter = (() => {
+    if (!clubId || !CLUB_COLLECTIONS.has(collection) || skipClubFilter) return rawFilter
+    const clubFilter = `club="${clubId}"`
+    return rawFilter ? `${clubFilter} && (${rawFilter})` : clubFilter
+  })()
 
   const fetchData = useCallback(async () => {
     if (!enabled) {

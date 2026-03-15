@@ -97,6 +97,10 @@ export default {
   hidden: 'Verborgen',
   yearOnly: 'Nur Jahrgang',
 
+  // Privacy consent
+  privacyConsent: 'Mit der Registrierung akzeptierst du unsere',
+  privacyPolicy: 'Datenschutzerklärung',
+
   // Guest registration
   isGuest: 'Ich bin Gast-Spieler/in',
   guestExplanation: 'Gäste haben bei vollen Trainings eine niedrigere Priorität als lizenzierte Spieler.',

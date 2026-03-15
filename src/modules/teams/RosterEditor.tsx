@@ -63,7 +63,7 @@ const ROLE_COLORS: Record<LeadershipRole, string> = {
 export default function RosterEditor() {
   const { t } = useTranslation('teams')
   const { teamSlug } = useParams<{ teamSlug: string }>()
-  const { isCoachOf } = useAuth()
+  const { isCoachOf, clubId } = useAuth()
   const season = getCurrentSeason()
   const { data: allMembers } = usePB<Member>('members', { filter: 'active=true', all: true, sort: 'last_name', fields: 'id,name,first_name,last_name,photo,number,position,licences' })
   const { create, remove } = useMutation<MemberTeam>('member_teams')
@@ -80,11 +80,12 @@ export default function RosterEditor() {
 
   useEffect(() => {
     if (!teamSlug) return
+    const filter = clubId ? `name="${teamSlug}" && club="${clubId}"` : `name="${teamSlug}"`
     pb.collection('teams')
-      .getFirstListItem<Team>(`name="${teamSlug}"`)
+      .getFirstListItem<Team>(filter)
       .then(setTeam)
       .catch(() => setTeam(null))
-  }, [teamSlug])
+  }, [teamSlug, clubId])
 
   if (team && !isCoachOf(team.id)) {
     return <Navigate to={`/teams/${teamSlug}`} replace />

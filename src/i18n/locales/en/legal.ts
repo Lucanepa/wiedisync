@@ -1,7 +1,7 @@
 export default {
   // Privacy Policy page
   privacyTitle: 'Privacy Policy',
-  lastUpdated: 'Last updated: March 12, 2026',
+  lastUpdated: 'Last updated: March 15, 2026',
 
   controllerTitle: '1. Data Controller',
   controllerText:
@@ -39,6 +39,12 @@ export default {
     'Swiss Volley API (api.volleyball.ch) — We retrieve publicly available game data and rankings. No personal data is transmitted to Swiss Volley.',
   thirdPartyGCal:
     'Google Calendar — We retrieve a public calendar feed to display hall schedules. No personal data is transmitted to Google.',
+  thirdPartyBasketplan:
+    'Basketplan (basketball.ch) — We retrieve publicly available game data and rankings. No personal data is transmitted to Basketplan.',
+  thirdPartyMigadu:
+    'Migadu (migadu.com) — Email delivery for notifications and reminders | Switzerland | DPA',
+  thirdPartyCloudflareWorkers:
+    'Cloudflare Workers — Processing of push notifications | Global (US-based) | DPA, Standard Contractual Clauses, Swiss-US Data Privacy Framework',
 
   retentionTitle: '5. Data Retention',
   retentionText:

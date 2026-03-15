@@ -52,7 +52,10 @@ export default function DatenschutzPage() {
         <ul className="list-disc space-y-2 pl-5">
           <li>{t('thirdPartyCloudflare')}</li>
           <li>{t('thirdPartySwissVolley')}</li>
+          <li>{t('thirdPartyBasketplan')}</li>
           <li>{t('thirdPartyGCal')}</li>
+          <li>{t('thirdPartyMigadu')}</li>
+          <li>{t('thirdPartyCloudflareWorkers')}</li>
         </ul>
       </Section>
 

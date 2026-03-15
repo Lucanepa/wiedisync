@@ -97,6 +97,10 @@ export default {
   hidden: 'Hidden',
   yearOnly: 'Year only',
 
+  // Privacy consent
+  privacyConsent: 'By registering you accept our',
+  privacyPolicy: 'Privacy Policy',
+
   // Guest registration
   isGuest: 'I am a guest player',
   guestExplanation: 'Guests have lower priority than licenced players when trainings are full.',

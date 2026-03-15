@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronDown, X } from 'lucide-react'
 import TeamChip from './TeamChip'
-import { getTeamColor } from '../utils/teamColors'
 
 interface TeamOption {
   value: string
@@ -106,12 +105,18 @@ export default function TeamMultiSelect({ options, selected, onChange, placehold
           <button
             type="button"
             onClick={handleSelectAll}
-            className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 ${
+            className={`flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 ${
               allSelected ? 'bg-brand-50 font-semibold text-brand-700 dark:bg-brand-900/30 dark:text-brand-300' : 'text-gray-700 dark:text-gray-300'
             }`}
           >
-            <span className="flex h-4 w-4 items-center justify-center rounded border border-gray-300 dark:border-gray-500">
-              {allSelected && <span className="h-2 w-2 rounded-sm bg-brand-600" />}
+            <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 transition-colors ${
+              allSelected ? 'border-brand-500 bg-brand-500' : 'border-gray-300 dark:border-gray-500'
+            }`}>
+              {allSelected && (
+                <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 12 12" fill="none">
+                  <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
             </span>
             {placeholder ?? t('all')}
           </button>
@@ -151,33 +156,28 @@ export default function TeamMultiSelect({ options, selected, onChange, placehold
 }
 
 function DropdownOption({ option, isSelected, onToggle }: { option: TeamOption; isSelected: boolean; onToggle: () => void }) {
-  const color = getTeamColor(option.colorKey ?? option.label)
-
   return (
     <button
       type="button"
       onClick={onToggle}
-      className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 ${
-        isSelected ? 'bg-gray-50 dark:bg-gray-700/50' : ''
+      className={`flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 ${
+        isSelected ? 'bg-gray-100 dark:bg-gray-700/50' : ''
       }`}
     >
       <span
-        className="flex h-4 w-4 items-center justify-center rounded border"
-        style={{ borderColor: color.border }}
+        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 transition-colors ${
+          isSelected
+            ? 'border-brand-500 bg-brand-500'
+            : 'border-gray-300 dark:border-gray-500'
+        }`}
       >
         {isSelected && (
-          <span
-            className="h-2 w-2 rounded-sm"
-            style={{ backgroundColor: color.bg }}
-          />
+          <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 12 12" fill="none">
+            <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
         )}
       </span>
-      <span
-        className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold"
-        style={{ backgroundColor: color.bg, color: color.text, borderColor: color.border, borderWidth: '1px', borderStyle: 'solid' }}
-      >
-        {option.label}
-      </span>
+      <TeamChip team={option.colorKey ?? option.label} label={option.label} size="xs" />
     </button>
   )
 }

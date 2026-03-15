@@ -177,7 +177,7 @@ export default function GamesPage() {
             <SportToggle value={sport} onChange={setSport} />
           </div>
         )}
-        <TeamFilterBar selected={selectedTeams} onChange={setSelectedTeams} sport={sport} limitToTeams={effectiveIsAdmin ? undefined : memberTeamNames} />
+        <TeamFilterBar selected={selectedTeams} onChange={setSelectedTeams} sport={sport} limitToTeams={effectiveIsAdmin || !user ? undefined : memberTeamNames} />
         <GameTabs activeTab={activeTab} onChange={(tab) => { setActiveTab(tab); setShowAll(false) }} />
       </div>
 

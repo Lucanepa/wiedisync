@@ -220,7 +220,7 @@ export default function GameCard({ game, onClick, variant = 'card' }: GameCardPr
         <div className="w-20 shrink-0 space-y-0.5 text-xs text-gray-500 dark:text-gray-400">
           <div className="font-medium text-gray-700 dark:text-gray-300">{game.date ? formatDateCompact(game.date) : ''}</div>
           {game.time && <div>{formatTime(game.time)}</div>}
-          <div className="truncate">{leagueShort(game.league)}</div>
+          <div className="whitespace-pre-line">{leagueShort(game.league)}</div>
           {kscwTeamName && (
             <div className="flex items-center gap-1 pt-0.5">
               {expanded.expand?.kscw_team?.sport === 'basketball'

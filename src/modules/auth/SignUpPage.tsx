@@ -7,6 +7,8 @@ import { usePB } from '../../hooks/usePB'
 import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
 import Button from '../../components/ui/Button'
+import Modal from '../../components/Modal'
+import DatenschutzPage from '../legal/DatenschutzPage'
 import PrivacyNotice from '../../components/PrivacyNotice'
 import { Input, Select } from '../../components/ui/Input'
 import type { Team } from '../../types'
@@ -33,6 +35,7 @@ export default function SignUpPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [resetSent, setResetSent] = useState(false)
+  const [showPrivacy, setShowPrivacy] = useState(false)
 
   const { data: teams } = usePB<Team>('teams', {
     filter: 'active=true',
@@ -155,6 +158,17 @@ export default function SignUpPage() {
               <Button type="submit" loading={loading} className="w-full">
                 {loading ? t('checkingEmail') : t('continue')}
               </Button>
+
+              <p className="text-center text-xs text-gray-500 dark:text-gray-400">
+                {t('privacyConsent')}{' '}
+                <button
+                  type="button"
+                  onClick={() => setShowPrivacy(true)}
+                  className="font-medium text-brand-600 underline hover:text-brand-500 dark:text-brand-400"
+                >
+                  {t('privacyPolicy')}
+                </button>.
+              </p>
 
               <p className="text-center text-sm text-gray-500 dark:text-gray-400">
                 {t('alreadyHaveAccount')}{' '}
@@ -351,9 +365,13 @@ export default function SignUpPage() {
 
               <p className="text-center text-xs text-gray-500 dark:text-gray-400">
                 {t('privacyConsent')}{' '}
-                <Link to="/datenschutz" className="font-medium text-brand-600 underline hover:text-brand-500 dark:text-brand-400">
+                <button
+                  type="button"
+                  onClick={() => setShowPrivacy(true)}
+                  className="font-medium text-brand-600 underline hover:text-brand-500 dark:text-brand-400"
+                >
                   {t('privacyPolicy')}
-                </Link>.
+                </button>.
               </p>
 
               {error && (
@@ -368,6 +386,9 @@ export default function SignUpPage() {
         </div>
       </div>
       <PrivacyNotice />
+      <Modal open={showPrivacy} onClose={() => setShowPrivacy(false)} title={t('privacyPolicy')} size="lg">
+        <DatenschutzPage />
+      </Modal>
     </div>
   )
 }

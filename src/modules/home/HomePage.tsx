@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
 import { usePB } from '../../hooks/usePB'
@@ -212,7 +212,7 @@ export default function HomePage() {
           />
           <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
             {latestNews.map((n) => (
-              <NewsRow key={n.id} notification={n} />
+              <NewsRow key={n.id} notification={n} onMarkAsRead={markAsRead} />
             ))}
           </div>
         </div>
@@ -362,8 +362,19 @@ const newsTypeIcons: Record<string, React.ReactNode> = {
   result_available: <Trophy className="h-4 w-4" />,
 }
 
-function NewsRow({ notification }: { notification: Notification }) {
+function getNotificationPath(n: Notification): string {
+  if (n.type === 'duty_delegation_request' || n.activity_type === 'scorer_duty') return '/scorer'
+  switch (n.activity_type) {
+    case 'game': return '/games'
+    case 'training': return '/trainings'
+    case 'event': return '/events'
+    default: return '/'
+  }
+}
+
+function NewsRow({ notification, onMarkAsRead }: { notification: Notification; onMarkAsRead: (id: string) => void }) {
   const { t } = useTranslation('notifications')
+  const navigate = useNavigate()
   const message = (() => {
     try {
       const data = notification.body ? JSON.parse(notification.body) : {}
@@ -385,7 +396,13 @@ function NewsRow({ notification }: { notification: Notification }) {
   })()
 
   return (
-    <div className="flex items-center gap-3 border-b border-gray-100 px-4 py-2.5 last:border-b-0 dark:border-gray-700">
+    <div
+      className="flex cursor-pointer items-center gap-3 border-b border-gray-100 px-4 py-2.5 last:border-b-0 hover:bg-gray-50 active:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-700/50 dark:active:bg-gray-700"
+      onClick={() => {
+        if (!notification.read) onMarkAsRead(notification.id)
+        navigate(getNotificationPath(notification))
+      }}
+    >
       <span className="shrink-0 text-gray-500 dark:text-gray-400">{newsTypeIcons[notification.type] ?? <Bell className="h-4 w-4" />}</span>
       <p className="min-w-0 flex-1 truncate text-sm text-gray-900 dark:text-gray-100">{message}</p>
       <span className="shrink-0 text-xs text-gray-500 dark:text-gray-400">{timeAgo}</span>
@@ -481,12 +498,11 @@ function CompactTrainingRow({ training, onClick }: { training: TrainingExpanded;
             {team && <TeamChip team={team.name} size="sm" />}
             {hall && <span className="text-sm text-gray-700 dark:text-gray-300">{hall.name}</span>}
           </div>
-          <div className="mt-0.5 flex items-center gap-2">
-            {training.notes && (
-              <p className="min-w-0 truncate text-xs text-gray-500 dark:text-gray-400">{training.notes}</p>
-            )}
-            <ParticipationSummary activityType="training" activityId={training.id} compact />
-          </div>
+        </div>
+
+        {/* Participation summary — right-aligned, stacked vertically */}
+        <div className="shrink-0">
+          <ParticipationSummary activityType="training" activityId={training.id} stacked />
         </div>
       </div>
     </div>

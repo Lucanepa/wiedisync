@@ -1,28 +1,34 @@
 import { useTranslation } from 'react-i18next'
 import { Check, X, HelpCircle, Hourglass, Award } from 'lucide-react'
 import { usePB } from '../hooks/usePB'
+import { useRealtime } from '../hooks/useRealtime'
 import type { Participation } from '../types'
 
 interface ParticipationSummaryProps {
   activityType: Participation['activity_type']
   activityId: string
   compact?: boolean
+  stacked?: boolean
 }
 
 export default function ParticipationSummary({
   activityType,
   activityId,
   compact = false,
+  stacked = false,
 }: ParticipationSummaryProps) {
   const { t } = useTranslation('participation')
 
-  const { data } = usePB<Participation>('participations', {
+  const { data, refetch } = usePB<Participation>('participations', {
     filter: activityId
       ? `activity_type="${activityType}" && activity_id="${activityId}"`
       : '',
     all: true,
     enabled: !!activityId,
   })
+
+  // Auto-refresh when participations change (create/update/delete)
+  useRealtime('participations', () => refetch())
 
   // Separate player and staff participations — staff don't count towards totals
   const playerData = data.filter(p => !p.is_staff)
@@ -41,6 +47,29 @@ export default function ParticipationSummary({
   const staffConfirmed = staffData.filter(p => p.status === 'confirmed').length
 
   if (data.length === 0) return null
+
+  if (stacked) {
+    return (
+      <div className="flex flex-col items-end gap-0.5 text-xs">
+        <span className="inline-flex items-center gap-1 text-green-600 dark:text-green-400">
+          {confirmed}{confirmedGuests > 0 && <span className="text-[10px] opacity-75">+{confirmedGuests}</span>}
+          <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-green-600 text-white dark:bg-green-500"><Check className="h-2.5 w-2.5" /></span>
+        </span>
+        {tentative > 0 && (
+          <span className="inline-flex items-center gap-1 text-yellow-600 dark:text-yellow-400">
+            {tentative}{tentativeGuests > 0 && <span className="text-[10px] opacity-75">+{tentativeGuests}</span>}
+            <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-yellow-500 text-white"><HelpCircle className="h-2.5 w-2.5" /></span>
+          </span>
+        )}
+        {declined > 0 && (
+          <span className="inline-flex items-center gap-1 text-red-600 dark:text-red-400">
+            {declined}
+            <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-white dark:bg-red-500"><X className="h-2.5 w-2.5" /></span>
+          </span>
+        )}
+      </div>
+    )
+  }
 
   if (compact) {
     return (

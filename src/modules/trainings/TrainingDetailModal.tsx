@@ -117,6 +117,7 @@ export default function TrainingDetailModal({ training, onClose }: TrainingDetai
           teamId={training.team}
           title={`${team?.name ?? ''} — ${formatDate(training.date)}`}
           respondBy={training.respond_by}
+          activityStartTime={training.start_time}
         />
       )}
     </>

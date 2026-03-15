@@ -12,6 +12,7 @@ interface ParticipationButtonProps {
   activityDate?: string
   compact?: boolean
   respondBy?: string
+  activityStartTime?: string
   maxPlayers?: number
   confirmedCount?: number
   sessionId?: string
@@ -34,6 +35,7 @@ export default function ParticipationButton({
   activityDate,
   compact = false,
   respondBy,
+  activityStartTime,
   maxPlayers,
   confirmedCount,
   sessionId,
@@ -42,7 +44,7 @@ export default function ParticipationButton({
 }: ParticipationButtonProps) {
   const { t } = useTranslation('participation')
   const { isGuest } = useAuth()
-  const { participation, effectiveStatus, hasAbsence, setStatus } = useParticipation(
+  const { participation, effectiveStatus, hasAbsence, setStatus, saveConfirmed, dismissConfirmed } = useParticipation(
     activityType,
     activityId,
     activityDate,
@@ -57,6 +59,13 @@ export default function ParticipationButton({
     setGuestCount(participation?.guest_count ?? 0)
   }, [participation?.guest_count])
 
+  // Auto-dismiss save confirmation after 2s
+  useEffect(() => {
+    if (!saveConfirmed) return
+    const timer = setTimeout(dismissConfirmed, 2000)
+    return () => clearTimeout(timer)
+  }, [saveConfirmed, dismissConfirmed])
+
   const hasSessionMode = participationMode && participationMode !== 'whole' && eventSessions && eventSessions.length > 0
 
   const statusLabels: Record<string, string> = {
@@ -67,7 +76,10 @@ export default function ParticipationButton({
     absent: t('absent'),
   }
 
-  const deadlinePassed = respondBy ? new Date(respondBy) < new Date() : false
+  const deadlinePassed = respondBy ? (() => {
+    const deadlineDate = new Date(`${respondBy}T${activityStartTime || '23:59'}`)
+    return deadlineDate < new Date()
+  })() : false
   const isFull = maxPlayers != null && confirmedCount != null && confirmedCount >= maxPlayers
 
   if (hasAbsence) {
@@ -202,6 +214,14 @@ export default function ParticipationButton({
             )}
           </div>
         </>
+      )}
+
+      {/* Save confirmation popover */}
+      {saveConfirmed && !menuOpen && (
+        <span className="absolute -top-7 left-1/2 -translate-x-1/2 flex items-center gap-1 whitespace-nowrap rounded-md bg-green-600 px-2 py-0.5 text-[11px] font-medium text-white shadow-lg animate-fade-in">
+          <Check className="h-3 w-3" />
+          {t('saved')}
+        </span>
       )}
     </div>
   )

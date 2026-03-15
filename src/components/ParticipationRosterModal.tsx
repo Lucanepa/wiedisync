@@ -17,6 +17,7 @@ interface ParticipationRosterModalProps {
   teamId: string | null
   title: string
   respondBy?: string
+  activityStartTime?: string
   maxPlayers?: number
   eventSessions?: EventSession[]
   participationMode?: 'whole' | 'per_day' | 'per_session' | ''
@@ -40,6 +41,7 @@ export default function ParticipationRosterModal({
   teamId,
   title,
   respondBy,
+  activityStartTime,
   maxPlayers,
   eventSessions,
   participationMode,
@@ -157,7 +159,10 @@ export default function ParticipationRosterModal({
   const staffParticipations = participations.filter(p => p.is_staff)
   const staffConfirmed = staffParticipations.filter(p => p.status === 'confirmed').length
 
-  const deadlinePassed = respondBy ? new Date(respondBy) < new Date() : false
+  const deadlinePassed = respondBy ? (() => {
+    const deadlineDate = new Date(`${respondBy}T${activityStartTime || '23:59'}`)
+    return deadlineDate < new Date()
+  })() : false
 
   function getInitials(member: Member) {
     return `${(member.first_name ?? '')[0] ?? ''}${(member.last_name ?? '')[0] ?? ''}`.toUpperCase()

@@ -116,4 +116,5 @@ export default {
   participationRoster: 'Aufgebot anzeigen',
   setDeadline: 'Frist setzen',
   respondBy: 'Antwort bis',
+  comeAndSupport: 'Komm und unterstütze uns!',
 } as const

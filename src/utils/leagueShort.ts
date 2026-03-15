@@ -36,6 +36,6 @@ export function leagueShort(league: string): string {
     return `${ligaMatch[1]}L${gender}${group}`
   }
 
-  // Fallback: return as-is
-  return league
+  // Fallback: strip em-dash separators for compact display
+  return league.replace(/\s*—\s*/g, '\n')
 }

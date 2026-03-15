@@ -133,9 +133,9 @@ export default function KscwScoreboard({ rankings }: KscwScoreboardProps) {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-gray-200 bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
-                      <th className="w-1/3 px-3 py-2 text-left">{t('scoreboardMetric')}</th>
-                      <th className="w-1/3 px-3 py-2 text-center">{t('breakdownTotal')}</th>
-                      <th className="w-1/3 px-3 py-2 text-center">{t('scoreboardMost')}</th>
+                      <th className="w-2/6 px-3 py-2 text-left">{t('scoreboardMetric')}</th>
+                      <th className="w-1/6 px-3 py-2 text-center">{t('breakdownTotal')}</th>
+                      <th className="w-3/6 px-3 py-2 text-left">{t('scoreboardMost')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -161,20 +161,20 @@ export default function KscwScoreboard({ rankings }: KscwScoreboardProps) {
                               }))
                             }
                           >
-                            <td className="w-1/3 px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                            <td className="w-2/6 px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
                               <span className="inline-flex items-center gap-1.5">
                                 <span>{isExpanded ? '▾' : '▸'}</span>
                                 {t(metric.labelKey)}
                               </span>
                             </td>
-                            <td className="w-1/3 px-3 py-2 text-center font-semibold text-gray-900 dark:text-gray-100">
+                            <td className="w-1/6 px-3 py-2 text-center font-semibold text-gray-900 dark:text-gray-100">
                             {total === null ? t('scoreboardUnavailable') : formatNumberSwiss(total)}
                             </td>
-                            <td className="w-1/3 px-3 py-2">
+                            <td className="w-3/6 px-3 py-2">
                               {topValue === null || topTeams.length === 0 ? (
                                 <span className="block text-center text-sm text-gray-500 dark:text-gray-400">{t('scoreboardUnavailable')}</span>
                               ) : (
-                                <div className="flex min-w-0 flex-wrap justify-center gap-1.5">
+                                <div className="flex min-w-0 flex-wrap justify-start gap-1.5">
                                   {topTeams.map((entry) => {
                                     const shortTeam = teamIds[entry.teamId]
                                     if (!shortTeam) return null
@@ -193,13 +193,13 @@ export default function KscwScoreboard({ rankings }: KscwScoreboardProps) {
                                 {rankingRows.length === 0 || total === null || total <= 0 ? (
                                   <span className="text-sm text-gray-500 dark:text-gray-400">{t('scoreboardUnavailable')}</span>
                                 ) : (
-                                  <div className="flex justify-center">
+                                  <div>
                                     <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
-                                      <table className="w-auto table-auto text-sm">
+                                      <table className="w-full text-sm">
                                       <thead>
                                         <tr className="border-b border-gray-200 bg-gray-100/70 text-xs font-medium uppercase tracking-wide text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
                                           <th className="px-3 py-1.5 text-center">{t('rank')}</th>
-                                          <th className="px-3 py-1.5 text-center">{t('teamCol')}</th>
+                                          <th className="px-3 py-1.5 text-left">{t('teamCol')}</th>
                                           <th className="px-3 py-1.5 text-center">{t(metric.labelKey)}</th>
                                           <th className="px-3 py-1.5 text-center">{t('scoreboardPercent')}</th>
                                         </tr>
@@ -214,7 +214,7 @@ export default function KscwScoreboard({ rankings }: KscwScoreboardProps) {
                                           return (
                                             <tr key={entry.teamId}>
                                               <td className="px-2 py-1.5 text-center text-xs text-gray-500 dark:text-gray-400">#{rank}</td>
-                                              <td className="px-2 py-1.5 text-center">
+                                              <td className="px-2 py-1.5 text-left">
                                                 <span className="inline-flex">
                                                   <TeamChip team={shortTeam} size="sm" label={shortTeam} />
                                                 </span>

@@ -116,4 +116,5 @@ export default {
   participationRoster: 'View roster',
   setDeadline: 'Set deadline',
   respondBy: 'Respond by',
+  comeAndSupport: 'Come and support!',
 } as const

@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { usePB } from './usePB'
 import { useMutation } from './useMutation'
 import { useAuth } from './useAuth'
@@ -32,42 +32,68 @@ export function useParticipation(
 
   const { create, update, remove } = useMutation<Participation>('participations')
 
+  // Optimistic status: shown immediately while API call is in-flight
+  const [optimisticStatus, setOptimisticStatus] = useState<Participation['status'] | null>(null)
+  const [saveConfirmed, setSaveConfirmed] = useState(false)
+
   const participation = participations[0] ?? null
   const hasAbsence = absences.length > 0
 
   const setStatus = useCallback(async (status: Participation['status'], note = '', guestCount = 0) => {
     if (!user) return
-    if (participation) {
-      await update(participation.id, { status, note, guest_count: guestCount })
-    } else {
-      await create({
-        member: user.id,
-        activity_type: activityType,
-        activity_id: activityId,
-        status,
-        note,
-        guest_count: guestCount,
-        is_staff: isStaff ?? false,
-        ...(sessionId ? { session_id: sessionId } : {}),
-      })
+    // Optimistic update — show status immediately
+    setOptimisticStatus(status)
+    setSaveConfirmed(false)
+    try {
+      if (participation) {
+        await update(participation.id, { status, note, guest_count: guestCount })
+      } else {
+        await create({
+          member: user.id,
+          activity_type: activityType,
+          activity_id: activityId,
+          status,
+          note,
+          guest_count: guestCount,
+          is_staff: isStaff ?? false,
+          ...(sessionId ? { session_id: sessionId } : {}),
+        })
+      }
+      setSaveConfirmed(true)
+      refetch()
+    } catch {
+      // Revert optimistic update on failure
+      setOptimisticStatus(null)
     }
-    refetch()
-  }, [user, participation, activityType, activityId, isStaff, create, update, refetch])
+  }, [user, participation, activityType, activityId, isStaff, sessionId, create, update, refetch])
 
   const clearStatus = useCallback(async () => {
     if (participation) {
-      await remove(participation.id)
-      refetch()
+      setOptimisticStatus(null)
+      setSaveConfirmed(false)
+      try {
+        await remove(participation.id)
+        refetch()
+      } catch {
+        // Revert — restore the original status
+        setOptimisticStatus(participation.status)
+      }
     }
   }, [participation, remove, refetch])
+
+  // Clear optimistic status once server data catches up
+  const serverStatus = participation?.status ?? null
+  const displayStatus = optimisticStatus ?? serverStatus
 
   return {
     participation,
     hasAbsence,
-    effectiveStatus: hasAbsence ? 'absent' as const : participation?.status ?? null,
+    effectiveStatus: hasAbsence ? 'absent' as const : displayStatus,
     setStatus,
     clearStatus,
     refetch,
+    saveConfirmed,
+    dismissConfirmed: useCallback(() => setSaveConfirmed(false), []),
   }
 }
 

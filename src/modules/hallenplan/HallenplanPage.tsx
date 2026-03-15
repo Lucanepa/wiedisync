@@ -149,8 +149,22 @@ export default function HallenplanPage() {
     // A real slot with no team = manually created "free" slot
     const isManuallyFree = !meta && !slot.team
 
-    // Freed slot (virtual or manual) → open claim modal (for coaches/admins)
-    if ((meta?.isFreed || isManuallyFree) && (isCoach || canAdminTeam || canAdminCurrentSport)) {
+    // Admin mode: freed/manually-free slots → open slot editor (admins manage, not claim)
+    if ((meta?.isFreed || isManuallyFree) && effectiveIsAdmin && (canAdminTeam || canAdminCurrentSport)) {
+      if (!meta && isManuallyFree) {
+        // Real manually-free slot → edit it directly
+        setEditingSlot(slot)
+        setPrefill(null)
+        setEditorOpen(true)
+      } else {
+        // Virtual freed slot → show detail modal (with admin context)
+        setVirtualDetailSlot(slot)
+      }
+      return
+    }
+
+    // Freed slot (virtual or manual) → open claim modal (for coaches only)
+    if ((meta?.isFreed || isManuallyFree) && isCoach) {
       setClaimSlot(slot)
       return
     }
@@ -162,8 +176,8 @@ export default function HallenplanPage() {
       return
     }
 
-    // Virtual slot (non-freed, non-claimed) → open read-only detail modal
-    if (meta && !canAdminTeam) {
+    // Virtual slot → open detail modal (read-only for non-admins, with nav links for admins)
+    if (meta) {
       setVirtualDetailSlot(slot)
       return
     }
@@ -174,11 +188,6 @@ export default function HallenplanPage() {
       setPrefill(null)
       setEditorOpen(true)
       return
-    }
-
-    // Admin: virtual slots → open virtual detail modal
-    if (canAdminTeam && meta) {
-      setVirtualDetailSlot(slot)
     }
   }
 
@@ -330,6 +339,7 @@ export default function HallenplanPage() {
           slot={virtualDetailSlot}
           halls={halls}
           teams={teams}
+          isAdmin={effectiveIsAdmin}
           onClose={() => setVirtualDetailSlot(null)}
         />
       )}

@@ -30,4 +30,5 @@ export default {
   bumpedToWaitlist: 'Du wurdest auf die Warteliste verschoben',
   promotedFromWaitlist: 'Du wurdest von der Warteliste bestätigt',
   waitlistHint: 'Training voll — du wirst auf die Warteliste gesetzt',
+  saved: 'Gespeichert',
 } as const

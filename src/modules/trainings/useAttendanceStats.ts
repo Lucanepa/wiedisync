@@ -13,6 +13,7 @@ export interface PlayerStats {
   excused: number
   percentage: number
   trend: ('present' | 'absent' | 'excused')[]
+  lastResponseAt: string | null
 }
 
 export function useAttendanceStats(teamId: string | null, season: string) {
@@ -88,6 +89,7 @@ export function useAttendanceStats(teamId: string | null, season: string) {
           excused: 0,
           percentage: 0,
           trend: [],
+          lastResponseAt: null,
         }
       }
 
@@ -118,6 +120,17 @@ export function useAttendanceStats(teamId: string | null, season: string) {
             s.absent++
           }
           // Future training with no response → not counted
+        }
+      }
+
+      // Compute last response timestamp per member
+      for (const member of members) {
+        const memberParticipations = participations.filter((p) => p.member === member.id)
+        if (memberParticipations.length > 0) {
+          const latest = memberParticipations.reduce((a, b) =>
+            a.updated > b.updated ? a : b
+          )
+          memberStats[member.id].lastResponseAt = latest.updated
         }
       }
 

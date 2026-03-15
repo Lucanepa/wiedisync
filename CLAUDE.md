@@ -4,9 +4,10 @@
 All infrastructure details (IPs, URLs, ports, credentials, deploy commands) are in **INFRA.md**. Always consult it before making infrastructure-related changes or when you need connection details.
 
 ## Tech Stack
-- Frontend: React 19 + TypeScript + Vite + TailwindCSS
+- Frontend: React 19 + TypeScript + Vite + TailwindCSS v4 + shadcn/ui
+- UI Components: shadcn/ui primitives in `src/components/ui/` (lowercase), KSCW wrappers in `src/components/` (PascalCase)
 - Backend: PocketBase (SQLite, REST API, Realtime, Auth)
-- Hosting: Cloudflare Pages (frontend), Synology NAS + Cloudflare Tunnel (backend)
+- Hosting: Cloudflare Pages (frontend), Infomaniak VPS + Cloudflare Tunnel (backend)
 - Language: German UI (Swiss German context), code in English
 
 ## Data Format: TOON
@@ -37,8 +38,9 @@ positions[3]{ticker,shares,costBasis}:
 \`\`\`
 
 ## Key Patterns
+- **shadcn/ui**: UI components use shadcn/ui on Tailwind CSS v4. Load `/kscw-shadcn` skill for KSCW-specific conventions (brand theming, component wrappers, migration map). Load `/tailwind-v4-shadcn` for general TW v4 + shadcn patterns. Full migration spec: `docs/superpowers/specs/2026-03-15-shadcn-migration-design.md`
 - **Mobile-first**: All UI must be designed mobile-first — responsive layout, touch-friendly targets (min 44px), and tested on small screens before desktop
-- **Dark mode contrast**: Always ensure text/bg contrast in both light and dark mode. Every input, select, textarea must have explicit `dark:bg-gray-700 dark:text-gray-100` (or equivalent). Never leave default browser colors — they break in dark mode.
+- **Dark mode contrast**: Always ensure text/bg contrast in both light and dark mode. Use shadcn semantic tokens (`bg-background`, `text-foreground`, `bg-primary`) which auto-switch in dark mode. For non-semantic colors, add explicit `dark:` variants.
 - **Hallenplan virtual slots**: Games, trainings, and GCal hall events are converted to `HallSlot`-shaped objects at display time (via `_virtual` metadata field) and merged with real `hall_slots`. They're never stored in the DB. See `INFRA.md → Hallenplan Virtual Slots` for the full mapping table.
 - PocketBase hooks use isolated scopes — shared code must use `require(__hooks + "/file.js")` with `module.exports`
 - `pb_hooks/` is gitignored (contains API keys) — deployed separately via SSH/rsync

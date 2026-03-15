@@ -5,6 +5,7 @@ import TeamChip from '../../../components/TeamChip'
 import Modal from '../../../components/Modal'
 import { teamIds } from '../../../utils/teamColors'
 import { getPromotionColor, promotionBorderColors } from '../../../utils/leaguePromotion'
+import { formatNumberSwiss } from '../../../utils/formatNumber'
 
 interface RankingsTableProps {
   league: string
@@ -135,7 +136,7 @@ export default function RankingsTable({ league, rankings }: RankingsTableProps) 
                     {isBasketball ? (
                       <>
                         <td className="px-2 py-2 text-center text-gray-700 dark:text-gray-300">
-                          {row.points_won}:{row.points_lost}
+                          {formatNumberSwiss(row.points_won)}:{formatNumberSwiss(row.points_lost)}
                         </td>
                       </>
                     ) : (
@@ -144,7 +145,7 @@ export default function RankingsTable({ league, rankings }: RankingsTableProps) 
                           {row.sets_won}:{row.sets_lost}
                         </td>
                         <td className="hidden px-2 py-2 text-center text-gray-700 dark:text-gray-300 lg:table-cell">
-                          {row.points_won}:{row.points_lost}
+                          {formatNumberSwiss(row.points_won)}:{formatNumberSwiss(row.points_lost)}
                         </td>
                       </>
                     )}

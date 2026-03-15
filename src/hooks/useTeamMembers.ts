@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import pb from '../pb'
 import { coercePositions, normalizePositionsForSport } from '../utils/memberPositions'
+import { useAuth } from './useAuth'
 import type { Member, MemberTeam, Team } from '../types'
 
 export type ExpandedMemberTeam = MemberTeam & { expand?: { member?: Member } }
@@ -9,6 +10,7 @@ export function useTeamMembers(teamId: string | undefined, season?: string) {
   const [members, setMembers] = useState<ExpandedMemberTeam[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
+  const { clubId } = useAuth()
 
   const fetch = useCallback(async () => {
     if (!teamId) {
@@ -21,9 +23,10 @@ export function useTeamMembers(teamId: string | undefined, season?: string) {
     setError(null)
     try {
       const team = await pb.collection('teams').getOne<Team>(teamId, { fields: 'id,sport' })
-      const filter = season
+      const baseFilter = season
         ? `team="${teamId}" && season="${season}"`
         : `team="${teamId}"`
+      const filter = clubId ? `club="${clubId}" && ${baseFilter}` : baseFilter
       const result = await pb.collection('member_teams').getFullList<ExpandedMemberTeam>({
         filter,
         expand: 'member',
@@ -56,7 +59,7 @@ export function useTeamMembers(teamId: string | undefined, season?: string) {
     } finally {
       setIsLoading(false)
     }
-  }, [teamId, season])
+  }, [teamId, season, clubId])
 
   useEffect(() => {
     fetch()

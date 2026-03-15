@@ -50,10 +50,35 @@ interface CollectionDef {
   name: string
   type: 'base' | 'auth'
   fields: Record<string, unknown>[]
+  indexes?: string[]
+}
+
+// ── Phase 0: clubs (no dependencies) ─────────────────────────────────
+// Created first so all other collections can reference it
+
+const clubsDef: CollectionDef = {
+  name: 'clubs',
+  type: 'base',
+  fields: [
+    text('name', { required: true }),
+    text('slug', { required: true }),
+    file('logo', { maxSize: 5242880, mimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'] }),
+    text('color_primary'),
+    text('color_secondary'),
+  ],
+  indexes: ['CREATE UNIQUE INDEX idx_clubs_slug ON clubs (slug)'],
+}
+
+// Placeholder — set after clubs collection is created
+let clubsId = ''
+
+/** Club relation field — added to all domain collections */
+function clubField() {
+  return relation('club', clubsId)
 }
 
 const collections: CollectionDef[] = [
-  // 1. halls (no relations)
+  // 1. halls (no relations except club)
   {
     name: 'halls',
     type: 'base',
@@ -131,6 +156,16 @@ async function getCollectionId(name: string): Promise<string> {
 
 // ── main ─────────────────────────────────────────────────────────────
 
+// ── Phase 0: Create clubs collection ──────────────────────────────────
+console.log('\n=== Phase 0: Create clubs collection ===')
+await createCollection(clubsDef)
+clubsId = await getCollectionId('clubs')
+
+// Inject clubField() into all Phase 1 collections
+for (const def of collections) {
+  def.fields.push(clubField())
+}
+
 console.log('\n=== Phase 1: Create base collections ===')
 for (const def of collections) {
   await createCollection(def)
@@ -166,6 +201,7 @@ const dependentCollections: CollectionDef[] = [
       relation('member', membersId, { required: true }),
       relation('team', teamsId, { required: true }),
       text('season'),
+      clubField(),
     ],
   },
 
@@ -185,6 +221,7 @@ const dependentCollections: CollectionDef[] = [
       date('valid_until'),
       text('label'),
       text('notes'),
+      clubField(),
     ],
   },
 
@@ -198,6 +235,7 @@ const dependentCollections: CollectionDef[] = [
       date('end_date'),
       text('reason'),
       select('source', ['hauswart', 'admin', 'auto', 'gcal', 'school_holidays']),
+      clubField(),
     ],
   },
 
@@ -227,6 +265,7 @@ const dependentCollections: CollectionDef[] = [
       text('scoreboard_person'),
       bool('duty_confirmed'),
       select('source', ['swiss_volley', 'manual']),
+      clubField(),
     ],
   },
 
@@ -252,6 +291,7 @@ const dependentCollections: CollectionDef[] = [
       number('points'),
       text('season'),
       date('updated_at'),
+      clubField(),
     ],
   },
 
@@ -267,6 +307,7 @@ const dependentCollections: CollectionDef[] = [
       text('reason_detail'),
       json('affects'),
       bool('approved'),
+      clubField(),
     ],
   },
 
@@ -284,6 +325,7 @@ const dependentCollections: CollectionDef[] = [
       text('location'),
       relation('teams', teamsId, { maxSelect: 99 }),
       relation('created_by', membersId),
+      clubField(),
     ],
   },
 
@@ -297,6 +339,7 @@ const dependentCollections: CollectionDef[] = [
       text('activity_id', { required: true }),
       select('status', ['confirmed', 'declined', 'tentative'], { required: true }),
       text('note'),
+      clubField(),
     ],
   },
 ]
@@ -337,6 +380,7 @@ const phase3Collections: CollectionDef[] = [
       text('notes'),
       bool('cancelled'),
       text('cancel_reason'),
+      clubField(),
     ],
   },
 ]
@@ -363,6 +407,7 @@ const phase4Collections: CollectionDef[] = [
       relation('to_team', teamsId, { required: true }),
       bool('same_team'),
       select('status', ['pending', 'accepted', 'declined', 'expired'], { required: true }),
+      clubField(),
     ],
   },
 ]

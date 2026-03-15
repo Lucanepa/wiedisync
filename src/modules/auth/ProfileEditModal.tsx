@@ -28,7 +28,7 @@ interface ProfileEditModalProps {
 }
 
 export default function ProfileEditModal({ open, onClose, onboarding }: ProfileEditModalProps) {
-  const { user } = useAuth()
+  const { user, clubId } = useAuth()
   const { t, i18n } = useTranslation('auth')
   const { t: tc } = useTranslation('common')
   const { t: tt } = useTranslation('teams')
@@ -112,14 +112,15 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
     try {
       // Check for duplicate number in the same team(s)
       if (number > 0 && number !== user.number) {
+        const clubPrefix = clubId ? `club="${clubId}" && ` : ''
         const myTeams = await pb.collection('member_teams').getFullList({
-          filter: `member="${user.id}"`,
+          filter: `${clubPrefix}member="${user.id}"`,
         })
         const teamIds = myTeams.map((mt) => mt.team)
         if (teamIds.length > 0) {
           const teamFilter = teamIds.map((id) => `team="${id}"`).join(' || ')
           const teammates = await pb.collection('member_teams').getFullList({
-            filter: `(${teamFilter}) && member!="${user.id}"`,
+            filter: `${clubPrefix}(${teamFilter}) && member!="${user.id}"`,
             expand: 'member',
           })
           const conflict = teammates.find(

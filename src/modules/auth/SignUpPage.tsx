@@ -349,6 +349,13 @@ export default function SignUpPage() {
                 autoComplete="new-password"
               />
 
+              <p className="text-center text-xs text-gray-500 dark:text-gray-400">
+                {t('privacyConsent')}{' '}
+                <Link to="/datenschutz" className="font-medium text-brand-600 underline hover:text-brand-500 dark:text-brand-400">
+                  {t('privacyPolicy')}
+                </Link>.
+              </p>
+
               {error && (
                 <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
               )}

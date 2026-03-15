@@ -2,11 +2,14 @@ import { useState, useCallback } from 'react'
 import type { RecordModel } from 'pocketbase'
 import pb from '../pb'
 import { logActivity } from '../utils/logActivity'
+import { useAuth } from './useAuth'
+import { CLUB_COLLECTIONS } from '../clubConfig'
 
 /** Collections where we skip logging (to avoid infinite loops or noise) */
 const SKIP_LOG = new Set(['user_logs'])
 
 export function useMutation<T extends RecordModel>(collection: string) {
+  const { clubId } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
 
@@ -15,7 +18,12 @@ export function useMutation<T extends RecordModel>(collection: string) {
       setIsLoading(true)
       setError(null)
       try {
-        const record = await pb.collection(collection).create<T>(data)
+        // Auto-inject club for domain collections
+        const payload = { ...data }
+        if (clubId && CLUB_COLLECTIONS.has(collection) && !payload.club) {
+          payload.club = clubId
+        }
+        const record = await pb.collection(collection).create<T>(payload)
         if (!SKIP_LOG.has(collection)) {
           logActivity('create', collection, record.id, data)
         }

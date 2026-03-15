@@ -8,6 +8,7 @@ import type { Member, MemberTeam, Team } from '../types'
 
 interface AuthContextValue {
   user: (RecordModel & Member) | null
+  clubId: string
   isSuperAdmin: boolean
   isAdmin: boolean
   isGlobalAdmin: boolean
@@ -100,7 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const uid = user.id
     pb.collection('teams')
       .getFullList<Team>({
-        filter: `active=true && (coach~"${uid}" || team_responsible~"${uid}")`,
+        filter: `active=true && (coach~"${uid}" || team_responsible~"${uid}")${user?.club ? ` && club="${user.club}"` : ''}`,
       })
       .then((teams) => {
         setCoachTeamIds(teams.map((t) => t.id))
@@ -117,7 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     pb.collection('teams')
       .getFullList<Team>({
-        filter: 'active=true',
+        filter: `active=true${user?.club ? ` && club="${user.club}"` : ''}`,
         fields: 'id,sport',
       })
       .then((allTeams) => {
@@ -143,7 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const season = getCurrentSeason()
     pb.collection('member_teams')
       .getFullList<MemberTeam & { expand?: { team?: Team } }>({
-        filter: `member="${user.id}" && season="${season}"`,
+        filter: `member="${user.id}" && season="${season}"${user?.club ? ` && club="${user.club}"` : ''}`,
         expand: 'team',
       })
       .then((mts) => {
@@ -199,6 +200,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isProfileComplete = !!user?.language
   const isVorstand = roles.includes('vorstand') || isGlobalAdmin
   const isGuest = user?.is_guest === true
+  const clubId = (user?.club as string) ?? ''
 
   const primarySport: 'volleyball' | 'basketball' | 'both' =
     memberSports.size === 1 ? [...memberSports][0] : 'both'
@@ -232,7 +234,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   return (
-    <AuthContext.Provider value={{ user, isSuperAdmin, isAdmin, isGlobalAdmin, isVbAdmin, isBbAdmin, hasAdminAccessToSport, hasAdminAccessToTeam, isApproved, isProfileComplete, isCoach, isCoachOf, canParticipateIn, isStaffOnly, coachTeamIds, memberTeamIds, memberTeamNames, memberSports, primarySport, canViewTeam, isVorstand, isGuest, isLoading, login, loginWithOAuth, logout }}>
+    <AuthContext.Provider value={{ user, clubId, isSuperAdmin, isAdmin, isGlobalAdmin, isVbAdmin, isBbAdmin, hasAdminAccessToSport, hasAdminAccessToTeam, isApproved, isProfileComplete, isCoach, isCoachOf, canParticipateIn, isStaffOnly, coachTeamIds, memberTeamIds, memberTeamNames, memberSports, primarySport, canViewTeam, isVorstand, isGuest, isLoading, login, loginWithOAuth, logout }}>
       {children}
     </AuthContext.Provider>
   )

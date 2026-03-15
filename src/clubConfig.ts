@@ -1,0 +1,22 @@
+/** Collections that are scoped to a club */
+export const CLUB_COLLECTIONS = new Set([
+  'halls',
+  'teams',
+  'members',
+  'member_teams',
+  'hall_slots',
+  'hall_closures',
+  'games',
+  'rankings',
+  'trainings',
+  'absences',
+  'events',
+  'event_sessions',
+  'participations',
+  'slot_claims',
+  'scorer_delegations',
+  'game_scheduling_seasons',
+  'game_scheduling_slots',
+  'game_scheduling_opponents',
+  'game_scheduling_bookings',
+])

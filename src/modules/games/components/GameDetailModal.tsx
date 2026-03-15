@@ -481,6 +481,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
       teamId={game?.kscw_team ?? null}
       title={t('participationRoster')}
       respondBy={game?.respond_by}
+      activityStartTime={game?.time}
     />
     </>
   )

@@ -36,7 +36,7 @@ export function useMutation<T extends RecordModel>(collection: string) {
         setIsLoading(false)
       }
     },
-    [collection],
+    [collection, clubId],
   )
 
   const update = useCallback(

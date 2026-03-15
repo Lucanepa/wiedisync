@@ -30,4 +30,5 @@ export default {
   bumpedToWaitlist: 'You have been moved to the waitlist',
   promotedFromWaitlist: 'You have been promoted from the waitlist',
   waitlistHint: 'Training full — you will be waitlisted',
+  saved: 'Saved',
 } as const

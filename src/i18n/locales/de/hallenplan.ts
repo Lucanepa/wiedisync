@@ -120,6 +120,10 @@ export default {
   vbOnly: 'Nur VB',
   all: 'Alle',
 
+  // Admin navigation
+  goToTrainings: 'Zu Trainings',
+  goToGames: 'Zu Spiele',
+
   // Available slots
   slotsAvailable: '{{count}} Halle(n) frei',
   slotsAvailableTitle: 'Freie Hallen',

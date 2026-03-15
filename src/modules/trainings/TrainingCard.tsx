@@ -1,4 +1,6 @@
+import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Check } from 'lucide-react'
 import TeamChip from '../../components/TeamChip'
 import ParticipationSummary from '../../components/ParticipationSummary'
 import { useAuth } from '../../hooks/useAuth'
@@ -109,14 +111,21 @@ function TrainingParticipation({ training }: { training: TrainingExpanded }) {
   const { t } = useTranslation('participation')
   const { isStaffOnly } = useAuth()
   const staffOnly = isStaffOnly(training.team)
-  const { effectiveStatus, hasAbsence, setStatus } = useParticipation('training', training.id, training.date, undefined, staffOnly)
+  const { effectiveStatus, hasAbsence, setStatus, saveConfirmed, dismissConfirmed } = useParticipation('training', training.id, training.date, undefined, staffOnly)
+
+  // Auto-dismiss confirmation after 2s
+  useEffect(() => {
+    if (!saveConfirmed) return
+    const timer = setTimeout(dismissConfirmed, 2000)
+    return () => clearTimeout(timer)
+  }, [saveConfirmed, dismissConfirmed])
 
   if (hasAbsence) {
     return <span className="text-xs text-gray-600 dark:text-gray-400">{t('absent')}</span>
   }
 
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="relative flex items-center gap-1.5">
       <button
         onClick={() => setStatus('confirmed')}
         className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
@@ -147,6 +156,14 @@ function TrainingParticipation({ training }: { training: TrainingExpanded }) {
       >
         {t('no')}
       </button>
+
+      {/* Save confirmation popover */}
+      {saveConfirmed && (
+        <span className="absolute -top-7 left-1/2 -translate-x-1/2 flex items-center gap-1 whitespace-nowrap rounded-md bg-green-600 px-2 py-0.5 text-[11px] font-medium text-white shadow-lg animate-fade-in">
+          <Check className="h-3 w-3" />
+          {t('saved')}
+        </span>
+      )}
     </div>
   )
 }

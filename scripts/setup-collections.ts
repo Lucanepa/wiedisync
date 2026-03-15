@@ -99,6 +99,7 @@ const collections: CollectionDef[] = [
       file('photo', { maxSize: 5242880, mimeTypes: ['image/jpeg', 'image/png', 'image/webp'] }),
       select('role', ['user', 'vorstand', 'admin', 'superuser']),
       bool('active'),
+      bool('member_active'),
     ],
   },
 

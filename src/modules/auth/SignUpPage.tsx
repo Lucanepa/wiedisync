@@ -22,6 +22,7 @@ export default function SignUpPage() {
 
   const [step, setStep] = useState<Step>('email')
   const [email, setEmail] = useState('')
+  const [selectedLanguage, setSelectedLanguage] = useState<'german' | 'english'>('german')
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [password, setPassword] = useState('')
@@ -105,6 +106,8 @@ export default function SignUpPage() {
         approved: false,
         requested_team: selectedTeam,
         is_guest: isGuest,
+        member_active: true,
+        language: selectedLanguage,
       })
       await login(email.trim().toLowerCase(), password)
       logActivity('create', 'members', newMember.id, { first_name: firstName, last_name: lastName, requested_team: selectedTeam })
@@ -225,6 +228,29 @@ export default function SignUpPage() {
                   >
                     {t('change')}
                   </button>
+                </div>
+              </div>
+
+              {/* Language */}
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {t('language')}
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(['german', 'english'] as const).map((lang) => (
+                    <button
+                      key={lang}
+                      type="button"
+                      onClick={() => setSelectedLanguage(lang)}
+                      className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                        selectedLanguage === lang
+                          ? 'border-brand-500 bg-brand-50 text-brand-700 dark:border-brand-400 dark:bg-brand-900/30 dark:text-brand-300'
+                          : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      {t(lang === 'german' ? 'languageGerman' : 'languageEnglish')}
+                    </button>
+                  ))}
                 </div>
               </div>
 

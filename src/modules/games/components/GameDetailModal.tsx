@@ -129,6 +129,11 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
   const sets = parseSets(game.sets_json)
   const dateStr = game.date ? new Intl.DateTimeFormat(i18n.language, dateFormatOptions).format(new Date(game.date)) : ''
   const showScorerContact = isCoachOf(game.kscw_team)
+  const homeWon = Number(game.home_score) > Number(game.away_score)
+  const awayWon = Number(game.away_score) > Number(game.home_score)
+  const kscwWon = game.type === 'home' ? homeWon : awayWon
+  const kscwLost = game.type === 'home' ? awayWon : homeWon
+  const scoreColor = kscwWon ? 'text-green-600 dark:text-green-400' : kscwLost ? 'text-red-500 dark:text-red-400' : 'text-gray-900 dark:text-gray-100'
 
   return (
     <>
@@ -174,20 +179,12 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
             </div>
 
             <div className="shrink-0 text-center">
-              {game.status === 'completed' || game.status === 'live' ? (() => {
-                const homeWon = Number(game.home_score) > Number(game.away_score)
-                const awayWon = Number(game.away_score) > Number(game.home_score)
-                const won = game.type === 'home' ? homeWon : awayWon
-                const lost = game.type === 'home' ? awayWon : homeWon
-                const scoreColor = won ? 'text-green-600 dark:text-green-400' : lost ? 'text-red-500 dark:text-red-400' : 'text-gray-900 dark:text-gray-100'
-                return (
-                  <div className={`font-mono text-3xl font-bold ${scoreColor}`}>
-                    {game.home_score}
-                    <span className="mx-1 text-gray-400 dark:text-gray-500">:</span>
-                    {game.away_score}
-                  </div>
-                )
-              })()
+              {game.status === 'completed' || game.status === 'live' ? (
+                <div className={`font-mono text-3xl font-bold ${scoreColor}`}>
+                  {game.home_score}
+                  <span className="mx-1 text-gray-400 dark:text-gray-500">:</span>
+                  {game.away_score}
+                </div>
               ) : (
                 <div className="text-base font-light text-gray-400 dark:text-gray-500">vs</div>
               )}

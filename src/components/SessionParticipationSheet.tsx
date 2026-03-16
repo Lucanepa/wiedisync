@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Check, X } from 'lucide-react'
-import Modal from './Modal'
+import Modal from '@/components/Modal'
 import { useParticipation } from '../hooks/useParticipation'
 import type { EventSession, Participation } from '../types'
 

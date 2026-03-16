@@ -1,9 +1,9 @@
 import { useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import pb from '../../../pb'
-import Button from '../../../components/ui/Button'
+import { Button } from '@/components/ui/button'
 import ResultsTable from './ResultsTable'
-import ConfirmDialog from '../../../components/ConfirmDialog'
+import ConfirmDialog from '@/components/ConfirmDialog'
 
 interface SqlResult {
   success: boolean
@@ -101,7 +101,6 @@ export default function SqlEditor() {
       {/* Actions */}
       <div className="flex flex-wrap items-center gap-2">
         <Button
-          variant="primary"
           onClick={handleExecute}
           disabled={loading || !query.trim()}
           loading={loading}

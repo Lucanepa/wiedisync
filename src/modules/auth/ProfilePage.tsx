@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { PartyPopper } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { usePB } from '../../hooks/usePB'
-import Button from '../../components/ui/Button'
+import { Button } from '@/components/ui/button'
 import StatusBadge from '../../components/StatusBadge'
 import TeamChip from '../../components/TeamChip'
 import ParticipationButton from '../../components/ParticipationButton'
@@ -116,7 +116,7 @@ export default function ProfilePage() {
             )}
           </div>
           <Button
-            variant="secondary"
+            variant="outline"
             size="sm"
             onClick={() => setEditOpen(true)}
             className="shrink-0"
@@ -335,7 +335,7 @@ export default function ProfilePage() {
         <h2 className="text-base font-semibold text-red-600 dark:text-red-400">{t('dangerZone')}</h2>
         <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{t('deleteAccountDescription')}</p>
         <div className="mt-4">
-          <Button variant="danger" size="sm" onClick={() => setDeleteOpen(true)}>
+          <Button variant="destructive" size="sm" onClick={() => setDeleteOpen(true)}>
             {t('deleteAccount')}
           </Button>
         </div>

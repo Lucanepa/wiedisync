@@ -8,7 +8,7 @@ import { useTeamMembers } from '../../hooks/useTeamMembers'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import { usePendingMembers } from '../../hooks/usePendingMembers'
-import Button from '../../components/ui/Button'
+import { Button } from '@/components/ui/button'
 import TeamChip from '../../components/TeamChip'
 import EmptyState from '../../components/EmptyState'
 import { sanitizeUrl } from '../../utils/sanitizeUrl'
@@ -323,7 +323,6 @@ export default function TeamDetail() {
                 </div>
                 <div className="flex shrink-0 gap-2">
                   <Button
-                    variant="primary"
                     size="sm"
                     onClick={() => handleApprove(member)}
                     className="bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
@@ -331,7 +330,7 @@ export default function TeamDetail() {
                     {t('approve')}
                   </Button>
                   <Button
-                    variant="danger"
+                    variant="destructive"
                     size="sm"
                     onClick={() => handleReject(member.id)}
                   >

@@ -7,7 +7,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { getCurrentSeason, getSeasonDateRange, formatDateCompact, formatTime } from '../../utils/dateHelpers'
 import { logActivity } from '../../utils/logActivity'
 import pb from '../../pb'
-import Button from '../../components/ui/Button'
+import { Button } from '@/components/ui/button'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import TeamSelect from '../../components/TeamSelect'
 import TeamChip from '../../components/TeamChip'
@@ -169,7 +169,6 @@ export default function ScorerAssignPage() {
         </div>
 
         <Button
-          variant="primary"
           size="sm"
           onClick={handleRunAlgorithm}
           loading={running}
@@ -180,7 +179,6 @@ export default function ScorerAssignPage() {
 
         {assignments.length > 0 && (
           <Button
-            variant="primary"
             size="sm"
             onClick={handleSaveAll}
             loading={saving}

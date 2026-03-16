@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import pb from '../../../pb'
 import type { Hall, SpielsamstagConfig } from '../../../types'
-import DatePicker from '../../../components/ui/DatePicker'
+import DatePicker from '@/components/ui/DatePicker'
 
 const DEFAULT_TIMES = ['11:00', '13:30', '16:00']
 

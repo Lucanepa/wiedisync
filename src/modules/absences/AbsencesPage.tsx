@@ -7,11 +7,11 @@ import { useMutation } from '../../hooks/useMutation'
 import { useRealtime } from '../../hooks/useRealtime'
 import TeamFilter from '../../components/TeamFilter'
 import EmptyState from '../../components/EmptyState'
-import ConfirmDialog from '../../components/ConfirmDialog'
+import ConfirmDialog from '@/components/ConfirmDialog'
 import AbsenceCard from './AbsenceCard'
 import AbsenceForm from './AbsenceForm'
 import TeamAbsenceView from './TeamAbsenceView'
-import Button from '../../components/ui/Button'
+import { Button } from '@/components/ui/button'
 import type { Absence, Member } from '../../types'
 
 type AbsenceExpanded = Absence & { expand?: { member?: Member } }

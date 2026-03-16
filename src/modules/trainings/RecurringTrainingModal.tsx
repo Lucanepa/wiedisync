@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import Modal from '../../components/Modal'
+import Modal from '@/components/Modal'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import { usePB } from '../../hooks/usePB'
@@ -9,7 +9,7 @@ import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
 import type { HallSlot, HallClosure, Team, Hall } from '../../types'
 import TeamChip from '../../components/TeamChip'
-import DatePicker from '../../components/ui/DatePicker'
+import DatePicker from '@/components/ui/DatePicker'
 
 type SlotExpanded = HallSlot & { expand?: { team?: Team; hall?: Hall } }
 

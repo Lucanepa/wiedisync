@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import Modal from '../../../components/Modal'
-import Button from '../../../components/ui/Button'
-import { Input, Select } from '../../../components/ui/Input'
-import DatePicker from '../../../components/ui/DatePicker'
+import Modal from '@/components/Modal'
+import { Button } from '@/components/ui/button'
+import { FormInput, FormField } from '@/components/FormField'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import DatePicker from '@/components/ui/DatePicker'
 import pb from '../../../pb'
 import { logActivity } from '../../../utils/logActivity'
 import type { Hall, HallClosure } from '../../../types'
@@ -247,27 +248,30 @@ export default function ClosureManager({ halls, closures, onClose, onChanged }: 
           </h3>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Select
-              label={t('hall')}
-              value={form.hall}
-              onChange={(e) => update('hall', e.target.value)}
-              disabled={!!editingGroup}
-              helperText={editingGroup && editingGroup.records.length > 1 ? t('editAppliesToAllHalls', { count: editingGroup.records.length }) : undefined}
-            >
-              <option value="">{t('selectPlaceholder')}</option>
-              {halls.map((h) => (
-                <option key={h.id} value={h.id}>{h.name}</option>
-              ))}
-            </Select>
-            <Select
-              label={t('source')}
-              value={form.source}
-              onChange={(e) => update('source', e.target.value as typeof form.source)}
-            >
-              {SOURCE_OPTIONS.map((s) => (
-                <option key={s.value} value={s.value}>{s.label}</option>
-              ))}
-            </Select>
+            <FormField label={t('hall')} helperText={editingGroup && editingGroup.records.length > 1 ? t('editAppliesToAllHalls', { count: editingGroup.records.length }) : undefined}>
+              <Select value={form.hall} onValueChange={(v) => update('hall', v)} disabled={!!editingGroup}>
+                <SelectTrigger className="min-h-[44px]">
+                  <SelectValue placeholder={t('selectPlaceholder')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {halls.map((h) => (
+                    <SelectItem key={h.id} value={h.id}>{h.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormField>
+            <FormField label={t('source')}>
+              <Select value={form.source} onValueChange={(v) => update('source', v as typeof form.source)}>
+                <SelectTrigger className="min-h-[44px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SOURCE_OPTIONS.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormField>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -304,7 +308,6 @@ export default function ClosureManager({ halls, closures, onClose, onChanged }: 
               </Button>
             )}
             <Button
-              variant="primary"
               onClick={handleSave}
               disabled={isSaving}
               loading={isSaving}

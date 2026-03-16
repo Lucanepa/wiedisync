@@ -1,13 +1,14 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import Modal from '../../components/Modal'
+import Modal from '@/components/Modal'
 import { useAuth } from '../../hooks/useAuth'
 import { useMutation } from '../../hooks/useMutation'
 import { usePB } from '../../hooks/usePB'
 import pb from '../../pb'
-import Button from '../../components/ui/Button'
-import { Input, Textarea, Select } from '../../components/ui/Input'
-import DatePicker from '../../components/ui/DatePicker'
+import { Button } from '@/components/ui/button'
+import { FormInput, FormTextarea, FormField } from '@/components/FormField'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import DatePicker from '@/components/ui/DatePicker'
 import type { Event, EventSession, Team } from '../../types'
 
 interface SessionDraft {
@@ -257,7 +258,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
       size="md"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Input
+        <FormInput
           label={t('eventTitle')}
           type="text"
           value={title}
@@ -265,20 +266,23 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
           required
         />
 
-        <Select
-          label={t('eventType')}
-          value={eventType}
-          onChange={(e) => setEventType(e.target.value as Event['event_type'])}
-        >
-          <option value="verein">{t('club')}</option>
-          <option value="social">{t('social')}</option>
-          <option value="meeting">{t('meeting')}</option>
-          <option value="tournament">{t('tournament')}</option>
-          <option value="other">{t('other')}</option>
-        </Select>
+        <FormField label={t('eventType')}>
+          <Select value={eventType} onValueChange={(v) => setEventType(v as Event['event_type'])}>
+            <SelectTrigger className="min-h-[44px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="verein">{t('club')}</SelectItem>
+              <SelectItem value="social">{t('social')}</SelectItem>
+              <SelectItem value="meeting">{t('meeting')}</SelectItem>
+              <SelectItem value="tournament">{t('tournament')}</SelectItem>
+              <SelectItem value="other">{t('other')}</SelectItem>
+            </SelectContent>
+          </Select>
+        </FormField>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Input
+          <FormInput
             label={t('startDate')}
             type={allDay ? 'date' : 'datetime-local'}
             value={startDate}
@@ -288,7 +292,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
             }}
             required
           />
-          <Input
+          <FormInput
             label={t('endDate')}
             type={allDay ? 'date' : 'datetime-local'}
             value={endDate}
@@ -307,14 +311,14 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
           {t('allDay')}
         </label>
 
-        <Input
+        <FormInput
           label={t('location')}
           type="text"
           value={location}
           onChange={(e) => setLocation(e.target.value)}
         />
 
-        <Textarea
+        <FormTextarea
           label={t('description')}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
@@ -329,7 +333,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
         />
 
         {eventType === 'tournament' && (
-          <Input
+          <FormInput
             label={t('maxPlayers')}
             type="number"
             value={maxPlayers}

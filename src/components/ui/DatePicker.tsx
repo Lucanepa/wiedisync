@@ -1,0 +1,137 @@
+import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Calendar as CalendarIcon } from 'lucide-react'
+import { parseISO } from 'date-fns'
+import { de } from 'date-fns/locale/de'
+import { enUS } from 'date-fns/locale'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Calendar } from '@/components/ui/calendar'
+import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+import { toDateKey, formatDateLocale } from '../../utils/dateUtils'
+
+interface DatePickerProps {
+  value: string
+  onChange: (value: string) => void
+  label?: string
+  error?: string
+  helperText?: string
+  min?: string
+  max?: string
+  placeholder?: string
+  id?: string
+  required?: boolean
+  disabled?: boolean
+  className?: string
+}
+
+export default function DatePicker({
+  value,
+  onChange,
+  label,
+  error,
+  helperText,
+  min,
+  max,
+  placeholder,
+  id,
+  disabled,
+  className = '',
+}: DatePickerProps) {
+  const { t, i18n } = useTranslation('common')
+  const lang = i18n.language
+  const [open, setOpen] = useState(false)
+
+  const selectedDate = value ? parseISO(value) : undefined
+  const [month, setMonth] = useState<Date>(
+    selectedDate ?? new Date(),
+  )
+
+  // Sync month when value changes externally
+  useEffect(() => {
+    if (selectedDate) setMonth(selectedDate)
+  }, [value]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const minDate = min ? parseISO(min) : undefined
+  const maxDate = max ? parseISO(max) : undefined
+
+  const displayValue = selectedDate
+    ? formatDateLocale(selectedDate, 'd. MMM yyyy', lang)
+    : ''
+
+  const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined)
+  const locale = lang === 'de' ? de : enUS
+
+  function handleSelect(date: Date | undefined) {
+    if (date) {
+      onChange(toDateKey(date))
+      setOpen(false)
+    }
+  }
+
+  function handleToday() {
+    const today = new Date()
+    onChange(toDateKey(today))
+    setMonth(today)
+    setOpen(false)
+  }
+
+  return (
+    <div>
+      {label && (
+        <Label htmlFor={inputId} className="mb-1.5">
+          {label}
+        </Label>
+      )}
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            id={inputId}
+            disabled={disabled}
+            data-testid="datepicker-trigger"
+            className={cn(
+              'flex min-h-[44px] w-full cursor-pointer items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-left text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
+              error && 'border-destructive',
+              className,
+            )}
+          >
+            <span className={displayValue ? '' : 'text-muted-foreground'}>
+              {displayValue || placeholder || t('selectDate')}
+            </span>
+            <CalendarIcon className="h-4 w-4 shrink-0 opacity-50" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            mode="single"
+            selected={selectedDate}
+            onSelect={handleSelect}
+            month={month}
+            onMonthChange={setMonth}
+            locale={locale}
+            weekStartsOn={1}
+            disabled={(date) => {
+              if (minDate && toDateKey(date) < toDateKey(minDate)) return true
+              if (maxDate && toDateKey(date) > toDateKey(maxDate)) return true
+              return false
+            }}
+          />
+          <div className="border-t p-2 flex justify-end">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleToday}
+              type="button"
+            >
+              {t('today')}
+            </Button>
+          </div>
+        </PopoverContent>
+      </Popover>
+      {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
+      {helperText && !error && <p className="mt-1 text-xs text-muted-foreground">{helperText}</p>}
+    </div>
+  )
+}

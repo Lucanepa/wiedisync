@@ -6,11 +6,12 @@ import { useTheme } from '../../hooks/useTheme'
 import { usePB } from '../../hooks/usePB'
 import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
-import Button from '../../components/ui/Button'
-import Modal from '../../components/Modal'
+import { Button } from '@/components/ui/button'
+import Modal from '@/components/Modal'
 import DatenschutzPage from '../legal/DatenschutzPage'
 import PrivacyNotice from '../../components/PrivacyNotice'
-import { Input, Select } from '../../components/ui/Input'
+import { FormInput, FormField } from '@/components/FormField'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { Team } from '../../types'
 
 type Step = 'email' | 'claim' | 'register'
@@ -248,7 +249,7 @@ export default function SignUpPage() {
                 >
                   {t('signIn')}
                 </Link>
-                <Button variant="secondary" onClick={() => { setStep('email'); setError(''); setResetSent(false) }} className="w-full">
+                <Button variant="outline" onClick={() => { setStep('email'); setError(''); setResetSent(false) }} className="w-full">
                   {t('tryDifferentEmail')}
                 </Button>
               </div>
@@ -320,19 +321,20 @@ export default function SignUpPage() {
                 </div>
               </div>
 
-              <Select
-                label={t('selectTeam')}
-                value={selectedTeam}
-                onChange={(e) => setSelectedTeam(e.target.value)}
-                required
-              >
-                <option value="">{t('selectTeamPlaceholder')}</option>
-                {filteredTeams.map((team) => (
-                  <option key={team.id} value={team.id}>
-                    {team.name}{team.league ? ` — ${team.league}` : ''}
-                  </option>
-                ))}
-              </Select>
+              <FormField label={t('selectTeam')}>
+                <Select value={selectedTeam} onValueChange={setSelectedTeam}>
+                  <SelectTrigger className="min-h-[44px]">
+                    <SelectValue placeholder={t('selectTeamPlaceholder')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredTeams.map((team) => (
+                      <SelectItem key={team.id} value={team.id}>
+                        {team.name}{team.league ? ` — ${team.league}` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormField>
 
               {/* Guest checkbox */}
               <label className="flex items-start gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 dark:border-gray-600 dark:bg-gray-700">

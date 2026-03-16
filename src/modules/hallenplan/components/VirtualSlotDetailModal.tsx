@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import Modal from '../../../components/Modal'
+import Modal from '@/components/Modal'
 import TeamChip from '../../../components/TeamChip'
 import type { HallSlot, Hall, Team, Game, Training, HallEvent } from '../../../types'
 import { formatTime } from '../../../utils/dateHelpers'

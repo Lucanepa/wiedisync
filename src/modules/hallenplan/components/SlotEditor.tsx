@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import Modal from '../../../components/Modal'
-import Button from '../../../components/ui/Button'
-import { Input, Textarea, Select } from '../../../components/ui/Input'
-import DatePicker from '../../../components/ui/DatePicker'
+import Modal from '@/components/Modal'
+import { Button } from '@/components/ui/button'
+import { FormInput, FormTextarea, FormField } from '@/components/FormField'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import DatePicker from '@/components/ui/DatePicker'
 import pb from '../../../pb'
 import { logActivity } from '../../../utils/logActivity'
 import { useConflictChecker } from '../hooks/useConflictChecker'
@@ -172,63 +173,73 @@ export default function SlotEditor({
       <div className="space-y-4">
         {/* Row 1: Hall + Team */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Select
-            label={t('hall')}
-            value={form.hall}
-            onChange={(e) => update('hall', e.target.value)}
-          >
-            <option value="">{t('selectPlaceholder')}</option>
-            {halls.flatMap((h) => {
-              const items = [<option key={h.id} value={h.id}>{h.name}</option>]
-              if (COMBO_VALUE && h.name === 'KWI A') {
-                items.push(<option key="kwi-ab" value={COMBO_VALUE}>KWI A+B</option>)
-              }
-              return items
-            })}
-          </Select>
-          <Select
-            label={t('team')}
-            value={form.team}
-            onChange={(e) => update('team', e.target.value)}
-          >
-            <option value="">{t('selectPlaceholder')}</option>
-            {visibleTeams.map((tm) => (
-              <option key={tm.id} value={tm.id}>{tm.name}</option>
-            ))}
-          </Select>
+          <FormField label={t('hall')}>
+            <Select value={form.hall} onValueChange={(v) => update('hall', v)}>
+              <SelectTrigger className="min-h-[44px]">
+                <SelectValue placeholder={t('selectPlaceholder')} />
+              </SelectTrigger>
+              <SelectContent>
+                {halls.flatMap((h) => {
+                  const items = [<SelectItem key={h.id} value={h.id}>{h.name}</SelectItem>]
+                  if (COMBO_VALUE && h.name === 'KWI A') {
+                    items.push(<SelectItem key="kwi-ab" value={COMBO_VALUE}>KWI A+B</SelectItem>)
+                  }
+                  return items
+                })}
+              </SelectContent>
+            </Select>
+          </FormField>
+          <FormField label={t('team')}>
+            <Select value={form.team} onValueChange={(v) => update('team', v)}>
+              <SelectTrigger className="min-h-[44px]">
+                <SelectValue placeholder={t('selectPlaceholder')} />
+              </SelectTrigger>
+              <SelectContent>
+                {visibleTeams.map((tm) => (
+                  <SelectItem key={tm.id} value={tm.id}>{tm.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormField>
         </div>
 
         {/* Row 2: Day + Type */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Select
-            label={t('dayOfWeek')}
-            value={form.day_of_week}
-            onChange={(e) => update('day_of_week', Number(e.target.value))}
-          >
-            {DAY_OPTIONS.map((d) => (
-              <option key={d.value} value={d.value}>{d.label}</option>
-            ))}
-          </Select>
-          <Select
-            label={t('slotType')}
-            value={form.slot_type}
-            onChange={(e) => update('slot_type', e.target.value as typeof form.slot_type)}
-          >
-            {TYPE_OPTIONS.map((tp) => (
-              <option key={tp.value} value={tp.value}>{tp.label}</option>
-            ))}
-          </Select>
+          <FormField label={t('dayOfWeek')}>
+            <Select value={String(form.day_of_week)} onValueChange={(v) => update('day_of_week', Number(v))}>
+              <SelectTrigger className="min-h-[44px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {DAY_OPTIONS.map((d) => (
+                  <SelectItem key={d.value} value={String(d.value)}>{d.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormField>
+          <FormField label={t('slotType')}>
+            <Select value={form.slot_type} onValueChange={(v) => update('slot_type', v as typeof form.slot_type)}>
+              <SelectTrigger className="min-h-[44px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {TYPE_OPTIONS.map((tp) => (
+                  <SelectItem key={tp.value} value={tp.value}>{tp.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormField>
         </div>
 
         {/* Row 3: Times */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Input
+          <FormInput
             type="time"
             label={t('startTime')}
             value={form.start_time}
             onChange={(e) => update('start_time', e.target.value)}
           />
-          <Input
+          <FormInput
             type="time"
             label={t('endTime')}
             value={form.end_time}
@@ -288,7 +299,7 @@ export default function SlotEditor({
         )}
 
         {/* Row 6: Label */}
-        <Input
+        <FormInput
           type="text"
           label={t('label')}
           value={form.label}
@@ -297,7 +308,7 @@ export default function SlotEditor({
         />
 
         {/* Row 7: Notes */}
-        <Textarea
+        <FormTextarea
           label={t('notes')}
           value={form.notes}
           onChange={(e) => update('notes', e.target.value)}
@@ -331,7 +342,7 @@ export default function SlotEditor({
           <div>
             {slot && canDelete && (
               <Button
-                variant="danger"
+                variant="destructive"
                 onClick={handleDelete}
                 disabled={isSaving}
                 className="bg-transparent text-red-600 hover:bg-red-50 dark:bg-transparent dark:text-red-400 dark:hover:bg-red-900/20"
@@ -345,7 +356,6 @@ export default function SlotEditor({
               {t('common:cancel')}
             </Button>
             <Button
-              variant="primary"
               onClick={handleSave}
               disabled={isSaving}
               loading={isSaving}

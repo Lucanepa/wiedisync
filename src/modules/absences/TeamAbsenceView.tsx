@@ -5,7 +5,7 @@ import { useTeamAbsences } from '../../hooks/useTeamAbsences'
 import StatusBadge from '../../components/StatusBadge'
 import EmptyState from '../../components/EmptyState'
 import { formatDate, toISODate } from '../../utils/dateHelpers'
-import DatePicker from '../../components/ui/DatePicker'
+import DatePicker from '@/components/ui/DatePicker'
 
 interface TeamAbsenceViewProps {
   teamId: string

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Hall, HallSlot } from '../../../types'
-import Modal from '../../../components/Modal'
+import Modal from '@/components/Modal'
 import type { FreedSlotInfo, SportFilter } from '../HallenplanPage'
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const

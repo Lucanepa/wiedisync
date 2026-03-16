@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../hooks/useAuth'
 import { useAdminMode } from '../hooks/useAdminMode'
-import SwitchToggle from './SwitchToggle'
+import SwitchToggle from '@/components/SwitchToggle'
 import { Shield, ShieldCheck } from 'lucide-react'
 
 interface AdminToggleProps {

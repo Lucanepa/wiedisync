@@ -30,7 +30,8 @@ interface AuthContextValue {
   primarySport: 'volleyball' | 'basketball' | 'both'
   canViewTeam: (teamId: string) => boolean
   isVorstand: boolean
-  isGuest: boolean
+  getGuestLevel: (teamId: string) => number
+  isGuestIn: (teamId: string) => boolean
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
   loginWithOAuth: (provider: string) => Promise<void>
@@ -49,6 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [memberTeamNames, setMemberTeamNames] = useState<string[]>([])
   const [memberSports, setMemberSports] = useState<Set<'volleyball' | 'basketball'>>(new Set())
   const [teamSportById, setTeamSportById] = useState<Record<string, 'volleyball' | 'basketball'>>({})
+  const [guestLevelByTeam, setGuestLevelByTeam] = useState<Record<string, number>>({})
 
   // Auth refresh — skip if token was just issued (within last 5s, e.g. right after login)
   useEffect(() => {
@@ -140,6 +142,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setMemberTeamIds([])
       setMemberTeamNames([])
       setMemberSports(new Set())
+      setGuestLevelByTeam({})
       return
     }
     const season = getCurrentSeason()
@@ -157,11 +160,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (s === 'volleyball' || s === 'basketball') sports.add(s)
         }
         setMemberSports(sports)
+        const glMap: Record<string, number> = {}
+        for (const mt of mts) {
+          glMap[mt.team] = mt.guest_level ?? 0
+        }
+        setGuestLevelByTeam(glMap)
       })
       .catch(() => {
         setMemberTeamIds([])
         setMemberTeamNames([])
         setMemberSports(new Set())
+        setGuestLevelByTeam({})
       })
   }, [user?.id])
 
@@ -200,7 +209,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isApproved = user?.approved === true || isAdmin
   const isProfileComplete = !!user?.language
   const isVorstand = roles.includes('vorstand') || isGlobalAdmin
-  const isGuest = user?.is_guest === true
+  const getGuestLevel = useCallback(
+    (teamId: string) => guestLevelByTeam[teamId] ?? 0,
+    [guestLevelByTeam],
+  )
+
+  const isGuestIn = useCallback(
+    (teamId: string) => getGuestLevel(teamId) > 0,
+    [getGuestLevel],
+  )
   const clubId = (user?.club as string) || DEFAULT_CLUB_ID
 
   const primarySport: 'volleyball' | 'basketball' | 'both' =
@@ -235,7 +252,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   return (
-    <AuthContext.Provider value={{ user, clubId, isSuperAdmin, isAdmin, isGlobalAdmin, isVbAdmin, isBbAdmin, hasAdminAccessToSport, hasAdminAccessToTeam, isApproved, isProfileComplete, isCoach, isCoachOf, canParticipateIn, isStaffOnly, coachTeamIds, memberTeamIds, memberTeamNames, memberSports, primarySport, canViewTeam, isVorstand, isGuest, isLoading, login, loginWithOAuth, logout }}>
+    <AuthContext.Provider value={{ user, clubId, isSuperAdmin, isAdmin, isGlobalAdmin, isVbAdmin, isBbAdmin, hasAdminAccessToSport, hasAdminAccessToTeam, isApproved, isProfileComplete, isCoach, isCoachOf, canParticipateIn, isStaffOnly, coachTeamIds, memberTeamIds, memberTeamNames, memberSports, primarySport, canViewTeam, isVorstand, getGuestLevel, isGuestIn, isLoading, login, loginWithOAuth, logout }}>
       {children}
     </AuthContext.Provider>
   )

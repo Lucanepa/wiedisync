@@ -43,6 +43,8 @@ Add:
 
 Implementation: the existing `member_teams` fetch (line ~146 in useAuth.tsx) already runs per-session. Store `guest_level` in a map `Record<string, number>` (teamId -> guest_level) alongside existing `memberTeamIds`.
 
+**Important**: `getGuestLevel` / `isGuestIn` should only be called after confirming the user can participate via `canParticipateIn(teamId)`. A non-member returns 0 (same as regular member), which is correct because non-members are gated by `canParticipateIn` before reaching guest logic.
+
 ### Participation Priority (Waitlist Bumping)
 
 **Current**: Guest confirms when full -> auto-waitlisted. Licensed player confirms when full -> bump last-confirmed guest.
@@ -55,7 +57,29 @@ Implementation: the existing `member_teams` fetch (line ~146 in useAuth.tsx) alr
 
 The PB hook looks up the participant's `member_teams` record for the activity's team to get `guest_level`. When choosing who to bump, it queries confirmed participants, joins their `member_teams` guest_level, and picks `ORDER BY guest_level DESC, created DESC LIMIT 1`.
 
-**`ParticipationButton.tsx`**: Replace `isGuest` (global) with `isGuestIn(teamId)` for the "can't confirm when full" disabled state.
+**`ParticipationButton.tsx`**: Add a `teamId` prop. Replace `isGuest` (global) with `isGuestIn(teamId)` for the "can't confirm when full" disabled state.
+
+Call sites must thread `teamId`:
+- **Trainings** (`TrainingCard`): use `training.team`
+- **Games** (`GameCard`): use `game.kscw_team`
+- **Events** (`EventCard`/`ProfilePage`): events can span multiple teams. Use the user's first matching team from `event.teams` via `memberTeamIds`, falling back to the first team. For events, guest bumping is less relevant (social/club events rarely have capacity limits), but this keeps the API consistent.
+
+### Scorer Module & Guest Exclusion
+
+The scorer module uses `is_guest` to exclude guests from duty assignments. With per-team guest levels, scorer duty eligibility is checked against the **duty team** context:
+
+- `AssignmentAlgorithm.ts`: When assigning scorer duties for a game, filter out members whose `guest_level > 0` on the duty team (the team assigned the scoring obligation).
+- `AssignmentEditor.tsx`: Member dropdown excludes members who are guests on the duty team.
+- `DelegationModal.tsx`: Delegation candidate filter excludes guests on the target team.
+- `ScorerPage.tsx`: Update fields list to no longer fetch `is_guest` from members; instead resolve guest status from `member_teams`.
+
+### Events & Guest Levels
+
+Events (`Event.teams: string[]`) can span multiple teams. For guest-level checks on events:
+- Resolve the user's team context: find which of `event.teams` the user belongs to via `memberTeamIds`
+- Use that team's `guest_level` for the participation check
+- If the user is on multiple event teams, use the **lowest** (best) guest level across them
+- If the user is not on any event team (shouldn't happen due to `canParticipateIn` gating), treat as non-guest
 
 ### RosterEditor
 
@@ -76,9 +100,10 @@ Remove the `is_guest` checkbox from `SignUpPage`. New members sign up with just 
 
 ### Migration
 
-1. Add `guest_level` field (number, default 0) to `member_teams` collection via PB API
+1. Add `guest_level` field (number, default 0, min 0, max 3) to `member_teams` collection via PB API
 2. Backfill: for every member where `members.is_guest = true`, set `guest_level = 1` on all their `member_teams` records
 3. Remove `is_guest` field from `members` collection (after code is updated)
+4. **Post-migration**: coaches should review their rosters and adjust per-team guest levels — the backfill sets level 1 on all teams, but some members may be regular on one team and guest on another
 
 ### Code Cleanup
 
@@ -88,6 +113,8 @@ Remove all references to `members.is_guest`:
 - `SignUpPage.tsx`: remove guest checkbox + `isGuest` state
 - `ParticipationButton.tsx`: use `isGuestIn(teamId)` instead of `isGuest`
 - `RosterEditor.tsx`: update guest toggle to cycle `member_teams.guest_level`
+- `MemberRow.tsx`: update guest badge to show per-team guest level
+- Scorer module: `AssignmentAlgorithm.ts`, `AssignmentEditor.tsx`, `DelegationModal.tsx`, `ScorerPage.tsx` — replace `is_guest` checks with per-team `guest_level` lookup
 - i18n files: update/add guest level labels
 
 ### Translations (new keys)
@@ -104,6 +131,11 @@ Remove all references to `members.is_guest`:
 - `src/modules/auth/SignUpPage.tsx` — remove guest checkbox
 - `src/components/ParticipationButton.tsx` — use `isGuestIn(teamId)`
 - `src/modules/teams/RosterEditor.tsx` — guest level cycle button on `member_teams`
+- `src/modules/teams/MemberRow.tsx` — guest badge shows per-team level
+- `src/modules/scorer/components/AssignmentAlgorithm.ts` — exclude guests by duty team
+- `src/modules/scorer/components/AssignmentEditor.tsx` — filter dropdown by duty team guest status
+- `src/modules/scorer/components/DelegationModal.tsx` — filter candidates by team guest status
+- `src/modules/scorer/ScorerPage.tsx` — remove `is_guest` from member fields fetch
 - `pb_hooks/participation_priority.pb.js` — bump by guest_level DESC
 - `pb_hooks/participation_priority_lib.js` — updated bumping logic
 - `src/i18n/locales/en/teams.ts` — guest level labels

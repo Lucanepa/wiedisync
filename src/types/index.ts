@@ -62,7 +62,6 @@ export interface Member extends RecordModel {
   approved: boolean
   requested_team: string
   language: 'english' | 'german' | ''
-  is_guest: boolean
   hide_phone: boolean
   birthdate_visibility: 'full' | 'year_only' | 'hidden'
   member_active: boolean
@@ -73,6 +72,7 @@ export interface MemberTeam extends RecordModel {
   member: string
   team: string
   season: string
+  guest_level: number  // 0=member, 1-3=guest levels
   club?: string
 }
 

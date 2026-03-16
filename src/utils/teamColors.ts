@@ -133,8 +133,9 @@ export function getTeamColor(teamName: string) {
  *  "Damen D-Classics 1LR" → "Damen D-Classics", "H-Classics 1LR" → "H-Classics".
  *  Short names like "DU12", "Lions D1" are returned unchanged. */
 export function trimBBTeamName(name: string): string {
+  // Remove "BB-" prefix (sport already indicated by basketball icon)
   // Remove trailing league codes like "H1", "H3", "H4", "1LR", "1LRA"
-  return name.replace(/\s+(?:H\d+|\dLR[A-Z]?)$/, '')
+  return name.replace(/^BB-/, '').replace(/\s+(?:H\d+|\dLR[A-Z]?)$/, '')
 }
 
 /**

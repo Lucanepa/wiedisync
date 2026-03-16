@@ -252,6 +252,7 @@ export default function ProfilePage() {
                 activityType="training"
                 activityId={tr.id}
                 activityDate={tr.date}
+                teamId={tr.team}
                 compact
               />
             </div>
@@ -271,6 +272,7 @@ export default function ProfilePage() {
                 activityType="game"
                 activityId={g.id}
                 activityDate={g.date}
+                teamId={g.kscw_team}
                 compact
               />
             </div>
@@ -289,6 +291,7 @@ export default function ProfilePage() {
                 activityType="event"
                 activityId={ev.id}
                 activityDate={ev.start_date}
+                teamId={ev.teams?.[0]}
                 compact
               />
             </div>

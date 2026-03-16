@@ -64,6 +64,7 @@ export default function EventCard({ event, onEdit, onDelete, onOpenRoster }: Eve
                 activityType="event"
                 activityId={event.id}
                 activityDate={event.start_date}
+                teamId={event.teams?.[0]}
                 compact
               />
             </div>

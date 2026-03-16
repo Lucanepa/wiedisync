@@ -287,7 +287,7 @@ export default function ClosureManager({ halls, closures, onClose, onChanged }: 
             />
           </div>
 
-          <Input
+          <FormInput
             type="text"
             label={t('common:reason')}
             value={form.reason}

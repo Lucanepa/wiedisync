@@ -244,14 +244,14 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
         </div>
 
         <div className="grid grid-cols-1 gap-4">
-          <Input
+          <FormInput
             label={`${t('firstName')}${onboarding ? ' *' : ''}`}
             type="text"
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
             required
           />
-          <Input
+          <FormInput
             label={`${t('lastName')}${onboarding ? ' *' : ''}`}
             type="text"
             value={lastName}
@@ -260,7 +260,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
           />
         </div>
 
-        <Input
+        <FormInput
           label={`${t('email')}${onboarding ? ' *' : ''}`}
           type="email"
           value={email}
@@ -268,7 +268,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
           required
         />
 
-        <Input
+        <FormInput
           label={t('phone')}
           type="tel"
           value={phone}
@@ -276,7 +276,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
         />
 
         <div className="grid grid-cols-1 gap-4">
-          <Input
+          <FormInput
             label={t('number')}
             type="number"
             min={0}

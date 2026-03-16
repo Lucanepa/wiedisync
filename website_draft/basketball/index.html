@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Basketball — KSC Wiedikon</title>
+  <meta name="description" content="Alle Basketball-Teams des KSC Wiedikon — Von der 1. Liga bis U8.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+
+  <!-- ═══ Header ═══════════════════════════════════════════════════ -->
+  <header class="site-header">
+    <div class="container">
+      <nav class="nav-inner">
+        <a href="/" class="nav-logo">
+          <img src="/images/kscw_logo.svg" alt="KSC Wiedikon Logo">
+          <span>KSC Wiedikon</span>
+        </a>
+
+        <!-- Desktop Navigation -->
+        <ul class="nav-menu">
+          <li class="nav-item">
+            <a href="/" class="nav-link">Home</a>
+          </li>
+          <li class="nav-item">
+            <a href="/volleyball/" class="nav-link">Volleyball
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </a>
+            <div class="nav-dropdown">
+              <span class="dropdown-label">Herren</span>
+              <a href="/volleyball/h1/" class="dropdown-link">Herren 1 — 2. Liga</a>
+              <a href="/volleyball/h2/" class="dropdown-link">Herren 2 — 3. Liga</a>
+              <a href="/volleyball/h3/" class="dropdown-link">Herren 3 — 3. Liga</a>
+              <a href="/volleyball/legends/" class="dropdown-link">Legends — 4. Liga</a>
+              <div class="dropdown-divider"></div>
+              <span class="dropdown-label">Damen</span>
+              <a href="/volleyball/d1/" class="dropdown-link">Damen 1 — 3. Liga</a>
+              <a href="/volleyball/d2/" class="dropdown-link">Damen 2 — 3. Liga</a>
+              <a href="/volleyball/d3/" class="dropdown-link">Damen 3 — 4. Liga</a>
+              <a href="/volleyball/d4/" class="dropdown-link">Damen 4 — 5. Liga</a>
+              <div class="dropdown-divider"></div>
+              <span class="dropdown-label">Nachwuchs</span>
+              <a href="/volleyball/du23/" class="dropdown-link">Damen U23</a>
+              <a href="/volleyball/hu23/" class="dropdown-link">Herren U23</a>
+              <a href="/volleyball/hu20/" class="dropdown-link">Herren U20</a>
+            </div>
+          </li>
+          <li class="nav-item">
+            <a href="#" class="nav-link active">Basketball
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </a>
+            <div class="nav-dropdown">
+              <span class="dropdown-label">Damen</span>
+              <a href="/basketball/lions/" class="dropdown-link">Lions — 1. Liga</a>
+              <a href="/basketball/rhinos/" class="dropdown-link">Rhinos — 2. Liga</a>
+              <div class="dropdown-divider"></div>
+              <span class="dropdown-label">Herren</span>
+              <a href="/basketball/h1/" class="dropdown-link">Herren 1 — 1. Liga</a>
+              <a href="/basketball/h3/" class="dropdown-link">Herren 3 — 3. Liga</a>
+              <a href="/basketball/h4/" class="dropdown-link">Herren 4 — 4. Liga</a>
+              <div class="dropdown-divider"></div>
+              <span class="dropdown-label">Nachwuchs</span>
+              <a href="/basketball/nachwuchs/" class="dropdown-link">Alle Jugendteams</a>
+            </div>
+          </li>
+          <li class="nav-item">
+            <a href="/club/" class="nav-link">Verein
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </a>
+            <div class="nav-dropdown">
+              <a href="/club/vorstand/" class="dropdown-link">Vorstand</a>
+              <a href="/club/geschichte/" class="dropdown-link">Geschichte</a>
+              <a href="/club/halle/" class="dropdown-link">Unsere Halle</a>
+              <a href="/club/dokumente/" class="dropdown-link">Dokumente</a>
+            </div>
+          </li>
+          <li class="nav-item">
+            <a href="/sponsoren/" class="nav-link">Sponsoren</a>
+          </li>
+          <li class="nav-item">
+            <a href="/weiteres/kontakt/" class="nav-link">Kontakt</a>
+          </li>
+          <li class="nav-item">
+            <a href="https://kscw.lucanepa.com/login" class="nav-link btn btn-gold btn-sm" target="_blank" rel="noopener"><i data-lucide="lock" style="width:14px;height:14px;"></i> Wiedisync</a>
+          </li>
+        </ul>
+
+        <!-- Mobile Hamburger -->
+        <button class="nav-hamburger" aria-label="Navigation umschalten">
+          <div class="hamburger-icon">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </button>
+      </nav>
+    </div>
+
+    <!-- Mobile Navigation -->
+    <nav class="mobile-nav" aria-label="Mobile Navigation">
+      <div class="mobile-nav-item">
+        <a href="/" class="mobile-nav-link">Home</a>
+      </div>
+      <div class="mobile-nav-item">
+        <button class="mobile-nav-link">
+          Volleyball
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mobile-chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="mobile-subnav">
+          <span class="mobile-sub-label">Herren</span>
+          <a href="/volleyball/h1/" class="mobile-sublink">Herren 1 — 2. Liga</a>
+          <a href="/volleyball/h2/" class="mobile-sublink">Herren 2 — 3. Liga</a>
+          <a href="/volleyball/h3/" class="mobile-sublink">Herren 3 — 3. Liga</a>
+          <a href="/volleyball/legends/" class="mobile-sublink">Legends — 4. Liga</a>
+          <span class="mobile-sub-label">Damen</span>
+          <a href="/volleyball/d1/" class="mobile-sublink">Damen 1 — 3. Liga</a>
+          <a href="/volleyball/d2/" class="mobile-sublink">Damen 2 — 3. Liga</a>
+          <a href="/volleyball/d3/" class="mobile-sublink">Damen 3 — 4. Liga</a>
+          <a href="/volleyball/d4/" class="mobile-sublink">Damen 4 — 5. Liga</a>
+          <span class="mobile-sub-label">Nachwuchs</span>
+          <a href="/volleyball/du23/" class="mobile-sublink">Damen U23</a>
+          <a href="/volleyball/hu23/" class="mobile-sublink">Herren U23</a>
+          <a href="/volleyball/hu20/" class="mobile-sublink">Herren U20</a>
+        </div>
+      </div>
+      <div class="mobile-nav-item">
+        <button class="mobile-nav-link">
+          Basketball
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mobile-chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="mobile-subnav">
+          <span class="mobile-sub-label">Damen</span>
+          <a href="/basketball/lions/" class="mobile-sublink">Lions — 1. Liga</a>
+          <a href="/basketball/rhinos/" class="mobile-sublink">Rhinos — 2. Liga</a>
+          <span class="mobile-sub-label">Herren</span>
+          <a href="/basketball/h1/" class="mobile-sublink">Herren 1 — 1. Liga</a>
+          <a href="/basketball/h3/" class="mobile-sublink">Herren 3 — 3. Liga</a>
+          <a href="/basketball/h4/" class="mobile-sublink">Herren 4 — 4. Liga</a>
+          <span class="mobile-sub-label">Nachwuchs</span>
+          <a href="/basketball/nachwuchs/" class="mobile-sublink">Alle Jugendteams</a>
+        </div>
+      </div>
+      <div class="mobile-nav-item">
+        <button class="mobile-nav-link">
+          Verein
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mobile-chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="mobile-subnav">
+          <a href="/club/vorstand/" class="mobile-sublink">Vorstand</a>
+          <a href="/club/geschichte/" class="mobile-sublink">Geschichte</a>
+          <a href="/club/halle/" class="mobile-sublink">Unsere Halle</a>
+          <a href="/club/dokumente/" class="mobile-sublink">Dokumente</a>
+        </div>
+      </div>
+      <div class="mobile-nav-item">
+        <a href="/sponsoren/" class="mobile-nav-link">Sponsoren</a>
+      </div>
+      <div class="mobile-nav-item">
+        <a href="/weiteres/kontakt/" class="mobile-nav-link">Kontakt</a>
+      </div>
+        <div class="mobile-nav-item" style="border-bottom: none; padding-top: 1rem;">
+          <a href="https://kscw.lucanepa.com/login" class="btn btn-gold w-full" target="_blank" rel="noopener" style="justify-content: center;">Wiedisync Login</a>
+        </div>
+    </nav>
+  </header>
+
+  <!-- ═══ Page Header ══════════════════════════════════════════════ -->
+  <section class="page-header">
+    <div class="container">
+      <h1>Basketball</h1>
+      <p>Über 20 Teams — Von der 1. Liga bis U8</p>
+      <a href="https://kscw.lucanepa.com/games" class="btn btn-outline-white btn-sm" style="margin-top: 1rem;" target="_blank" rel="noopener">Spiele & Resultate auf Wiedisync</a>
+    </div>
+  </section>
+
+  <!-- ═══ Damen ════════════════════════════════════════════════════ -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <div>
+          <h2>Damen</h2>
+          <div class="gold-bar"></div>
+        </div>
+      </div>
+      <div class="grid grid-4">
+
+        <!-- Lions -->
+        <a href="/basketball/lions/" class="card team-card card-accent" style="--card-accent: #6d28d9;">
+          <div class="card-body">
+            <div class="team-card-header">
+              <span class="chip" style="background: #6d28d9; color: #ffffff;">Lions</span>
+              <h3>Lions</h3>
+            </div>
+            <span class="badge badge-blue">1. Liga</span>
+            <p class="team-card-meta mt-sm">Mo 20:00–21:30, Do 19:30–21:30</p>
+            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;">Mehr erfahren &rarr;</p>
+          </div>
+        </a>
+
+        <!-- Rhinos -->
+        <a href="/basketball/rhinos/" class="card team-card card-accent" style="--card-accent: #059669;">
+          <div class="card-body">
+            <div class="team-card-header">
+              <span class="chip" style="background: #059669; color: #ffffff;">Rhinos</span>
+              <h3>Rhinos</h3>
+            </div>
+            <span class="badge badge-blue">2. Liga</span>
+            <p class="team-card-meta mt-sm">Di 20:00–21:30, Do 20:00–21:30</p>
+            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;">Mehr erfahren &rarr;</p>
+          </div>
+        </a>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Herren ═══════════════════════════════════════════════════ -->
+  <section class="section-alt">
+    <div class="container">
+      <div class="section-header">
+        <div>
+          <h2>Herren</h2>
+          <div class="gold-bar"></div>
+        </div>
+      </div>
+      <div class="grid grid-4">
+
+        <!-- BB-H1 -->
+        <a href="/basketball/h1/" class="card team-card card-accent" style="--card-accent: #9a3412;">
+          <div class="card-body">
+            <div class="team-card-header">
+              <span class="chip" style="background: #9a3412; color: #ffffff;">BB-H1</span>
+              <h3>Herren 1</h3>
+            </div>
+            <span class="badge badge-blue">1. Liga</span>
+            <p class="team-card-meta mt-sm">Mo 20:00–21:30, Mi 20:00–21:30</p>
+            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;">Mehr erfahren &rarr;</p>
+          </div>
+        </a>
+
+        <!-- BB-H3 -->
+        <a href="/basketball/h3/" class="card team-card card-accent" style="--card-accent: #c2410c;">
+          <div class="card-body">
+            <div class="team-card-header">
+              <span class="chip" style="background: #c2410c; color: #ffffff;">BB-H3</span>
+              <h3>Herren 3</h3>
+            </div>
+            <span class="badge badge-blue">3. Liga</span>
+            <p class="team-card-meta mt-sm">Di 20:00–21:30, Do 20:00–21:30</p>
+            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;">Mehr erfahren &rarr;</p>
+          </div>
+        </a>
+
+        <!-- BB-H4 -->
+        <a href="/basketball/h4/" class="card team-card card-accent" style="--card-accent: #ea580c;">
+          <div class="card-body">
+            <div class="team-card-header">
+              <span class="chip" style="background: #ea580c; color: #ffffff;">BB-H4</span>
+              <h3>Herren 4</h3>
+            </div>
+            <span class="badge badge-blue">4. Liga</span>
+            <p class="team-card-meta mt-sm">Mi 20:00–21:30</p>
+            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;">Mehr erfahren &rarr;</p>
+          </div>
+        </a>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Nachwuchs ════════════════════════════════════════════════ -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <div>
+          <h2>Nachwuchs</h2>
+          <div class="gold-bar"></div>
+        </div>
+      </div>
+      <div class="grid grid-4">
+
+        <!-- BB-HU18 -->
+        <a href="/basketball/nachwuchs/#hu18" class="card team-card card-accent" style="--card-accent: #f97316;">
+          <div class="card-body">
+            <div class="team-card-header">
+              <span class="chip" style="background: #f97316; color: #ffffff;">BB-HU18</span>
+              <h3>Herren U18</h3>
+            </div>
+            <span class="badge badge-blue">U18</span>
+            <p class="team-card-meta mt-sm">Mo 18:00–19:30, Mi 18:00–19:30</p>
+            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;">Mehr erfahren &rarr;</p>
+          </div>
+        </a>
+
+        <!-- BB-HU16 -->
+        <a href="/basketball/nachwuchs/#hu16" class="card team-card card-accent" style="--card-accent: #fb923c;">
+          <div class="card-body">
+            <div class="team-card-header">
+              <span class="chip" style="background: #fb923c; color: #7c2d12;">BB-HU16</span>
+              <h3>Herren U16</h3>
+            </div>
+            <span class="badge badge-blue">U16</span>
+            <p class="team-card-meta mt-sm">Di 17:30–19:00, Do 17:30–19:00</p>
+            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;">Mehr erfahren &rarr;</p>
+          </div>
+        </a>
+
+        <!-- BB-HU14 -->
+        <a href="/basketball/nachwuchs/#hu14" class="card team-card card-accent" style="--card-accent: #fdba74;">
+          <div class="card-body">
+            <div class="team-card-header">
+              <span class="chip" style="background: #fdba74; color: #7c2d12;">BB-HU14</span>
+              <h3>Herren U14</h3>
+            </div>
+            <span class="badge badge-blue">U14</span>
+            <p class="team-card-meta mt-sm">Mo 17:00–18:30, Mi 17:00–18:30</p>
+            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;">Mehr erfahren &rarr;</p>
+          </div>
+        </a>
+
+        <!-- BB-HU12 -->
+        <a href="/basketball/nachwuchs/#hu12" class="card team-card card-accent" style="--card-accent: #fed7aa;">
+          <div class="card-body">
+            <div class="team-card-header">
+              <span class="chip" style="background: #fed7aa; color: #7c2d12;">BB-HU12</span>
+              <h3>Herren U12</h3>
+            </div>
+            <span class="badge badge-blue">U12</span>
+            <p class="team-card-meta mt-sm">Di 16:00–17:30</p>
+            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;">Mehr erfahren &rarr;</p>
+          </div>
+        </a>
+
+        <!-- BB-DU18 -->
+        <a href="/basketball/nachwuchs/#du18" class="card team-card card-accent" style="--card-accent: #c084fc;">
+          <div class="card-body">
+            <div class="team-card-header">
+              <span class="chip" style="background: #c084fc; color: #581c87;">BB-DU18</span>
+              <h3>Damen U18</h3>
+            </div>
+            <span class="badge badge-blue">U18</span>
+            <p class="team-card-meta mt-sm">Mo 17:30–19:00, Mi 17:30–19:00</p>
+            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;">Mehr erfahren &rarr;</p>
+          </div>
+        </a>
+
+        <!-- BB-DU16 -->
+        <a href="/basketball/nachwuchs/#du16" class="card team-card card-accent" style="--card-accent: #d8b4fe;">
+          <div class="card-body">
+            <div class="team-card-header">
+              <span class="chip" style="background: #d8b4fe; color: #581c87;">BB-DU16</span>
+              <h3>Damen U16</h3>
+            </div>
+            <span class="badge badge-blue">U16</span>
+            <p class="team-card-meta mt-sm">Di 17:00–18:30, Do 17:00–18:30</p>
+            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;">Mehr erfahren &rarr;</p>
+          </div>
+        </a>
+
+        <!-- BB-DU14 -->
+        <a href="/basketball/nachwuchs/#du14" class="card team-card card-accent" style="--card-accent: #e9d5ff;">
+          <div class="card-body">
+            <div class="team-card-header">
+              <span class="chip" style="background: #e9d5ff; color: #581c87;">BB-DU14</span>
+              <h3>Damen U14</h3>
+            </div>
+            <span class="badge badge-blue">U14</span>
+            <p class="team-card-meta mt-sm">Mo 16:00–17:30, Mi 16:00–17:30</p>
+            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;">Mehr erfahren &rarr;</p>
+          </div>
+        </a>
+
+        <!-- BB-DU12 -->
+        <a href="/basketball/nachwuchs/#du12" class="card team-card card-accent" style="--card-accent: #f3e8ff;">
+          <div class="card-body">
+            <div class="team-card-header">
+              <span class="chip" style="background: #f3e8ff; color: #581c87;">BB-DU12</span>
+              <h3>Damen U12</h3>
+            </div>
+            <span class="badge badge-blue">U12</span>
+            <p class="team-card-meta mt-sm">Di 16:00–17:30</p>
+            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;">Mehr erfahren &rarr;</p>
+          </div>
+        </a>
+
+        <!-- BB-DU10 -->
+        <a href="/basketball/nachwuchs/#du10" class="card team-card card-accent" style="--card-accent: #faf5ff;">
+          <div class="card-body">
+            <div class="team-card-header">
+              <span class="chip" style="background: #faf5ff; color: #581c87;">BB-DU10</span>
+              <h3>Damen U10</h3>
+            </div>
+            <span class="badge badge-blue">U10</span>
+            <p class="team-card-meta mt-sm">Sa 10:00–11:30</p>
+            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;">Mehr erfahren &rarr;</p>
+          </div>
+        </a>
+
+        <!-- BB-MU10 -->
+        <a href="/basketball/nachwuchs/#mu10" class="card team-card card-accent" style="--card-accent: #14b8a6;">
+          <div class="card-body">
+            <div class="team-card-header">
+              <span class="chip" style="background: #14b8a6; color: #042f2e;">BB-MU10</span>
+              <h3>Mixed U10</h3>
+            </div>
+            <span class="badge badge-blue">U10</span>
+            <p class="team-card-meta mt-sm">Sa 09:00–10:30</p>
+            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;">Mehr erfahren &rarr;</p>
+          </div>
+        </a>
+
+        <!-- BB-MU8 -->
+        <a href="/basketball/nachwuchs/#mu8" class="card team-card card-accent" style="--card-accent: #0d9488;">
+          <div class="card-body">
+            <div class="team-card-header">
+              <span class="chip" style="background: #0d9488; color: #ffffff;">BB-MU8</span>
+              <h3>Mixed U8</h3>
+            </div>
+            <span class="badge badge-blue">U8</span>
+            <p class="team-card-meta mt-sm">Sa 10:30–12:00</p>
+            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;">Mehr erfahren &rarr;</p>
+          </div>
+        </a>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ CTA Section ══════════════════════════════════════════════ -->
+  <section class="cta-section">
+    <div class="container">
+      <h2>Interesse?</h2>
+      <p>Kontaktiere uns für ein Probetraining — wir freuen uns auf dich!</p>
+      <a href="/weiteres/kontakt/" class="btn btn-gold">Kontakt aufnehmen</a>
+    </div>
+  </section>
+
+  <!-- ═══ Footer ═══════════════════════════════════════════════════ -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-grid">
+          <div class="footer-brand">
+            <a href="/" class="nav-logo">
+              <img src="/images/kscw_logo.svg" alt="KSC Wiedikon" style="height: 48px; filter: brightness(0) invert(1);">
+            </a>
+            <p>KSC Wiedikon — Volleyball und Basketball seit 1978 in Zürich-Wiedikon.</p>
+            <div class="footer-social">
+              <a href="https://instagram.com/kscwiedikon" aria-label="Instagram">
+                <i data-lucide="instagram"></i>
+              </a>
+              <a href="https://facebook.com/kscwiedikon" aria-label="Facebook">
+                <i data-lucide="facebook"></i>
+              </a>
+              <a href="mailto:info@kscw.ch" aria-label="E-Mail">
+                <i data-lucide="mail"></i>
+              </a>
+            </div>
+          </div>
+          <div>
+            <h3 class="footer-heading">Volleyball</h3>
+            <div class="footer-links">
+              <a href="/volleyball/">Alle Teams</a>
+              <a href="/volleyball/h1/">Herren 1</a>
+              <a href="/volleyball/d1/">Damen 1</a>
+              <a href="/volleyball/du23/">Damen U23</a>
+              <a href="/volleyball/hu23/">Herren U23</a>
+            </div>
+          </div>
+          <div>
+            <h3 class="footer-heading">Basketball</h3>
+            <div class="footer-links">
+              <a href="/basketball/">Alle Teams</a>
+              <a href="/basketball/lions/">Lions</a>
+              <a href="/basketball/rhinos/">Rhinos</a>
+              <a href="/basketball/h1/">Herren 1</a>
+              <a href="/basketball/nachwuchs/">Nachwuchs</a>
+            </div>
+          </div>
+          <div>
+            <h3 class="footer-heading">Verein</h3>
+            <div class="footer-links">
+              <a href="/club/vorstand/">Vorstand</a>
+              <a href="/club/geschichte/">Geschichte</a>
+              <a href="/club/halle/">Unsere Halle</a>
+              <a href="/sponsoren/">Sponsoren</a>
+              <a href="/weiteres/kontakt/">Kontakt</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom" style="display:flex;align-items:center;justify-content:center;gap:1.5rem;flex-wrap:wrap;">
+        <button class="theme-toggle" aria-label="Farbmodus wechseln"><i data-lucide="sun" style="width:16px;height:16px;"></i> <span class="theme-label">Light Mode</span></button>
+        <p>&copy; 2026 KSC Wiedikon. Alle Rechte vorbehalten. | <a href="/weiteres/impressum/">Impressum</a> | <a href="/weiteres/datenschutz/">Datenschutz</a></p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/js/data.js"></script>
+  <script src="/js/main.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script>lucide.createIcons();</script>
+</body>
+</html>

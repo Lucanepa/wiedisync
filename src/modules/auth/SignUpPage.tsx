@@ -39,7 +39,6 @@ export default function SignUpPage() {
   const [passwordConfirm, setPasswordConfirm] = useState('')
   const [selectedTeam, setSelectedTeam] = useState('')
   const [selectedSport, setSelectedSport] = useState<'volleyball' | 'basketball'>('volleyball')
-  const [isGuest, setIsGuest] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [resetSent, setResetSent] = useState(false)
@@ -122,7 +121,6 @@ export default function SignUpPage() {
         active: true,
         approved: false,
         requested_team: selectedTeam,
-        is_guest: isGuest,
         member_active: true,
         language: selectedLanguage,
         club: selectedTeamObj?.club || '',
@@ -339,24 +337,6 @@ export default function SignUpPage() {
                   </SelectContent>
                 </Select>
               </FormField>
-
-              {/* Guest checkbox */}
-              <label className="flex items-start gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 dark:border-gray-600 dark:bg-gray-700">
-                <input
-                  type="checkbox"
-                  checked={isGuest}
-                  onChange={(e) => setIsGuest(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500 dark:border-gray-500"
-                />
-                <div>
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {t('isGuest')}
-                  </span>
-                  <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                    {t('guestExplanation')}
-                  </p>
-                </div>
-              </label>
 
               <FormInput
                 type="password"

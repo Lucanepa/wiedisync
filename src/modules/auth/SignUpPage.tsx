@@ -72,10 +72,9 @@ export default function SignUpPage() {
       })
 
       if (res.exists) {
-        // Email found — send password reset
-        await pb.collection('members').requestPasswordReset(email.trim().toLowerCase())
-        setStep('claim')
-        setResetSent(true)
+        // Account already exists — redirect to login
+        navigate('/login', { state: { email: email.trim().toLowerCase() } })
+        return
       } else {
         // New member — show full registration form
         setStep('register')

@@ -65,13 +65,13 @@ function shouldUseCombined(game: Game, hallName: string): boolean {
 function buildScorerTeams(members: Member[], memberTeams: MemberTeam[]): Set<string> {
   const scorerMemberIds = new Set<string>()
   for (const m of members) {
-    if (m.licences?.includes('scorer_vb') && !m.is_guest) {
+    if (m.licences?.includes('scorer_vb')) {
       scorerMemberIds.add(m.id)
     }
   }
   const teams = new Set<string>()
   for (const mt of memberTeams) {
-    if (scorerMemberIds.has(mt.member)) {
+    if (scorerMemberIds.has(mt.member) && (mt.guest_level ?? 0) === 0) {
       teams.add(mt.team)
     }
   }

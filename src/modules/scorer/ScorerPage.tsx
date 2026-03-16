@@ -106,7 +106,7 @@ export default function ScorerPage() {
     filter: 'active = true',
     sort: '+last_name,+first_name',
     all: true,
-    fields: 'id,name,first_name,last_name,licences,active,phone,email,is_guest',
+    fields: 'id,name,first_name,last_name,licences,active,phone,email',
   })
 
   const { data: teams } = usePB<Team>('teams', {
@@ -125,6 +125,14 @@ export default function ScorerPage() {
       map.get(mt.team)!.add(mt.member)
     }
     return map
+  }, [allMemberTeams])
+
+  const guestMemberIds = useMemo(() => {
+    const guests = new Set<string>()
+    for (const mt of allMemberTeams) {
+      if ((mt.guest_level ?? 0) > 0) guests.add(mt.member)
+    }
+    return guests
   }, [allMemberTeams])
 
   const userTeamIds = useMemo(() => {
@@ -370,6 +378,7 @@ export default function ScorerPage() {
       teams={teams}
       teamMemberIds={teamMemberIds}
       memberTeams={allMemberTeams}
+      guestMemberIds={guestMemberIds}
       onUpdate={handleUpdate}
       canEdit={isPast ? false : canEdit}
       showContact={showContact}

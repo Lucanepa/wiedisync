@@ -19,6 +19,8 @@ interface AssignmentEditorProps {
   showContact?: boolean
   selfAssignButton?: boolean
   onSelfAssign?: () => void
+  /** Set of member IDs who are guests on any team */
+  guestMemberIds?: Set<string>
   /** Whether the editor should show admin controls (dropdowns) */
   canEdit: boolean
   /** Whether the current user is the assigned member for this role */
@@ -47,6 +49,7 @@ export default function AssignmentEditor({
   showContact,
   selfAssignButton,
   onSelfAssign,
+  guestMemberIds,
   canEdit,
   isCurrentUserAssigned,
   onDelegate,
@@ -57,7 +60,7 @@ export default function AssignmentEditor({
   const { t } = useTranslation('scorer')
 
   const filteredMembers = useMemo(() => {
-    let list = members.filter((m) => m.active && !m.is_guest)
+    let list = members.filter((m) => m.active && !guestMemberIds?.has(m.id))
     if (requiredLicence) {
       const licences = Array.isArray(requiredLicence) ? requiredLicence : [requiredLicence]
       list = list.filter((m) => licences.some((l) => m.licences?.includes(l)))
@@ -76,7 +79,7 @@ export default function AssignmentEditor({
     return list.sort((a, b) =>
       `${a.last_name} ${a.first_name}`.localeCompare(`${b.last_name} ${b.first_name}`, 'de'),
     )
-  }, [members, requiredLicence, teamValue, teamMemberIds, personValue])
+  }, [members, requiredLicence, teamValue, teamMemberIds, personValue, guestMemberIds])
 
   const assignedPerson = useMemo(() => {
     if (!personValue) return null

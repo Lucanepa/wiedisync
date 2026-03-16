@@ -142,6 +142,7 @@ export default function DatePicker({
           <Popover.Content
             align="start"
             sideOffset={4}
+            collisionPadding={8}
             className="z-[100] w-[280px] rounded-xl border border-gray-200 bg-white p-3 shadow-lg dark:border-gray-600 dark:bg-gray-800"
           >
             {/* Month navigation header */}

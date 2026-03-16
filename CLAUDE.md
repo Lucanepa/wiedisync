@@ -61,6 +61,16 @@ positions[3]{ticker,shares,costBasis}:
 - Deploy hooks via `scp` + `sudo cp` to `/opt/pocketbase-kscw/pb_hooks/`
 - See `INFRA.md → SSH to VPS` for common patterns (deploy hooks, read logs, restart PB).
 
+### SQLite Safety Rules (CRITICAL)
+
+PocketBase uses SQLite. Violating these rules **will corrupt the database** (happened 2026-03-16, required restore from backup):
+
+1. **NEVER run `sqlite3` directly against the live DB** while PocketBase is running. Use PB's API/MCP tools or the in-app SQL Editor instead.
+2. **NEVER start a second PocketBase instance** pointing at the same `pb_data` directory. Two writers = guaranteed corruption.
+3. **NEVER bulk-move/delete all hooks** from `pb_hooks/` as a debugging strategy. Instead, rename the suspect file to `.disabled` and restart.
+4. **If you need raw SQL access**, stop PocketBase first (`sudo systemctl stop pocketbase-kscw`), run your queries, then restart. Never have two processes writing to the same SQLite file.
+5. **To debug a crashing hook**, use binary search: rename half the hooks to `.disabled`, restart, check logs. Narrow down the broken file without removing everything.
+
 ## Branches
 - `main` → production (`kscw.lucanepa.com`)
 - `dev` → preview (`dev-kscw.lucanepa.com`)

@@ -11,6 +11,7 @@ interface Props {
   teams: Team[]
   isAdmin?: boolean
   onClose: () => void
+  onEditSlot?: (training: Training) => void
 }
 
 function DetailRow({ label, value }: { label: string; value: string }) {
@@ -23,7 +24,7 @@ function DetailRow({ label, value }: { label: string; value: string }) {
   )
 }
 
-export default function VirtualSlotDetailModal({ slot, halls, teams, isAdmin, onClose }: Props) {
+export default function VirtualSlotDetailModal({ slot, halls, teams, isAdmin, onClose, onEditSlot }: Props) {
   const { t } = useTranslation('hallenplan')
   const navigate = useNavigate()
   const meta = slot._virtual!
@@ -142,9 +143,17 @@ export default function VirtualSlotDetailModal({ slot, halls, teams, isAdmin, on
 
       <div className="mt-4 border-t border-gray-200 pt-3 dark:border-gray-700">
         {isAdmin && (meta.source === 'training' || meta.source === 'game') && (
-          <div className="mb-3 flex justify-end">
+          <div className="mb-3 flex justify-end gap-2">
+            {meta.source === 'training' && onEditSlot && (meta.sourceRecord as Training).hall_slot && (
+              <button
+                className="rounded-lg border border-brand-300 px-4 py-2 text-sm font-medium text-brand-700 hover:bg-brand-50 dark:border-brand-600 dark:text-brand-300 dark:hover:bg-brand-900/30"
+                onClick={() => onEditSlot(meta.sourceRecord as Training)}
+              >
+                {t('editSlot')}
+              </button>
+            )}
             <button
-              className="rounded-lg border border-brand-300 px-4 py-2 text-sm font-medium text-brand-700 hover:bg-brand-50 dark:border-brand-600 dark:text-brand-300 dark:hover:bg-brand-900/30"
+              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
               onClick={() => {
                 onClose()
                 navigate(meta.source === 'training' ? '/trainings' : '/games')

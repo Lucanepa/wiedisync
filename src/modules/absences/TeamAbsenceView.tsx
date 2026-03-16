@@ -1,39 +1,69 @@
 import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CheckCircle } from 'lucide-react'
+import { CalendarDays, List, CheckCircle } from 'lucide-react'
 import { useTeamAbsences } from '../../hooks/useTeamAbsences'
 import StatusBadge from '../../components/StatusBadge'
 import EmptyState from '../../components/EmptyState'
+import MonthGrid from '../calendar/components/MonthGrid'
+import CalendarEntryModal from '../calendar/CalendarEntryModal'
 import { formatDate, toISODate } from '../../utils/dateHelpers'
+import { parseDate, isSameDay, startOfMonth } from '../../utils/dateUtils'
 import DatePicker from '@/components/ui/DatePicker'
+import type { CalendarEntry } from '../../types/calendar'
+import type { Absence, Member } from '../../types'
 
 interface TeamAbsenceViewProps {
-  teamId: string
+  teamIds: string[]
 }
 
-export default function TeamAbsenceView({ teamId }: TeamAbsenceViewProps) {
+/** Convert team absences into CalendarEntry[] for MonthGrid */
+function absencesToEntries(absences: Absence[], memberMap: Record<string, Member>): CalendarEntry[] {
+  return absences.map((a) => {
+    const start = parseDate(a.start_date)
+    const end = parseDate(a.end_date)
+    const isMultiDay = !isSameDay(start, end)
+    const memberName = memberMap[a.member]?.name ?? ''
+
+    return {
+      id: a.id,
+      type: 'absence' as const,
+      title: memberName,
+      date: start,
+      endDate: isMultiDay ? end : undefined,
+      startTime: null,
+      endTime: null,
+      allDay: true,
+      location: '',
+      teamNames: [],
+      description: a.reason_detail ?? '',
+      source: a,
+    }
+  })
+}
+
+export default function TeamAbsenceView({ teamIds }: TeamAbsenceViewProps) {
   const { t } = useTranslation('absences')
   const today = toISODate(new Date())
   const fourWeeksLater = toISODate(new Date(Date.now() + 28 * 24 * 60 * 60 * 1000))
 
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list')
   const [startDate, setStartDate] = useState(today)
   const [endDate, setEndDate] = useState(fourWeeksLater)
+  const [month, setMonth] = useState<Date>(() => startOfMonth(new Date()))
+  const [selectedEntry, setSelectedEntry] = useState<CalendarEntry | null>(null)
 
-  const { absences, memberMap, isLoading } = useTeamAbsences(teamId, startDate, endDate)
+  const { absences, memberMap, isLoading } = useTeamAbsences(teamIds, startDate, endDate)
 
-  const groupedByMember = useMemo(() => {
-    const groups: Record<string, typeof absences> = {}
-    for (const a of absences) {
-      if (!groups[a.member]) groups[a.member] = []
-      groups[a.member].push(a)
-    }
-    return groups
-  }, [absences])
+  // Flat list sorted by most recent first
+  const sortedAbsences = useMemo(() =>
+    [...absences].sort((a, b) => b.start_date.localeCompare(a.start_date)),
+  [absences])
 
-  // All team members from the memberMap, including those without absences
-  const memberIds = Object.keys(memberMap)
-  const membersWithAbsences = new Set(Object.keys(groupedByMember))
-  const availableMembers = memberIds.filter((id) => !membersWithAbsences.has(id))
+  // Calendar entries
+  const calendarEntries = useMemo(
+    () => absencesToEntries(absences, memberMap),
+    [absences, memberMap],
+  )
 
   if (isLoading) {
     return <div className="py-8 text-center text-gray-500 dark:text-gray-400">{t('common:loading')}</div>
@@ -41,61 +71,87 @@ export default function TeamAbsenceView({ teamId }: TeamAbsenceViewProps) {
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-end gap-4">
-        <DatePicker
-          label={t('fromTo')}
-          value={startDate}
-          onChange={setStartDate}
-        />
-        <DatePicker
-          label={t('until')}
-          value={endDate}
-          onChange={setEndDate}
-        />
+      {/* Controls row */}
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-wrap items-end gap-4">
+          <DatePicker label={t('fromTo')} value={startDate} onChange={setStartDate} />
+          <DatePicker label={t('until')} value={endDate} onChange={setEndDate} />
+        </div>
+        {/* View toggle */}
+        <div className="flex gap-1 rounded-lg bg-gray-100 p-1 dark:bg-gray-700">
+          <button
+            onClick={() => setViewMode('list')}
+            className={`rounded-md p-2 transition-colors ${
+              viewMode === 'list'
+                ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-800 dark:text-gray-100'
+                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+            }`}
+            title={t('common:list')}
+          >
+            <List className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => setViewMode('calendar')}
+            className={`rounded-md p-2 transition-colors ${
+              viewMode === 'calendar'
+                ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-800 dark:text-gray-100'
+                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+            }`}
+            title={t('common:calendar')}
+          >
+            <CalendarDays className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
-      {absences.length === 0 && availableMembers.length === 0 ? (
-        <EmptyState
-          icon={<CheckCircle className="h-10 w-10" />}
-          title={t('noTeamAbsences')}
-          description={t('noTeamAbsencesDescription')}
-        />
-      ) : (
-        <div className="space-y-4">
-          {/* Members with absences */}
-          {Object.entries(groupedByMember).map(([memberId, memberAbsences]) => {
-            const member = memberMap[memberId]
-            return (
-              <div key={memberId} className="rounded-lg border dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-                <h2 className="font-medium text-gray-900 dark:text-gray-100">{member?.name ?? t('common:unknown')}</h2>
-                <div className="mt-2 space-y-2">
-                  {memberAbsences.map((a) => (
-                    <div key={a.id} className="flex flex-wrap items-center gap-2 text-sm">
-                      <StatusBadge status={a.reason} />
-                      <span className="text-gray-600 dark:text-gray-400">
-                        {formatDate(a.start_date)}
-                        {a.start_date !== a.end_date && ` — ${formatDate(a.end_date)}`}
-                      </span>
-                      {a.reason_detail && (
-                        <span className="text-gray-400">({a.reason_detail})</span>
-                      )}
-                    </div>
-                  ))}
+      {viewMode === 'list' ? (
+        /* ── List view ── */
+        sortedAbsences.length === 0 ? (
+          <EmptyState
+            icon={<CheckCircle className="h-10 w-10" />}
+            title={t('noTeamAbsences')}
+            description={t('noTeamAbsencesDescription')}
+          />
+        ) : (
+          <div className="space-y-2">
+            {sortedAbsences.map((a) => {
+              const member = memberMap[a.member]
+              return (
+                <div
+                  key={a.id}
+                  className="flex flex-wrap items-center gap-3 rounded-lg border bg-white px-4 py-2.5 dark:border-gray-700 dark:bg-gray-800"
+                >
+                  <span className="font-medium text-gray-900 dark:text-gray-100">
+                    {member?.name ?? t('common:unknown')}
+                  </span>
+                  <StatusBadge status={a.reason} />
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    {formatDate(a.start_date)}
+                    {a.start_date !== a.end_date && ` — ${formatDate(a.end_date)}`}
+                  </span>
+                  {a.reason_detail && (
+                    <span className="text-sm text-gray-400">({a.reason_detail})</span>
+                  )}
                 </div>
-              </div>
-            )
-          })}
-
-          {/* Members without absences */}
-          {availableMembers.length > 0 && (
-            <div className="rounded-lg border dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-              <h2 className="text-sm font-medium text-green-700">{t('common:available')}</h2>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                {availableMembers.map((id) => memberMap[id]?.name).filter(Boolean).join(', ')}
-              </p>
-            </div>
-          )}
-        </div>
+              )
+            })}
+          </div>
+        )
+      ) : (
+        /* ── Calendar view ── */
+        <>
+          <MonthGrid
+            entries={calendarEntries}
+            closedDates={new Set()}
+            month={month}
+            onMonthChange={setMonth}
+            onEntryClick={setSelectedEntry}
+          />
+          <CalendarEntryModal
+            entry={selectedEntry}
+            onClose={() => setSelectedEntry(null)}
+          />
+        </>
       )}
     </div>
   )

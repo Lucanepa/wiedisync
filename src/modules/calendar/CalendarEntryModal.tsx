@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import TeamChip from '../../components/TeamChip'
 import type { CalendarEntry } from '../../types/calendar'
-import type { Training, Event as KscwEvent } from '../../types'
+import type { Training, Event as KscwEvent, Absence } from '../../types'
 import { formatDate } from '../../utils/dateUtils'
 
 interface CalendarEntryModalProps {
@@ -30,6 +30,7 @@ export default function CalendarEntryModal({ entry, onClose }: CalendarEntryModa
     closure: t('typeClosure'),
     event: t('typeEvent'),
     hall: t('typeHall'),
+    absence: t('typeAbsence'),
   }
 
   const typeBadgeStyles: Record<CalendarEntry['type'], string> = {
@@ -38,6 +39,7 @@ export default function CalendarEntryModal({ entry, onClose }: CalendarEntryModa
     closure: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
     event: 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300',
     hall: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-300',
+    absence: 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900',
   }
 
   const dateStr = formatDate(entry.date, 'EEEE, MMMM d, yyyy')
@@ -110,6 +112,9 @@ export default function CalendarEntryModal({ entry, onClose }: CalendarEntryModa
 
           {/* Event-specific fields */}
           {entry.type === 'event' && renderEventDetails(entry.source as KscwEvent, t)}
+
+          {/* Absence-specific fields */}
+          {entry.type === 'absence' && renderAbsenceDetails(entry.source as Absence, t)}
         </div>
       </div>
     </div>
@@ -128,6 +133,30 @@ function renderTrainingDetails(training: Training, t: (key: string) => string) {
       )}
       {training.notes && !training.cancelled && (
         <DetailRow label={t('common:notes')} value={training.notes} />
+      )}
+    </>
+  )
+}
+
+function renderAbsenceDetails(absence: Absence, t: (key: string) => string) {
+  if (!absence) return null
+
+  const reasonLabels: Record<string, string> = {
+    injury: t('common:injury'),
+    vacation: t('common:vacation'),
+    work: t('common:work'),
+    personal: t('common:personal'),
+    other: t('common:other'),
+  }
+
+  return (
+    <>
+      <DetailRow label={t('common:reason')} value={reasonLabels[absence.reason] ?? absence.reason} />
+      {absence.reason_detail && (
+        <DetailRow label={t('common:details')} value={absence.reason_detail} />
+      )}
+      {absence.end_date && absence.end_date !== absence.start_date && (
+        <DetailRow label={t('common:to')} value={formatDate(new Date(absence.end_date), 'EEEE, MMMM d, yyyy')} />
       )}
     </>
   )

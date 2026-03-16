@@ -28,7 +28,7 @@ export default function TrainingCard({ training, onOpenRoster, onEdit, onDelete 
 
   return (
     <div className={`overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 shadow-card ${training.cancelled ? 'opacity-60' : ''}`}>
-      {/* Top row: team chip + date */}
+      {/* Top row: team chip + date + counters */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           {team && <TeamChip team={team.name} size="sm" />}
@@ -36,11 +36,16 @@ export default function TrainingCard({ training, onOpenRoster, onEdit, onDelete 
             {formatWeekday(training.date)}, {formatDate(training.date)}
           </span>
         </div>
-        {training.cancelled && (
-          <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
-            {t('cancelled')}
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {!training.cancelled && (
+            <ParticipationSummary activityType="training" activityId={training.id} compact />
+          )}
+          {training.cancelled && (
+            <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
+              {t('cancelled')}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Details */}
@@ -64,7 +69,6 @@ export default function TrainingCard({ training, onOpenRoster, onEdit, onDelete 
             {user && canParticipateIn(training.team) && (
               <TrainingParticipation training={training} />
             )}
-            <ParticipationSummary activityType="training" activityId={training.id} compact />
           </div>
           <div className="flex items-center gap-1">
             {onOpenRoster && (
@@ -111,7 +115,7 @@ function TrainingParticipation({ training }: { training: TrainingExpanded }) {
   const { t } = useTranslation('participation')
   const { isStaffOnly } = useAuth()
   const staffOnly = isStaffOnly(training.team)
-  const { effectiveStatus, hasAbsence, setStatus, saveConfirmed, dismissConfirmed } = useParticipation('training', training.id, training.date, undefined, staffOnly)
+  const { effectiveStatus, setStatus, saveConfirmed, dismissConfirmed } = useParticipation('training', training.id, training.date, undefined, staffOnly)
 
   // Auto-dismiss confirmation after 2s
   useEffect(() => {
@@ -119,10 +123,6 @@ function TrainingParticipation({ training }: { training: TrainingExpanded }) {
     const timer = setTimeout(dismissConfirmed, 2000)
     return () => clearTimeout(timer)
   }, [saveConfirmed, dismissConfirmed])
-
-  if (hasAbsence) {
-    return <span className="text-xs text-gray-600 dark:text-gray-400">{t('absent')}</span>
-  }
 
   return (
     <div className="relative flex items-center gap-1.5">

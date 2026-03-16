@@ -17,7 +17,8 @@ import VirtualSlotDetailModal from './components/VirtualSlotDetailModal'
 import ClaimModal from './components/ClaimModal'
 import ClaimDetailModal from './components/ClaimDetailModal'
 import LoadingSpinner from '../../components/LoadingSpinner'
-import type { HallSlot, HallClosure, SlotClaim, Team, Hall } from '../../types'
+import pb from '../../pb'
+import type { HallSlot, HallClosure, SlotClaim, Team, Hall, Training } from '../../types'
 
 export type SportFilter = 'all' | 'vb' | 'bb'
 
@@ -341,6 +342,18 @@ export default function HallenplanPage() {
           teams={teams}
           isAdmin={effectiveIsAdmin}
           onClose={() => setVirtualDetailSlot(null)}
+          onEditSlot={async (training: Training) => {
+            if (!training.hall_slot) return
+            setVirtualDetailSlot(null)
+            try {
+              const parentSlot = await pb.collection('hall_slots').getOne<HallSlot>(training.hall_slot)
+              setEditingSlot(parentSlot)
+              setPrefill(null)
+              setEditorOpen(true)
+            } catch {
+              // hall_slot not found — fall back to navigating to trainings
+            }
+          }}
         />
       )}
 

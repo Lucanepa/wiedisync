@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { usePB } from '../../../hooks/usePB'
-import type { Game, Training, Event, HallClosure, HallEvent, Team } from '../../../types'
+import type { Game, Training, Event, HallClosure, HallEvent, Team, Absence } from '../../../types'
 import type { CalendarEntry, CalendarFilterState } from '../../../types/calendar'
 import {
   parseDate,
@@ -17,6 +17,10 @@ interface UseCalendarDataOptions {
   /** Visible range end (inclusive) */
   rangeEnd: Date
   enabled?: boolean
+  /** Current user ID — needed to fetch personal absences */
+  userId?: string
+  /** Current user's display name — shown in absence entries */
+  userName?: string
 }
 
 /**
@@ -134,6 +138,27 @@ function closureToEntry(closure: HallClosure): CalendarEntry {
   }
 }
 
+function absenceToEntry(absence: Absence, memberName: string): CalendarEntry {
+  const start = parseDate(absence.start_date)
+  const end = parseDate(absence.end_date)
+  const isMultiDay = !isSameDay(start, end)
+
+  return {
+    id: absence.id,
+    type: 'absence',
+    title: memberName || 'Absence',
+    date: start,
+    endDate: isMultiDay ? end : undefined,
+    startTime: null,
+    endTime: null,
+    allDay: true,
+    location: '',
+    teamNames: [],
+    description: absence.reason_detail ?? '',
+    source: absence,
+  }
+}
+
 /** Detect hall events that are actually closures (e.g. "Halle geschlossen") */
 const CLOSURE_PATTERN = /geschlossen|gesperrt|closed/i
 
@@ -160,7 +185,7 @@ function entryOverlapsRange(entry: CalendarEntry, rangeStart: Date, rangeEnd: Da
   return !isAfter(entry.date, rangeEnd) && !isBefore(entryEnd, rangeStart)
 }
 
-export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true }: UseCalendarDataOptions) {
+export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true, userId, userName }: UseCalendarDataOptions) {
   const fetchRange = useFetchRange(rangeStart)
 
   const wantHome = filters.sources.includes('game-home')
@@ -170,6 +195,7 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
   const fetchClosures = enabled && filters.sources.includes('closure')
   const fetchEvents = enabled && filters.sources.includes('event')
   const fetchHallEvents = enabled && filters.sources.includes('hall')
+  const fetchAbsences = enabled && filters.sources.includes('absence') && !!userId
 
   const { data: games, isLoading: gamesLoading } = usePB<Game>('games', {
     enabled: fetchGames,
@@ -214,6 +240,15 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
     enabled: fetchHallEvents,
     filter: buildDateFilter('date', fetchRange.start, fetchRange.end),
     sort: 'date,start_time',
+    all: true,
+  })
+
+  const { data: absences, isLoading: absencesLoading } = usePB<Absence>('absences', {
+    enabled: fetchAbsences,
+    filter: userId
+      ? `member="${userId}" && end_date >= "${fetchRange.start}" && start_date <= "${fetchRange.end}"`
+      : '',
+    sort: 'start_date',
     all: true,
   })
 
@@ -272,6 +307,12 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
       }
     }
 
+    if (fetchAbsences) {
+      for (const a of absences) {
+        all.push(absenceToEntry(a, userName ?? ''))
+      }
+    }
+
     // Filter to visible range
     const filtered = all.filter((entry) => entryOverlapsRange(entry, rangeStart, rangeEnd))
 
@@ -284,7 +325,7 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
     })
 
     return filtered
-  }, [games, trainings, events, closuresRaw, hallEvents, fetchGames, fetchTrainings, fetchEvents, fetchClosures, fetchHallEvents, wantHome, wantAway, rangeStart, rangeEnd])
+  }, [games, trainings, events, closuresRaw, hallEvents, absences, fetchGames, fetchTrainings, fetchEvents, fetchClosures, fetchHallEvents, fetchAbsences, wantHome, wantAway, rangeStart, rangeEnd, userName])
 
   const closedDates = useMemo(() => {
     const dates = new Set<string>()
@@ -307,7 +348,7 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
   return {
     entries,
     closedDates,
-    isLoading: gamesLoading || trainingsLoading || closuresLoading || eventsLoading || hallEventsLoading,
+    isLoading: gamesLoading || trainingsLoading || closuresLoading || eventsLoading || hallEventsLoading || absencesLoading,
     error: null,
   }
 }

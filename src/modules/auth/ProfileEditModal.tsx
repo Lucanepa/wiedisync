@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import Modal from '../../components/Modal'
-import Button from '../../components/ui/Button'
-import { Input, Select } from '../../components/ui/Input'
-import DatePicker from '../../components/ui/DatePicker'
+import Modal from '@/components/Modal'
+import { Button } from '@/components/ui/button'
+import { FormInput, FormField } from '@/components/FormField'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import DatePicker from '@/components/ui/DatePicker'
 import { useAuth } from '../../hooks/useAuth'
 import { getFileUrl } from '../../utils/pbFile'
 import { coercePositions, getPositionI18nKey } from '../../utils/memberPositions'
@@ -198,15 +199,17 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
         )}
 
         {/* Language selector */}
-        <Select
-          label={`${t('language')}${onboarding ? ' *' : ''}`}
-          value={language}
-          onChange={(e) => handleLanguageChange(e.target.value as 'german' | 'english')}
-          required
-        >
-          <option value="german">{t('languageGerman')}</option>
-          <option value="english">{t('languageEnglish')}</option>
-        </Select>
+        <FormField label={`${t('language')}${onboarding ? ' *' : ''}`}>
+          <Select value={language} onValueChange={(v) => handleLanguageChange(v as 'german' | 'english')}>
+            <SelectTrigger className="min-h-[44px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="german">{t('languageGerman')}</SelectItem>
+              <SelectItem value="english">{t('languageEnglish')}</SelectItem>
+            </SelectContent>
+          </Select>
+        </FormField>
 
         {/* Photo */}
         <div className="flex items-center gap-4">
@@ -224,7 +227,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
           <div>
             <Button
               type="button"
-              variant="secondary"
+              variant="outline"
               size="sm"
               onClick={() => fileInputRef.current?.click()}
             >
@@ -308,15 +311,18 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
                   <p className="text-xs text-gray-500 dark:text-gray-400">{t('hidePhoneHint')}</p>
                 </div>
               </label>
-              <Select
-                label={t('birthdateVisibility')}
-                value={birthdateVisibility}
-                onChange={(e) => setBirthdateVisibility(e.target.value as 'full' | 'year_only' | 'hidden')}
-              >
-                <option value="full">{t('birthdateVisibilityFull')}</option>
-                <option value="year_only">{t('birthdateVisibilityYearOnly')}</option>
-                <option value="hidden">{t('birthdateVisibilityHidden')}</option>
-              </Select>
+              <FormField label={t('birthdateVisibility')}>
+                <Select value={birthdateVisibility} onValueChange={(v) => setBirthdateVisibility(v as 'full' | 'year_only' | 'hidden')}>
+                  <SelectTrigger className="min-h-[44px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="full">{t('birthdateVisibilityFull')}</SelectItem>
+                    <SelectItem value="year_only">{t('birthdateVisibilityYearOnly')}</SelectItem>
+                    <SelectItem value="hidden">{t('birthdateVisibilityHidden')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormField>
             </div>
           </div>
         )}
@@ -334,7 +340,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
             ) : (
               <Button
                 type="button"
-                variant="secondary"
+                variant="outline"
                 size="sm"
                 onClick={handlePasswordReset}
                 loading={resetLoading}
@@ -387,7 +393,6 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
           )}
           <Button
             type="submit"
-            variant="primary"
             loading={loading}
           >
             {loading ? tc('saving') : onboarding ? t('completeProfile') : tc('save')}

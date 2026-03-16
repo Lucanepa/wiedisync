@@ -7,7 +7,7 @@ import { useRealtime } from '../../hooks/useRealtime'
 import { useMutation } from '../../hooks/useMutation'
 import TeamFilter from '../../components/TeamFilter'
 import EmptyState from '../../components/EmptyState'
-import ConfirmDialog from '../../components/ConfirmDialog'
+import ConfirmDialog from '@/components/ConfirmDialog'
 import ParticipationRosterModal from '../../components/ParticipationRosterModal'
 import TrainingCard from './TrainingCard'
 import TrainingForm from './TrainingForm'
@@ -16,7 +16,7 @@ import RecurringEditDialog from './RecurringEditDialog'
 import type { RecurringEditScope } from './RecurringEditDialog'
 import CoachDashboard from './CoachDashboard'
 import LoadingSpinner from '../../components/LoadingSpinner'
-import Button from '../../components/ui/Button'
+import { Button } from '@/components/ui/button'
 import type { Training, Team, Hall, Member } from '../../types'
 
 type TrainingExpanded = Training & {
@@ -101,7 +101,7 @@ export default function TrainingsPage() {
         {(isCoach || effectiveIsAdmin) && (
           <div className="flex gap-2">
             <Button
-              variant="secondary"
+              variant="outline"
               onClick={() => setRecurringOpen(true)}
             >
               {t('recurringTitle')}

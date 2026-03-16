@@ -7,9 +7,10 @@ import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
-import Button from '../../components/ui/Button'
-import { Input, Select } from '../../components/ui/Input'
-import DatePicker from '../../components/ui/DatePicker'
+import { Button } from '@/components/ui/button'
+import { FormInput, FormField } from '@/components/FormField'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import DatePicker from '@/components/ui/DatePicker'
 import TeamSelect from '../../components/TeamSelect'
 import SportToggle from '../../components/SportToggle'
 import type { SportView } from '../../hooks/useSportPreference'
@@ -526,42 +527,52 @@ export default function ScorerPage() {
                   {sportTab === 'volleyball' && (
                     <div>
                       <label htmlFor="scorer-duty-type" className={filterLabelClass}>{t('filterDutyType')}</label>
-                      <Select id="scorer-duty-type" value={dutyTypeFilter} onChange={(e) => setDutyTypeFilter(e.target.value as VbDutyTypeFilter)}>
-                        <option value="all">{t('filterAllTypes')}</option>
-                        <option value="scorer">{t('scorer')}</option>
-                        <option value="scoreboard">{t('scoreboard')}</option>
-                        <option value="scorer_scoreboard">{t('scorerTaefeler')}</option>
+                      <Select value={dutyTypeFilter} onValueChange={(v) => setDutyTypeFilter(v as VbDutyTypeFilter)}>
+                        <SelectTrigger className="min-h-[44px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">{t('filterAllTypes')}</SelectItem>
+                          <SelectItem value="scorer">{t('scorer')}</SelectItem>
+                          <SelectItem value="scoreboard">{t('scoreboard')}</SelectItem>
+                          <SelectItem value="scorer_scoreboard">{t('scorerTaefeler')}</SelectItem>
+                        </SelectContent>
                       </Select>
                     </div>
                   )}
                   <div>
                     <label htmlFor="scorer-unassigned" className={filterLabelClass}>{t('filterUnassigned')}</label>
-                    <Select id="scorer-unassigned" value={unassignedFilter} onChange={(e) => setUnassignedFilter(e.target.value as VbUnassignedFilter | BbUnassignedFilter)}>
-                      <option value="all">{t('filterAllDuties')}</option>
-                      <option value="any">{t('filterAnyUnassigned')}</option>
-                      {sportTab === 'volleyball' ? (
-                        <>
-                          <option value="scorer">{t('scorer')}</option>
-                          <option value="scoreboard">{t('scoreboard')}</option>
-                          <option value="scorer_scoreboard">{t('scorerTaefeler')}</option>
-                        </>
-                      ) : (
-                        <>
-                          <option value="bb_scorer">{t('bbScorer')}</option>
-                          <option value="bb_timekeeper">{t('bbTimekeeper')}</option>
-                          <option value="bb_24s_official">{t('bb24sOfficial')}</option>
-                        </>
-                      )}
+                    <Select value={unassignedFilter} onValueChange={(v) => setUnassignedFilter(v as VbUnassignedFilter | BbUnassignedFilter)}>
+                      <SelectTrigger className="min-h-[44px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">{t('filterAllDuties')}</SelectItem>
+                        <SelectItem value="any">{t('filterAnyUnassigned')}</SelectItem>
+                        {sportTab === 'volleyball' ? (
+                          <>
+                            <SelectItem value="scorer">{t('scorer')}</SelectItem>
+                            <SelectItem value="scoreboard">{t('scoreboard')}</SelectItem>
+                            <SelectItem value="scorer_scoreboard">{t('scorerTaefeler')}</SelectItem>
+                          </>
+                        ) : (
+                          <>
+                            <SelectItem value="bb_scorer">{t('bbScorer')}</SelectItem>
+                            <SelectItem value="bb_timekeeper">{t('bbTimekeeper')}</SelectItem>
+                            <SelectItem value="bb_24s_official">{t('bb24sOfficial')}</SelectItem>
+                          </>
+                        )}
+                      </SelectContent>
                     </Select>
                   </div>
                   <div>
                     <label htmlFor="scorer-search" className={filterLabelClass}>{t('filterSearchAssignee')}</label>
-                    <Input id="scorer-search" type="text" value={searchAssignee} onChange={(e) => setSearchAssignee(e.target.value)} placeholder={t('searchAssigneePlaceholder')} />
+                    <FormInput id="scorer-search" type="text" value={searchAssignee} onChange={(e) => setSearchAssignee(e.target.value)} placeholder={t('searchAssigneePlaceholder')} />
                   </div>
                 </div>
                 {hasActiveFilters && (
                   <div className="mt-3 flex justify-center">
-                    <Button variant="secondary" size="sm" onClick={clearFilters} className="rounded-full">{t('clearFilters')}</Button>
+                    <Button variant="outline" size="sm" onClick={clearFilters} className="rounded-full">{t('clearFilters')}</Button>
                   </div>
                 )}
               </div>
@@ -585,7 +596,7 @@ export default function ScorerPage() {
           {/* Past games */}
           <div className="mt-8">
             {!showPast ? (
-              <Button variant="secondary" onClick={() => { setShowPast(true); setPastVisible(PAST_PAGE_SIZE) }} className="mx-auto rounded-full">
+              <Button variant="outline" onClick={() => { setShowPast(true); setPastVisible(PAST_PAGE_SIZE) }} className="mx-auto rounded-full">
                 {t('showOlderGames')}
               </Button>
             ) : (
@@ -599,7 +610,7 @@ export default function ScorerPage() {
                     <div className="grid gap-3 opacity-75 lg:grid-cols-2 2xl:grid-cols-3">{visiblePastGames.map((g) => renderScorerRow(g, true))}</div>
                     {pastVisible < filteredPastGames.length && (
                       <div className="mt-4 flex justify-center">
-                        <Button variant="secondary" onClick={() => setPastVisible((v) => v + PAST_PAGE_SIZE)} className="rounded-full">{t('loadMore')}</Button>
+                        <Button variant="outline" onClick={() => setPastVisible((v) => v + PAST_PAGE_SIZE)} className="rounded-full">{t('loadMore')}</Button>
                       </div>
                     )}
                   </>

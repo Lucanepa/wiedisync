@@ -1,7 +1,7 @@
 import { useState, useRef, useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import ViewToggle from '../../components/ViewToggle'
-import Modal from '../../components/Modal'
+import Modal from '@/components/Modal'
 import CalendarFilters, { getActiveFilterCount } from './CalendarFilters'
 import MonthGrid from './components/MonthGrid'
 import WeekGrid from './components/WeekGrid'

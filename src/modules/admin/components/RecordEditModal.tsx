@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next'
 import type { RecordModel } from 'pocketbase'
 import pb from '../../../pb'
 import { logActivity } from '../../../utils/logActivity'
-import Modal from '../../../components/Modal'
-import Button from '../../../components/ui/Button'
-import ConfirmDialog from '../../../components/ConfirmDialog'
+import Modal from '@/components/Modal'
+import { Button } from '@/components/ui/button'
+import ConfirmDialog from '@/components/ConfirmDialog'
 
 interface SchemaField {
   id: string
@@ -338,7 +338,7 @@ export default function RecordEditModal({
           <div className="flex items-center justify-between pt-2">
             <div>
               {isEdit && (
-                <Button variant="danger" onClick={() => setShowDeleteConfirm(true)}>
+                <Button variant="destructive" onClick={() => setShowDeleteConfirm(true)}>
                   {t('deleteRecord')}
                 </Button>
               )}
@@ -348,7 +348,6 @@ export default function RecordEditModal({
                 {t('cancel')}
               </Button>
               <Button
-                variant="primary"
                 onClick={handleSave}
                 disabled={loading}
                 loading={loading}

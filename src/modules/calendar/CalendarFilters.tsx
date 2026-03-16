@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import Modal from '../../components/Modal'
+import Modal from '@/components/Modal'
 import FilterChips from '../../components/FilterChips'
 import TeamMultiSelect from '../../components/TeamMultiSelect'
 import { useTeams } from '../../hooks/useTeams'

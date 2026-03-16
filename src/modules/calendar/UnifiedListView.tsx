@@ -35,6 +35,7 @@ export default function UnifiedListView({ entries, onEntryClick }: UnifiedListVi
     closure: t('typeClosure'),
     event: t('typeEvent'),
     hall: t('typeHall'),
+    absence: t('typeAbsence'),
   }
   const grouped = useMemo(() => {
     const groups: { dateKey: string; label: string; entries: CalendarEntry[] }[] = []

@@ -1,4 +1,5 @@
 import { type ReactNode } from 'react'
+import { cn } from '@/lib/utils'
 
 interface SwitchToggleProps {
   enabled: boolean
@@ -33,24 +34,27 @@ export default function SwitchToggle({
       className="flex items-center gap-2"
     >
       {(labelLeft || labelRight) && (
-        <span className={`${isMd ? 'text-base' : 'text-sm'} text-gray-600 dark:text-gray-400`}>
+        <span className={cn(isMd ? 'text-base' : 'text-sm', 'text-gray-600 dark:text-gray-400')}>
           {enabled ? labelRight : labelLeft}
         </span>
       )}
       <div
-        className={`relative inline-flex shrink-0 cursor-pointer items-center rounded-full transition-colors ${
-          isMd ? 'h-12 w-[5.25rem]' : 'h-11 w-[4.5rem]'
-        } bg-gray-300 dark:bg-gray-600`}
+        className={cn(
+          'relative inline-flex shrink-0 cursor-pointer items-center rounded-full transition-colors',
+          isMd ? 'h-12 w-[5.25rem]' : 'h-11 w-[4.5rem]',
+          'bg-gray-300 dark:bg-gray-600',
+        )}
       >
         <span
-          className={`inline-flex items-center justify-center overflow-hidden rounded-full bg-white shadow-sm transition-transform ${
-            isMd ? 'h-9 w-9' : 'h-8 w-8'
-          }`}
+          className={cn(
+            'inline-flex items-center justify-center overflow-hidden rounded-full bg-white shadow-sm transition-transform',
+            isMd ? 'h-9 w-9' : 'h-8 w-8',
+          )}
           style={{
             transform: `translateX(${enabled ? (isMd ? '2.75rem' : '2.125rem') : '0.375rem'})`,
           }}
         >
-          <span className={`flex items-center justify-center ${isMd ? 'h-7 w-7' : 'h-5 w-5'} text-gray-600`}>
+          <span className={cn('flex items-center justify-center', isMd ? 'h-7 w-7' : 'h-5 w-5', 'text-gray-600')}>
             {enabled ? iconOn : iconOff}
           </span>
         </span>

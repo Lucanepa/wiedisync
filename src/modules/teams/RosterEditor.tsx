@@ -379,26 +379,35 @@ export default function RosterEditor() {
                     })}
                   </div>
 
-                  {/* Guest toggle */}
+                  {/* Guest level cycle */}
                   <button
                     onClick={async () => {
-                      const next = !member.is_guest
+                      const currentLevel = mt.guest_level ?? 0
+                      const nextLevel = (currentLevel + 1) % 4
                       try {
-                        await pb.collection('members').update(member.id, { is_guest: next })
-                        logActivity('update', 'members', member.id, { is_guest: next })
-                        if (mt.expand?.member) {
-                          ;(mt.expand.member as Record<string, unknown>).is_guest = next
-                        }
+                        await pb.collection('member_teams').update(mt.id, { guest_level: nextLevel })
+                        logActivity('update', 'member_teams', mt.id, { guest_level: nextLevel })
+                        ;(mt as Record<string, unknown>).guest_level = nextLevel
                       } catch { /* ignore */ }
                     }}
-                    title={t('toggleGuest')}
+                    title={(() => {
+                      const level = mt.guest_level ?? 0
+                      return level === 0 ? t('guestLevel0') : t('guestLevelTooltip', { level })
+                    })()}
                     className={`rounded px-1.5 py-0.5 text-xs font-medium transition-colors ${
-                      member.is_guest
-                        ? 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300'
-                        : 'bg-gray-100 text-gray-400 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-500 dark:hover:bg-gray-600'
+                      (() => {
+                        const level = mt.guest_level ?? 0
+                        if (level === 0) return 'bg-gray-100 text-gray-400 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-500 dark:hover:bg-gray-600'
+                        if (level === 1) return 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300'
+                        if (level === 2) return 'bg-orange-100/70 text-orange-600 dark:bg-orange-900/60 dark:text-orange-400'
+                        return 'bg-orange-100/50 text-orange-500 dark:bg-orange-900/40 dark:text-orange-500'
+                      })()
                     }`}
                   >
-                    {t('guestBadge')}
+                    {(() => {
+                      const level = mt.guest_level ?? 0
+                      return level === 0 ? t('guestBadge') : `G${level}`
+                    })()}
                   </button>
 
                   {/* Licence toggles */}

@@ -18,13 +18,20 @@ type Step = 'email' | 'claim' | 'register'
 export default function SignUpPage() {
   const { login, user, isApproved } = useAuth()
   const { theme } = useTheme()
-  const { t } = useTranslation('auth')
+  const { t, i18n } = useTranslation('auth')
   const { t: tc } = useTranslation('common')
   const navigate = useNavigate()
 
   const [step, setStep] = useState<Step>('email')
   const [email, setEmail] = useState('')
-  const [selectedLanguage, setSelectedLanguage] = useState<'german' | 'english'>('german')
+  const [selectedLanguage, setSelectedLanguage] = useState<'german' | 'english'>(
+    i18n.language === 'en' ? 'english' : 'german',
+  )
+
+  function handleLanguageChange(lang: 'german' | 'english') {
+    setSelectedLanguage(lang)
+    i18n.changeLanguage(lang === 'german' ? 'de' : 'en')
+  }
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [password, setPassword] = useState('')
@@ -96,6 +103,8 @@ export default function SignUpPage() {
 
     setLoading(true)
     try {
+      // Derive club from the selected team
+      const selectedTeamObj = teams.find((t) => t.id === selectedTeam)
       const newMember = await pb.collection('members').create({
         first_name: firstName,
         last_name: lastName,
@@ -111,6 +120,7 @@ export default function SignUpPage() {
         is_guest: isGuest,
         member_active: true,
         language: selectedLanguage,
+        club: selectedTeamObj?.club || '',
       })
       await login(email.trim().toLowerCase(), password)
       logActivity('create', 'members', newMember.id, { first_name: firstName, last_name: lastName, requested_team: selectedTeam })
@@ -150,6 +160,29 @@ export default function SignUpPage() {
                 autoComplete="email"
                 placeholder={t('emailPlaceholder')}
               />
+
+              {/* Language */}
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {t('language')}
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(['german', 'english'] as const).map((lang) => (
+                    <button
+                      key={lang}
+                      type="button"
+                      onClick={() => handleLanguageChange(lang)}
+                      className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                        selectedLanguage === lang
+                          ? 'border-brand-500 bg-brand-50 text-brand-700 dark:border-brand-400 dark:bg-brand-900/30 dark:text-brand-300'
+                          : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      {lang === 'german' ? 'Deutsch' : 'English'}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               {error && (
                 <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
@@ -242,29 +275,6 @@ export default function SignUpPage() {
                   >
                     {t('change')}
                   </button>
-                </div>
-              </div>
-
-              {/* Language */}
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t('language')}
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {(['german', 'english'] as const).map((lang) => (
-                    <button
-                      key={lang}
-                      type="button"
-                      onClick={() => setSelectedLanguage(lang)}
-                      className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
-                        selectedLanguage === lang
-                          ? 'border-brand-500 bg-brand-50 text-brand-700 dark:border-brand-400 dark:bg-brand-900/30 dark:text-brand-300'
-                          : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-                      }`}
-                    >
-                      {t(lang === 'german' ? 'languageGerman' : 'languageEnglish')}
-                    </button>
-                  ))}
                 </div>
               </div>
 

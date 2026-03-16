@@ -287,30 +287,32 @@ export default function MonthGrid({
         {weekRows.map((week, wi) => {
           const { bars, timedByCol } = weekLayouts[wi]
 
-          // Merge absence bars: collect names per column, then build merged spans
+          // Merge absence bars: collect names + entries per column, then build merged spans
           const absenceBars = bars.filter((b) => b.entry.type === 'absence')
-          const absenceNamesByCol: string[][] = Array.from({ length: 7 }, () => [])
+          const absenceInfoByCol: { names: string[]; entries: CalendarEntry[] }[] = Array.from({ length: 7 }, () => ({ names: [], entries: [] }))
           for (const bar of absenceBars) {
-            // Extract just the name part (after "Absence · ")
             const name = bar.entry.title.replace(/^Absence · /, '')
             for (let c = bar.startCol; c < bar.startCol + bar.span; c++) {
-              if (!absenceNamesByCol[c].includes(name)) absenceNamesByCol[c].push(name)
+              if (!absenceInfoByCol[c].names.includes(name)) absenceInfoByCol[c].names.push(name)
+              if (!absenceInfoByCol[c].entries.find((e) => e.id === bar.entry.id)) absenceInfoByCol[c].entries.push(bar.entry)
             }
           }
-          // Build merged absence spans: consecutive columns with any names
-          const mergedAbsenceSpans: { startCol: number; span: number; label: string }[] = []
+          // Build merged absence spans: consecutive columns with same name set
+          const mergedAbsenceSpans: { startCol: number; span: number; label: string; entry: CalendarEntry }[] = []
           let spanStart = -1
           let prevLabel = ''
+          let spanEntry: CalendarEntry | null = null
           for (let c = 0; c <= 7; c++) {
-            const names = c < 7 ? absenceNamesByCol[c] : []
-            const label = names.length > 0 ? `Absence · ${names.join(' · ')}` : ''
+            const info = c < 7 ? absenceInfoByCol[c] : { names: [], entries: [] }
+            const label = info.names.length > 0 ? `Absence · ${info.names.join(' · ')}` : ''
             if (label && label === prevLabel) {
               // continue current span
             } else {
-              if (spanStart >= 0 && prevLabel) {
-                mergedAbsenceSpans.push({ startCol: spanStart, span: c - spanStart, label: prevLabel })
+              if (spanStart >= 0 && prevLabel && spanEntry) {
+                mergedAbsenceSpans.push({ startCol: spanStart, span: c - spanStart, label: prevLabel, entry: spanEntry })
               }
               spanStart = label ? c : -1
+              spanEntry = info.entries[0] ?? null
             }
             prevLabel = label
           }
@@ -323,13 +325,15 @@ export default function MonthGrid({
                 const leftPct = (seg.startCol / 7) * 100
                 const widthPct = (seg.span / 7) * 100
                 return (
-                  <div
+                  <button
                     key={`abs-${si}`}
+                    type="button"
+                    onClick={() => onEntryClick?.(seg.entry)}
                     style={{ left: `${leftPct}%`, width: `${widthPct}%`, top: '24px' }}
-                    className={`absolute z-10 truncate rounded px-1.5 text-left text-[10px] font-medium leading-[16px] lg:text-xs ${c.bg} ${c.text} ${c.darkBg} ${c.darkText}`}
+                    className={`absolute z-10 cursor-pointer truncate rounded px-1.5 text-left text-[10px] font-medium leading-[16px] hover:opacity-80 lg:text-xs ${c.bg} ${c.text} ${c.darkBg} ${c.darkText}`}
                   >
                     {seg.label}
-                  </div>
+                  </button>
                 )
               })}
               {/* Day cells row */}

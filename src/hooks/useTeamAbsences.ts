@@ -61,10 +61,11 @@ export function useTeamAbsences(teamIds: string[], startDate: string, endDate: s
         sort: 'start_date',
       })
 
-      // Filter to absences that affect at least one of the selected teams (or all teams when affects is empty)
+      // Filter to absences that affect at least one of the selected teams
+      // Empty affects, or affects containing 'all', means all teams are affected
       const teamIdSet = new Set(teamIds)
       const relevant = result.filter(
-        (a) => !a.affects || a.affects.length === 0 || a.affects.some((id) => teamIdSet.has(id)),
+        (a) => !a.affects || a.affects.length === 0 || a.affects.includes('all') || a.affects.some((id) => teamIdSet.has(id)),
       )
 
       // Build member map from absence expands

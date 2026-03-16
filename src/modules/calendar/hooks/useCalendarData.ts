@@ -17,10 +17,6 @@ interface UseCalendarDataOptions {
   /** Visible range end (inclusive) */
   rangeEnd: Date
   enabled?: boolean
-  /** Current user ID — needed to fetch personal absences */
-  userId?: string
-  /** Current user's display name — shown in absence entries */
-  userName?: string
 }
 
 /**
@@ -146,7 +142,7 @@ function absenceToEntry(absence: Absence, memberName: string): CalendarEntry {
   return {
     id: absence.id,
     type: 'absence',
-    title: memberName || 'Absence',
+    title: memberName ? `Absence · ${memberName}` : 'Absence',
     date: start,
     endDate: isMultiDay ? end : undefined,
     startTime: null,
@@ -185,7 +181,7 @@ function entryOverlapsRange(entry: CalendarEntry, rangeStart: Date, rangeEnd: Da
   return !isAfter(entry.date, rangeEnd) && !isBefore(entryEnd, rangeStart)
 }
 
-export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true, userId, userName }: UseCalendarDataOptions) {
+export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true }: UseCalendarDataOptions) {
   const fetchRange = useFetchRange(rangeStart)
 
   const wantHome = filters.sources.includes('game-home')
@@ -195,7 +191,7 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true,
   const fetchClosures = enabled && filters.sources.includes('closure')
   const fetchEvents = enabled && filters.sources.includes('event')
   const fetchHallEvents = enabled && filters.sources.includes('hall')
-  const fetchAbsences = enabled && filters.sources.includes('absence') && !!userId
+  const fetchAbsences = enabled && filters.sources.includes('absence')
 
   const { data: games, isLoading: gamesLoading } = usePB<Game>('games', {
     enabled: fetchGames,
@@ -243,11 +239,13 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true,
     all: true,
   })
 
-  const { data: absences, isLoading: absencesLoading } = usePB<Absence>('absences', {
+  const { data: absences, isLoading: absencesLoading } = usePB<Absence & { expand?: { member?: { first_name: string; last_name: string; name: string } } }>('absences', {
     enabled: fetchAbsences,
-    filter: userId
-      ? `member="${userId}" && end_date >= "${fetchRange.start}" && start_date <= "${fetchRange.end}"`
+    filter: fetchAbsences
+      ? `end_date >= "${fetchRange.start}" && start_date <= "${fetchRange.end}"`
       : '',
+    expand: 'member',
+    fields: 'id,member,start_date,end_date,reason,reason_detail,expand.member.first_name,expand.member.name',
     sort: 'start_date',
     all: true,
   })
@@ -309,7 +307,9 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true,
 
     if (fetchAbsences) {
       for (const a of absences) {
-        all.push(absenceToEntry(a, userName ?? ''))
+        const m = a.expand?.member
+        const firstName = m?.first_name || m?.name || '?'
+        all.push(absenceToEntry(a, firstName))
       }
     }
 
@@ -325,7 +325,7 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true,
     })
 
     return filtered
-  }, [games, trainings, events, closuresRaw, hallEvents, absences, fetchGames, fetchTrainings, fetchEvents, fetchClosures, fetchHallEvents, fetchAbsences, wantHome, wantAway, rangeStart, rangeEnd, userName])
+  }, [games, trainings, events, closuresRaw, hallEvents, absences, fetchGames, fetchTrainings, fetchEvents, fetchClosures, fetchHallEvents, fetchAbsences, wantHome, wantAway, rangeStart, rangeEnd])
 
   const closedDates = useMemo(() => {
     const dates = new Set<string>()

@@ -278,6 +278,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   transition: background var(--transition-base), color var(--transition-base);
 }
+body.nav-open { overflow: hidden; }
 img, svg { display: block; max-width: 100%; height: auto; }
 a { color: inherit; text-decoration: none; }
 button, input, textarea, select { font: inherit; color: inherit; }
@@ -505,15 +506,17 @@ h1, h2, h3, h4, h5, h6 {
 /* Mobile nav overlay */
 .mobile-nav {
   display: none;
-  position: fixed;
-  top: 75px;
+  position: absolute;
+  top: 100%;
   left: 0;
   right: 0;
-  bottom: 0;
+  max-height: calc(100vh - 75px);
+  max-height: calc(100dvh - 75px);
   background: var(--bg-white);
   z-index: var(--z-overlay);
   overflow-y: auto;
   padding: var(--space-lg);
+  box-shadow: var(--shadow-xl);
 }
 .nav-open .mobile-nav {
   display: block;

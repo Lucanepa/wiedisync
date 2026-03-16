@@ -5,6 +5,8 @@
 
 /* ── Design Tokens ─────────────────────────────────────────── */
 :root {
+  color-scheme: dark light;
+
   /* Brand */
   --kscw-blue: #4A55A2;
   --kscw-blue-dark: #3a4382;

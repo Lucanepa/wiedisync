@@ -854,10 +854,12 @@ window.KSCW = {
     fetchAll('teams', 'filter=(active=true)'),
     fetchAll('games', 'sort=-date&expand=kscw_team'),
     fetchAll('rankings', 'sort=rank'),
+    fetchAll('news', 'sort=-published_at&filter=(is_published=true)'),
   ]).then(function (results) {
     var pbTeams = results[0];
     var pbGames = results[1];
     var pbRankings = results[2];
+    var pbNews = results[3];
 
     // ── Build teams map ────────────────────────────────
     var teamsMap = {};
@@ -904,9 +906,26 @@ window.KSCW = {
     }
     // If PB returned zero rankings, keep mock rankings as fallback
 
+    // ── Map news ──────────────────────────────────────────
+    if (pbNews && pbNews.length > 0) {
+      D.news = pbNews.map(function (n) {
+        return {
+          id: n.id,
+          title: n.title,
+          slug: n.slug,
+          date: n.published_at || n.created,
+          excerpt: n.excerpt || '',
+          body: n.body || '',
+          category: n.category || 'club',
+          author: n.author || 'KSCW',
+          image: n.image ? PB + '/api/files/news/' + n.id + '/' + n.image : null,
+        };
+      });
+    }
+
     D.ready = true;
     D.dataSource = 'pocketbase';
-    console.log('[KSCW] Data loaded from PocketBase: ' + pbTeams.length + ' teams, ' + D.games.length + ' games, ' + pbRankings.length + ' ranking entries');
+    console.log('[KSCW] Data loaded from PocketBase: ' + pbTeams.length + ' teams, ' + D.games.length + ' games, ' + pbRankings.length + ' ranking entries, ' + (pbNews ? pbNews.length : 0) + ' news');
 
     // Dispatch event for pages that want to re-render with live data
     document.dispatchEvent(new Event('kscw-data-ready'));

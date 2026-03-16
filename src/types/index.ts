@@ -1,13 +1,5 @@
 import type { RecordModel } from 'pocketbase'
 
-export interface Club extends RecordModel {
-  name: string
-  slug: string
-  logo: string
-  color_primary: string
-  color_secondary: string
-}
-
 export type LicenceType = 'scorer_vb' | 'referee_vb' | 'otr1_bb' | 'otr2_bb' | 'otn_bb' | 'referee_bb'
 export type MemberPosition =
   | 'setter'
@@ -41,7 +33,7 @@ export interface Team extends RecordModel {
   sponsors: string[]
   sponsors_logos: string[]
   bb_source_id: string
-  club?: string
+
 }
 
 export interface Member extends RecordModel {
@@ -65,7 +57,7 @@ export interface Member extends RecordModel {
   hide_phone: boolean
   birthdate_visibility: 'full' | 'year_only' | 'hidden'
   member_active: boolean
-  club?: string
+
 }
 
 export interface MemberTeam extends RecordModel {
@@ -73,7 +65,7 @@ export interface MemberTeam extends RecordModel {
   team: string
   season: string
   guest_level: number  // 0=member, 1-3=guest levels
-  club?: string
+
 }
 
 export interface Hall extends RecordModel {
@@ -85,7 +77,7 @@ export interface Hall extends RecordModel {
   maps_url: string
   homologation: boolean
   sv_hall_id: string
-  club?: string
+
 }
 
 export interface SlotClaim extends RecordModel {
@@ -100,7 +92,7 @@ export interface SlotClaim extends RecordModel {
   freed_source_id: string
   notes: string
   status: 'active' | 'revoked'
-  club?: string
+
 }
 
 export interface VirtualSlotMeta {
@@ -133,7 +125,7 @@ export interface HallSlot extends RecordModel {
   indefinite: boolean
   label: string
   notes: string
-  club?: string
+
   _virtual?: VirtualSlotMeta
 }
 
@@ -143,7 +135,7 @@ export interface HallClosure extends RecordModel {
   end_date: string
   reason: string
   source: 'hauswart' | 'admin' | 'auto' | 'gcal' | 'school_holidays'
-  club?: string
+
 }
 
 export interface Game extends RecordModel {
@@ -187,7 +179,7 @@ export interface Game extends RecordModel {
   referees_json: Array<{ name: string; id?: number }>
   source: 'swiss_volley' | 'manual' | 'basketplan'
   respond_by: string
-  club?: string
+
 }
 
 
@@ -211,7 +203,7 @@ export interface Ranking extends RecordModel {
   points: number
   season: string
   updated_at: string
-  club?: string
+
 }
 
 export interface Training extends RecordModel {
@@ -229,7 +221,7 @@ export interface Training extends RecordModel {
   respond_by: string
   min_participants: number
   max_participants: number
-  club?: string
+
 }
 
 export interface Absence extends RecordModel {
@@ -240,7 +232,7 @@ export interface Absence extends RecordModel {
   reason_detail: string
   affects: string[]
   approved: boolean
-  club?: string
+
 }
 
 export interface Event extends RecordModel {
@@ -257,7 +249,7 @@ export interface Event extends RecordModel {
   respond_by: string
   max_players: number
   participation_mode: 'whole' | 'per_day' | 'per_session' | ''
-  club?: string
+
 }
 
 export interface EventSession extends RecordModel {
@@ -267,7 +259,7 @@ export interface EventSession extends RecordModel {
   end_time: string
   label: string
   sort_order: number
-  club?: string
+
 }
 
 export interface HallEvent extends RecordModel {
@@ -292,7 +284,7 @@ export interface Participation extends RecordModel {
   guest_count: number
   is_staff: boolean
   waitlisted_at: string
-  club?: string
+
 }
 
 export interface UserLog extends RecordModel {
@@ -311,7 +303,7 @@ export interface GameSchedulingSeason extends RecordModel {
   spielsamstage: SpielsamstagConfig[]
   team_slot_config: TeamSlotConfig | null
   notes: string
-  club?: string
+
 }
 
 export interface SpielsamstagConfig {
@@ -337,7 +329,7 @@ export interface GameSchedulingSlot extends RecordModel {
   status: 'available' | 'booked' | 'blocked'
   booking: string
   game: string
-  club?: string
+
 }
 
 export interface GameSchedulingOpponent extends RecordModel {
@@ -349,7 +341,7 @@ export interface GameSchedulingOpponent extends RecordModel {
   token: string
   home_game: string
   away_game: string
-  club?: string
+
 }
 
 export interface GameSchedulingBooking extends RecordModel {
@@ -367,7 +359,7 @@ export interface GameSchedulingBooking extends RecordModel {
   confirmed_proposal: number
   status: 'pending' | 'confirmed' | 'rejected'
   admin_notes: string
-  club?: string
+
 }
 
 export interface ScorerDelegation extends RecordModel {
@@ -379,7 +371,7 @@ export interface ScorerDelegation extends RecordModel {
   to_team: string
   same_team: boolean
   status: 'pending' | 'accepted' | 'declined' | 'expired'
-  club?: string
+
 }
 
 export interface Notification extends RecordModel {

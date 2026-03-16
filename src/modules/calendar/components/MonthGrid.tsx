@@ -287,8 +287,51 @@ export default function MonthGrid({
         {weekRows.map((week, wi) => {
           const { bars, timedByCol } = weekLayouts[wi]
 
+          // Merge absence bars: collect names per column, then build merged spans
+          const absenceBars = bars.filter((b) => b.entry.type === 'absence')
+          const absenceNamesByCol: string[][] = Array.from({ length: 7 }, () => [])
+          for (const bar of absenceBars) {
+            // Extract just the name part (after "Absence · ")
+            const name = bar.entry.title.replace(/^Absence · /, '')
+            for (let c = bar.startCol; c < bar.startCol + bar.span; c++) {
+              if (!absenceNamesByCol[c].includes(name)) absenceNamesByCol[c].push(name)
+            }
+          }
+          // Build merged absence spans: consecutive columns with any names
+          const mergedAbsenceSpans: { startCol: number; span: number; label: string }[] = []
+          let spanStart = -1
+          let prevLabel = ''
+          for (let c = 0; c <= 7; c++) {
+            const names = c < 7 ? absenceNamesByCol[c] : []
+            const label = names.length > 0 ? `Absence · ${names.join(' · ')}` : ''
+            if (label && label === prevLabel) {
+              // continue current span
+            } else {
+              if (spanStart >= 0 && prevLabel) {
+                mergedAbsenceSpans.push({ startCol: spanStart, span: c - spanStart, label: prevLabel })
+              }
+              spanStart = label ? c : -1
+            }
+            prevLabel = label
+          }
+
           return (
-            <div key={wi} className="flex flex-1 flex-col">
+            <div key={wi} className="relative flex flex-1 flex-col">
+              {/* Absence overlay bars — merged across overlapping absences */}
+              {mergedAbsenceSpans.map((seg, si) => {
+                const c = barColors.absence
+                const leftPct = (seg.startCol / 7) * 100
+                const widthPct = (seg.span / 7) * 100
+                return (
+                  <div
+                    key={`abs-${si}`}
+                    style={{ left: `${leftPct}%`, width: `${widthPct}%`, top: '24px' }}
+                    className={`absolute z-10 truncate rounded px-1.5 text-left text-[10px] font-medium leading-[16px] lg:text-xs ${c.bg} ${c.text} ${c.darkBg} ${c.darkText}`}
+                  >
+                    {seg.label}
+                  </div>
+                )
+              })}
               {/* Day cells row */}
               <div className="grid flex-1 grid-cols-7">
                 {week.map((date, ci) => {
@@ -328,7 +371,7 @@ export default function MonthGrid({
                       role={bgBar ? 'button' : undefined}
                     >
                       {/* Date number */}
-                      <div className="flex items-start">
+                      <div className="relative z-20 flex items-start">
                         <span
                           className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium ${
                             isToday
@@ -343,29 +386,6 @@ export default function MonthGrid({
                           {date.getDate()}
                         </span>
                       </div>
-
-                      {/* Absence bars (thin, at top, clickable) */}
-                      {visibleBars.some((b) => b.entry.type === 'absence') && (
-                        <div className="space-y-px">
-                          {visibleBars.filter((b) => b.entry.type === 'absence').map((bar) => {
-                            if (ci !== bar.startCol) return null
-                            const c = barColors.absence
-                            return (
-                              <button
-                                key={bar.entry.id}
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  onEntryClick?.(bar.entry)
-                                }}
-                                className={`w-full truncate rounded px-1 text-left text-[10px] font-medium leading-snug hover:opacity-80 lg:text-xs ${c.bg} ${c.text} ${c.darkBg} ${c.darkText}`}
-                              >
-                                {bar.entry.title}
-                              </button>
-                            )
-                          })}
-                        </div>
-                      )}
 
                       {/* Other all-day event labels (vertically centered) */}
                       {visibleBars.some((b) => b.entry.type !== 'absence') && (

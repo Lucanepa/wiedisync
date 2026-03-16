@@ -155,8 +155,6 @@ export default function CalendarPage() {
     rangeStart,
     rangeEnd,
     enabled: needsData,
-    userId: user?.id,
-    userName: (user as Record<string, unknown>)?.name as string | undefined,
   })
 
   // Only show full-page spinner on initial load, not on navigation

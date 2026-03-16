@@ -144,9 +144,13 @@ export default function MemberRow({ memberTeam, teamId: _teamId, teamSlug, team,
           >
             {displayName}
           </Link>
-          {member.is_guest && (
-            <span className="ml-1.5 rounded px-1.5 py-0.5 text-[10px] font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
-              {t('guestBadge')}
+          {(memberTeam.guest_level ?? 0) > 0 && (
+            <span className={`ml-1.5 rounded px-1.5 py-0.5 text-[10px] font-medium ${
+              memberTeam.guest_level === 1 ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
+              : memberTeam.guest_level === 2 ? 'bg-orange-100/70 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400'
+              : 'bg-orange-100/50 text-orange-500 dark:bg-orange-900/10 dark:text-orange-500'
+            }`}>
+              G{memberTeam.guest_level}
             </span>
           )}
         </div>

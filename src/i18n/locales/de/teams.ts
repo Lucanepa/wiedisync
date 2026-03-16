@@ -71,10 +71,14 @@ export default {
   licenceOTN: 'OTN-Lizenz',
   licenceRefereeBB: 'Schiedsrichter-Lizenz (Basketball)',
 
-  // Guest
-  guestBadge: 'Gast',
-  toggleGuest: 'Gast-Status umschalten',
-  guestExplanation: 'Gäste haben bei vollen Trainings eine niedrigere Priorität als lizenzierte Spieler.',
+  // Gaststufen
+  guestBadge: 'G',
+  guestLevel0: 'Kein Gast',
+  guestLevel1: 'Gast Stufe 1',
+  guestLevel2: 'Gast Stufe 2',
+  guestLevel3: 'Gast Stufe 3',
+  guestLevelTooltip: 'Gast Stufe {{level}} — niedrigere Priorität bei vollen Trainings',
+  guestExplanation: 'Gaststufen 1-3 bestimmen die Priorität bei vollen Trainings. Stufe 1 hat die höchste Gast-Priorität, Stufe 3 die niedrigste.',
 
   // Pending requests
   pendingRequests: '{{count}} ausstehende Beitrittsanfrage(n)',

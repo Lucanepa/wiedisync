@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Modal from '@/components/Modal'
 import TeamChip from '../../components/TeamChip'
@@ -8,7 +8,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useParticipation } from '../../hooks/useParticipation'
 import { formatDate, formatWeekday, formatTime } from '../../utils/dateHelpers'
 import type { Training, Team, Hall, Member } from '../../types'
-import { MapPin, Clock, User, Users, Calendar } from 'lucide-react'
+import { MapPin, Clock, MessageSquare, User, Users, Calendar } from 'lucide-react'
 
 type TrainingExpanded = Training & {
   expand?: { team?: Team; hall?: Hall; coach?: Member }
@@ -126,46 +126,78 @@ export default function TrainingDetailModal({ training, onClose }: TrainingDetai
 
 function TrainingParticipation({ training, staffOnly }: { training: TrainingExpanded; staffOnly: boolean }) {
   const { t } = useTranslation('participation')
-  const { effectiveStatus, hasAbsence, setStatus } = useParticipation(
+  const { effectiveStatus, hasAbsence, note: savedNote, setStatus } = useParticipation(
     'training',
     training.id,
     training.date,
     undefined,
     staffOnly,
   )
+  const [noteText, setNoteText] = useState(savedNote)
+  const noteInitRef = useRef(savedNote)
+  // Sync note text when server data loads/changes
+  if (savedNote !== noteInitRef.current) {
+    noteInitRef.current = savedNote
+    setNoteText(savedNote)
+  }
 
   if (hasAbsence) {
     return <p className="text-sm text-gray-500 dark:text-gray-400">{t('absent')}</p>
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('yourStatus')}:</span>
-      <div className="flex items-center gap-1.5">
-        {(['confirmed', 'tentative', 'declined'] as const).map((status) => {
-          const labels = { confirmed: t('yes'), tentative: t('maybe'), declined: t('no') }
-          const colors = {
-            confirmed: effectiveStatus === 'confirmed'
-              ? 'bg-green-600 text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-green-900/30 dark:hover:text-green-400',
-            tentative: effectiveStatus === 'tentative'
-              ? 'bg-yellow-500 text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-yellow-100 hover:text-yellow-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-yellow-900/30 dark:hover:text-yellow-400',
-            declined: effectiveStatus === 'declined'
-              ? 'bg-red-600 text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-red-900/30 dark:hover:text-red-400',
-          }
-          return (
-            <button
-              key={status}
-              onClick={() => setStatus(status)}
-              className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${colors[status]}`}
-            >
-              {labels[status]}
-            </button>
-          )
-        })}
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('yourStatus')}:</span>
+        <div className="flex items-center gap-1.5">
+          {(['confirmed', 'tentative', 'declined'] as const).map((status) => {
+            const labels = { confirmed: t('yes'), tentative: t('maybe'), declined: t('no') }
+            const colors = {
+              confirmed: effectiveStatus === 'confirmed'
+                ? 'bg-green-600 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-green-900/30 dark:hover:text-green-400',
+              tentative: effectiveStatus === 'tentative'
+                ? 'bg-yellow-500 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-yellow-100 hover:text-yellow-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-yellow-900/30 dark:hover:text-yellow-400',
+              declined: effectiveStatus === 'declined'
+                ? 'bg-red-600 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-red-900/30 dark:hover:text-red-400',
+            }
+            return (
+              <button
+                key={status}
+                onClick={() => setStatus(status)}
+                className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${colors[status]}`}
+              >
+                {labels[status]}
+              </button>
+            )
+          })}
+        </div>
       </div>
+      {/* Participation note */}
+      {effectiveStatus && (
+        <div className="flex items-center gap-2">
+          <MessageSquare className="h-4 w-4 shrink-0 text-gray-400" />
+          <input
+            type="text"
+            value={noteText}
+            onChange={(e) => setNoteText(e.target.value)}
+            onBlur={() => {
+              if (noteText !== savedNote && effectiveStatus) {
+                setStatus(effectiveStatus as 'confirmed' | 'tentative' | 'declined', noteText)
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.currentTarget.blur()
+              }
+            }}
+            placeholder={t('notePlaceholder')}
+            className="min-w-0 flex-1 rounded-md border border-gray-200 bg-transparent px-2.5 py-1 text-sm text-gray-700 placeholder:text-gray-400 focus:border-brand-400 focus:outline-none dark:border-gray-600 dark:text-gray-300 dark:placeholder:text-gray-500 dark:focus:border-brand-500"
+          />
+        </div>
+      )}
     </div>
   )
 }

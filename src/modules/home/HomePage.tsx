@@ -411,49 +411,74 @@ function NewsRow({ notification, onMarkAsRead }: { notification: Notification; o
 }
 
 function CompactGameRow({ game, showScore, onClick }: { game: ExpandedGame; showScore: boolean; onClick?: () => void }) {
+  const { user } = useAuth()
   const dateStr = game.date ? formatDateCompact(game.date) : ''
   const homeWon = Number(game.home_score) > Number(game.away_score)
   const awayWon = Number(game.away_score) > Number(game.home_score)
   const kscwWon = game.type === 'home' ? homeWon : awayWon
   const kscwLost = game.type === 'home' ? awayWon : homeWon
 
+  const { effectiveStatus } = useParticipation('game', game.id, game.date)
+
+  const statusBorderColor: Record<string, string> = {
+    confirmed: 'bg-green-500 dark:bg-green-400',
+    tentative: 'bg-yellow-500 dark:bg-yellow-400',
+    declined: 'bg-red-500 dark:bg-red-400',
+    waitlisted: 'bg-orange-500 dark:bg-orange-400',
+    absent: 'bg-gray-400 dark:bg-gray-500',
+  }
+
   return (
     <div
-      className="flex cursor-pointer items-center gap-3 border-b border-gray-100 px-4 py-2 last:border-b-0 hover:bg-gray-50 active:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-700/50 dark:active:bg-gray-700"
+      className="flex cursor-pointer items-stretch border-b border-gray-100 last:border-b-0 hover:bg-gray-50 active:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-700/50 dark:active:bg-gray-700"
       onClick={onClick}
     >
-      {/* Date & time */}
-      <div className="w-16 shrink-0 text-xs text-gray-500 dark:text-gray-400">
-        <div>{dateStr}</div>
-        {game.time && <div>{formatTime(game.time)}</div>}
-      </div>
-
-      {/* Sport icon */}
-      {game.expand?.kscw_team?.sport === 'basketball'
-        ? <BasketballIcon className="h-5 w-5 shrink-0" filled />
-        : <VolleyballIcon className="h-5 w-5 shrink-0" filled />}
-
-      {/* Team names — stacked, Wiedikon team bold */}
-      <div className="min-w-0 flex-1">
-        <p className={`truncate text-sm text-gray-900 dark:text-gray-100 ${game.type === 'home' ? 'font-bold' : ''}`}>
-          {game.home_team}
-        </p>
-        <p className={`truncate text-sm text-gray-900 dark:text-gray-100 ${game.type === 'away' ? 'font-bold' : ''}`}>
-          {game.away_team}
-        </p>
-      </div>
-
-      {/* Vertical score: KSCW line colored, opponent neutral */}
-      {showScore && game.status === 'completed' && (
-        <div className="shrink-0 text-right font-mono text-sm leading-snug">
-          <div className={`${game.type === 'home' ? (kscwWon ? 'text-green-600 dark:text-green-400' : kscwLost ? 'text-red-500' : 'text-gray-500') : 'text-gray-500 dark:text-gray-400'} ${game.type === 'home' ? 'font-bold' : 'font-medium'}`}>
-            {game.home_score}
-          </div>
-          <div className={`${game.type === 'away' ? (kscwWon ? 'text-green-600 dark:text-green-400' : kscwLost ? 'text-red-500' : 'text-gray-500') : 'text-gray-500 dark:text-gray-400'} ${game.type === 'away' ? 'font-bold' : 'font-medium'}`}>
-            {game.away_score}
-          </div>
-        </div>
+      {/* Participation status vertical banner */}
+      {user && effectiveStatus && (
+        <div className={`w-1 shrink-0 ${statusBorderColor[effectiveStatus] ?? ''}`} />
       )}
+
+      <div className="flex flex-1 items-center gap-3 px-4 py-2">
+        {/* Date & time */}
+        <div className="w-16 shrink-0 text-xs text-gray-500 dark:text-gray-400">
+          <div>{dateStr}</div>
+          {game.time && <div>{formatTime(game.time)}</div>}
+        </div>
+
+        {/* Sport icon */}
+        {game.expand?.kscw_team?.sport === 'basketball'
+          ? <BasketballIcon className="h-5 w-5 shrink-0" filled />
+          : <VolleyballIcon className="h-5 w-5 shrink-0" filled />}
+
+        {/* Team names — stacked, Wiedikon team bold */}
+        <div className="min-w-0 flex-1">
+          <p className={`truncate text-sm text-gray-900 dark:text-gray-100 ${game.type === 'home' ? 'font-bold' : ''}`}>
+            {game.home_team}
+          </p>
+          <p className={`truncate text-sm text-gray-900 dark:text-gray-100 ${game.type === 'away' ? 'font-bold' : ''}`}>
+            {game.away_team}
+          </p>
+        </div>
+
+        {/* Vertical score: KSCW line colored, opponent neutral */}
+        {showScore && game.status === 'completed' && (
+          <div className="shrink-0 text-right font-mono text-sm leading-snug">
+            <div className={`${game.type === 'home' ? (kscwWon ? 'text-green-600 dark:text-green-400' : kscwLost ? 'text-red-500' : 'text-gray-500') : 'text-gray-500 dark:text-gray-400'} ${game.type === 'home' ? 'font-bold' : 'font-medium'}`}>
+              {game.home_score}
+            </div>
+            <div className={`${game.type === 'away' ? (kscwWon ? 'text-green-600 dark:text-green-400' : kscwLost ? 'text-red-500' : 'text-gray-500') : 'text-gray-500 dark:text-gray-400'} ${game.type === 'away' ? 'font-bold' : 'font-medium'}`}>
+              {game.away_score}
+            </div>
+          </div>
+        )}
+
+        {/* Participation summary — right-aligned, stacked vertically (scheduled games only) */}
+        {game.status === 'scheduled' && (
+          <div className="ml-auto shrink-0">
+            <ParticipationSummary activityType="game" activityId={game.id} stacked />
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -501,7 +526,7 @@ function CompactTrainingRow({ training, onClick }: { training: TrainingExpanded;
         </div>
 
         {/* Participation summary — right-aligned, stacked vertically */}
-        <div className="shrink-0">
+        <div className="ml-auto shrink-0">
           <ParticipationSummary activityType="training" activityId={training.id} stacked />
         </div>
       </div>

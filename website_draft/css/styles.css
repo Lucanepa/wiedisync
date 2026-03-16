@@ -1116,6 +1116,39 @@ tr:hover td {
   align-items: center;
   gap: 4px;
 }
+/* Team card with photo background */
+.team-card--photo {
+  position: relative;
+  background-size: cover;
+  background-position: center 30%;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  border: none;
+}
+.team-card--photo .card-body {
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 60%, transparent 100%);
+  padding: var(--space-xl) var(--space-lg) var(--space-lg);
+  margin: 0;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+.team-card--photo .card-body h3,
+.team-card--photo .card-body .team-card-meta,
+.team-card--photo .card-body .badge {
+  color: #ffffff;
+}
+.team-card--photo .card-body .team-card-meta {
+  opacity: 0.85;
+}
+.team-card--photo .card-body .badge {
+  background: rgba(255,255,255,0.15);
+}
+.team-card--photo .card-body p[style*="color"] {
+  color: var(--kscw-gold) !important;
+}
 
 /* ── Sponsor Carousel ──────────────────────────────────────── */
 .sponsor-track {

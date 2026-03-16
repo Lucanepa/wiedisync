@@ -1,3 +1,6 @@
+/** Default club ID — KSC Wiedikon */
+export const DEFAULT_CLUB_ID = 'ie2dc04dk3jojgs'
+
 /** Collections that are scoped to a club */
 export const CLUB_COLLECTIONS = new Set([
   'halls',

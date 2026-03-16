@@ -5,6 +5,7 @@ import i18n from '../i18n'
 import { pbLangToI18n } from '../utils/languageMap'
 import { getCurrentSeason } from '../utils/dateHelpers'
 import type { Member, MemberTeam, Team } from '../types'
+import { DEFAULT_CLUB_ID } from '../clubConfig'
 
 interface AuthContextValue {
   user: (RecordModel & Member) | null
@@ -200,7 +201,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isProfileComplete = !!user?.language
   const isVorstand = roles.includes('vorstand') || isGlobalAdmin
   const isGuest = user?.is_guest === true
-  const clubId = (user?.club as string) ?? ''
+  const clubId = (user?.club as string) || DEFAULT_CLUB_ID
 
   const primarySport: 'volleyball' | 'basketball' | 'both' =
     memberSports.size === 1 ? [...memberSports][0] : 'both'

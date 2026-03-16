@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../hooks/useAuth'
 import { useTheme } from '../hooks/useTheme'
 import TeamChip from './TeamChip'
-import SwitchToggle from './SwitchToggle'
+import SwitchToggle from '@/components/SwitchToggle'
 import { getFileUrl } from '../utils/pbFile'
 import AdminToggle from './AdminToggle'
 import { useAdminMode } from '../hooks/useAdminMode'
@@ -302,7 +302,7 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
 
               {/* Toggles — same row */}
               <div className="flex items-center justify-center gap-4">
-                {(!user || !user.language) && (
+                {(
                   <SwitchToggle
                     enabled={i18n.language === 'de'}
                     onChange={() => {

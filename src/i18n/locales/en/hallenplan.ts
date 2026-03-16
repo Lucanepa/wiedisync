@@ -121,7 +121,6 @@ export default {
   all: 'All',
 
   // Admin navigation
-  editSlot: 'Edit Slot',
   updateFutureTrainings: 'Update future trainings',
   goToTrainings: 'Go to Trainings',
   goToGames: 'Go to Games',

@@ -110,7 +110,7 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
+            <FormInput
               type="email"
               label={t('email')}
               value={email}
@@ -120,7 +120,7 @@ export default function LoginPage() {
               placeholder={t('emailPlaceholder')}
             />
 
-            <Input
+            <FormInput
               type="password"
               label={t('password')}
               value={password}

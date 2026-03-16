@@ -74,7 +74,7 @@ export default function ResetPasswordPage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
-              <Input
+              <FormInput
                 type="password"
                 label={t('newPassword')}
                 value={password}
@@ -85,7 +85,7 @@ export default function ResetPasswordPage() {
                 placeholder={t('passwordPlaceholder')}
               />
 
-              <Input
+              <FormInput
                 type="password"
                 label={t('confirmPassword')}
                 value={passwordConfirm}

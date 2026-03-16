@@ -152,7 +152,7 @@ export default function SignUpPage() {
           {/* Step 1: Email check */}
           {step === 'email' && (
             <form onSubmit={handleEmailCheck} className="space-y-4">
-              <Input
+              <FormInput
                 type="email"
                 label={t('email')}
                 value={email}
@@ -262,7 +262,7 @@ export default function SignUpPage() {
               {/* Email (read-only) */}
               <div>
                 <div className="flex items-center gap-2">
-                  <Input
+                  <FormInput
                     type="email"
                     label={t('email')}
                     value={email}
@@ -280,7 +280,7 @@ export default function SignUpPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <Input
+                <FormInput
                   type="text"
                   label={t('firstName')}
                   value={firstName}
@@ -288,7 +288,7 @@ export default function SignUpPage() {
                   required
                   autoComplete="given-name"
                 />
-                <Input
+                <FormInput
                   type="text"
                   label={t('lastName')}
                   value={lastName}
@@ -354,7 +354,7 @@ export default function SignUpPage() {
                 </div>
               </label>
 
-              <Input
+              <FormInput
                 type="password"
                 label={t('password')}
                 value={password}
@@ -365,7 +365,7 @@ export default function SignUpPage() {
                 placeholder={t('passwordPlaceholder')}
               />
 
-              <Input
+              <FormInput
                 type="password"
                 label={t('confirmPassword')}
                 value={passwordConfirm}

@@ -153,7 +153,7 @@ export default function PublicTerminplanungPage() {
           )}
 
           {/* Club info */}
-          <Input
+          <FormInput
             type="text"
             label={t('clubName')}
             value={clubName}
@@ -162,7 +162,7 @@ export default function PublicTerminplanungPage() {
             required
           />
 
-          <Input
+          <FormInput
             type="text"
             label={t('contactName')}
             value={contactName}
@@ -170,7 +170,7 @@ export default function PublicTerminplanungPage() {
             required
           />
 
-          <Input
+          <FormInput
             type="email"
             label={t('contactEmailLabel')}
             value={contactEmail}

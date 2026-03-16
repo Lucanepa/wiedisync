@@ -27,6 +27,7 @@ export default {
   gameTypeHome: 'Home games',
   gameTypeAway: 'Away games',
   sourceHallHW: 'Halle HW',
+  sourceAbsences: 'Absences',
 
   // Type labels
   typeGame: 'Game',
@@ -34,6 +35,7 @@ export default {
   typeClosure: 'Hall closure',
   typeEvent: 'Event',
   typeHall: 'Hall booking',
+  typeAbsence: 'Absence',
 
   // Other
   noEntries: 'No entries found',

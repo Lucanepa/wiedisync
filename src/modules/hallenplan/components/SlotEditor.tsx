@@ -93,6 +93,7 @@ export default function SlotEditor({
 
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [updateTrainings, setUpdateTrainings] = useState(true)
 
   const conflicts = useConflictChecker(form, allSlots, slot?.id)
 
@@ -138,6 +139,24 @@ export default function SlotEditor({
       } else {
         const rec = await pb.collection('hall_slots').create(payload)
         logActivity('create', 'hall_slots', rec.id, payload)
+      }
+      // Batch-update future trainings if checkbox is checked and this is an existing training slot
+      if (updateTrainings && slot && form.slot_type === 'training') {
+        try {
+          const today = new Date().toISOString().slice(0, 10)
+          const futureTrainings = await pb.collection('trainings').getFullList({
+            filter: `hall_slot="${slot.id}" && date>="${today}"`,
+          })
+          for (const tr of futureTrainings) {
+            await pb.collection('trainings').update(tr.id, {
+              start_time: form.start_time,
+              end_time: form.end_time,
+              hall: isCombo ? kwiA!.id : form.hall,
+            })
+          }
+        } catch {
+          // Non-critical — slot was saved, trainings update failed silently
+        }
       }
       onSaved()
       onClose()
@@ -335,6 +354,19 @@ export default function SlotEditor({
           <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
             {error}
           </div>
+        )}
+
+        {/* Update future trainings checkbox (only for existing training slots) */}
+        {slot && form.slot_type === 'training' && (
+          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+            <input
+              type="checkbox"
+              checked={updateTrainings}
+              onChange={(e) => setUpdateTrainings(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300"
+            />
+            {t('updateFutureTrainings')}
+          </label>
         )}
 
         {/* Actions */}

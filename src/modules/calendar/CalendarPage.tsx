@@ -57,6 +57,14 @@ const TypeIcon = ({ type, sport, className = '' }: { type: string; sport?: 'voll
       </svg>
     )
   }
+  if (type === 'absence') {
+    return (
+      <svg className={`h-3 w-3 shrink-0 ${className}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+        <circle cx="12" cy="8" r="4" />
+        <path strokeLinecap="round" d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2" />
+      </svg>
+    )
+  }
   if (type === 'hall') {
     return <BasketballIcon className="h-3 w-3 shrink-0" filled />
   }
@@ -71,6 +79,7 @@ const iconColors: Record<string, string> = {
   closure: 'text-red-500',
   event: 'text-purple-500',
   hall: 'text-cyan-500',
+  absence: 'text-gray-900 dark:text-gray-100',
 }
 
 function entryIconColor(entry: CalendarEntry): string {
@@ -84,7 +93,7 @@ export default function CalendarPage() {
   const isMobile = useIsMobile()
   const [viewMode, setViewMode] = useState<CalendarViewMode>('month')
   const allSources: SourceFilter[] = user
-    ? ['game-home', 'game-away', 'training', 'event', 'closure', 'hall']
+    ? ['game-home', 'game-away', 'training', 'event', 'closure', 'hall', 'absence']
     : ['game-home', 'game-away', 'hall']
 
   const [filters, setFilters] = useState<CalendarFilterState>(() => ({
@@ -146,6 +155,8 @@ export default function CalendarPage() {
     rangeStart,
     rangeEnd,
     enabled: needsData,
+    userId: user?.id,
+    userName: (user as Record<string, unknown>)?.name as string | undefined,
   })
 
   // Only show full-page spinner on initial load, not on navigation

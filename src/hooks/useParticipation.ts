@@ -1,8 +1,18 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { usePB } from './usePB'
 import { useMutation } from './useMutation'
 import { useAuth } from './useAuth'
 import type { Participation, Absence } from '../types'
+
+/** Check if an absence's `affects` field matches the given activity type */
+function absenceAffectsActivity(absence: Absence, activityType: Participation['activity_type']): boolean {
+  const affects = absence.affects
+  if (!affects || affects.length === 0 || affects.includes('all')) return true
+  if (activityType === 'training' && affects.includes('trainings')) return true
+  if (activityType === 'game' && affects.includes('games')) return true
+  if (activityType === 'event') return true // events always affected
+  return false
+}
 
 export function useParticipation(
   activityType: Participation['activity_type'],
@@ -22,11 +32,11 @@ export function useParticipation(
     enabled: !!user && !!activityId,
   })
 
-  const { data: absences } = usePB<Absence>('absences', {
+  const { data: absencesRaw } = usePB<Absence>('absences', {
     filter: user && activityDate
       ? `member="${user.id}" && start_date<="${activityDate}" && end_date>="${activityDate}"`
       : '',
-    perPage: 1,
+    perPage: 5,
     enabled: !!user && !!activityDate,
   })
 
@@ -37,7 +47,40 @@ export function useParticipation(
   const [saveConfirmed, setSaveConfirmed] = useState(false)
 
   const participation = participations[0] ?? null
-  const hasAbsence = absences.length > 0
+
+  // Filter absences to those that actually affect this activity type
+  const hasAbsence = absencesRaw.some((a) => absenceAffectsActivity(a, activityType))
+
+  // Auto-decline when absent and no participation exists yet (or existing is not declined)
+  const autoDeclineRef = useRef(false)
+  useEffect(() => {
+    if (!hasAbsence || !user || !activityId) return
+    if (autoDeclineRef.current) return // already attempted
+
+    // If no participation record, or existing is not declined → auto-decline
+    if (!participation) {
+      autoDeclineRef.current = true
+      create({
+        member: user.id,
+        activity_type: activityType,
+        activity_id: activityId,
+        status: 'declined',
+        note: '',
+        guest_count: 0,
+        is_staff: isStaff ?? false,
+        ...(sessionId ? { session_id: sessionId } : {}),
+      }).then(() => refetch()).catch(() => {})
+    } else if (participation.status !== 'declined') {
+      autoDeclineRef.current = true
+      update(participation.id, { status: 'declined', guest_count: 0 })
+        .then(() => refetch()).catch(() => {})
+    }
+  }, [hasAbsence, user, activityId, participation, activityType, isStaff, sessionId, create, update, refetch])
+
+  // Reset auto-decline flag when activity changes
+  useEffect(() => {
+    autoDeclineRef.current = false
+  }, [activityId])
 
   const setStatus = useCallback(async (status: Participation['status'], note = '', guestCount = 0) => {
     if (!user) return
@@ -88,7 +131,7 @@ export function useParticipation(
   return {
     participation,
     hasAbsence,
-    effectiveStatus: hasAbsence ? 'absent' as const : displayStatus,
+    effectiveStatus: displayStatus,
     note: participation?.note ?? '',
     setStatus,
     clearStatus,

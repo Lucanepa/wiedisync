@@ -50,6 +50,15 @@ const TypeIcon = ({ type, sport, className = '' }: { type: string; sport?: 'voll
       </svg>
     )
   }
+  if (type === 'absence') {
+    // Absence — person-off icon
+    return (
+      <svg className={`inline-block h-2.5 w-2.5 shrink-0 ${className}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+        <circle cx="12" cy="8" r="4" />
+        <path strokeLinecap="round" d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2" />
+      </svg>
+    )
+  }
   if (type === 'hall') {
     // Hall events — default to basketball ball (most GCal hall events are BB games)
     return <BasketballIcon className="inline-block h-2.5 w-2.5 shrink-0" filled />
@@ -68,6 +77,7 @@ const barColors: Record<string, { bg: string; text: string; darkBg: string; dark
   closure:     { bg: 'bg-red-200', text: 'text-red-900', darkBg: 'dark:bg-red-800', darkText: 'dark:text-red-100' },
   event:       { bg: 'bg-purple-200', text: 'text-purple-900', darkBg: 'dark:bg-purple-800', darkText: 'dark:text-purple-100' },
   hall:        { bg: 'bg-cyan-200', text: 'text-cyan-900', darkBg: 'dark:bg-cyan-800', darkText: 'dark:text-cyan-100' },
+  absence:     { bg: 'bg-gray-900', text: 'text-white', darkBg: 'dark:bg-gray-100', darkText: 'dark:text-gray-900' },
 }
 
 function colorKey(e: CalendarEntry): string {
@@ -83,6 +93,7 @@ const dotColors: Record<string, string> = {
   closure: 'bg-red-500',
   event: 'bg-purple-500',
   hall: 'bg-cyan-500',
+  absence: 'bg-gray-900 dark:bg-gray-100',
 }
 
 /* ── spanning bar layout algorithm ───────────────────────── */
@@ -297,8 +308,8 @@ export default function MonthGrid({
                   const hiddenTimed = Math.max(0, timed.length - MAX_VISIBLE_TIMED)
                   const overflow = hiddenBars + hiddenTimed
 
-                  // Pick the first visible all-day entry for full-cell background
-                  const bgBar = visibleBars[0]
+                  // Pick the first visible all-day entry for full-cell background (skip absences)
+                  const bgBar = visibleBars.find((b) => b.entry.type !== 'absence') ?? null
                   const bgColor = bgBar ? barColors[colorKey(bgBar.entry)] : null
 
                   return (
@@ -333,10 +344,33 @@ export default function MonthGrid({
                         </span>
                       </div>
 
-                      {/* All-day event labels (vertically centered) */}
-                      {visibleBars.length > 0 && (
+                      {/* Absence bars (thin, at top, clickable) */}
+                      {visibleBars.some((b) => b.entry.type === 'absence') && (
+                        <div className="space-y-px">
+                          {visibleBars.filter((b) => b.entry.type === 'absence').map((bar) => {
+                            if (ci !== bar.startCol) return null
+                            const c = barColors.absence
+                            return (
+                              <button
+                                key={bar.entry.id}
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  onEntryClick?.(bar.entry)
+                                }}
+                                className={`w-full truncate rounded px-1 text-left text-[10px] font-medium leading-snug hover:opacity-80 lg:text-xs ${c.bg} ${c.text} ${c.darkBg} ${c.darkText}`}
+                              >
+                                {bar.entry.title}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
+
+                      {/* Other all-day event labels (vertically centered) */}
+                      {visibleBars.some((b) => b.entry.type !== 'absence') && (
                         <div className="flex flex-1 flex-col items-center justify-center">
-                          {visibleBars.map((bar) => {
+                          {visibleBars.filter((b) => b.entry.type !== 'absence').map((bar) => {
                             // Only show label on the first column of the span
                             if (ci !== bar.startCol) return null
                             const c = barColors[colorKey(bar.entry)]

@@ -25,6 +25,7 @@ export default function CalendarFilters({ open, onClose, filters, onChange, allo
     { value: 'closure', label: t('sourceClosures'), colorClasses: 'bg-red-100 text-red-800 border-red-200' },
     { value: 'event', label: t('sourceEvents'), colorClasses: 'bg-purple-100 text-purple-800 border-purple-200' },
     { value: 'hall', label: t('sourceHallHW'), colorClasses: 'bg-cyan-100 text-cyan-800 border-cyan-200' },
+    { value: 'absence', label: t('sourceAbsences'), colorClasses: 'bg-gray-900 text-white border-gray-700' },
   ]
   const sourceOptions = allowedSources
     ? allSourceOptions.filter((o) => allowedSources.includes(o.value as SourceFilter))

@@ -914,6 +914,10 @@ tr:hover td {
   margin-bottom: var(--space-xl);
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.tab-bar::-webkit-scrollbar {
+  display: none;
 }
 .tab-btn {
   padding: var(--space-sm) var(--space-lg);
@@ -1069,7 +1073,7 @@ tr:hover td {
 .sponsor-track {
   display: flex;
   gap: var(--space-2xl);
-  animation: scroll-sponsors 30s linear infinite;
+  animation: scroll-sponsors 60s linear infinite;
   width: max-content;
 }
 .sponsor-track:hover {

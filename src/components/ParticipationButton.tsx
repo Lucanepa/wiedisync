@@ -10,6 +10,7 @@ interface ParticipationButtonProps {
   activityType: Participation['activity_type']
   activityId: string
   activityDate?: string
+  teamId?: string
   compact?: boolean
   respondBy?: string
   activityStartTime?: string
@@ -32,6 +33,7 @@ export default function ParticipationButton({
   activityType,
   activityId,
   activityDate,
+  teamId,
   compact = false,
   respondBy,
   activityStartTime,
@@ -42,7 +44,7 @@ export default function ParticipationButton({
   eventSessions,
 }: ParticipationButtonProps) {
   const { t } = useTranslation('participation')
-  const { isGuest } = useAuth()
+  const { isGuestIn } = useAuth()
   const { participation, effectiveStatus, setStatus, saveConfirmed, dismissConfirmed } = useParticipation(
     activityType,
     activityId,
@@ -154,7 +156,8 @@ export default function ParticipationButton({
               const style = statusStyles[status]
               // Guests can't confirm when full (they'll be waitlisted server-side)
               // Licenced players CAN confirm when full (server bumps a guest)
-              const isDisabledConfirmed = status === 'confirmed' && isFull && isGuest && effectiveStatus !== 'confirmed'
+              const isGuestForTeam = teamId ? isGuestIn(teamId) : false
+              const isDisabledConfirmed = status === 'confirmed' && isFull && isGuestForTeam && effectiveStatus !== 'confirmed'
 
               return (
                 <button

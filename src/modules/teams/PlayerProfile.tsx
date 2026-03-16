@@ -20,7 +20,7 @@ type ExpandedMemberTeam = MemberTeam & { expand?: { team?: Team } }
 export default function PlayerProfile() {
   const { t } = useTranslation('teams')
   const { memberId } = useParams<{ memberId: string }>()
-  const { isCoachOf, clubId } = useAuth()
+  const { isCoachOf } = useAuth()
   const [member, setMember] = useState<Member | null>(null)
   const [loading, setLoading] = useState(true)
   const [lightboxOpen, setLightboxOpen] = useState(false)
@@ -56,17 +56,16 @@ export default function PlayerProfile() {
     if (!memberId || !memberTeams?.length) return
     const teamIds = memberTeams.map((mt) => mt.team)
     const teamFilter = teamIds.map((id) => `team="${id}"`).join(' || ')
-    const clubPrefix = clubId ? `club="${clubId}" && ` : ''
     Promise.all([
       pb.collection('trainings').getFullList<{ id: string; date: string }>({
-        filter: `${clubPrefix}(${teamFilter}) && date>="${start}" && date<="${end}" && cancelled=false`,
+        filter: `(${teamFilter}) && date>="${start}" && date<="${end}" && cancelled=false`,
         fields: 'id,date',
       }),
       pb.collection('participations').getFullList<Participation>({
-        filter: `${clubPrefix}member="${memberId}" && activity_type="training"`,
+        filter: `member="${memberId}" && activity_type="training"`,
       }),
       pb.collection('absences').getFullList<Absence>({
-        filter: `${clubPrefix}member="${memberId}" && end_date>="${start}" && start_date<="${end}"`,
+        filter: `member="${memberId}" && end_date>="${start}" && start_date<="${end}"`,
       }),
     ])
       .then(([trainings, participations, seasonAbsences]) => {
@@ -88,7 +87,7 @@ export default function PlayerProfile() {
         setAttendanceStats({ total: countable, present })
       })
       .catch(() => setAttendanceStats(null))
-  }, [memberId, memberTeams, start, end, clubId])
+  }, [memberId, memberTeams, start, end])
 
   if (loading) {
     return <div className="py-12 text-center text-gray-500 dark:text-gray-400">Loading...</div>

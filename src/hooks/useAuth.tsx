@@ -5,11 +5,9 @@ import i18n from '../i18n'
 import { pbLangToI18n } from '../utils/languageMap'
 import { getCurrentSeason } from '../utils/dateHelpers'
 import type { Member, MemberTeam, Team } from '../types'
-import { DEFAULT_CLUB_ID } from '../clubConfig'
 
 interface AuthContextValue {
   user: (RecordModel & Member) | null
-  clubId: string
   isSuperAdmin: boolean
   isAdmin: boolean
   isGlobalAdmin: boolean
@@ -104,7 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const uid = user.id
     pb.collection('teams')
       .getFullList<Team>({
-        filter: `active=true && (coach~"${uid}" || team_responsible~"${uid}")${user?.club ? ` && club="${user.club}"` : ''}`,
+        filter: `active=true && (coach~"${uid}" || team_responsible~"${uid}")`,
       })
       .then((teams) => {
         setCoachTeamIds(teams.map((t) => t.id))
@@ -121,7 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     pb.collection('teams')
       .getFullList<Team>({
-        filter: `active=true${user?.club ? ` && club="${user.club}"` : ''}`,
+        filter: `active=true`,
         fields: 'id,sport',
       })
       .then((allTeams) => {
@@ -148,7 +146,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const season = getCurrentSeason()
     pb.collection('member_teams')
       .getFullList<MemberTeam & { expand?: { team?: Team } }>({
-        filter: `member="${user.id}" && season="${season}"${user?.club ? ` && club="${user.club}"` : ''}`,
+        filter: `member="${user.id}" && season="${season}"`,
         expand: 'team',
       })
       .then((mts) => {
@@ -218,8 +216,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     (teamId: string) => getGuestLevel(teamId) > 0,
     [getGuestLevel],
   )
-  const clubId = (user?.club as string) || DEFAULT_CLUB_ID
-
   const primarySport: 'volleyball' | 'basketball' | 'both' =
     memberSports.size === 1 ? [...memberSports][0] : 'both'
 
@@ -252,7 +248,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   return (
-    <AuthContext.Provider value={{ user, clubId, isSuperAdmin, isAdmin, isGlobalAdmin, isVbAdmin, isBbAdmin, hasAdminAccessToSport, hasAdminAccessToTeam, isApproved, isProfileComplete, isCoach, isCoachOf, canParticipateIn, isStaffOnly, coachTeamIds, memberTeamIds, memberTeamNames, memberSports, primarySport, canViewTeam, isVorstand, getGuestLevel, isGuestIn, isLoading, login, loginWithOAuth, logout }}>
+    <AuthContext.Provider value={{ user, isSuperAdmin, isAdmin, isGlobalAdmin, isVbAdmin, isBbAdmin, hasAdminAccessToSport, hasAdminAccessToTeam, isApproved, isProfileComplete, isCoach, isCoachOf, canParticipateIn, isStaffOnly, coachTeamIds, memberTeamIds, memberTeamNames, memberSports, primarySport, canViewTeam, isVorstand, getGuestLevel, isGuestIn, isLoading, login, loginWithOAuth, logout }}>
       {children}
     </AuthContext.Provider>
   )

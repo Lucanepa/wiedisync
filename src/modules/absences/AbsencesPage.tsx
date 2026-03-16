@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ClipboardList, Users } from 'lucide-react'
+import { ClipboardList } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import { usePB } from '../../hooks/usePB'

@@ -41,9 +41,16 @@ import deNotifications from './locales/de/notifications'
 import deGameScheduling from './locales/de/gameScheduling'
 import deScorerAssign from './locales/de/scorerAssign'
 
-const savedLng = typeof window !== 'undefined'
-  ? localStorage.getItem('kscw-lang') ?? 'de'
-  : 'de'
+function getInitialLanguage(): string {
+  if (typeof window === 'undefined') return 'de'
+  const saved = localStorage.getItem('kscw-lang')
+  if (saved) return saved
+  // Detect browser language, default to German for Swiss context
+  const browserLang = navigator.language?.slice(0, 2)
+  return browserLang === 'en' ? 'en' : 'de'
+}
+
+const savedLng = getInitialLanguage()
 
 i18n.use(initReactI18next).init({
   lng: savedLng,

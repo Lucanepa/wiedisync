@@ -62,6 +62,26 @@ var teamColors = {
   Other: { bg: '#6b7280', text: '#ffffff', border: '#4b5563' },
 };
 
+// ─── Team Pictures (from PocketBase) ─────────────────────────────────
+var PB_FILES = 'https://kscw-api.lucanepa.com/api/files/pbc_1568971955/';
+var teamPictures = {
+  // Volleyball
+  H1:      PB_FILES + 'qz7y8l4tz48f65j/h193rllc4ye3_7d834yw8do.jpg',
+  H2:      PB_FILES + '601p27iw4xvw1ds/h29vraeson3m_zzvezaah1z.jpg',
+  H3:      PB_FILES + 'il1wd1p018hrb61/image1000852_fbnjri0thk.jpg',
+  Legends: PB_FILES + 'e352q254s1cip8y/image1000856_d4zcs4gmho.jpg',
+  D1:      PB_FILES + 'p1i9cs4km520dd6/d1jfiquwbimv_si9bndu1ir.jpg',
+  D2:      PB_FILES + '9kwn129z84967fc/d24vsjosw59i_83r02oi737.jpg',
+  D3:      PB_FILES + 'c18yey33vwx9yo4/d35u0ihf626u_2ll1lkswhm.jpg',
+  D4:      PB_FILES + '2h55x265r941a4k/d4jgm2oo03ah_7ouliepg2p.jpg',
+  // Basketball
+  'BB-H1':       PB_FILES + 'wpg9887276cdkd9/bbh1_bo760yoe5s.jpg',
+  'BB-H3':       PB_FILES + 'oqqn58l012ie36e/bbh2_x8bm3fove3.jpg',
+  'BB-H4':       PB_FILES + '4e65vlw744mldc0/bbh3_w5h2xtpj2x.jpg',
+  'BB-Lions D1': PB_FILES + '31k9c1qk62p23oe/bblions_ldzkbkw0b2.jpg',
+  'BB-Rhinos D3':PB_FILES + 'cj55682587v210q/bbrhinos_jzjphi50in.jpg',
+};
+
 // ─── teamIds map (PB team_id → display short name) ─────────────────
 var teamIdMap = {
   'vb_12747': 'H3',     'vb_1394': 'D4',      'vb_14040': 'DU23',
@@ -624,6 +644,11 @@ window.KSCW = {
   /** Get sponsors by tier */
   getSponsorsByTier: function (tier) {
     return this.sponsors[tier] || [];
+  },
+
+  /** Get team picture URL (or null) */
+  getTeamPicture: function (short) {
+    return teamPictures[short] || null;
   },
 
   /** Get roster for a team */

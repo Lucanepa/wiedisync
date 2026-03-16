@@ -92,7 +92,7 @@ export default function DatePicker({
             disabled={disabled}
             data-testid="datepicker-trigger"
             className={cn(
-              'flex min-h-[44px] w-full cursor-pointer items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-left text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
+              'flex min-h-[44px] min-w-[140px] w-full cursor-pointer items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-left text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
               error && 'border-destructive',
               className,
             )}

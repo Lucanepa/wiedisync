@@ -88,11 +88,14 @@ export default function CalendarEntryModal({ entry, onClose }: CalendarEntryModa
 
         {/* Details */}
         <div className="space-y-3 border-t dark:border-gray-700 px-6 py-4">
-          <DetailRow label={t('common:date')} value={dateStr} />
+          <DetailRow label={entry.endDate ? t('common:from') : t('common:date')} value={dateStr} />
+          {entry.endDate && (
+            <DetailRow label={t('common:to')} value={formatDate(entry.endDate, 'EEEE, MMMM d, yyyy')} />
+          )}
 
-          {entry.allDay ? (
+          {entry.allDay && !entry.endDate ? (
             <DetailRow label={t('common:type')} value={t('common:allDay')} />
-          ) : entry.startTime ? (
+          ) : !entry.allDay && entry.startTime ? (
             <DetailRow
               label={t('common:from')}
               value={entry.endTime ? `${entry.startTime} – ${entry.endTime}` : entry.startTime}
@@ -154,9 +157,6 @@ function renderAbsenceDetails(absence: Absence, t: (key: string) => string) {
       <DetailRow label={t('common:reason')} value={reasonLabels[absence.reason] ?? absence.reason} />
       {absence.reason_detail && (
         <DetailRow label={t('common:details')} value={absence.reason_detail} />
-      )}
-      {absence.end_date && absence.end_date !== absence.start_date && (
-        <DetailRow label={t('common:to')} value={formatDate(new Date(absence.end_date), 'EEEE, MMMM d, yyyy')} />
       )}
     </>
   )

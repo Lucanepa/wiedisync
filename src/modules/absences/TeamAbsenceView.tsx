@@ -22,7 +22,8 @@ function absencesToEntries(absences: Absence[], memberMap: Record<string, Member
     const start = parseDate(a.start_date)
     const end = parseDate(a.end_date)
     const isMultiDay = !isSameDay(start, end)
-    const memberName = memberMap[a.member]?.name ?? ''
+    const m = memberMap[a.member]
+    const memberName = m?.name || [m?.first_name, m?.last_name].filter(Boolean).join(' ') || ''
 
     return {
       id: a.id,
@@ -122,7 +123,7 @@ export default function TeamAbsenceView({ teamIds }: TeamAbsenceViewProps) {
                   className="flex flex-wrap items-center gap-3 rounded-lg border bg-white px-4 py-2.5 dark:border-gray-700 dark:bg-gray-800"
                 >
                   <span className="font-medium text-gray-900 dark:text-gray-100">
-                    {member?.name ?? t('common:unknown')}
+                    {member?.name || [member?.first_name, member?.last_name].filter(Boolean).join(' ') || t('common:unknown')}
                   </span>
                   <StatusBadge status={a.reason} />
                   <span className="text-sm text-gray-600 dark:text-gray-400">

@@ -75,9 +75,21 @@ PocketBase uses SQLite. Violating these rules **will corrupt the database** (hap
 4. **If you need raw SQL access**, stop PocketBase first (`sudo systemctl stop pocketbase-kscw`), run your queries, then restart. Never have two processes writing to the same SQLite file.
 5. **To debug a crashing hook**, use binary search: rename half the hooks to `.disabled`, restart, check logs. Narrow down the broken file without removing everything.
 
-## Branches
-- `main` → production (`kscw.lucanepa.com`)
-- `dev` → preview (`dev-kscw.lucanepa.com`)
+## Branches & Dev-First Workflow
+
+- `main` → production (`kscw.lucanepa.com`, PB: `kscw-api.lucanepa.com`)
+- `dev` → preview (`dev-kscw.lucanepa.com`, PB: `kscw-api-dev.lucanepa.com`)
+
+**All changes go through `dev` first.** Never push directly to `main`. Workflow:
+
+1. Develop and commit on `dev` branch
+2. Deploy frontend to dev (push `dev` → Cloudflare Pages preview)
+3. Deploy hooks to dev PB (`/opt/pocketbase-kscw-dev/pb_hooks/`, restart `pocketbase-kscw-dev`)
+4. Test on `dev-kscw.lucanepa.com` against `kscw-api-dev.lucanepa.com`
+5. Once confirmed working, merge `dev` → `main` (with user approval)
+6. Deploy hooks to prod PB and push `main` to trigger production build
+
+**Dev PB daily sync**: A cron job at 04:00 UTC copies prod `pb_data` to dev PB daily (script: `/opt/pocketbase-kscw-dev/sync-from-prod.sh`, log: `/var/log/pocketbase-kscw-dev-sync.log`). Hooks are NOT synced — they stay as deployed to dev.
 
 ## Session Workflow
 

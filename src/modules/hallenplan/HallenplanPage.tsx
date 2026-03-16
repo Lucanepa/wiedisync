@@ -147,11 +147,12 @@ export default function HallenplanPage() {
     const canAdminCurrentSport = sportFilter === 'all'
       ? hasAdminAccessToSport('volleyball') || hasAdminAccessToSport('basketball')
       : hasAdminAccessToSport(sportFilter === 'vb' ? 'volleyball' : 'basketball')
+    const canAdmin = canAdminTeam || canAdminCurrentSport
     // A real slot with no team = manually created "free" slot
     const isManuallyFree = !meta && !slot.team
 
     // Admin mode: freed/manually-free slots → open slot editor (admins manage, not claim)
-    if ((meta?.isFreed || isManuallyFree) && effectiveIsAdmin && (canAdminTeam || canAdminCurrentSport)) {
+    if ((meta?.isFreed || isManuallyFree) && effectiveIsAdmin && canAdmin) {
       if (!meta && isManuallyFree) {
         // Real manually-free slot → edit it directly
         setEditingSlot(slot)
@@ -184,7 +185,7 @@ export default function HallenplanPage() {
     }
 
     // Admin or coach (own team): real slots → open slot editor
-    if ((canAdminTeam || (isCoach && coachTeamIds.includes(slot.team))) && !meta) {
+    if ((effectiveIsAdmin && canAdmin) || (isCoach && coachTeamIds.includes(slot.team))) {
       setEditingSlot(slot)
       setPrefill(null)
       setEditorOpen(true)
@@ -343,15 +344,28 @@ export default function HallenplanPage() {
           isAdmin={effectiveIsAdmin}
           onClose={() => setVirtualDetailSlot(null)}
           onEditSlot={async (training: Training) => {
-            if (!training.hall_slot) return
             setVirtualDetailSlot(null)
             try {
-              const parentSlot = await pb.collection('hall_slots').getOne<HallSlot>(training.hall_slot)
-              setEditingSlot(parentSlot)
-              setPrefill(null)
-              setEditorOpen(true)
+              let parentSlot: HallSlot | null = null
+              if (training.hall_slot) {
+                parentSlot = await pb.collection('hall_slots').getOne<HallSlot>(training.hall_slot)
+              } else {
+                // No hall_slot reference — find matching slot by team + day + time
+                const trainingDate = new Date(training.date)
+                const jsDay = trainingDate.getDay()
+                const dbDay = jsDay === 0 ? 6 : jsDay - 1
+                const results = await pb.collection('hall_slots').getList<HallSlot>(1, 1, {
+                  filter: `team="${training.team}" && day_of_week=${dbDay} && start_time="${training.start_time}" && end_time="${training.end_time}"`,
+                })
+                if (results.items.length > 0) parentSlot = results.items[0]
+              }
+              if (parentSlot) {
+                setEditingSlot(parentSlot)
+                setPrefill(null)
+                setEditorOpen(true)
+              }
             } catch {
-              // hall_slot not found — fall back to navigating to trainings
+              // hall_slot not found — ignore
             }
           }}
         />

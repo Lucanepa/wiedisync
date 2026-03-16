@@ -8,8 +8,8 @@ import DatePicker from '@/components/ui/DatePicker'
 import pb from '../../../pb'
 import { logActivity } from '../../../utils/logActivity'
 import { useConflictChecker } from '../hooks/useConflictChecker'
-import { minutesToTime, timeToMinutes } from '../../../utils/dateHelpers'
-import type { Hall, HallSlot, Team } from '../../../types'
+import { minutesToTime, timeToMinutes, toISODate } from '../../../utils/dateHelpers'
+import type { Hall, HallClosure, HallSlot, Team } from '../../../types'
 
 interface SlotEditorProps {
   slot: HallSlot | null
@@ -93,8 +93,6 @@ export default function SlotEditor({
 
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [updateTrainings, setUpdateTrainings] = useState(true)
-
   const conflicts = useConflictChecker(form, allSlots, slot?.id)
 
   function update<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
@@ -102,6 +100,86 @@ export default function SlotEditor({
   }
 
   const isCombo = COMBO_VALUE && form.hall === COMBO_VALUE
+
+  /** Generate season-end date (May 31 of current or next year) */
+  function getSeasonEndDate(): string {
+    const now = new Date()
+    const year = now.getMonth() < 5 ? now.getFullYear() : now.getFullYear() + 1
+    return `${year}-05-31`
+  }
+
+  /** Generate training dates for a slot, skipping closures and existing trainings */
+  async function generateTrainings(slotId: string, slotData: typeof form & { indefinite: boolean }) {
+    const today = new Date().toISOString().slice(0, 10)
+    const startDate = slotData.valid_from > today ? slotData.valid_from : today
+    const endDate = slotData.indefinite ? getSeasonEndDate() : (slotData.valid_until || getSeasonEndDate())
+    if (!startDate || !endDate) return
+
+    // Fetch closures and existing trainings
+    const hallId = isCombo ? kwiA!.id : slotData.hall
+    const [closures, existing] = await Promise.all([
+      pb.collection('hall_closures').getFullList<HallClosure>(),
+      pb.collection('trainings').getFullList<{ date: string }>({
+        filter: `hall_slot="${slotId}"`,
+        fields: 'date',
+      }),
+    ])
+    const existingDates = new Set(existing.map((t) => t.date.slice(0, 10)))
+
+    // Generate dates matching day_of_week
+    const targetJsDay = (slotData.day_of_week + 1) % 7
+    const current = new Date(startDate)
+    const end = new Date(endDate)
+
+    // Advance to first matching day
+    while (current.getDay() !== targetJsDay && current <= end) {
+      current.setDate(current.getDate() + 1)
+    }
+
+    while (current <= end) {
+      const dateStr = toISODate(current)
+      const isClosed = closures.some(
+        (c) => c.hall === hallId && c.start_date <= dateStr && c.end_date >= dateStr,
+      )
+      if (!isClosed && !existingDates.has(dateStr)) {
+        const rec = await pb.collection('trainings').create({
+          team: slotData.team,
+          hall_slot: slotId,
+          date: dateStr,
+          start_time: slotData.start_time,
+          end_time: slotData.end_time,
+          hall: hallId,
+          cancelled: false,
+        })
+        logActivity('create', 'trainings', rec.id, { team: slotData.team, date: dateStr })
+      }
+      current.setDate(current.getDate() + 7)
+    }
+  }
+
+  /** Cascade slot changes to future trainings */
+  async function cascadeChanges(slotId: string, oldSlot: HallSlot, newData: typeof form) {
+    const today = new Date().toISOString().slice(0, 10)
+    const futureTrainings = await pb.collection('trainings').getFullList({
+      filter: `hall_slot="${slotId}" && date>="${today}"`,
+    })
+    if (futureTrainings.length === 0) return
+
+    const ownerChanged = oldSlot.team !== newData.team
+    const timeChanged = oldSlot.start_time !== newData.start_time || oldSlot.end_time !== newData.end_time
+    const hallChanged = oldSlot.hall !== newData.hall
+
+    if (ownerChanged || timeChanged || hallChanged) {
+      const hallId = isCombo ? kwiA!.id : newData.hall
+      for (const tr of futureTrainings) {
+        await pb.collection('trainings').update(tr.id, {
+          ...(ownerChanged ? { team: newData.team } : {}),
+          ...(timeChanged ? { start_time: newData.start_time, end_time: newData.end_time } : {}),
+          ...(hallChanged ? { hall: hallId } : {}),
+        })
+      }
+    }
+  }
 
   async function handleSave() {
     if (!form.hall) {
@@ -121,8 +199,9 @@ export default function SlotEditor({
         indefinite: indefinitely,
         valid_until: indefinitely ? '' : form.valid_until,
       }
+      let savedSlotId = slot?.id ?? ''
+
       if (isCombo && kwiA && kwiB) {
-        // Create/update a slot for each hall in the combo
         const hallIds = [kwiA.id, kwiB.id]
         if (slot) {
           await pb.collection('hall_slots').update(slot.id, { ...payload, hall: hallIds[0] })
@@ -131,6 +210,7 @@ export default function SlotEditor({
           for (const hid of hallIds) {
             const rec = await pb.collection('hall_slots').create({ ...payload, hall: hid })
             logActivity('create', 'hall_slots', rec.id, { ...payload, hall: hid })
+            if (!savedSlotId) savedSlotId = rec.id
           }
         }
       } else if (slot) {
@@ -139,25 +219,20 @@ export default function SlotEditor({
       } else {
         const rec = await pb.collection('hall_slots').create(payload)
         logActivity('create', 'hall_slots', rec.id, payload)
+        savedSlotId = rec.id
       }
-      // Batch-update future trainings if checkbox is checked and this is an existing training slot
-      if (updateTrainings && slot && form.slot_type === 'training') {
-        try {
-          const today = new Date().toISOString().slice(0, 10)
-          const futureTrainings = await pb.collection('trainings').getFullList({
-            filter: `hall_slot="${slot.id}" && date>="${today}"`,
-          })
-          for (const tr of futureTrainings) {
-            await pb.collection('trainings').update(tr.id, {
-              start_time: form.start_time,
-              end_time: form.end_time,
-              hall: isCombo ? kwiA!.id : form.hall,
-            })
-          }
-        } catch {
-          // Non-critical — slot was saved, trainings update failed silently
+
+      // For training slots: cascade changes or auto-generate
+      if (payload.slot_type === 'training' && savedSlotId) {
+        if (slot) {
+          // Existing slot — cascade changes to future trainings
+          await cascadeChanges(savedSlotId, slot, form)
+        } else {
+          // New slot — auto-generate trainings
+          await generateTrainings(savedSlotId, payload)
         }
       }
+
       onSaved()
       onClose()
     } catch (err) {
@@ -354,19 +429,6 @@ export default function SlotEditor({
           <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
             {error}
           </div>
-        )}
-
-        {/* Update future trainings checkbox (only for existing training slots) */}
-        {slot && form.slot_type === 'training' && (
-          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-            <input
-              type="checkbox"
-              checked={updateTrainings}
-              onChange={(e) => setUpdateTrainings(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300"
-            />
-            {t('updateFutureTrainings')}
-          </label>
         )}
 
         {/* Actions */}

@@ -71,10 +71,15 @@ export default function SignUpPage() {
         body: JSON.stringify({ email: email.trim().toLowerCase() }),
       })
 
-      if (res.exists) {
-        // Account already exists — redirect to login
+      if (res.exists && res.claimed) {
+        // Account already claimed — redirect to login
         navigate('/login', { state: { email: email.trim().toLowerCase() } })
         return
+      } else if (res.exists) {
+        // Account exists but not claimed — send password reset to claim
+        await pb.collection('members').requestPasswordReset(email.trim().toLowerCase())
+        setStep('claim')
+        setResetSent(true)
       } else {
         // New member — show full registration form
         setStep('register')

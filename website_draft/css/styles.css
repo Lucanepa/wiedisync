@@ -967,12 +967,14 @@ tr:hover td {
 
 /* ── Game Rows ─────────────────────────────────────────────── */
 .game-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
   align-items: center;
-  gap: var(--space-md);
+  gap: var(--space-sm) var(--space-md);
   padding: var(--space-md);
   border-bottom: 1px solid var(--border);
   transition: background var(--transition-fast);
+  overflow: hidden;
 }
 .game-row:hover {
   background: rgba(74, 85, 162, 0.03);
@@ -982,12 +984,15 @@ tr:hover td {
   font-weight: 600;
   font-size: var(--text-sm);
   color: var(--text-muted);
-  min-width: 80px;
+  white-space: nowrap;
   text-transform: uppercase;
 }
 .game-teams {
-  flex: 1;
   font-weight: 500;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .game-teams .vs { color: var(--text-muted); margin: 0 0.3em; font-weight: 400; }
 .game-score {
@@ -995,8 +1000,8 @@ tr:hover td {
   font-weight: 700;
   font-size: var(--text-lg);
   color: var(--kscw-blue);
-  min-width: 50px;
   text-align: right;
+  white-space: nowrap;
 }
 .game-score.win { color: var(--success); }
 .game-score.loss { color: var(--danger); }
@@ -1005,9 +1010,34 @@ tr:hover td {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  white-space: nowrap;
 }
 .game-badge.home { color: var(--kscw-blue); }
 .game-badge.away { color: var(--bb-orange); }
+
+/* Mobile: compact 2-row game cards */
+@media (max-width: 639px) {
+  .game-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs) var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+  }
+  /* Row 1: date, chip, badge — with time/score pushed right */
+  .game-date { order: 1; }
+  .game-row .chip { order: 2; }
+  .game-badge { order: 3; flex: 1; }
+  .game-score { order: 4; text-align: right; font-size: var(--text-base); }
+  /* Row 2: teams span full width */
+  .game-teams {
+    order: 5;
+    flex-basis: 100%;
+    white-space: normal;
+    font-size: var(--text-sm);
+    line-height: 1.4;
+  }
+}
 
 /* ── Section Headers ───────────────────────────────────────── */
 .section-header {

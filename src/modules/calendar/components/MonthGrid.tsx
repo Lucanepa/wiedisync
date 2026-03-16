@@ -365,19 +365,19 @@ export default function MonthGrid({
                               }`}
                             >
                               <TypeIcon type={colorKey(entry)} sport={entry.sport} className={dotColors[colorKey(entry)].replace('bg-', 'text-')} />
-                              <span className="truncate">
-                                {entry.startTime && (
-                                  <span className="font-medium">{entry.startTime} </span>
-                                )}
-                                {entry.type === 'game' && entry.gameType ? (
-                                  <span className="hidden lg:inline">
-                                    <span className="font-semibold">{entry.gameType === 'home' ? 'H' : 'A'}</span>
-                                    {entry.teamNames[0] ? ` ${entry.teamNames[0]}` : ''}
+                              {entry.startTime && (
+                                <span className="font-medium">{entry.startTime}</span>
+                              )}
+                              {entry.type === 'game' && entry.gameType ? (
+                                <>
+                                  <span className={`hidden lg:inline-flex h-3.5 w-3.5 items-center justify-center rounded-sm text-[8px] font-bold leading-none text-white ${entry.gameType === 'home' ? 'bg-brand-500' : 'bg-amber-500'}`}>
+                                    {entry.gameType === 'home' ? 'H' : 'A'}
                                   </span>
-                                ) : (
-                                  <span className="hidden lg:inline">{entry.title}</span>
-                                )}
-                              </span>
+                                  {entry.teamNames[0] ? <span className="hidden lg:inline truncate">{entry.teamNames[0]}</span> : null}
+                                </>
+                              ) : (
+                                <span className="hidden lg:inline truncate">{entry.title}</span>
+                              )}
                             </button>
                           ))}
                           {overflow > 0 && (

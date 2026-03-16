@@ -20,7 +20,7 @@
       .contact-layout { grid-template-columns: 1fr; }
     }
     .contact-form {
-      background: var(--card-bg, #ffffff);
+      background: var(--bg-white);
       border: 1px solid var(--border);
       border-radius: var(--radius-lg);
       padding: var(--space-xl);
@@ -29,6 +29,7 @@
       font-size: var(--text-xl);
       font-weight: 700;
       margin-bottom: var(--space-lg);
+      color: var(--text-primary);
     }
     .form-group {
       margin-bottom: var(--space-md);
@@ -49,7 +50,7 @@
       font-family: 'Inter', sans-serif;
       border: 1px solid var(--border);
       border-radius: var(--radius-md, 8px);
-      background: var(--card-bg, #ffffff);
+      background: var(--bg-white);
       color: var(--text-primary);
       transition: border-color 0.2s ease, box-shadow 0.2s ease;
       box-sizing: border-box;
@@ -100,7 +101,7 @@
       margin-bottom: var(--space-lg);
     }
     .contact-info-card {
-      background: var(--card-bg, #ffffff);
+      background: var(--bg-white);
       border: 1px solid var(--border);
       border-radius: var(--radius-lg);
       padding: var(--space-lg);
@@ -113,6 +114,7 @@
       display: flex;
       align-items: center;
       gap: var(--space-xs);
+      color: var(--text-primary);
     }
     .contact-info-card p {
       font-size: var(--text-sm);
@@ -151,7 +153,7 @@
     <div class="container">
       <nav class="nav-inner">
         <a href="/" class="nav-logo">
-          <img src="/images/kscw_blau.png" alt="KSC Wiedikon">
+          <img src="/images/kscw_weiss.png" alt="KSC Wiedikon">
           <span>KSC Wiedikon</span>
         </a>
 
@@ -161,7 +163,7 @@
             <a href="/" class="nav-link">Home</a>
           </li>
           <li class="nav-item">
-            <a href="/club/" class="nav-link active">Verein
+            <a href="#" class="nav-link active">Verein
               <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </a>
             <div class="nav-dropdown">
@@ -173,7 +175,7 @@
             </div>
           </li>
           <li class="nav-item">
-            <a href="/volleyball/" class="nav-link">Volleyball
+            <a href="/volleyball/index.html" class="nav-link">Volleyball
               <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </a>
             <div class="nav-dropdown">
@@ -193,7 +195,7 @@
             </div>
           </li>
           <li class="nav-item">
-            <a href="/basketball/" class="nav-link">Basketball
+            <a href="/basketball/index.html" class="nav-link">Basketball
               <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </a>
             <div class="nav-dropdown">
@@ -204,10 +206,10 @@
             </div>
           </li>
           <li class="nav-item">
-            <a href="/sponsoren/" class="nav-link">Sponsoren</a>
+            <a href="/sponsoren/index.html" class="nav-link">Sponsoren</a>
           </li>
           <li class="nav-item">
-            <a href="/weiteres/" class="nav-link">Weiteres
+            <a href="#" class="nav-link">Weiteres
               <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </a>
             <div class="nav-dropdown">
@@ -282,7 +284,7 @@
         </div>
       </div>
       <div class="mobile-nav-item">
-        <a href="/sponsoren/" class="mobile-nav-link">Sponsoren</a>
+        <a href="/sponsoren/index.html" class="mobile-nav-link">Sponsoren</a>
       </div>
       <div class="mobile-nav-item">
         <button class="mobile-nav-link">
@@ -366,6 +368,17 @@
             <p>
               KSC Wiedikon<br>
               <a href="mailto:kontakt@kscw.ch">kontakt@kscw.ch</a>
+            </p>
+          </div>
+
+          <div class="contact-info-card">
+            <h3>
+              <i data-lucide="circle" style="width: 18px; height: 18px; color: var(--kscw-blue, #4A55A2);"></i>
+              Volleyball
+            </h3>
+            <p>
+              Thamayanth Kanagalingam<br>
+              <a href="mailto:volleyball@kscw.ch">volleyball@kscw.ch</a>
             </p>
           </div>
 
@@ -456,7 +469,7 @@
               <a href="/club/ueber-uns.html">Ueber uns</a>
               <a href="/club/vorstand.html">Vorstand</a>
               <a href="/club/kontakt.html">Kontakt</a>
-              <a href="/sponsoren/">Sponsoren</a>
+              <a href="/sponsoren/index.html">Sponsoren</a>
               <a href="/weiteres/downloads.html">Downloads</a>
             </div>
           </div>

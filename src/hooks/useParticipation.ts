@@ -89,6 +89,7 @@ export function useParticipation(
     participation,
     hasAbsence,
     effectiveStatus: hasAbsence ? 'absent' as const : displayStatus,
+    note: participation?.note ?? '',
     setStatus,
     clearStatus,
     refetch,

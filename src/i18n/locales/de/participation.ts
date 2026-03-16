@@ -31,4 +31,6 @@ export default {
   promotedFromWaitlist: 'Du wurdest von der Warteliste bestätigt',
   waitlistHint: 'Training voll — du wirst auf die Warteliste gesetzt',
   saved: 'Gespeichert',
+  notePlaceholder: 'Notiz hinzufügen…',
+  noteSaved: 'Notiz gespeichert',
 } as const

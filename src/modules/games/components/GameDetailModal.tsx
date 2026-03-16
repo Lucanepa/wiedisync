@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { X } from 'lucide-react'
+import { MessageSquare, X } from 'lucide-react'
 import type { RecordModel } from 'pocketbase'
 import type { Game, Team, Hall, Member } from '../../../types'
 import { Button } from '@/components/ui/button'
@@ -69,13 +69,20 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
   const { update: updateGame } = useMutation<Game>('games')
   const canParticipate = !!user && !!game?.kscw_team && canParticipateIn(game.kscw_team)
   const staffOnly = !!game?.kscw_team && isStaffOnly(game.kscw_team)
-  const { effectiveStatus, hasAbsence, setStatus } = useParticipation(
+  const { effectiveStatus, hasAbsence, note: savedNote, setStatus } = useParticipation(
     'game',
     game?.id ?? '',
     game?.date,
     undefined,
     staffOnly,
   )
+  const [noteText, setNoteText] = useState(savedNote)
+  const noteInitRef = useRef(savedNote)
+  // Sync note text when server data loads/changes
+  if (savedNote !== noteInitRef.current) {
+    noteInitRef.current = savedNote
+    setNoteText(savedNote)
+  }
 
   // Re-fetch with full expand when opened from calendar (which only expands kscw_team,hall)
   useEffect(() => {
@@ -291,6 +298,29 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
             <div className="ml-auto border-l pl-3 dark:border-gray-600">
               <ParticipationSummary activityType="game" activityId={game.id} compact />
             </div>
+            {/* Participation note */}
+            {!hasAbsence && effectiveStatus && (
+              <div className="flex w-full items-center gap-2 pt-1">
+                <MessageSquare className="h-4 w-4 shrink-0 text-gray-400" />
+                <input
+                  type="text"
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                  onBlur={() => {
+                    if (noteText !== savedNote && effectiveStatus) {
+                      setStatus(effectiveStatus as 'confirmed' | 'tentative' | 'declined', noteText)
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.currentTarget.blur()
+                    }
+                  }}
+                  placeholder={t('participation:notePlaceholder')}
+                  className="min-w-0 flex-1 rounded-md border border-gray-200 bg-transparent px-2.5 py-1 text-sm text-gray-700 placeholder:text-gray-400 focus:border-brand-400 focus:outline-none dark:border-gray-600 dark:text-gray-300 dark:placeholder:text-gray-500 dark:focus:border-brand-500"
+                />
+              </div>
+            )}
           </div>
         )}
 

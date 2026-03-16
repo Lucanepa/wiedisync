@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { usePB } from '../../../hooks/usePB'
-import type { Game, Training, Event, HallClosure, HallEvent, Team, Absence } from '../../../types'
+import type { Game, Training, Event, HallClosure, HallEvent, Team, Absence, MemberTeam } from '../../../types'
 import type { CalendarEntry, CalendarFilterState } from '../../../types/calendar'
 import {
   parseDate,
@@ -239,13 +239,24 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
     all: true,
   })
 
+  // Fetch member_teams for selected teams (used to filter absences by team)
+  const hasTeamFilter = filters.selectedTeamIds.length > 0
+  const { data: teamMemberLinks } = usePB<MemberTeam>('member_teams', {
+    enabled: fetchAbsences && hasTeamFilter,
+    filter: hasTeamFilter
+      ? filters.selectedTeamIds.map((id) => `team="${id}"`).join(' || ')
+      : '',
+    fields: 'member',
+    all: true,
+  })
+
   const { data: absences, isLoading: absencesLoading } = usePB<Absence & { expand?: { member?: { first_name: string; last_name: string; name: string } } }>('absences', {
     enabled: fetchAbsences,
     filter: fetchAbsences
       ? `end_date >= "${fetchRange.start}" && start_date <= "${fetchRange.end}"`
       : '',
     expand: 'member',
-    fields: 'id,member,start_date,end_date,reason,reason_detail,expand.member.first_name,expand.member.name',
+    fields: 'id,member,start_date,end_date,reason,reason_detail,affects,expand.member.first_name,expand.member.name',
     sort: 'start_date',
     all: true,
   })
@@ -306,7 +317,15 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
     }
 
     if (fetchAbsences) {
+      // Filter absences by team membership when team filter is active
+      const teamMemberIds = hasTeamFilter ? new Set(teamMemberLinks.map((mt) => mt.member)) : null
+      const teamIdSet = hasTeamFilter ? new Set(filters.selectedTeamIds) : null
       for (const a of absences) {
+        // Skip if team filter active and member not in selected teams
+        if (teamMemberIds && !teamMemberIds.has(a.member)) continue
+        // Also check affects field: skip if affects specific teams that don't match
+        const affects = (a as Record<string, unknown>).affects as string[] | undefined
+        if (teamIdSet && affects && affects.length > 0 && !affects.includes('all') && !affects.some((id) => teamIdSet.has(id))) continue
         const m = a.expand?.member
         const firstName = m?.first_name || m?.name || '?'
         all.push(absenceToEntry(a, firstName))
@@ -325,7 +344,7 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
     })
 
     return filtered
-  }, [games, trainings, events, closuresRaw, hallEvents, absences, fetchGames, fetchTrainings, fetchEvents, fetchClosures, fetchHallEvents, fetchAbsences, wantHome, wantAway, rangeStart, rangeEnd])
+  }, [games, trainings, events, closuresRaw, hallEvents, absences, teamMemberLinks, fetchGames, fetchTrainings, fetchEvents, fetchClosures, fetchHallEvents, fetchAbsences, wantHome, wantAway, rangeStart, rangeEnd, hasTeamFilter, filters.selectedTeamIds])
 
   const closedDates = useMemo(() => {
     const dates = new Set<string>()

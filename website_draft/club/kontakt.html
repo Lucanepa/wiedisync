@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kontakt — KSC Wiedikon</title>
+  <meta name="description" content="Kontaktiere den KSC Wiedikon — Volleyball und Basketball in Zuerich-Wiedikon.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    .contact-layout {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: var(--space-2xl);
+      align-items: start;
+    }
+    @media (max-width: 768px) {
+      .contact-layout { grid-template-columns: 1fr; }
+    }
+    .contact-form {
+      background: var(--card-bg, #ffffff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-xl);
+    }
+    .contact-form h2 {
+      font-size: var(--text-xl);
+      font-weight: 700;
+      margin-bottom: var(--space-lg);
+    }
+    .form-group {
+      margin-bottom: var(--space-md);
+    }
+    .form-group label {
+      display: block;
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: var(--space-xs);
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 0.625rem 0.875rem;
+      font-size: var(--text-sm);
+      font-family: 'Inter', sans-serif;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md, 8px);
+      background: var(--card-bg, #ffffff);
+      color: var(--text-primary);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      box-sizing: border-box;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--kscw-blue, #4A55A2);
+      box-shadow: 0 0 0 3px rgba(74, 85, 162, 0.15);
+    }
+    .form-group textarea {
+      min-height: 140px;
+      resize: vertical;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-md);
+    }
+    @media (max-width: 480px) {
+      .form-row { grid-template-columns: 1fr; }
+    }
+    .form-submit {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      padding: 0.75rem 1.5rem;
+      font-size: var(--text-sm);
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      color: #ffffff;
+      background: var(--kscw-blue, #4A55A2);
+      border: none;
+      border-radius: var(--radius-md, 8px);
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.1s ease;
+    }
+    .form-submit:hover {
+      background: #3b4590;
+    }
+    .form-submit:active {
+      transform: scale(0.98);
+    }
+    .contact-sidebar h2 {
+      font-size: var(--text-xl);
+      font-weight: 700;
+      margin-bottom: var(--space-lg);
+    }
+    .contact-info-card {
+      background: var(--card-bg, #ffffff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      margin-bottom: var(--space-lg);
+    }
+    .contact-info-card h3 {
+      font-size: var(--text-base);
+      font-weight: 700;
+      margin-bottom: var(--space-sm);
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+    }
+    .contact-info-card p {
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+      line-height: 1.8;
+      margin: 0;
+    }
+    .contact-info-card a {
+      color: var(--kscw-blue, #4A55A2);
+      text-decoration: underline;
+    }
+    .social-links {
+      display: flex;
+      gap: var(--space-md);
+      margin-top: var(--space-md);
+    }
+    .social-link {
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+      font-size: var(--text-sm);
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+    .social-link:hover {
+      color: var(--kscw-blue, #4A55A2);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══ Header ═══════════════════════════════════════════════════ -->
+  <header class="site-header">
+    <div class="container">
+      <nav class="nav-inner">
+        <a href="/" class="nav-logo">
+          <img src="/images/kscw_logo.png" alt="KSC Wiedikon Logo">
+          <span>KSC Wiedikon</span>
+        </a>
+
+        <!-- Desktop Navigation -->
+        <ul class="nav-menu">
+          <li class="nav-item">
+            <a href="/" class="nav-link">Home</a>
+          </li>
+          <li class="nav-item">
+            <a href="/club/" class="nav-link active">Verein
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </a>
+            <div class="nav-dropdown">
+              <a href="/club/ueber-uns.html" class="dropdown-link">Ueber uns</a>
+              <a href="/club/vorstand.html" class="dropdown-link">Vorstand</a>
+              <a href="/club/geschichte.html" class="dropdown-link">Geschichte</a>
+              <a href="/club/halle.html" class="dropdown-link">Halle</a>
+              <a href="/club/kontakt.html" class="dropdown-link">Kontakt</a>
+            </div>
+          </li>
+          <li class="nav-item">
+            <a href="/volleyball/" class="nav-link">Volleyball
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </a>
+            <div class="nav-dropdown">
+              <span class="dropdown-label">Herren</span>
+              <a href="/volleyball/teams/h1.html" class="dropdown-link">Herren 1</a>
+              <a href="/volleyball/teams/h2.html" class="dropdown-link">Herren 2</a>
+              <a href="/volleyball/teams/h3.html" class="dropdown-link">Herren 3</a>
+              <a href="/volleyball/teams/h4.html" class="dropdown-link">Herren 4</a>
+              <div class="dropdown-divider"></div>
+              <span class="dropdown-label">Damen</span>
+              <a href="/volleyball/teams/d1.html" class="dropdown-link">Damen 1</a>
+              <a href="/volleyball/teams/d2.html" class="dropdown-link">Damen 2</a>
+              <div class="dropdown-divider"></div>
+              <span class="dropdown-label">Nachwuchs</span>
+              <a href="/volleyball/teams/u23.html" class="dropdown-link">U23</a>
+              <a href="/volleyball/teams/u18.html" class="dropdown-link">U18</a>
+            </div>
+          </li>
+          <li class="nav-item">
+            <a href="/basketball/" class="nav-link">Basketball
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </a>
+            <div class="nav-dropdown">
+              <a href="/basketball/teams/h1.html" class="dropdown-link">Herren 1</a>
+              <a href="/basketball/teams/h2.html" class="dropdown-link">Herren 2</a>
+              <a href="/basketball/teams/h4.html" class="dropdown-link">Herren 4</a>
+              <a href="/basketball/teams/d1.html" class="dropdown-link">Damen 1</a>
+            </div>
+          </li>
+          <li class="nav-item">
+            <a href="/sponsoren/" class="nav-link">Sponsoren</a>
+          </li>
+          <li class="nav-item">
+            <a href="/weiteres/" class="nav-link">Weiteres
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </a>
+            <div class="nav-dropdown">
+              <a href="/weiteres/news.html" class="dropdown-link">News</a>
+              <a href="/weiteres/kalender.html" class="dropdown-link">Kalender</a>
+              <a href="/weiteres/downloads.html" class="dropdown-link">Downloads</a>
+            </div>
+          </li>
+                  <li class="nav-item">
+            <a href="https://kscw.lucanepa.com/login" class="nav-link btn btn-gold btn-sm" target="_blank" rel="noopener"><i data-lucide="lock" style="width:14px;height:14px;"></i> Wiedisync</a>
+          </li>
+        </ul>
+
+        <!-- Hamburger (Mobile) -->
+        <button class="nav-hamburger" aria-label="Menu oeffnen">
+          <div class="hamburger-icon">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </button>
+      </nav>
+    </div>
+
+    <!-- Mobile Navigation -->
+    <nav class="mobile-nav" aria-label="Mobile Navigation">
+      <div class="mobile-nav-item">
+        <a href="/" class="mobile-nav-link">Home</a>
+      </div>
+      <div class="mobile-nav-item">
+        <button class="mobile-nav-link">
+          Verein
+          <svg class="mobile-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="mobile-subnav">
+          <a href="/club/ueber-uns.html" class="mobile-sublink">Ueber uns</a>
+          <a href="/club/vorstand.html" class="mobile-sublink">Vorstand</a>
+          <a href="/club/geschichte.html" class="mobile-sublink">Geschichte</a>
+          <a href="/club/halle.html" class="mobile-sublink">Halle</a>
+          <a href="/club/kontakt.html" class="mobile-sublink">Kontakt</a>
+        </div>
+      </div>
+      <div class="mobile-nav-item">
+        <button class="mobile-nav-link">
+          Volleyball
+          <svg class="mobile-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="mobile-subnav">
+          <span class="mobile-sub-label">Herren</span>
+          <a href="/volleyball/teams/h1.html" class="mobile-sublink">Herren 1</a>
+          <a href="/volleyball/teams/h2.html" class="mobile-sublink">Herren 2</a>
+          <a href="/volleyball/teams/h3.html" class="mobile-sublink">Herren 3</a>
+          <a href="/volleyball/teams/h4.html" class="mobile-sublink">Herren 4</a>
+          <span class="mobile-sub-label">Damen</span>
+          <a href="/volleyball/teams/d1.html" class="mobile-sublink">Damen 1</a>
+          <a href="/volleyball/teams/d2.html" class="mobile-sublink">Damen 2</a>
+          <span class="mobile-sub-label">Nachwuchs</span>
+          <a href="/volleyball/teams/u23.html" class="mobile-sublink">U23</a>
+          <a href="/volleyball/teams/u18.html" class="mobile-sublink">U18</a>
+        </div>
+      </div>
+      <div class="mobile-nav-item">
+        <button class="mobile-nav-link">
+          Basketball
+          <svg class="mobile-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="mobile-subnav">
+          <a href="/basketball/teams/h1.html" class="mobile-sublink">Herren 1</a>
+          <a href="/basketball/teams/h2.html" class="mobile-sublink">Herren 2</a>
+          <a href="/basketball/teams/h4.html" class="mobile-sublink">Herren 4</a>
+          <a href="/basketball/teams/d1.html" class="mobile-sublink">Damen 1</a>
+        </div>
+      </div>
+      <div class="mobile-nav-item">
+        <a href="/sponsoren/" class="mobile-nav-link">Sponsoren</a>
+      </div>
+      <div class="mobile-nav-item">
+        <button class="mobile-nav-link">
+          Weiteres
+          <svg class="mobile-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="mobile-subnav">
+          <a href="/weiteres/news.html" class="mobile-sublink">News</a>
+          <a href="/weiteres/kalender.html" class="mobile-sublink">Kalender</a>
+          <a href="/weiteres/downloads.html" class="mobile-sublink">Downloads</a>
+        </div>
+      </div>
+            <div class="mobile-nav-item" style="border-bottom: none; padding-top: 1rem;">
+          <a href="https://kscw.lucanepa.com/login" class="btn btn-gold w-full" target="_blank" rel="noopener" style="justify-content: center;">Wiedisync Login</a>
+        </div>
+    </nav>
+  </header>
+
+  <!-- ═══ Page Header ══════════════════════════════════════════════ -->
+  <section class="page-header">
+    <div class="container">
+      <h1>Kontakt</h1>
+      <p style="font-size: var(--text-lg); margin-top: var(--space-sm); opacity: 0.85;">Wir freuen uns auf deine Nachricht</p>
+    </div>
+  </section>
+
+  <!-- ═══ Contact Content ══════════════════════════════════════════ -->
+  <section class="section">
+    <div class="container">
+      <div class="contact-layout">
+
+        <!-- Contact Form -->
+        <div class="contact-form">
+          <h2>Nachricht senden</h2>
+          <form action="#" method="post" onsubmit="return false;">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="vorname">Vorname</label>
+                <input type="text" id="vorname" name="vorname" placeholder="Dein Vorname" required>
+              </div>
+              <div class="form-group">
+                <label for="nachname">Nachname</label>
+                <input type="text" id="nachname" name="nachname" placeholder="Dein Nachname" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="email">E-Mail</label>
+              <input type="email" id="email" name="email" placeholder="deine@email.ch" required>
+            </div>
+            <div class="form-group">
+              <label for="betreff">Betreff</label>
+              <select id="betreff" name="betreff" required>
+                <option value="" disabled selected>Bitte waehlen...</option>
+                <option value="allgemein">Allgemein</option>
+                <option value="volleyball">Volleyball</option>
+                <option value="basketball">Basketball</option>
+                <option value="sponsoring">Sponsoring</option>
+                <option value="sonstiges">Sonstiges</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="nachricht">Nachricht</label>
+              <textarea id="nachricht" name="nachricht" placeholder="Deine Nachricht..." required></textarea>
+            </div>
+            <button type="submit" class="form-submit">
+              <i data-lucide="send" style="width: 16px; height: 16px;"></i>
+              Absenden
+            </button>
+          </form>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="contact-sidebar">
+          <h2>Kontaktdaten</h2>
+
+          <div class="contact-info-card">
+            <h3>
+              <i data-lucide="mail" style="width: 18px; height: 18px; color: var(--kscw-blue, #4A55A2);"></i>
+              Allgemein
+            </h3>
+            <p>
+              KSC Wiedikon<br>
+              <a href="mailto:kontakt@kscw.ch">kontakt@kscw.ch</a>
+            </p>
+          </div>
+
+          <div class="contact-info-card">
+            <h3>
+              <i data-lucide="dribbble" style="width: 18px; height: 18px; color: #ea580c;"></i>
+              Basketball
+            </h3>
+            <p>
+              Anja Jimenez<br>
+              <a href="mailto:anja.jimenez@kscw.ch">anja.jimenez@kscw.ch</a>
+            </p>
+            <p style="margin-top: var(--space-sm);">
+              Rachel Moser<br>
+              <a href="mailto:rachel.moser@kscw.ch">rachel.moser@kscw.ch</a>
+            </p>
+          </div>
+
+          <div class="contact-info-card">
+            <h3>
+              <i data-lucide="share-2" style="width: 18px; height: 18px; color: var(--kscw-blue, #4A55A2);"></i>
+              Social Media
+            </h3>
+            <div class="social-links">
+              <a href="https://www.facebook.com/kscwiedikon/" class="social-link">
+                <i data-lucide="facebook" style="width: 18px; height: 18px;"></i>
+                KSC-Wiedikon
+              </a>
+              <a href="https://www.instagram.com/ksc_wiedikon/" class="social-link">
+                <i data-lucide="instagram" style="width: 18px; height: 18px;"></i>
+                @ksc_wiedikon
+              </a>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Footer ═══════════════════════════════════════════════════ -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-grid">
+          <div class="footer-brand">
+            <a href="/" class="nav-logo">
+              <img src="/images/kscw_logo.png" alt="KSC Wiedikon" style="height: 40px; filter: brightness(0) invert(1);">
+              <span style="color: #ffffff;">KSC Wiedikon</span>
+            </a>
+            <p>Volleyball &amp; Basketball in Zuerich seit 1978. Trainiere mit uns — vom Breitensport bis zur Regionalliga.</p>
+            <div class="footer-social">
+              <a href="https://www.instagram.com/kscwiedikon/" aria-label="Instagram">
+                <i data-lucide="instagram"></i>
+              </a>
+              <a href="https://www.facebook.com/kscwiedikon/" aria-label="Facebook">
+                <i data-lucide="facebook"></i>
+              </a>
+              <a href="mailto:kontakt@kscw.ch" aria-label="E-Mail">
+                <i data-lucide="mail"></i>
+              </a>
+            </div>
+          </div>
+          <div>
+            <h3 class="footer-heading">Volleyball</h3>
+            <div class="footer-links">
+              <a href="/volleyball/teams/h1.html">Herren 1</a>
+              <a href="/volleyball/teams/h2.html">Herren 2</a>
+              <a href="/volleyball/teams/h3.html">Herren 3</a>
+              <a href="/volleyball/teams/h4.html">Herren 4</a>
+              <a href="/volleyball/teams/d1.html">Damen 1</a>
+              <a href="/volleyball/teams/d2.html">Damen 2</a>
+            </div>
+          </div>
+          <div>
+            <h3 class="footer-heading">Basketball</h3>
+            <div class="footer-links">
+              <a href="/basketball/teams/h1.html">Herren 1</a>
+              <a href="/basketball/teams/h2.html">Herren 2</a>
+              <a href="/basketball/teams/h4.html">Herren 4</a>
+              <a href="/basketball/teams/d1.html">Damen 1</a>
+            </div>
+          </div>
+          <div>
+            <h3 class="footer-heading">Verein</h3>
+            <div class="footer-links">
+              <a href="/club/ueber-uns.html">Ueber uns</a>
+              <a href="/club/vorstand.html">Vorstand</a>
+              <a href="/club/kontakt.html">Kontakt</a>
+              <a href="/sponsoren/">Sponsoren</a>
+              <a href="/weiteres/downloads.html">Downloads</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom" style="display:flex;align-items:center;justify-content:center;gap:1.5rem;flex-wrap:wrap;">
+        <button class="theme-toggle" aria-label="Farbmodus wechseln"><i data-lucide="sun" style="width:16px;height:16px;"></i> <span class="theme-label">Light Mode</span></button>
+        <p>&copy; 2026 KSC Wiedikon. Alle Rechte vorbehalten. · <a href="/club/kontakt.html">Impressum</a></p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ═══ Scripts ══════════════════════════════════════════════════ -->
+  <script src="/js/data.js"></script>
+  <script src="/js/main.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script>lucide.createIcons();</script>
+
+</body>
+</html>

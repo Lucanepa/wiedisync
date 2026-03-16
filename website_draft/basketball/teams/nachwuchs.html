@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Basketball Nachwuchs — KSC Wiedikon</title>
+  <meta name="description" content="KSC Wiedikon Basketball Nachwuchs — Alle Jugendteams von U8 bis U18 im Ueberblick.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    .youth-sections { display: flex; flex-direction: column; gap: var(--space-2xl); }
+    .youth-section-title {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      margin-bottom: var(--space-lg);
+      padding-bottom: var(--space-sm);
+      border-bottom: 2px solid var(--border);
+    }
+    .youth-section-title .chip {
+      font-size: var(--text-sm);
+      font-weight: 700;
+      padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+      display: inline-block;
+    }
+    .youth-section-title h2 {
+      font-size: var(--text-xl);
+      font-weight: 700;
+      margin: 0;
+    }
+    .youth-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: var(--space-lg);
+    }
+    .youth-card {
+      background: var(--card-bg, #ffffff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      transition: box-shadow 0.2s ease, transform 0.2s ease;
+    }
+    .youth-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      transform: translateY(-2px);
+    }
+    .youth-card-header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-md);
+    }
+    .youth-card-header .chip {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+    }
+    .youth-card-header h3 {
+      font-size: var(--text-lg);
+      font-weight: 600;
+      margin: 0;
+    }
+    .youth-card p {
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin: 0 0 var(--space-sm) 0;
+    }
+    .youth-meta {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+      margin-top: var(--space-md);
+      font-size: var(--text-sm);
+    }
+    .youth-meta span {
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+      color: var(--text-secondary);
+    }
+    .youth-meta strong {
+      color: var(--text-primary);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══ Header ═══════════════════════════════════════════════════ -->
+  <header class="site-header">
+    <div class="container">
+      <nav class="nav-inner">
+        <a href="/" class="nav-logo">
+          <img src="/images/kscw_logo.png" alt="KSC Wiedikon Logo">
+          <span>KSC Wiedikon</span>
+        </a>
+
+        <!-- Desktop Navigation -->
+        <ul class="nav-menu">
+          <li class="nav-item">
+            <a href="/" class="nav-link">Home</a>
+          </li>
+          <li class="nav-item">
+            <a href="/club/" class="nav-link">Verein
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </a>
+            <div class="nav-dropdown">
+              <a href="/club/" class="dropdown-link">Ueber uns</a>
+              <a href="/club/vorstand.html" class="dropdown-link">Vorstand</a>
+              <a href="/club/geschichte.html" class="dropdown-link">Geschichte</a>
+              <a href="/club/halle.html" class="dropdown-link">Halle</a>
+              <a href="/club/kontakt.html" class="dropdown-link">Kontakt</a>
+            </div>
+          </li>
+          <li class="nav-item">
+            <a href="/volleyball/" class="nav-link">Volleyball
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </a>
+            <div class="nav-dropdown">
+              <span class="dropdown-label">Herren</span>
+              <a href="/volleyball/teams/h1.html" class="dropdown-link">Herren 1</a>
+              <a href="/volleyball/teams/h2.html" class="dropdown-link">Herren 2</a>
+              <a href="/volleyball/teams/h3.html" class="dropdown-link">Herren 3</a>
+              <a href="/volleyball/teams/h4.html" class="dropdown-link">Herren 4</a>
+              <div class="dropdown-divider"></div>
+              <span class="dropdown-label">Damen</span>
+              <a href="/volleyball/teams/d1.html" class="dropdown-link">Damen 1</a>
+              <a href="/volleyball/teams/d2.html" class="dropdown-link">Damen 2</a>
+              <div class="dropdown-divider"></div>
+              <span class="dropdown-label">Nachwuchs</span>
+              <a href="/volleyball/teams/u23.html" class="dropdown-link">U23</a>
+              <a href="/volleyball/teams/u18.html" class="dropdown-link">U18</a>
+            </div>
+          </li>
+          <li class="nav-item">
+            <a href="/basketball/" class="nav-link active">Basketball
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </a>
+            <div class="nav-dropdown">
+              <a href="/basketball/teams/h1.html" class="dropdown-link">Herren 1</a>
+              <a href="/basketball/teams/h2.html" class="dropdown-link">Herren 2</a>
+              <a href="/basketball/teams/h4.html" class="dropdown-link">Herren 4</a>
+              <a href="/basketball/teams/d1.html" class="dropdown-link">Damen 1</a>
+              <div class="dropdown-divider"></div>
+              <a href="/basketball/teams/nachwuchs.html" class="dropdown-link">Nachwuchs</a>
+            </div>
+          </li>
+          <li class="nav-item">
+            <a href="/sponsoren/" class="nav-link">Sponsoren</a>
+          </li>
+          <li class="nav-item">
+            <a href="/weiteres/" class="nav-link">Weiteres
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </a>
+            <div class="nav-dropdown">
+              <a href="/weiteres/news.html" class="dropdown-link">News</a>
+              <a href="/weiteres/kalender.html" class="dropdown-link">Kalender</a>
+              <a href="/weiteres/downloads.html" class="dropdown-link">Downloads</a>
+            </div>
+          </li>
+                  <li class="nav-item">
+            <a href="https://kscw.lucanepa.com/login" class="nav-link btn btn-gold btn-sm" target="_blank" rel="noopener"><i data-lucide="lock" style="width:14px;height:14px;"></i> Wiedisync</a>
+          </li>
+        </ul>
+
+        <!-- Hamburger (Mobile) -->
+        <button class="nav-hamburger" aria-label="Menu oeffnen">
+          <div class="hamburger-icon">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </button>
+      </nav>
+    </div>
+
+    <!-- Mobile Navigation -->
+    <nav class="mobile-nav" aria-label="Mobile Navigation">
+      <div class="mobile-nav-item">
+        <a href="/" class="mobile-nav-link">Home</a>
+      </div>
+      <div class="mobile-nav-item">
+        <button class="mobile-nav-link">
+          Verein
+          <svg class="mobile-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="mobile-subnav">
+          <a href="/club/" class="mobile-sublink">Ueber uns</a>
+          <a href="/club/vorstand.html" class="mobile-sublink">Vorstand</a>
+          <a href="/club/geschichte.html" class="mobile-sublink">Geschichte</a>
+          <a href="/club/halle.html" class="mobile-sublink">Halle</a>
+          <a href="/club/kontakt.html" class="mobile-sublink">Kontakt</a>
+        </div>
+      </div>
+      <div class="mobile-nav-item">
+        <button class="mobile-nav-link">
+          Volleyball
+          <svg class="mobile-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="mobile-subnav">
+          <span class="mobile-sub-label">Herren</span>
+          <a href="/volleyball/teams/h1.html" class="mobile-sublink">Herren 1</a>
+          <a href="/volleyball/teams/h2.html" class="mobile-sublink">Herren 2</a>
+          <a href="/volleyball/teams/h3.html" class="mobile-sublink">Herren 3</a>
+          <a href="/volleyball/teams/h4.html" class="mobile-sublink">Herren 4</a>
+          <span class="mobile-sub-label">Damen</span>
+          <a href="/volleyball/teams/d1.html" class="mobile-sublink">Damen 1</a>
+          <a href="/volleyball/teams/d2.html" class="mobile-sublink">Damen 2</a>
+          <span class="mobile-sub-label">Nachwuchs</span>
+          <a href="/volleyball/teams/u23.html" class="mobile-sublink">U23</a>
+          <a href="/volleyball/teams/u18.html" class="mobile-sublink">U18</a>
+        </div>
+      </div>
+      <div class="mobile-nav-item">
+        <button class="mobile-nav-link">
+          Basketball
+          <svg class="mobile-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="mobile-subnav">
+          <a href="/basketball/teams/h1.html" class="mobile-sublink">Herren 1</a>
+          <a href="/basketball/teams/h2.html" class="mobile-sublink">Herren 2</a>
+          <a href="/basketball/teams/h4.html" class="mobile-sublink">Herren 4</a>
+          <a href="/basketball/teams/d1.html" class="mobile-sublink">Damen 1</a>
+          <a href="/basketball/teams/nachwuchs.html" class="mobile-sublink">Nachwuchs</a>
+        </div>
+      </div>
+      <div class="mobile-nav-item">
+        <a href="/sponsoren/" class="mobile-nav-link">Sponsoren</a>
+      </div>
+      <div class="mobile-nav-item">
+        <button class="mobile-nav-link">
+          Weiteres
+          <svg class="mobile-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="mobile-subnav">
+          <a href="/weiteres/news.html" class="mobile-sublink">News</a>
+          <a href="/weiteres/kalender.html" class="mobile-sublink">Kalender</a>
+          <a href="/weiteres/downloads.html" class="mobile-sublink">Downloads</a>
+        </div>
+      </div>
+            <div class="mobile-nav-item" style="border-bottom: none; padding-top: 1rem;">
+          <a href="https://kscw.lucanepa.com/login" class="btn btn-gold w-full" target="_blank" rel="noopener" style="justify-content: center;">Wiedisync Login</a>
+        </div>
+    </nav>
+  </header>
+
+  <!-- ═══ Page Header ══════════════════════════════════════════════ -->
+  <section class="page-header" style="--team-color: #f97316; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);">
+    <div class="container">
+      <h1 style="color: #ffffff;">Basketball Nachwuchs</h1>
+      <p style="color: rgba(255,255,255,0.85); font-size: var(--text-lg); margin-top: var(--space-sm);">Alle Jugendteams im Ueberblick — von U8 bis U18</p>
+    </div>
+  </section>
+
+  <!-- ═══ Youth Teams ══════════════════════════════════════════════ -->
+  <section class="section">
+    <div class="container">
+      <div class="youth-sections">
+
+        <!-- ── U18 ─────────────────────────────────────────────── -->
+        <div>
+          <div class="youth-section-title">
+            <h2>U18</h2>
+          </div>
+          <div class="youth-grid">
+            <div class="youth-card">
+              <div class="youth-card-header">
+                <span class="chip" style="background: #f97316; color: #ffffff;">U18 Knaben</span>
+                <h3>U18 Knaben</h3>
+              </div>
+              <p>Unser U18-Knabenteam spielt in der regionalen Jugendliga und bereitet sich auf den Uebergang in die Herrenmannschaften vor. Technik, Taktik und Teamgeist stehen im Fokus.</p>
+              <div class="youth-meta">
+                <span><strong>Training:</strong> Dienstag 18:00 – 19:30</span>
+                <span><strong>Halle:</strong> Turnhalle Utogrund</span>
+                <span><strong>Coach:</strong> Marco Frei</span>
+              </div>
+            </div>
+            <div class="youth-card">
+              <div class="youth-card-header">
+                <span class="chip" style="background: #c084fc; color: #ffffff;">U18 Maedchen</span>
+                <h3>U18 Maedchen</h3>
+              </div>
+              <p>Die U18 Maedchen sind ein ambitioniertes Team mit starkem Zusammenhalt. Sie nehmen an regionalen Turnieren teil und entwickeln ihre spielerischen Faehigkeiten stetig weiter.</p>
+              <div class="youth-meta">
+                <span><strong>Training:</strong> Mittwoch 18:00 – 19:30</span>
+                <span><strong>Halle:</strong> Turnhalle Lavater</span>
+                <span><strong>Coach:</strong> Sabrina Vollenweider</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── U16 ─────────────────────────────────────────────── -->
+        <div>
+          <div class="youth-section-title">
+            <h2>U16</h2>
+          </div>
+          <div class="youth-grid">
+            <div class="youth-card">
+              <div class="youth-card-header">
+                <span class="chip" style="background: #fb923c; color: #ffffff;">U16 Knaben</span>
+                <h3>U16 Knaben</h3>
+              </div>
+              <p>Im U16-Bereich wird die basketballerische Grundausbildung vertieft. Positionsspiel und Spielverstaendnis werden gezielt gefoerdert.</p>
+              <div class="youth-meta">
+                <span><strong>Training:</strong> Montag 17:30 – 19:00</span>
+                <span><strong>Halle:</strong> Turnhalle Sihlfeld</span>
+                <span><strong>Coach:</strong> David Ammann</span>
+              </div>
+            </div>
+            <div class="youth-card">
+              <div class="youth-card-header">
+                <span class="chip" style="background: #d8b4fe; color: #1e1e1e;">U16 Maedchen</span>
+                <h3>U16 Maedchen</h3>
+              </div>
+              <p>Die U16 Maedchen trainieren mit Begeisterung und nehmen regelmäessig an Meisterschaftsspielen teil. Spass am Basketball steht an erster Stelle.</p>
+              <div class="youth-meta">
+                <span><strong>Training:</strong> Donnerstag 17:30 – 19:00</span>
+                <span><strong>Halle:</strong> Turnhalle Lavater</span>
+                <span><strong>Coach:</strong> Nina Berger</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── U14 ─────────────────────────────────────────────── -->
+        <div>
+          <div class="youth-section-title">
+            <h2>U14</h2>
+          </div>
+          <div class="youth-grid">
+            <div class="youth-card">
+              <div class="youth-card-header">
+                <span class="chip" style="background: #fdba74; color: #1e1e1e;">U14 Knaben</span>
+                <h3>U14 Knaben</h3>
+              </div>
+              <p>Unsere U14 Knaben lernen die Grundlagen des Basketballs: Dribbeln, Passen, Werfen und erste taktische Konzepte in spielerischer Form.</p>
+              <div class="youth-meta">
+                <span><strong>Training:</strong> Dienstag 16:30 – 18:00</span>
+                <span><strong>Halle:</strong> Turnhalle Utogrund</span>
+                <span><strong>Coach:</strong> Patrick Ruegg</span>
+              </div>
+            </div>
+            <div class="youth-card">
+              <div class="youth-card-header">
+                <span class="chip" style="background: #e9d5ff; color: #1e1e1e;">U14 Maedchen</span>
+                <h3>U14 Maedchen</h3>
+              </div>
+              <p>Die U14 Maedchen entwickeln ihre Basketballskills in einer motivierenden Umgebung. Teamwork und Freude an der Bewegung sind zentral.</p>
+              <div class="youth-meta">
+                <span><strong>Training:</strong> Freitag 16:30 – 18:00</span>
+                <span><strong>Halle:</strong> Turnhalle Sihlfeld</span>
+                <span><strong>Coach:</strong> Laura Kessler</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── U12 ─────────────────────────────────────────────── -->
+        <div>
+          <div class="youth-section-title">
+            <h2>U12</h2>
+          </div>
+          <div class="youth-grid">
+            <div class="youth-card">
+              <div class="youth-card-header">
+                <span class="chip" style="background: #fed7aa; color: #1e1e1e;">U12 Knaben</span>
+                <h3>U12 Knaben</h3>
+              </div>
+              <p>Im U12-Bereich steht die spielerische Heranfuehrung an den Basketball im Vordergrund. Koordination, Ballgefuehl und Spass praeegen die Trainings.</p>
+              <div class="youth-meta">
+                <span><strong>Training:</strong> Mittwoch 15:30 – 17:00</span>
+                <span><strong>Halle:</strong> Turnhalle Lavater</span>
+                <span><strong>Coach:</strong> Thomas Wyss</span>
+              </div>
+            </div>
+            <div class="youth-card">
+              <div class="youth-card-header">
+                <span class="chip" style="background: #f3e8ff; color: #1e1e1e;">U12 Maedchen</span>
+                <h3>U12 Maedchen</h3>
+              </div>
+              <p>Die U12 Maedchen entdecken Basketball mit viel Energie und Freude. In altersgerechten Trainings werden Grundtechniken und Spielfreude vermittelt.</p>
+              <div class="youth-meta">
+                <span><strong>Training:</strong> Samstag 10:00 – 11:30</span>
+                <span><strong>Halle:</strong> Turnhalle Utogrund</span>
+                <span><strong>Coach:</strong> Sandra Mueller</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── U10 ─────────────────────────────────────────────── -->
+        <div>
+          <div class="youth-section-title">
+            <h2>U10</h2>
+          </div>
+          <div class="youth-grid">
+            <div class="youth-card">
+              <div class="youth-card-header">
+                <span class="chip" style="background: #14b8a6; color: #ffffff;">U10 Mixed</span>
+                <h3>U10 Mixed</h3>
+              </div>
+              <p>Unser U10-Team ist gemischt und bietet Kindern den idealen Einstieg in den Basketball. Spielerische Uebungen, Mini-Turniere und jede Menge Spass warten auf die jungen Athletinnen und Athleten.</p>
+              <div class="youth-meta">
+                <span><strong>Training:</strong> Samstag 09:00 – 10:30</span>
+                <span><strong>Halle:</strong> Turnhalle Sihlfeld</span>
+                <span><strong>Coach:</strong> Jonas Brunner</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── U8 ──────────────────────────────────────────────── -->
+        <div>
+          <div class="youth-section-title">
+            <h2>U8</h2>
+          </div>
+          <div class="youth-grid">
+            <div class="youth-card">
+              <div class="youth-card-header">
+                <span class="chip" style="background: #0d9488; color: #ffffff;">U8 Mixed</span>
+                <h3>U8 Mixed</h3>
+              </div>
+              <p>Das juengste Team im Verein! Hier lernen Kinder ab 5 Jahren die ersten Schritte mit dem Basketball. Bewegung, Koordination und Spass stehen im Mittelpunkt — ganz ohne Leistungsdruck.</p>
+              <div class="youth-meta">
+                <span><strong>Training:</strong> Samstag 10:30 – 11:30</span>
+                <span><strong>Halle:</strong> Turnhalle Sihlfeld</span>
+                <span><strong>Coach:</strong> Lena Hartmann</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ CTA Section ══════════════════════════════════════════════ -->
+  <section class="cta-section">
+    <div class="container">
+      <h2>Interesse am Nachwuchs-Basketball?</h2>
+      <p>Schnuppere bei einem Probetraining — alle Altersgruppen sind willkommen!</p>
+      <a href="/club/kontakt.html" class="btn btn-gold">Kontakt aufnehmen</a>
+    </div>
+  </section>
+
+  <!-- ═══ Footer ═══════════════════════════════════════════════════ -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-grid">
+          <div class="footer-brand">
+            <a href="/" class="nav-logo">
+              <img src="/images/kscw_logo.png" alt="KSC Wiedikon" style="height: 40px; filter: brightness(0) invert(1);">
+              <span style="color: #ffffff;">KSC Wiedikon</span>
+            </a>
+            <p>Volleyball &amp; Basketball in Zuerich seit 1978. Trainiere mit uns — vom Breitensport bis zur Regionalliga.</p>
+            <div class="footer-social">
+              <a href="https://www.instagram.com/kscwiedikon/" aria-label="Instagram">
+                <i data-lucide="instagram"></i>
+              </a>
+              <a href="https://www.facebook.com/kscwiedikon/" aria-label="Facebook">
+                <i data-lucide="facebook"></i>
+              </a>
+              <a href="mailto:kontakt@kscw.ch" aria-label="E-Mail">
+                <i data-lucide="mail"></i>
+              </a>
+            </div>
+          </div>
+          <div>
+            <h3 class="footer-heading">Volleyball</h3>
+            <div class="footer-links">
+              <a href="/volleyball/teams/h1.html">Herren 1</a>
+              <a href="/volleyball/teams/h2.html">Herren 2</a>
+              <a href="/volleyball/teams/h3.html">Herren 3</a>
+              <a href="/volleyball/teams/h4.html">Herren 4</a>
+              <a href="/volleyball/teams/d1.html">Damen 1</a>
+              <a href="/volleyball/teams/d2.html">Damen 2</a>
+            </div>
+          </div>
+          <div>
+            <h3 class="footer-heading">Basketball</h3>
+            <div class="footer-links">
+              <a href="/basketball/teams/h1.html">Herren 1</a>
+              <a href="/basketball/teams/h2.html">Herren 2</a>
+              <a href="/basketball/teams/h4.html">Herren 4</a>
+              <a href="/basketball/teams/d1.html">Damen 1</a>
+              <a href="/basketball/teams/nachwuchs.html">Nachwuchs</a>
+            </div>
+          </div>
+          <div>
+            <h3 class="footer-heading">Verein</h3>
+            <div class="footer-links">
+              <a href="/club/">Ueber uns</a>
+              <a href="/club/vorstand.html">Vorstand</a>
+              <a href="/club/kontakt.html">Kontakt</a>
+              <a href="/sponsoren/">Sponsoren</a>
+              <a href="/weiteres/downloads.html">Downloads</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom" style="display:flex;align-items:center;justify-content:center;gap:1.5rem;flex-wrap:wrap;">
+        <button class="theme-toggle" aria-label="Farbmodus wechseln"><i data-lucide="sun" style="width:16px;height:16px;"></i> <span class="theme-label">Light Mode</span></button>
+        <p>&copy; 2026 KSC Wiedikon. Alle Rechte vorbehalten. · <a href="/club/kontakt.html">Impressum</a></p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ═══ Scripts ══════════════════════════════════════════════════ -->
+  <script src="/js/data.js"></script>
+  <script src="/js/main.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script>lucide.createIcons();</script>
+
+</body>
+</html>

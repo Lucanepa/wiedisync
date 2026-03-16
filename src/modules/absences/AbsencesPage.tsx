@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ClipboardList, Users } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
+import { useAdminMode } from '../../hooks/useAdminMode'
 import { usePB } from '../../hooks/usePB'
 import { useMutation } from '../../hooks/useMutation'
 import { useRealtime } from '../../hooks/useRealtime'
@@ -18,18 +19,19 @@ type AbsenceExpanded = Absence & { expand?: { member?: Member } }
 
 export default function AbsencesPage() {
   const { t } = useTranslation('absences')
-  const { user, isCoach, isAdmin, memberTeamIds, coachTeamIds } = useAuth()
+  const { user, isCoach, memberTeamIds, coachTeamIds } = useAuth()
+  const { effectiveIsAdmin, effectiveIsCoach } = useAdminMode()
   const [activeTab, setActiveTab] = useState<'mine' | 'team'>('mine')
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null)
   const [formOpen, setFormOpen] = useState(false)
   const [editingAbsence, setEditingAbsence] = useState<Absence | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  // Non-admin coaches: only their own + coached teams
+  // Only show all teams when admin mode is active; otherwise scope to own teams
   const visibleTeamIds = useMemo(() => {
-    if (isAdmin) return undefined // admins see all teams
+    if (effectiveIsAdmin) return undefined // admins in admin mode see all teams
     return [...new Set([...memberTeamIds, ...coachTeamIds])]
-  }, [isAdmin, memberTeamIds, coachTeamIds])
+  }, [effectiveIsAdmin, memberTeamIds, coachTeamIds])
 
   const { data: myAbsences, refetch } = usePB<AbsenceExpanded>('absences', {
     filter: user ? `member="${user.id}"` : '',
@@ -78,7 +80,7 @@ export default function AbsencesPage() {
       </div>
 
       {/* Tabs (coach only) */}
-      {isCoach && (
+      {(isCoach || effectiveIsCoach) && (
         <div className="mt-6">
           <div className="flex gap-1 rounded-lg bg-gray-100 dark:bg-gray-700 p-1">
             <button
@@ -102,7 +104,7 @@ export default function AbsencesPage() {
       )}
 
       {/* Content */}
-      {activeTab === 'mine' || !isCoach ? (
+      {activeTab === 'mine' || (!isCoach && !effectiveIsCoach) ? (
         <div className="mt-6">
           {myAbsences.length === 0 ? (
             <EmptyState
@@ -118,7 +120,7 @@ export default function AbsencesPage() {
                   absence={a}
                   onEdit={handleEdit}
                   onDelete={setDeletingId}
-                  canEdit={a.member === user?.id || isCoach}
+                  canEdit={a.member === user?.id || isCoach || effectiveIsCoach}
                 />
               ))}
             </div>

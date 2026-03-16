@@ -265,6 +265,19 @@
   background: rgba(0,0,0,0.08);
 }
 
+/* ── Prevent Samsung Internet / Chrome forced dark mode ────── */
+:root, body, .hero, .site-header, .site-footer,
+.card, .contact-form, .contact-info-card,
+.section, .section-alt, .section-dark, .cta-section,
+.page-header, .team-hero, .mobile-nav {
+  -webkit-color-adjust: exact;
+  color-adjust: exact;
+  forced-color-adjust: none;
+}
+@media (prefers-color-scheme: dark) {
+  :root { color-scheme: dark; }
+}
+
 /* ── Reset ─────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }

@@ -37,6 +37,10 @@ positions[3]{ticker,shares,costBasis}:
   NVDA,75,420.50
 \`\`\`
 
+## Work Style
+
+- **Maximize parallel subagents**: When a task involves multiple independent pieces of work (e.g. editing different files, researching separate topics, running independent checks), always dispatch them as parallel subagents rather than doing them sequentially. This applies to exploration, implementation, testing, and any other work that doesn't have sequential dependencies.
+
 ## Key Patterns
 - **shadcn/ui**: UI components use shadcn/ui on Tailwind CSS v4. Load `/kscw-shadcn` skill for KSCW-specific conventions (brand theming, component wrappers, migration map). Load `/tailwind-v4-shadcn` for general TW v4 + shadcn patterns. Full migration spec: `docs/superpowers/specs/2026-03-15-shadcn-migration-design.md`
 - **Mobile-first**: All UI must be designed mobile-first — responsive layout, touch-friendly targets (min 44px), and tested on small screens before desktop

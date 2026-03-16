@@ -2,7 +2,6 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Member, Team, LicenceType } from '../../../types'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { FormField } from '@/components/FormField'
 import { Phone, Mail, Hand, ArrowRightLeft, Clock, Check } from 'lucide-react'
 import TeamSelect from '../../../components/TeamSelect'
 

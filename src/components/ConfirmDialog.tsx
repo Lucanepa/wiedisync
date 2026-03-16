@@ -1,6 +1,15 @@
 import { useTranslation } from 'react-i18next'
-import Modal from './Modal'
-import Button from './ui/Button'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { cn } from '@/lib/utils'
 
 interface ConfirmDialogProps {
   open: boolean
@@ -23,22 +32,25 @@ export default function ConfirmDialog({
 }: ConfirmDialogProps) {
   const { t } = useTranslation()
   return (
-    <Modal open={open} onClose={onClose} title={title} size="sm">
-      <p className="text-sm text-gray-600 dark:text-gray-400">{message}</p>
-      <div className="mt-6 flex justify-end gap-3">
-        <Button variant="ghost" onClick={onClose}>
-          {t('cancel')}
-        </Button>
-        <Button
-          variant={danger ? 'danger' : 'primary'}
-          onClick={() => {
-            onConfirm()
-            onClose()
-          }}
-        >
-          {confirmLabel ?? t('confirm')}
-        </Button>
-      </div>
-    </Modal>
+    <AlertDialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{message}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={onClose}>{t('cancel')}</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => {
+              onConfirm()
+              onClose()
+            }}
+            className={cn(danger && 'bg-destructive text-destructive-foreground hover:bg-destructive/90')}
+          >
+            {confirmLabel ?? t('confirm')}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   )
 }

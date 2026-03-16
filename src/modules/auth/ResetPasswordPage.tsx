@@ -3,8 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useTheme } from '../../hooks/useTheme'
 import pb from '../../pb'
-import Button from '../../components/ui/Button'
-import { Input } from '../../components/ui/Input'
+import { Button } from '@/components/ui/button'
+import { FormInput } from '@/components/FormField'
 
 export default function ResetPasswordPage() {
   const { token } = useParams<{ token: string }>()

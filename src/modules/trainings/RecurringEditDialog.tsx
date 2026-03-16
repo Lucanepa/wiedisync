@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import Modal from '../../components/Modal'
+import Modal from '@/components/Modal'
 
 export type RecurringEditScope = 'this' | 'all' | 'same_day'
 

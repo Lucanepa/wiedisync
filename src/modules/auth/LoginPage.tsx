@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
 import { useTheme } from '../../hooks/useTheme'
-import Button from '../../components/ui/Button'
-import { Input } from '../../components/ui/Input'
+import { Button } from '@/components/ui/button'
+import { FormInput } from '@/components/FormField'
 
 export default function LoginPage() {
   const { login, loginWithOAuth, user } = useAuth()

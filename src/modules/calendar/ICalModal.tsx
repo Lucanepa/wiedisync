@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import Modal from '../../components/Modal'
+import Modal from '@/components/Modal'
 import { useTeams } from '../../hooks/useTeams'
 import { downloadICal } from '../../utils/icalGenerator'
 import type { CalendarEntry } from '../../types/calendar'

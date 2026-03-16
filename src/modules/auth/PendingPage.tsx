@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
 import { useTheme } from '../../hooks/useTheme'
 import ProfileEditModal from './ProfileEditModal'
-import Button from '../../components/ui/Button'
+import { Button } from '@/components/ui/button'
 import pb from '../../pb'
 import type { Team } from '../../types'
 
@@ -101,7 +101,7 @@ export default function PendingPage() {
               {refreshing ? t('checking') : t('refreshStatus')}
             </Button>
 
-            <Button variant="secondary" onClick={logout} className="w-full">
+            <Button variant="outline" onClick={logout} className="w-full">
               {t('logout')}
             </Button>
           </div>

@@ -1,14 +1,14 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import Modal from '../../components/Modal'
+import Modal from '@/components/Modal'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import { useMutation } from '../../hooks/useMutation'
 import { usePB } from '../../hooks/usePB'
-import Button from '../../components/ui/Button'
-import { Textarea } from '../../components/ui/Input'
-import DatePicker from '../../components/ui/DatePicker'
-import SearchableSelect from '../../components/ui/SearchableSelect'
+import { Button } from '@/components/ui/button'
+import { FormTextarea } from '@/components/FormField'
+import DatePicker from '@/components/ui/DatePicker'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 import type { Absence, Member, MemberTeam } from '../../types'
 
 interface AbsenceFormProps {
@@ -178,7 +178,7 @@ export default function AbsenceForm({ open, absence, onSave, onCancel }: Absence
           ]}
         />
 
-        <Textarea
+        <FormTextarea
           label={t('detailsOptional')}
           value={reasonDetail}
           onChange={(e) => setReasonDetail(e.target.value)}

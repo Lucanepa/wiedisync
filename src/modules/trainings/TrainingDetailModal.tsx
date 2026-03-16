@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import Modal from '../../components/Modal'
+import Modal from '@/components/Modal'
 import TeamChip from '../../components/TeamChip'
 import ParticipationSummary from '../../components/ParticipationSummary'
 import ParticipationRosterModal from '../../components/ParticipationRosterModal'

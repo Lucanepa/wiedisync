@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react'
 import type { RecordModel } from 'pocketbase'
 import type { Game, Team, Hall, Member } from '../../../types'
-import Button from '../../../components/ui/Button'
+import { Button } from '@/components/ui/button'
 import TeamChip from '../../../components/TeamChip'
 import { pbNameToColorKey } from '../../../utils/teamColors'
 import ParticipationSummary from '../../../components/ParticipationSummary'
@@ -13,7 +13,7 @@ import { useParticipation } from '../../../hooks/useParticipation'
 import { useMutation } from '../../../hooks/useMutation'
 import pb from '../../../pb'
 import { sanitizeUrl } from '../../../utils/sanitizeUrl'
-import DatePicker from '../../../components/ui/DatePicker'
+import DatePicker from '@/components/ui/DatePicker'
 import { formatDate, formatTime } from '../../../utils/dateHelpers'
 
 const GAME_EXPAND = 'kscw_team,hall,scorer_member,scoreboard_member,scorer_scoreboard_member,scorer_duty_team,scoreboard_duty_team,scorer_scoreboard_duty_team,bb_scorer_member,bb_timekeeper_member,bb_24s_official,bb_duty_team,bb_scorer_duty_team,bb_timekeeper_duty_team,bb_24s_duty_team'
@@ -433,7 +433,6 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
                     max={game.date?.split(' ')[0]}
                   />
                   <Button
-                    variant="primary"
                     size="sm"
                     onClick={async () => {
                       await updateGame(game.id, { respond_by: deadlineValue || null })
@@ -462,7 +461,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
               )
             )}
             <Button
-              variant="secondary"
+              variant="outline"
               onClick={() => setRosterOpen(true)}
               className="w-full"
             >

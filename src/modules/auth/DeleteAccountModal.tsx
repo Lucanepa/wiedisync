@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
 import pb from '../../pb'
-import Modal from '../../components/Modal'
-import Button from '../../components/ui/Button'
+import Modal from '@/components/Modal'
+import { Button } from '@/components/ui/button'
 
 interface DeleteAccountModalProps {
   open: boolean
@@ -69,7 +69,7 @@ export default function DeleteAccountModal({ open, onClose, userEmail }: DeleteA
 
         <div className="flex gap-3 pt-1">
           <Button
-            variant="secondary"
+            variant="outline"
             size="sm"
             onClick={onClose}
             disabled={isDeleting}
@@ -78,7 +78,7 @@ export default function DeleteAccountModal({ open, onClose, userEmail }: DeleteA
             {t('cancel', { defaultValue: 'Abbrechen' })}
           </Button>
           <Button
-            variant="danger"
+            variant="destructive"
             size="sm"
             onClick={handleDelete}
             disabled={!canConfirm || isDeleting}

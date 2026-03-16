@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Member, Team, LicenceType } from '../../../types'
-import { Select } from '../../../components/ui/Input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { FormField } from '@/components/FormField'
 import { Phone, Mail, Hand, ArrowRightLeft, Clock, Check } from 'lucide-react'
 import TeamSelect from '../../../components/TeamSelect'
 
@@ -123,18 +124,17 @@ export default function AssignmentEditor({
               placeholder={t('selectTeam')}
             />
             {teamValue && (
-              <Select
-                value={personValue}
-                onChange={(e) => onPersonChange(e.target.value)}
-                disabled={disabled}
-                aria-label={`${label} – ${t('selectPerson')}`}
-              >
-                <option value="">{t('selectPerson')}</option>
-                {filteredMembers.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.first_name} {m.last_name}
-                  </option>
-                ))}
+              <Select value={personValue} onValueChange={onPersonChange} disabled={disabled}>
+                <SelectTrigger className="min-h-[44px]" aria-label={`${label} – ${t('selectPerson')}`}>
+                  <SelectValue placeholder={t('selectPerson')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredMembers.map((m) => (
+                    <SelectItem key={m.id} value={m.id}>
+                      {m.first_name} {m.last_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             )}
             {personValue && onDelegate && !disabled && (

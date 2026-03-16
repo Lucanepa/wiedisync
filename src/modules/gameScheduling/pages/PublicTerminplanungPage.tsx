@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
-import Button from '../../../components/ui/Button'
-import { Input } from '../../../components/ui/Input'
+import { Button } from '@/components/ui/button'
+import { FormInput } from '@/components/FormField'
 import pb from '../../../pb'
 import type { Team } from '../../../types'
 
@@ -192,7 +192,6 @@ export default function PublicTerminplanungPage() {
 
           <Button
             type="submit"
-            variant="primary"
             disabled={loading || seasonOpen === false || !selectedTeamId || !turnstileToken}
             loading={loading}
             className="w-full"

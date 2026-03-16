@@ -1,15 +1,16 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import Modal from '../../components/Modal'
+import Modal from '@/components/Modal'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import { useMutation } from '../../hooks/useMutation'
 import { usePB } from '../../hooks/usePB'
 import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
-import Button from '../../components/ui/Button'
-import { Input, Textarea, Select } from '../../components/ui/Input'
-import DatePicker from '../../components/ui/DatePicker'
+import { Button } from '@/components/ui/button'
+import { FormInput, FormTextarea, FormField } from '@/components/FormField'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import DatePicker from '@/components/ui/DatePicker'
 import type { Training, Team, Hall, HallSlot, SlotClaim } from '../../types'
 import type { RecurringEditScope } from './RecurringEditDialog'
 
@@ -326,17 +327,18 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
           </div>
         )}
 
-        <Select
-          label={tc('team')}
-          value={teamId}
-          onChange={(e) => setTeamId(e.target.value)}
-          required
-        >
-          <option value="">{tc('select')}</option>
-          {teams.map((t) => (
-            <option key={t.id} value={t.id}>{t.name}</option>
-          ))}
-        </Select>
+        <FormField label={tc('team')}>
+          <Select value={teamId} onValueChange={setTeamId}>
+            <SelectTrigger className="min-h-[44px]">
+              <SelectValue placeholder={tc('select')} />
+            </SelectTrigger>
+            <SelectContent>
+              {teams.map((t) => (
+                <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FormField>
 
         <DatePicker
           label={tc('date')}
@@ -405,7 +407,7 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
           return (
             <>
               <div className="grid grid-cols-2 gap-4">
-                <Input
+                <FormInput
                   label={tc('from')}
                   type="time"
                   value={startTime}
@@ -414,7 +416,7 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
                   readOnly={slotActive}
                   className={slotActive ? 'opacity-60' : ''}
                 />
-                <Input
+                <FormInput
                   label={tc('to')}
                   type="time"
                   value={endTime}
@@ -426,24 +428,21 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
               </div>
 
               <div>
-                <Select
-                  label={tc('hall')}
-                  value={hallId}
-                  onChange={(e) => {
-                    setHallId(e.target.value)
-                    if (e.target.value !== '__other__') setHallName('')
-                  }}
-                  disabled={slotActive}
-                  className={slotActive ? 'opacity-60' : ''}
-                >
-                  <option value="">{tc('select')}</option>
-                  {halls.map((h) => (
-                    <option key={h.id} value={h.id}>{h.name}</option>
-                  ))}
-                  <option value="__other__">{tc('otherHall')}</option>
-                </Select>
+                <FormField label={tc('hall')}>
+                  <Select value={hallId} onValueChange={(v) => { setHallId(v); if (v !== '__other__') setHallName('') }} disabled={slotActive}>
+                    <SelectTrigger className={`min-h-[44px] ${slotActive ? 'opacity-60' : ''}`}>
+                      <SelectValue placeholder={tc('select')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {halls.map((h) => (
+                        <SelectItem key={h.id} value={h.id}>{h.name}</SelectItem>
+                      ))}
+                      <SelectItem value="__other__">{tc('otherHall')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormField>
                 {hallId === '__other__' && (
-                  <Input
+                  <FormInput
                     type="text"
                     value={hallName}
                     onChange={(e) => setHallName(e.target.value)}
@@ -457,14 +456,14 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
         })()}
 
         <div className="grid grid-cols-2 gap-4">
-          <Input
+          <FormInput
             label={t('minParticipants')}
             type="number"
             value={minParticipants}
             onChange={(e) => setMinParticipants(e.target.value)}
             min={0}
           />
-          <Input
+          <FormInput
             label={t('maxParticipants')}
             type="number"
             value={maxParticipants}
@@ -473,7 +472,7 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
           />
         </div>
 
-        <Textarea
+        <FormTextarea
           label={tc('notes')}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
@@ -500,7 +499,7 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
               {t('cancelTraining')}
             </label>
             {cancelled && (
-              <Textarea
+              <FormTextarea
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
                 rows={2}

@@ -8,6 +8,8 @@ export default {
   remove: 'Entfernen',
   add: 'Hinzufügen',
   confirm: 'Bestätigen',
+  list: 'Liste',
+  calendar: 'Kalender',
   close: 'Schliessen',
   update: 'Aktualisieren',
 

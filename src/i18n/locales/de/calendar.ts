@@ -27,6 +27,7 @@ export default {
   gameTypeHome: 'Heimspiele',
   gameTypeAway: 'Auswärtsspiele',
   sourceHallHW: 'Halle HW',
+  sourceAbsences: 'Absenzen',
 
   // Type labels
   typeGame: 'Spiel',
@@ -34,6 +35,7 @@ export default {
   typeClosure: 'Hallensperrung',
   typeEvent: 'Event',
   typeHall: 'Hallenbelegung',
+  typeAbsence: 'Absenz',
 
   // Other
   noEntries: 'Keine Einträge gefunden',

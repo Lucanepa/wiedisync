@@ -204,8 +204,11 @@ export default function GameCard({ game, onClick, variant = 'card' }: GameCardPr
       onClick={() => onClick?.(game)}
       className={`overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 shadow-card transition-shadow ${onClick ? 'cursor-pointer hover:shadow-card-hover' : ''}`}
     >
-      {/* H/A badge top-right */}
-      <div className="flex justify-end">
+      {/* H/A badge + counters top-right */}
+      <div className="flex items-center justify-end gap-2">
+        {game.status === 'scheduled' && (
+          <ParticipationSummary activityType="game" activityId={game.id} compact />
+        )}
         <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold leading-none ${
           game.type === 'home'
             ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
@@ -243,12 +246,9 @@ export default function GameCard({ game, onClick, variant = 'card' }: GameCardPr
             <StatusBadge status={game.status} />
             {hallInfo && <span className="truncate text-xs text-gray-500 dark:text-gray-400">{hallInfo}</span>}
           </div>
-          {game.status === 'scheduled' && (
-            <div className="mt-1.5 flex items-center gap-2">
-              {canParticipate && <GameCardParticipation game={game} />}
-              <div className="ml-auto">
-                <ParticipationSummary activityType="game" activityId={game.id} compact />
-              </div>
+          {game.status === 'scheduled' && canParticipate && (
+            <div className="mt-1.5">
+              <GameCardParticipation game={game} />
             </div>
           )}
         </div>
@@ -261,11 +261,7 @@ function GameCardParticipation({ game }: { game: Game }) {
   const { t } = useTranslation('participation')
   const { isStaffOnly } = useAuth()
   const staffOnly = !!game.kscw_team && isStaffOnly(game.kscw_team)
-  const { effectiveStatus, hasAbsence, setStatus } = useParticipation('game', game.id, game.date, undefined, staffOnly)
-
-  if (hasAbsence) {
-    return <span className="text-xs text-gray-500 dark:text-gray-400">{t('absent')}</span>
-  }
+  const { effectiveStatus, setStatus } = useParticipation('game', game.id, game.date, undefined, staffOnly)
 
   return (
     <div className="flex items-center gap-1.5">

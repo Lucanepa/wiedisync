@@ -13,7 +13,7 @@ import AbsenceCard from './AbsenceCard'
 import AbsenceForm from './AbsenceForm'
 import TeamAbsenceView from './TeamAbsenceView'
 import { Button } from '@/components/ui/button'
-import type { Absence, Member } from '../../types'
+import type { Absence, Member, Team } from '../../types'
 
 type AbsenceExpanded = Absence & { expand?: { member?: Member } }
 
@@ -27,11 +27,22 @@ export default function AbsencesPage() {
   const [editingAbsence, setEditingAbsence] = useState<Absence | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
+  // Fetch all active teams (needed to resolve "Alle" selection to actual IDs)
+  const { data: allTeams } = usePB<Team>('teams', { filter: 'active=true', sort: 'name', perPage: 50 })
+
   // Only show all teams when admin mode is active; otherwise scope to own teams
   const visibleTeamIds = useMemo(() => {
     if (effectiveIsAdmin) return undefined // admins in admin mode see all teams
     return [...new Set([...memberTeamIds, ...coachTeamIds])]
   }, [effectiveIsAdmin, memberTeamIds, coachTeamIds])
+
+  // Resolve effective team IDs for TeamAbsenceView
+  const effectiveTeamIds = useMemo(() => {
+    if (selectedTeam) return [selectedTeam]
+    // "Alle" selected — use visible teams or all teams
+    if (visibleTeamIds) return visibleTeamIds
+    return allTeams.map((t) => t.id)
+  }, [selectedTeam, visibleTeamIds, allTeams])
 
   const { data: myAbsences, refetch } = usePB<AbsenceExpanded>('absences', {
     filter: user ? `member="${user.id}"` : '',
@@ -79,8 +90,8 @@ export default function AbsencesPage() {
         </Button>
       </div>
 
-      {/* Tabs (coach only) */}
-      {(isCoach || effectiveIsCoach) && (
+      {/* Tabs (any user with team memberships) */}
+      {(memberTeamIds.length > 0 || coachTeamIds.length > 0 || effectiveIsAdmin) && (
         <div className="mt-6">
           <div className="flex gap-1 rounded-lg bg-gray-100 dark:bg-gray-700 p-1">
             <button
@@ -104,7 +115,7 @@ export default function AbsencesPage() {
       )}
 
       {/* Content */}
-      {activeTab === 'mine' || (!isCoach && !effectiveIsCoach) ? (
+      {activeTab === 'mine' || (memberTeamIds.length === 0 && coachTeamIds.length === 0 && !effectiveIsAdmin) ? (
         <div className="mt-6">
           {myAbsences.length === 0 ? (
             <EmptyState
@@ -129,19 +140,9 @@ export default function AbsencesPage() {
       ) : (
         <div className="mt-6">
           <TeamFilter selected={selectedTeam} onChange={setSelectedTeam} limitToTeamIds={visibleTeamIds} />
-          {selectedTeam ? (
-            <div className="mt-4">
-              <TeamAbsenceView teamId={selectedTeam} />
-            </div>
-          ) : (
-            <div className="mt-4">
-              <EmptyState
-                icon={<Users className="h-10 w-10" />}
-                title={t('noTeamAbsences')}
-                description={t('noTeamAbsencesDescription')}
-              />
-            </div>
-          )}
+          <div className="mt-4">
+            <TeamAbsenceView teamIds={effectiveTeamIds} />
+          </div>
         </div>
       )}
 

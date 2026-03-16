@@ -1,9 +1,9 @@
-import type { Game, Training, Event, HallClosure, HallEvent } from './index'
+import type { Game, Training, Event, HallClosure, HallEvent, Absence } from './index'
 
 /** Unified calendar entry for rendering and iCal export */
 export interface CalendarEntry {
   id: string
-  type: 'game' | 'training' | 'event' | 'closure' | 'hall'
+  type: 'game' | 'training' | 'event' | 'closure' | 'hall' | 'absence'
   title: string
   date: Date
   /** End date for multi-day entries (closures, multi-day events). Undefined = single-day. */
@@ -14,7 +14,7 @@ export interface CalendarEntry {
   location: string
   teamNames: string[]
   description: string
-  source: Game | Training | Event | HallClosure | HallEvent
+  source: Game | Training | Event | HallClosure | HallEvent | Absence
   /** Only set for game entries */
   gameType?: 'home' | 'away'
   /** Sport type — set for game entries to show correct ball icon */
@@ -26,7 +26,7 @@ export type CalendarViewMode = 'hallenplan' | 'month' | 'week'
 
 export type SportFilter = 'volleyball' | 'basketball' | 'all'
 export type GameTypeFilter = 'home' | 'away' | 'all'
-export type SourceFilter = 'game-home' | 'game-away' | 'training' | 'event' | 'closure' | 'hall'
+export type SourceFilter = 'game-home' | 'game-away' | 'training' | 'event' | 'closure' | 'hall' | 'absence'
 
 export interface SpielplanungFilterState {
   sport: SportFilter

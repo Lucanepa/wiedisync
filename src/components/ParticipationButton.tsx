@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Check, X, HelpCircle, Hourglass, Minus } from 'lucide-react'
+import { Check, X, HelpCircle, Hourglass } from 'lucide-react'
 import { useParticipation } from '../hooks/useParticipation'
 import { useAuth } from '../hooks/useAuth'
 import type { Participation, EventSession } from '../types'
@@ -26,7 +26,6 @@ const statusStyles = {
   declined: { icon: <X className="h-3.5 w-3.5" />, bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-700 dark:text-red-400' },
   tentative: { icon: <HelpCircle className="h-3.5 w-3.5" />, bg: 'bg-yellow-100 dark:bg-yellow-900/30', text: 'text-yellow-700 dark:text-yellow-400' },
   waitlisted: { icon: <Hourglass className="h-3.5 w-3.5" />, bg: 'bg-orange-100 dark:bg-orange-900/30', text: 'text-orange-700 dark:text-orange-400' },
-  absent: { icon: <Minus className="h-3.5 w-3.5" />, bg: 'bg-gray-100 dark:bg-gray-700', text: 'text-gray-500 dark:text-gray-400' },
 }
 
 export default function ParticipationButton({
@@ -44,7 +43,7 @@ export default function ParticipationButton({
 }: ParticipationButtonProps) {
   const { t } = useTranslation('participation')
   const { isGuest } = useAuth()
-  const { participation, effectiveStatus, hasAbsence, setStatus, saveConfirmed, dismissConfirmed } = useParticipation(
+  const { participation, effectiveStatus, setStatus, saveConfirmed, dismissConfirmed } = useParticipation(
     activityType,
     activityId,
     activityDate,
@@ -73,7 +72,6 @@ export default function ParticipationButton({
     declined: t('declined'),
     tentative: t('tentative'),
     waitlisted: t('waitlisted'),
-    absent: t('absent'),
   }
 
   const deadlinePassed = respondBy ? (() => {
@@ -82,16 +80,7 @@ export default function ParticipationButton({
   })() : false
   const isFull = maxPlayers != null && confirmedCount != null && confirmedCount >= maxPlayers
 
-  if (hasAbsence) {
-    const style = statusStyles.absent
-    return (
-      <span className={`inline-flex min-h-[44px] items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium sm:min-h-0 ${style.bg} ${style.text}`}>
-        {style.icon} {!compact && statusLabels.absent}
-      </span>
-    )
-  }
-
-  const currentStyle = effectiveStatus ? statusStyles[effectiveStatus] : null
+  const currentStyle = effectiveStatus ? statusStyles[effectiveStatus as keyof typeof statusStyles] : null
 
   async function handleSelect(status: Participation['status']) {
     setMenuOpen(false)
@@ -189,7 +178,7 @@ export default function ParticipationButton({
             })}
 
             {/* Guest counter — shown when confirmed or tentative */}
-            {effectiveStatus && effectiveStatus !== 'declined' && effectiveStatus !== 'absent' && (
+            {effectiveStatus && effectiveStatus !== 'declined' && (
               <div className="border-t px-3 py-2 dark:border-gray-700">
                 <p className="mb-1 text-xs text-gray-500 dark:text-gray-400">{t('guests')}</p>
                 <div className="flex items-center gap-2">

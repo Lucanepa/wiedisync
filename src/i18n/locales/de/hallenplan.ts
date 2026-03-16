@@ -121,6 +121,8 @@ export default {
   all: 'Alle',
 
   // Admin navigation
+  editSlot: 'Slot bearbeiten',
+  updateFutureTrainings: 'Zukünftige Trainings aktualisieren',
   goToTrainings: 'Zu Trainings',
   goToGames: 'Zu Spiele',
 

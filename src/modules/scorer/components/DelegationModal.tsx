@@ -54,19 +54,29 @@ export default function DelegationModal({
     return map
   }, [memberTeams])
 
+  const guestsOnDutyTeam = useMemo(() => {
+    const guests = new Set<string>()
+    for (const mt of memberTeams) {
+      if (mt.team === dutyTeamId && (mt.guest_level ?? 0) > 0) {
+        guests.add(mt.member)
+      }
+    }
+    return guests
+  }, [memberTeams, dutyTeamId])
+
   // Filter eligible members by licence
   const eligibleMembers = useMemo(() => {
     const requiredLicence = ROLE_LICENCE_MAP[role]
     return members.filter((m) => {
       if (m.id === currentUserId) return false
-      if (!m.active || m.is_guest) return false
+      if (!m.active || guestsOnDutyTeam.has(m.id)) return false
       if (requiredLicence) {
         const licences = Array.isArray(requiredLicence) ? requiredLicence : [requiredLicence]
         if (!licences.some((l) => m.licences?.includes(l))) return false
       }
       return true
     })
-  }, [members, role, currentUserId])
+  }, [members, role, currentUserId, guestsOnDutyTeam])
 
   // Split into same-team and cross-team
   const { sameTeamMembers, crossTeamMembers } = useMemo(() => {

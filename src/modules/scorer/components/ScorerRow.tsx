@@ -23,6 +23,7 @@ interface ScorerRowProps {
   userTeamIds?: string[]
   userLicences?: LicenceType[]
   sport: 'volleyball' | 'basketball'
+  guestMemberIds?: Set<string>
   onDelegate?: (gameId: string, role: ScorerDelegation['role'], toMemberId: string, fromTeamId: string, toTeamId: string) => void
   getPendingForRole: (gameId: string, role: string) => ScorerDelegation | undefined
   getDelegationTargetName: (delegation: ScorerDelegation, members: Member[]) => string
@@ -157,6 +158,7 @@ export default function ScorerRow({
   userTeamIds = [],
   userLicences = [],
   sport,
+  guestMemberIds,
   onDelegate,
   getPendingForRole,
   getDelegationTargetName,
@@ -333,6 +335,7 @@ export default function ScorerRow({
       showContact={showContact}
       selfAssignButton={canSelfAssign(role)}
       onSelfAssign={() => setConfirmRole(role)}
+      guestMemberIds={guestMemberIds}
       canEdit={canEdit}
       isCurrentUserAssigned={isUserAssigned(role)}
       onDelegate={onDelegate ? () => setDelegateRole(role) : undefined}
@@ -408,6 +411,7 @@ export default function ScorerRow({
               showContact={showContact}
               selfAssignButton={canSelfAssign('bb_scorer')}
               onSelfAssign={() => setConfirmRole('bb_scorer')}
+              guestMemberIds={guestMemberIds}
               canEdit={canEdit}
               isCurrentUserAssigned={isUserAssigned('bb_scorer')}
               onDelegate={onDelegate ? () => setDelegateRole('bb_scorer') : undefined}
@@ -428,6 +432,7 @@ export default function ScorerRow({
               showContact={showContact}
               selfAssignButton={canSelfAssign('bb_timekeeper')}
               onSelfAssign={() => setConfirmRole('bb_timekeeper')}
+              guestMemberIds={guestMemberIds}
               canEdit={canEdit}
               isCurrentUserAssigned={isUserAssigned('bb_timekeeper')}
               onDelegate={onDelegate ? () => setDelegateRole('bb_timekeeper') : undefined}
@@ -449,6 +454,7 @@ export default function ScorerRow({
                 showContact={showContact}
                 selfAssignButton={canSelfAssign('bb_24s_official')}
                 onSelfAssign={() => setConfirmRole('bb_24s_official')}
+                guestMemberIds={guestMemberIds}
                 canEdit={canEdit}
                 isCurrentUserAssigned={isUserAssigned('bb_24s_official')}
                 onDelegate={onDelegate ? () => setDelegateRole('bb_24s_official') : undefined}

@@ -369,7 +369,14 @@ export default function MonthGrid({
                                 {entry.startTime && (
                                   <span className="font-medium">{entry.startTime} </span>
                                 )}
-                                <span className="hidden lg:inline">{entry.title}</span>
+                                {entry.type === 'game' && entry.gameType ? (
+                                  <span className="hidden lg:inline">
+                                    <span className="font-semibold">{entry.gameType === 'home' ? 'H' : 'A'}</span>
+                                    {entry.teamNames[0] ? ` ${entry.teamNames[0]}` : ''}
+                                  </span>
+                                ) : (
+                                  <span className="hidden lg:inline">{entry.title}</span>
+                                )}
                               </span>
                             </button>
                           ))}

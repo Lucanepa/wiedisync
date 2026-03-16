@@ -1,3 +1,4 @@
+import { cn } from '@/lib/utils'
 import VolleyballIcon from './VolleyballIcon'
 import BasketballIcon from './BasketballIcon'
 import type { SportView } from '../hooks/useSportPreference'
@@ -27,17 +28,19 @@ export default function SportToggle({ value, onChange, showAll = true, className
   const items = showAll ? OPTIONS : OPTIONS.filter((o) => o.value !== 'all')
 
   return (
-    <div className={`flex overflow-hidden rounded-md border border-gray-300 dark:border-gray-600 ${className}`}>
+    <div className={cn('flex overflow-hidden rounded-md border border-gray-300 dark:border-gray-600', className)}>
       {items.map((opt, i) => (
         <button
           key={opt.value}
           onClick={() => onChange(opt.value)}
           aria-label={opt.label}
-          className={`flex items-center justify-center px-3 py-3.5 text-sm font-medium transition-colors ${
+          className={cn(
+            'flex items-center justify-center px-3 py-3.5 text-sm font-medium transition-colors',
             value === opt.value
               ? 'bg-brand-100 text-brand-800 dark:bg-brand-700 dark:text-white'
-              : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700'
-          } ${i > 0 ? 'border-l border-gray-300 dark:border-gray-600' : ''}`}
+              : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700',
+            i > 0 && 'border-l border-gray-300 dark:border-gray-600',
+          )}
         >
           {opt.value === 'all' ? (
             <span className="flex items-center gap-1">

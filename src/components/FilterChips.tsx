@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { cn } from '@/lib/utils'
 import { getTeamColor } from '../utils/teamColors'
 
 interface FilterChipOption {
@@ -51,7 +52,7 @@ export default function FilterChips({
   const noneSelected = selected.length === 0
 
   return (
-    <div className={`flex flex-wrap items-center ${compact ? 'gap-1' : 'gap-2 sm:gap-1.5'}`}>
+    <div className={cn('flex flex-wrap items-center', compact ? 'gap-1' : 'gap-2 sm:gap-1.5')}>
       {showBulkToggle && (
         <button
           onClick={() => {
@@ -61,13 +62,14 @@ export default function FilterChips({
               onChange(options.map((o) => o.value))
             }
           }}
-          className={`${sizeClasses} ${
+          className={cn(
+            sizeClasses,
             allSelected
               ? 'border-brand-300 bg-brand-50 text-brand-700 dark:border-brand-600 dark:bg-brand-900/30 dark:text-brand-300'
               : noneSelected
                 ? 'border-red-200 bg-red-50 text-red-600 dark:border-red-700 dark:bg-red-900/30 dark:text-red-400'
-                : unselectedClasses
-          }`}
+                : unselectedClasses,
+          )}
           title={allSelected ? t('selectNone') : t('selectAll')}
         >
           {allSelected ? t('all') : noneSelected ? t('none') : t('all')}
@@ -81,7 +83,7 @@ export default function FilterChips({
             <button
               key={option.value}
               onClick={() => handleClick(option.value)}
-              className={`${sizeClasses} ${isSelected ? option.colorClasses : unselectedClasses}`}
+              className={cn(sizeClasses, isSelected ? option.colorClasses : unselectedClasses)}
             >
               {option.label}
             </button>
@@ -93,7 +95,7 @@ export default function FilterChips({
           <button
             key={option.value}
             onClick={() => handleClick(option.value)}
-            className={`${sizeClasses} ${!isSelected ? unselectedClasses : ''}`}
+            className={cn(sizeClasses, !isSelected && unselectedClasses)}
             style={
               isSelected
                 ? {

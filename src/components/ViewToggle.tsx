@@ -1,3 +1,5 @@
+import { cn } from '@/lib/utils'
+
 interface ViewToggleOption {
   value: string
   label: string
@@ -16,11 +18,12 @@ export default function ViewToggle({ options, value, onChange }: ViewToggleProps
         <button
           key={option.value}
           onClick={() => onChange(option.value)}
-          className={`min-h-[44px] rounded-md px-3 py-2 text-sm font-medium transition-colors sm:min-h-0 sm:py-1.5 ${
+          className={cn(
+            'min-h-[44px] rounded-md px-3 py-2 text-sm font-medium transition-colors sm:min-h-0 sm:py-1.5',
             value === option.value
               ? 'bg-gold-400 text-brand-900 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'
-          }`}
+              : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white',
+          )}
         >
           {option.label}
         </button>

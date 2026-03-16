@@ -29,7 +29,7 @@ export default {
   waitlistedPosition: 'Waitlist position {{position}}',
   bumpedToWaitlist: 'You have been moved to the waitlist',
   promotedFromWaitlist: 'You have been promoted from the waitlist',
-  waitlistHint: 'Training full — you will be waitlisted',
+  waitlistHint: 'Full — guests are waitlisted by level',
   saved: 'Saved',
   notePlaceholder: 'Add a note…',
   noteSaved: 'Note saved',

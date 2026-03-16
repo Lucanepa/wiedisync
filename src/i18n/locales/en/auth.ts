@@ -101,10 +101,6 @@ export default {
   privacyConsent: 'By registering you accept our',
   privacyPolicy: 'Privacy Policy',
 
-  // Guest registration
-  isGuest: 'I am a guest player',
-  guestExplanation: 'Guests have lower priority than licenced players when trainings are full.',
-
   // Password reset
   resetPasswordTitle: 'Reset Password',
   newPassword: 'New password',

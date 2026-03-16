@@ -29,7 +29,7 @@ export default {
   waitlistedPosition: 'Warteliste Position {{position}}',
   bumpedToWaitlist: 'Du wurdest auf die Warteliste verschoben',
   promotedFromWaitlist: 'Du wurdest von der Warteliste bestätigt',
-  waitlistHint: 'Training voll — du wirst auf die Warteliste gesetzt',
+  waitlistHint: 'Voll — Gäste werden nach Stufe auf die Warteliste gesetzt',
   saved: 'Gespeichert',
   notePlaceholder: 'Notiz hinzufügen…',
   noteSaved: 'Notiz gespeichert',

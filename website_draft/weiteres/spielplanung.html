@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Spielplanung des KSC Wiedikon — Heimspiele planen, Spielsamstage und Halleninfos.">
+  <title>Spielplanung — KSC Wiedikon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="icon" href="/images/kscw_logo.svg" type="image/svg+xml">
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       HEADER
+       ═══════════════════════════════════════════════════════════ -->
+  <header class="site-header">
+    <div class="container">
+      <nav class="nav-inner">
+        <a href="/index.html" class="nav-logo">
+          <img src="/images/kscw_logo.svg" alt="KSC Wiedikon">
+          <span>KSC Wiedikon</span>
+        </a>
+
+        <!-- Desktop Navigation -->
+        <div class="nav-menu">
+          <div class="nav-item">
+            <a href="/index.html" class="nav-link">News</a>
+          </div>
+
+          <div class="nav-item">
+            <a href="#" class="nav-link">
+              Club
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </a>
+            <div class="nav-dropdown">
+              <a href="/club/ueber-uns.html" class="dropdown-link">Über uns</a>
+              <a href="/club/vorstand.html" class="dropdown-link">Vorstand</a>
+              <a href="/club/kontakt.html" class="dropdown-link">Kontakt</a>
+            </div>
+          </div>
+
+          <div class="nav-item">
+            <a href="#" class="nav-link">
+              Volleyball
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </a>
+            <div class="nav-dropdown">
+              <a href="/volleyball/index.html" class="dropdown-link">Übersicht</a>
+              <div class="dropdown-divider"></div>
+              <div class="dropdown-label">Herren</div>
+              <a href="/volleyball/teams/h1.html" class="dropdown-link">Herren 1 — 2. Liga</a>
+              <a href="/volleyball/teams/h2.html" class="dropdown-link">Herren 2 — 3. Liga</a>
+              <a href="/volleyball/teams/h3.html" class="dropdown-link">Herren 3 — 3. Liga</a>
+              <a href="/volleyball/teams/legends.html" class="dropdown-link">Legends — 4. Liga</a>
+              <div class="dropdown-divider"></div>
+              <div class="dropdown-label">Damen</div>
+              <a href="/volleyball/teams/d1.html" class="dropdown-link">Damen 1 — 3. Liga</a>
+              <a href="/volleyball/teams/d2.html" class="dropdown-link">Damen 2 — 3. Liga</a>
+              <a href="/volleyball/teams/d3.html" class="dropdown-link">Damen 3 — 4. Liga</a>
+              <a href="/volleyball/teams/d4.html" class="dropdown-link">Damen 4 — 5. Liga</a>
+              <div class="dropdown-divider"></div>
+              <div class="dropdown-label">Nachwuchs</div>
+              <a href="/volleyball/teams/du23.html" class="dropdown-link">Damen U23</a>
+              <a href="/volleyball/teams/hu23.html" class="dropdown-link">Herren U23</a>
+              <a href="/volleyball/teams/hu20.html" class="dropdown-link">Herren U20</a>
+            </div>
+          </div>
+
+          <div class="nav-item">
+            <a href="#" class="nav-link">
+              Basketball
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </a>
+            <div class="nav-dropdown">
+              <a href="/basketball/index.html" class="dropdown-link">Übersicht</a>
+              <div class="dropdown-divider"></div>
+              <div class="dropdown-label">Damen</div>
+              <a href="/basketball/teams/lions.html" class="dropdown-link">Lions — 1. Liga</a>
+              <a href="/basketball/teams/rhinos.html" class="dropdown-link">Rhinos — 2. Liga</a>
+              <div class="dropdown-divider"></div>
+              <div class="dropdown-label">Herren</div>
+              <a href="/basketball/teams/h1.html" class="dropdown-link">Herren 1 — 1. Liga</a>
+              <a href="/basketball/teams/h3.html" class="dropdown-link">Herren 3 — 3. Liga</a>
+              <a href="/basketball/teams/h4.html" class="dropdown-link">Herren 4 — 4. Liga</a>
+              <div class="dropdown-divider"></div>
+              <div class="dropdown-label">Nachwuchs</div>
+              <a href="/basketball/teams/nachwuchs.html" class="dropdown-link">Alle Jugendteams</a>
+            </div>
+          </div>
+
+          <div class="nav-item">
+            <a href="/sponsoren/index.html" class="nav-link">Sponsoren</a>
+          </div>
+
+          <div class="nav-item">
+            <a href="#" class="nav-link active">
+              Weiteres
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </a>
+            <div class="nav-dropdown">
+              <a href="/weiteres/kalender.html" class="dropdown-link">Kalender</a>
+              <a href="/weiteres/mitgliedschaft.html" class="dropdown-link">Mitgliedschaft</a>
+              <a href="/weiteres/spielplanung.html" class="dropdown-link">Spielplanung</a>
+            </div>
+          </div>
+                <a href="https://kscw.lucanepa.com/login" class="nav-link btn btn-gold btn-sm" target="_blank" rel="noopener"><i data-lucide="lock" style="width:14px;height:14px;"></i> Wiedisync</a>
+</div>
+
+        <button class="nav-hamburger" aria-label="Navigation öffnen">
+          <div class="hamburger-icon">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </button>
+      </nav>
+    </div>
+
+    <!-- Mobile Navigation -->
+    <div class="mobile-nav">
+      <div class="mobile-nav-item">
+        <a href="/index.html" class="mobile-nav-link">News</a>
+      </div>
+
+      <div class="mobile-nav-item">
+        <button class="mobile-nav-link" aria-expanded="false">
+          Club
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mobile-chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="mobile-subnav">
+          <a href="/club/ueber-uns.html" class="mobile-sublink">Über uns</a>
+          <a href="/club/vorstand.html" class="mobile-sublink">Vorstand</a>
+          <a href="/club/kontakt.html" class="mobile-sublink">Kontakt</a>
+        </div>
+      </div>
+
+      <div class="mobile-nav-item">
+        <button class="mobile-nav-link" aria-expanded="false">
+          Volleyball
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mobile-chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="mobile-subnav">
+          <a href="/volleyball/index.html" class="mobile-sublink">Übersicht</a>
+          <div class="mobile-sub-label">Herren</div>
+          <a href="/volleyball/teams/h1.html" class="mobile-sublink">Herren 1 — 2. Liga</a>
+          <a href="/volleyball/teams/h2.html" class="mobile-sublink">Herren 2 — 3. Liga</a>
+          <a href="/volleyball/teams/h3.html" class="mobile-sublink">Herren 3 — 3. Liga</a>
+          <a href="/volleyball/teams/legends.html" class="mobile-sublink">Legends — 4. Liga</a>
+          <div class="mobile-sub-label">Damen</div>
+          <a href="/volleyball/teams/d1.html" class="mobile-sublink">Damen 1 — 3. Liga</a>
+          <a href="/volleyball/teams/d2.html" class="mobile-sublink">Damen 2 — 3. Liga</a>
+          <a href="/volleyball/teams/d3.html" class="mobile-sublink">Damen 3 — 4. Liga</a>
+          <a href="/volleyball/teams/d4.html" class="mobile-sublink">Damen 4 — 5. Liga</a>
+          <div class="mobile-sub-label">Nachwuchs</div>
+          <a href="/volleyball/teams/du23.html" class="mobile-sublink">Damen U23</a>
+          <a href="/volleyball/teams/hu23.html" class="mobile-sublink">Herren U23</a>
+          <a href="/volleyball/teams/hu20.html" class="mobile-sublink">Herren U20</a>
+        </div>
+      </div>
+
+      <div class="mobile-nav-item">
+        <button class="mobile-nav-link" aria-expanded="false">
+          Basketball
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mobile-chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="mobile-subnav">
+          <a href="/basketball/index.html" class="mobile-sublink">Übersicht</a>
+          <div class="mobile-sub-label">Damen</div>
+          <a href="/basketball/teams/lions.html" class="mobile-sublink">Lions — 1. Liga</a>
+          <a href="/basketball/teams/rhinos.html" class="mobile-sublink">Rhinos — 2. Liga</a>
+          <div class="mobile-sub-label">Herren</div>
+          <a href="/basketball/teams/h1.html" class="mobile-sublink">Herren 1 — 1. Liga</a>
+          <a href="/basketball/teams/h3.html" class="mobile-sublink">Herren 3 — 3. Liga</a>
+          <a href="/basketball/teams/h4.html" class="mobile-sublink">Herren 4 — 4. Liga</a>
+          <div class="mobile-sub-label">Nachwuchs</div>
+          <a href="/basketball/teams/nachwuchs.html" class="mobile-sublink">Alle Jugendteams</a>
+        </div>
+      </div>
+
+      <div class="mobile-nav-item">
+        <a href="/sponsoren/index.html" class="mobile-nav-link">Sponsoren</a>
+      </div>
+
+      <div class="mobile-nav-item">
+        <button class="mobile-nav-link" aria-expanded="false">
+          Weiteres
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mobile-chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="mobile-subnav">
+          <a href="/weiteres/kalender.html" class="mobile-sublink">Kalender</a>
+          <a href="/weiteres/mitgliedschaft.html" class="mobile-sublink">Mitgliedschaft</a>
+          <a href="/weiteres/spielplanung.html" class="mobile-sublink">Spielplanung</a>
+        </div>
+      </div>
+            <div class="mobile-nav-item" style="border-bottom: none; padding-top: 1rem;">
+          <a href="https://kscw.lucanepa.com/login" class="btn btn-gold w-full" target="_blank" rel="noopener" style="justify-content: center;">Wiedisync Login</a>
+        </div>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         PAGE HEADER
+         ═══════════════════════════════════════════════════════════ -->
+    <section class="page-header">
+      <div class="container">
+        <h1>Spielplanung</h1>
+        <p>Heimspiele planen und koordinieren</p>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         EINLEITUNG
+         ═══════════════════════════════════════════════════════════ -->
+    <section class="section">
+      <div class="container">
+        <div class="section-header">
+          <div>
+            <h2>Terminplanung für Heimspiele</h2>
+            <div class="gold-bar"></div>
+          </div>
+        </div>
+        <div style="max-width: 720px;">
+          <p style="font-size: 1.125rem; line-height: 1.8; color: var(--text-secondary); margin-bottom: var(--space-md);">
+            Die Spielplanung des KSC Wiedikon ermöglicht eine effiziente Koordination von Heimspielen.
+            Unsere Teams tragen ihre Heimspiele an festgelegten Spielsamstagen aus, wobei mehrere Teams
+            an einem Tag in verschiedenen Zeitfenstern spielen können. Die Planung berücksichtigt
+            Hallenverfügbarkeit, Schiedsrichtereinsätze und Überschneidungen automatisch.
+          </p>
+          <p style="font-size: 1.125rem; line-height: 1.8; color: var(--text-secondary); margin-bottom: var(--space-lg);">
+            Gegnerische Teams können über unser Online-Tool ihre bevorzugten Spieltermine direkt buchen.
+            Die Bestätigung erfolgt automatisch per E-Mail.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SPIELSAMSTAGE
+         ═══════════════════════════════════════════════════════════ -->
+    <section class="section-alt">
+      <div class="container">
+        <div class="section-header">
+          <div>
+            <h2>Spielsamstage</h2>
+            <div class="gold-bar"></div>
+          </div>
+        </div>
+        <div style="max-width: 720px;">
+          <p style="color: var(--text-secondary); margin-bottom: var(--space-lg);">
+            An den Spielsamstagen finden die meisten Heimspiele statt. Pro Samstag stehen drei Zeitfenster zur Verfügung,
+            verteilt auf unsere Hallen. So können mehrere Teams gleichzeitig oder nacheinander spielen.
+          </p>
+          <div class="grid grid-3" style="margin-bottom: var(--space-lg);">
+            <div class="card" style="text-align: center; border-top: 4px solid var(--kscw-gold);">
+              <div class="card-body">
+                <i data-lucide="clock" style="width: 32px; height: 32px; color: var(--kscw-gold); margin-bottom: var(--space-sm);"></i>
+                <h3 style="font-size: 1.5rem; margin-bottom: var(--space-xs);">11:00</h3>
+                <p style="color: var(--text-secondary); font-size: 0.875rem;">Vormittag</p>
+              </div>
+            </div>
+            <div class="card" style="text-align: center; border-top: 4px solid var(--kscw-blue);">
+              <div class="card-body">
+                <i data-lucide="clock" style="width: 32px; height: 32px; color: var(--kscw-blue); margin-bottom: var(--space-sm);"></i>
+                <h3 style="font-size: 1.5rem; margin-bottom: var(--space-xs);">13:30</h3>
+                <p style="color: var(--text-secondary); font-size: 0.875rem;">Nachmittag</p>
+              </div>
+            </div>
+            <div class="card" style="text-align: center; border-top: 4px solid var(--kscw-gold);">
+              <div class="card-body">
+                <i data-lucide="clock" style="width: 32px; height: 32px; color: var(--kscw-gold); margin-bottom: var(--space-sm);"></i>
+                <h3 style="font-size: 1.5rem; margin-bottom: var(--space-xs);">16:00</h3>
+                <p style="color: var(--text-secondary); font-size: 0.875rem;">Spätmittag</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         FÜR GEGNER
+         ═══════════════════════════════════════════════════════════ -->
+    <section class="section">
+      <div class="container">
+        <div class="section-header">
+          <div>
+            <h2>Für Gegner</h2>
+            <div class="gold-bar"></div>
+          </div>
+        </div>
+        <div style="max-width: 720px;">
+          <p style="font-size: 1.125rem; line-height: 1.8; color: var(--text-secondary); margin-bottom: var(--space-md);">
+            Als gegnerisches Team könnt ihr eure Heimspiel-Termine bei uns direkt online buchen.
+            Ihr erhaltet von eurem KSCW-Kontakt einen personalisierten Link zur Spielplanung.
+            Dort seht ihr alle verfügbaren Termine und Zeitfenster und könnt euren Wunschtermin auswählen.
+          </p>
+
+          <div style="background: var(--surface-alt); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--space-lg); margin-bottom: var(--space-lg);">
+            <h3 style="margin-bottom: var(--space-md);">
+              <i data-lucide="list-checks" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 8px; color: var(--kscw-blue);"></i>
+              So funktioniert es
+            </h3>
+            <ol style="color: var(--text-secondary); line-height: 1.8; padding-left: var(--space-lg); margin: 0;">
+              <li>Ihr erhaltet einen persönlichen Buchungslink per E-Mail</li>
+              <li>Wählt einen der verfügbaren Spielsamstage und ein Zeitfenster</li>
+              <li>Gebt eure Kontaktdaten und eventuelle Wünsche an</li>
+              <li>Ihr erhaltet eine automatische Bestätigung per E-Mail</li>
+              <li>Bei Konflikten meldet sich unser Spielplaner direkt bei euch</li>
+            </ol>
+          </div>
+
+          <div style="text-align: center; margin-bottom: var(--space-xl);">
+            <a href="https://kscw.lucanepa.com/terminplanung" class="btn btn-gold" style="font-size: 1.125rem; padding: var(--space-md) var(--space-xl);" target="_blank" rel="noopener noreferrer">
+              <i data-lucide="calendar-plus" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 8px;"></i>
+              Zur Spielplanung
+            </a>
+            <p style="margin-top: var(--space-sm); font-size: 0.875rem; color: var(--text-secondary);">
+              Zugang nur mit personalisiertem Link möglich
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         HALLEN
+         ═══════════════════════════════════════════════════════════ -->
+    <section class="section-alt">
+      <div class="container">
+        <div class="section-header">
+          <div>
+            <h2>Unsere Hallen</h2>
+            <div class="gold-bar"></div>
+          </div>
+        </div>
+        <p style="color: var(--text-secondary); margin-bottom: var(--space-lg); max-width: 640px;">
+          Der KSC Wiedikon nutzt drei Turnhallen im Quartier Wiedikon für Trainings und Heimspiele. Alle Hallen sind gut mit dem öffentlichen Verkehr erreichbar.
+        </p>
+        <div class="grid grid-3">
+
+          <div class="card" style="border-top: 4px solid var(--kscw-blue);">
+            <div class="card-body">
+              <div style="display: flex; align-items: center; gap: var(--space-sm); margin-bottom: var(--space-md);">
+                <i data-lucide="building-2" style="width: 24px; height: 24px; color: var(--kscw-blue);"></i>
+                <h3>Utogrund</h3>
+              </div>
+              <p style="color: var(--text-secondary); margin-bottom: var(--space-md);">
+                Unsere Haupthalle für Volleyball und Basketball. Zwei Spielfelder, Tribüne für Zuschauer, moderne Ausstattung.
+              </p>
+              <div style="display: flex; align-items: flex-start; gap: var(--space-xs); color: var(--text-secondary); font-size: 0.875rem;">
+                <i data-lucide="map-pin" style="width: 16px; height: 16px; flex-shrink: 0; margin-top: 2px;"></i>
+                <span>Utogrundstrasse 2<br>8045 Zürich</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="border-top: 4px solid var(--kscw-gold);">
+            <div class="card-body">
+              <div style="display: flex; align-items: center; gap: var(--space-sm); margin-bottom: var(--space-md);">
+                <i data-lucide="building-2" style="width: 24px; height: 24px; color: var(--kscw-gold);"></i>
+                <h3>Lavater</h3>
+              </div>
+              <p style="color: var(--text-secondary); margin-bottom: var(--space-md);">
+                Turnhalle des Schulhauses Lavater. Wird vor allem für Basketball-Trainings und einzelne Heimspiele genutzt.
+              </p>
+              <div style="display: flex; align-items: flex-start; gap: var(--space-xs); color: var(--text-secondary); font-size: 0.875rem;">
+                <i data-lucide="map-pin" style="width: 16px; height: 16px; flex-shrink: 0; margin-top: 2px;"></i>
+                <span>Lavaterstrasse 99<br>8002 Zürich</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="border-top: 4px solid var(--kscw-blue);">
+            <div class="card-body">
+              <div style="display: flex; align-items: center; gap: var(--space-sm); margin-bottom: var(--space-md);">
+                <i data-lucide="building-2" style="width: 24px; height: 24px; color: var(--kscw-blue);"></i>
+                <h3>Sihlfeld</h3>
+              </div>
+              <p style="color: var(--text-secondary); margin-bottom: var(--space-md);">
+                Grosse Dreifachhalle beim Schulhaus Sihlfeld. Ideal für parallele Trainings und Turniere am Wochenende.
+              </p>
+              <div style="display: flex; align-items: flex-start; gap: var(--space-xs); color: var(--text-secondary); font-size: 0.875rem;">
+                <i data-lucide="map-pin" style="width: 16px; height: 16px; flex-shrink: 0; margin-top: 2px;"></i>
+                <span>Sihlfeld Strasse 15<br>8003 Zürich</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       FOOTER
+       ═══════════════════════════════════════════════════════════ -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-grid">
+
+          <!-- Brand -->
+          <div class="footer-brand">
+            <a href="/index.html" class="nav-logo" style="margin-bottom: var(--space-sm);">
+              <img src="/images/kscw_logo.svg" alt="KSC Wiedikon" style="height: 40px; filter: brightness(0) invert(1);">
+              <span style="color: white;">KSC Wiedikon</span>
+            </a>
+            <p>Basketball und Volleyball seit 1982. Sportverein in Zürich-Wiedikon mit über 30 Teams in allen Altersklassen.</p>
+            <div class="footer-social">
+              <a href="https://facebook.com/kscwiedikon" aria-label="Facebook" target="_blank" rel="noopener noreferrer">
+                <i data-lucide="facebook"></i>
+              </a>
+              <a href="https://instagram.com/kscwiedikon" aria-label="Instagram" target="_blank" rel="noopener noreferrer">
+                <i data-lucide="instagram"></i>
+              </a>
+            </div>
+          </div>
+
+          <!-- Club -->
+          <div>
+            <div class="footer-heading">Club</div>
+            <div class="footer-links">
+              <a href="/club/ueber-uns.html">Über uns</a>
+              <a href="/club/vorstand.html">Vorstand</a>
+              <a href="/club/kontakt.html">Kontakt</a>
+            </div>
+          </div>
+
+          <!-- Sport -->
+          <div>
+            <div class="footer-heading">Sport</div>
+            <div class="footer-links">
+              <a href="/volleyball/index.html">Volleyball</a>
+              <a href="/basketball/index.html">Basketball</a>
+            </div>
+          </div>
+
+          <!-- Mehr -->
+          <div>
+            <div class="footer-heading">Mehr</div>
+            <div class="footer-links">
+              <a href="/weiteres/kalender.html">Kalender</a>
+              <a href="/weiteres/mitgliedschaft.html">Mitgliedschaft</a>
+              <a href="/weiteres/spielplanung.html">Spielplanung</a>
+              <a href="/weiteres/datenschutz.html">Datenschutz</a>
+              <a href="/weiteres/impressum.html">Impressum</a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      <div class="footer-bottom" style="display:flex;align-items:center;justify-content:center;gap:1.5rem;flex-wrap:wrap;">
+        <button class="theme-toggle" aria-label="Farbmodus wechseln"><i data-lucide="sun" style="width:16px;height:16px;"></i> <span class="theme-label">Light Mode</span></button>
+        <p>&copy; 2026 KSC Wiedikon. Alle Rechte vorbehalten.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SCRIPTS
+       ═══════════════════════════════════════════════════════════ -->
+  <script src="/js/data.js"></script>
+  <script src="/js/main.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script>lucide.createIcons();</script>
+
+</body>
+</html>

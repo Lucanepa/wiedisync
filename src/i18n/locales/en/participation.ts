@@ -23,6 +23,7 @@ export default {
   guestsCount_one: '{{count}} guest',
   guestsCount_other: '{{count}} guests',
   staffPresent: 'Staff present',
+  coachPresent: 'Coach present',
   staff: 'Staff',
   yourStatus: 'Your status',
   waitlisted: 'Waitlisted',

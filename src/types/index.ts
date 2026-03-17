@@ -125,6 +125,7 @@ export interface HallSlot extends RecordModel {
   indefinite: boolean
   label: string
   notes: string
+  sport: 'volleyball' | 'basketball' | ''
 
   _virtual?: VirtualSlotMeta
 }

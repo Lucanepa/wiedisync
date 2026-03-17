@@ -205,7 +205,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
   const isAdmin = isGlobalAdmin || isVbAdmin || isBbAdmin
   const isApproved = user?.approved === true || isAdmin
-  const isProfileComplete = !!user?.language
+  const isProfileComplete = !!user?.language && !!user?.first_name
   const isVorstand = roles.includes('vorstand') || isGlobalAdmin
   const getGuestLevel = useCallback(
     (teamId: string) => guestLevelByTeam[teamId] ?? 0,

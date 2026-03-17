@@ -21,11 +21,11 @@ interface TrainingDetailModalProps {
 
 export default function TrainingDetailModal({ training, onClose }: TrainingDetailModalProps) {
   const { t } = useTranslation('trainings')
-  const { user, canParticipateIn, isStaffOnly } = useAuth()
+  const { user, canParticipateIn, isCoachOf } = useAuth()
   const [rosterOpen, setRosterOpen] = useState(false)
 
   const canParticipate = !!user && !!training?.team && canParticipateIn(training.team)
-  const staffOnly = !!training?.team && isStaffOnly(training.team)
+  const isStaff = !!training?.team && isCoachOf(training.team)
 
   if (!training) return null
 
@@ -88,7 +88,7 @@ export default function TrainingDetailModal({ training, onClose }: TrainingDetai
             <div className="space-y-3 border-t border-gray-200 pt-3 dark:border-gray-700">
               {/* Participation buttons */}
               {canParticipate && (
-                <TrainingParticipation training={training} staffOnly={staffOnly} />
+                <TrainingParticipation training={training} isStaff={isStaff} />
               )}
 
               {/* Summary + roster button */}
@@ -124,14 +124,14 @@ export default function TrainingDetailModal({ training, onClose }: TrainingDetai
   )
 }
 
-function TrainingParticipation({ training, staffOnly }: { training: TrainingExpanded; staffOnly: boolean }) {
+function TrainingParticipation({ training, isStaff }: { training: TrainingExpanded; isStaff: boolean }) {
   const { t } = useTranslation('participation')
   const { effectiveStatus, hasAbsence, note: savedNote, setStatus, saveConfirmed, dismissConfirmed } = useParticipation(
     'training',
     training.id,
     training.date,
     undefined,
-    staffOnly,
+    isStaff,
   )
   const [noteText, setNoteText] = useState(savedNote)
   const [noteSaved, setNoteSaved] = useState(false)

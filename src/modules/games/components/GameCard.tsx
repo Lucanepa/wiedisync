@@ -259,9 +259,9 @@ export default function GameCard({ game, onClick, variant = 'card' }: GameCardPr
 
 function GameCardParticipation({ game }: { game: Game }) {
   const { t } = useTranslation('participation')
-  const { isStaffOnly } = useAuth()
-  const staffOnly = !!game.kscw_team && isStaffOnly(game.kscw_team)
-  const { effectiveStatus, setStatus } = useParticipation('game', game.id, game.date, undefined, staffOnly)
+  const { isCoachOf } = useAuth()
+  const isStaff = !!game.kscw_team && isCoachOf(game.kscw_team)
+  const { effectiveStatus, setStatus } = useParticipation('game', game.id, game.date, undefined, isStaff)
 
   return (
     <div className="flex items-center gap-1.5">

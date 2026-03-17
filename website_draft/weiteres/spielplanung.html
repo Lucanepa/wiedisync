@@ -11,6 +11,21 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/styles.css">
   <link rel="icon" href="/images/kscw_trio.png" type="image/png">
+  <!-- i18n: early language detection + FOUC prevention -->
+  <script>
+    (function() {
+      var lang = localStorage.getItem('lang');
+      if (!lang && navigator.language && navigator.language.startsWith('en')) lang = 'en';
+      if (lang && lang !== 'de') {
+        document.documentElement.lang = lang;
+        var style = document.createElement('style');
+        style.textContent = '.i18n-loading [data-i18n],.i18n-loading [data-i18n-placeholder]{visibility:hidden}';
+        document.head.appendChild(style);
+        document.addEventListener('DOMContentLoaded', function() { document.body.classList.add('i18n-loading'); });
+      }
+    })();
+  </script>
+  <script src="/js/i18n.js"></script>
 </head>
 <body>
 
@@ -26,8 +41,8 @@
          ═══════════════════════════════════════════════════════════ -->
     <section class="page-header">
       <div class="container">
-        <h1>Spielplanung</h1>
-        <p>Heimspiele planen und koordinieren</p>
+        <h1 data-i18n="schedulingTitle">Spielplanung</h1>
+        <p data-i18n="schedulingSubtitle">Heimspiele planen und koordinieren</p>
       </div>
     </section>
 
@@ -38,18 +53,18 @@
       <div class="container">
         <div class="section-header">
           <div>
-            <h2>Terminplanung für Heimspiele</h2>
+            <h2 data-i18n="schedulingIntro">Terminplanung für Heimspiele</h2>
             <div class="gold-bar"></div>
           </div>
         </div>
         <div style="max-width: 720px;">
-          <p style="font-size: 1.125rem; line-height: 1.8; color: var(--text-secondary); margin-bottom: var(--space-md);">
+          <p style="font-size: 1.125rem; line-height: 1.8; color: var(--text-secondary); margin-bottom: var(--space-md);" data-i18n="schedulingIntroText1">
             Die Spielplanung des KSC Wiedikon ermöglicht eine effiziente Koordination von Heimspielen.
             Unsere Teams tragen ihre Heimspiele an festgelegten Spielsamstagen aus, wobei mehrere Teams
             an einem Tag in verschiedenen Zeitfenstern spielen können. Die Planung berücksichtigt
             Hallenverfügbarkeit, Schiedsrichtereinsätze und Überschneidungen automatisch.
           </p>
-          <p style="font-size: 1.125rem; line-height: 1.8; color: var(--text-secondary); margin-bottom: var(--space-lg);">
+          <p style="font-size: 1.125rem; line-height: 1.8; color: var(--text-secondary); margin-bottom: var(--space-lg);" data-i18n="schedulingIntroText2">
             Gegnerische Teams können über unser Online-Tool ihre bevorzugten Spieltermine direkt buchen.
             Die Bestätigung erfolgt automatisch per E-Mail.
           </p>
@@ -64,12 +79,12 @@
       <div class="container">
         <div class="section-header">
           <div>
-            <h2>Spielsamstage</h2>
+            <h2 data-i18n="schedulingSaturdays">Spielsamstage</h2>
             <div class="gold-bar"></div>
           </div>
         </div>
         <div style="max-width: 720px;">
-          <p style="color: var(--text-secondary); margin-bottom: var(--space-lg);">
+          <p style="color: var(--text-secondary); margin-bottom: var(--space-lg);" data-i18n="schedulingSaturdaysText">
             An den Spielsamstagen finden die meisten Heimspiele statt. Pro Samstag stehen drei Zeitfenster zur Verfügung,
             verteilt auf unsere Hallen. So können mehrere Teams gleichzeitig oder nacheinander spielen.
           </p>
@@ -78,21 +93,21 @@
               <div class="card-body">
                 <i data-lucide="clock" style="width: 32px; height: 32px; color: var(--kscw-gold); margin-bottom: var(--space-sm);"></i>
                 <h3 style="font-size: 1.5rem; margin-bottom: var(--space-xs);">11:00</h3>
-                <p style="color: var(--text-secondary); font-size: 0.875rem;">Vormittag</p>
+                <p style="color: var(--text-secondary); font-size: 0.875rem;" data-i18n="schedulingMorning">Vormittag</p>
               </div>
             </div>
             <div class="card" style="text-align: center; border-top: 4px solid var(--kscw-blue);">
               <div class="card-body">
                 <i data-lucide="clock" style="width: 32px; height: 32px; color: var(--kscw-blue); margin-bottom: var(--space-sm);"></i>
                 <h3 style="font-size: 1.5rem; margin-bottom: var(--space-xs);">13:30</h3>
-                <p style="color: var(--text-secondary); font-size: 0.875rem;">Nachmittag</p>
+                <p style="color: var(--text-secondary); font-size: 0.875rem;" data-i18n="schedulingAfternoon">Nachmittag</p>
               </div>
             </div>
             <div class="card" style="text-align: center; border-top: 4px solid var(--kscw-gold);">
               <div class="card-body">
                 <i data-lucide="clock" style="width: 32px; height: 32px; color: var(--kscw-gold); margin-bottom: var(--space-sm);"></i>
                 <h3 style="font-size: 1.5rem; margin-bottom: var(--space-xs);">16:00</h3>
-                <p style="color: var(--text-secondary); font-size: 0.875rem;">Spätmittag</p>
+                <p style="color: var(--text-secondary); font-size: 0.875rem;" data-i18n="schedulingLateAfternoon">Spätmittag</p>
               </div>
             </div>
           </div>
@@ -107,12 +122,12 @@
       <div class="container">
         <div class="section-header">
           <div>
-            <h2>Für Gegner</h2>
+            <h2 data-i18n="schedulingOpponents">Für Gegner</h2>
             <div class="gold-bar"></div>
           </div>
         </div>
         <div style="max-width: 720px;">
-          <p style="font-size: 1.125rem; line-height: 1.8; color: var(--text-secondary); margin-bottom: var(--space-md);">
+          <p style="font-size: 1.125rem; line-height: 1.8; color: var(--text-secondary); margin-bottom: var(--space-md);" data-i18n="schedulingOpponentsText">
             Als gegnerisches Team könnt ihr eure Heimspiel-Termine bei uns direkt online buchen.
             Ihr erhaltet von eurem KSCW-Kontakt einen personalisierten Link zur Spielplanung.
             Dort seht ihr alle verfügbaren Termine und Zeitfenster und könnt euren Wunschtermin auswählen.
@@ -121,24 +136,24 @@
           <div style="background: var(--surface-alt); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--space-lg); margin-bottom: var(--space-lg);">
             <h3 style="margin-bottom: var(--space-md);">
               <i data-lucide="list-checks" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 8px; color: var(--kscw-blue);"></i>
-              So funktioniert es
+              <span data-i18n="schedulingHowItWorks">So funktioniert es</span>
             </h3>
             <ol style="color: var(--text-secondary); line-height: 1.8; padding-left: var(--space-lg); margin: 0;">
-              <li>Ihr erhaltet einen persönlichen Buchungslink per E-Mail</li>
-              <li>Wählt einen der verfügbaren Spielsamstage und ein Zeitfenster</li>
-              <li>Gebt eure Kontaktdaten und eventuelle Wünsche an</li>
-              <li>Ihr erhaltet eine automatische Bestätigung per E-Mail</li>
-              <li>Bei Konflikten meldet sich unser Spielplaner direkt bei euch</li>
+              <li data-i18n="schedulingStep1">Ihr erhaltet einen persönlichen Buchungslink per E-Mail</li>
+              <li data-i18n="schedulingStep2">Wählt einen der verfügbaren Spielsamstage und ein Zeitfenster</li>
+              <li data-i18n="schedulingStep3">Gebt eure Kontaktdaten und eventuelle Wünsche an</li>
+              <li data-i18n="schedulingStep4">Ihr erhaltet eine automatische Bestätigung per E-Mail</li>
+              <li data-i18n="schedulingStep5">Bei Konflikten meldet sich unser Spielplaner direkt bei euch</li>
             </ol>
           </div>
 
           <div style="text-align: center; margin-bottom: var(--space-xl);">
             <a href="https://kscw.lucanepa.com/terminplanung" class="btn btn-gold" style="font-size: 1.125rem; padding: var(--space-md) var(--space-xl);" target="_blank" rel="noopener noreferrer">
               <i data-lucide="calendar-plus" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 8px;"></i>
-              Zur Spielplanung
+              <span data-i18n="schedulingGoTo">Zur Spielplanung</span>
             </a>
             <p style="margin-top: var(--space-sm); font-size: 0.875rem; color: var(--text-secondary);">
-              Zugang nur mit personalisiertem Link möglich
+              <span data-i18n="schedulingAccessNote">Zugang nur mit personalisiertem Link möglich</span>
             </p>
           </div>
         </div>
@@ -152,11 +167,11 @@
       <div class="container">
         <div class="section-header">
           <div>
-            <h2>Unsere Hallen</h2>
+            <h2 data-i18n="schedulingHalls">Unsere Hallen</h2>
             <div class="gold-bar"></div>
           </div>
         </div>
-        <p style="color: var(--text-secondary); margin-bottom: var(--space-lg); max-width: 640px;">
+        <p style="color: var(--text-secondary); margin-bottom: var(--space-lg); max-width: 640px;" data-i18n="schedulingHallsText">
           Der KSC Wiedikon nutzt drei Turnhallen im Quartier Wiedikon für Trainings und Heimspiele. Alle Hallen sind gut mit dem öffentlichen Verkehr erreichbar.
         </p>
         <div class="grid grid-3">
@@ -218,67 +233,7 @@
   <!-- ═══════════════════════════════════════════════════════════
        FOOTER
        ═══════════════════════════════════════════════════════════ -->
-  <footer class="site-footer">
-    <div class="container">
-      <div class="footer-inner">
-        <div class="footer-grid">
-
-          <!-- Brand -->
-          <div class="footer-brand">
-            <a href="/index.html" class="nav-logo" style="margin-bottom: var(--space-sm);">
-              <img src="/images/kscw_weiss.png" alt="KSC Wiedikon" style="height: 40px;">
-              <span style="color: white;">KSC Wiedikon</span>
-            </a>
-            <p>Basketball und Volleyball seit 1982. Sportverein in Zürich-Wiedikon mit über 30 Teams in allen Altersklassen.</p>
-            <div class="footer-social">
-              <a href="https://facebook.com/kscwiedikon" aria-label="Facebook" target="_blank" rel="noopener noreferrer">
-                <i data-lucide="facebook"></i>
-              </a>
-              <a href="https://instagram.com/kscwiedikon" aria-label="Instagram" target="_blank" rel="noopener noreferrer">
-                <i data-lucide="instagram"></i>
-              </a>
-            </div>
-          </div>
-
-          <!-- Club -->
-          <div>
-            <div class="footer-heading">Club</div>
-            <div class="footer-links">
-              <a href="/club/ueber-uns.html">Über uns</a>
-              <a href="/club/vorstand.html">Vorstand</a>
-              <a href="/club/kontakt.html">Kontakt</a>
-            </div>
-          </div>
-
-          <!-- Sport -->
-          <div>
-            <div class="footer-heading">Sport</div>
-            <div class="footer-links">
-              <a href="/volleyball/index.html">Volleyball</a>
-              <a href="/basketball/index.html">Basketball</a>
-            </div>
-          </div>
-
-          <!-- Mehr -->
-          <div>
-            <div class="footer-heading">Mehr</div>
-            <div class="footer-links">
-              <a href="/weiteres/kalender.html">Kalender</a>
-              <a href="/weiteres/mitgliedschaft.html">Mitgliedschaft</a>
-              <a href="/weiteres/spielplanung.html">Spielplanung</a>
-              <a href="/weiteres/datenschutz.html">Datenschutz</a>
-              <a href="/weiteres/impressum.html">Impressum</a>
-            </div>
-          </div>
-
-        </div>
-      </div>
-      <div class="footer-bottom" style="display:flex;align-items:center;justify-content:center;gap:1.5rem;flex-wrap:wrap;">
-        <button class="theme-toggle" aria-label="Farbmodus wechseln"><i data-lucide="sun" style="width:16px;height:16px;"></i> <span class="theme-label">Light Mode</span></button>
-        <p>&copy; 2026 KSC Wiedikon. Alle Rechte vorbehalten.</p>
-      </div>
-    </div>
-  </footer>
+  <div id="site-footer"></div>
 
   <!-- ═══════════════════════════════════════════════════════════
        SCRIPTS

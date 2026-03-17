@@ -16,17 +16,19 @@
   var TEAM = CFG.short || '';
   var TEAM_PB_ID = CFG.pbId;
 
-  var posLabels = {
-    setter: 'Zuspieler', opposite: 'Diagonal', outside_hitter: 'Aussen',
-    middle_blocker: 'Mitte', libero: 'Libero', other: 'Spieler',
-    point_guard: 'Point Guard', shooting_guard: 'Shooting Guard',
-    small_forward: 'Small Forward', power_forward: 'Power Forward',
-    center: 'Center',
-  };
+  function getPosLabel(key) {
+    var map = {
+      setter: 'posSetter', opposite: 'posOpposite', outside_hitter: 'posOutsideHitter',
+      middle_blocker: 'posMiddleBlocker', libero: 'posLibero', other: 'posPlayer',
+      point_guard: 'posPointGuard', shooting_guard: 'posShootingGuard',
+      small_forward: 'posSmallForward', power_forward: 'posPowerForward', center: 'posCenter'
+    };
+    return i18n.t(map[key] || 'posPlayer');
+  }
 
   function positionText(positions) {
     if (!positions || !positions.length) return '';
-    return positions.map(function (p) { return posLabels[p] || p; }).join(', ');
+    return positions.map(function (p) { return getPosLabel(p); }).join(', ');
   }
 
   function esc(s) { var d = document.createElement('span'); d.textContent = s; return d.innerHTML; }
@@ -70,7 +72,7 @@
 
     var league = document.createElement('p');
     league.className = 'team-league';
-    league.textContent = (teamData.league || '') + (teamData.season ? ' — Saison ' + teamData.season : '');
+    league.textContent = (teamData.league || '') + (teamData.season ? ' — ' + i18n.t('teamSeason') + ' ' + teamData.season : '');
     inner.appendChild(league);
 
     section.appendChild(inner);
@@ -90,7 +92,7 @@
       if (!container) return;
       var img = document.createElement('img');
       img.src = url;
-      img.alt = 'Teamfoto ' + esc(teamData.name || TEAM);
+      img.alt = i18n.t('teamPhoto') + ' ' + esc(teamData.name || TEAM);
       img.className = 'team-photo';
       img.loading = 'lazy';
       container.parentNode.insertBefore(img, container.nextSibling);
@@ -98,7 +100,7 @@
     }
     var img2 = document.createElement('img');
     img2.src = url;
-    img2.alt = 'Teamfoto ' + esc(teamData.name || TEAM);
+    img2.alt = i18n.t('teamPhoto') + ' ' + esc(teamData.name || TEAM);
     img2.className = 'team-photo';
     img2.loading = 'lazy';
     container.appendChild(img2);
@@ -116,17 +118,17 @@
     inner.className = 'container';
 
     var h2 = document.createElement('h2');
-    h2.textContent = 'Interesse am ' + (teamData.name || TEAM) + '?';
+    h2.textContent = i18n.t('teamCTA', { team: teamData.name || TEAM });
     inner.appendChild(h2);
 
     var p = document.createElement('p');
-    p.textContent = 'Kontaktiere uns für ein Probetraining';
+    p.textContent = i18n.t('teamCTAText');
     inner.appendChild(p);
 
     var btn = document.createElement('a');
     btn.href = '/club/kontakt.html';
     btn.className = 'btn btn-gold';
-    btn.textContent = 'Kontakt aufnehmen';
+    btn.textContent = i18n.t('teamCTAButton');
     inner.appendChild(btn);
 
     section.appendChild(inner);
@@ -161,8 +163,35 @@
         renderTrainings(data.trainings || []);
         renderHookGames(data.upcoming || [], data.results || []);
         renderHookRankings(data.rankings || [], teamData);
+
+        // Update static tab labels and headings with i18n
+        updateStaticLabels();
       })
       .catch(function () { hideSection('kader'); hideSection('training'); });
+  }
+
+  // ── Update static HTML labels with i18n ───────────────────────────
+  function updateStaticLabels() {
+    // Tab labels
+    var tabMap = {
+      kader: 'teamTabRoster',
+      spiele: 'teamTabGames',
+      rangliste: 'teamTabRankings',
+      training: 'teamTabTraining'
+    };
+    var keys = Object.keys(tabMap);
+    for (var i = 0; i < keys.length; i++) {
+      var btn = document.querySelector('[data-tab="' + keys[i] + '"]');
+      if (btn) btn.textContent = i18n.t(tabMap[keys[i]]);
+    }
+
+    // Section headings in the spiele tab
+    var spielePanel = document.querySelector('[data-tab-panel="spiele"]');
+    if (spielePanel) {
+      var headings = spielePanel.querySelectorAll('h2');
+      if (headings[0]) headings[0].textContent = i18n.t('teamUpcoming');
+      if (headings[1]) headings[1].textContent = i18n.t('teamResults');
+    }
   }
 
   // ── Render Roster ─────────────────────────────────────────────────
@@ -227,10 +256,10 @@
       metaEl.textContent = '';
       var lines = [];
       if (captain.length) {
-        lines.push('Captain: ' + captain.map(function (c) { return c.first_name + ' ' + c.last_name; }).join(', '));
+        lines.push(i18n.t('teamCaptain') + ': ' + captain.map(function (c) { return c.first_name + ' ' + c.last_name; }).join(', '));
       }
       if (coach.length) {
-        lines.push('Trainer: ' + coach.map(function (c) { return c.first_name + ' ' + c.last_name; }).join(', '));
+        lines.push(i18n.t('teamCoach') + ': ' + coach.map(function (c) { return c.first_name + ' ' + c.last_name; }).join(', '));
       }
       for (var li = 0; li < lines.length; li++) {
         var p = document.createElement('p');
@@ -292,7 +321,7 @@
       } else {
         var p = document.createElement('p');
         p.className = 'text-muted text-sm';
-        p.textContent = 'Keine anstehenden Spiele.';
+        p.textContent = i18n.t('teamNoGames');
         upEl.appendChild(p);
       }
     }
@@ -309,7 +338,7 @@
       } else {
         var p2 = document.createElement('p');
         p2.className = 'text-muted text-sm';
-        p2.textContent = 'Keine Resultate vorhanden.';
+        p2.textContent = i18n.t('teamNoResults');
         resEl.appendChild(p2);
       }
     }
@@ -337,7 +366,7 @@
     // Badge
     var badge = document.createElement('span');
     badge.className = 'game-badge ' + (g.isHome ? 'home' : 'away');
-    badge.textContent = g.isHome ? 'Heim' : 'Auswärts';
+    badge.textContent = g.isHome ? i18n.t('teamBadgeHome') : i18n.t('teamBadgeAway');
     row.appendChild(badge);
 
     // Teams
@@ -381,7 +410,7 @@
     if (!rankings.length) {
       var p = document.createElement('p');
       p.className = 'text-muted text-sm';
-      p.textContent = 'Keine Rangliste verfügbar.';
+      p.textContent = i18n.t('teamNoRankings');
       rankEl.appendChild(p);
       return;
     }
@@ -389,7 +418,7 @@
     var h2 = document.createElement('h2');
     h2.style.fontSize = 'var(--text-2xl)';
     h2.style.marginBottom = 'var(--space-lg)';
-    h2.textContent = teamInfo.league || 'Rangliste';
+    h2.textContent = teamInfo.league || i18n.t('rankingRankings');
     rankEl.appendChild(h2);
 
     // Detect sport from first ranking entry
@@ -401,8 +430,8 @@
 
     var thead = document.createElement('thead');
     var headRow = document.createElement('tr');
-    var headers = ['#', 'Pkt', 'Team', 'Sp', 'S', 'N'];
-    if (isVB) headers.push('Sätze');
+    var headers = ['#', i18n.t('rankingPoints'), i18n.t('rankingTeam'), i18n.t('rankingPlayed'), i18n.t('rankingWon'), i18n.t('rankingLost')];
+    if (isVB) headers.push(i18n.t('rankingSets'));
     headers.forEach(function (t) {
       var th = document.createElement('th'); th.textContent = t; headRow.appendChild(th);
     });
@@ -536,4 +565,21 @@
 
   // ── Init ──────────────────────────────────────────────────────────
   fetchTeamData();
+
+  // ── Re-render on language change ──────────────────────────────────
+  document.addEventListener('langChanged', function () {
+    if (window.TEAM_CONFIG && window.TEAM_CONFIG.pbId) {
+      // Clear rendered content so fetchTeamData re-renders fresh
+      var heroContainer = document.getElementById('team-hero-container');
+      if (heroContainer) heroContainer.textContent = '';
+      var photoContainer = document.getElementById('team-photo-container');
+      if (photoContainer) photoContainer.textContent = '';
+      var existingPhoto = document.querySelector('.team-photo');
+      if (existingPhoto) existingPhoto.remove();
+      var ctaContainer = document.getElementById('cta-container');
+      if (ctaContainer) ctaContainer.textContent = '';
+
+      fetchTeamData();
+    }
+  });
 })();

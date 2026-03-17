@@ -11,6 +11,21 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/styles.css">
   <link rel="icon" href="/images/kscw_trio.png" type="image/png">
+  <!-- i18n: early language detection + FOUC prevention -->
+  <script>
+    (function() {
+      var lang = localStorage.getItem('lang');
+      if (!lang && navigator.language && navigator.language.startsWith('en')) lang = 'en';
+      if (lang && lang !== 'de') {
+        document.documentElement.lang = lang;
+        var style = document.createElement('style');
+        style.textContent = '.i18n-loading [data-i18n],.i18n-loading [data-i18n-placeholder]{visibility:hidden}';
+        document.head.appendChild(style);
+        document.addEventListener('DOMContentLoaded', function() { document.body.classList.add('i18n-loading'); });
+      }
+    })();
+  </script>
+  <script src="/js/i18n.js"></script>
 </head>
 <body>
 
@@ -26,8 +41,8 @@
          ═══════════════════════════════════════════════════════════ -->
     <section class="page-header">
       <div class="container">
-        <h1>Kalender</h1>
-        <p>Alle Termine auf einen Blick</p>
+        <h1 data-i18n="calendarTitle">Kalender</h1>
+        <p data-i18n="calendarSubtitle">Alle Termine auf einen Blick</p>
       </div>
     </section>
 
@@ -38,22 +53,22 @@
       <div class="container">
         <div class="section-header">
           <div>
-            <h2>Vereinskalender</h2>
+            <h2 data-i18n="calendarHeading">Vereinskalender</h2>
             <div class="gold-bar"></div>
           </div>
         </div>
         <div style="max-width: 720px;">
-          <p style="font-size: 1.125rem; line-height: 1.8; color: var(--text-secondary); margin-bottom: var(--space-md);">
+          <p style="font-size: 1.125rem; line-height: 1.8; color: var(--text-secondary); margin-bottom: var(--space-md);" data-i18n="calendarDescription">
             Im KSCW-Kalender findest du alle Spiele, Trainings, Vereinsanlässe und Hallenreservationen.
             Der vollständige Kalender mit Filtermöglichkeiten nach Team und Sportart ist auf unserer Mitglieder-Plattform verfügbar.
           </p>
           <div style="background: var(--surface-alt); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--space-lg); margin-bottom: var(--space-lg);">
             <p style="margin-bottom: var(--space-md); color: var(--text-secondary);">
               <i data-lucide="info" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 6px;"></i>
-              Der vollständige KSCW-Kalender ist auf unserer Mitglieder-Plattform verfügbar. Dort kannst du nach Teams filtern, einzelne Termine abonnieren und deine Teilnahme bestätigen.
+              <span data-i18n="calendarPlatformInfo">Der vollständige KSCW-Kalender ist auf unserer Mitglieder-Plattform verfügbar. Dort kannst du nach Teams filtern, einzelne Termine abonnieren und deine Teilnahme bestätigen.</span>
             </p>
             <a href="https://kscw.lucanepa.com/calendar" class="btn btn-gold" target="_blank" rel="noopener noreferrer">
-              Zur Plattform &rarr;
+              <span data-i18n="calendarPlatformLink">Zur Plattform &rarr;</span>
             </a>
           </div>
         </div>
@@ -67,33 +82,33 @@
       <div class="container">
         <div class="section-header">
           <div>
-            <h2>Kalender abonnieren</h2>
+            <h2 data-i18n="calendarSubscribe">Kalender abonnieren</h2>
             <div class="gold-bar"></div>
           </div>
         </div>
-        <p style="color: var(--text-secondary); margin-bottom: var(--space-lg); max-width: 640px;">
+        <p style="color: var(--text-secondary); margin-bottom: var(--space-lg); max-width: 640px;" data-i18n="calendarSubscribeDescription">
           Abonniere den KSCW-Kalender direkt in deiner Kalender-App (Google Calendar, Apple Calendar, Outlook). So hast du alle Spiele und Trainings immer aktuell auf deinem Handy.
         </p>
         <div class="grid grid-2" style="max-width: 720px;">
           <div class="card">
             <div class="card-body" style="text-align: center;">
               <i data-lucide="calendar-check" style="width: 48px; height: 48px; color: var(--kscw-blue); margin-bottom: var(--space-md);"></i>
-              <h3 style="margin-bottom: var(--space-sm);">Volleyball-Kalender</h3>
-              <p style="color: var(--text-secondary); margin-bottom: var(--space-md);">Alle Volleyball-Spiele und Trainings der Saison 2025/26.</p>
+              <h3 style="margin-bottom: var(--space-sm);" data-i18n="calendarVolleyball">Volleyball-Kalender</h3>
+              <p style="color: var(--text-secondary); margin-bottom: var(--space-md);" data-i18n="calendarVolleyballDescription">Alle Volleyball-Spiele und Trainings der Saison 2025/26.</p>
               <a href="https://kscw.lucanepa.com/api/ical/volleyball" class="btn btn-outline" target="_blank" rel="noopener noreferrer">
                 <i data-lucide="download" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></i>
-                iCal abonnieren
+                <span data-i18n="calendarICalSubscribe">iCal abonnieren</span>
               </a>
             </div>
           </div>
           <div class="card">
             <div class="card-body" style="text-align: center;">
               <i data-lucide="calendar-check" style="width: 48px; height: 48px; color: var(--kscw-gold); margin-bottom: var(--space-md);"></i>
-              <h3 style="margin-bottom: var(--space-sm);">Basketball-Kalender</h3>
-              <p style="color: var(--text-secondary); margin-bottom: var(--space-md);">Alle Basketball-Spiele und Trainings der Saison 2025/26.</p>
+              <h3 style="margin-bottom: var(--space-sm);" data-i18n="calendarBasketball">Basketball-Kalender</h3>
+              <p style="color: var(--text-secondary); margin-bottom: var(--space-md);" data-i18n="calendarBasketballDescription">Alle Basketball-Spiele und Trainings der Saison 2025/26.</p>
               <a href="https://kscw.lucanepa.com/api/ical/basketball" class="btn btn-outline" target="_blank" rel="noopener noreferrer">
                 <i data-lucide="download" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></i>
-                iCal abonnieren
+                <span data-i18n="calendarICalSubscribe">iCal abonnieren</span>
               </a>
             </div>
           </div>
@@ -108,7 +123,7 @@
       <div class="container">
         <div class="section-header">
           <div>
-            <h2>Nächste Termine</h2>
+            <h2 data-i18n="calendarUpcoming">Nächste Termine</h2>
             <div class="gold-bar"></div>
           </div>
         </div>
@@ -130,7 +145,7 @@
                   Turnhalle Utogrund, Zürich
                 </span>
               </div>
-              <span class="badge badge-blue" style="margin-left: auto;">Heimspiel</span>
+              <span class="badge badge-blue" style="margin-left: auto;" data-i18n="calendarHomeGame">Heimspiel</span>
             </div>
           </div>
 
@@ -149,7 +164,7 @@
                   Turnhalle Lavater, Zürich
                 </span>
               </div>
-              <span class="badge badge-gold" style="margin-left: auto;">Heimspiel</span>
+              <span class="badge badge-gold" style="margin-left: auto;" data-i18n="calendarHomeGame">Heimspiel</span>
             </div>
           </div>
 
@@ -168,7 +183,7 @@
                   Turnhalle Sihlfeld, Zürich
                 </span>
               </div>
-              <span class="badge" style="margin-left: auto;">Training</span>
+              <span class="badge" style="margin-left: auto;" data-i18n="calendarTraining">Training</span>
             </div>
           </div>
 
@@ -187,7 +202,7 @@
                   Turnhalle Utogrund, Zürich
                 </span>
               </div>
-              <span class="badge" style="margin-left: auto;">Training</span>
+              <span class="badge" style="margin-left: auto;" data-i18n="calendarTraining">Training</span>
             </div>
           </div>
 
@@ -206,7 +221,7 @@
                   Turnhalle Utogrund, Zürich
                 </span>
               </div>
-              <span class="badge badge-gold" style="margin-left: auto;">Heimspiel</span>
+              <span class="badge badge-gold" style="margin-left: auto;" data-i18n="calendarHomeGame">Heimspiel</span>
             </div>
           </div>
 
@@ -219,67 +234,7 @@
   <!-- ═══════════════════════════════════════════════════════════
        FOOTER
        ═══════════════════════════════════════════════════════════ -->
-  <footer class="site-footer">
-    <div class="container">
-      <div class="footer-inner">
-        <div class="footer-grid">
-
-          <!-- Brand -->
-          <div class="footer-brand">
-            <a href="/index.html" class="nav-logo" style="margin-bottom: var(--space-sm);">
-              <img src="/images/kscw_weiss.png" alt="KSC Wiedikon" style="height: 40px;">
-              <span style="color: white;">KSC Wiedikon</span>
-            </a>
-            <p>Basketball und Volleyball seit 1982. Sportverein in Zürich-Wiedikon mit über 30 Teams in allen Altersklassen.</p>
-            <div class="footer-social">
-              <a href="https://facebook.com/kscwiedikon" aria-label="Facebook" target="_blank" rel="noopener noreferrer">
-                <i data-lucide="facebook"></i>
-              </a>
-              <a href="https://instagram.com/kscwiedikon" aria-label="Instagram" target="_blank" rel="noopener noreferrer">
-                <i data-lucide="instagram"></i>
-              </a>
-            </div>
-          </div>
-
-          <!-- Club -->
-          <div>
-            <div class="footer-heading">Club</div>
-            <div class="footer-links">
-              <a href="/club/ueber-uns.html">Über uns</a>
-              <a href="/club/vorstand.html">Vorstand</a>
-              <a href="/club/kontakt.html">Kontakt</a>
-            </div>
-          </div>
-
-          <!-- Sport -->
-          <div>
-            <div class="footer-heading">Sport</div>
-            <div class="footer-links">
-              <a href="/volleyball/index.html">Volleyball</a>
-              <a href="/basketball/index.html">Basketball</a>
-            </div>
-          </div>
-
-          <!-- Mehr -->
-          <div>
-            <div class="footer-heading">Mehr</div>
-            <div class="footer-links">
-              <a href="/weiteres/kalender.html">Kalender</a>
-              <a href="/weiteres/mitgliedschaft.html">Mitgliedschaft</a>
-              <a href="/weiteres/spielplanung.html">Spielplanung</a>
-              <a href="/weiteres/datenschutz.html">Datenschutz</a>
-              <a href="/weiteres/impressum.html">Impressum</a>
-            </div>
-          </div>
-
-        </div>
-      </div>
-      <div class="footer-bottom" style="display:flex;align-items:center;justify-content:center;gap:1.5rem;flex-wrap:wrap;">
-        <button class="theme-toggle" aria-label="Farbmodus wechseln"><i data-lucide="sun" style="width:16px;height:16px;"></i> <span class="theme-label">Light Mode</span></button>
-        <p>&copy; 2026 KSC Wiedikon. Alle Rechte vorbehalten.</p>
-      </div>
-    </div>
-  </footer>
+  <div id="site-footer"></div>
 
   <!-- ═══════════════════════════════════════════════════════════
        SCRIPTS

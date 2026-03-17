@@ -10,6 +10,21 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/styles.css">
+  <!-- i18n: early language detection + FOUC prevention -->
+  <script>
+    (function() {
+      var lang = localStorage.getItem('lang');
+      if (!lang && navigator.language && navigator.language.startsWith('en')) lang = 'en';
+      if (lang && lang !== 'de') {
+        document.documentElement.lang = lang;
+        var style = document.createElement('style');
+        style.textContent = '.i18n-loading [data-i18n],.i18n-loading [data-i18n-placeholder]{visibility:hidden}';
+        document.head.appendChild(style);
+        document.addEventListener('DOMContentLoaded', function() { document.body.classList.add('i18n-loading'); });
+      }
+    })();
+  </script>
+  <script src="/js/i18n.js"></script>
 </head>
 <body>
 
@@ -19,8 +34,8 @@
   <!-- ═══ Page Header ══════════════════════════════════════════════ -->
   <section class="page-header">
     <div class="container">
-      <h1>Volleyball</h1>
-      <p>11 Teams — Von der 2. Liga bis zum Nachwuchs</p>
+      <h1 data-i18n="vbTitle">Volleyball</h1>
+      <p data-i18n="vbSubtitle">11 Teams — Von der 2. Liga bis zum Nachwuchs</p>
     </div>
   </section>
 
@@ -29,7 +44,7 @@
     <div class="container">
       <div class="section-header">
         <div>
-          <h2>Herren</h2>
+          <h2 data-i18n="vbMen">Herren</h2>
           <div class="gold-bar"></div>
         </div>
       </div>
@@ -45,7 +60,7 @@
             </div>
             <span class="badge badge-blue">2. Liga</span>
             <p class="team-card-meta mt-sm">Di 20:00–21:30, Do 19:30–21:30</p>
-            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;">Mehr erfahren &rarr;</p>
+            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;" data-i18n="vbMore">Mehr erfahren &rarr;</p>
           </div>
         </a>
 
@@ -59,7 +74,7 @@
             </div>
             <span class="badge badge-blue">3. Liga</span>
             <p class="team-card-meta mt-sm">Mo 20:00–21:30, Mi 20:00–21:30</p>
-            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;">Mehr erfahren &rarr;</p>
+            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;" data-i18n="vbMore">Mehr erfahren &rarr;</p>
           </div>
         </a>
 
@@ -73,7 +88,7 @@
             </div>
             <span class="badge badge-blue">3. Liga</span>
             <p class="team-card-meta mt-sm">Di 20:00–21:30, Do 20:00–21:30</p>
-            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;">Mehr erfahren &rarr;</p>
+            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;" data-i18n="vbMore">Mehr erfahren &rarr;</p>
           </div>
         </a>
 
@@ -87,7 +102,7 @@
             </div>
             <span class="badge badge-blue">4. Liga</span>
             <p class="team-card-meta mt-sm">Mi 20:30–22:00</p>
-            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;">Mehr erfahren &rarr;</p>
+            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;" data-i18n="vbMore">Mehr erfahren &rarr;</p>
           </div>
         </a>
 
@@ -100,7 +115,7 @@
     <div class="container">
       <div class="section-header">
         <div>
-          <h2>Damen</h2>
+          <h2 data-i18n="vbWomen">Damen</h2>
           <div class="gold-bar"></div>
         </div>
       </div>
@@ -116,7 +131,7 @@
             </div>
             <span class="badge badge-blue">3. Liga</span>
             <p class="team-card-meta mt-sm">Di 20:00–21:30, Do 19:30–21:30</p>
-            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;">Mehr erfahren &rarr;</p>
+            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;" data-i18n="vbMore">Mehr erfahren &rarr;</p>
           </div>
         </a>
 
@@ -130,7 +145,7 @@
             </div>
             <span class="badge badge-blue">3. Liga</span>
             <p class="team-card-meta mt-sm">Di 20:00–21:30, Do 20:00–21:30</p>
-            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;">Mehr erfahren &rarr;</p>
+            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;" data-i18n="vbMore">Mehr erfahren &rarr;</p>
           </div>
         </a>
 
@@ -144,7 +159,7 @@
             </div>
             <span class="badge badge-blue">4. Liga</span>
             <p class="team-card-meta mt-sm">Mo 20:00–21:30, Mi 20:00–21:30</p>
-            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;">Mehr erfahren &rarr;</p>
+            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;" data-i18n="vbMore">Mehr erfahren &rarr;</p>
           </div>
         </a>
 
@@ -158,7 +173,7 @@
             </div>
             <span class="badge badge-blue">5. Liga</span>
             <p class="team-card-meta mt-sm">Di 20:00–21:30</p>
-            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;">Mehr erfahren &rarr;</p>
+            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;" data-i18n="vbMore">Mehr erfahren &rarr;</p>
           </div>
         </a>
 
@@ -171,7 +186,7 @@
     <div class="container">
       <div class="section-header">
         <div>
-          <h2>Nachwuchs</h2>
+          <h2 data-i18n="vbYouth">Nachwuchs</h2>
           <div class="gold-bar"></div>
         </div>
       </div>
@@ -186,7 +201,7 @@
             </div>
             <span class="badge badge-blue">U23</span>
             <p class="team-card-meta mt-sm">Mo 19:00–20:30</p>
-            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;">Mehr erfahren &rarr;</p>
+            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;" data-i18n="vbMore">Mehr erfahren &rarr;</p>
           </div>
         </a>
 
@@ -199,7 +214,7 @@
             </div>
             <span class="badge badge-blue">U23</span>
             <p class="team-card-meta mt-sm">Di 18:00–19:30</p>
-            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;">Mehr erfahren &rarr;</p>
+            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;" data-i18n="vbMore">Mehr erfahren &rarr;</p>
           </div>
         </a>
 
@@ -212,7 +227,7 @@
             </div>
             <span class="badge badge-blue">U20</span>
             <p class="team-card-meta mt-sm">Mi 18:00–19:30</p>
-            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;">Mehr erfahren &rarr;</p>
+            <p class="team-card-meta mt-md" style="color: var(--kscw-blue); font-weight: 600;" data-i18n="vbMore">Mehr erfahren &rarr;</p>
           </div>
         </a>
 
@@ -223,72 +238,14 @@
   <!-- ═══ CTA Section ══════════════════════════════════════════════ -->
   <section class="cta-section">
     <div class="container">
-      <h2>Mitspielen?</h2>
-      <p>Kontaktiere uns für ein Probetraining — wir freuen uns auf dich!</p>
-      <a href="/club/kontakt.html" class="btn btn-gold">Kontakt aufnehmen</a>
+      <h2 data-i18n="vbCTA">Mitspielen?</h2>
+      <p data-i18n="vbCTAText">Kontaktiere uns für ein Probetraining — wir freuen uns auf dich!</p>
+      <a href="/club/kontakt.html" class="btn btn-gold" data-i18n="vbCTAButton">Kontakt aufnehmen</a>
     </div>
   </section>
 
   <!-- ═══ Footer ═══════════════════════════════════════════════════ -->
-  <footer class="site-footer">
-    <div class="container">
-      <div class="footer-inner">
-        <div class="footer-grid">
-          <div class="footer-brand">
-            <a href="/" class="nav-logo">
-              <img src="/images/kscw_weiss.png" alt="KSC Wiedikon" style="height: 48px;">
-            </a>
-            <p>KSC Wiedikon — Volleyball und Basketball seit 1978 in Zürich-Wiedikon.</p>
-            <div class="footer-social">
-              <a href="https://instagram.com/kscwiedikon" aria-label="Instagram">
-                <i data-lucide="instagram"></i>
-              </a>
-              <a href="https://facebook.com/kscwiedikon" aria-label="Facebook">
-                <i data-lucide="facebook"></i>
-              </a>
-              <a href="mailto:info@kscw.ch" aria-label="E-Mail">
-                <i data-lucide="mail"></i>
-              </a>
-            </div>
-          </div>
-          <div>
-            <h3 class="footer-heading">Volleyball</h3>
-            <div class="footer-links">
-              <a href="/volleyball/index.html">Alle Teams</a>
-              <a href="/volleyball/h1">Herren 1</a>
-              <a href="/volleyball/d1">Damen 1</a>
-              <a href="/volleyball/du23">Damen U23</a>
-              <a href="/volleyball/hu23">Herren U23</a>
-            </div>
-          </div>
-          <div>
-            <h3 class="footer-heading">Basketball</h3>
-            <div class="footer-links">
-              <a href="/basketball/index.html">Alle Teams</a>
-              <a href="/basketball/lions">Lions</a>
-              <a href="/basketball/rhinos">Rhinos</a>
-              <a href="/basketball/h1">Herren 1</a>
-              <a href="/basketball/teams/nachwuchs.html">Nachwuchs</a>
-            </div>
-          </div>
-          <div>
-            <h3 class="footer-heading">Verein</h3>
-            <div class="footer-links">
-              <a href="/club/vorstand.html">Vorstand</a>
-              <a href="/club/ueber-uns.html">Geschichte</a>
-              <a href="/club/ueber-uns.html">Unsere Halle</a>
-              <a href="/sponsoren/index.html">Sponsoren</a>
-              <a href="/club/kontakt.html">Kontakt</a>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="footer-bottom" style="display:flex;align-items:center;justify-content:center;gap:1.5rem;flex-wrap:wrap;">
-        <button class="theme-toggle" aria-label="Farbmodus wechseln"><i data-lucide="sun" style="width:16px;height:16px;"></i> <span class="theme-label">Light Mode</span></button>
-        <p>&copy; 2026 KSC Wiedikon. Alle Rechte vorbehalten. | <a href="/weiteres/impressum.html">Impressum</a> | <a href="/weiteres/datenschutz.html">Datenschutz</a></p>
-      </div>
-    </div>
-  </footer>
+  <div id="site-footer"></div>
 
   <script src="/js/data.js"></script>
   <script src="/js/main.js"></script>

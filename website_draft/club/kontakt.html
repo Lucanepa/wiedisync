@@ -10,6 +10,21 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/styles.css">
+  <!-- i18n: early language detection + FOUC prevention -->
+  <script>
+    (function() {
+      var lang = localStorage.getItem('lang');
+      if (!lang && navigator.language && navigator.language.startsWith('en')) lang = 'en';
+      if (lang && lang !== 'de') {
+        document.documentElement.lang = lang;
+        var style = document.createElement('style');
+        style.textContent = '.i18n-loading [data-i18n],.i18n-loading [data-i18n-placeholder]{visibility:hidden}';
+        document.head.appendChild(style);
+        document.addEventListener('DOMContentLoaded', function() { document.body.classList.add('i18n-loading'); });
+      }
+    })();
+  </script>
+  <script src="/js/i18n.js"></script>
   <style>
     .contact-layout {
       display: grid;
@@ -193,8 +208,8 @@
   <!-- ═══ Page Header ══════════════════════════════════════════════ -->
   <section class="page-header">
     <div class="container">
-      <h1>Kontakt</h1>
-      <p style="font-size: var(--text-lg); margin-top: var(--space-sm); opacity: 0.85;">Wir freuen uns auf deine Nachricht</p>
+      <h1 data-i18n="contactTitle">Kontakt</h1>
+      <p style="font-size: var(--text-lg); margin-top: var(--space-sm); opacity: 0.85;" data-i18n="contactSubtitle">Wir freuen uns auf deine Nachricht</p>
     </div>
   </section>
 
@@ -205,47 +220,47 @@
 
         <!-- Contact Form -->
         <div class="contact-form">
-          <h2>Nachricht senden</h2>
+          <h2 data-i18n="contactFormHeading">Nachricht senden</h2>
           <form id="contact-form" action="#" method="post">
             <div class="form-row">
               <div class="form-group">
-                <label for="vorname">Vorname</label>
-                <input type="text" id="vorname" name="vorname" placeholder="Dein Vorname" required>
+                <label for="vorname" data-i18n="contactFirstName">Vorname</label>
+                <input type="text" id="vorname" name="vorname" placeholder="Dein Vorname" data-i18n-placeholder="contactFirstNamePlaceholder" required>
               </div>
               <div class="form-group">
-                <label for="nachname">Nachname</label>
-                <input type="text" id="nachname" name="nachname" placeholder="Dein Nachname" required>
+                <label for="nachname" data-i18n="contactLastName">Nachname</label>
+                <input type="text" id="nachname" name="nachname" placeholder="Dein Nachname" data-i18n-placeholder="contactLastNamePlaceholder" required>
               </div>
             </div>
             <div class="form-group">
-              <label for="email">E-Mail</label>
-              <input type="email" id="email" name="email" placeholder="deine@email.ch" required>
+              <label for="email" data-i18n="contactEmail">E-Mail</label>
+              <input type="email" id="email" name="email" placeholder="deine@email.ch" data-i18n-placeholder="contactEmailPlaceholder" required>
             </div>
             <div class="form-group">
-              <label for="betreff">Betreff</label>
+              <label for="betreff" data-i18n="contactSubject">Betreff</label>
               <select id="betreff" name="betreff" required>
-                <option value="" disabled selected>Bitte wählen...</option>
-                <option value="allgemein">Allgemein</option>
-                <option value="volleyball">Volleyball</option>
-                <option value="basketball">Basketball</option>
-                <option value="sponsoring">Sponsoring</option>
-                <option value="sonstiges">Sonstiges</option>
+                <option value="" disabled selected data-i18n="contactSubjectPlaceholder">Bitte wählen...</option>
+                <option value="allgemein" data-i18n="contactSubjectGeneral">Allgemein</option>
+                <option value="volleyball" data-i18n="contactSubjectVolleyball">Volleyball</option>
+                <option value="basketball" data-i18n="contactSubjectBasketball">Basketball</option>
+                <option value="sponsoring" data-i18n="contactSubjectSponsoring">Sponsoring</option>
+                <option value="sonstiges" data-i18n="contactSubjectOther">Sonstiges</option>
               </select>
             </div>
             <div class="form-group" id="team-group" style="display: none;">
-              <label for="team-select">Team</label>
+              <label for="team-select" data-i18n="contactTeam">Team</label>
               <select id="team-select" name="team">
-                <option value="" disabled selected>Bitte wählen...</option>
+                <option value="" disabled selected data-i18n="contactTeamPlaceholder">Bitte wählen...</option>
               </select>
             </div>
             <div class="form-group">
-              <label for="nachricht">Nachricht</label>
-              <textarea id="nachricht" name="nachricht" placeholder="Deine Nachricht..." required></textarea>
+              <label for="nachricht" data-i18n="contactMessage">Nachricht</label>
+              <textarea id="nachricht" name="nachricht" placeholder="Deine Nachricht..." data-i18n-placeholder="contactMessagePlaceholder" required></textarea>
             </div>
             <div id="turnstile-container" class="form-group"></div>
             <button type="submit" class="form-submit">
               <i data-lucide="send" style="width: 16px; height: 16px;"></i>
-              Absenden
+              <span data-i18n="contactSubmit">Absenden</span>
             </button>
           </form>
           <div id="form-feedback" style="display: none;"></div>
@@ -253,12 +268,12 @@
 
         <!-- Sidebar -->
         <div class="contact-sidebar">
-          <h2>Kontaktdaten</h2>
+          <h2 data-i18n="contactSidebar">Kontaktdaten</h2>
 
           <div class="contact-info-card">
             <h3>
               <i data-lucide="mail" style="width: 18px; height: 18px; color: var(--kscw-blue, #4A55A2);"></i>
-              Allgemein
+              <span data-i18n="contactGeneral">Allgemein</span>
             </h3>
             <p>
               KSC Wiedikon<br>
@@ -295,7 +310,7 @@
           <div class="contact-info-card">
             <h3>
               <i data-lucide="share-2" style="width: 18px; height: 18px; color: var(--kscw-blue, #4A55A2);"></i>
-              Social Media
+              <span data-i18n="contactSocialMedia">Social Media</span>
             </h3>
             <div class="social-links">
               <a href="https://www.facebook.com/kscwiedikon/" class="social-link">
@@ -316,66 +331,7 @@
   </section>
 
   <!-- ═══ Footer ═══════════════════════════════════════════════════ -->
-  <footer class="site-footer">
-    <div class="container">
-      <div class="footer-inner">
-        <div class="footer-grid">
-          <div class="footer-brand">
-            <a href="/" class="nav-logo">
-              <img src="/images/kscw_weiss.png" alt="KSC Wiedikon" style="height: 40px;">
-              <span style="color: #ffffff;">KSC Wiedikon</span>
-            </a>
-            <p>Volleyball &amp; Basketball in Zürich seit 1978. Trainiere mit uns — vom Breitensport bis zur Regionalliga.</p>
-            <div class="footer-social">
-              <a href="https://www.instagram.com/kscwiedikon/" aria-label="Instagram">
-                <i data-lucide="instagram"></i>
-              </a>
-              <a href="https://www.facebook.com/kscwiedikon/" aria-label="Facebook">
-                <i data-lucide="facebook"></i>
-              </a>
-              <a href="mailto:kontakt@kscw.ch" aria-label="E-Mail">
-                <i data-lucide="mail"></i>
-              </a>
-            </div>
-          </div>
-          <div>
-            <h3 class="footer-heading">Volleyball</h3>
-            <div class="footer-links">
-              <a href="/volleyball/h1">Herren 1</a>
-              <a href="/volleyball/h2">Herren 2</a>
-              <a href="/volleyball/h3">Herren 3</a>
-              <a href="/volleyball/legends">Legends</a>
-              <a href="/volleyball/d1">Damen 1</a>
-              <a href="/volleyball/d2">Damen 2</a>
-            </div>
-          </div>
-          <div>
-            <h3 class="footer-heading">Basketball</h3>
-            <div class="footer-links">
-              <a href="/basketball/h1">Herren 1</a>
-              <a href="/basketball/h2">Herren 2</a>
-              <a href="/basketball/h4">Herren 4</a>
-              <a href="/basketball/d1">Damen 1</a>
-            </div>
-          </div>
-          <div>
-            <h3 class="footer-heading">Verein</h3>
-            <div class="footer-links">
-              <a href="/club/ueber-uns.html">Über uns</a>
-              <a href="/club/vorstand.html">Vorstand</a>
-              <a href="/club/kontakt.html">Kontakt</a>
-              <a href="/sponsoren/index.html">Sponsoren</a>
-              <a href="/weiteres/downloads.html">Downloads</a>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="footer-bottom" style="display:flex;align-items:center;justify-content:center;gap:1.5rem;flex-wrap:wrap;">
-        <button class="theme-toggle" aria-label="Farbmodus wechseln"><i data-lucide="sun" style="width:16px;height:16px;"></i> <span class="theme-label">Light Mode</span></button>
-        <p>&copy; 2026 KSC Wiedikon. Alle Rechte vorbehalten. · <a href="/club/kontakt.html">Impressum</a></p>
-      </div>
-    </div>
-  </footer>
+  <div id="site-footer"></div>
 
   <!-- ═══ Scripts ══════════════════════════════════════════════════ -->
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>

@@ -370,7 +370,9 @@
           var icon = b.querySelector('[data-lucide]');
           var label = b.querySelector('.theme-label');
           if (icon) icon.setAttribute('data-lucide', isLight ? 'moon' : 'sun');
-          if (label) label.textContent = isLight ? 'Dark Mode' : 'Light Mode';
+          if (label) label.textContent = isLight
+            ? (window.i18n ? i18n.t('themeDark') : 'Dark Mode')
+            : (window.i18n ? i18n.t('themeLight') : 'Light Mode');
           // Re-render lucide icons
           if (typeof lucide !== 'undefined') lucide.createIcons();
         });
@@ -382,15 +384,29 @@
 
   function loadHeader(callback) {
     var placeholder = document.getElementById('site-header');
-    if (!placeholder) { callback(); return; }
+    if (!placeholder) { if (callback) callback(); return; }
 
     fetch('/partials/header.html')
       .then(function (r) { return r.text(); })
       .then(function (html) {
         placeholder.outerHTML = html;
-        callback();
+        if (callback) callback();
       })
-      .catch(function () { callback(); });
+      .catch(function () { if (callback) callback(); });
+  }
+
+  /* ── Load Shared Footer ──────────────────────────────────── */
+
+  function loadFooter(callback) {
+    var el = document.getElementById('site-footer');
+    if (!el) { if (callback) callback(); return; }
+    fetch('/partials/footer.html')
+      .then(function (r) { return r.text(); })
+      .then(function (html) {
+        el.outerHTML = html;
+        if (callback) callback();
+      })
+      .catch(function () { if (callback) callback(); });
   }
 
   /* ── Initialize Everything on DOM Ready ───────────────────── */
@@ -409,6 +425,25 @@
       initSmoothScroll();
       // Re-render lucide icons (header has lock icon)
       if (typeof lucide !== 'undefined') lucide.createIcons();
+
+      // Load footer partial, then re-init theme toggle, icons, and i18n
+      loadFooter(function () {
+        initThemeToggle();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+
+        // Initialize i18n after header + footer are in the DOM
+        if (window.i18n) {
+          window.i18n.init().then(function () {
+            // Wire up language toggle buttons (desktop + mobile)
+            document.querySelectorAll('.lang-btn, .lang-btn-mobile').forEach(function (btn) {
+              btn.addEventListener('click', function () {
+                var lang = btn.getAttribute('data-lang') || 'de';
+                window.i18n.setLang(lang);
+              });
+            });
+          });
+        }
+      });
     });
   });
 })();

@@ -174,39 +174,47 @@
       <p class="team-league">5. Liga — Saison 2025/26</p>
     </div>
   </section>
-  <img src="https://kscw-api.lucanepa.com/api/files/pbc_1568971955/2h55x265r941a4k/d4jgm2oo03ah_7ouliepg2p.jpg?thumb=1280x0" alt="Teamfoto Damen 4" class="team-photo" loading="lazy">
 
-  <!-- ═══ Content Section ════════════════════════════════════════════ -->
   <section class="section">
     <div class="container">
 
-      <!-- Tab Bar -->
       <div class="tab-bar" role="tablist">
-        <button class="tab-btn active" data-tab="spiele" role="tab" aria-selected="true">Spiele</button>
+        <button class="tab-btn active" data-tab="kader" role="tab" aria-selected="true">Kader</button>
+        <button class="tab-btn" data-tab="spiele" role="tab" aria-selected="false">Spiele</button>
         <button class="tab-btn" data-tab="rangliste" role="tab" aria-selected="false">Rangliste</button>
+        <button class="tab-btn" data-tab="training" role="tab" aria-selected="false">Training</button>
       </div>
 
-      <!-- ── Spiele Panel ──────────────────────────────────────── -->
-      <div class="tab-panel active" data-tab-panel="spiele" role="tabpanel">
+      <div class="tab-panel active" data-tab-panel="kader" role="tabpanel">
+        <div id="roster-grid" class="roster-grid">
+          <p class="text-muted text-sm">Kader wird geladen...</p>
+        </div>
+        <div id="roster-meta" class="mt-lg"></div>
+      </div>
+
+      <div class="tab-panel" data-tab-panel="spiele" role="tabpanel">
         <h2 style="font-size: var(--text-2xl); margin-bottom: var(--space-lg);">Nächste Spiele</h2>
         <div id="upcoming-games">
           <p class="text-muted text-sm">Spiele werden geladen...</p>
         </div>
-
         <h2 style="font-size: var(--text-2xl); margin-top: var(--space-2xl); margin-bottom: var(--space-lg);">Letzte Resultate</h2>
         <div id="recent-results">
           <p class="text-muted text-sm">Resultate werden geladen...</p>
         </div>
-
         <div style="margin-top: 1.5rem; text-align: center;">
           <a href="https://kscw.lucanepa.com/games" class="btn btn-primary" target="_blank" rel="noopener">Alle Spiele &amp; Resultate auf Wiedisync</a>
         </div>
       </div>
 
-      <!-- ── Rangliste Panel ───────────────────────────────────── -->
       <div class="tab-panel" data-tab-panel="rangliste" role="tabpanel">
         <div id="rankings-table">
           <p class="text-muted text-sm">Rangliste wird geladen...</p>
+        </div>
+      </div>
+
+      <div class="tab-panel" data-tab-panel="training" role="tabpanel">
+        <div id="training-list">
+          <p class="text-muted text-sm">Trainingszeiten werden geladen...</p>
         </div>
       </div>
 
@@ -285,102 +293,11 @@
   </footer>
 
   <!-- ═══ Scripts ══════════════════════════════════════════════════ -->
+  <script>window.TEAM_CONFIG = { short: 'D4', pbId: '2h55x265r941a4k' };</script>
   <script src="/js/data.js"></script>
+  <script src="/js/team-page.js"></script>
   <script src="/js/main.js"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <script>lucide.createIcons();</script>
-<script>
-(function () {
-  var TEAM = 'D4';
-  var D = window.KSCW;
-  if (!D) return;
-
-  function ready() {
-    // ── Upcoming Games ──
-    var upEl = document.getElementById('upcoming-games');
-    if (upEl) {
-      var upcoming = D.getUpcomingGames().filter(function (g) { return g.teamShort === TEAM; }).slice(0, 5);
-      if (upcoming.length) {
-        upEl.innerHTML = '';
-        upcoming.forEach(function (g) {
-          var row = document.createElement('div');
-          row.className = 'game-row';
-          row.innerHTML =
-            '<span class="game-date">' + D.formatDate(g.date) + '</span>' +
-            '<span class="chip" style="background:' + (D.getTeam(TEAM) || {}).bg + ';color:' + (D.getTeam(TEAM) || {}).text + ';">' + g.teamShort + '</span>' +
-            '<span class="game-badge ' + (g.isHome ? 'home' : 'away') + '">' + (g.isHome ? 'Heim' : 'Auswärts') + '</span>' +
-            '<span class="game-teams">' + (g.isHome ? 'KSCW ' + g.teamShort + ' <span class="vs">vs</span> ' + g.opponent : g.opponent + ' <span class="vs">vs</span> KSCW ' + g.teamShort) + '</span>' +
-            '<span class="game-date">' + g.time + '</span>';
-          upEl.appendChild(row);
-        });
-      } else {
-        upEl.innerHTML = '<p class="text-muted text-sm">Keine anstehenden Spiele.</p>';
-      }
-    }
-
-    // ── Recent Results ──
-    var resEl = document.getElementById('recent-results');
-    if (resEl) {
-      var results = D.getCompletedGames().filter(function (g) { return g.teamShort === TEAM; }).slice(0, 5);
-      if (results.length) {
-        resEl.innerHTML = '';
-        results.forEach(function (g) {
-          var win = D.isWin(g);
-          var cls = win === true ? ' win' : win === false ? ' loss' : '';
-          var row = document.createElement('div');
-          row.className = 'game-row';
-          row.innerHTML =
-            '<span class="game-date">' + D.formatDate(g.date) + '</span>' +
-            '<span class="chip" style="background:' + (D.getTeam(TEAM) || {}).bg + ';color:' + (D.getTeam(TEAM) || {}).text + ';">' + g.teamShort + '</span>' +
-            '<span class="game-badge ' + (g.isHome ? 'home' : 'away') + '">' + (g.isHome ? 'Heim' : 'Auswärts') + '</span>' +
-            '<span class="game-teams">' + (g.isHome ? 'KSCW ' + g.teamShort + ' <span class="vs">vs</span> ' + g.opponent : g.opponent + ' <span class="vs">vs</span> KSCW ' + g.teamShort) + '</span>' +
-            '<span class="game-score' + cls + '">' + g.score + '</span>';
-          resEl.appendChild(row);
-        });
-      } else {
-        resEl.innerHTML = '<p class="text-muted text-sm">Keine Resultate vorhanden.</p>';
-      }
-    }
-
-    // ── Rankings ──
-    var rankEl = document.getElementById('rankings-table');
-    if (rankEl) {
-      var teamData = D.getTeam(TEAM);
-      var teamRankings = null;
-      if (D.rankings) {
-        var keys = Object.keys(D.rankings);
-        for (var i = 0; i < keys.length; i++) {
-          var r = D.rankings[keys[i]];
-          if (r && r.rows) {
-            for (var j = 0; j < r.rows.length; j++) {
-              if (r.rows[j].isKSCW && r.rows[j].teamShort === TEAM) {
-                teamRankings = r;
-                break;
-              }
-            }
-          }
-          if (teamRankings) break;
-        }
-      }
-      if (teamRankings && teamRankings.rows.length) {
-        var html = '<h2 style="font-size: var(--text-2xl); margin-bottom: var(--space-lg);">' + (teamRankings.league || 'Rangliste') + '</h2>';
-        html += '<div class="table-wrap"><table><thead><tr><th>#</th><th>Team</th><th>Spiele</th><th>Siege</th><th>Ndl.</th><th>Punkte</th></tr></thead><tbody>';
-        teamRankings.rows.forEach(function (row) {
-          var highlight = row.isKSCW ? ' class="table-highlight"' : '';
-          html += '<tr' + highlight + '><td class="table-rank">' + row.rank + '</td><td class="table-team">' + row.team + '</td><td>' + (row.played || '-') + '</td><td>' + (row.wins || '-') + '</td><td>' + (row.losses || '-') + '</td><td><strong>' + (row.points || '-') + '</strong></td></tr>';
-        });
-        html += '</tbody></table></div>';
-        rankEl.innerHTML = html;
-      } else {
-        rankEl.innerHTML = '<p class="text-muted text-sm">Keine Rangliste verfügbar.</p>';
-      }
-    }
-  }
-
-  if (D.ready) { ready(); }
-  else { document.addEventListener('kscw-data-ready', ready); }
-})();
-</script>
-
 </body>
 </html>

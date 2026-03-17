@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { MessageSquare, X } from 'lucide-react'
+import { MessageSquare, X, Check } from 'lucide-react'
 import type { RecordModel } from 'pocketbase'
 import type { Game, Team, Hall, Member } from '../../../types'
 import { Button } from '@/components/ui/button'
@@ -69,7 +69,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
   const { update: updateGame } = useMutation<Game>('games')
   const canParticipate = !!user && !!game?.kscw_team && canParticipateIn(game.kscw_team)
   const staffOnly = !!game?.kscw_team && isStaffOnly(game.kscw_team)
-  const { effectiveStatus, hasAbsence, note: savedNote, setStatus } = useParticipation(
+  const { effectiveStatus, hasAbsence, note: savedNote, setStatus, saveConfirmed, dismissConfirmed } = useParticipation(
     'game',
     game?.id ?? '',
     game?.date,
@@ -77,11 +77,33 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
     staffOnly,
   )
   const [noteText, setNoteText] = useState(savedNote)
+  const [noteSaved, setNoteSaved] = useState(false)
   const noteInitRef = useRef(savedNote)
   // Sync note text when server data loads/changes
   if (savedNote !== noteInitRef.current) {
     noteInitRef.current = savedNote
     setNoteText(savedNote)
+  }
+
+  // Auto-dismiss status confirmation after 2s
+  useEffect(() => {
+    if (!saveConfirmed) return
+    const timer = setTimeout(dismissConfirmed, 2000)
+    return () => clearTimeout(timer)
+  }, [saveConfirmed, dismissConfirmed])
+
+  // Auto-dismiss note confirmation after 2s
+  useEffect(() => {
+    if (!noteSaved) return
+    const timer = setTimeout(() => setNoteSaved(false), 2000)
+    return () => clearTimeout(timer)
+  }, [noteSaved])
+
+  const saveNote = () => {
+    if (noteText !== savedNote && effectiveStatus) {
+      setStatus(effectiveStatus as 'confirmed' | 'tentative' | 'declined', noteText)
+      setNoteSaved(true)
+    }
   }
 
   // Re-fetch with full expand when opened from calendar (which only expands kscw_team,hall)
@@ -261,7 +283,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
             ) : (
               <>
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('participation:attending')}</span>
-                <div className="flex gap-2">
+                <div className="relative flex gap-2">
                   <button
                     onClick={() => setStatus('confirmed')}
                     className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
@@ -292,6 +314,13 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
                   >
                     {t('participation:no')}
                   </button>
+                  {/* Save confirmation popover */}
+                  {saveConfirmed && (
+                    <span className="absolute -top-7 left-1/2 -translate-x-1/2 flex items-center gap-1 whitespace-nowrap rounded-md bg-green-600 px-2 py-0.5 text-[11px] font-medium text-white shadow-lg animate-fade-in">
+                      <Check className="h-3 w-3" />
+                      {t('participation:saved')}
+                    </span>
+                  )}
                 </div>
               </>
             )}
@@ -300,25 +329,32 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
             </div>
             {/* Participation note */}
             {!hasAbsence && effectiveStatus && (
-              <div className="flex w-full items-center gap-2 pt-1">
+              <div className="relative flex w-full items-center gap-2 pt-1">
                 <MessageSquare className="h-4 w-4 shrink-0 text-gray-400" />
                 <input
                   type="text"
                   value={noteText}
                   onChange={(e) => setNoteText(e.target.value)}
-                  onBlur={() => {
-                    if (noteText !== savedNote && effectiveStatus) {
-                      setStatus(effectiveStatus as 'confirmed' | 'tentative' | 'declined', noteText)
-                    }
-                  }}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.currentTarget.blur()
-                    }
+                    if (e.key === 'Enter') saveNote()
                   }}
                   placeholder={t('participation:notePlaceholder')}
                   className="min-w-0 flex-1 rounded-md border border-gray-200 bg-transparent px-2.5 py-1 text-sm text-gray-700 placeholder:text-gray-400 focus:border-brand-400 focus:outline-none dark:border-gray-600 dark:text-gray-300 dark:placeholder:text-gray-500 dark:focus:border-brand-500"
                 />
+                <button
+                  onClick={saveNote}
+                  disabled={noteText === savedNote}
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-green-600 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-green-400"
+                >
+                  <Check className="h-4 w-4" />
+                </button>
+                {/* Note saved confirmation */}
+                {noteSaved && (
+                  <span className="absolute -top-7 right-0 flex items-center gap-1 whitespace-nowrap rounded-md bg-green-600 px-2 py-0.5 text-[11px] font-medium text-white shadow-lg animate-fade-in">
+                    <Check className="h-3 w-3" />
+                    {t('participation:noteSaved')}
+                  </span>
+                )}
               </div>
             )}
           </div>

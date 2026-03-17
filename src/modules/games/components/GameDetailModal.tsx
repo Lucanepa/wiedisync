@@ -61,20 +61,20 @@ const dateFormatOptions: Intl.DateTimeFormatOptions = {
 
 export default function GameDetailModal({ game, onClose, readOnly }: GameDetailModalProps) {
   const { t, i18n } = useTranslation('games')
-  const { user, isCoachOf, canParticipateIn, isStaffOnly } = useAuth()
+  const { user, isCoachOf, canParticipateIn } = useAuth()
   const [rosterOpen, setRosterOpen] = useState(false)
   const [editingDeadline, setEditingDeadline] = useState(false)
   const [deadlineValue, setDeadlineValue] = useState(game?.respond_by?.split(' ')[0] ?? '')
   const [fullGame, setFullGame] = useState<Game | null>(null)
   const { update: updateGame } = useMutation<Game>('games')
   const canParticipate = !!user && !!game?.kscw_team && canParticipateIn(game.kscw_team)
-  const staffOnly = !!game?.kscw_team && isStaffOnly(game.kscw_team)
+  const isStaff = !!game?.kscw_team && isCoachOf(game.kscw_team)
   const { effectiveStatus, hasAbsence, note: savedNote, setStatus, saveConfirmed, dismissConfirmed } = useParticipation(
     'game',
     game?.id ?? '',
     game?.date,
     undefined,
-    staffOnly,
+    isStaff,
   )
   const [noteText, setNoteText] = useState(savedNote)
   const [noteSaved, setNoteSaved] = useState(false)

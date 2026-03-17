@@ -44,12 +44,14 @@ export default function ParticipationButton({
   eventSessions,
 }: ParticipationButtonProps) {
   const { t } = useTranslation('participation')
-  const { isGuestIn } = useAuth()
+  const { isGuestIn, isCoachOf } = useAuth()
+  const isStaff = !!teamId && isCoachOf(teamId)
   const { participation, effectiveStatus, setStatus, saveConfirmed, dismissConfirmed } = useParticipation(
     activityType,
     activityId,
     activityDate,
     sessionId,
+    isStaff,
   )
   const [menuOpen, setMenuOpen] = useState(false)
   const [sessionSheetOpen, setSessionSheetOpen] = useState(false)

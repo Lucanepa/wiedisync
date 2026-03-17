@@ -169,8 +169,8 @@ function InlineParticipationSummary({ participations }: { participations: Partic
 /** Participation buttons using pre-fetched data — only writes trigger API calls */
 function TrainingParticipation({ training, existingParticipation }: { training: TrainingExpanded; existingParticipation?: Participation }) {
   const { t } = useTranslation('participation')
-  const { user, isStaffOnly } = useAuth()
-  const staffOnly = isStaffOnly(training.team)
+  const { user, isCoachOf } = useAuth()
+  const isStaff = isCoachOf(training.team)
   const { create, update } = useMutation<Participation>('participations')
 
   const [optimisticStatus, setOptimisticStatus] = useState<Participation['status'] | null>(null)
@@ -201,14 +201,14 @@ function TrainingParticipation({ training, existingParticipation }: { training: 
           status,
           note: '',
           guest_count: 0,
-          is_staff: staffOnly,
+          is_staff: isStaff,
         })
       }
       setSaveConfirmed(true)
     } catch {
       setOptimisticStatus(null)
     }
-  }, [user, existingParticipation, training.id, staffOnly, create, update])
+  }, [user, existingParticipation, training.id, isStaff, create, update])
 
   return (
     <div className="relative flex items-center gap-1.5">

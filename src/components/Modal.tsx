@@ -3,6 +3,7 @@ import { useMediaQuery } from '@/hooks/useMediaQuery'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
@@ -41,6 +42,7 @@ export default function Modal({ open, onClose, title, children, size = 'md', hid
         >
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
+            <DialogDescription className="sr-only">{title}</DialogDescription>
           </DialogHeader>
           <div className="max-h-[calc(100vh-12rem)] overflow-y-auto">
             {children}

@@ -321,11 +321,18 @@
     table.appendChild(thead);
 
     var myTeamId = teamInfo.team_id || '';
+    var totalTeams = rankings.length;
     var tbody = document.createElement('tbody');
     for (var j = 0; j < rankings.length; j++) {
       var rw = rankings[j];
       var tr = document.createElement('tr');
       if (rw.team_id === myTeamId) tr.className = 'table-highlight';
+
+      // Promotion/relegation color band (volleyball only)
+      var promoColor = isVB ? getPromotionColor(teamInfo.league || '', rw.rank, totalTeams, rw.team) : null;
+      if (promoColor) {
+        tr.style.borderLeft = '4px solid ' + promoColor;
+      }
 
       // Rank
       var tdRank = document.createElement('td');
@@ -396,6 +403,46 @@
     table.appendChild(tbody);
     wrap.appendChild(table);
     rankEl.appendChild(wrap);
+  }
+
+  // ── Promotion / relegation colors (volleyball) ─────────────────────
+  function getPromotionColor(league, rank, totalTeams, teamName) {
+    // Skip youth, classics, cup, etc.
+    if (/U\d|Jugend|Junior|Classics|Cup|Turnier|Plausch|Mini/i.test(league)) return null;
+    // Skip "talents" teams
+    if (teamName && /talents/i.test(teamName)) return null;
+
+    var m = league.match(/(\d)\.\s*Liga/i);
+    if (!m) return null;
+    var level = parseInt(m[1], 10);
+
+    var green = '#22c55e', blue = '#3b82f6', orange = '#f97316', red = '#ef4444';
+
+    switch (level) {
+      case 5:
+        if (rank === 1) return green;
+        return null;
+      case 4:
+        if (rank === 1) return green;
+        if (rank === totalTeams) return red;
+        return null;
+      case 3:
+        if (rank === 1) return green;
+        if (rank === 2) return blue;
+        if (rank === totalTeams) return red;
+        return null;
+      case 2:
+        if (rank === 1) return green;
+        if (rank === totalTeams || rank === totalTeams - 1) return red;
+        if (rank === totalTeams - 2) return orange;
+        return null;
+      case 1:
+        if (rank === 1) return green;
+        if (rank === totalTeams) return red;
+        return null;
+      default:
+        return null;
+    }
   }
 
   // ── Init ──────────────────────────────────────────────────────────

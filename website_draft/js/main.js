@@ -378,18 +378,37 @@
     });
   }
 
+  /* ── Load Shared Header ──────────────────────────────────── */
+
+  function loadHeader(callback) {
+    var placeholder = document.getElementById('site-header');
+    if (!placeholder) { callback(); return; }
+
+    fetch('/partials/header.html')
+      .then(function (r) { return r.text(); })
+      .then(function (html) {
+        placeholder.outerHTML = html;
+        callback();
+      })
+      .catch(function () { callback(); });
+  }
+
   /* ── Initialize Everything on DOM Ready ───────────────────── */
 
   document.addEventListener('DOMContentLoaded', function () {
-    initThemeToggle();
-    initStickyHeader();
-    initMobileNav();
-    initDesktopDropdowns();
-    initTabs();
-    initSponsorCarousel();
-    initScrollAnimations();
-    initStatCounters();
-    initActiveNav();
-    initSmoothScroll();
+    loadHeader(function () {
+      initThemeToggle();
+      initStickyHeader();
+      initMobileNav();
+      initDesktopDropdowns();
+      initTabs();
+      initSponsorCarousel();
+      initScrollAnimations();
+      initStatCounters();
+      initActiveNav();
+      initSmoothScroll();
+      // Re-render lucide icons (header has lock icon)
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    });
   });
 })();

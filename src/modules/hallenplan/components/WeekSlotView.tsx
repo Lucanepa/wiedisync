@@ -75,6 +75,11 @@ export default function WeekSlotView({
   const { t } = useTranslation('hallenplan')
   const multiHall = visibleHalls.length > 1
 
+  const todayIndex = useMemo(() => {
+    const today = toISODate(new Date())
+    return weekDays.findIndex((d) => toISODate(d) === today)
+  }, [weekDays])
+
   // Position slots using multi-hall grouping when multiple halls visible
   const positioned = useMemo(
     () => positionSlotsMultiHall(slots, baseMinute),
@@ -159,9 +164,13 @@ export default function WeekSlotView({
     return map
   }, [closures, weekDays])
 
-  // Determine which days have content (slots or closures) — hide empty days
+  // Determine which days have content (slots or closures) — hide empty days and past days
   const visibleDays = useMemo(() => {
-    if (!multiHall) return [0, 1, 2, 3, 4, 5, 6]
+    if (!multiHall) {
+      // Single hall: show today onwards (or full week if today is not in this week)
+      if (todayIndex >= 0) return [0, 1, 2, 3, 4, 5, 6].filter((d) => d >= todayIndex)
+      return [0, 1, 2, 3, 4, 5, 6]
+    }
     const daysWithContent = new Set<number>()
     for (const ps of positioned) daysWithContent.add(ps.dayIndex)
     for (const closure of closures) {
@@ -174,8 +183,11 @@ export default function WeekSlotView({
     }
     // Always show Mon-Fri at minimum
     for (let i = 0; i < 5; i++) daysWithContent.add(i)
-    return Array.from(daysWithContent).sort((a, b) => a - b)
-  }, [multiHall, positioned, closures, weekDays])
+    // Hide past days when viewing the current week
+    const days = Array.from(daysWithContent).sort((a, b) => a - b)
+    if (todayIndex >= 0) return days.filter((d) => d >= todayIndex)
+    return days
+  }, [multiHall, positioned, closures, weekDays, todayIndex])
 
   // Per-day visible halls: only show halls that have slots on that day
   // Closure-only halls are excluded — they're handled by allClosedDays (collapsed column)
@@ -260,10 +272,7 @@ export default function WeekSlotView({
     return { mergedClosureRuns: runs, mergedSkipDays: skip }
   }, [multiHall, visibleDays, allClosedDays])
 
-  const todayIndex = useMemo(() => {
-    const today = toISODate(new Date())
-    return weekDays.findIndex((d) => toISODate(d) === today)
-  }, [weekDays])
+  // todayIndex moved above visibleDays (computed earlier in file)
 
   // Grid template: time label + per-day hall columns (variable width per day)
   // Merged closure runs count as 1 column, skipped days contribute 0

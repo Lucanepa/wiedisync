@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { usePB } from './usePB'
 import { useMutation } from './useMutation'
 import { useAuth } from './useAuth'
+import { useRealtime } from './useRealtime'
 import type { Participation, Absence } from '../types'
 
 /** Check if an absence's `affects` field matches the given activity type */
@@ -41,6 +42,13 @@ export function useParticipation(
   })
 
   const { create, update, remove } = useMutation<Participation>('participations')
+
+  // Realtime: refetch when any participation for this activity changes
+  useRealtime<Participation>('participations', (e) => {
+    if (e.record.activity_id === activityId && e.record.member === user?.id) {
+      refetch()
+    }
+  })
 
   // Optimistic status: shown immediately while API call is in-flight
   const [optimisticStatus, setOptimisticStatus] = useState<Participation['status'] | null>(null)

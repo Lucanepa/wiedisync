@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
@@ -17,7 +17,7 @@ import type { RecurringEditScope } from './RecurringEditDialog'
 import CoachDashboard from './CoachDashboard'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import { Button } from '@/components/ui/button'
-import type { Training, Team, Hall, Member } from '../../types'
+import type { Training, Team, Hall, Member, Participation } from '../../types'
 
 type TrainingExpanded = Training & {
   expand?: { team?: Team; hall?: Hall; coach?: Member }
@@ -25,7 +25,7 @@ type TrainingExpanded = Training & {
 
 export default function TrainingsPage() {
   const { t } = useTranslation('trainings')
-  const { isCoach, isCoachOf, memberTeamIds } = useAuth()
+  const { user, isCoach, isCoachOf, memberTeamIds } = useAuth()
   const { effectiveIsAdmin } = useAdminMode()
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null)
   const [autoSelected, setAutoSelected] = useState(false)
@@ -54,9 +54,39 @@ export default function TrainingsPage() {
     perPage: 50,
   })
 
+  // Batch-fetch ALL participations for visible trainings in ONE request (fixes N+1 / 429 storm)
+  const trainingIds = useMemo(() => trainings.map((t) => t.id), [trainings])
+  const participationFilter = useMemo(() => {
+    if (trainingIds.length === 0) return ''
+    const idClauses = trainingIds.map((id) => `activity_id="${id}"`).join(' || ')
+    return `activity_type="training" && (${idClauses})`
+  }, [trainingIds])
+
+  const { data: allParticipations, refetch: refetchParticipations } = usePB<Participation>('participations', {
+    filter: participationFilter,
+    all: true,
+    enabled: trainingIds.length > 0,
+  })
+
+  // Build maps: activityId → participations[], activityId → user's participation
+  const { participationsByActivity, myParticipationByActivity } = useMemo(() => {
+    const byActivity = new Map<string, Participation[]>()
+    const myByActivity = new Map<string, Participation>()
+    for (const p of allParticipations) {
+      const list = byActivity.get(p.activity_id) ?? []
+      list.push(p)
+      byActivity.set(p.activity_id, list)
+      if (user && p.member === user.id) {
+        myByActivity.set(p.activity_id, p)
+      }
+    }
+    return { participationsByActivity: byActivity, myParticipationByActivity: myByActivity }
+  }, [allParticipations, user])
+
   const { remove } = useMutation<Training>('trainings')
 
   useRealtime('trainings', () => refetch())
+  useRealtime('participations', () => refetchParticipations())
 
   function handleEdit(training: Training) {
     setEditingTraining(training)
@@ -172,6 +202,8 @@ export default function TrainingsPage() {
               <TrainingCard
                 key={training.id}
                 training={training}
+                participations={participationsByActivity.get(training.id)}
+                myParticipation={myParticipationByActivity.get(training.id)}
                 onOpenRoster={(id, teamId, date) => setRosterTraining({ id, teamId, date })}
                 onEdit={(effectiveIsAdmin || isCoachOf(training.team)) ? handleEdit : undefined}
                 onDelete={(effectiveIsAdmin || isCoachOf(training.team)) ? setDeletingId : undefined}

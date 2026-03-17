@@ -121,6 +121,7 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
   const previewDates = useMemo(() => {
     if (!slot || !startDate || !effectiveEndDate) return []
     const dates: string[] = []
+    const today = toISODate(new Date())
     const start = new Date(startDate)
     const end = new Date(effectiveEndDate)
     // DB: 0=Mon..6=Sun → convert to JS: 0=Sun..6=Sat
@@ -135,11 +136,14 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
 
     while (current <= end) {
       const dateStr = toISODate(current)
-      // Skip dates where the hall is closed
-      const isClosed = closures.some(
-        (c) => c.hall === closureHallId && c.start_date <= dateStr && c.end_date >= dateStr,
-      )
-      if (!isClosed && !existingDates.has(dateStr)) dates.push(dateStr)
+      // Never generate trainings in the past
+      if (dateStr >= today) {
+        // Skip dates where the hall is closed
+        const isClosed = closures.some(
+          (c) => c.hall === closureHallId && c.start_date <= dateStr && c.end_date >= dateStr,
+        )
+        if (!isClosed && !existingDates.has(dateStr)) dates.push(dateStr)
+      }
       current.setDate(current.getDate() + 7)
     }
     return dates
@@ -198,8 +202,9 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
       setSkipped(skipCount)
       setDone(true)
       onGenerated()
-    } catch {
-      setError(tc('errorSaving'))
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      setError(`${tc('errorSaving')}: ${msg}`)
     } finally {
       setLoading(false)
     }
@@ -260,7 +265,9 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
               setHallId('')
               const picked = slots.find((s) => s.id === id)
               if (picked) {
-                if (picked.valid_from) setStartDate(picked.valid_from.slice(0, 10))
+                const today = toISODate(new Date())
+                const validFrom = picked.valid_from?.slice(0, 10) || today
+                setStartDate(validFrom < today ? today : validFrom)
                 if (picked.indefinite) {
                   setUntilSeasonEnd(true)
                   setEndDate(getSeasonEndDate())
@@ -314,6 +321,7 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
             label={tc('from')}
             value={startDate}
             onChange={setStartDate}
+            min={toISODate(new Date())}
           />
           {!untilSeasonEnd && (
             <DatePicker

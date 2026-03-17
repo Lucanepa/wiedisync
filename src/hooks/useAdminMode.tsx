@@ -9,7 +9,7 @@ interface AdminModeContextValue {
   effectiveIsCoach: boolean
 }
 
-const STORAGE_KEY = 'kscw-admin-mode'
+const STORAGE_KEY = 'wiedisync-admin-mode'
 
 const AdminModeContext = createContext<AdminModeContextValue | null>(null)
 

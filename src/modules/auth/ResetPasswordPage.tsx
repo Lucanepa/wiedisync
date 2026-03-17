@@ -45,7 +45,7 @@ export default function ResetPasswordPage() {
       <div className="w-full max-w-sm">
         <div className="mb-8 flex justify-center">
           <img
-            src={theme === 'light' ? '/kscw_blau.png' : '/kscw_weiss.png'}
+            src={theme === 'light' ? '/wiedisync_blau.png' : '/wiedisync_weiss.png'}
             alt="KSC Wiedikon"
             className="h-16 w-auto"
           />

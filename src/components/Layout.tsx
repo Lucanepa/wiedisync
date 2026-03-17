@@ -121,8 +121,8 @@ export default function Layout() {
               className="rounded-lg p-1.5 transition-colors hover:bg-gray-100 dark:hover:bg-brand-800"
             >
               <img
-                src={theme === 'light' ? '/kscw_blau.png' : '/kscw_weiss.png'}
-                alt="KSCW"
+                src={theme === 'light' ? '/wiedisync_blau.png' : '/wiedisync_weiss.png'}
+                alt="Wiedisync"
                 className="h-8 w-auto"
               />
             </button>
@@ -161,8 +161,8 @@ export default function Layout() {
                 className="rounded-lg p-1.5 transition-colors hover:bg-gray-100 dark:hover:bg-brand-800"
               >
                 <img
-                  src={theme === 'light' ? '/kscw_blau.png' : '/kscw_weiss.png'}
-                  alt="KSCW"
+                  src={theme === 'light' ? '/wiedisync_blau.png' : '/wiedisync_weiss.png'}
+                  alt="Wiedisync"
                   className="h-8 w-auto"
                 />
               </button>
@@ -296,7 +296,7 @@ export default function Layout() {
                     onChange={() => {
                       const next = i18n.language === 'de' ? 'en' : 'de'
                       i18n.changeLanguage(next)
-                      localStorage.setItem('kscw-lang', next)
+                      localStorage.setItem('wiedisync-lang', next)
                     }}
                     ariaLabel="Toggle language"
                     iconOff={

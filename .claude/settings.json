@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(md5sum *.png)",
+      "Bash(pkill -f \"astro dev\")",
+      "Bash(pkill -f \"vite\")",
+      "Bash(/home/luca-canepa/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.5/skills/brainstorming/scripts/start-server.sh --project-dir /home/luca-canepa/Desktop/Github/kscw)",
+      "Read(//home/luca-canepa/Desktop/Github/kscw/**)",
+      "Bash(/home/luca-canepa/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.5/skills/brainstorming/scripts/stop-server.sh /home/luca-canepa/Desktop/Github/kscw/.superpowers/brainstorm/235041-1773785365)",
+      "Bash(git mv:*)"
+    ],
+    "additionalDirectories": [
+      "/home/luca-canepa/Desktop/Github/kscw-website/public/js"
+    ]
+  }
+}

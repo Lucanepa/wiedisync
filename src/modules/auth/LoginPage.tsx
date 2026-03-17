@@ -18,7 +18,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [oauthLoading, setOauthLoading] = useState(false)
   const [rememberMe, setRememberMe] = useState(
-    () => localStorage.getItem('kscw-remember-me') !== 'false',
+    () => localStorage.getItem('wiedisync-remember-me') !== 'false',
   )
 
   useEffect(() => {
@@ -29,7 +29,7 @@ export default function LoginPage() {
     e.preventDefault()
     setError('')
     setLoading(true)
-    localStorage.setItem('kscw-remember-me', String(rememberMe))
+    localStorage.setItem('wiedisync-remember-me', String(rememberMe))
     try {
       await login(email, password)
       navigate('/', { replace: true })
@@ -43,7 +43,7 @@ export default function LoginPage() {
   async function handleGoogleLogin() {
     setError('')
     setOauthLoading(true)
-    localStorage.setItem('kscw-remember-me', 'true')
+    localStorage.setItem('wiedisync-remember-me', 'true')
     try {
       await loginWithOAuth('google')
       navigate('/', { replace: true })
@@ -59,7 +59,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="mb-8 flex justify-center">
           <img
-            src={theme === 'light' ? '/kscw_blau.png' : '/kscw_weiss.png'}
+            src={theme === 'light' ? '/wiedisync_blau.png' : '/wiedisync_weiss.png'}
             alt="KSC Wiedikon"
             className="h-16 w-auto"
           />

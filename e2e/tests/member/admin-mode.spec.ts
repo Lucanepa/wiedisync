@@ -10,7 +10,7 @@ test.beforeEach(async ({}, testInfo) => {
  * The sidebar starts collapsed; clicking the logo button slides the full panel open.
  */
 async function expandSidebar(page: import('@playwright/test').Page) {
-  const logoButton = page.locator('button', { has: page.locator('img[alt="KSCW"]') }).first()
+  const logoButton = page.locator('button', { has: page.locator('img[alt="Wiedisync"]') }).first()
   await logoButton.click()
   // Wait for the sidebar slide-in transition (200ms CSS transition)
   await page.waitForTimeout(300)
@@ -58,7 +58,7 @@ test.describe('Member mode filtering', () => {
   test('admin with toggle OFF sees fewer teams than with toggle ON', async ({ page }) => {
     // Start in admin mode ON to get the full team count
     await page.addInitScript(() => {
-      localStorage.setItem('kscw-admin-mode', 'true')
+      localStorage.setItem('wiedisync-admin-mode', 'true')
     })
 
     await page.goto('/teams')
@@ -98,7 +98,7 @@ test.describe('Admin mode controls', () => {
   test('member mode hides admin nav and gold bar', async ({ page }) => {
     // Pre-set member mode OFF before navigating
     await page.addInitScript(() => {
-      localStorage.setItem('kscw-admin-mode', 'false')
+      localStorage.setItem('wiedisync-admin-mode', 'false')
     })
 
     await page.goto('/')
@@ -118,7 +118,7 @@ test.describe('Admin mode controls', () => {
   test('admin mode shows admin nav and gold bar', async ({ page }) => {
     // Pre-set admin mode ON before navigating
     await page.addInitScript(() => {
-      localStorage.setItem('kscw-admin-mode', 'true')
+      localStorage.setItem('wiedisync-admin-mode', 'true')
     })
 
     await page.goto('/')

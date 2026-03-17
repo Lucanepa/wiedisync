@@ -121,7 +121,7 @@ test.describe('Readability — dark mode text visibility', () => {
 
   test('text is visible in light mode on home page', async ({ page }) => {
     await page.addInitScript(() => {
-      localStorage.setItem('kscw-theme', 'light')
+      localStorage.setItem('wiedisync-theme', 'light')
     })
     await page.goto('/')
     await page.waitForLoadState('domcontentloaded')

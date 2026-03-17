@@ -168,13 +168,8 @@
 
       var dayEl = document.createElement('span');
       dayEl.className = 'training-day';
-      dayEl.textContent = t.day;
+      dayEl.textContent = t.day + ' ' + t.start_time + '–' + t.end_time;
       row.appendChild(dayEl);
-
-      var timeEl = document.createElement('span');
-      timeEl.className = 'training-time';
-      timeEl.textContent = t.start_time + ' – ' + t.end_time;
-      row.appendChild(timeEl);
 
       var hallEl = document.createElement('span');
       hallEl.className = 'training-hall';

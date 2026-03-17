@@ -57,7 +57,7 @@
 
     var url = PB + '/api/collections/teams/records'
       + '?filter=(sport=%27' + sport + '%27%20%26%26%20active=true)'
-      + '&fields=id,name,full_name'
+      + '&fields=id,name,league'
       + '&sort=name'
       + '&perPage=50';
 
@@ -101,7 +101,7 @@
     // Each team
     for (var i = 0; i < teams.length; i++) {
       var t = teams[i];
-      var label = t.name + (t.full_name ? ' — ' + t.full_name : '');
+      var label = t.name + (t.league ? ' — ' + t.league : '');
       teamSelect.appendChild(makeOption(t.id, label, false, false));
     }
 

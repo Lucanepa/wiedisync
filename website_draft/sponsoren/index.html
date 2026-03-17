@@ -26,59 +26,28 @@
   </script>
   <script src="/js/i18n.js"></script>
   <style>
-    .sponsor-tier {
-      margin-bottom: var(--space-3xl);
-    }
-    .sponsor-tier-title {
-      display: flex;
-      align-items: center;
-      gap: var(--space-md);
-      margin-bottom: var(--space-xl);
-      padding-bottom: var(--space-sm);
-      border-bottom: 2px solid var(--border);
-    }
-    .sponsor-tier-title h2 {
-      font-size: var(--text-2xl);
-      font-weight: 700;
-      margin: 0;
-    }
-    .tier-badge {
-      font-size: var(--text-xs);
-      font-weight: 700;
-      padding: 0.25rem 0.75rem;
-      border-radius: 999px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-    .tier-gold { background: #FFC832; color: #1e1e1e; }
-    .tier-silver { background: #94a3b8; color: #ffffff; }
-    .tier-bronze { background: #b45309; color: #ffffff; }
-    .sponsor-grid {
+    .sponsors-grid {
       display: grid;
+      grid-template-columns: repeat(4, 1fr);
       gap: var(--space-lg);
     }
-    .sponsor-grid--gold {
-      grid-template-columns: repeat(2, 1fr);
+    @media (max-width: 1024px) {
+      .sponsors-grid { grid-template-columns: repeat(2, 1fr); }
     }
-    .sponsor-grid--silver {
-      grid-template-columns: repeat(4, 1fr);
-    }
-    .sponsor-grid--bronze {
-      grid-template-columns: repeat(4, 1fr);
-    }
-    @media (max-width: 768px) {
-      .sponsor-grid--gold { grid-template-columns: 1fr; }
-      .sponsor-grid--silver { grid-template-columns: repeat(2, 1fr); }
-      .sponsor-grid--bronze { grid-template-columns: repeat(2, 1fr); }
+    @media (max-width: 480px) {
+      .sponsors-grid { grid-template-columns: 1fr; }
     }
     .sponsor-card {
       background: var(--card-bg, #ffffff);
       border: 1px solid var(--border);
       border-radius: var(--radius-lg);
+      padding: var(--space-xl) var(--space-lg);
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       text-align: center;
+      min-height: 120px;
       transition: box-shadow 0.2s ease, transform 0.2s ease;
       overflow: hidden;
     }
@@ -86,35 +55,33 @@
       box-shadow: 0 8px 24px rgba(0,0,0,0.08);
       transform: translateY(-2px);
     }
-    .sponsor-card--gold {
-      padding: var(--space-2xl) var(--space-xl);
-      min-height: 160px;
+    .sponsor-card a {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-decoration: none;
+      color: inherit;
     }
-    .sponsor-card--silver {
-      padding: var(--space-xl) var(--space-lg);
-      min-height: 120px;
-    }
-    .sponsor-card--bronze {
-      padding: var(--space-lg) var(--space-md);
-      min-height: 100px;
+    .sponsor-logo {
+      max-height: 80px;
+      max-width: 100%;
+      object-fit: contain;
     }
     .sponsor-name {
-      font-weight: 700;
-      color: var(--text-primary);
-    }
-    .sponsor-card--gold .sponsor-name {
-      font-size: var(--text-xl);
-    }
-    .sponsor-card--silver .sponsor-name {
-      font-size: var(--text-base);
-    }
-    .sponsor-card--bronze .sponsor-name {
       font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-top: var(--space-sm);
     }
-    .sponsor-placeholder {
-      font-size: var(--text-xs);
+    .sponsors-loading,
+    .sponsors-error {
+      text-align: center;
+      padding: var(--space-3xl) 0;
+      font-size: var(--text-lg);
       color: var(--text-muted);
-      margin-top: var(--space-xs);
+    }
+    .sponsors-error {
+      color: var(--text-primary);
     }
     .become-sponsor {
       background: linear-gradient(135deg, var(--kscw-blue, #4A55A2) 0%, #3b4590 100%);
@@ -171,112 +138,12 @@
     </div>
   </section>
 
-  <!-- ═══ Sponsor Tiers ════════════════════════════════════════════ -->
+  <!-- ═══ Sponsors Grid ══════════════════════════════════════════ -->
   <section class="section">
     <div class="container">
-
-      <!-- Gold -->
-      <div class="sponsor-tier">
-        <div class="sponsor-tier-title">
-          <span class="tier-badge tier-gold" data-i18n="sponsorsBadgeGold">Gold</span>
-          <h2 data-i18n="sponsorsTierGold">Gold-Sponsoren</h2>
-        </div>
-        <div class="sponsor-grid sponsor-grid--gold">
-          <div class="sponsor-card sponsor-card--gold">
-            <div>
-              <div class="sponsor-name">Metzgerei Keller</div>
-              <div class="sponsor-placeholder" data-i18n="sponsorsLogoPlaceholder">Logo-Platzhalter</div>
-            </div>
-          </div>
-          <div class="sponsor-card sponsor-card--gold">
-            <div>
-              <div class="sponsor-name">Voitsport</div>
-              <div class="sponsor-placeholder" data-i18n="sponsorsLogoPlaceholder">Logo-Platzhalter</div>
-            </div>
-          </div>
-          <div class="sponsor-card sponsor-card--gold">
-            <div>
-              <div class="sponsor-name">functiomed</div>
-              <div class="sponsor-placeholder" data-i18n="sponsorsLogoPlaceholder">Logo-Platzhalter</div>
-            </div>
-          </div>
-          <div class="sponsor-card sponsor-card--gold">
-            <div>
-              <div class="sponsor-name">Honda Zürich</div>
-              <div class="sponsor-placeholder" data-i18n="sponsorsLogoPlaceholder">Logo-Platzhalter</div>
-            </div>
-          </div>
-        </div>
+      <div id="sponsors-grid">
+        <div class="sponsors-loading" data-i18n="sponsorsLoading">Sponsoren werden geladen...</div>
       </div>
-
-      <!-- Silver -->
-      <div class="sponsor-tier">
-        <div class="sponsor-tier-title">
-          <span class="tier-badge tier-silver" data-i18n="sponsorsBadgeSilver">Silber</span>
-          <h2 data-i18n="sponsorsTierSilver">Silber-Sponsoren</h2>
-        </div>
-        <div class="sponsor-grid sponsor-grid--silver">
-          <div class="sponsor-card sponsor-card--silver">
-            <div>
-              <div class="sponsor-name">Apotheke Wiedikon</div>
-              <div class="sponsor-placeholder" data-i18n="sponsorsLogoPlaceholder">Logo-Platzhalter</div>
-            </div>
-          </div>
-          <div class="sponsor-card sponsor-card--silver">
-            <div>
-              <div class="sponsor-name">Baeckerei Steiner</div>
-              <div class="sponsor-placeholder" data-i18n="sponsorsLogoPlaceholder">Logo-Platzhalter</div>
-            </div>
-          </div>
-          <div class="sponsor-card sponsor-card--silver">
-            <div>
-              <div class="sponsor-name">Malerei Brunner</div>
-              <div class="sponsor-placeholder" data-i18n="sponsorsLogoPlaceholder">Logo-Platzhalter</div>
-            </div>
-          </div>
-          <div class="sponsor-card sponsor-card--silver">
-            <div>
-              <div class="sponsor-name">Physio Wiedikon</div>
-              <div class="sponsor-placeholder" data-i18n="sponsorsLogoPlaceholder">Logo-Platzhalter</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Bronze -->
-      <div class="sponsor-tier">
-        <div class="sponsor-tier-title">
-          <span class="tier-badge tier-bronze" data-i18n="sponsorsBadgeBronze">Bronze</span>
-          <h2 data-i18n="sponsorsTierBronze">Bronze-Sponsoren</h2>
-        </div>
-        <div class="sponsor-grid sponsor-grid--bronze">
-          <div class="sponsor-card sponsor-card--bronze">
-            <div>
-              <div class="sponsor-name">Restaurant Falcone</div>
-              <div class="sponsor-placeholder" data-i18n="sponsorsLogoPlaceholder">Logo-Platzhalter</div>
-            </div>
-          </div>
-          <div class="sponsor-card sponsor-card--bronze">
-            <div>
-              <div class="sponsor-name">Blumen Meyer</div>
-              <div class="sponsor-placeholder" data-i18n="sponsorsLogoPlaceholder">Logo-Platzhalter</div>
-            </div>
-          </div>
-          <div class="sponsor-card sponsor-card--bronze">
-            <div>
-              <div class="sponsor-name">Druckerei Huber</div>
-              <div class="sponsor-placeholder" data-i18n="sponsorsLogoPlaceholder">Logo-Platzhalter</div>
-            </div>
-          </div>
-          <div class="sponsor-card sponsor-card--bronze">
-            <div>
-              <div class="sponsor-name">IT Solutions Zürich</div>
-              <div class="sponsor-placeholder" data-i18n="sponsorsLogoPlaceholder">Logo-Platzhalter</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
     </div>
   </section>
 
@@ -327,6 +194,84 @@
   <script src="/js/main.js"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <script>lucide.createIcons();</script>
+
+  <script>
+    (function() {
+      var container = document.getElementById('sponsors-grid');
+      var lang = document.documentElement.lang || 'de';
+      var errorMsg = lang === 'en' ? 'Sponsors could not be loaded' : 'Sponsoren konnten nicht geladen werden';
+
+      function showError() {
+        container.textContent = '';
+        var div = document.createElement('div');
+        div.className = 'sponsors-error';
+        div.textContent = errorMsg;
+        container.appendChild(div);
+      }
+
+      function buildCard(s) {
+        var card = document.createElement('div');
+        card.className = 'sponsor-card';
+
+        var name = s.name || '';
+        var hasLogo = s.logo_url && s.logo_url.trim();
+        var hasUrl = s.website_url && s.website_url.trim();
+
+        var wrapper = card;
+        if (hasUrl) {
+          var link = document.createElement('a');
+          link.href = s.website_url;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          card.appendChild(link);
+          wrapper = link;
+        }
+
+        if (hasLogo) {
+          var img = document.createElement('img');
+          img.className = 'sponsor-logo';
+          img.src = s.logo_url;
+          img.alt = name;
+          img.loading = 'lazy';
+          wrapper.appendChild(img);
+        }
+
+        if (name) {
+          var nameEl = document.createElement('div');
+          nameEl.className = 'sponsor-name';
+          nameEl.textContent = name;
+          wrapper.appendChild(nameEl);
+        }
+
+        return card;
+      }
+
+      fetch('https://kscw-api.lucanepa.com/api/public/sponsors')
+        .then(function(res) {
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          return res.json();
+        })
+        .then(function(sponsors) {
+          if (!sponsors || !sponsors.length) {
+            showError();
+            return;
+          }
+
+          container.textContent = '';
+          var grid = document.createElement('div');
+          grid.className = 'sponsors-grid';
+
+          sponsors.forEach(function(s) {
+            grid.appendChild(buildCard(s));
+          });
+
+          container.appendChild(grid);
+        })
+        .catch(function() {
+          showError();
+        });
+    })();
+  </script>
 
 </body>
 </html>

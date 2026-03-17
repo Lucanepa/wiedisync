@@ -382,4 +382,21 @@ for (const def of phase4Collections) {
   await createCollection(def)
 }
 
+// Phase 5: sponsors (public, no relations)
+console.log('\n=== Phase 5: Create sponsors collection ===')
+
+const sponsorsCollection: CollectionDef = {
+  name: 'sponsors',
+  type: 'base',
+  fields: [
+    text('name', { required: true }),
+    file('logo', { maxSize: 2097152, mimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'] }),
+    url('website_url'),
+    number('sort_order'),
+    bool('active'),
+  ],
+}
+
+await createCollection(sponsorsCollection)
+
 console.log('\n=== All collections created successfully! ===')

@@ -1566,6 +1566,15 @@ button:focus-visible {
   margin-top: var(--space-sm);
 }
 
+/* ── Instagram Embed ───────────────────────────────────────── */
+.instagram-embed-wrapper {
+  max-width: 540px;
+  margin: 0 auto;
+}
+.instagram-embed-wrapper iframe {
+  border-radius: var(--radius-lg) !important;
+}
+
 /* ── CTA Section ───────────────────────────────────────────── */
 .cta-section {
   background: linear-gradient(135deg, var(--kscw-blue) 0%, var(--kscw-blue-dark) 100%);

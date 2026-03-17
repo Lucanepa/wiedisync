@@ -131,11 +131,30 @@
   </footer>
 
   <script>
-    // Read team ID from URL and set config
-    // Note: innerHTML usage here is safe — content is a static string, not user input
+    // Resolve team PB ID from URL path (e.g. /volleyball/h1 → pbId)
     (function() {
-      var params = new URLSearchParams(window.location.search);
-      var id = params.get('id');
+      var PATH_TO_ID = {
+        '/volleyball/d1': 'p1i9cs4km520dd6',
+        '/volleyball/d2': '9kwn129z84967fc',
+        '/volleyball/d3': 'c18yey33vwx9yo4',
+        '/volleyball/d4': '2h55x265r941a4k',
+        '/volleyball/h1': 'qz7y8l4tz48f65j',
+        '/volleyball/h2': '601p27iw4xvw1ds',
+        '/volleyball/h3': 'il1wd1p018hrb61',
+        '/volleyball/legends': 'e352q254s1cip8y',
+        '/volleyball/du23': 'vo89vn93wdoo01o',
+        '/volleyball/hu23': '6380e7aj8z80o79',
+        '/volleyball/hu20': '274nyi35of7v34x',
+        '/basketball/h1': 'wpg9887276cdkd9',
+        '/basketball/h3': 'oqqn58l012ie36e',
+        '/basketball/h4': '4e65vlw744mldc0',
+        '/basketball/lions': '31k9c1qk62p23oe',
+        '/basketball/rhinos': 'cj55682587v210q',
+      };
+
+      var path = window.location.pathname.replace(/\/+$/, '');
+      var id = PATH_TO_ID[path] || new URLSearchParams(window.location.search).get('id');
+
       if (!id) {
         var main = document.querySelector('main');
         while (main.firstChild) main.removeChild(main.firstChild);

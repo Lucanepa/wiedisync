@@ -285,7 +285,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('participation:attending')}</span>
                 <div className="relative flex gap-2">
                   <button
-                    onClick={() => setStatus('confirmed')}
+                    onClick={() => setStatus('confirmed', noteText)}
                     className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
                       effectiveStatus === 'confirmed'
                         ? 'bg-green-600 text-white'
@@ -295,7 +295,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
                     {t('participation:yes')}
                   </button>
                   <button
-                    onClick={() => setStatus('tentative')}
+                    onClick={() => setStatus('tentative', noteText)}
                     className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
                       effectiveStatus === 'tentative'
                         ? 'bg-yellow-500 text-white'
@@ -305,7 +305,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
                     {t('participation:maybe')}
                   </button>
                   <button
-                    onClick={() => setStatus('declined')}
+                    onClick={() => setStatus('declined', noteText)}
                     className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
                       effectiveStatus === 'declined'
                         ? 'bg-red-600 text-white'

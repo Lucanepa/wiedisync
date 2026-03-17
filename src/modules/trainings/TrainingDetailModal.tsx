@@ -188,7 +188,7 @@ function TrainingParticipation({ training, staffOnly }: { training: TrainingExpa
             return (
               <button
                 key={status}
-                onClick={() => setStatus(status)}
+                onClick={() => setStatus(status, noteText)}
                 className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${colors[status]}`}
               >
                 {labels[status]}

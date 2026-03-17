@@ -176,306 +176,43 @@
   </section>
   <img src="https://kscw-api.lucanepa.com/api/files/pbc_1568971955/2h55x265r941a4k/d4jgm2oo03ah_7ouliepg2p.jpg?thumb=1280x0" alt="Teamfoto Damen 4" class="team-photo" loading="lazy">
 
-  <!-- ═══ Tabs Section ═════════════════════════════════════════════ -->
+  <!-- ═══ Content Section ════════════════════════════════════════════ -->
   <section class="section">
     <div class="container">
 
       <!-- Tab Bar -->
       <div class="tab-bar" role="tablist">
-        <button class="tab-btn active" data-tab="kader" role="tab" aria-selected="true">Kader</button>
-        <button class="tab-btn" data-tab="spiele" role="tab" aria-selected="false">Spiele</button>
+        <button class="tab-btn active" data-tab="spiele" role="tab" aria-selected="true">Spiele</button>
         <button class="tab-btn" data-tab="rangliste" role="tab" aria-selected="false">Rangliste</button>
-        <button class="tab-btn" data-tab="training" role="tab" aria-selected="false">Training</button>
-      </div>
-
-      <!-- ── Kader Panel ───────────────────────────────────────── -->
-      <div class="tab-panel active" data-tab-panel="kader" role="tabpanel">
-        <div class="roster-grid">
-
-          <div class="roster-card">
-            <div class="roster-avatar">JA</div>
-            <div>
-              <div class="roster-name">Jasmin</div>
-              <div class="roster-position">Zuspielerin · #1</div>
-            </div>
-          </div>
-
-          <div class="roster-card">
-            <div class="roster-avatar">VA</div>
-            <div>
-              <div class="roster-name">Vanessa</div>
-              <div class="roster-position">Aussen · #2</div>
-            </div>
-          </div>
-
-          <div class="roster-card">
-            <div class="roster-avatar">ME</div>
-            <div>
-              <div class="roster-name">Melanie</div>
-              <div class="roster-position">Aussen · #3</div>
-            </div>
-          </div>
-
-          <div class="roster-card">
-            <div class="roster-avatar">TA</div>
-            <div>
-              <div class="roster-name">Tamara</div>
-              <div class="roster-position">Mitte · #4</div>
-            </div>
-          </div>
-
-          <div class="roster-card">
-            <div class="roster-avatar">FA</div>
-            <div>
-              <div class="roster-name">Fabienne</div>
-              <div class="roster-position">Diagonal · #5</div>
-            </div>
-          </div>
-
-          <div class="roster-card">
-            <div class="roster-avatar">LA</div>
-            <div>
-              <div class="roster-name">Ladina</div>
-              <div class="roster-position">Libera · #6</div>
-            </div>
-          </div>
-
-          <div class="roster-card">
-            <div class="roster-avatar">RA</div>
-            <div>
-              <div class="roster-name">Ramona</div>
-              <div class="roster-position">Aussen · #7</div>
-            </div>
-          </div>
-
-          <div class="roster-card">
-            <div class="roster-avatar">SV</div>
-            <div>
-              <div class="roster-name">Svenja</div>
-              <div class="roster-position">Mitte · #8</div>
-            </div>
-          </div>
-
-          <div class="roster-card">
-            <div class="roster-avatar">AL</div>
-            <div>
-              <div class="roster-name">Aline</div>
-              <div class="roster-position">Aussen · #9</div>
-            </div>
-          </div>
-
-          <div class="roster-card">
-            <div class="roster-avatar">DE</div>
-            <div>
-              <div class="roster-name">Denise</div>
-              <div class="roster-position">Zuspielerin · #10</div>
-            </div>
-          </div>
-
-          <div class="roster-card">
-            <div class="roster-avatar">JO</div>
-            <div>
-              <div class="roster-name">Jolanda</div>
-              <div class="roster-position">Diagonal · #11</div>
-            </div>
-          </div>
-
-          <div class="roster-card">
-            <div class="roster-avatar">PE</div>
-            <div>
-              <div class="roster-name">Petra</div>
-              <div class="roster-position">Libera · #12</div>
-            </div>
-          </div>
-
-        </div>
-
-        <p class="mt-xl" style="font-weight: 600; font-size: var(--text-sm); color: var(--text-secondary);">
-          Trainerin: Jasmin
-        </p>
       </div>
 
       <!-- ── Spiele Panel ──────────────────────────────────────── -->
-      <div class="tab-panel" data-tab-panel="spiele" role="tabpanel">
-
-        <h2 style="font-size: var(--text-2xl); margin-bottom: var(--space-lg);">Naechste Spiele</h2>
-
-        <div class="game-row">
-          <span class="game-date">Sa 18.01.</span>
-          <span class="game-badge home">Heim</span>
-          <span class="game-teams">KSC Wiedikon D4 <span class="vs">vs</span> VBC Stallikon</span>
-          <span class="game-score">—</span>
-        </div>
-
-        <div class="game-row">
-          <span class="game-date">Sa 25.01.</span>
-          <span class="game-badge away">Ausw.</span>
-          <span class="game-teams">TV Hoengg <span class="vs">vs</span> KSC Wiedikon D4</span>
-          <span class="game-score">—</span>
-        </div>
-
-        <div class="game-row">
-          <span class="game-date">Sa 01.02.</span>
-          <span class="game-badge home">Heim</span>
-          <span class="game-teams">KSC Wiedikon D4 <span class="vs">vs</span> STV Embrach</span>
-          <span class="game-score">—</span>
+      <div class="tab-panel active" data-tab-panel="spiele" role="tabpanel">
+        <h2 style="font-size: var(--text-2xl); margin-bottom: var(--space-lg);">Nächste Spiele</h2>
+        <div id="upcoming-games">
+          <p class="text-muted text-sm">Spiele werden geladen...</p>
         </div>
 
         <h2 style="font-size: var(--text-2xl); margin-top: var(--space-2xl); margin-bottom: var(--space-lg);">Letzte Resultate</h2>
-
-        <div class="game-row">
-          <span class="game-date">Sa 11.01.</span>
-          <span class="game-badge away">Ausw.</span>
-          <span class="game-teams">VBC Stallikon <span class="vs">vs</span> KSC Wiedikon D4</span>
-          <span class="game-score loss">1:3</span>
+        <div id="recent-results">
+          <p class="text-muted text-sm">Resultate werden geladen...</p>
         </div>
 
-        <div class="game-row">
-          <span class="game-date">Sa 04.01.</span>
-          <span class="game-badge home">Heim</span>
-          <span class="game-teams">KSC Wiedikon D4 <span class="vs">vs</span> VBC Opfikon</span>
-          <span class="game-score win">3:1</span>
+        <div style="margin-top: 1.5rem; text-align: center;">
+          <a href="https://kscw.lucanepa.com/games" class="btn btn-primary" target="_blank" rel="noopener">Alle Spiele &amp; Resultate auf Wiedisync</a>
         </div>
-
-        <div class="game-row">
-          <span class="game-date">Sa 14.12.</span>
-          <span class="game-badge away">Ausw.</span>
-          <span class="game-teams">TV Hoengg <span class="vs">vs</span> KSC Wiedikon D4</span>
-          <span class="game-score loss">0:3</span>
-        </div>
-
-        <p class="mt-xl">
-          <a href="/volleyball/teams/d4.html#spiele" class="btn btn-sm btn-outline" style="border-color: #fb7185; color: #fb7185;">Alle Spiele &rarr;</a>
-        </p>
-
-<div style="margin-top: 1.5rem; text-align: center;">
-  <a href="https://kscw.lucanepa.com/games" class="btn btn-primary" target="_blank" rel="noopener">Alle Spiele &amp; Resultate auf Wiedisync</a>
-</div>
-
       </div>
 
       <!-- ── Rangliste Panel ───────────────────────────────────── -->
       <div class="tab-panel" data-tab-panel="rangliste" role="tabpanel">
-
-        <h2 style="font-size: var(--text-2xl); margin-bottom: var(--space-lg);">5. Liga — Saison 2025/26</h2>
-
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Team</th>
-                <th>Sp</th>
-                <th>S</th>
-                <th>N</th>
-                <th>Saetze</th>
-                <th>Pkt</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td class="table-rank">1</td>
-                <td class="table-team">TV Hoengg</td>
-                <td>10</td>
-                <td>10</td>
-                <td>0</td>
-                <td>30:3</td>
-                <td>30</td>
-              </tr>
-              <tr>
-                <td class="table-rank">2</td>
-                <td class="table-team">VBC Stallikon</td>
-                <td>10</td>
-                <td>8</td>
-                <td>2</td>
-                <td>26:9</td>
-                <td>24</td>
-              </tr>
-              <tr>
-                <td class="table-rank">3</td>
-                <td class="table-team">STV Embrach</td>
-                <td>10</td>
-                <td>7</td>
-                <td>3</td>
-                <td>23:12</td>
-                <td>21</td>
-              </tr>
-              <tr>
-                <td class="table-rank">4</td>
-                <td class="table-team">VBC Opfikon</td>
-                <td>10</td>
-                <td>6</td>
-                <td>4</td>
-                <td>20:16</td>
-                <td>17</td>
-              </tr>
-              <tr>
-                <td class="table-rank">5</td>
-                <td class="table-team">TV Albisrieden</td>
-                <td>10</td>
-                <td>5</td>
-                <td>5</td>
-                <td>17:18</td>
-                <td>14</td>
-              </tr>
-              <tr class="table-highlight">
-                <td class="table-rank">6</td>
-                <td class="table-team">KSC Wiedikon D4</td>
-                <td>10</td>
-                <td>3</td>
-                <td>7</td>
-                <td>13:22</td>
-                <td>10</td>
-              </tr>
-              <tr>
-                <td class="table-rank">7</td>
-                <td class="table-team">VBC Dietikon</td>
-                <td>10</td>
-                <td>1</td>
-                <td>9</td>
-                <td>8:27</td>
-                <td>4</td>
-              </tr>
-              <tr>
-                <td class="table-rank">8</td>
-                <td class="table-team">VBC Schlieren</td>
-                <td>10</td>
-                <td>0</td>
-                <td>10</td>
-                <td>4:30</td>
-                <td>1</td>
-              </tr>
-            </tbody>
-          </table>
+        <div id="rankings-table">
+          <p class="text-muted text-sm">Rangliste wird geladen...</p>
         </div>
-
-<div style="margin-top: 1.5rem; text-align: center;">
-  <a href="https://kscw.lucanepa.com/games#rangliste" class="btn btn-outline btn-sm" style="border-color: var(--kscw-blue); color: var(--kscw-blue);" target="_blank" rel="noopener">Aktuelle Rangliste auf Wiedisync</a>
-</div>
-
-      </div>
-
-      <!-- ── Training Panel ────────────────────────────────────── -->
-      <div class="tab-panel" data-tab-panel="training" role="tabpanel">
-
-        <h2 style="font-size: var(--text-2xl); margin-bottom: var(--space-lg);">Trainingszeiten</h2>
-
-        <div class="training-item">
-          <span class="training-day">Dienstag</span>
-          <span class="training-time">20:00 – 21:30</span>
-        </div>
-
-        <p class="mt-xl" style="font-weight: 500; color: var(--text-secondary);">
-          <strong>Halle:</strong> Turnhalle Sihlfeld
-        </p>
-
-        <p class="mt-md" style="font-size: var(--text-sm); color: var(--text-muted);">
-          Bei Fragen zum Team: <a href="mailto:kontakt@kscw.ch" style="color: #fb7185; text-decoration: underline;">kontakt@kscw.ch</a>
-        </p>
       </div>
 
     </div>
   </section>
+
 
   <!-- ═══ CTA Section ══════════════════════════════════════════════ -->
   <section class="cta-section">
@@ -552,6 +289,98 @@
   <script src="/js/main.js"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <script>lucide.createIcons();</script>
+<script>
+(function () {
+  var TEAM = 'D4';
+  var D = window.KSCW;
+  if (!D) return;
+
+  function ready() {
+    // ── Upcoming Games ──
+    var upEl = document.getElementById('upcoming-games');
+    if (upEl) {
+      var upcoming = D.getUpcomingGames().filter(function (g) { return g.teamShort === TEAM; }).slice(0, 5);
+      if (upcoming.length) {
+        upEl.innerHTML = '';
+        upcoming.forEach(function (g) {
+          var row = document.createElement('div');
+          row.className = 'game-row';
+          row.innerHTML =
+            '<span class="game-date">' + D.formatDate(g.date) + '</span>' +
+            '<span class="chip" style="background:' + (D.getTeam(TEAM) || {}).bg + ';color:' + (D.getTeam(TEAM) || {}).text + ';">' + g.teamShort + '</span>' +
+            '<span class="game-badge ' + (g.isHome ? 'home' : 'away') + '">' + (g.isHome ? 'Heim' : 'Auswärts') + '</span>' +
+            '<span class="game-teams">' + (g.isHome ? 'KSCW ' + g.teamShort + ' <span class="vs">vs</span> ' + g.opponent : g.opponent + ' <span class="vs">vs</span> KSCW ' + g.teamShort) + '</span>' +
+            '<span class="game-date">' + g.time + '</span>';
+          upEl.appendChild(row);
+        });
+      } else {
+        upEl.innerHTML = '<p class="text-muted text-sm">Keine anstehenden Spiele.</p>';
+      }
+    }
+
+    // ── Recent Results ──
+    var resEl = document.getElementById('recent-results');
+    if (resEl) {
+      var results = D.getCompletedGames().filter(function (g) { return g.teamShort === TEAM; }).slice(0, 5);
+      if (results.length) {
+        resEl.innerHTML = '';
+        results.forEach(function (g) {
+          var win = D.isWin(g);
+          var cls = win === true ? ' win' : win === false ? ' loss' : '';
+          var row = document.createElement('div');
+          row.className = 'game-row';
+          row.innerHTML =
+            '<span class="game-date">' + D.formatDate(g.date) + '</span>' +
+            '<span class="chip" style="background:' + (D.getTeam(TEAM) || {}).bg + ';color:' + (D.getTeam(TEAM) || {}).text + ';">' + g.teamShort + '</span>' +
+            '<span class="game-badge ' + (g.isHome ? 'home' : 'away') + '">' + (g.isHome ? 'Heim' : 'Auswärts') + '</span>' +
+            '<span class="game-teams">' + (g.isHome ? 'KSCW ' + g.teamShort + ' <span class="vs">vs</span> ' + g.opponent : g.opponent + ' <span class="vs">vs</span> KSCW ' + g.teamShort) + '</span>' +
+            '<span class="game-score' + cls + '">' + g.score + '</span>';
+          resEl.appendChild(row);
+        });
+      } else {
+        resEl.innerHTML = '<p class="text-muted text-sm">Keine Resultate vorhanden.</p>';
+      }
+    }
+
+    // ── Rankings ──
+    var rankEl = document.getElementById('rankings-table');
+    if (rankEl) {
+      var teamData = D.getTeam(TEAM);
+      var teamRankings = null;
+      if (D.rankings) {
+        var keys = Object.keys(D.rankings);
+        for (var i = 0; i < keys.length; i++) {
+          var r = D.rankings[keys[i]];
+          if (r && r.rows) {
+            for (var j = 0; j < r.rows.length; j++) {
+              if (r.rows[j].isKSCW && r.rows[j].teamShort === TEAM) {
+                teamRankings = r;
+                break;
+              }
+            }
+          }
+          if (teamRankings) break;
+        }
+      }
+      if (teamRankings && teamRankings.rows.length) {
+        var html = '<h2 style="font-size: var(--text-2xl); margin-bottom: var(--space-lg);">' + (teamRankings.league || 'Rangliste') + '</h2>';
+        html += '<div class="table-wrap"><table><thead><tr><th>#</th><th>Team</th><th>Spiele</th><th>Siege</th><th>Ndl.</th><th>Punkte</th></tr></thead><tbody>';
+        teamRankings.rows.forEach(function (row) {
+          var highlight = row.isKSCW ? ' class="table-highlight"' : '';
+          html += '<tr' + highlight + '><td class="table-rank">' + row.rank + '</td><td class="table-team">' + row.team + '</td><td>' + (row.played || '-') + '</td><td>' + (row.wins || '-') + '</td><td>' + (row.losses || '-') + '</td><td><strong>' + (row.points || '-') + '</strong></td></tr>';
+        });
+        html += '</tbody></table></div>';
+        rankEl.innerHTML = html;
+      } else {
+        rankEl.innerHTML = '<p class="text-muted text-sm">Keine Rangliste verfügbar.</p>';
+      }
+    }
+  }
+
+  if (D.ready) { ready(); }
+  else { document.addEventListener('kscw-data-ready', ready); }
+})();
+</script>
 
 </body>
 </html>

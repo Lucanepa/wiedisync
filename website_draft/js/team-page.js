@@ -70,6 +70,8 @@
         renderRoster(data.roster || [], data.coach || [], data.captain || []);
         renderTrainings(data.trainings || []);
         renderTeamPhoto(data);
+        renderHookGames(data.upcoming || [], data.results || []);
+        renderHookRankings(data.rankings || [], data.team || {});
       })
       .catch(function () { hideSection('kader'); hideSection('training'); });
   }
@@ -186,24 +188,20 @@
     el.appendChild(frag);
   }
 
-  // ── Render Games (from window.KSCW) ───────────────────────────────
-  function renderGames() {
+  // ── Render Games from hook response ─────────────────────────────────
+  function renderHookGames(upcoming, results) {
     var D = window.KSCW;
-    if (!D) return;
-
-    var teamInfo = D.getTeam(TEAM) || {};
+    var teamInfo = (D && D.getTeam) ? D.getTeam(TEAM) || {} : {};
     var chipBg = teamInfo.bg || '#6b7280';
     var chipText = teamInfo.text || '#fff';
 
-    // Upcoming
     var upEl = document.getElementById('upcoming-games');
     if (upEl) {
-      var upcoming = D.getUpcomingGames().filter(function (g) { return g.teamShort === TEAM; }).slice(0, 5);
       upEl.textContent = '';
       if (upcoming.length) {
         var frag = document.createDocumentFragment();
         for (var u = 0; u < upcoming.length; u++) {
-          frag.appendChild(makeGameRow(D, upcoming[u], chipBg, chipText, false));
+          frag.appendChild(makeHookGameRow(upcoming[u], chipBg, chipText, false));
         }
         upEl.appendChild(frag);
       } else {
@@ -214,15 +212,13 @@
       }
     }
 
-    // Results
     var resEl = document.getElementById('recent-results');
     if (resEl) {
-      var results = D.getCompletedGames().filter(function (g) { return g.teamShort === TEAM; }).slice(0, 5);
       resEl.textContent = '';
       if (results.length) {
         var frag2 = document.createDocumentFragment();
         for (var r = 0; r < results.length; r++) {
-          frag2.appendChild(makeGameRow(D, results[r], chipBg, chipText, true));
+          frag2.appendChild(makeHookGameRow(results[r], chipBg, chipText, true));
         }
         resEl.appendChild(frag2);
       } else {
@@ -232,139 +228,131 @@
         resEl.appendChild(p2);
       }
     }
-
-    // Rankings
-    var rankEl = document.getElementById('rankings-table');
-    if (rankEl) {
-      var teamRankings = findRankings(D);
-      rankEl.textContent = '';
-      if (teamRankings && teamRankings.rows && teamRankings.rows.length) {
-        var h2 = document.createElement('h2');
-        h2.style.fontSize = 'var(--text-2xl)';
-        h2.style.marginBottom = 'var(--space-lg)';
-        h2.textContent = teamRankings.league || 'Rangliste';
-        rankEl.appendChild(h2);
-
-        var wrap = document.createElement('div');
-        wrap.className = 'table-wrap';
-        var table = document.createElement('table');
-
-        var thead = document.createElement('thead');
-        var headRow = document.createElement('tr');
-        ['#', 'Team', 'Sp', 'S', 'N', 'Pkt'].forEach(function (t) {
-          var th = document.createElement('th');
-          th.textContent = t;
-          headRow.appendChild(th);
-        });
-        thead.appendChild(headRow);
-        table.appendChild(thead);
-
-        var tbody = document.createElement('tbody');
-        for (var j = 0; j < teamRankings.rows.length; j++) {
-          var rw = teamRankings.rows[j];
-          var tr = document.createElement('tr');
-          if (rw.isKSCW) tr.className = 'table-highlight';
-
-          var cells = [
-            { text: String(rw.rank), cls: 'table-rank' },
-            { text: rw.team, cls: 'table-team' },
-            { text: String(rw.played || '-') },
-            { text: String(rw.wins || '-') },
-            { text: String(rw.losses || '-') },
-            { text: String(rw.points || '-'), bold: true },
-          ];
-          for (var c = 0; c < cells.length; c++) {
-            var td = document.createElement('td');
-            if (cells[c].cls) td.className = cells[c].cls;
-            if (cells[c].bold) {
-              var strong = document.createElement('strong');
-              strong.textContent = cells[c].text;
-              td.appendChild(strong);
-            } else {
-              td.textContent = cells[c].text;
-            }
-            tr.appendChild(td);
-          }
-          tbody.appendChild(tr);
-        }
-        table.appendChild(tbody);
-        wrap.appendChild(table);
-        rankEl.appendChild(wrap);
-      } else {
-        var p3 = document.createElement('p');
-        p3.className = 'text-muted text-sm';
-        p3.textContent = 'Keine Rangliste verfügbar.';
-        rankEl.appendChild(p3);
-      }
-    }
   }
 
-  function makeGameRow(D, g, chipBg, chipText, showScore) {
+  function makeHookGameRow(g, chipBg, chipText, showScore) {
     var row = document.createElement('div');
     row.className = 'game-row';
 
+    // Date
     var dateEl = document.createElement('span');
     dateEl.className = 'game-date';
-    dateEl.textContent = D.formatDate(g.date);
+    var parts = g.date.split('-');
+    dateEl.textContent = parts[2] + '.' + parts[1] + '.' + parts[0];
     row.appendChild(dateEl);
 
+    // Chip
     var chip = document.createElement('span');
     chip.className = 'chip';
     chip.style.background = chipBg;
     chip.style.color = chipText;
-    chip.textContent = g.teamShort;
+    chip.textContent = TEAM;
     row.appendChild(chip);
 
+    // Badge
     var badge = document.createElement('span');
     badge.className = 'game-badge ' + (g.isHome ? 'home' : 'away');
     badge.textContent = g.isHome ? 'Heim' : 'Auswärts';
     row.appendChild(badge);
 
+    // Teams
     var teams = document.createElement('span');
     teams.className = 'game-teams';
-    var homeTeam = g.isHome ? 'KSCW ' + g.teamShort : g.opponent;
-    var awayTeam = g.isHome ? g.opponent : 'KSCW ' + g.teamShort;
-    teams.appendChild(document.createTextNode(homeTeam + ' '));
+    teams.appendChild(document.createTextNode(g.home_team + ' '));
     var vs = document.createElement('span');
     vs.className = 'vs';
     vs.textContent = 'vs';
     teams.appendChild(vs);
-    teams.appendChild(document.createTextNode(' ' + awayTeam));
+    teams.appendChild(document.createTextNode(' ' + g.away_team));
     row.appendChild(teams);
 
+    // Score or time
     if (showScore && g.score) {
-      var win = D.isWin(g);
+      var scoreParts = g.score.split(':');
+      var homeScore = parseInt(scoreParts[0], 10);
+      var awayScore = parseInt(scoreParts[1], 10);
+      var win = g.isHome ? homeScore > awayScore : awayScore > homeScore;
+      var loss = g.isHome ? homeScore < awayScore : awayScore < homeScore;
       var scoreEl = document.createElement('span');
-      scoreEl.className = 'game-score' + (win === true ? ' win' : win === false ? ' loss' : '');
+      scoreEl.className = 'game-score' + (win ? ' win' : loss ? ' loss' : '');
       scoreEl.textContent = g.score;
       row.appendChild(scoreEl);
     } else {
       var timeEl = document.createElement('span');
       timeEl.className = 'game-date';
-      timeEl.textContent = g.time;
+      timeEl.textContent = g.time || '';
       row.appendChild(timeEl);
     }
 
     return row;
   }
 
-  function findRankings(D) {
-    if (!D.rankings) return null;
-    var keys = Object.keys(D.rankings);
-    for (var i = 0; i < keys.length; i++) {
-      var r = D.rankings[keys[i]];
-      if (r && r.rows) {
-        for (var j = 0; j < r.rows.length; j++) {
-          if (r.rows[j].isKSCW && r.rows[j].teamShort === TEAM) return r;
-        }
-      }
+  // ── Render Rankings from hook response ─────────────────────────────
+  function renderHookRankings(rankings, teamInfo) {
+    var rankEl = document.getElementById('rankings-table');
+    if (!rankEl) return;
+    rankEl.textContent = '';
+
+    if (!rankings.length) {
+      var p = document.createElement('p');
+      p.className = 'text-muted text-sm';
+      p.textContent = 'Keine Rangliste verfügbar.';
+      rankEl.appendChild(p);
+      return;
     }
-    return null;
+
+    var h2 = document.createElement('h2');
+    h2.style.fontSize = 'var(--text-2xl)';
+    h2.style.marginBottom = 'var(--space-lg)';
+    h2.textContent = teamInfo.league || 'Rangliste';
+    rankEl.appendChild(h2);
+
+    var wrap = document.createElement('div');
+    wrap.className = 'table-wrap';
+    var table = document.createElement('table');
+
+    var thead = document.createElement('thead');
+    var headRow = document.createElement('tr');
+    ['#', 'Team', 'Sp', 'S', 'N', 'Pkt'].forEach(function (t) {
+      var th = document.createElement('th'); th.textContent = t; headRow.appendChild(th);
+    });
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    var myTeamId = teamInfo.team_id || '';
+    var tbody = document.createElement('tbody');
+    for (var j = 0; j < rankings.length; j++) {
+      var rw = rankings[j];
+      var tr = document.createElement('tr');
+      if (rw.team_id === myTeamId) tr.className = 'table-highlight';
+
+      var cells = [
+        { text: String(rw.rank || '-'), cls: 'table-rank' },
+        { text: rw.team || '?', cls: 'table-team' },
+        { text: String(rw.played || '-') },
+        { text: String(rw.wins || '-') },
+        { text: String(rw.losses || '-') },
+        { text: String(rw.points || '-'), bold: true },
+      ];
+      for (var c = 0; c < cells.length; c++) {
+        var td = document.createElement('td');
+        if (cells[c].cls) td.className = cells[c].cls;
+        if (cells[c].bold) {
+          var strong = document.createElement('strong');
+          strong.textContent = cells[c].text;
+          td.appendChild(strong);
+        } else {
+          td.textContent = cells[c].text;
+        }
+        tr.appendChild(td);
+      }
+      tbody.appendChild(tr);
+    }
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+    rankEl.appendChild(wrap);
   }
 
   // ── Init ──────────────────────────────────────────────────────────
   fetchTeamData();
-  var D = window.KSCW;
-  if (D && D.ready) { renderGames(); }
-  else { document.addEventListener('kscw-data-ready', renderGames); }
 })();

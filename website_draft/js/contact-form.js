@@ -93,10 +93,10 @@
     }
 
     // Default placeholder
-    teamSelect.appendChild(makeOption('', 'Bitte wählen...', true, true));
+    teamSelect.appendChild(makeOption('', i18n.t('contactTeamPlaceholder'), true, true));
 
     // "Allgemein" option for the sport
-    teamSelect.appendChild(makeOption('', 'Allgemein (' + sportLabel + ')', false, false));
+    teamSelect.appendChild(makeOption('', i18n.t('generalTeamGeneral') + ' (' + sportLabel + ')', false, false));
 
     // Each team
     for (var i = 0; i < teams.length; i++) {
@@ -158,9 +158,9 @@
     submitBtn.disabled = loading;
     if (loading) {
       submitBtn.dataset.originalText = submitBtn.textContent;
-      submitBtn.textContent = 'Wird gesendet...';
+      submitBtn.textContent = i18n.t('contactSending');
     } else {
-      submitBtn.textContent = submitBtn.dataset.originalText || 'Absenden';
+      submitBtn.textContent = submitBtn.dataset.originalText || i18n.t('contactSubmit');
     }
   }
 
@@ -177,17 +177,17 @@
     var message = (document.getElementById('nachricht').value || '').trim();
 
     // Client-side validation
-    if (!firstName || !lastName) return showFeedback('error', 'Bitte Vor- und Nachname eingeben.');
-    if (!email) return showFeedback('error', 'Bitte E-Mail eingeben.');
-    if (!subject) return showFeedback('error', 'Bitte Betreff wählen.');
-    if (!message) return showFeedback('error', 'Bitte Nachricht eingeben.');
+    if (!firstName || !lastName) return showFeedback('error', i18n.t('contactValidationName'));
+    if (!email) return showFeedback('error', i18n.t('contactValidationEmail'));
+    if (!subject) return showFeedback('error', i18n.t('contactValidationSubject'));
+    if (!message) return showFeedback('error', i18n.t('contactValidationMessage'));
 
     // Turnstile token
     var turnstileToken = '';
     if (window.turnstile && turnstileWidgetId !== null) {
       turnstileToken = window.turnstile.getResponse(turnstileWidgetId) || '';
     }
-    if (!turnstileToken) return showFeedback('error', 'Bitte das Captcha lösen.');
+    if (!turnstileToken) return showFeedback('error', i18n.t('contactValidationCaptcha'));
 
     setLoading(true);
 
@@ -205,11 +205,11 @@
       }),
     })
       .then(function (r) {
-        if (!r.ok) return r.json().then(function (d) { throw new Error(d.message || 'Fehler beim Senden.'); });
+        if (!r.ok) return r.json().then(function (d) { throw new Error(d.message || i18n.t('contactError')); });
         return r.json();
       })
       .then(function () {
-        showFeedback('success', 'Nachricht erfolgreich gesendet! Wir melden uns bald.');
+        showFeedback('success', i18n.t('contactSuccess'));
         form.reset();
         hideTeamDropdown();
         if (window.turnstile && turnstileWidgetId !== null) {
@@ -217,10 +217,22 @@
         }
       })
       .catch(function (err) {
-        showFeedback('error', err.message || 'Fehler beim Senden. Bitte versuche es erneut.');
+        showFeedback('error', err.message || i18n.t('contactErrorRetry'));
       })
       .finally(function () {
         setLoading(false);
       });
+  });
+
+  // ── Language change handler ───────────────────────────────────────
+  document.addEventListener('langChanged', function () {
+    if (window.i18n) {
+      i18n.applyTranslations(document.querySelector('.contact-form') || document.querySelector('form'));
+      var btn = document.getElementById('contact-submit') || document.querySelector('button[type="submit"]');
+      if (btn && !btn.disabled) btn.textContent = i18n.t('contactSubmit');
+      // Update dynamically generated select option placeholders
+      var teamPlaceholder = document.querySelector('#team-select option[value=""]');
+      if (teamPlaceholder) teamPlaceholder.textContent = i18n.t('contactTeamPlaceholder');
+    }
   });
 })();

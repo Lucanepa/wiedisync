@@ -10,6 +10,21 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/styles.css">
+  <!-- i18n: early language detection + FOUC prevention -->
+  <script>
+    (function() {
+      var lang = localStorage.getItem('lang');
+      if (!lang && navigator.language && navigator.language.startsWith('en')) lang = 'en';
+      if (lang && lang !== 'de') {
+        document.documentElement.lang = lang;
+        var style = document.createElement('style');
+        style.textContent = '.i18n-loading [data-i18n],.i18n-loading [data-i18n-placeholder]{visibility:hidden}';
+        document.head.appendChild(style);
+        document.addEventListener('DOMContentLoaded', function() { document.body.classList.add('i18n-loading'); });
+      }
+    })();
+  </script>
+  <script src="/js/i18n.js"></script>
   <style>
     .stats-section {
       background: var(--bg-dark, #111827);
@@ -128,8 +143,8 @@
   <!-- ═══ Page Header ══════════════════════════════════════════════ -->
   <section class="page-header">
     <div class="container">
-      <h1>Über uns</h1>
-      <p style="font-size: var(--text-lg); margin-top: var(--space-sm); opacity: 0.85;">Basketball und Volleyball seit 1982</p>
+      <h1 data-i18n="aboutTitle">Über uns</h1>
+      <p style="font-size: var(--text-lg); margin-top: var(--space-sm); opacity: 0.85;" data-i18n="aboutSubtitle">Basketball und Volleyball seit 1982</p>
     </div>
   </section>
 
@@ -137,11 +152,11 @@
   <section class="section">
     <div class="container">
       <div class="history-content" style="text-align: justify; max-width: 720px;">
-        <h2 style="font-size: var(--text-2xl); margin-bottom: var(--space-lg); text-align: left;">Geschichte</h2>
-        <p>
+        <h2 style="font-size: var(--text-2xl); margin-bottom: var(--space-lg); text-align: left;" data-i18n="aboutHistory">Geschichte</h2>
+        <p data-i18n="aboutHistoryText1">
           Der KSC Wiedikon wurde 1982 in Zürich-Wiedikon als reiner Volleyballverein gegründet. Eine Gruppe begeisterter Sportler aus dem Quartier fand sich zusammen, um gemeinsam ihrer Leidenschaft nachzugehen. Was mit einem einzigen Herrenteam in der untersten Liga begann, wuchs schnell zu einem festen Bestandteil des Zürcher Breitensports heran. Bereits in den ersten Jahren konnte der Verein dank engagierter Mitglieder und guter Jugendarbeit stetig neue Teams aufbauen.
         </p>
-        <p style="margin-top: var(--space-lg);">
+        <p style="margin-top: var(--space-lg);" data-i18n="aboutHistoryText2">
           In den frühen 1990er-Jahren erweiterte der KSC Wiedikon sein Angebot um Basketball — ein Schritt, der den Verein nachhaltig prägte. Die Kombination aus zwei Hallensportarten unter einem Dach erwies sich als einzigartig in Zürich und zog über die Jahre immer mehr Mitglieder an. Heute zählt der KSC Wiedikon über 300 aktive Mitglieder in mehr als 20 Teams, von der Regionalliga bis zum Breitensport, und ist damit einer der grössten Mehrspartensportvereine im Kreis 3. Die enge Verbundenheit mit dem Quartier Wiedikon, die familiäre Atmosphäre und die Leidenschaft für den Sport bilden nach wie vor das Fundament des Vereins.
         </p>
       </div>
@@ -154,19 +169,19 @@
       <div class="stats-grid">
         <div class="stat-item">
           <span class="stat-number">1982</span>
-          <span class="stat-label">Gegründet</span>
+          <span class="stat-label" data-i18n="aboutStatFounded">Gegründet</span>
         </div>
         <div class="stat-item">
           <span class="stat-number">300+</span>
-          <span class="stat-label">Mitglieder</span>
+          <span class="stat-label" data-i18n="aboutStatMembers">Mitglieder</span>
         </div>
         <div class="stat-item">
           <span class="stat-number">20+</span>
-          <span class="stat-label">Teams</span>
+          <span class="stat-label" data-i18n="aboutStatTeams">Teams</span>
         </div>
         <div class="stat-item">
           <span class="stat-number">2</span>
-          <span class="stat-label">Sportarten</span>
+          <span class="stat-label" data-i18n="aboutStatSports">Sportarten</span>
         </div>
       </div>
     </div>
@@ -175,28 +190,28 @@
   <!-- ═══ Werte ════════════════════════════════════════════════════ -->
   <section class="section">
     <div class="container">
-      <h2 style="font-size: var(--text-2xl); margin-bottom: var(--space-xl); text-align: center;">Unsere Werte</h2>
+      <h2 style="font-size: var(--text-2xl); margin-bottom: var(--space-xl); text-align: center;" data-i18n="aboutValues">Unsere Werte</h2>
       <div class="values-grid">
         <div class="value-card">
           <div class="value-icon">
             <i data-lucide="users" style="width: 28px; height: 28px;"></i>
           </div>
-          <h3>Gemeinschaft</h3>
-          <p>Beim KSC Wiedikon steht das Miteinander im Zentrum. Ob auf dem Spielfeld oder daneben — wir sind ein Team. Neue Mitglieder werden herzlich aufgenommen und finden schnell Anschluss in unserer vielfaeltigen Vereinsfamilie.</p>
+          <h3 data-i18n="aboutCommunity">Gemeinschaft</h3>
+          <p data-i18n="aboutCommunityText">Beim KSC Wiedikon steht das Miteinander im Zentrum. Ob auf dem Spielfeld oder daneben — wir sind ein Team. Neue Mitglieder werden herzlich aufgenommen und finden schnell Anschluss in unserer vielfaeltigen Vereinsfamilie.</p>
         </div>
         <div class="value-card">
           <div class="value-icon">
             <i data-lucide="handshake" style="width: 28px; height: 28px;"></i>
           </div>
-          <h3>Fairplay</h3>
-          <p>Respekt gegenueber Gegnerinnen und Gegnern, Schiedsrichtern und Teamkolleginnen ist für uns selbstverstaendlich. Wir treten immer fair an — im Training, im Spiel und im Vereinsleben.</p>
+          <h3 data-i18n="aboutFairplay">Fairplay</h3>
+          <p data-i18n="aboutFairplayText">Respekt gegenueber Gegnerinnen und Gegnern, Schiedsrichtern und Teamkolleginnen ist für uns selbstverstaendlich. Wir treten immer fair an — im Training, im Spiel und im Vereinsleben.</p>
         </div>
         <div class="value-card">
           <div class="value-icon">
             <i data-lucide="trending-up" style="width: 28px; height: 28px;"></i>
           </div>
-          <h3>Entwicklung</h3>
-          <p>Vom ersten Probetraining bis zur Regionalliga foerdern wir die sportliche und persoenliche Entwicklung unserer Mitglieder. Unsere Trainer setzen auf moderne Methoden und individuelle Betreuung.</p>
+          <h3 data-i18n="aboutDevelopment">Entwicklung</h3>
+          <p data-i18n="aboutDevelopmentText">Vom ersten Probetraining bis zur Regionalliga foerdern wir die sportliche und persoenliche Entwicklung unserer Mitglieder. Unsere Trainer setzen auf moderne Methoden und individuelle Betreuung.</p>
         </div>
       </div>
     </div>
@@ -205,19 +220,19 @@
   <!-- ═══ Hallen ═══════════════════════════════════════════════════ -->
   <section class="section" style="background: var(--bg-muted, #f9fafb);">
     <div class="container">
-      <h2 style="font-size: var(--text-2xl); margin-bottom: var(--space-xl); text-align: center;">Unsere Hallen</h2>
+      <h2 style="font-size: var(--text-2xl); margin-bottom: var(--space-xl); text-align: center;" data-i18n="aboutHalls">Unsere Hallen</h2>
       <div class="halls-list">
         <div class="hall-card">
-          <h3>Turnhalle Utogrund</h3>
-          <p>Unsere Haupthalle für Volleyball und Basketball. Zentral in Wiedikon gelegen mit hervorragender oeV-Anbindung.</p>
+          <h3 data-i18n="aboutHallUtogrund">Turnhalle Utogrund</h3>
+          <p data-i18n="aboutHallUtogrundText">Unsere Haupthalle für Volleyball und Basketball. Zentral in Wiedikon gelegen mit hervorragender oeV-Anbindung.</p>
         </div>
         <div class="hall-card">
-          <h3>Turnhalle Lavater</h3>
-          <p>Zweite Trainingshalle, vor allem für Nachwuchsteams und zusaetzliche Trainingseinheiten genutzt.</p>
+          <h3 data-i18n="aboutHallLavater">Turnhalle Lavater</h3>
+          <p data-i18n="aboutHallLavaterText">Zweite Trainingshalle, vor allem für Nachwuchsteams und zusaetzliche Trainingseinheiten genutzt.</p>
         </div>
         <div class="hall-card">
-          <h3>Turnhalle Sihlfeld</h3>
-          <p>Dritte Halle für Basketball-Trainings und Heimspiele. Grosszuegiges Spielfeld mit Zuschauertribuene.</p>
+          <h3 data-i18n="aboutHallSihlfeld">Turnhalle Sihlfeld</h3>
+          <p data-i18n="aboutHallSihlfeldText">Dritte Halle für Basketball-Trainings und Heimspiele. Grosszuegiges Spielfeld mit Zuschauertribuene.</p>
         </div>
       </div>
     </div>
@@ -226,73 +241,14 @@
   <!-- ═══ CTA Section ══════════════════════════════════════════════ -->
   <section class="cta-section">
     <div class="container">
-      <h2>Werde Teil des KSC Wiedikon</h2>
-      <p>Komm vorbei — wir freuen uns auf dich!</p>
-      <a href="/club/kontakt.html" class="btn btn-gold">Kontakt aufnehmen</a>
+      <h2 data-i18n="aboutCTA">Werde Teil des KSC Wiedikon</h2>
+      <p data-i18n="aboutCTAText">Komm vorbei — wir freuen uns auf dich!</p>
+      <a href="/club/kontakt.html" class="btn btn-gold" data-i18n="aboutCTAButton">Kontakt aufnehmen</a>
     </div>
   </section>
 
   <!-- ═══ Footer ═══════════════════════════════════════════════════ -->
-  <footer class="site-footer">
-    <div class="container">
-      <div class="footer-inner">
-        <div class="footer-grid">
-          <div class="footer-brand">
-            <a href="/" class="nav-logo">
-              <img src="/images/kscw_weiss.png" alt="KSC Wiedikon" style="height: 40px;">
-              <span style="color: #ffffff;">KSC Wiedikon</span>
-            </a>
-            <p>Volleyball &amp; Basketball in Zürich seit 1978. Trainiere mit uns — vom Breitensport bis zur Regionalliga.</p>
-            <div class="footer-social">
-              <a href="https://www.instagram.com/kscwiedikon/" aria-label="Instagram">
-                <i data-lucide="instagram"></i>
-              </a>
-              <a href="https://www.facebook.com/kscwiedikon/" aria-label="Facebook">
-                <i data-lucide="facebook"></i>
-              </a>
-              <a href="mailto:kontakt@kscw.ch" aria-label="E-Mail">
-                <i data-lucide="mail"></i>
-              </a>
-            </div>
-          </div>
-          <div>
-            <h3 class="footer-heading">Volleyball</h3>
-            <div class="footer-links">
-              <a href="/volleyball/h1">Herren 1</a>
-              <a href="/volleyball/h2">Herren 2</a>
-              <a href="/volleyball/h3">Herren 3</a>
-              <a href="/volleyball/legends">Legends</a>
-              <a href="/volleyball/d1">Damen 1</a>
-              <a href="/volleyball/d2">Damen 2</a>
-            </div>
-          </div>
-          <div>
-            <h3 class="footer-heading">Basketball</h3>
-            <div class="footer-links">
-              <a href="/basketball/h1">Herren 1</a>
-              <a href="/basketball/h2">Herren 2</a>
-              <a href="/basketball/h4">Herren 4</a>
-              <a href="/basketball/d1">Damen 1</a>
-            </div>
-          </div>
-          <div>
-            <h3 class="footer-heading">Verein</h3>
-            <div class="footer-links">
-              <a href="/club/ueber-uns.html">Über uns</a>
-              <a href="/club/vorstand.html">Vorstand</a>
-              <a href="/club/kontakt.html">Kontakt</a>
-              <a href="/sponsoren/index.html">Sponsoren</a>
-              <a href="/weiteres/downloads.html">Downloads</a>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="footer-bottom" style="display:flex;align-items:center;justify-content:center;gap:1.5rem;flex-wrap:wrap;">
-        <button class="theme-toggle" aria-label="Farbmodus wechseln"><i data-lucide="sun" style="width:16px;height:16px;"></i> <span class="theme-label">Light Mode</span></button>
-        <p>&copy; 2026 KSC Wiedikon. Alle Rechte vorbehalten. · <a href="/club/kontakt.html">Impressum</a></p>
-      </div>
-    </div>
-  </footer>
+  <div id="site-footer"></div>
 
   <!-- ═══ Scripts ══════════════════════════════════════════════════ -->
   <script src="/js/data.js"></script>

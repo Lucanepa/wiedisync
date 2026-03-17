@@ -43,7 +43,7 @@ import deScorerAssign from './locales/de/scorerAssign'
 
 function getInitialLanguage(): string {
   if (typeof window === 'undefined') return 'de'
-  const saved = localStorage.getItem('kscw-lang')
+  const saved = localStorage.getItem('wiedisync-lang')
   if (saved) return saved
   // Detect browser language, default to German for Swiss context
   const browserLang = navigator.language?.slice(0, 2)

@@ -41,6 +41,13 @@ export default {
   rowsReturned: '{{count}} row(s)',
   dangerousQueryTitle: 'Confirm Destructive Query',
   dangerousQueryMessage: 'This query will modify data. Are you sure you want to execute it?',
+  resultsSummary: '{{rows}} rows · {{cols}} columns',
+  copyResults: 'Copy',
+  copiedResults: 'Copied!',
+  exportCSV: 'CSV',
+  exportJSON: 'JSON',
+  exportExcel: 'Excel',
+  exportText: 'Text',
 
   // Table Browser
   selectTable: 'Select a table…',

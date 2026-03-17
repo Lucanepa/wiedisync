@@ -13,7 +13,7 @@ export default function LoadingSpinner({ size = 'md', label }: LoadingSpinnerPro
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center">
       <img
-        src="/kscw_logo_vektoren.svg"
+        src="/wiedisync_logo.svg"
         alt="Loading..."
         className={`${sizeMap[size]} animate-spin`}
         style={{ animationDuration: '2s' }}

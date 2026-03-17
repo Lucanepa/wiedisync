@@ -13,6 +13,7 @@ import GameDetailModal from '../games/components/GameDetailModal'
 import ICalModal from './ICalModal'
 import { useCalendarData } from './hooks/useCalendarData'
 import { useAuth } from '../../hooks/useAuth'
+import { useAdminMode } from '../../hooks/useAdminMode'
 import { useIsMobile } from '../../hooks/useMediaQuery'
 import {
   startOfMonth,
@@ -89,17 +90,32 @@ function entryIconColor(entry: CalendarEntry): string {
 
 export default function CalendarPage() {
   const { t } = useTranslation('calendar')
-  const { user } = useAuth()
+  const { user, memberTeamIds, coachTeamIds } = useAuth()
+  const { effectiveIsAdmin } = useAdminMode()
   const isMobile = useIsMobile()
   const [viewMode, setViewMode] = useState<CalendarViewMode>('month')
   const allSources: SourceFilter[] = user
     ? ['game-home', 'game-away', 'training', 'event', 'closure', 'hall', 'absence']
     : ['game-home', 'game-away', 'hall']
 
+  // Combine member + coach teams for the user's "own teams"
+  const userTeamIds = useMemo(() => {
+    const set = new Set([...memberTeamIds, ...coachTeamIds])
+    return [...set]
+  }, [memberTeamIds, coachTeamIds])
+
   const [filters, setFilters] = useState<CalendarFilterState>(() => ({
     sources: [...allSources],
     selectedTeamIds: [],
   }))
+  // Auto-select user's teams on initial load (non-admin only)
+  const [autoSelected, setAutoSelected] = useState(false)
+  useEffect(() => {
+    if (!autoSelected && userTeamIds.length > 0 && !effectiveIsAdmin) {
+      setFilters((f) => ({ ...f, selectedTeamIds: userTeamIds }))
+      setAutoSelected(true)
+    }
+  }, [userTeamIds, autoSelected, effectiveIsAdmin])
   // Sync sources when auth state changes (e.g., user logs in → training/event/closure become available)
   const prevUserRef = useRef(user)
   useEffect(() => {
@@ -120,13 +136,17 @@ export default function CalendarPage() {
   const allowedSources = allSources
 
   // Active chips = what's selected. Pass directly to data hook.
-  // Empty selectedTeamIds = all teams (no team filter).
+  // Non-admins: fall back to own teams when filter is empty (never show all teams).
   const effectiveFilters: CalendarFilterState = useMemo(() => {
     if (!user) {
       return { sources: ['game-home', 'game-away', 'hall'], selectedTeamIds: [] }
     }
+    // Non-admins: if no teams selected, scope to their own teams
+    if (!effectiveIsAdmin && filters.selectedTeamIds.length === 0 && userTeamIds.length > 0) {
+      return { ...filters, selectedTeamIds: userTeamIds }
+    }
     return filters
-  }, [filters, user])
+  }, [filters, user, effectiveIsAdmin, userTeamIds])
 
   // Compute visible range based on view mode
   const { rangeStart, rangeEnd } = useMemo(() => {

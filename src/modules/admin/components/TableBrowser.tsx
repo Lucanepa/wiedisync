@@ -7,14 +7,14 @@ import ResultsTable from './ResultsTable'
 import SchemaViewer from './SchemaViewer'
 import RecordEditModal from './RecordEditModal'
 
-interface CollectionInfo {
+export interface CollectionInfo {
   id: string
   name: string
   type: string
   schema: SchemaField[]
 }
 
-interface SchemaField {
+export interface SchemaField {
   id: string
   name: string
   type: string
@@ -24,10 +24,13 @@ interface SchemaField {
 
 const PER_PAGE = 25
 
-export default function TableBrowser() {
+interface TableBrowserProps {
+  collections: CollectionInfo[]
+  loadingCollections: boolean
+}
+
+export default function TableBrowser({ collections, loadingCollections }: TableBrowserProps) {
   const { t } = useTranslation('admin')
-  const [collections, setCollections] = useState<CollectionInfo[]>([])
-  const [loadingCollections, setLoadingCollections] = useState(true)
   const [selected, setSelected] = useState('')
   const [page, setPage] = useState(1)
   const [sortField, setSortField] = useState('')
@@ -37,49 +40,6 @@ export default function TableBrowser() {
   const [showSchema, setShowSchema] = useState(false)
   const [editRecord, setEditRecord] = useState<RecordModel | null>(null)
   const [showCreate, setShowCreate] = useState(false)
-
-  // Fetch all collections via our SQL admin endpoint (pb.collections API is superusers-only)
-  useEffect(() => {
-    setLoadingCollections(true)
-    pb.send('/api/admin/sql', {
-      method: 'POST',
-      body: JSON.stringify({
-        query: "SELECT id, name, type, fields FROM _collections ORDER BY name",
-      }),
-    })
-      .then((res: { success: boolean; columns: string[]; rows: unknown[][] }) => {
-        if (!res.success) return
-        const idIdx = res.columns.indexOf('id')
-        const nameIdx = res.columns.indexOf('name')
-        const typeIdx = res.columns.indexOf('type')
-        const fieldsIdx = res.columns.indexOf('fields')
-        const infos: CollectionInfo[] = res.rows.map((row) => {
-          let fields: SchemaField[] = []
-          try {
-            const parsed = JSON.parse(String(row[fieldsIdx] || '[]'))
-            fields = parsed
-              .filter((f: Record<string, unknown>) => !f.system && f.name !== 'id')
-              .map((f: Record<string, unknown>) => ({
-                id: f.id || '',
-                name: f.name || '',
-                type: f.type || 'text',
-                required: !!f.required,
-                options: (f.options || {}) as Record<string, unknown>,
-              }))
-          } catch {}
-          return {
-            id: String(row[idIdx]),
-            name: String(row[nameIdx]),
-            type: String(row[typeIdx]),
-            schema: fields,
-          }
-        })
-        infos.sort((a, b) => a.name.localeCompare(b.name))
-        setCollections(infos)
-      })
-      .catch(() => {})
-      .finally(() => setLoadingCollections(false))
-  }, [])
 
   const selectedCol = collections.find((c) => c.name === selected)
 

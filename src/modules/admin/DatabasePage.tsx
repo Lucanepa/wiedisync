@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import pb from '../../pb'
 import SqlEditor from './components/SqlEditor'
 import TableBrowser from './components/TableBrowser'
+import type { CollectionInfo, SchemaField } from './components/TableBrowser'
 
 const PB_ADMIN_URL = `${import.meta.env.VITE_PB_URL || 'https://kscw-api.lucanepa.com'}/_/`
 
@@ -10,6 +12,53 @@ type Tab = 'sql' | 'tables'
 export default function DatabasePage() {
   const { t } = useTranslation('admin')
   const [tab, setTab] = useState<Tab>('sql')
+  const [collections, setCollections] = useState<CollectionInfo[]>([])
+  const [loadingCollections, setLoadingCollections] = useState(true)
+
+  // Fetch all collection schemas (shared by SqlEditor autocomplete + TableBrowser)
+  useEffect(() => {
+    setLoadingCollections(true)
+    pb.send('/api/admin/sql', {
+      method: 'POST',
+      body: JSON.stringify({
+        query: 'SELECT id, name, type, fields FROM _collections ORDER BY name',
+      }),
+    })
+      .then((res: { success: boolean; columns: string[]; rows: unknown[][] }) => {
+        if (!res.success) return
+        const idIdx = res.columns.indexOf('id')
+        const nameIdx = res.columns.indexOf('name')
+        const typeIdx = res.columns.indexOf('type')
+        const fieldsIdx = res.columns.indexOf('fields')
+        const infos: CollectionInfo[] = res.rows.map((row) => {
+          let fields: SchemaField[] = []
+          try {
+            const parsed = JSON.parse(String(row[fieldsIdx] || '[]'))
+            fields = parsed
+              .filter((f: Record<string, unknown>) => !f.system && f.name !== 'id')
+              .map((f: Record<string, unknown>) => ({
+                id: f.id || '',
+                name: f.name || '',
+                type: f.type || 'text',
+                required: !!f.required,
+                options: (f.options || {}) as Record<string, unknown>,
+              }))
+          } catch {
+            // ignore parse errors
+          }
+          return {
+            id: String(row[idIdx]),
+            name: String(row[nameIdx]),
+            type: String(row[typeIdx]),
+            schema: fields,
+          }
+        })
+        infos.sort((a, b) => a.name.localeCompare(b.name))
+        setCollections(infos)
+      })
+      .catch(() => {})
+      .finally(() => setLoadingCollections(false))
+  }, [])
 
   return (
     <div className="flex h-[calc(100vh-6rem)] flex-col">
@@ -47,8 +96,13 @@ export default function DatabasePage() {
 
       {/* Content */}
       <div className="mt-4 flex-1 overflow-auto">
-        {tab === 'sql' && <SqlEditor />}
-        {tab === 'tables' && <TableBrowser />}
+        {tab === 'sql' && <SqlEditor collections={collections} />}
+        {tab === 'tables' && (
+          <TableBrowser
+            collections={collections}
+            loadingCollections={loadingCollections}
+          />
+        )}
       </div>
     </div>
   )

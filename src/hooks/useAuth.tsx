@@ -87,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const lang = pbLangToI18n(user.language)
       if (i18n.language !== lang) {
         i18n.changeLanguage(lang)
-        localStorage.setItem('kscw-lang', lang)
+        localStorage.setItem('wiedisync-lang', lang)
       }
     }
   }, [user?.language])

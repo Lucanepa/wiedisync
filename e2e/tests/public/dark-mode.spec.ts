@@ -13,7 +13,7 @@ test.describe('Dark mode', () => {
 
   test('respects light mode from localStorage', async ({ page }) => {
     await page.addInitScript(() => {
-      localStorage.setItem('kscw-theme', 'light')
+      localStorage.setItem('wiedisync-theme', 'light')
     })
     await page.goto('/')
     const isDark = await page.evaluate(() =>

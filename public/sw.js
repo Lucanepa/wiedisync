@@ -13,9 +13,9 @@ self.addEventListener('push', function(event) {
 
   var options = {
     body: data.body || '',
-    icon: '/kscw_blau.png',
-    badge: '/kscw_blau.png',
-    tag: data.tag || 'kscw-notification',
+    icon: '/wiedisync_blau.png',
+    badge: '/wiedisync_blau.png',
+    tag: data.tag || 'wiedisync-notification',
     renotify: true,
     data: {
       url: data.url || 'https://kscw.lucanepa.com',

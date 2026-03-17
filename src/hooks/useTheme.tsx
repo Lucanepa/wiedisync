@@ -11,7 +11,7 @@ const ThemeContext = createContext<ThemeContextValue | null>(null)
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
-    const stored = localStorage.getItem('kscw-theme') as Theme | null
+    const stored = localStorage.getItem('wiedisync-theme') as Theme | null
     return stored === 'light' ? 'light' : 'dark'
   })
 
@@ -22,7 +22,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     } else {
       root.classList.remove('dark')
     }
-    localStorage.setItem('kscw-theme', theme)
+    localStorage.setItem('wiedisync-theme', theme)
   }, [theme])
 
   const toggleTheme = () => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))

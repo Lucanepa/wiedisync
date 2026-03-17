@@ -57,6 +57,10 @@ export default function ResultsTable({ columns, rows, maxHeight = 'max-h-[60vh]'
   return (
     <div>
       <div className={`overflow-auto rounded-lg border border-gray-200 dark:border-gray-700 ${maxHeight}`}>
+        {/* Header bar with row/column counts */}
+        <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-3 py-1.5 text-xs text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
+          <span>{t('resultsSummary', { rows: rows.length, cols: columns.length })}</span>
+        </div>
         <table className="w-full text-left text-xs">
           <thead className="sticky top-0 bg-gray-50 dark:bg-gray-800">
             <tr>
@@ -70,9 +74,14 @@ export default function ResultsTable({ columns, rows, maxHeight = 'max-h-[60vh]'
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+          <tbody>
             {rows.map((row, i) => (
-              <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+              <tr
+                key={i}
+                className={`${
+                  i % 2 === 1 ? 'bg-gray-50/50 dark:bg-gray-800/30' : ''
+                } hover:bg-gray-100 dark:hover:bg-gray-700/50`}
+              >
                 {row.map((cell, j) => (
                   <td
                     key={j}
@@ -86,9 +95,6 @@ export default function ResultsTable({ columns, rows, maxHeight = 'max-h-[60vh]'
           </tbody>
         </table>
       </div>
-      <p className="mt-1 text-right text-xs text-gray-500 dark:text-gray-400">
-        {t('rowsReturned', { count: rows.length })}
-      </p>
     </div>
   )
 }

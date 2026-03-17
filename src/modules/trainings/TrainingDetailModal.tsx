@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Modal from '@/components/Modal'
 import TeamChip from '../../components/TeamChip'
@@ -8,7 +8,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useParticipation } from '../../hooks/useParticipation'
 import { formatDate, formatWeekday, formatTime } from '../../utils/dateHelpers'
 import type { Training, Team, Hall, Member } from '../../types'
-import { MapPin, Clock, MessageSquare, User, Users, Calendar } from 'lucide-react'
+import { MapPin, Clock, MessageSquare, User, Users, Calendar, Check } from 'lucide-react'
 
 type TrainingExpanded = Training & {
   expand?: { team?: Team; hall?: Hall; coach?: Member }
@@ -126,7 +126,7 @@ export default function TrainingDetailModal({ training, onClose }: TrainingDetai
 
 function TrainingParticipation({ training, staffOnly }: { training: TrainingExpanded; staffOnly: boolean }) {
   const { t } = useTranslation('participation')
-  const { effectiveStatus, hasAbsence, note: savedNote, setStatus } = useParticipation(
+  const { effectiveStatus, hasAbsence, note: savedNote, setStatus, saveConfirmed, dismissConfirmed } = useParticipation(
     'training',
     training.id,
     training.date,
@@ -134,11 +134,33 @@ function TrainingParticipation({ training, staffOnly }: { training: TrainingExpa
     staffOnly,
   )
   const [noteText, setNoteText] = useState(savedNote)
+  const [noteSaved, setNoteSaved] = useState(false)
   const noteInitRef = useRef(savedNote)
   // Sync note text when server data loads/changes
   if (savedNote !== noteInitRef.current) {
     noteInitRef.current = savedNote
     setNoteText(savedNote)
+  }
+
+  // Auto-dismiss status confirmation after 2s
+  useEffect(() => {
+    if (!saveConfirmed) return
+    const timer = setTimeout(dismissConfirmed, 2000)
+    return () => clearTimeout(timer)
+  }, [saveConfirmed, dismissConfirmed])
+
+  // Auto-dismiss note confirmation after 2s
+  useEffect(() => {
+    if (!noteSaved) return
+    const timer = setTimeout(() => setNoteSaved(false), 2000)
+    return () => clearTimeout(timer)
+  }, [noteSaved])
+
+  const saveNote = () => {
+    if (noteText !== savedNote && effectiveStatus) {
+      setStatus(effectiveStatus as 'confirmed' | 'tentative' | 'declined', noteText)
+      setNoteSaved(true)
+    }
   }
 
   if (hasAbsence) {
@@ -147,7 +169,7 @@ function TrainingParticipation({ training, staffOnly }: { training: TrainingExpa
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2">
+      <div className="relative flex items-center gap-2">
         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('yourStatus')}:</span>
         <div className="flex items-center gap-1.5">
           {(['confirmed', 'tentative', 'declined'] as const).map((status) => {
@@ -174,28 +196,42 @@ function TrainingParticipation({ training, staffOnly }: { training: TrainingExpa
             )
           })}
         </div>
+        {/* Save confirmation popover */}
+        {saveConfirmed && (
+          <span className="absolute -top-7 left-1/2 -translate-x-1/2 flex items-center gap-1 whitespace-nowrap rounded-md bg-green-600 px-2 py-0.5 text-[11px] font-medium text-white shadow-lg animate-fade-in">
+            <Check className="h-3 w-3" />
+            {t('saved')}
+          </span>
+        )}
       </div>
       {/* Participation note */}
       {effectiveStatus && (
-        <div className="flex items-center gap-2">
+        <div className="relative flex items-center gap-2">
           <MessageSquare className="h-4 w-4 shrink-0 text-gray-400" />
           <input
             type="text"
             value={noteText}
             onChange={(e) => setNoteText(e.target.value)}
-            onBlur={() => {
-              if (noteText !== savedNote && effectiveStatus) {
-                setStatus(effectiveStatus as 'confirmed' | 'tentative' | 'declined', noteText)
-              }
-            }}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.currentTarget.blur()
-              }
+              if (e.key === 'Enter') saveNote()
             }}
             placeholder={t('notePlaceholder')}
             className="min-w-0 flex-1 rounded-md border border-gray-200 bg-transparent px-2.5 py-1 text-sm text-gray-700 placeholder:text-gray-400 focus:border-brand-400 focus:outline-none dark:border-gray-600 dark:text-gray-300 dark:placeholder:text-gray-500 dark:focus:border-brand-500"
           />
+          <button
+            onClick={saveNote}
+            disabled={noteText === savedNote}
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-green-600 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-green-400"
+          >
+            <Check className="h-4 w-4" />
+          </button>
+          {/* Note saved confirmation */}
+          {noteSaved && (
+            <span className="absolute -top-7 right-0 flex items-center gap-1 whitespace-nowrap rounded-md bg-green-600 px-2 py-0.5 text-[11px] font-medium text-white shadow-lg animate-fade-in">
+              <Check className="h-3 w-3" />
+              {t('noteSaved')}
+            </span>
+          )}
         </div>
       )}
     </div>

@@ -136,19 +136,20 @@
     var metaEl = document.getElementById('roster-meta');
     if (metaEl) {
       metaEl.textContent = '';
-      var parts = [];
-      if (coach.length) {
-        parts.push('Trainer: ' + coach.map(function (c) { return c.first_name + ' ' + c.last_name; }).join(', '));
-      }
+      var lines = [];
       if (captain.length) {
-        parts.push('Captain: ' + captain.map(function (c) { return c.first_name + ' ' + c.last_name; }).join(', '));
+        lines.push('Captain: ' + captain.map(function (c) { return c.first_name + ' ' + c.last_name; }).join(', '));
       }
-      if (parts.length) {
+      if (coach.length) {
+        lines.push('Trainer: ' + coach.map(function (c) { return c.first_name + ' ' + c.last_name; }).join(', '));
+      }
+      for (var li = 0; li < lines.length; li++) {
         var p = document.createElement('p');
         p.style.fontWeight = '600';
         p.style.fontSize = 'var(--text-sm)';
         p.style.color = 'var(--text-secondary)';
-        p.textContent = parts.join(' · ');
+        if (li > 0) p.style.marginTop = 'var(--space-xs)';
+        p.textContent = lines[li];
         metaEl.appendChild(p);
       }
     }
@@ -302,13 +303,18 @@
     h2.textContent = teamInfo.league || 'Rangliste';
     rankEl.appendChild(h2);
 
+    // Detect sport from first ranking entry
+    var isVB = rankings.length > 0 && rankings[0].sport === 'volleyball';
+
     var wrap = document.createElement('div');
     wrap.className = 'table-wrap';
     var table = document.createElement('table');
 
     var thead = document.createElement('thead');
     var headRow = document.createElement('tr');
-    ['#', 'Team', 'Sp', 'S', 'N', 'Pkt'].forEach(function (t) {
+    var headers = ['#', 'Pkt', 'Team', 'Sp', 'S', 'N'];
+    if (isVB) headers.push('Sätze');
+    headers.forEach(function (t) {
       var th = document.createElement('th'); th.textContent = t; headRow.appendChild(th);
     });
     thead.appendChild(headRow);
@@ -321,26 +327,70 @@
       var tr = document.createElement('tr');
       if (rw.team_id === myTeamId) tr.className = 'table-highlight';
 
-      var cells = [
-        { text: String(rw.rank || '-'), cls: 'table-rank' },
-        { text: rw.team || '?', cls: 'table-team' },
-        { text: String(rw.played || '-') },
-        { text: String(rw.wins || '-') },
-        { text: String(rw.losses || '-') },
-        { text: String(rw.points || '-'), bold: true },
-      ];
-      for (var c = 0; c < cells.length; c++) {
-        var td = document.createElement('td');
-        if (cells[c].cls) td.className = cells[c].cls;
-        if (cells[c].bold) {
-          var strong = document.createElement('strong');
-          strong.textContent = cells[c].text;
-          td.appendChild(strong);
-        } else {
-          td.textContent = cells[c].text;
-        }
-        tr.appendChild(td);
+      // Rank
+      var tdRank = document.createElement('td');
+      tdRank.className = 'table-rank';
+      tdRank.textContent = rw.rank || '-';
+      tr.appendChild(tdRank);
+
+      // Points (bold)
+      var tdPts = document.createElement('td');
+      var strong = document.createElement('strong');
+      strong.textContent = rw.points != null ? rw.points : '-';
+      tdPts.appendChild(strong);
+      tr.appendChild(tdPts);
+
+      // Team name (ellipsis on overflow)
+      var tdTeam = document.createElement('td');
+      tdTeam.className = 'table-team';
+      tdTeam.style.maxWidth = '180px';
+      tdTeam.style.overflow = 'hidden';
+      tdTeam.style.textOverflow = 'ellipsis';
+      tdTeam.textContent = rw.team || '?';
+      tr.appendChild(tdTeam);
+
+      // Played
+      var tdSp = document.createElement('td');
+      tdSp.textContent = rw.played || '-';
+      tr.appendChild(tdSp);
+
+      // Wins — with clear/narrow split for VB
+      var tdW = document.createElement('td');
+      if (isVB && (rw.wins_clear || rw.wins_narrow)) {
+        tdW.textContent = (rw.won || 0);
+        var wSub = document.createElement('span');
+        wSub.style.fontSize = 'var(--text-xs)';
+        wSub.style.color = 'var(--text-muted)';
+        wSub.style.display = 'block';
+        wSub.textContent = (rw.wins_clear || 0) + '/' + (rw.wins_narrow || 0);
+        tdW.appendChild(wSub);
+      } else {
+        tdW.textContent = rw.won || '-';
       }
+      tr.appendChild(tdW);
+
+      // Losses — with clear/narrow split for VB
+      var tdL = document.createElement('td');
+      if (isVB && (rw.defeats_clear || rw.defeats_narrow)) {
+        tdL.textContent = (rw.lost || 0);
+        var lSub = document.createElement('span');
+        lSub.style.fontSize = 'var(--text-xs)';
+        lSub.style.color = 'var(--text-muted)';
+        lSub.style.display = 'block';
+        lSub.textContent = (rw.defeats_clear || 0) + '/' + (rw.defeats_narrow || 0);
+        tdL.appendChild(lSub);
+      } else {
+        tdL.textContent = rw.lost || '-';
+      }
+      tr.appendChild(tdL);
+
+      // Sets (VB only)
+      if (isVB) {
+        var tdSets = document.createElement('td');
+        tdSets.textContent = (rw.sets_won || 0) + ':' + (rw.sets_lost || 0);
+        tr.appendChild(tdSets);
+      }
+
       tbody.appendChild(tr);
     }
     table.appendChild(tbody);

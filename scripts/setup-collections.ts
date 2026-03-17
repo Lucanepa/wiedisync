@@ -187,6 +187,7 @@ const dependentCollections: CollectionDef[] = [
       date('valid_until'),
       text('label'),
       text('notes'),
+      select('sport', ['volleyball', 'basketball']),
 
     ],
   },

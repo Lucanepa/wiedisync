@@ -1,12 +1,11 @@
-import { useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Check } from 'lucide-react'
+import { Check, X, HelpCircle, Hourglass, Award } from 'lucide-react'
 import TeamChip from '../../components/TeamChip'
-import ParticipationSummary from '../../components/ParticipationSummary'
 import { useAuth } from '../../hooks/useAuth'
-import { useParticipation } from '../../hooks/useParticipation'
+import { useMutation } from '../../hooks/useMutation'
 import { formatDate, formatWeekday, formatTime } from '../../utils/dateHelpers'
-import type { Training, Team, Hall, Member } from '../../types'
+import type { Training, Team, Hall, Member, Participation } from '../../types'
 
 type TrainingExpanded = Training & {
   expand?: { team?: Team; hall?: Hall; coach?: Member }
@@ -14,12 +13,16 @@ type TrainingExpanded = Training & {
 
 interface TrainingCardProps {
   training: TrainingExpanded
+  /** Pre-fetched participations for this training (from batch query) */
+  participations?: Participation[]
+  /** Pre-fetched current user's participation (from batch query) */
+  myParticipation?: Participation
   onOpenRoster?: (trainingId: string, teamId: string, date: string) => void
   onEdit?: (training: Training) => void
   onDelete?: (trainingId: string) => void
 }
 
-export default function TrainingCard({ training, onOpenRoster, onEdit, onDelete }: TrainingCardProps) {
+export default function TrainingCard({ training, participations, myParticipation, onOpenRoster, onEdit, onDelete }: TrainingCardProps) {
   const { t } = useTranslation('trainings')
   const { user, canParticipateIn } = useAuth()
   const team = training.expand?.team
@@ -37,8 +40,8 @@ export default function TrainingCard({ training, onOpenRoster, onEdit, onDelete 
           </span>
         </div>
         <div className="flex items-center gap-2">
-          {!training.cancelled && (
-            <ParticipationSummary activityType="training" activityId={training.id} compact />
+          {!training.cancelled && participations && participations.length > 0 && (
+            <InlineParticipationSummary participations={participations} />
           )}
           {training.cancelled && (
             <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
@@ -67,7 +70,7 @@ export default function TrainingCard({ training, onOpenRoster, onEdit, onDelete 
         <div className="mt-2.5 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             {user && canParticipateIn(training.team) && (
-              <TrainingParticipation training={training} />
+              <TrainingParticipation training={training} existingParticipation={myParticipation} />
             )}
           </div>
           <div className="flex items-center gap-1">
@@ -111,25 +114,108 @@ export default function TrainingCard({ training, onOpenRoster, onEdit, onDelete 
   )
 }
 
-function TrainingParticipation({ training }: { training: TrainingExpanded }) {
+/** Inline participation summary using pre-fetched data (no API call) */
+function InlineParticipationSummary({ participations }: { participations: Participation[] }) {
   const { t } = useTranslation('participation')
-  const { isStaffOnly } = useAuth()
+  const playerData = participations.filter(p => !p.is_staff)
+  const confirmedParts = playerData.filter(p => p.status === 'confirmed')
+  const confirmed = confirmedParts.length
+  const confirmedGuests = confirmedParts.reduce((sum, p) => sum + (p.guest_count ?? 0), 0)
+  const tentativeParts = playerData.filter(p => p.status === 'tentative')
+  const tentative = tentativeParts.length
+  const tentativeGuests = tentativeParts.reduce((sum, p) => sum + (p.guest_count ?? 0), 0)
+  const declined = playerData.filter(p => p.status === 'declined').length
+  const waitlisted = playerData.filter(p => p.status === 'waitlisted').length
+  const staffConfirmed = participations.filter(p => p.is_staff && p.status === 'confirmed').length
+
+  if (participations.length === 0) return null
+
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs">
+      {confirmed > 0 && (
+        <span className="inline-flex items-center gap-1 text-green-600 dark:text-green-400">
+          {confirmed}{confirmedGuests > 0 && <span className="text-[10px] opacity-75">+{confirmedGuests}</span>}
+          <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-green-600 text-white dark:bg-green-500"><Check className="h-2.5 w-2.5" /></span>
+        </span>
+      )}
+      {tentative > 0 && (
+        <span className="inline-flex items-center gap-1 text-yellow-600 dark:text-yellow-400">
+          {tentative}{tentativeGuests > 0 && <span className="text-[10px] opacity-75">+{tentativeGuests}</span>}
+          <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-yellow-500 text-white"><HelpCircle className="h-2.5 w-2.5" /></span>
+        </span>
+      )}
+      {declined > 0 && (
+        <span className="inline-flex items-center gap-1 text-red-600 dark:text-red-400">
+          {declined}
+          <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-white dark:bg-red-500"><X className="h-2.5 w-2.5" /></span>
+        </span>
+      )}
+      {waitlisted > 0 && (
+        <span className="inline-flex items-center gap-1 text-orange-600 dark:text-orange-400">
+          {waitlisted}
+          <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-white"><Hourglass className="h-2.5 w-2.5" /></span>
+        </span>
+      )}
+      {staffConfirmed > 0 && (
+        <span className="inline-flex items-center gap-1 text-brand-600 dark:text-brand-400" title={t('staffPresent')}>
+          {staffConfirmed}
+          <Award className="h-3.5 w-3.5" />
+        </span>
+      )}
+    </span>
+  )
+}
+
+/** Participation buttons using pre-fetched data — only writes trigger API calls */
+function TrainingParticipation({ training, existingParticipation }: { training: TrainingExpanded; existingParticipation?: Participation }) {
+  const { t } = useTranslation('participation')
+  const { user, isStaffOnly } = useAuth()
   const staffOnly = isStaffOnly(training.team)
-  const { effectiveStatus, setStatus, saveConfirmed, dismissConfirmed } = useParticipation('training', training.id, training.date, undefined, staffOnly)
+  const { create, update } = useMutation<Participation>('participations')
+
+  const [optimisticStatus, setOptimisticStatus] = useState<Participation['status'] | null>(null)
+  const [saveConfirmed, setSaveConfirmed] = useState(false)
+
+  const serverStatus = existingParticipation?.status ?? null
+  const displayStatus = optimisticStatus ?? serverStatus
 
   // Auto-dismiss confirmation after 2s
   useEffect(() => {
     if (!saveConfirmed) return
-    const timer = setTimeout(dismissConfirmed, 2000)
+    const timer = setTimeout(() => setSaveConfirmed(false), 2000)
     return () => clearTimeout(timer)
-  }, [saveConfirmed, dismissConfirmed])
+  }, [saveConfirmed])
+
+  const setStatus = useCallback(async (status: Participation['status']) => {
+    if (!user) return
+    setOptimisticStatus(status)
+    setSaveConfirmed(false)
+    try {
+      if (existingParticipation) {
+        await update(existingParticipation.id, { status })
+      } else {
+        await create({
+          member: user.id,
+          activity_type: 'training' as const,
+          activity_id: training.id,
+          status,
+          note: '',
+          guest_count: 0,
+          is_staff: staffOnly,
+        })
+      }
+      setSaveConfirmed(true)
+    } catch {
+      setOptimisticStatus(null)
+    }
+  }, [user, existingParticipation, training.id, staffOnly, create, update])
 
   return (
     <div className="relative flex items-center gap-1.5">
       <button
         onClick={() => setStatus('confirmed')}
         className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
-          effectiveStatus === 'confirmed'
+          displayStatus === 'confirmed'
             ? 'bg-green-600 text-white'
             : 'bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-green-900/30 dark:hover:text-green-400'
         }`}
@@ -139,7 +225,7 @@ function TrainingParticipation({ training }: { training: TrainingExpanded }) {
       <button
         onClick={() => setStatus('tentative')}
         className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
-          effectiveStatus === 'tentative'
+          displayStatus === 'tentative'
             ? 'bg-yellow-500 text-white'
             : 'bg-gray-100 text-gray-600 hover:bg-yellow-100 hover:text-yellow-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-yellow-900/30 dark:hover:text-yellow-400'
         }`}
@@ -149,7 +235,7 @@ function TrainingParticipation({ training }: { training: TrainingExpanded }) {
       <button
         onClick={() => setStatus('declined')}
         className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
-          effectiveStatus === 'declined'
+          displayStatus === 'declined'
             ? 'bg-red-600 text-white'
             : 'bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-red-900/30 dark:hover:text-red-400'
         }`}

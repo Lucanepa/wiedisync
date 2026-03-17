@@ -342,28 +342,42 @@
         resultsList.appendChild(resFrag);
       }
 
-      // ── 4. Sponsor Carousel ────────────────────────────────
+      // ── 4. Sponsor Carousel (fetched from PB API) ─────────
       var sponsorTrack = document.getElementById('sponsor-track');
-      if (sponsorTrack && D.sponsors) {
-        var allSponsors = [].concat(D.sponsors.gold, D.sponsors.silver, D.sponsors.bronze);
-        var spFrag = document.createDocumentFragment();
-        // Render sponsors twice for infinite scroll effect
-        for (var pass = 0; pass < 2; pass++) {
-          for (var s = 0; s < allSponsors.length; s++) {
-            var sp = allSponsors[s];
-            var link = document.createElement('a');
-            link.href = sp.url;
-            link.className = 'sponsor-item';
-            link.target = '_blank';
-            link.rel = 'noopener noreferrer';
-            link.title = sp.name;
-            var label = document.createElement('span');
-            label.textContent = sp.name;
-            link.appendChild(label);
-            spFrag.appendChild(link);
-          }
-        }
-        sponsorTrack.appendChild(spFrag);
+      if (sponsorTrack) {
+        fetch('https://kscw-api.lucanepa.com/api/public/sponsors')
+          .then(function (res) { return res.json(); })
+          .then(function (data) {
+            var allSponsors = data.sponsors || [];
+            if (!allSponsors.length) return;
+            var spFrag = document.createDocumentFragment();
+            // Render sponsors twice for infinite scroll effect
+            for (var pass = 0; pass < 2; pass++) {
+              for (var s = 0; s < allSponsors.length; s++) {
+                var sp = allSponsors[s];
+                var link = document.createElement('a');
+                link.href = sp.website_url || '#';
+                link.className = 'sponsor-item';
+                if (sp.website_url) { link.target = '_blank'; link.rel = 'noopener noreferrer'; }
+                link.title = sp.name;
+                if (sp.logo_url) {
+                  var img = document.createElement('img');
+                  img.src = sp.logo_url;
+                  img.alt = sp.name;
+                  img.style.maxHeight = '40px';
+                  img.style.objectFit = 'contain';
+                  link.appendChild(img);
+                } else {
+                  var label = document.createElement('span');
+                  label.textContent = sp.name;
+                  link.appendChild(label);
+                }
+                spFrag.appendChild(link);
+              }
+            }
+            sponsorTrack.appendChild(spFrag);
+          })
+          .catch(function () { /* silently fail — sponsor carousel is non-critical */ });
       }
 
       // ── 5. Trigger fade-in animations ──────────────────────

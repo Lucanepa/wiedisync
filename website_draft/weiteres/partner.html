@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark light">
+  <meta name="supported-color-schemes" content="dark light">
+  <meta name="description" content="Partner des KSC Wiedikon — functiomed für Prävention und medizinische Betreuung.">
+  <title>Partner — KSC Wiedikon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="icon" href="/images/kscw_trio.png" type="image/png">
+  <!-- i18n: early language detection + FOUC prevention -->
+  <script>
+    (function() {
+      var lang = localStorage.getItem('lang');
+      if (!lang && navigator.language && navigator.language.startsWith('en')) lang = 'en';
+      if (lang && lang !== 'de') {
+        document.documentElement.lang = lang;
+        var style = document.createElement('style');
+        style.textContent = '.i18n-loading [data-i18n],.i18n-loading [data-i18n-placeholder]{visibility:hidden}';
+        document.head.appendChild(style);
+        document.addEventListener('DOMContentLoaded', function() { document.body.classList.add('i18n-loading'); });
+      }
+    })();
+  </script>
+  <script src="/js/i18n.js"></script>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       HEADER
+       ═══════════════════════════════════════════════════════════ -->
+  <div id="site-header"></div>
+
+  <main>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         PAGE HEADER
+         ═══════════════════════════════════════════════════════════ -->
+    <section class="page-header">
+      <div class="container">
+        <h1 data-i18n="partnerTitle">Partner</h1>
+        <p data-i18n="partnerSubtitle">Unsere Partnerschaften für Sport und Gesundheit</p>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         FUNCTIOMED
+         ═══════════════════════════════════════════════════════════ -->
+    <section class="section">
+      <div class="container">
+        <div class="section-header">
+          <div>
+            <h2 data-i18n="partnerFunctiomed">functiomed</h2>
+            <div class="gold-bar"></div>
+          </div>
+        </div>
+        <div style="max-width: 720px;">
+
+          <div style="display: flex; flex-direction: column; gap: var(--space-md); margin-bottom: var(--space-xl);">
+
+            <div class="card" style="border-left: 4px solid var(--kscw-gold);">
+              <div class="card-body" style="display: flex; align-items: flex-start; gap: var(--space-md);">
+                <div style="min-width: 48px; height: 48px; background: var(--kscw-gold); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                  <i data-lucide="shield-check" style="width: 24px; height: 24px;"></i>
+                </div>
+                <div>
+                  <h3 style="margin-bottom: var(--space-xs);" data-i18n="partnerPrevention">Prävention</h3>
+                  <p style="color: var(--text-secondary);" data-i18n="partnerPreventionText">Die Ausbildung von Trainerinnen, Trainern und Spielerinnen und Spielern, um das Verletzungsrisiko durch geeignete Massnahmen zu minimieren.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="card" style="border-left: 4px solid var(--kscw-blue);">
+              <div class="card-body" style="display: flex; align-items: flex-start; gap: var(--space-md);">
+                <div style="min-width: 48px; height: 48px; background: var(--kscw-blue); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                  <i data-lucide="heart-pulse" style="width: 24px; height: 24px;"></i>
+                </div>
+                <div>
+                  <h3 style="margin-bottom: var(--space-xs);" data-i18n="partnerMedical">Medizinische Betreuung</h3>
+                  <p style="color: var(--text-secondary);" data-i18n="partnerMedicalText">Umfassende medizinische Versorgung bei allen Verletzungen, die im Trainings- oder Spielbetrieb auftreten.</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <div style="text-align: center; margin-bottom: var(--space-lg);">
+            <a href="https://functiomed.ch" target="_blank" rel="noopener noreferrer" class="btn btn-gold" style="font-size: 1.125rem; padding: var(--space-md) var(--space-xl);">
+              <i data-lucide="external-link" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 8px;"></i>
+              <span data-i18n="partnerVisitWebsite">functiomed.ch besuchen</span>
+            </a>
+          </div>
+
+          <p style="font-size: 0.875rem; color: var(--text-secondary); text-align: center;">
+            <i data-lucide="info" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></i>
+            <span data-i18n="partnerContactNote">Bei Fragen zu unserer Partnerschaft mit functiomed wende dich an deinen Trainer oder deine Trainerin.</span>
+          </p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       FOOTER
+       ═══════════════════════════════════════════════════════════ -->
+  <div id="site-footer"></div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SCRIPTS
+       ═══════════════════════════════════════════════════════════ -->
+  <script src="/js/data.js"></script>
+  <script src="/js/main.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script>lucide.createIcons();</script>
+
+</body>
+</html>

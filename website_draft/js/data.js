@@ -356,27 +356,8 @@ window.KSCW = {
     { name: 'Thamayanth Kanagalingam',  role: 'TK Volleyball',     email: 'volleyball@kscw.ch' },
   ],
 
-  // ─── Sponsors (mock only — not in PB) ─────────────────────
-  sponsors: {
-    gold: [
-      { name: 'Metzgerei Keller',  logo: 'sponsoren/metzgerei-keller.png',  url: 'https://metzgerei-keller.ch' },
-      { name: 'Voitsport',         logo: 'sponsoren/voitsport.png',         url: 'https://voitsport.ch' },
-      { name: 'functiomed',        logo: 'sponsoren/functiomed.png',        url: 'https://functiomed.ch' },
-      { name: 'Honda Zürich',      logo: 'sponsoren/honda-zuerich.png',     url: 'https://honda-zuerich.ch' },
-    ],
-    silver: [
-      { name: 'Apotheke Wiedikon',  logo: 'sponsoren/apotheke-wiedikon.png',  url: 'https://apotheke-wiedikon.ch' },
-      { name: 'Bäckerei Steiner',   logo: 'sponsoren/baeckerei-steiner.png',  url: 'https://baeckerei-steiner.ch' },
-      { name: 'Malerei Brunner',    logo: 'sponsoren/malerei-brunner.png',    url: 'https://malerei-brunner.ch' },
-      { name: 'Physio Wiedikon',    logo: 'sponsoren/physio-wiedikon.png',    url: 'https://physio-wiedikon.ch' },
-    ],
-    bronze: [
-      { name: 'Restaurant Falcone',   logo: 'sponsoren/restaurant-falcone.png',   url: 'https://restaurant-falcone.ch' },
-      { name: 'Blumen Meyer',         logo: 'sponsoren/blumen-meyer.png',         url: 'https://blumen-meyer.ch' },
-      { name: 'Druckerei Huber',      logo: 'sponsoren/druckerei-huber.png',      url: 'https://druckerei-huber.ch' },
-      { name: 'IT Solutions Zürich',   logo: 'sponsoren/it-solutions-zuerich.png', url: 'https://it-solutions.ch' },
-    ],
-  },
+  // ─── Sponsors (fetched from PB /api/public/sponsors) ──────
+  sponsors: [],
 
   // ─── Rosters (mock only — members not public in PB) ───────
   rosters: {
@@ -641,9 +622,9 @@ window.KSCW = {
     return this.games.filter(function (g) { return g.teamShort === teamShort; });
   },
 
-  /** Get sponsors by tier */
-  getSponsorsByTier: function (tier) {
-    return this.sponsors[tier] || [];
+  /** Get all sponsors (flat array) */
+  getSponsors: function () {
+    return this.sponsors || [];
   },
 
   /** Get team picture URL (or null) */

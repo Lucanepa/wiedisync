@@ -45,6 +45,11 @@ export default function ParticipationSummary({
   const totalGuests = confirmedGuests + tentativeGuests
 
   const staffConfirmed = staffData.filter(p => p.status === 'confirmed').length
+  const staffConfirmedGuests = staffData.filter(p => p.status === 'confirmed').reduce((sum, p) => sum + (p.guest_count ?? 0), 0)
+
+  // Confirmed breakdown: total = players + coaches + all guests
+  const confirmedTotal = confirmed + staffConfirmed + confirmedGuests + staffConfirmedGuests
+  const hasConfirmedBreakdown = staffConfirmed > 0 || confirmedGuests + staffConfirmedGuests > 0
 
   if (data.length === 0) return null
 
@@ -52,8 +57,13 @@ export default function ParticipationSummary({
     return (
       <div className="flex flex-col items-end gap-0.5 text-xs">
         <span className="inline-flex items-center gap-1 text-green-600 dark:text-green-400">
-          {confirmed}{confirmedGuests > 0 && <span className="text-[10px] opacity-75">+{confirmedGuests}</span>}
+          {confirmedTotal}
           <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-green-600 text-white dark:bg-green-500"><Check className="h-2.5 w-2.5" /></span>
+          {hasConfirmedBreakdown && (
+            <span className="text-[10px] text-gray-500 dark:text-gray-400">
+              ({confirmed}P{staffConfirmed > 0 && <>{staffConfirmed}C</>}{(confirmedGuests + staffConfirmedGuests) > 0 && <>{confirmedGuests + staffConfirmedGuests}G</>})
+            </span>
+          )}
         </span>
         {tentative > 0 && (
           <span className="inline-flex items-center gap-1 text-yellow-600 dark:text-yellow-400">
@@ -74,10 +84,15 @@ export default function ParticipationSummary({
   if (compact) {
     return (
       <span className="inline-flex items-center gap-1.5 text-xs">
-        {confirmed > 0 && (
+        {confirmedTotal > 0 && (
           <span className="inline-flex items-center gap-1 text-green-600 dark:text-green-400">
-            {confirmed}{confirmedGuests > 0 && <span className="text-[10px] opacity-75">+{confirmedGuests}</span>}
+            {confirmedTotal}
             <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-green-600 text-white dark:bg-green-500"><Check className="h-2.5 w-2.5" /></span>
+            {hasConfirmedBreakdown && (
+              <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                ({confirmed}P{staffConfirmed > 0 && <>{staffConfirmed}C</>}{(confirmedGuests + staffConfirmedGuests) > 0 && <>{confirmedGuests + staffConfirmedGuests}G</>})
+              </span>
+            )}
           </span>
         )}
         {tentative > 0 && (
@@ -96,17 +111,6 @@ export default function ParticipationSummary({
           <span className="inline-flex items-center gap-1 text-orange-600 dark:text-orange-400">
             {waitlisted}
             <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-white"><Hourglass className="h-2.5 w-2.5" /></span>
-          </span>
-        )}
-        {totalGuests > 0 && (
-          <span className="text-gray-500 dark:text-gray-400">
-            ({confirmed + tentative + totalGuests})
-          </span>
-        )}
-        {staffConfirmed > 0 && (
-          <span className="inline-flex items-center gap-1 text-brand-600 dark:text-brand-400" title={t('staffPresent')}>
-            {staffConfirmed}
-            <Award className="h-3.5 w-3.5" />
           </span>
         )}
       </span>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark light">
+  <meta name="supported-color-schemes" content="dark light">
+  <title>Team — KSC Wiedikon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="icon" href="/images/kscw_trio.png" type="image/png">
+</head>
+<body>
+  <div id="site-header"></div>
+
+  <main>
+    <!-- Hero: rendered by JS -->
+    <section id="team-hero-container"></section>
+
+    <!-- Team photo: rendered by JS -->
+    <div id="team-photo-container"></div>
+
+    <!-- Content tabs -->
+    <section class="section">
+      <div class="container">
+        <div class="tab-bar" role="tablist">
+          <button class="tab-btn active" data-tab="kader" role="tab" aria-selected="true">Kader</button>
+          <button class="tab-btn" data-tab="spiele" role="tab" aria-selected="false">Spiele</button>
+          <button class="tab-btn" data-tab="rangliste" role="tab" aria-selected="false">Rangliste</button>
+          <button class="tab-btn" data-tab="training" role="tab" aria-selected="false">Training</button>
+        </div>
+
+        <div class="tab-panel active" data-tab-panel="kader" role="tabpanel">
+          <div id="roster-grid" class="roster-grid">
+            <p class="text-muted text-sm">Kader wird geladen...</p>
+          </div>
+          <div id="roster-meta" class="mt-lg"></div>
+        </div>
+
+        <div class="tab-panel" data-tab-panel="spiele" role="tabpanel">
+          <h2 style="font-size: var(--text-2xl); margin-bottom: var(--space-lg);">Nächste Spiele</h2>
+          <div id="upcoming-games">
+            <p class="text-muted text-sm">Spiele werden geladen...</p>
+          </div>
+          <h2 style="font-size: var(--text-2xl); margin-top: var(--space-2xl); margin-bottom: var(--space-lg);">Letzte Resultate</h2>
+          <div id="recent-results">
+            <p class="text-muted text-sm">Resultate werden geladen...</p>
+          </div>
+        </div>
+
+        <div class="tab-panel" data-tab-panel="rangliste" role="tabpanel">
+          <div id="rankings-table">
+            <p class="text-muted text-sm">Rangliste wird geladen...</p>
+          </div>
+        </div>
+
+        <div class="tab-panel" data-tab-panel="training" role="tabpanel">
+          <div id="training-list">
+            <p class="text-muted text-sm">Trainingszeiten werden geladen...</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA: rendered by JS -->
+    <div id="cta-container"></div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-grid">
+
+          <!-- Brand -->
+          <div class="footer-brand">
+            <a href="/index.html" class="nav-logo" style="margin-bottom: var(--space-sm);">
+              <img src="/images/kscw_weiss.png" alt="KSC Wiedikon" style="height: 40px;">
+              <span style="color: white;">KSC Wiedikon</span>
+            </a>
+            <p>Basketball und Volleyball seit 1982. Sportverein in Zürich-Wiedikon mit über 30 Teams in allen Altersklassen.</p>
+            <div class="footer-social">
+              <a href="https://facebook.com/kscwiedikon" aria-label="Facebook" target="_blank" rel="noopener noreferrer">
+                <i data-lucide="facebook"></i>
+              </a>
+              <a href="https://instagram.com/kscwiedikon" aria-label="Instagram" target="_blank" rel="noopener noreferrer">
+                <i data-lucide="instagram"></i>
+              </a>
+            </div>
+          </div>
+
+          <!-- Club -->
+          <div>
+            <div class="footer-heading">Club</div>
+            <div class="footer-links">
+              <a href="/club/ueber-uns.html">Über uns</a>
+              <a href="/club/vorstand.html">Vorstand</a>
+              <a href="/club/kontakt.html">Kontakt</a>
+            </div>
+          </div>
+
+          <!-- Sport -->
+          <div>
+            <div class="footer-heading">Sport</div>
+            <div class="footer-links">
+              <a href="/volleyball/index.html">Volleyball</a>
+              <a href="/basketball/index.html">Basketball</a>
+            </div>
+          </div>
+
+          <!-- Mehr -->
+          <div>
+            <div class="footer-heading">Mehr</div>
+            <div class="footer-links">
+              <a href="/weiteres/kalender.html">Kalender</a>
+              <a href="/weiteres/mitgliedschaft.html">Mitgliedschaft</a>
+              <a href="/weiteres/spielplanung.html">Spielplanung</a>
+              <a href="/weiteres/datenschutz.html">Datenschutz</a>
+              <a href="/weiteres/impressum.html">Impressum</a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      <div class="footer-bottom" style="display:flex;align-items:center;justify-content:center;gap:1.5rem;flex-wrap:wrap;">
+        <button class="theme-toggle" aria-label="Farbmodus wechseln"><i data-lucide="sun" style="width:16px;height:16px;"></i> <span class="theme-label">Light Mode</span></button>
+        <p>&copy; 2026 KSC Wiedikon. Alle Rechte vorbehalten.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Read team ID from URL and set config
+    // Note: innerHTML usage here is safe — content is a static string, not user input
+    (function() {
+      var params = new URLSearchParams(window.location.search);
+      var id = params.get('id');
+      if (!id) {
+        var main = document.querySelector('main');
+        while (main.firstChild) main.removeChild(main.firstChild);
+        var wrapper = document.createElement('div');
+        wrapper.className = 'container';
+        wrapper.style.cssText = 'padding:4rem 0;text-align:center;';
+        var h = document.createElement('h1');
+        h.textContent = 'Team nicht gefunden';
+        var p = document.createElement('p');
+        p.className = 'text-muted mt-md';
+        p.textContent = 'Kein Team angegeben.';
+        var a = document.createElement('a');
+        a.href = '/';
+        a.className = 'btn btn-primary mt-lg';
+        a.textContent = 'Zurück zur Startseite';
+        a.style.display = 'inline-block';
+        wrapper.appendChild(h);
+        wrapper.appendChild(p);
+        wrapper.appendChild(a);
+        main.appendChild(wrapper);
+        return;
+      }
+      window.TEAM_CONFIG = { short: '', pbId: id };
+    })();
+  </script>
+  <script src="/js/data.js"></script>
+  <script src="/js/team-page.js"></script>
+  <script src="/js/main.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script>lucide.createIcons();</script>
+</body>
+</html>

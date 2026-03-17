@@ -10,10 +10,10 @@
   'use strict';
 
   var CFG = window.TEAM_CONFIG;
-  if (!CFG || !CFG.short) return;
+  if (!CFG || (!CFG.short && !CFG.pbId)) return;
 
   var PB = 'https://kscw-api.lucanepa.com';
-  var TEAM = CFG.short;
+  var TEAM = CFG.short || '';
   var TEAM_PB_ID = CFG.pbId;
 
   var posLabels = {
@@ -38,26 +38,99 @@
     if (panel) panel.style.display = 'none';
   }
 
-  // ── Render team photo dynamically if not already in HTML ──────────
-  function renderTeamPhoto(data) {
-    if (document.querySelector('.team-photo')) return; // already in HTML
-    if (!data.team || !TEAM_PB_ID) return;
-    // Fetch team record to get team_picture
-    fetch(PB + '/api/collections/teams/records/' + TEAM_PB_ID)
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .catch(function () { return null; })
-      .then(function (team) {
-        if (!team || !team.team_picture) return;
-        var url = PB + '/api/files/' + team.collectionId + '/' + team.id + '/' + team.team_picture + '?thumb=1280x0';
-        var hero = document.querySelector('.team-hero');
-        if (!hero) return;
-        var img = document.createElement('img');
-        img.src = url;
-        img.alt = 'Teamfoto ' + esc(data.team.name || TEAM);
-        img.className = 'team-photo';
-        img.loading = 'lazy';
-        hero.parentNode.insertBefore(img, hero.nextSibling);
-      });
+  // ── Render hero section dynamically ──────────────────────────────
+  function renderHero(teamData) {
+    var container = document.getElementById('team-hero-container');
+    if (!container) return;
+
+    // Resolve team color from teamColors in data.js or fallback
+    var D = window.KSCW;
+    var teamInfo = (D && D.getTeam) ? D.getTeam(TEAM) : null;
+    var color = (teamInfo && teamInfo.bg) ? teamInfo.bg : 'var(--kscw-blue)';
+
+    var section = document.createElement('section');
+    section.className = 'team-hero';
+    section.style.setProperty('--team-color', color);
+
+    var inner = document.createElement('div');
+    inner.className = 'container';
+
+    var chip = document.createElement('span');
+    chip.className = 'chip';
+    chip.style.background = color;
+    chip.style.color = '#fff';
+    chip.style.marginBottom = '0.75rem';
+    chip.style.display = 'inline-block';
+    chip.textContent = TEAM;
+    inner.appendChild(chip);
+
+    var h1 = document.createElement('h1');
+    h1.textContent = teamData.full_name || teamData.name || TEAM;
+    inner.appendChild(h1);
+
+    var league = document.createElement('p');
+    league.className = 'team-league';
+    league.textContent = (teamData.league || '') + (teamData.season ? ' — Saison ' + teamData.season : '');
+    inner.appendChild(league);
+
+    section.appendChild(inner);
+    container.appendChild(section);
+  }
+
+  // ── Render team photo ──────────────────────────────────────────────
+  function renderTeamPhoto(teamData) {
+    if (document.querySelector('.team-photo')) return;
+    if (!teamData.team_picture || !teamData.collectionId) return;
+
+    var url = PB + '/api/files/' + teamData.collectionId + '/' + TEAM_PB_ID + '/' + teamData.team_picture + '?thumb=1280x0';
+    var container = document.getElementById('team-photo-container');
+    if (!container) {
+      // Fallback: insert after hero
+      container = document.querySelector('.team-hero');
+      if (!container) return;
+      var img = document.createElement('img');
+      img.src = url;
+      img.alt = 'Teamfoto ' + esc(teamData.name || TEAM);
+      img.className = 'team-photo';
+      img.loading = 'lazy';
+      container.parentNode.insertBefore(img, container.nextSibling);
+      return;
+    }
+    var img2 = document.createElement('img');
+    img2.src = url;
+    img2.alt = 'Teamfoto ' + esc(teamData.name || TEAM);
+    img2.className = 'team-photo';
+    img2.loading = 'lazy';
+    container.appendChild(img2);
+  }
+
+  // ── Render CTA section ─────────────────────────────────────────────
+  function renderCTA(teamData) {
+    var container = document.getElementById('cta-container');
+    if (!container) return;
+
+    var section = document.createElement('section');
+    section.className = 'cta-section';
+
+    var inner = document.createElement('div');
+    inner.className = 'container';
+
+    var h2 = document.createElement('h2');
+    h2.textContent = 'Interesse am ' + (teamData.name || TEAM) + '?';
+    inner.appendChild(h2);
+
+    var p = document.createElement('p');
+    p.textContent = 'Kontaktiere uns für ein Probetraining';
+    inner.appendChild(p);
+
+    var btn = document.createElement('a');
+    btn.href = '/club/kontakt.html';
+    btn.className = 'btn btn-gold';
+    btn.textContent = 'Kontakt aufnehmen';
+    inner.appendChild(btn);
+
+    section.appendChild(inner);
+    container.appendChild(section);
   }
 
   // ── Fetch team data from public API ───────────────────────────────
@@ -67,11 +140,27 @@
     fetch(PB + '/api/public/team/' + TEAM_PB_ID)
       .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
       .then(function (data) {
+        var teamData = data.team || {};
+
+        // Derive TEAM short name from API if not set
+        if (!TEAM && teamData.name) {
+          TEAM = teamData.name;
+          CFG.short = TEAM;
+        }
+
+        // Update page title
+        document.title = (teamData.full_name || teamData.name || 'Team') + ' — KSC Wiedikon';
+
+        // Render hero, photo, CTA
+        renderHero(teamData);
+        renderTeamPhoto(teamData);
+        renderCTA(teamData);
+
+        // Render tab content
         renderRoster(data.roster || [], data.coach || [], data.captain || []);
         renderTrainings(data.trainings || []);
-        renderTeamPhoto(data);
         renderHookGames(data.upcoming || [], data.results || []);
-        renderHookRankings(data.rankings || [], data.team || {});
+        renderHookRankings(data.rankings || [], teamData);
       })
       .catch(function () { hideSection('kader'); hideSection('training'); });
   }

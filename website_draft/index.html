@@ -12,6 +12,22 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/styles.css">
   <link rel="icon" href="/images/kscw_trio.png" type="image/png">
+  <meta name="i18n-title" content="homeTitle">
+  <!-- i18n: early language detection + FOUC prevention -->
+  <script>
+    (function() {
+      var lang = localStorage.getItem('lang');
+      if (!lang && navigator.language && navigator.language.startsWith('en')) lang = 'en';
+      if (lang && lang !== 'de') {
+        document.documentElement.lang = lang;
+        var style = document.createElement('style');
+        style.textContent = '.i18n-loading [data-i18n],.i18n-loading [data-i18n-placeholder]{visibility:hidden}';
+        document.head.appendChild(style);
+        document.addEventListener('DOMContentLoaded', function() { document.body.classList.add('i18n-loading'); });
+      }
+    })();
+  </script>
+  <script src="/js/i18n.js"></script>
 </head>
 <body>
 
@@ -30,7 +46,7 @@
         <div class="hero-content">
           <img src="/images/kscw_trio.png" alt="" class="hero-logo" aria-hidden="true">
           <h1>KSC Wiedikon</h1>
-          <p class="hero-subtitle">Basketball und Volleyball seit 1982</p>
+          <p class="hero-subtitle" data-i18n="homeSubtitle">Basketball und Volleyball seit 1982</p>
           <div class="hero-buttons">
             <a href="/volleyball/index.html" class="btn sport-btn sport-btn--vb">Volleyball</a>
             <a href="/basketball/index.html" class="btn sport-btn sport-btn--bb">Basketball</a>
@@ -46,7 +62,7 @@
       <div class="container">
         <div class="section-header">
           <div>
-            <h2>Aktuelles</h2>
+            <h2 data-i18n="homeNews">Aktuelles</h2>
             <div class="gold-bar"></div>
           </div>
         </div>
@@ -63,7 +79,7 @@
       <div class="container">
         <div class="section-header">
           <div>
-            <h2>Nächste Spiele</h2>
+            <h2 data-i18n="homeUpcomingGames">Nächste Spiele</h2>
             <div class="gold-bar"></div>
           </div>
         </div>
@@ -80,7 +96,7 @@
       <div class="container">
         <div class="section-header">
           <div>
-            <h2>Letzte Resultate</h2>
+            <h2 data-i18n="homeRecentResults">Letzte Resultate</h2>
             <div class="gold-bar"></div>
           </div>
         </div>
@@ -97,10 +113,10 @@
       <div class="container">
         <div class="section-header">
           <div>
-            <h2>Unsere Partner</h2>
+            <h2 data-i18n="homePartners">Unsere Partner</h2>
             <div class="gold-bar"></div>
           </div>
-          <a href="/sponsoren/index.html" class="btn btn-sm btn-outline">Alle Sponsoren &rarr;</a>
+          <a href="/sponsoren/index.html" class="btn btn-sm btn-outline" data-i18n="homeAllSponsors">Alle Sponsoren &rarr;</a>
         </div>
         <div class="sponsor-overflow">
           <div id="sponsor-track" class="sponsor-track">
@@ -115,67 +131,7 @@
   <!-- ═══════════════════════════════════════════════════════════
        FOOTER
        ═══════════════════════════════════════════════════════════ -->
-  <footer class="site-footer">
-    <div class="container">
-      <div class="footer-inner">
-        <div class="footer-grid">
-
-          <!-- Brand -->
-          <div class="footer-brand">
-            <a href="/index.html" class="nav-logo" style="margin-bottom: var(--space-sm);">
-              <img src="/images/kscw_weiss.png" alt="KSC Wiedikon" style="height: 40px;">
-              <span style="color: white;">KSC Wiedikon</span>
-            </a>
-            <p>Basketball und Volleyball seit 1982. Sportverein in Zürich-Wiedikon mit über 30 Teams in allen Altersklassen.</p>
-            <div class="footer-social">
-              <a href="https://facebook.com/kscwiedikon" aria-label="Facebook" target="_blank" rel="noopener noreferrer">
-                <i data-lucide="facebook"></i>
-              </a>
-              <a href="https://instagram.com/kscwiedikon" aria-label="Instagram" target="_blank" rel="noopener noreferrer">
-                <i data-lucide="instagram"></i>
-              </a>
-            </div>
-          </div>
-
-          <!-- Club -->
-          <div>
-            <div class="footer-heading">Club</div>
-            <div class="footer-links">
-              <a href="/club/ueber-uns.html">Über uns</a>
-              <a href="/club/vorstand.html">Vorstand</a>
-              <a href="/club/kontakt.html">Kontakt</a>
-            </div>
-          </div>
-
-          <!-- Sport -->
-          <div>
-            <div class="footer-heading">Sport</div>
-            <div class="footer-links">
-              <a href="/volleyball/index.html">Volleyball</a>
-              <a href="/basketball/index.html">Basketball</a>
-            </div>
-          </div>
-
-          <!-- Mehr -->
-          <div>
-            <div class="footer-heading">Mehr</div>
-            <div class="footer-links">
-              <a href="/weiteres/kalender.html">Kalender</a>
-              <a href="/weiteres/mitgliedschaft.html">Mitgliedschaft</a>
-              <a href="/weiteres/spielplanung.html">Spielplanung</a>
-              <a href="/weiteres/datenschutz.html">Datenschutz</a>
-              <a href="/weiteres/impressum.html">Impressum</a>
-            </div>
-          </div>
-
-        </div>
-      </div>
-      <div class="footer-bottom" style="display:flex;align-items:center;justify-content:center;gap:1.5rem;flex-wrap:wrap;">
-        <button class="theme-toggle" aria-label="Farbmodus wechseln"><i data-lucide="sun" style="width:16px;height:16px;"></i> <span class="theme-label">Light Mode</span></button>
-        <p>&copy; 2026 KSC Wiedikon. Alle Rechte vorbehalten.</p>
-      </div>
-    </div>
-  </footer>
+  <div id="site-footer"></div>
 
   <!-- ═══════════════════════════════════════════════════════════
        SCRIPTS

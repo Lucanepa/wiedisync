@@ -3,7 +3,7 @@
  *
  * Fetches REAL data from the PocketBase API at kscw-api.lucanepa.com.
  * Falls back to hardcoded mock data if the API is unreachable.
- * All text in German. Colors from src/utils/teamColors.ts.
+ * Locale-aware via window.i18n (DE/EN). Colors from src/utils/teamColors.ts.
  *
  * The same `window.KSCW` interface is preserved so all HTML pages work unchanged.
  * After async fetch completes, a `kscw-data-ready` custom event is dispatched on `document`.
@@ -656,18 +656,34 @@ window.KSCW = {
     return this.rosters[teamShort] || [];
   },
 
-  /** Format date as "DD.MM.YYYY" (Swiss format) */
+  /** Format date as "DD.MM.YYYY" (Swiss) or "MM/DD/YYYY" (English) */
   formatDate: function (isoDate) {
     var parts = isoDate.split('-');
+    if (window.i18n && i18n.getLang() === 'en') {
+      return parts[1] + '/' + parts[2] + '/' + parts[0];
+    }
     return parts[2] + '.' + parts[1] + '.' + parts[0];
   },
 
-  /** Format date as "Sa, 1. März 2026" */
+  /** Format date as "Sa, 1. März 2026" (DE) or "Sat, March 1, 2026" (EN) */
   formatDateLong: function (isoDate) {
-    var days = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
-    var months = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+    var dayKeys = ['dateSun', 'dateMon', 'dateTue', 'dateWed', 'dateThu', 'dateFri', 'dateSat'];
+    var monthKeys = ['dateJan', 'dateFeb', 'dateMar', 'dateApr', 'dateMay', 'dateJun',
+                     'dateJul', 'dateAug', 'dateSep', 'dateOct', 'dateNov', 'dateDec'];
     var d = new Date(isoDate + 'T12:00:00');
-    return days[d.getDay()] + ', ' + d.getDate() + '. ' + months[d.getMonth()] + ' ' + d.getFullYear();
+
+    // Fallback arrays for when i18n isn't loaded yet
+    var deFallbackDays = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+    var deFallbackMonths = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+
+    var dayName = window.i18n ? i18n.t(dayKeys[d.getDay()]) : deFallbackDays[d.getDay()];
+    var monthName = window.i18n ? i18n.t(monthKeys[d.getMonth()]) : deFallbackMonths[d.getMonth()];
+
+    // German: "Sa, 1. März 2026" vs English: "Sat, March 1, 2026"
+    if (window.i18n && i18n.getLang() === 'en') {
+      return dayName + ', ' + monthName + ' ' + d.getDate() + ', ' + d.getFullYear();
+    }
+    return dayName + ', ' + d.getDate() + '. ' + monthName + ' ' + d.getFullYear();
   },
 
   /** Check if a game is a win for KSCW */

@@ -10,6 +10,21 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/styles.css">
   <link rel="icon" href="/images/kscw_trio.png" type="image/png">
+  <!-- i18n: early language detection + FOUC prevention -->
+  <script>
+    (function() {
+      var lang = localStorage.getItem('lang');
+      if (!lang && navigator.language && navigator.language.startsWith('en')) lang = 'en';
+      if (lang && lang !== 'de') {
+        document.documentElement.lang = lang;
+        var style = document.createElement('style');
+        style.textContent = '.i18n-loading [data-i18n],.i18n-loading [data-i18n-placeholder]{visibility:hidden}';
+        document.head.appendChild(style);
+        document.addEventListener('DOMContentLoaded', function() { document.body.classList.add('i18n-loading'); });
+      }
+    })();
+  </script>
+  <script src="/js/i18n.js"></script>
 </head>
 <body>
   <div id="site-header"></div>
@@ -25,39 +40,39 @@
     <section class="section">
       <div class="container">
         <div class="tab-bar" role="tablist">
-          <button class="tab-btn active" data-tab="kader" role="tab" aria-selected="true">Kader</button>
-          <button class="tab-btn" data-tab="spiele" role="tab" aria-selected="false">Spiele</button>
-          <button class="tab-btn" data-tab="rangliste" role="tab" aria-selected="false">Rangliste</button>
-          <button class="tab-btn" data-tab="training" role="tab" aria-selected="false">Training</button>
+          <button class="tab-btn active" data-tab="kader" role="tab" aria-selected="true" data-i18n="teamTabRoster">Kader</button>
+          <button class="tab-btn" data-tab="spiele" role="tab" aria-selected="false" data-i18n="teamTabGames">Spiele</button>
+          <button class="tab-btn" data-tab="rangliste" role="tab" aria-selected="false" data-i18n="teamTabRankings">Rangliste</button>
+          <button class="tab-btn" data-tab="training" role="tab" aria-selected="false" data-i18n="teamTabTraining">Training</button>
         </div>
 
         <div class="tab-panel active" data-tab-panel="kader" role="tabpanel">
           <div id="roster-grid" class="roster-grid">
-            <p class="text-muted text-sm">Kader wird geladen...</p>
+            <p class="text-muted text-sm" data-i18n="teamLoadingRoster">Kader wird geladen...</p>
           </div>
           <div id="roster-meta" class="mt-lg"></div>
         </div>
 
         <div class="tab-panel" data-tab-panel="spiele" role="tabpanel">
-          <h2 style="font-size: var(--text-2xl); margin-bottom: var(--space-lg);">Nächste Spiele</h2>
+          <h2 style="font-size: var(--text-2xl); margin-bottom: var(--space-lg);" data-i18n="teamUpcoming">Nächste Spiele</h2>
           <div id="upcoming-games">
-            <p class="text-muted text-sm">Spiele werden geladen...</p>
+            <p class="text-muted text-sm" data-i18n="teamLoadingGames">Spiele werden geladen...</p>
           </div>
-          <h2 style="font-size: var(--text-2xl); margin-top: var(--space-2xl); margin-bottom: var(--space-lg);">Letzte Resultate</h2>
+          <h2 style="font-size: var(--text-2xl); margin-top: var(--space-2xl); margin-bottom: var(--space-lg);" data-i18n="teamResults">Letzte Resultate</h2>
           <div id="recent-results">
-            <p class="text-muted text-sm">Resultate werden geladen...</p>
+            <p class="text-muted text-sm" data-i18n="teamLoadingResults">Resultate werden geladen...</p>
           </div>
         </div>
 
         <div class="tab-panel" data-tab-panel="rangliste" role="tabpanel">
           <div id="rankings-table">
-            <p class="text-muted text-sm">Rangliste wird geladen...</p>
+            <p class="text-muted text-sm" data-i18n="teamLoadingRankings">Rangliste wird geladen...</p>
           </div>
         </div>
 
         <div class="tab-panel" data-tab-panel="training" role="tabpanel">
           <div id="training-list">
-            <p class="text-muted text-sm">Trainingszeiten werden geladen...</p>
+            <p class="text-muted text-sm" data-i18n="teamLoadingTrainings">Trainingszeiten werden geladen...</p>
           </div>
         </div>
       </div>
@@ -68,67 +83,7 @@
   </main>
 
   <!-- Footer -->
-  <footer class="site-footer">
-    <div class="container">
-      <div class="footer-inner">
-        <div class="footer-grid">
-
-          <!-- Brand -->
-          <div class="footer-brand">
-            <a href="/index.html" class="nav-logo" style="margin-bottom: var(--space-sm);">
-              <img src="/images/kscw_weiss.png" alt="KSC Wiedikon" style="height: 40px;">
-              <span style="color: white;">KSC Wiedikon</span>
-            </a>
-            <p>Basketball und Volleyball seit 1982. Sportverein in Zürich-Wiedikon mit über 30 Teams in allen Altersklassen.</p>
-            <div class="footer-social">
-              <a href="https://facebook.com/kscwiedikon" aria-label="Facebook" target="_blank" rel="noopener noreferrer">
-                <i data-lucide="facebook"></i>
-              </a>
-              <a href="https://instagram.com/kscwiedikon" aria-label="Instagram" target="_blank" rel="noopener noreferrer">
-                <i data-lucide="instagram"></i>
-              </a>
-            </div>
-          </div>
-
-          <!-- Club -->
-          <div>
-            <div class="footer-heading">Club</div>
-            <div class="footer-links">
-              <a href="/club/ueber-uns.html">Über uns</a>
-              <a href="/club/vorstand.html">Vorstand</a>
-              <a href="/club/kontakt.html">Kontakt</a>
-            </div>
-          </div>
-
-          <!-- Sport -->
-          <div>
-            <div class="footer-heading">Sport</div>
-            <div class="footer-links">
-              <a href="/volleyball/index.html">Volleyball</a>
-              <a href="/basketball/index.html">Basketball</a>
-            </div>
-          </div>
-
-          <!-- Mehr -->
-          <div>
-            <div class="footer-heading">Mehr</div>
-            <div class="footer-links">
-              <a href="/weiteres/kalender.html">Kalender</a>
-              <a href="/weiteres/mitgliedschaft.html">Mitgliedschaft</a>
-              <a href="/weiteres/spielplanung.html">Spielplanung</a>
-              <a href="/weiteres/datenschutz.html">Datenschutz</a>
-              <a href="/weiteres/impressum.html">Impressum</a>
-            </div>
-          </div>
-
-        </div>
-      </div>
-      <div class="footer-bottom" style="display:flex;align-items:center;justify-content:center;gap:1.5rem;flex-wrap:wrap;">
-        <button class="theme-toggle" aria-label="Farbmodus wechseln"><i data-lucide="sun" style="width:16px;height:16px;"></i> <span class="theme-label">Light Mode</span></button>
-        <p>&copy; 2026 KSC Wiedikon. Alle Rechte vorbehalten.</p>
-      </div>
-    </div>
-  </footer>
+  <div id="site-footer"></div>
 
   <script>
     // Resolve team PB ID from URL path (e.g. /volleyball/h1 → pbId)
@@ -162,14 +117,14 @@
         wrapper.className = 'container';
         wrapper.style.cssText = 'padding:4rem 0;text-align:center;';
         var h = document.createElement('h1');
-        h.textContent = 'Team nicht gefunden';
+        h.textContent = (window.i18n ? i18n.t('teamNotFound') : 'Team nicht gefunden');
         var p = document.createElement('p');
         p.className = 'text-muted mt-md';
-        p.textContent = 'Kein Team angegeben.';
+        p.textContent = (window.i18n ? i18n.t('teamNoTeam') : 'Kein Team angegeben.');
         var a = document.createElement('a');
         a.href = '/';
         a.className = 'btn btn-primary mt-lg';
-        a.textContent = 'Zurück zur Startseite';
+        a.textContent = (window.i18n ? i18n.t('teamBackHome') : 'Zurück zur Startseite');
         a.style.display = 'inline-block';
         wrapper.appendChild(h);
         wrapper.appendChild(p);

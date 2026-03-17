@@ -11,6 +11,21 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/styles.css">
   <link rel="icon" href="/images/kscw_trio.png" type="image/png">
+  <!-- i18n: early language detection + FOUC prevention -->
+  <script>
+    (function() {
+      var lang = localStorage.getItem('lang');
+      if (!lang && navigator.language && navigator.language.startsWith('en')) lang = 'en';
+      if (lang && lang !== 'de') {
+        document.documentElement.lang = lang;
+        var style = document.createElement('style');
+        style.textContent = '.i18n-loading [data-i18n],.i18n-loading [data-i18n-placeholder]{visibility:hidden}';
+        document.head.appendChild(style);
+        document.addEventListener('DOMContentLoaded', function() { document.body.classList.add('i18n-loading'); });
+      }
+    })();
+  </script>
+  <script src="/js/i18n.js"></script>
 </head>
 <body>
 
@@ -26,8 +41,8 @@
          ═══════════════════════════════════════════════════════════ -->
     <section class="page-header">
       <div class="container">
-        <h1>Mitgliedschaft</h1>
-        <p>Werde Teil des KSC Wiedikon</p>
+        <h1 data-i18n="membershipTitle">Mitgliedschaft</h1>
+        <p data-i18n="membershipSubtitle">Werde Teil des KSC Wiedikon</p>
       </div>
     </section>
 
@@ -38,7 +53,7 @@
       <div class="container">
         <div class="section-header">
           <div>
-            <h2>Warum KSCW?</h2>
+            <h2 data-i18n="membershipWhy">Warum KSCW?</h2>
             <div class="gold-bar"></div>
           </div>
         </div>
@@ -47,8 +62,8 @@
           <div class="card">
             <div class="card-body" style="text-align: center;">
               <i data-lucide="users" style="width: 48px; height: 48px; color: var(--kscw-blue); margin-bottom: var(--space-md);"></i>
-              <h3 style="margin-bottom: var(--space-sm);">Teamgeist</h3>
-              <p style="color: var(--text-secondary);">
+              <h3 style="margin-bottom: var(--space-sm);" data-i18n="membershipTeamSpirit">Teamgeist</h3>
+              <p style="color: var(--text-secondary);" data-i18n="membershipTeamSpiritText">
                 Beim KSCW steht das Miteinander im Vordergrund. Ob Anfänger oder erfahrener Spieler — bei uns findest du dein Team.
                 Gemeinsam trainieren, gewinnen und feiern: das macht den KSCW-Spirit aus.
               </p>
@@ -58,8 +73,8 @@
           <div class="card">
             <div class="card-body" style="text-align: center;">
               <i data-lucide="trophy" style="width: 48px; height: 48px; color: var(--kscw-gold); margin-bottom: var(--space-md);"></i>
-              <h3 style="margin-bottom: var(--space-sm);">Professionelles Training</h3>
-              <p style="color: var(--text-secondary);">
+              <h3 style="margin-bottom: var(--space-sm);" data-i18n="membershipTraining">Professionelles Training</h3>
+              <p style="color: var(--text-secondary);" data-i18n="membershipTrainingText">
                 Unsere erfahrenen Trainerinnen und Trainer bieten strukturierte Trainings für alle Leistungsstufen.
                 Mehrmals pro Woche in top-ausgestatteten Hallen in Zürich-Wiedikon.
               </p>
@@ -69,8 +84,8 @@
           <div class="card">
             <div class="card-body" style="text-align: center;">
               <i data-lucide="heart" style="width: 48px; height: 48px; color: var(--kscw-blue); margin-bottom: var(--space-md);"></i>
-              <h3 style="margin-bottom: var(--space-sm);">Gemeinschaft</h3>
-              <p style="color: var(--text-secondary);">
+              <h3 style="margin-bottom: var(--space-sm);" data-i18n="membershipCommunity">Gemeinschaft</h3>
+              <p style="color: var(--text-secondary);" data-i18n="membershipCommunityText">
                 Der KSCW ist mehr als ein Sportverein. Vereinsanlässe, gemeinsame Ausflüge und eine aktive Community machen
                 uns zu einer Familie — auf und neben dem Spielfeld.
               </p>
@@ -88,7 +103,7 @@
       <div class="container">
         <div class="section-header">
           <div>
-            <h2>Mitgliederbeiträge</h2>
+            <h2 data-i18n="membershipFees">Mitgliederbeiträge</h2>
             <div class="gold-bar"></div>
           </div>
         </div>
@@ -96,15 +111,15 @@
           <table style="width: 100%; border-collapse: collapse; background: var(--surface); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm);">
             <thead>
               <tr style="background: var(--kscw-blue); color: white;">
-                <th style="padding: var(--space-md) var(--space-lg); text-align: left; font-weight: 600;">Kategorie</th>
-                <th style="padding: var(--space-md) var(--space-lg); text-align: right; font-weight: 600;">Beitrag</th>
+                <th style="padding: var(--space-md) var(--space-lg); text-align: left; font-weight: 600;" data-i18n="membershipCategory">Kategorie</th>
+                <th style="padding: var(--space-md) var(--space-lg); text-align: right; font-weight: 600;" data-i18n="membershipFee">Beitrag</th>
               </tr>
             </thead>
             <tbody>
               <tr style="border-bottom: 1px solid var(--border);">
                 <td style="padding: var(--space-md) var(--space-lg);">
-                  <strong>Aktiv (Erwachsene)</strong><br>
-                  <span style="font-size: 0.875rem; color: var(--text-secondary);">Ab 18 Jahren, Spielberechtigung inkl.</span>
+                  <strong data-i18n="membershipCategoryActive">Aktiv (Erwachsene)</strong><br>
+                  <span style="font-size: 0.875rem; color: var(--text-secondary);" data-i18n="membershipCategoryActiveDesc">Ab 18 Jahren, Spielberechtigung inkl.</span>
                 </td>
                 <td style="padding: var(--space-md) var(--space-lg); text-align: right; font-weight: 700; font-size: 1.125rem; color: var(--kscw-blue);">
                   CHF 350/Jahr
@@ -112,8 +127,8 @@
               </tr>
               <tr style="border-bottom: 1px solid var(--border);">
                 <td style="padding: var(--space-md) var(--space-lg);">
-                  <strong>Aktiv (Junioren U18)</strong><br>
-                  <span style="font-size: 0.875rem; color: var(--text-secondary);">Unter 18 Jahren, Nachwuchsförderung</span>
+                  <strong data-i18n="membershipCategoryYouth">Aktiv (Junioren U18)</strong><br>
+                  <span style="font-size: 0.875rem; color: var(--text-secondary);" data-i18n="membershipCategoryYouthDesc">Unter 18 Jahren, Nachwuchsförderung</span>
                 </td>
                 <td style="padding: var(--space-md) var(--space-lg); text-align: right; font-weight: 700; font-size: 1.125rem; color: var(--kscw-blue);">
                   CHF 200/Jahr
@@ -121,8 +136,8 @@
               </tr>
               <tr style="border-bottom: 1px solid var(--border);">
                 <td style="padding: var(--space-md) var(--space-lg);">
-                  <strong>Passiv</strong><br>
-                  <span style="font-size: 0.875rem; color: var(--text-secondary);">Unterstützung ohne Spielbetrieb</span>
+                  <strong data-i18n="membershipCategoryPassive">Passiv</strong><br>
+                  <span style="font-size: 0.875rem; color: var(--text-secondary);" data-i18n="membershipCategoryPassiveDesc">Unterstützung ohne Spielbetrieb</span>
                 </td>
                 <td style="padding: var(--space-md) var(--space-lg); text-align: right; font-weight: 700; font-size: 1.125rem; color: var(--kscw-blue);">
                   CHF 50/Jahr
@@ -130,8 +145,8 @@
               </tr>
               <tr>
                 <td style="padding: var(--space-md) var(--space-lg);">
-                  <strong>Familie</strong><br>
-                  <span style="font-size: 0.875rem; color: var(--text-secondary);">Für Familien mit mehreren aktiven Mitgliedern</span>
+                  <strong data-i18n="membershipCategoryFamily">Familie</strong><br>
+                  <span style="font-size: 0.875rem; color: var(--text-secondary);" data-i18n="membershipCategoryFamilyDesc">Für Familien mit mehreren aktiven Mitgliedern</span>
                 </td>
                 <td style="padding: var(--space-md) var(--space-lg); text-align: right; font-weight: 700; font-size: 1.125rem; color: var(--kscw-blue);">
                   CHF 600/Jahr
@@ -141,7 +156,7 @@
           </table>
           <p style="margin-top: var(--space-md); font-size: 0.875rem; color: var(--text-secondary);">
             <i data-lucide="info" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></i>
-            Alle Beiträge verstehen sich pro Saison (September bis Juni). Die Verbandslizenz (Swiss Volley / Swiss Basketball) ist im Beitrag nicht inbegriffen und wird separat verrechnet.
+            <span data-i18n="membershipFeesNote">Alle Beiträge verstehen sich pro Saison (September bis Juni). Die Verbandslizenz (Swiss Volley / Swiss Basketball) ist im Beitrag nicht inbegriffen und wird separat verrechnet.</span>
           </p>
         </div>
       </div>
@@ -154,13 +169,13 @@
       <div class="container">
         <div class="section-header">
           <div>
-            <h2>Anmeldung</h2>
+            <h2 data-i18n="membershipRegistration">Anmeldung</h2>
             <div class="gold-bar"></div>
           </div>
         </div>
         <div style="max-width: 720px;">
           <p style="font-size: 1.125rem; line-height: 1.8; color: var(--text-secondary); margin-bottom: var(--space-lg);">
-            Der Weg zum KSCW-Mitglied ist unkompliziert. In drei einfachen Schritten bist du dabei:
+            <span data-i18n="membershipRegistrationText">Der Weg zum KSCW-Mitglied ist unkompliziert. In drei einfachen Schritten bist du dabei:</span>
           </p>
 
           <div style="display: flex; flex-direction: column; gap: var(--space-md); margin-bottom: var(--space-xl);">
@@ -169,8 +184,8 @@
               <div class="card-body" style="display: flex; align-items: flex-start; gap: var(--space-md);">
                 <div style="min-width: 48px; height: 48px; background: var(--kscw-gold); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.25rem;">1</div>
                 <div>
-                  <h3 style="margin-bottom: var(--space-xs);">Probetraining besuchen</h3>
-                  <p style="color: var(--text-secondary);">Komm unverbindlich zu einem Training vorbei und lerne das Team kennen. Du kannst bis zu drei Probetrainings absolvieren, bevor du dich entscheidest. Melde dich einfach per Kontaktformular oder E-Mail an.</p>
+                  <h3 style="margin-bottom: var(--space-xs);" data-i18n="membershipStep1">Probetraining besuchen</h3>
+                  <p style="color: var(--text-secondary);" data-i18n="membershipStep1Text">Komm unverbindlich zu einem Training vorbei und lerne das Team kennen. Du kannst bis zu drei Probetrainings absolvieren, bevor du dich entscheidest. Melde dich einfach per Kontaktformular oder E-Mail an.</p>
                 </div>
               </div>
             </div>
@@ -179,8 +194,8 @@
               <div class="card-body" style="display: flex; align-items: flex-start; gap: var(--space-md);">
                 <div style="min-width: 48px; height: 48px; background: var(--kscw-blue); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.25rem;">2</div>
                 <div>
-                  <h3 style="margin-bottom: var(--space-xs);">Anmeldeformular ausfüllen</h3>
-                  <p style="color: var(--text-secondary);">Nach dem Probetraining erhältst du das Anmeldeformular vom Trainer oder der Trainerin. Fülle es aus und gib es direkt ab oder sende es per E-Mail an den Vorstand.</p>
+                  <h3 style="margin-bottom: var(--space-xs);" data-i18n="membershipStep2">Anmeldeformular ausfüllen</h3>
+                  <p style="color: var(--text-secondary);" data-i18n="membershipStep2Text">Nach dem Probetraining erhältst du das Anmeldeformular vom Trainer oder der Trainerin. Fülle es aus und gib es direkt ab oder sende es per E-Mail an den Vorstand.</p>
                 </div>
               </div>
             </div>
@@ -189,8 +204,8 @@
               <div class="card-body" style="display: flex; align-items: flex-start; gap: var(--space-md);">
                 <div style="min-width: 48px; height: 48px; background: var(--kscw-gold); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.25rem;">3</div>
                 <div>
-                  <h3 style="margin-bottom: var(--space-xs);">Bestätigung erhalten</h3>
-                  <p style="color: var(--text-secondary);">Du erhältst eine Bestätigung per E-Mail mit allen weiteren Informationen — Zugang zur Mitglieder-Plattform, Trainingszeiten und Ansprechpersonen deines Teams.</p>
+                  <h3 style="margin-bottom: var(--space-xs);" data-i18n="membershipStep3">Bestätigung erhalten</h3>
+                  <p style="color: var(--text-secondary);" data-i18n="membershipStep3Text">Du erhältst eine Bestätigung per E-Mail mit allen weiteren Informationen — Zugang zur Mitglieder-Plattform, Trainingszeiten und Ansprechpersonen deines Teams.</p>
                 </div>
               </div>
             </div>
@@ -200,7 +215,7 @@
           <div style="text-align: center;">
             <a href="/club/kontakt.html" class="btn btn-gold" style="font-size: 1.125rem; padding: var(--space-md) var(--space-xl);">
               <i data-lucide="mail" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 8px;"></i>
-              Jetzt Probetraining anfragen
+              <span data-i18n="membershipCTAButton">Jetzt Probetraining anfragen</span>
             </a>
           </div>
         </div>
@@ -212,67 +227,7 @@
   <!-- ═══════════════════════════════════════════════════════════
        FOOTER
        ═══════════════════════════════════════════════════════════ -->
-  <footer class="site-footer">
-    <div class="container">
-      <div class="footer-inner">
-        <div class="footer-grid">
-
-          <!-- Brand -->
-          <div class="footer-brand">
-            <a href="/index.html" class="nav-logo" style="margin-bottom: var(--space-sm);">
-              <img src="/images/kscw_weiss.png" alt="KSC Wiedikon" style="height: 40px;">
-              <span style="color: white;">KSC Wiedikon</span>
-            </a>
-            <p>Basketball und Volleyball seit 1982. Sportverein in Zürich-Wiedikon mit über 30 Teams in allen Altersklassen.</p>
-            <div class="footer-social">
-              <a href="https://facebook.com/kscwiedikon" aria-label="Facebook" target="_blank" rel="noopener noreferrer">
-                <i data-lucide="facebook"></i>
-              </a>
-              <a href="https://instagram.com/kscwiedikon" aria-label="Instagram" target="_blank" rel="noopener noreferrer">
-                <i data-lucide="instagram"></i>
-              </a>
-            </div>
-          </div>
-
-          <!-- Club -->
-          <div>
-            <div class="footer-heading">Club</div>
-            <div class="footer-links">
-              <a href="/club/ueber-uns.html">Über uns</a>
-              <a href="/club/vorstand.html">Vorstand</a>
-              <a href="/club/kontakt.html">Kontakt</a>
-            </div>
-          </div>
-
-          <!-- Sport -->
-          <div>
-            <div class="footer-heading">Sport</div>
-            <div class="footer-links">
-              <a href="/volleyball/index.html">Volleyball</a>
-              <a href="/basketball/index.html">Basketball</a>
-            </div>
-          </div>
-
-          <!-- Mehr -->
-          <div>
-            <div class="footer-heading">Mehr</div>
-            <div class="footer-links">
-              <a href="/weiteres/kalender.html">Kalender</a>
-              <a href="/weiteres/mitgliedschaft.html">Mitgliedschaft</a>
-              <a href="/weiteres/spielplanung.html">Spielplanung</a>
-              <a href="/weiteres/datenschutz.html">Datenschutz</a>
-              <a href="/weiteres/impressum.html">Impressum</a>
-            </div>
-          </div>
-
-        </div>
-      </div>
-      <div class="footer-bottom" style="display:flex;align-items:center;justify-content:center;gap:1.5rem;flex-wrap:wrap;">
-        <button class="theme-toggle" aria-label="Farbmodus wechseln"><i data-lucide="sun" style="width:16px;height:16px;"></i> <span class="theme-label">Light Mode</span></button>
-        <p>&copy; 2026 KSC Wiedikon. Alle Rechte vorbehalten.</p>
-      </div>
-    </div>
-  </footer>
+  <div id="site-footer"></div>
 
   <!-- ═══════════════════════════════════════════════════════════
        SCRIPTS

@@ -606,6 +606,8 @@ export function mergeVirtualSlots(
   const recurringFreedKeys = new Set<string>()
   for (const slot of filteredReal) {
     if (!slot.recurring || slot.slot_type !== 'training') continue
+    // Slots with a label but no team are external bookings — show as occupied, not available
+    if (slot.label && !slot.team) continue
     const dayIdx = slot.day_of_week
     const dateStr = weekDays[dayIdx] ? toISODate(weekDays[dayIdx]) : ''
     if (!dateStr) continue

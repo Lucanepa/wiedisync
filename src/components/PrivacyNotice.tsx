@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
-const STORAGE_KEY = 'kscw-privacy-noticed'
+const STORAGE_KEY = 'wiedisync-privacy-noticed'
 
 export default function PrivacyNotice() {
   const { t } = useTranslation('legal')

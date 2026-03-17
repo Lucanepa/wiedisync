@@ -154,7 +154,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
       await pb.collection('members').update(user.id, formData)
       logActivity('update', 'members', user.id, { first_name: firstName, last_name: lastName, email, phone, language })
       // Persist language to localStorage
-      localStorage.setItem('kscw-lang', pbLangToI18n(language))
+      localStorage.setItem('wiedisync-lang', pbLangToI18n(language))
       await pb.collection('members').authRefresh()
       onClose()
     } catch {

@@ -1,7 +1,7 @@
 import PocketBase, { AsyncAuthStore } from 'pocketbase'
 
 const AUTH_KEY = 'pocketbase_auth'
-const REMEMBER_KEY = 'kscw-remember-me'
+const REMEMBER_KEY = 'wiedisync-remember-me'
 
 function isRememberMe(): boolean {
   return localStorage.getItem(REMEMBER_KEY) !== 'false'
@@ -18,7 +18,7 @@ const store = new AsyncAuthStore({
   clear: async () => {
     localStorage.removeItem(AUTH_KEY)
     sessionStorage.removeItem(AUTH_KEY)
-    localStorage.removeItem('kscw-sql-history')
+    localStorage.removeItem('wiedisync-sql-history')
   },
   initial: getStorage().getItem(AUTH_KEY) || '',
 })

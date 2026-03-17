@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
@@ -167,14 +167,14 @@ export default function HomePage() {
               aria-label="Show all sports"
             >
               <img
-                src="/kscw_logo_vektoren.svg"
+                src="/wiedisync_logo.svg"
                 alt="KSC Wiedikon"
                 className="h-20 w-auto sm:h-24"
               />
             </button>
           ) : (
             <img
-              src="/kscw_logo_vektoren.svg"
+              src="/wiedisync_logo.svg"
               alt="KSC Wiedikon"
               className="h-20 w-auto sm:h-24"
             />
@@ -452,12 +452,12 @@ function CompactGameRow({ game, showScore, onClick }: { game: ExpandedGame; show
 
         {/* Team names — stacked, Wiedikon team bold */}
         <div className="min-w-0 flex-1">
-          <p className={`truncate text-sm text-gray-900 dark:text-gray-100 ${game.type === 'home' ? 'font-bold' : ''}`}>
+          <ShrinkOnOverflow className={`text-gray-900 dark:text-gray-100 ${game.type === 'home' ? 'font-bold' : ''}`}>
             {game.home_team}
-          </p>
-          <p className={`truncate text-sm text-gray-900 dark:text-gray-100 ${game.type === 'away' ? 'font-bold' : ''}`}>
+          </ShrinkOnOverflow>
+          <ShrinkOnOverflow className={`text-gray-900 dark:text-gray-100 ${game.type === 'away' ? 'font-bold' : ''}`}>
             {game.away_team}
-          </p>
+          </ShrinkOnOverflow>
         </div>
 
         {/* Vertical score: KSCW line colored, opponent neutral */}
@@ -531,6 +531,24 @@ function CompactTrainingRow({ training, onClick }: { training: TrainingExpanded;
         </div>
       </div>
     </div>
+  )
+}
+
+/** Text that starts at text-sm and shrinks to text-xs only when it would overflow/truncate */
+function ShrinkOnOverflow({ children, className }: { children: React.ReactNode; className?: string }) {
+  const ref = useCallback((el: HTMLParagraphElement | null) => {
+    if (!el) return
+    // Reset to default size, check overflow, shrink if needed
+    el.style.fontSize = ''
+    if (el.scrollWidth > el.clientWidth) {
+      el.style.fontSize = '0.75rem'
+    }
+  }, [children]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <p ref={ref} className={`truncate text-sm ${className ?? ''}`}>
+      {children}
+    </p>
   )
 }
 

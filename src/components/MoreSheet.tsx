@@ -260,7 +260,7 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
                     onChange={() => {
                       const next = i18n.language === 'de' ? 'en' : 'de'
                       i18n.changeLanguage(next)
-                      localStorage.setItem('kscw-lang', next)
+                      localStorage.setItem('wiedisync-lang', next)
                     }}
                     size="sm"
                     ariaLabel="Toggle language"
@@ -308,7 +308,7 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
                     onChange={() => {
                       const next = i18n.language === 'de' ? 'en' : 'de'
                       i18n.changeLanguage(next)
-                      localStorage.setItem('kscw-lang', next)
+                      localStorage.setItem('wiedisync-lang', next)
                     }}
                     size="md"
                     ariaLabel="Toggle language"

@@ -41,6 +41,13 @@ export default {
   rowsReturned: '{{count}} Zeile(n)',
   dangerousQueryTitle: 'Destruktive Abfrage bestätigen',
   dangerousQueryMessage: 'Diese Abfrage wird Daten verändern. Möchten Sie fortfahren?',
+  resultsSummary: '{{rows}} Zeilen · {{cols}} Spalten',
+  copyResults: 'Kopieren',
+  copiedResults: 'Kopiert!',
+  exportCSV: 'CSV',
+  exportJSON: 'JSON',
+  exportExcel: 'Excel',
+  exportText: 'Text',
 
   // Tabellen-Browser
   selectTable: 'Tabelle auswählen…',

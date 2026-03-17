@@ -73,7 +73,7 @@ export default function ICalModal({ open, mode, onClose, entries }: ICalModalPro
           return !teamId || selectedTeamIds.includes(teamId)
         })
       }
-      downloadICal(filtered, 'kscw-kalender.ics')
+      downloadICal(filtered, 'wiedisync-kalender.ics')
     }
     onClose()
   }

@@ -3,7 +3,7 @@ import { useAuth } from './useAuth'
 
 export type SportView = 'vb' | 'bb' | 'all'
 
-const STORAGE_KEY = 'kscw-sport'
+const STORAGE_KEY = 'wiedisync-sport'
 
 /**
  * Sport preference hook.

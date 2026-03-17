@@ -4,6 +4,9 @@ import pb from '../../../pb'
 import { Button } from '@/components/ui/button'
 import ResultsTable from './ResultsTable'
 import ConfirmDialog from '@/components/ConfirmDialog'
+import CodeMirrorEditor from './CodeMirrorEditor'
+import ExportToolbar from './ExportToolbar'
+import type { CollectionInfo } from './TableBrowser'
 
 interface SqlResult {
   success: boolean
@@ -14,7 +17,11 @@ interface SqlResult {
   error?: string
 }
 
-const HISTORY_KEY = 'kscw-sql-history'
+interface SqlEditorProps {
+  collections: CollectionInfo[]
+}
+
+const HISTORY_KEY = 'wiedisync-sql-history'
 const MAX_HISTORY = 20
 
 function loadHistory(): string[] {
@@ -25,7 +32,7 @@ function loadHistory(): string[] {
   }
 }
 
-export default function SqlEditor() {
+export default function SqlEditor({ collections }: SqlEditorProps) {
   const { t } = useTranslation('admin')
   const [query, setQuery] = useState('')
   const [result, setResult] = useState<SqlResult | null>(null)
@@ -71,32 +78,26 @@ export default function SqlEditor() {
     }
   }, [query, history])
 
-  const handleExecute = () => {
+  const handleExecute = useCallback(() => {
     if (isDangerous) {
       setShowConfirm(true)
     } else {
       executeQuery()
     }
-  }
+  }, [isDangerous, executeQuery])
+
+  const hasResults = result?.success && result.columns.length > 0 && !result.message
 
   return (
     <div className="space-y-4">
-      {/* SQL Input */}
-      <div>
-        <textarea
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => {
-            if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-              e.preventDefault()
-              handleExecute()
-            }
-          }}
-          placeholder={t('sqlPlaceholder')}
-          rows={8}
-          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 font-mono text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
-        />
-      </div>
+      {/* CodeMirror SQL Editor */}
+      <CodeMirrorEditor
+        value={query}
+        onChange={setQuery}
+        onExecute={handleExecute}
+        collections={collections}
+        placeholder={t('sqlPlaceholder')}
+      />
 
       {/* Actions */}
       <div className="flex flex-wrap items-center gap-2">
@@ -163,9 +164,12 @@ export default function SqlEditor() {
         </div>
       )}
 
-      {/* Results table */}
-      {result && result.success && result.columns.length > 0 && !result.message && (
-        <ResultsTable columns={result.columns} rows={result.rows} />
+      {/* Export toolbar + Results table */}
+      {hasResults && (
+        <>
+          <ExportToolbar columns={result.columns} rows={result.rows} />
+          <ResultsTable columns={result.columns} rows={result.rows} />
+        </>
       )}
 
       {/* Dangerous query confirmation */}

@@ -64,7 +64,7 @@ export function generateICal(entries: CalendarEntry[]): string {
  */
 export function downloadICal(
   entries: CalendarEntry[],
-  filename: string = 'kscw.ics',
+  filename: string = 'wiedisync.ics',
 ): void {
   const content = generateICal(entries)
   const blob = new Blob([content], { type: 'text/calendar;charset=utf-8' })

@@ -57,13 +57,16 @@ export function useParticipation(
   const participation = participations[0] ?? null
 
   // Filter absences to those that actually affect this activity type
-  const hasAbsence = absencesRaw.some((a) => absenceAffectsActivity(a, activityType))
+  const matchingAbsence = absencesRaw.find((a) => absenceAffectsActivity(a, activityType))
+  const hasAbsence = !!matchingAbsence
 
   // Auto-decline when absent and no participation exists yet (or existing is not declined)
   const autoDeclineRef = useRef(false)
   useEffect(() => {
-    if (!hasAbsence || !user || !activityId) return
+    if (!hasAbsence || !matchingAbsence || !user || !activityId) return
     if (autoDeclineRef.current) return // already attempted
+
+    const absenceNote = matchingAbsence.reason ?? ''
 
     // If no participation record, or existing is not declined → auto-decline
     if (!participation) {
@@ -73,17 +76,17 @@ export function useParticipation(
         activity_type: activityType,
         activity_id: activityId,
         status: 'declined',
-        note: '',
+        note: absenceNote,
         guest_count: 0,
         is_staff: isStaff ?? false,
         ...(sessionId ? { session_id: sessionId } : {}),
       }).then(() => refetch()).catch(() => {})
     } else if (participation.status !== 'declined') {
       autoDeclineRef.current = true
-      update(participation.id, { status: 'declined', guest_count: 0 })
+      update(participation.id, { status: 'declined', note: absenceNote, guest_count: 0 })
         .then(() => refetch()).catch(() => {})
     }
-  }, [hasAbsence, user, activityId, participation, activityType, isStaff, sessionId, create, update, refetch])
+  }, [hasAbsence, matchingAbsence, user, activityId, participation, activityType, isStaff, sessionId, create, update, refetch])
 
   // Reset auto-decline flag when activity changes
   useEffect(() => {

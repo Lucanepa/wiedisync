@@ -20,6 +20,7 @@ import participation from './locales/en/participation'
 import notifications from './locales/en/notifications'
 import gameScheduling from './locales/en/gameScheduling'
 import scorerAssign from './locales/en/scorerAssign'
+import join from './locales/en/join'
 
 import deCommon from './locales/de/common'
 import deNav from './locales/de/nav'
@@ -40,6 +41,7 @@ import deParticipation from './locales/de/participation'
 import deNotifications from './locales/de/notifications'
 import deGameScheduling from './locales/de/gameScheduling'
 import deScorerAssign from './locales/de/scorerAssign'
+import deJoin from './locales/de/join'
 
 import frCommon from './locales/fr/common'
 import frNav from './locales/fr/nav'
@@ -139,6 +141,7 @@ i18n.use(initReactI18next).init({
     'notifications',
     'gameScheduling',
     'scorerAssign',
+    'join',
   ],
   defaultNS: 'common',
   resources: {
@@ -162,6 +165,7 @@ i18n.use(initReactI18next).init({
       notifications,
       gameScheduling,
       scorerAssign,
+      join,
     },
     de: {
       common: deCommon,
@@ -183,6 +187,7 @@ i18n.use(initReactI18next).init({
       notifications: deNotifications,
       gameScheduling: deGameScheduling,
       scorerAssign: deScorerAssign,
+      join: deJoin,
     },
     fr: {
       common: frCommon,

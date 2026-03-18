@@ -88,6 +88,7 @@ export default {
   available: 'Disponible',
   yes: 'Oui',
   no: 'Non',
+  saved: 'Enregistré',
   errorSaving: 'Erreur lors de l\'enregistrement',
   errorLoading: 'Erreur de chargement :',
   overlapDetected: 'Chevauchement detecte :',

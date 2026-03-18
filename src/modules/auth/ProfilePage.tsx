@@ -216,7 +216,7 @@ export default function ProfilePage() {
             {user.licences?.length > 0 ? (
               <div className="mt-1 flex flex-wrap gap-1.5">
                 {user.licences.map((l) => (
-                  <span key={l} className="inline-flex rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-medium text-brand-700 dark:bg-brand-900/30 dark:text-brand-300">
+                  <span key={l} className="inline-flex rounded-full bg-gold-100 px-2.5 py-0.5 text-xs font-medium text-gold-900 dark:bg-gold-400/20 dark:text-gold-300">
                     {tt(LICENCE_LABELS[l])}
                   </span>
                 ))}

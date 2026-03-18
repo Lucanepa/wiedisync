@@ -106,12 +106,15 @@ export default function DatePicker({
         <PopoverContent className="w-auto p-0" align="start">
           <Calendar
             mode="single"
+            captionLayout="dropdown"
             selected={selectedDate}
             onSelect={handleSelect}
             month={month}
             onMonthChange={setMonth}
             locale={locale}
             weekStartsOn={1}
+            startMonth={new Date(1900, 0)}
+            endMonth={new Date(Math.max(2035, new Date().getFullYear() + 10), 11)}
             disabled={(date) => {
               if (minDate && toDateKey(date) < toDateKey(minDate)) return true
               if (maxDate && toDateKey(date) > toDateKey(maxDate)) return true

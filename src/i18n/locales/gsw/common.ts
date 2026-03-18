@@ -88,6 +88,7 @@ export default {
   available: 'Verfüägbar',
   yes: 'Jo',
   no: 'Nei',
+  saved: 'Gspeicheret',
   errorSaving: 'Bim Speichere isch öppis schief gange',
   errorLoading: 'Bim Lade isch öppis schief gange:',
   overlapDetected: 'Überschnidig gfunde:',

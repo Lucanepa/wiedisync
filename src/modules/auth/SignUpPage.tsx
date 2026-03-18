@@ -318,7 +318,7 @@ export default function SignUpPage() {
                       onClick={() => { setSelectedSport(sport); setSelectedTeam('') }}
                       className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
                         selectedSport === sport
-                          ? 'border-brand-500 bg-brand-50 text-brand-700 dark:border-brand-400 dark:bg-brand-900/30 dark:text-brand-300'
+                          ? 'border-gold-400 bg-gold-100 text-gold-900 dark:border-gold-400/50 dark:bg-gold-400/20 dark:text-gold-300'
                           : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
                       }`}
                     >

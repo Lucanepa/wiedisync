@@ -88,6 +88,7 @@ export default {
   available: 'Available',
   yes: 'Yes',
   no: 'No',
+  saved: 'Saved',
   errorSaving: 'Error saving',
   errorLoading: 'Error loading:',
   overlapDetected: 'Overlap detected:',

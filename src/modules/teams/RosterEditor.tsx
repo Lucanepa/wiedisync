@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
 import { useParams, Link, Navigate } from 'react-router-dom'
 import { User } from 'lucide-react'
 import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
-import { coercePositions, getPositionI18nKey, getSelectablePositions } from '../../utils/memberPositions'
+import { coercePositions, getPositionI18nKey, getSelectablePositions, isNonPlayingStaff } from '../../utils/memberPositions'
 import { useAuth } from '../../hooks/useAuth'
 import { useTeamMembers } from '../../hooks/useTeamMembers'
 import { useMutation } from '../../hooks/useMutation'
@@ -112,16 +113,24 @@ export default function RosterEditor() {
 
   async function handleAdd(memberId: string) {
     if (!teamId) return
-    await create({ member: memberId, team: teamId, season })
-    setSearch('')
-    refetch()
+    try {
+      await create({ member: memberId, team: teamId, season })
+      setSearch('')
+      refetch()
+    } catch {
+      toast.error(t('common:errorSaving'))
+    }
   }
 
   async function handleRemove() {
     if (!removingId) return
-    await remove(removingId)
-    setRemovingId(null)
-    refetch()
+    try {
+      await remove(removingId)
+      setRemovingId(null)
+      refetch()
+    } catch {
+      toast.error(t('common:errorSaving'))
+    }
   }
 
   const toggleRole = useCallback(async (memberId: string, role: LeadershipRole) => {
@@ -135,9 +144,9 @@ export default function RosterEditor() {
       logActivity('update', 'teams', team.id, { [role]: next })
       setTeam((prev) => prev ? { ...prev, [role]: next } : prev)
     } catch {
-      // ignore
+      toast.error(t('common:errorSaving'))
     }
-  }, [team])
+  }, [team, t])
 
   const licenceOptions = team?.sport === 'basketball' ? BB_LICENCES : VB_LICENCES
 
@@ -153,9 +162,9 @@ export default function RosterEditor() {
         ;(mt.expand.member as Record<string, unknown>).licences = next
       }
     } catch {
-      // ignore
+      toast.error(t('common:errorSaving'))
     }
-  }, [members])
+  }, [members, t])
 
   async function saveNumber(memberId: string) {
     const num = numberValue ? parseInt(numberValue, 10) : 0
@@ -167,7 +176,7 @@ export default function RosterEditor() {
         ;(mt.expand.member as Record<string, unknown>).number = num
       }
     } catch {
-      // ignore
+      toast.error(t('common:errorSaving'))
     }
     setEditingNumber(null)
   }
@@ -181,7 +190,7 @@ export default function RosterEditor() {
         ;(mt.expand.member as Record<string, unknown>).position = positions
       }
     } catch {
-      // ignore
+      toast.error(t('common:errorSaving'))
     }
   }
 
@@ -189,7 +198,7 @@ export default function RosterEditor() {
     const file = e.target.files?.[0]
     if (!file || !team) return
     if (file.size > 10 * 1024 * 1024) {
-      alert(t('pictureTooLarge'))
+      toast.error(t('pictureTooLarge'))
       if (fileInputRef.current) fileInputRef.current.value = ''
       return
     }
@@ -200,8 +209,9 @@ export default function RosterEditor() {
       const updated = await pb.collection('teams').update<Team>(team.id, formData)
       logActivity('update', 'teams', team.id, { team_picture: updated.team_picture })
       setTeam((prev) => prev ? { ...prev, team_picture: updated.team_picture } : prev)
+      toast.success(t('common:saved'))
     } catch {
-      // ignore
+      toast.error(t('errorUploadingPicture'))
     }
     setUploadingPicture(false)
     if (fileInputRef.current) fileInputRef.current.value = ''
@@ -214,8 +224,9 @@ export default function RosterEditor() {
       await pb.collection('teams').update(team.id, { team_picture: null })
       logActivity('update', 'teams', team.id, { team_picture: null })
       setTeam((prev) => prev ? { ...prev, team_picture: '' } : prev)
+      toast.success(t('common:saved'))
     } catch {
-      // ignore
+      toast.error(t('common:errorSaving'))
     }
     setUploadingPicture(false)
   }
@@ -298,7 +309,8 @@ export default function RosterEditor() {
               const initials = `${member.first_name?.[0] ?? ''}${member.last_name?.[0] ?? ''}`.toUpperCase()
               const roles = team ? getMemberRoles(member.id, team) : []
               const memberPositions = coercePositions(member.position)
-              const selectablePositions = getSelectablePositions(team?.sport, memberPositions)
+              const nonPlaying = isNonPlayingStaff(member.id, team, memberPositions)
+              const selectablePositions = nonPlaying ? ['coach' as const] : getSelectablePositions(team?.sport, memberPositions)
               return (
                 <div key={mt.id} className="flex items-center gap-3 rounded-lg border bg-white dark:bg-gray-800 dark:border-gray-700 px-4 py-2.5">
                   {member.photo ? (
@@ -317,8 +329,10 @@ export default function RosterEditor() {
                     {displayName(member)}
                   </span>
 
-                  {/* Editable number */}
-                  {editingNumber === member.id ? (
+                  {/* Editable number — hidden for non-playing staff */}
+                  {nonPlaying ? (
+                    <span className="flex h-7 w-10 items-center justify-center text-sm text-gray-400 dark:text-gray-500">—</span>
+                  ) : editingNumber === member.id ? (
                     <input
                       type="number"
                       value={numberValue}
@@ -415,7 +429,7 @@ export default function RosterEditor() {
                         await pb.collection('member_teams').update(mt.id, { guest_level: nextLevel })
                         logActivity('update', 'member_teams', mt.id, { guest_level: nextLevel })
                         ;(mt as Record<string, unknown>).guest_level = nextLevel
-                      } catch { /* ignore */ }
+                      } catch { toast.error(t('common:errorSaving')) }
                     }}
                     title={(() => {
                       const level = mt.guest_level ?? 0

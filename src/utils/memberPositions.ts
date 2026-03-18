@@ -50,6 +50,22 @@ export function getSelectablePositions(sport?: Team['sport'], current?: unknown)
   return base
 }
 
+/**
+ * A member is "non-playing staff" if they are in team.coach or team.team_responsible
+ * AND have no player positions (only 'coach' / 'other' or empty).
+ */
+export function isNonPlayingStaff(
+  memberId: string,
+  team: { coach?: string[]; team_responsible?: string[] } | null | undefined,
+  positions: MemberPosition[],
+): boolean {
+  if (!team) return false
+  const isStaff = team.coach?.includes(memberId) || team.team_responsible?.includes(memberId)
+  if (!isStaff) return false
+  const playerPositions = positions.filter((p) => p !== 'coach' && p !== 'other')
+  return playerPositions.length === 0
+}
+
 export function isPositionValidForSport(position: string | null | undefined, sport?: Team['sport']): boolean {
   if (!position) return true
   return getPositionsForSport(sport).includes(position as MemberPosition)

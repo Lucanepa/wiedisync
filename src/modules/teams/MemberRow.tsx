@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
-import { coercePositions, getPositionI18nKey, getSelectablePositions } from '../../utils/memberPositions'
+import { coercePositions, getPositionI18nKey, getSelectablePositions, isNonPlayingStaff } from '../../utils/memberPositions'
 import StatusBadge from '../../components/StatusBadge'
 import { getFileUrl } from '../../utils/pbFile'
 import ImageLightbox from '../../components/ImageLightbox'
@@ -54,7 +54,8 @@ export default function MemberRow({ memberTeam, teamId: _teamId, teamSlug, team,
 
   const displayName = [member.last_name, member.first_name].filter(Boolean).join(' ') || member.name || '—'
   const memberPositions = coercePositions(member.position)
-  const selectablePositions = getSelectablePositions(team?.sport, memberPositions)
+  const nonPlaying = isNonPlayingStaff(member.id, team, memberPositions)
+  const selectablePositions = nonPlaying ? ['coach' as const] : getSelectablePositions(team?.sport, memberPositions)
   const initials = `${member.first_name?.[0] ?? ''}${member.last_name?.[0] ?? ''}`.toUpperCase()
   const role = getMemberRole(member.id, team)
 
@@ -156,9 +157,11 @@ export default function MemberRow({ memberTeam, teamId: _teamId, teamSlug, team,
         </div>
       </td>
 
-      {/* Number — editable by coach */}
+      {/* Number — editable by coach, hidden for non-playing staff */}
       <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-        {canEdit && editingField === 'number' ? (
+        {nonPlaying ? (
+          <span>—</span>
+        ) : canEdit && editingField === 'number' ? (
           <input
             type="number"
             value={editValue}

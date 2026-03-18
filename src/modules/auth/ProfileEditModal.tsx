@@ -396,7 +396,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
                   }}
                   className={`min-h-[44px] rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                     active
-                      ? 'bg-brand-50 text-brand-700 ring-1 ring-brand-500/30 dark:bg-brand-900/30 dark:text-brand-300 dark:ring-brand-400/30'
+                      ? 'bg-gold-100 text-gold-900 ring-1 ring-gold-400/50 dark:bg-gold-400/20 dark:text-gold-300 dark:ring-gold-400/40'
                       : 'bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600'
                   }`}
                 >

@@ -88,6 +88,7 @@ export default {
   available: 'Disponibile',
   yes: 'Sì',
   no: 'No',
+  saved: 'Salvato',
   errorSaving: 'Errore durante il salvataggio',
   errorLoading: 'Errore durante il caricamento:',
   overlapDetected: 'Sovrapposizione rilevata:',

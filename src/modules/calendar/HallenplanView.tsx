@@ -308,7 +308,7 @@ export default function HallenplanView() {
               onClick={() => setSelectedHallIds([])}
               className={`rounded-full border px-2 py-0.5 text-[10px] font-medium transition-colors ${
                 selectedHallIds.length === 0
-                  ? 'border-brand-300 bg-brand-50 text-brand-700 dark:border-brand-600 dark:bg-brand-900/30 dark:text-brand-300'
+                  ? 'border-gold-400 bg-gold-100 text-gold-900 dark:border-gold-400/50 dark:bg-gold-400/20 dark:text-gold-300'
                   : 'border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
               }`}
             >
@@ -320,7 +320,7 @@ export default function HallenplanView() {
                 onClick={() => toggleHall(hall.id)}
                 className={`rounded-full border px-2 py-0.5 text-[10px] font-medium transition-colors ${
                   selectedHallIds.includes(hall.id)
-                    ? 'border-brand-300 bg-brand-50 text-brand-700 dark:border-brand-600 dark:bg-brand-900/30 dark:text-brand-300'
+                    ? 'border-gold-400 bg-gold-100 text-gold-900 dark:border-gold-400/50 dark:bg-gold-400/20 dark:text-gold-300'
                     : 'border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
                 }`}
               >

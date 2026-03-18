@@ -154,7 +154,7 @@ export default function Layout() {
       {/* Backdrop overlay when sidebar is expanded — fades in/out with sidebar */}
       {isDesktop && (
         <div
-          className={`fixed inset-0 z-30 bg-black/30 transition-opacity duration-200 ${
+          className={`fixed inset-0 z-30 bg-black/30 transition-opacity duration-300 ${
             sidebarExpanded ? 'opacity-100' : 'pointer-events-none opacity-0'
           }`}
           onClick={() => setSidebarView('closed')}
@@ -172,12 +172,14 @@ export default function Layout() {
           >
             <button
               onClick={() => setSidebarView('nav')}
-              className="rounded-lg p-1.5 transition-colors hover:bg-gray-100 dark:hover:bg-brand-800"
+              className="rounded-lg p-1.5 transition-colors hover:bg-gray-100 dark:hover:bg-brand-800 [perspective:600px]"
             >
               <img
                 src={theme === 'light' ? '/wiedisync_blau.png' : '/wiedisync_weiss.png'}
                 alt="Wiedisync"
-                className="h-8 w-auto"
+                className={`h-8 w-auto transition-transform duration-500 ease-out ${
+                  sidebarExpanded ? '[transform:rotateY(360deg)]' : ''
+                }`}
               />
             </button>
             {user && isApproved && (
@@ -191,7 +193,7 @@ export default function Layout() {
 
           {/* Expanded sidebar — overlays on top */}
           <aside
-            className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col shadow-lg transition-transform duration-200 ease-out ${
+            className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col shadow-lg transition-transform duration-300 ease-out ${
               sidebarExpanded ? 'translate-x-0' : '-translate-x-full'
             } ${theme === 'light' ? 'bg-white' : 'bg-brand-900 dark:bg-brand-950'}`}
           >
@@ -212,12 +214,14 @@ export default function Layout() {
             }`}>
               <button
                 onClick={() => setSidebarView('closed')}
-                className="rounded-lg p-1.5 transition-colors hover:bg-gray-100 dark:hover:bg-brand-800"
+                className="rounded-lg p-1.5 transition-colors hover:bg-gray-100 dark:hover:bg-brand-800 [perspective:600px]"
               >
                 <img
                   src={theme === 'light' ? '/wiedisync_blau.png' : '/wiedisync_weiss.png'}
                   alt="Wiedisync"
-                  className="h-8 w-auto"
+                  className={`h-8 w-auto transition-transform duration-500 ease-out ${
+                    sidebarExpanded ? '' : '[transform:rotateY(360deg)]'
+                  }`}
                 />
               </button>
             </div>

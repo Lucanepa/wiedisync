@@ -51,6 +51,7 @@ export default {
   removePicture: 'Bild entfernen',
   pictureHint: 'JPG oder PNG, max. 10 MB',
   pictureTooLarge: 'Datei ist zu gross (max. 10 MB)',
+  errorUploadingPicture: 'Fehler beim Hochladen des Bildes',
 
   // Spielerprofil
   statistics: 'Statistiken',

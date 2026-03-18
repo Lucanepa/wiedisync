@@ -65,7 +65,7 @@ export default function FilterChips({
           className={cn(
             sizeClasses,
             allSelected
-              ? 'border-brand-300 bg-brand-50 text-brand-700 dark:border-brand-600 dark:bg-brand-900/30 dark:text-brand-300'
+              ? 'border-gold-400 bg-gold-100 text-gold-900 dark:border-gold-400/50 dark:bg-gold-400/20 dark:text-gold-300'
               : noneSelected
                 ? 'border-red-200 bg-red-50 text-red-600 dark:border-red-700 dark:bg-red-900/30 dark:text-red-400'
                 : unselectedClasses,

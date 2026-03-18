@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { Toaster } from 'sonner'
 import { AuthProvider } from './hooks/useAuth'
 import { ThemeProvider } from './hooks/useTheme'
 import { AdminModeProvider } from './hooks/useAdminMode'
@@ -76,6 +77,7 @@ export default function App() {
           </Route>
         </Routes>
       </BrowserRouter>
+      <Toaster richColors position="top-center" />
       </AdminModeProvider>
     </AuthProvider>
     </ThemeProvider>

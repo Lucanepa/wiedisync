@@ -15,7 +15,7 @@ export function useScorerDelegations() {
     isLoading,
     refetch,
   } = usePB<ScorerDelegation>('scorer_delegations', {
-    filter: 'status = "pending"',
+    filter: userId ? `status = "pending" && (from_member = "${userId}" || to_member = "${userId}")` : '',
     sort: '-created',
     expand: 'game,from_member,to_member,from_team,to_team',
     perPage: 50,

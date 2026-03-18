@@ -13,15 +13,6 @@ import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
 import type { LicenceType, MemberPosition } from '../../types'
 
-const LICENCE_LABELS: Record<LicenceType, string> = {
-  scorer_vb: 'licenceScorer',
-  referee_vb: 'licenceReferee',
-  otr1_bb: 'licenceOTR1',
-  otr2_bb: 'licenceOTR2',
-  otn_bb: 'licenceOTN',
-  referee_bb: 'licenceRefereeBB',
-}
-
 const VB_LICENCES: { key: LicenceType; i18n: string }[] = [
   { key: 'scorer_vb', i18n: 'licenceScorer' },
   { key: 'referee_vb', i18n: 'licenceReferee' },

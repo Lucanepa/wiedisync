@@ -12,10 +12,12 @@ import { useMutation } from '../../hooks/useMutation'
 import { usePB } from '../../hooks/usePB'
 import TeamChip from '../../components/TeamChip'
 import ConfirmDialog from '@/components/ConfirmDialog'
+import InviteExternalUserModal from './InviteExternalUserModal'
 import EmptyState from '../../components/EmptyState'
 import { getFileUrl } from '../../utils/pbFile'
 import { getCurrentSeason } from '../../utils/dateHelpers'
 import type { Team, Member, MemberPosition, MemberTeam, LicenceType } from '../../types'
+import { Button } from '../../components/ui/button'
 
 type LeadershipRole = 'coach' | 'captain' | 'team_responsible'
 const ROLES: LeadershipRole[] = ['coach', 'captain', 'team_responsible']
@@ -76,6 +78,7 @@ export default function RosterEditor() {
   const [numberValue, setNumberValue] = useState('')
   const [editingPosition, setEditingPosition] = useState<string | null>(null)
   const [uploadingPicture, setUploadingPicture] = useState(false)
+  const [inviteModalOpen, setInviteModalOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const teamId = team?.id
   const { members, isLoading, refetch } = useTeamMembers(teamId, season)
@@ -130,6 +133,18 @@ export default function RosterEditor() {
       refetch()
     } catch {
       toast.error(t('common:errorSaving'))
+    }
+  }
+
+  const handleExtendShell = async (memberId: string) => {
+    try {
+      await pb.send('/api/team-invites/extend', {
+        method: 'POST',
+        body: { member_id: memberId },
+      })
+      refetch()
+    } catch (err: any) {
+      console.error('Failed to extend shell account:', err)
     }
   }
 
@@ -486,7 +501,16 @@ export default function RosterEditor() {
 
       {/* Add member */}
       <div className="mt-8">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('addPlayer')}</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('addPlayer')}</h2>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setInviteModalOpen(true)}
+          >
+            {t('addExternalUser')}
+          </Button>
+        </div>
         <input
           type="text"
           value={search}
@@ -537,6 +561,13 @@ export default function RosterEditor() {
         })}
         confirmLabel={t('common:remove')}
         danger
+      />
+
+      <InviteExternalUserModal
+        open={inviteModalOpen}
+        onClose={() => setInviteModalOpen(false)}
+        teamId={team?.id ?? ''}
+        teamName={team?.full_name ?? team?.name ?? ''}
       />
     </div>
   )

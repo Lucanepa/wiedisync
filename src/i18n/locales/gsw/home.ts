@@ -1,0 +1,16 @@
+export default {
+  subtitle: 'Volley- und Basketballclub Züri',
+  events: 'Events',
+  allEvents: 'Alli Events',
+  noEvents: 'Käni Events am Start.',
+  nextGames: 'Nöchschti Spiel',
+  allGames: 'Alli Spiel',
+  noUpcoming: 'Käni Spiel am Start.',
+  latestResults: 'Letscht Resultat',
+  allResults: 'Alli Resultat',
+  noResults: 'No käni Resultat.',
+  nextTrainings: 'Nöchschti Trainings',
+  allTrainings: 'Alli Trainings',
+  noTrainings: 'Käni Trainings am Start.',
+  myTeams: 'Mini Teams',
+} as const

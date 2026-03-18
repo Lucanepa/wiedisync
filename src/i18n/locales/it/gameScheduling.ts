@@ -1,0 +1,123 @@
+export default {
+  // Nav & page titles
+  title: 'Pianificazione partite',
+  adminTitle: 'Pianificazione partite (Admin)',
+  setupTitle: 'Configurazione stagione',
+  dashboardTitle: 'Dashboard',
+
+  // Season config
+  season: 'Stagione',
+  seasonStatus: 'Stato',
+  statusSetup: 'Configurazione',
+  statusOpen: 'Aperto',
+  statusClosed: 'Chiuso',
+  createSeason: 'Crea nuova stagione',
+  openForBooking: 'Apri per prenotazione',
+  closeBooking: 'Chiudi prenotazione',
+
+  // Spielsamstage
+  spielsamstage: 'Sabati di gioco',
+  addSpielssamstag: 'Aggiungi sabato di gioco',
+  removeSpielssamstag: 'Rimuovi',
+  timeSlot: 'Fascia oraria',
+  hall: 'Palestra',
+
+  // Slot generation
+  generateSlots: 'Genera fasce di gioco',
+  generatingSlots: 'Generazione fasce di gioco...',
+  slotsGenerated: '{{count}} fasce di gioco generate',
+  slotSource: 'Origine',
+  sourceHallSlot: 'Piano palestra',
+  sourceSpielsamstag: 'Sabato di gioco',
+  sourceSpielHalle: 'Palestra di gioco',
+  sourceManual: 'Manuale',
+  teamSlotConfig: 'Configurazione squadra',
+  latestSlot: 'Fascia serale (ultima)',
+  spielsamstagMode: 'Modalità sabato di gioco',
+
+  // Slot status
+  available: 'Disponibile',
+  booked: 'Prenotato',
+  blocked: 'Bloccato',
+
+  // Admin dashboard
+  allTeams: 'Tutte le squadre',
+  homeBookings: 'Prenotazioni casa',
+  awayProposals: 'Proposte trasferta',
+  noBookingsYet: 'Nessuna prenotazione',
+  confirmProposal: 'Conferma proposta',
+  rejectProposal: 'Rifiuta',
+  proposal: 'Proposta',
+  proposalNumber: 'Proposta {{number}}',
+  confirmed: 'Confermato',
+  pending: 'In attesa',
+  rejected: 'Rifiutato',
+  opponent: 'Avversario',
+  contactEmail: 'Email di contatto',
+  adminNotes: 'Note admin',
+  override: 'Sovrascrittura',
+  sendSummary: 'Invia riepilogo',
+
+  // Excel
+  excelImport: 'Importa Excel',
+  excelExport: 'Esporta Excel',
+  importGames: 'Importa partite',
+  exportSchedule: 'Esporta programma',
+  uploadFile: 'Carica file',
+  preview: 'Anteprima',
+  importSuccess: '{{count}} partite importate',
+  downloadExcel: 'Scarica Excel',
+
+  // Public opponent flow
+  publicTitle: 'Pianificazione partite KSCW',
+  publicSubtitle: 'Pianifica le tue partite con il KSCW',
+  selectGender: 'Genere',
+  genderMen: 'Uomini',
+  genderWomen: 'Donne',
+  selectLeague: 'Lega',
+  matchingTeam: 'Il tuo avversario',
+  clubName: 'Nome del club',
+  contactName: 'Persona di contatto',
+  contactEmailLabel: 'Email',
+  register: 'Continua',
+  registering: 'Registrazione...',
+
+  // Opponent flow - home game
+  homeGameTitle: 'Partita in casa KSCW',
+  homeGameDesc: 'Scegli una fascia per la partita nella nostra palestra',
+  pickSlot: 'Scegli fascia',
+  confirmSlot: 'Conferma fascia',
+  slotBooked: 'Fascia prenotata!',
+  noSlotsAvailable: 'Nessuna fascia disponibile',
+
+  // Opponent flow - away game
+  awayGameTitle: 'Partita in trasferta',
+  awayGameDesc: 'Proponi 3 fasce per la partita nella tua palestra',
+  proposalDate: 'Data e ora',
+  proposalPlace: 'Palestra / Indirizzo',
+  submitProposals: 'Invia proposte',
+  submitting: 'Invio in corso...',
+  proposalsSubmitted: 'Proposte inviate!',
+  awaitingConfirmation: 'In attesa di conferma',
+
+  // Confirmation
+  confirmationTitle: 'Grazie!',
+  confirmationMessage: 'Riceverai un\'email di conferma.',
+  bookingStatus: 'Stato prenotazione',
+
+  // Errors & validation
+  slotUnavailable: 'Questa fascia non è più disponibile.',
+  conflictSameDay: 'C\'è già una partita nello stesso giorno.',
+  conflictGapRule: 'Troppo vicino a un\'altra partita (min. 1 giorno di distanza).',
+  conflictClosure: 'La palestra è chiusa in questa data.',
+  conflictDoubleBooking: 'Questa fascia è già occupata.',
+  conflictCrossTeam: 'I giocatori di {{teams}} hanno un\'altra partita in questa data.',
+  invalidEmail: 'Inserisci un indirizzo email valido.',
+  required: 'Questo campo è obbligatorio.',
+  turnstileError: 'Conferma di non essere un robot.',
+  seasonNotOpen: 'La pianificazione partite non è attualmente aperta.',
+
+  // Email
+  emailBookingConfirmSubject: 'Fascia di gioco confermata – KSCW',
+  emailNewBookingSubject: 'Nuova prenotazione – {{opponent}}',
+}

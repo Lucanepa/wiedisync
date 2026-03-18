@@ -38,6 +38,16 @@ export default function TrainingsPage() {
       setAutoSelected(true)
     }
   }, [memberTeamIds, autoSelected])
+
+  // Non-admins: always scope to own teams (never show all teams' trainings)
+  const effectiveFilter = useMemo(() => {
+    if (selectedTeam) return `team="${selectedTeam}"`
+    if (!effectiveIsAdmin && memberTeamIds.length > 0) {
+      return memberTeamIds.map(id => `team="${id}"`).join(' || ')
+    }
+    return ''
+  }, [selectedTeam, effectiveIsAdmin, memberTeamIds])
+
   const [activeTab, setActiveTab] = useState<'trainings' | 'dashboard'>('trainings')
   const [formOpen, setFormOpen] = useState(false)
   const [editingTraining, setEditingTraining] = useState<Training | null>(null)
@@ -49,7 +59,7 @@ export default function TrainingsPage() {
   const recurringSelectionMade = useRef(false)
 
   const { data: trainings, isLoading, refetch } = usePB<TrainingExpanded>('trainings', {
-    filter: selectedTeam ? `team="${selectedTeam}"` : '',
+    filter: effectiveFilter,
     sort: 'date',
     expand: 'team,hall,coach',
     perPage: 50,

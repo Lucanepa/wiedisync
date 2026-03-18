@@ -5,10 +5,11 @@ import { useAuth } from '../hooks/useAuth'
 import { useTheme } from '../hooks/useTheme'
 import TeamChip from './TeamChip'
 import SwitchToggle from '@/components/SwitchToggle'
+import LanguageDropdown from '@/components/LanguageDropdown'
 import { getFileUrl } from '../utils/pbFile'
 import AdminToggle from './AdminToggle'
 import { useAdminMode } from '../hooks/useAdminMode'
-import { Bell, UserX, PenSquare, CalendarDays, ClipboardList, Building2, CalendarClock, Database, RefreshCcw, LogIn, User } from 'lucide-react'
+import { Bell, UserX, PenSquare, CalendarDays, ClipboardList, Building2, CalendarClock, Database, RefreshCcw, LogIn, User, Settings, ChevronDown } from 'lucide-react'
 import type { MemberTeam, Team } from '../types'
 
 type ExpandedMemberTeam = MemberTeam & { expand?: { team?: Team } }
@@ -39,6 +40,62 @@ const adminItems = [
   { to: '/admin/terminplanung', labelKey: 'terminplanung', icon: <CalendarClock className={iconClass} /> },
 ]
 
+function OptionsAccordion({ theme, toggleTheme }: { theme: string; toggleTheme: () => void }) {
+  const [open, setOpen] = useState(false)
+  const { t } = useTranslation('nav')
+
+  return (
+    <div className="px-4 py-2">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex w-full min-h-[44px] items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+      >
+        <Settings className="h-5 w-5" />
+        <span className="flex-1 text-left">{t('options', 'Options')}</span>
+        <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+      </button>
+      <div
+        className={`grid transition-[grid-template-rows] duration-200 ${open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
+      >
+        <div className="overflow-hidden">
+          <div className="py-1">
+            {/* Dark mode row */}
+            <div className="flex min-h-[48px] items-center justify-between rounded-lg px-4 py-3">
+              <span className="text-base font-medium text-gray-700 dark:text-gray-300">{t('darkMode', 'Dark mode')}</span>
+              <SwitchToggle
+                enabled={theme === 'dark'}
+                onChange={toggleTheme}
+                size="sm"
+                ariaLabel="Toggle dark mode"
+                iconOff={
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z" />
+                  </svg>
+                }
+                iconOn={
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path fillRule="evenodd" d="M9.528 1.718a.75.75 0 01.162.819A8.97 8.97 0 009 6a9 9 0 009 9 8.97 8.97 0 003.463-.69.75.75 0 01.981.98 10.503 10.503 0 01-9.694 6.46c-5.799 0-10.5-4.701-10.5-10.5 0-4.368 2.667-8.112 6.46-9.694a.75.75 0 01.818.162z" clipRule="evenodd" />
+                  </svg>
+                }
+              />
+            </div>
+            {/* Language row */}
+            <div className="flex min-h-[48px] items-center justify-between rounded-lg px-4 py-3">
+              <span className="text-base font-medium text-gray-700 dark:text-gray-300">{t('language', 'Language')}</span>
+              <LanguageDropdown size="sm" />
+            </div>
+            {/* Admin toggle row */}
+            <div className="flex min-h-[48px] items-center justify-between rounded-lg px-4 py-3">
+              <span className="text-base font-medium text-gray-700 dark:text-gray-300">{t('adminMode', 'Admin mode')}</span>
+              <AdminToggle size="sm" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 interface MoreSheetProps {
   onClose: () => void
   unreadNotifications?: number
@@ -50,7 +107,7 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
   const { user, isApproved, isSuperAdmin, logout } = useAuth()
   const { isAdminMode } = useAdminMode()
   const { theme, toggleTheme } = useTheme()
-  const { t, i18n } = useTranslation('nav')
+  const { t } = useTranslation('nav')
   const { closing, startClose, onAnimEnd } = useAnimatedClose(onClose)
 
   // Prevent body scroll when sheet is open
@@ -230,62 +287,9 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
               </div>
             </div>
 
-            {/* Options section */}
+            {/* Options section — expandable */}
             <div className="mx-4 border-t border-gray-200 dark:border-gray-700" />
-            <div className="px-4 py-3">
-              <span className="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                {t('options', 'Options')}
-              </span>
-              <div className="flex items-center gap-4">
-                <AdminToggle size="sm" />
-                <SwitchToggle
-                  enabled={theme === 'dark'}
-                  onChange={toggleTheme}
-                  size="sm"
-                  ariaLabel="Toggle dark mode"
-                  iconOff={
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z" />
-                    </svg>
-                  }
-                  iconOn={
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                      <path fillRule="evenodd" d="M9.528 1.718a.75.75 0 01.162.819A8.97 8.97 0 009 6a9 9 0 009 9 8.97 8.97 0 003.463-.69.75.75 0 01.981.98 10.503 10.503 0 01-9.694 6.46c-5.799 0-10.5-4.701-10.5-10.5 0-4.368 2.667-8.112 6.46-9.694a.75.75 0 01.818.162z" clipRule="evenodd" />
-                    </svg>
-                  }
-                />
-                {(!user.language) && (
-                  <SwitchToggle
-                    enabled={i18n.language === 'de'}
-                    onChange={() => {
-                      const next = i18n.language === 'de' ? 'en' : 'de'
-                      i18n.changeLanguage(next)
-                      localStorage.setItem('wiedisync-lang', next)
-                    }}
-                    size="sm"
-                    ariaLabel="Toggle language"
-                    iconOff={
-                      <svg viewBox="0 0 60 60">
-                        <g transform="translate(0,12)">
-                          <rect width="60" height="36" fill="#012169"/>
-                          <path d="M0,0 L60,36 M60,0 L0,36" stroke="#fff" strokeWidth="7"/>
-                          <path d="M0,0 L60,36 M60,0 L0,36" stroke="#C8102E" strokeWidth="4.5"/>
-                          <path d="M30,0 V36 M0,18 H60" stroke="#fff" strokeWidth="12"/>
-                          <path d="M30,0 V36 M0,18 H60" stroke="#C8102E" strokeWidth="7"/>
-                        </g>
-                      </svg>
-                    }
-                    iconOn={
-                      <svg viewBox="0 0 32 32" className="rounded-sm">
-                        <rect width="32" height="32" fill="#D52B1E" rx="2"/>
-                        <rect x="13" y="6" width="6" height="20" fill="#fff"/>
-                        <rect x="6" y="13" width="20" height="6" fill="#fff"/>
-                      </svg>
-                    }
-                  />
-                )}
-              </div>
-            </div>
+            <OptionsAccordion theme={theme} toggleTheme={toggleTheme} />
           </>
         ) : (
           <>
@@ -300,55 +304,8 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
                 {t('signIn')}
               </NavLink>
 
-              {/* Toggles — same row */}
-              <div className="flex items-center justify-center gap-4">
-                {(
-                  <SwitchToggle
-                    enabled={i18n.language === 'de'}
-                    onChange={() => {
-                      const next = i18n.language === 'de' ? 'en' : 'de'
-                      i18n.changeLanguage(next)
-                      localStorage.setItem('wiedisync-lang', next)
-                    }}
-                    size="md"
-                    ariaLabel="Toggle language"
-                    iconOff={
-                      <svg viewBox="0 0 60 60">
-                        <g transform="translate(0,12)">
-                          <rect width="60" height="36" fill="#012169"/>
-                          <path d="M0,0 L60,36 M60,0 L0,36" stroke="#fff" strokeWidth="7"/>
-                          <path d="M0,0 L60,36 M60,0 L0,36" stroke="#C8102E" strokeWidth="4.5"/>
-                          <path d="M30,0 V36 M0,18 H60" stroke="#fff" strokeWidth="12"/>
-                          <path d="M30,0 V36 M0,18 H60" stroke="#C8102E" strokeWidth="7"/>
-                        </g>
-                      </svg>
-                    }
-                    iconOn={
-                      <svg viewBox="0 0 32 32" className="rounded-sm">
-                        <rect width="32" height="32" fill="#D52B1E" rx="2"/>
-                        <rect x="13" y="6" width="6" height="20" fill="#fff"/>
-                        <rect x="6" y="13" width="20" height="6" fill="#fff"/>
-                      </svg>
-                    }
-                  />
-                )}
-                <SwitchToggle
-                  enabled={theme === 'dark'}
-                  onChange={toggleTheme}
-                  size="md"
-                  ariaLabel="Toggle dark mode"
-                  iconOff={
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z" />
-                    </svg>
-                  }
-                  iconOn={
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                      <path fillRule="evenodd" d="M9.528 1.718a.75.75 0 01.162.819A8.97 8.97 0 009 6a9 9 0 009 9 8.97 8.97 0 003.463-.69.75.75 0 01.981.98 10.503 10.503 0 01-9.694 6.46c-5.799 0-10.5-4.701-10.5-10.5 0-4.368 2.667-8.112 6.46-9.694a.75.75 0 01.818.162z" clipRule="evenodd" />
-                    </svg>
-                  }
-                />
-              </div>
+              {/* Toggles — expandable */}
+              <OptionsAccordion theme={theme} toggleTheme={toggleTheme} />
             </div>
           </>
         )}

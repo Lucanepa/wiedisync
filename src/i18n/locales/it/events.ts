@@ -1,0 +1,46 @@
+export default {
+  title: 'Eventi',
+  subtitle: 'Eventi e attività del club',
+  newEvent: 'Nuovo evento',
+  editEvent: 'Modifica evento',
+  noEvents: 'Nessun evento',
+  noEventsDescription: 'Nessun evento in programma.',
+  deleteEvent: 'Elimina evento',
+  deleteConfirm: 'Sei sicuro di voler eliminare questo evento?',
+
+  // Form fields
+  eventTitle: 'Titolo',
+  eventType: 'Tipo',
+  startDate: 'Inizio',
+  endDate: 'Fine',
+  allDay: 'Tutto il giorno',
+  location: 'Luogo',
+  description: 'Descrizione',
+  teamsInvolved: 'Squadre',
+
+  // Event types
+  club: 'Club',
+  social: 'Sociale',
+  meeting: 'Riunione',
+  tournament: 'Torneo',
+  other: 'Altro',
+  respondBy: 'Rispondi entro',
+  respondByHint: 'Promemoria 1 giorno prima',
+  maxPlayers: 'Max giocatori',
+  participation: 'Partecipazione',
+  viewRoster: 'Vedi lista',
+
+  // Session / participation mode
+  participationMode: 'Modalità di partecipazione',
+  modeWhole: 'Intero evento',
+  modePerDay: 'Per giorno',
+  modePerSession: 'Per fascia oraria',
+  addTimeBlock: 'Aggiungi fascia oraria',
+  sessions: 'Fasce orarie',
+  sessionLabel: 'Etichetta',
+  sessionDate: 'Data',
+  removeSession: 'Rimuovi fascia oraria',
+  sessionsConfirmed: '{{confirmed}}/{{total}} confermati',
+  overallView: 'Panoramica',
+  sessionParticipation: 'Partecipazione per fascia oraria',
+} as const

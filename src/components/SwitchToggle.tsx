@@ -41,17 +41,17 @@ export default function SwitchToggle({
       <div
         className={cn(
           'relative inline-flex shrink-0 cursor-pointer items-center rounded-full transition-colors',
-          isMd ? 'h-12 w-[5.25rem]' : 'h-11 w-[4.5rem]',
+          isMd ? 'h-[2.7rem] w-[4.75rem]' : 'h-[2.475rem] w-[4.05rem]',
           'bg-gray-300 dark:bg-gray-600',
         )}
       >
         <span
           className={cn(
             'inline-flex items-center justify-center overflow-hidden rounded-full bg-white shadow-sm transition-transform',
-            isMd ? 'h-9 w-9' : 'h-8 w-8',
+            isMd ? 'h-8 w-8' : 'h-7 w-7',
           )}
           style={{
-            transform: `translateX(${enabled ? (isMd ? '2.75rem' : '2.125rem') : '0.375rem'})`,
+            transform: `translateX(${enabled ? (isMd ? '2.375rem' : '1.8rem') : '0.3rem'})`,
           }}
         >
           <span className={cn('flex items-center justify-center', isMd ? 'h-7 w-7' : 'h-5 w-5', 'text-gray-600')}>

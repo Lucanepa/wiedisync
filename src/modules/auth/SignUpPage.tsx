@@ -12,7 +12,16 @@ import DatenschutzPage from '../legal/DatenschutzPage'
 import PrivacyNotice from '../../components/PrivacyNotice'
 import { FormInput, FormField } from '@/components/FormField'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { LANGUAGES, type PbLanguage } from '../../i18n/languageConfig'
+import { pbLangToI18n } from '../../utils/languageMap'
+import deFlag from '../../assets/flags/de.svg'
+import gbFlag from '../../assets/flags/gb.svg'
+import frFlag from '../../assets/flags/fr.svg'
+import itFlag from '../../assets/flags/it.svg'
+import chFlag from '../../assets/flags/ch.svg'
 import type { Team } from '../../types'
+
+const flagMap: Record<string, string> = { de: deFlag, gb: gbFlag, fr: frFlag, it: itFlag, ch: chFlag }
 
 type Step = 'email' | 'claim' | 'register'
 
@@ -25,13 +34,13 @@ export default function SignUpPage() {
 
   const [step, setStep] = useState<Step>('email')
   const [email, setEmail] = useState('')
-  const [selectedLanguage, setSelectedLanguage] = useState<'german' | 'english'>(
-    i18n.language === 'en' ? 'english' : 'german',
+  const [selectedLanguage, setSelectedLanguage] = useState<PbLanguage>(
+    LANGUAGES.find((l) => l.code === i18n.language)?.pbValue ?? 'german',
   )
 
-  function handleLanguageChange(lang: 'german' | 'english') {
+  function handleLanguageChange(lang: PbLanguage) {
     setSelectedLanguage(lang)
-    i18n.changeLanguage(lang === 'german' ? 'de' : 'en')
+    i18n.changeLanguage(pbLangToI18n(lang))
   }
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
@@ -169,19 +178,20 @@ export default function SignUpPage() {
                 <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                   {t('language')}
                 </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {(['german', 'english'] as const).map((lang) => (
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {LANGUAGES.map((lang) => (
                     <button
-                      key={lang}
+                      key={lang.pbValue}
                       type="button"
-                      onClick={() => handleLanguageChange(lang)}
-                      className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
-                        selectedLanguage === lang
+                      onClick={() => handleLanguageChange(lang.pbValue)}
+                      className={`flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                        selectedLanguage === lang.pbValue
                           ? 'border-brand-500 bg-brand-50 text-brand-700 dark:border-brand-400 dark:bg-brand-900/30 dark:text-brand-300'
                           : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
                       }`}
                     >
-                      {lang === 'german' ? 'Deutsch' : 'English'}
+                      <img src={flagMap[lang.flag]} alt="" className="w-5 h-[15px] rounded-[2px]" />
+                      {lang.nativeName}
                     </button>
                   ))}
                 </div>

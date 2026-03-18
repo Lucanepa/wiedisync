@@ -1,7 +1,9 @@
-export function pbLangToI18n(pbLang: string): 'de' | 'en' {
-  return pbLang === 'english' ? 'en' : 'de'
+import { LANGUAGES } from '../i18n/languageConfig'
+
+export function pbLangToI18n(pbLang: string): string {
+  return LANGUAGES.find((l) => l.pbValue === pbLang)?.code ?? 'de'
 }
 
-export function i18nToPbLang(i18nLang: string): 'english' | 'german' {
-  return i18nLang === 'en' ? 'english' : 'german'
+export function i18nToPbLang(i18nLang: string): string {
+  return LANGUAGES.find((l) => l.code === i18nLang)?.pbValue ?? 'german'
 }

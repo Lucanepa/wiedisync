@@ -94,4 +94,18 @@ export default {
   pendingRequests: '{{count}} pending request(s)',
   approve: 'Approve',
   reject: 'Reject',
+
+  // QR invite / external user
+  inviteExternalUser: 'Add External User',
+  inviteExternalUserDesc: 'Generate a QR code for someone to join {{teamName}}',
+  joinAs: 'Join as:',
+  player: 'Player',
+  guest: 'Guest',
+  generateQR: 'Generate QR Code',
+  inviteLinkExpiry: 'Link expires in 24 hours · Single use',
+  copyLink: 'Copy Link',
+  addExternalUser: 'Add External User',
+  shellAccount: 'Temporary',
+  expiresIn: 'expires in {{days}}d',
+  extend: 'Extend',
 } as const

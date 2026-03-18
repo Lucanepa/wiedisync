@@ -102,4 +102,5 @@ export default {
   sport: 'Sport',
   volleyball: 'Volleyball',
   basketball: 'Basketball',
+  copied: 'Kopiert!',
 } as const

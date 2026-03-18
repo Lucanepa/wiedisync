@@ -39,10 +39,6 @@ jobs:
           TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
           TEST_ADMIN_EMAIL: ${{ secrets.TEST_ADMIN_EMAIL }}
           TEST_ADMIN_PASSWORD: ${{ secrets.TEST_ADMIN_PASSWORD }}
-          TEST_VB_ADMIN_EMAIL: ${{ secrets.TEST_VB_ADMIN_EMAIL }}
-          TEST_VB_ADMIN_PASSWORD: ${{ secrets.TEST_VB_ADMIN_PASSWORD }}
-          TEST_BB_ADMIN_EMAIL: ${{ secrets.TEST_BB_ADMIN_EMAIL }}
-          TEST_BB_ADMIN_PASSWORD: ${{ secrets.TEST_BB_ADMIN_PASSWORD }}
           CI: true
 
       - name: Upload test report

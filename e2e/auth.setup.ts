@@ -4,8 +4,6 @@ setup.describe.configure({ mode: 'serial' })
 
 const USER_FILE = 'e2e/.auth/user.json'
 const ADMIN_FILE = 'e2e/.auth/admin.json'
-const VB_ADMIN_FILE = 'e2e/.auth/vb-admin.json'
-const BB_ADMIN_FILE = 'e2e/.auth/bb-admin.json'
 
 const PB_URL = process.env.VITE_PB_URL!
 
@@ -79,20 +77,3 @@ setup('authenticate as admin', async ({ page }) => {
   )
 })
 
-setup('authenticate as vb_admin', async ({ page }) => {
-  await loginViaAPI(
-    page,
-    process.env.TEST_VB_ADMIN_EMAIL!,
-    process.env.TEST_VB_ADMIN_PASSWORD!,
-    VB_ADMIN_FILE,
-  )
-})
-
-setup('authenticate as bb_admin', async ({ page }) => {
-  await loginViaAPI(
-    page,
-    process.env.TEST_BB_ADMIN_EMAIL!,
-    process.env.TEST_BB_ADMIN_PASSWORD!,
-    BB_ADMIN_FILE,
-  )
-})

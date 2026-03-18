@@ -1,7 +1,7 @@
 import type { MemberPosition, Team } from '../types'
 
-const VB_POSITIONS: MemberPosition[] = ['setter', 'outside', 'middle', 'opposite', 'libero', 'coach', 'other']
-const BB_POSITIONS: MemberPosition[] = ['point_guard', 'shooting_guard', 'small_forward', 'power_forward', 'center', 'coach', 'other']
+const VB_POSITIONS: MemberPosition[] = ['setter', 'outside', 'middle', 'opposite', 'libero', 'coach', 'guest', 'other']
+const BB_POSITIONS: MemberPosition[] = ['point_guard', 'shooting_guard', 'small_forward', 'power_forward', 'center', 'coach', 'guest', 'other']
 
 const POSITION_I18N_KEYS: Record<MemberPosition, string> = {
   setter: 'positionSetter',
@@ -15,6 +15,7 @@ const POSITION_I18N_KEYS: Record<MemberPosition, string> = {
   power_forward: 'positionPowerForward',
   center: 'positionCenter',
   coach: 'positionCoach',
+  guest: 'positionGuest',
   other: 'positionOther',
 }
 

@@ -165,12 +165,12 @@ export default function MemberRow({ memberTeam, teamId: _teamId, teamSlug, team,
             onChange={(e) => setEditValue(e.target.value)}
             onKeyDown={(e) => handleKeyDown(e, 'number')}
             onBlur={() => saveField('number', editValue ? parseInt(editValue, 10) : 0)}
-            className="w-14 rounded border px-1.5 py-0.5 text-sm dark:bg-gray-700 dark:border-gray-600 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            className="w-14 rounded-md border border-brand-400 bg-white px-1.5 py-0.5 text-center text-sm font-medium text-gray-900 shadow-sm ring-1 ring-brand-400/30 focus:outline-none dark:border-brand-500 dark:bg-gray-700 dark:text-gray-100 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             autoFocus
           />
         ) : (
           <span
-            className={canEdit ? 'cursor-pointer hover:text-brand-600' : ''}
+            className={canEdit ? 'inline-flex h-7 w-10 cursor-pointer items-center justify-center rounded-md border border-transparent font-medium transition-colors hover:border-brand-400 hover:text-brand-600 dark:hover:border-brand-500 dark:hover:text-brand-400' : ''}
             onClick={canEdit ? () => startEdit('number', member.number) : undefined}
           >
             {member.number || '—'}
@@ -178,32 +178,50 @@ export default function MemberRow({ memberTeam, teamId: _teamId, teamSlug, team,
         )}
       </td>
 
-      {/* Position — editable by coach */}
+      {/* Position — editable by coach (checkbox dropdown) */}
       <td className="hidden px-4 py-3 text-sm text-gray-500 sm:table-cell dark:text-gray-400">
-        {canEdit && editingField === 'position' ? (
-          <select
-            value={memberPositions}
-            multiple
-            size={Math.min(4, selectablePositions.length)}
-            onChange={(e) => {
-              const next = Array.from(e.target.selectedOptions).map((opt) => opt.value)
-              saveField('position', next.length > 0 ? next : ['other'])
-            }}
-            onBlur={() => setEditingField(null)}
-            className="min-h-[88px] rounded border px-1.5 py-0.5 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
-            autoFocus
-          >
-            {selectablePositions.map((p) => (
-              <option key={p} value={p}>{getPositionI18nKey(p) ? t(getPositionI18nKey(p)!) : p}</option>
-            ))}
-          </select>
+        {canEdit ? (
+          <div className="relative">
+            <button
+              onClick={() => setEditingField(editingField === 'position' ? null : 'position')}
+              className="cursor-pointer rounded px-1.5 py-0.5 text-left transition-colors hover:text-brand-600"
+            >
+              {getPositionLabelList(memberPositions)}
+            </button>
+            {editingField === 'position' && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setEditingField(null)} />
+                <div className="absolute left-0 z-20 mt-1 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-600 dark:bg-gray-800">
+                  {selectablePositions.map((p) => {
+                    const active = memberPositions.includes(p)
+                    return (
+                      <button
+                        key={p}
+                        onClick={() => {
+                          const next = active
+                            ? memberPositions.filter((pos) => pos !== p)
+                            : [...memberPositions, p]
+                          saveField('position', next.length > 0 ? next : ['other'])
+                        }}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
+                      >
+                        <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${active ? 'border-brand-500 bg-brand-500 text-white' : 'border-gray-300 dark:border-gray-500'}`}>
+                          {active && (
+                            <svg className="h-3 w-3" viewBox="0 0 12 12">
+                              <path d="M10 3L4.5 8.5 2 6" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          )}
+                        </span>
+                        {getPositionI18nKey(p) ? t(getPositionI18nKey(p)!) : p}
+                      </button>
+                    )
+                  })}
+                </div>
+              </>
+            )}
+          </div>
         ) : (
-          <span
-            className={canEdit ? 'cursor-pointer hover:text-brand-600' : ''}
-            onClick={canEdit ? () => setEditingField('position') : undefined}
-          >
-            {getPositionLabelList(memberPositions)}
-          </span>
+          <span>{getPositionLabelList(memberPositions)}</span>
         )}
       </td>
 

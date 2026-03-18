@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useParams, Link } from 'react-router-dom'
-import { XCircle } from 'lucide-react'
+import { useParams, useSearchParams, Link } from 'react-router-dom'
+import { XCircle, ChevronRight, Mail, Phone, Award, Calendar, TrendingUp, AlertCircle } from 'lucide-react'
 import { differenceInYears } from 'date-fns'
 import pb from '../../pb'
 import { usePB } from '../../hooks/usePB'
@@ -20,6 +20,8 @@ type ExpandedMemberTeam = MemberTeam & { expand?: { team?: Team } }
 export default function PlayerProfile() {
   const { t } = useTranslation('teams')
   const { memberId } = useParams<{ memberId: string }>()
+  const [searchParams] = useSearchParams()
+  const fromTeam = searchParams.get('from')
   const { isCoachOf } = useAuth()
   const [member, setMember] = useState<Member | null>(null)
   const [loading, setLoading] = useState(true)
@@ -40,7 +42,8 @@ export default function PlayerProfile() {
     perPage: 20,
   })
 
-  const [attendanceStats, setAttendanceStats] = useState<{ total: number; present: number } | null>(null)
+  const [trainingStats, setTrainingStats] = useState<{ total: number; present: number } | null>(null)
+  const [gameStats, setGameStats] = useState<{ total: number; present: number } | null>(null)
 
   useEffect(() => {
     if (!memberId) return
@@ -52,6 +55,7 @@ export default function PlayerProfile() {
       .finally(() => setLoading(false))
   }, [memberId])
 
+  // Training attendance
   useEffect(() => {
     if (!memberId || !memberTeams?.length) return
     const teamIds = memberTeams.map((mt) => mt.team)
@@ -84,9 +88,47 @@ export default function PlayerProfile() {
           }
         }
         const countable = trainings.length - excused
-        setAttendanceStats({ total: countable, present })
+        setTrainingStats({ total: countable, present })
       })
-      .catch(() => setAttendanceStats(null))
+      .catch(() => setTrainingStats(null))
+  }, [memberId, memberTeams, start, end])
+
+  // Game attendance
+  useEffect(() => {
+    if (!memberId || !memberTeams?.length) return
+    const teamIds = memberTeams.map((mt) => mt.team)
+    const kscwTeamFilter = teamIds.map((id) => `kscw_team="${id}"`).join(' || ')
+    Promise.all([
+      pb.collection('games').getFullList<{ id: string; date: string }>({
+        filter: `(${kscwTeamFilter}) && date>="${start}" && date<="${end}" && status!="postponed"`,
+        fields: 'id,date',
+      }),
+      pb.collection('participations').getFullList<Participation>({
+        filter: `member="${memberId}" && activity_type="game"`,
+      }),
+      pb.collection('absences').getFullList<Absence>({
+        filter: `member="${memberId}" && end_date>="${start}" && start_date<="${end}"`,
+      }),
+    ])
+      .then(([games, participations, seasonAbsences]) => {
+        let present = 0
+        let excused = 0
+        for (const game of games) {
+          const gameDate = game.date.split(' ')[0]
+          const hasAbsence = seasonAbsences.some(
+            (a) => a.start_date <= gameDate && a.end_date >= gameDate,
+          )
+          if (hasAbsence) {
+            excused++
+          } else {
+            const p = participations.find((p) => p.activity_id === game.id)
+            if (p?.status === 'confirmed') present++
+          }
+        }
+        const countable = games.length - excused
+        setGameStats({ total: countable, present })
+      })
+      .catch(() => setGameStats(null))
   }, [memberId, memberTeams, start, end])
 
   if (loading) {
@@ -99,110 +141,202 @@ export default function PlayerProfile() {
 
   const initials = `${member.first_name?.[0] ?? ''}${member.last_name?.[0] ?? ''}`.toUpperCase()
   const positions = coercePositions(member.position)
-  const attendancePct = attendanceStats && attendanceStats.total > 0
-    ? Math.round((attendanceStats.present / attendanceStats.total) * 100)
+  const trainingPct = trainingStats && trainingStats.total > 0
+    ? Math.round((trainingStats.present / trainingStats.total) * 100)
+    : null
+  const gamePct = gameStats && gameStats.total > 0
+    ? Math.round((gameStats.present / gameStats.total) * 100)
     : null
 
+  // Resolve the "from" team for breadcrumb
+  const fromTeamData = fromTeam
+    ? memberTeams.find((mt) => mt.expand?.team?.name === fromTeam)?.expand?.team
+    : null
+
+  const isCoach = memberTeams.some((mt) => isCoachOf(mt.team))
+
   return (
-    <div>
-      <div className="mb-6 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-        <Link to="/teams" className="hover:text-gray-700 dark:text-gray-300">Teams</Link>
-        <span>/</span>
-        <span className="text-gray-900 dark:text-gray-100">{member.name}</span>
-      </div>
-
-      {/* Header */}
-      <div className="flex items-start gap-6">
-        {member.photo ? (
+    <div className="mx-auto max-w-3xl">
+      {/* Breadcrumb */}
+      <nav className="mb-6 flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
+        <Link to="/teams" className="transition-colors hover:text-gray-700 dark:hover:text-gray-200">
+          {t('title')}
+        </Link>
+        {fromTeamData && (
           <>
-            <img
-              src={getFileUrl('members', member.id, member.photo)}
-              alt={member.name}
-              className="h-24 w-24 cursor-pointer rounded-full object-cover"
-              onClick={() => setLightboxOpen(true)}
-            />
-            <ImageLightbox
-              src={getFileUrl('members', member.id, member.photo)}
-              alt={member.name}
-              open={lightboxOpen}
-              onClose={() => setLightboxOpen(false)}
-            />
-          </>
-        ) : (
-          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gray-200 text-2xl font-bold text-gray-500 dark:text-gray-400">
-            {initials}
-          </div>
-        )}
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{member.name}</h1>
-          <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
-            {member.number && <span>#{member.number}</span>}
-            {positions.length > 0 && (
-              <span>{positions.map((p) => (getPositionI18nKey(p) ? t(getPositionI18nKey(p)!) : p)).join(', ')}</span>
-            )}
-            {member.role.map((r) => <StatusBadge key={r} status={r} />)}
-          </div>
-          {memberTeams.some((mt) => isCoachOf(mt.team)) && (
-            <div className="mt-2 flex flex-wrap gap-3 text-sm text-gray-500 dark:text-gray-400">
-              {member.birthdate_visibility !== 'hidden' && member.birthdate && (
-                <span>{t('age', { years: differenceInYears(new Date(), new Date(member.birthdate)) })}</span>
-              )}
-              {member.birthdate_visibility !== 'hidden' && !member.birthdate && member.yob > 0 && (
-                <span>{t('age', { years: new Date().getFullYear() - member.yob })}</span>
-              )}
-              {member.email && <span>{member.email}</span>}
-              {!member.hide_phone && member.phone && <span>{member.phone}</span>}
-              {member.license_nr && <span>License: {member.license_nr}</span>}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Teams */}
-      <div className="mt-8">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Teams</h2>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {memberTeams.map((mt) => (
-            <Link key={mt.id} to={`/teams/${mt.expand?.team?.name ?? mt.team}`}>
-              <TeamChip team={mt.expand?.team?.name ?? '?'} />
+            <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+            <Link
+              to={`/teams/${fromTeamData.name}`}
+              className="transition-colors hover:text-gray-700 dark:hover:text-gray-200"
+            >
+              {fromTeamData.full_name}
             </Link>
-          ))}
-          {memberTeams.length === 0 && (
-            <p className="text-sm text-gray-500 dark:text-gray-400">Not assigned to any team</p>
-          )}
+          </>
+        )}
+        <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+        <span className="font-medium text-gray-900 dark:text-gray-100">{member.name}</span>
+      </nav>
+
+      {/* Profile card */}
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+        {/* Header section */}
+        <div className="relative px-6 pb-5 pt-6">
+          <div className="flex items-start gap-5">
+            {/* Avatar */}
+            {member.photo ? (
+              <>
+                <div className="relative shrink-0">
+                  <img
+                    src={getFileUrl('members', member.id, member.photo)}
+                    alt={member.name}
+                    className="h-20 w-20 cursor-pointer rounded-full object-cover ring-2 ring-white sm:h-24 sm:w-24 dark:ring-gray-800"
+                    onClick={() => setLightboxOpen(true)}
+                  />
+                  {member.number > 0 && (
+                    <span className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-brand-500 text-xs font-bold text-white ring-2 ring-white dark:ring-gray-800">
+                      {member.number}
+                    </span>
+                  )}
+                </div>
+                <ImageLightbox
+                  src={getFileUrl('members', member.id, member.photo)}
+                  alt={member.name}
+                  open={lightboxOpen}
+                  onClose={() => setLightboxOpen(false)}
+                />
+              </>
+            ) : (
+              <div className="relative shrink-0">
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-100 text-2xl font-bold text-brand-600 sm:h-24 sm:w-24 dark:bg-brand-900/40 dark:text-brand-300">
+                  {initials}
+                </div>
+                {member.number > 0 && (
+                  <span className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-brand-500 text-xs font-bold text-white ring-2 ring-white dark:ring-gray-800">
+                    {member.number}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Info */}
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-gray-100">
+                  {member.name}
+                </h1>
+                {member.role.map((r) => <StatusBadge key={r} status={r} />)}
+              </div>
+
+              {positions.length > 0 && (
+                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                  {positions.map((p) => (getPositionI18nKey(p) ? t(getPositionI18nKey(p)!) : p)).join(' · ')}
+                </p>
+              )}
+
+              {/* Contact info — coach only */}
+              {isCoach && (
+                <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500 dark:text-gray-400">
+                  {member.birthdate_visibility !== 'hidden' && member.birthdate && (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Calendar className="h-3.5 w-3.5" />
+                      {t('age', { years: differenceInYears(new Date(), new Date(member.birthdate)) })}
+                    </span>
+                  )}
+                  {member.birthdate_visibility !== 'hidden' && !member.birthdate && member.yob > 0 && (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Calendar className="h-3.5 w-3.5" />
+                      {t('age', { years: new Date().getFullYear() - member.yob })}
+                    </span>
+                  )}
+                  {member.email && (
+                    <a href={`mailto:${member.email}`} className="inline-flex items-center gap-1.5 transition-colors hover:text-brand-500">
+                      <Mail className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">{member.email}</span>
+                      <span className="sm:hidden">Email</span>
+                    </a>
+                  )}
+                  {!member.hide_phone && member.phone && (
+                    <a href={`tel:${member.phone}`} className="inline-flex items-center gap-1.5 transition-colors hover:text-brand-500">
+                      <Phone className="h-3.5 w-3.5" />
+                      {member.phone}
+                    </a>
+                  )}
+                  {member.license_nr && (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Award className="h-3.5 w-3.5" />
+                      {member.license_nr}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Teams row */}
+        <div className="border-t border-gray-100 bg-gray-50 px-6 py-3 dark:border-gray-700 dark:bg-gray-800/50">
+          <div className="flex flex-wrap items-center gap-2">
+            {memberTeams.map((mt) => (
+              <Link key={mt.id} to={`/teams/${mt.expand?.team?.name ?? mt.team}`}>
+                <TeamChip team={mt.expand?.team?.name ?? '?'} />
+              </Link>
+            ))}
+            {memberTeams.length === 0 && (
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('noTeams')}</p>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="mt-8">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Statistics ({season})</h2>
-        <div className="mt-3 grid gap-4 sm:grid-cols-3">
-          <div className="rounded-lg border bg-white dark:bg-gray-800 p-4">
-            <p className="text-sm text-gray-500 dark:text-gray-400">Trainings attended</p>
-            <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">
-              {attendanceStats ? `${attendanceStats.present}/${attendanceStats.total}` : '—'}
-            </p>
-          </div>
-          <div className="rounded-lg border bg-white dark:bg-gray-800 p-4">
-            <p className="text-sm text-gray-500 dark:text-gray-400">Attendance rate</p>
-            <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">
-              {attendancePct !== null ? `${attendancePct}%` : '—'}
-            </p>
-          </div>
-          <div className="rounded-lg border bg-white dark:bg-gray-800 p-4">
-            <p className="text-sm text-gray-500 dark:text-gray-400">Active absences</p>
-            <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{absences.length}</p>
-          </div>
+      {/* Statistics */}
+      <div className="mt-6">
+        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+          {t('statistics')} ({season})
+        </h2>
+        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <StatCard
+            label={t('trainingsAttended')}
+            value={trainingStats ? `${trainingStats.present}/${trainingStats.total}` : '—'}
+            sub={trainingPct !== null ? `${trainingPct}%` : undefined}
+            icon={<TrendingUp className="h-4 w-4" />}
+            color="brand"
+          />
+          <StatCard
+            label={t('gamesAttended')}
+            value={gameStats ? `${gameStats.present}/${gameStats.total}` : '—'}
+            sub={gamePct !== null ? `${gamePct}%` : undefined}
+            icon={<TrendingUp className="h-4 w-4" />}
+            color="emerald"
+          />
+          <StatCard
+            label={t('trainingRate')}
+            value={trainingPct !== null ? `${trainingPct}%` : '—'}
+            icon={<TrendingUp className="h-4 w-4" />}
+            color="amber"
+            highlight={trainingPct !== null && trainingPct < 50}
+          />
+          <StatCard
+            label={t('activeAbsences')}
+            value={String(absences.length)}
+            icon={<AlertCircle className="h-4 w-4" />}
+            color="red"
+            highlight={absences.length > 0}
+          />
         </div>
       </div>
 
       {/* Active Absences */}
       {absences.length > 0 && (
-        <div className="mt-8">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Current absences</h2>
+        <div className="mt-6">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+            {t('currentAbsences')}
+          </h2>
           <div className="mt-3 space-y-2">
             {absences.map((a) => (
-              <div key={a.id} className="flex items-center gap-3 rounded-lg border bg-white dark:bg-gray-800 px-4 py-3">
+              <div
+                key={a.id}
+                className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800"
+              >
                 <StatusBadge status={a.reason} />
                 <span className="text-sm text-gray-700 dark:text-gray-300">
                   {formatDate(a.start_date)}
@@ -216,6 +350,52 @@ export default function PlayerProfile() {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+function StatCard({
+  label,
+  value,
+  sub,
+  icon,
+  color,
+  highlight,
+}: {
+  label: string
+  value: string
+  sub?: string
+  icon: React.ReactNode
+  color: 'brand' | 'emerald' | 'amber' | 'red'
+  highlight?: boolean
+}) {
+  const iconColors = {
+    brand: 'text-brand-500 bg-brand-50 dark:bg-brand-900/30 dark:text-brand-400',
+    emerald: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400',
+    amber: 'text-amber-600 bg-amber-50 dark:bg-amber-900/30 dark:text-amber-400',
+    red: 'text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-400',
+  }
+
+  return (
+    <div
+      className={`rounded-lg border p-3 sm:p-4 ${
+        highlight
+          ? 'border-red-200 bg-red-50/50 dark:border-red-900/50 dark:bg-red-900/10'
+          : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800'
+      }`}
+    >
+      <div className="flex items-center gap-2">
+        <span className={`flex h-6 w-6 items-center justify-center rounded-md ${iconColors[color]}`}>
+          {icon}
+        </span>
+        <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
+      </div>
+      <div className="mt-2 flex items-baseline gap-1.5">
+        <p className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-gray-100">{value}</p>
+        {sub && (
+          <span className="text-sm text-gray-400 dark:text-gray-500">{sub}</span>
+        )}
+      </div>
     </div>
   )
 }

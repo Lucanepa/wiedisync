@@ -334,7 +334,7 @@ function SectionHeader({
         {filterToggle && (
           <button
             onClick={filterToggle.onToggle}
-            className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
+            className={`min-h-[36px] rounded-full px-2.5 py-1.5 text-xs font-medium transition-colors ${
               filterToggle.active
                 ? 'bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300'
                 : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'

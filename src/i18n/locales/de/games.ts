@@ -117,4 +117,5 @@ export default {
   setDeadline: 'Frist setzen',
   respondBy: 'Antwort bis',
   comeAndSupport: 'Komm und unterstütze uns!',
+  guestsCannotParticipate: 'Gäste können nicht an Spielen teilnehmen',
 } as const

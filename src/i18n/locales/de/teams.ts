@@ -94,4 +94,18 @@ export default {
   pendingRequests: '{{count}} ausstehende Beitrittsanfrage(n)',
   approve: 'Annehmen',
   reject: 'Ablehnen',
+
+  // QR invite / external user
+  inviteExternalUser: 'Externen Benutzer hinzufügen',
+  inviteExternalUserDesc: 'QR-Code generieren, damit jemand {{teamName}} beitreten kann',
+  joinAs: 'Beitreten als:',
+  player: 'Spieler/in',
+  guest: 'Gast',
+  generateQR: 'QR-Code generieren',
+  inviteLinkExpiry: 'Link läuft in 24 Stunden ab · Einmalig verwendbar',
+  copyLink: 'Link kopieren',
+  addExternalUser: 'Externen Benutzer hinzufügen',
+  shellAccount: 'Temporär',
+  expiresIn: 'läuft in {{days}}T ab',
+  extend: 'Verlängern',
 } as const

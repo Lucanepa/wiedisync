@@ -117,4 +117,5 @@ export default {
   setDeadline: 'Set deadline',
   respondBy: 'Respond by',
   comeAndSupport: 'Come and support!',
+  guestsCannotParticipate: 'Guests cannot participate in games',
 } as const

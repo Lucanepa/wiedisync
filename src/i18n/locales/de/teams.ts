@@ -14,6 +14,7 @@ export default {
   positionPowerForward: 'Power Forward',
   positionCenter: 'Center',
   positionCoach: 'Trainer/in',
+  positionGuest: 'Gast',
   positionOther: 'Andere',
 
   // Roles
@@ -50,6 +51,14 @@ export default {
   removePicture: 'Bild entfernen',
   pictureHint: 'JPG oder PNG, max. 10 MB',
   pictureTooLarge: 'Datei ist zu gross (max. 10 MB)',
+
+  // Spielerprofil
+  statistics: 'Statistiken',
+  trainingsAttended: 'Trainings',
+  gamesAttended: 'Spiele',
+  trainingRate: 'Trainingsquote',
+  activeAbsences: 'Absenzen',
+  currentAbsences: 'Aktuelle Absenzen',
 
   // Team detail
   sponsors: 'Sponsoren',

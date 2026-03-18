@@ -73,6 +73,7 @@ export default function RosterEditor() {
   const [removingId, setRemovingId] = useState<string | null>(null)
   const [editingNumber, setEditingNumber] = useState<string | null>(null)
   const [numberValue, setNumberValue] = useState('')
+  const [editingPosition, setEditingPosition] = useState<string | null>(null)
   const [uploadingPicture, setUploadingPicture] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const teamId = team?.id
@@ -327,35 +328,62 @@ export default function RosterEditor() {
                         else if (e.key === 'Escape') setEditingNumber(null)
                       }}
                       onBlur={() => saveNumber(member.id)}
-                      className="w-14 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-1.5 py-0.5 text-center text-sm text-gray-900 dark:text-gray-100"
+                      className="w-14 rounded-md border border-brand-400 bg-white px-1.5 py-0.5 text-center text-sm font-medium text-gray-900 shadow-sm ring-1 ring-brand-400/30 focus:outline-none dark:border-brand-500 dark:bg-gray-700 dark:text-gray-100 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                       autoFocus
                     />
                   ) : (
                     <button
                       onClick={() => { setEditingNumber(member.id); setNumberValue(String(member.number || '')) }}
-                      className="w-10 text-center text-sm text-gray-400 hover:text-brand-500"
+                      className="flex h-7 w-10 items-center justify-center rounded-md border border-gray-200 text-sm font-medium text-gray-500 transition-colors hover:border-brand-400 hover:text-brand-600 dark:border-gray-600 dark:text-gray-400 dark:hover:border-brand-500 dark:hover:text-brand-400"
                       title={t('numberCol')}
                     >
-                      #{member.number || '—'}
+                      {member.number || '—'}
                     </button>
                   )}
 
-                  {/* Position dropdown */}
-                  <select
-                    value={memberPositions}
-                    multiple
-                    size={Math.min(3, selectablePositions.length)}
-                    onChange={(e) => {
-                      const next = Array.from(e.target.selectedOptions).map((opt) => opt.value) as MemberPosition[]
-                      savePosition(member.id, next.length > 0 ? next : ['other'])
-                    }}
-                    className="hidden sm:block w-40 min-h-[68px] rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-1.5 py-0.5 text-xs text-gray-700 dark:text-gray-100"
-                    title={t('positionCol')}
-                  >
-                    {selectablePositions.map((p) => (
-                      <option key={p} value={p}>{getPositionI18nKey(p) ? t(getPositionI18nKey(p)!) : p}</option>
-                    ))}
-                  </select>
+                  {/* Position dropdown (checkbox) */}
+                  <div className="relative hidden sm:block">
+                    <button
+                      onClick={() => setEditingPosition(editingPosition === member.id ? null : member.id)}
+                      className="w-40 truncate rounded border border-gray-300 px-2 py-1 text-left text-xs text-gray-700 transition-colors hover:border-brand-400 dark:border-gray-600 dark:text-gray-100 dark:hover:border-brand-500"
+                      title={t('positionCol')}
+                    >
+                      {memberPositions
+                        .map((p) => (getPositionI18nKey(p) ? t(getPositionI18nKey(p)!) : p))
+                        .join(', ') || '—'}
+                    </button>
+                    {editingPosition === member.id && (
+                      <>
+                        <div className="fixed inset-0 z-10" onClick={() => setEditingPosition(null)} />
+                        <div className="absolute left-0 z-20 mt-1 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-600 dark:bg-gray-800">
+                          {selectablePositions.map((p) => {
+                            const active = memberPositions.includes(p)
+                            return (
+                              <button
+                                key={p}
+                                onClick={() => {
+                                  const next = (active
+                                    ? memberPositions.filter((pos) => pos !== p)
+                                    : [...memberPositions, p]) as MemberPosition[]
+                                  savePosition(member.id, next.length > 0 ? next : ['other'])
+                                }}
+                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
+                              >
+                                <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${active ? 'border-brand-500 bg-brand-500 text-white' : 'border-gray-300 dark:border-gray-500'}`}>
+                                  {active && (
+                                    <svg className="h-3 w-3" viewBox="0 0 12 12">
+                                      <path d="M10 3L4.5 8.5 2 6" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                  )}
+                                </span>
+                                {getPositionI18nKey(p) ? t(getPositionI18nKey(p)!) : p}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </>
+                    )}
+                  </div>
 
                   {/* Role toggles */}
                   <div className="hidden sm:flex gap-1">

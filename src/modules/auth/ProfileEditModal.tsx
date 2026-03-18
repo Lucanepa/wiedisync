@@ -7,11 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import DatePicker from '@/components/ui/DatePicker'
 import { useAuth } from '../../hooks/useAuth'
 import { getFileUrl } from '../../utils/pbFile'
-import { coercePositions, getPositionI18nKey } from '../../utils/memberPositions'
+import { coercePositions, getPositionI18nKey, getSelectablePositions } from '../../utils/memberPositions'
 import { pbLangToI18n } from '../../utils/languageMap'
 import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
-import type { LicenceType } from '../../types'
+import type { LicenceType, MemberPosition } from '../../types'
 
 const LICENCE_LABELS: Record<LicenceType, string> = {
   scorer_vb: 'licenceScorer',
@@ -22,6 +22,18 @@ const LICENCE_LABELS: Record<LicenceType, string> = {
   referee_bb: 'licenceRefereeBB',
 }
 
+const VB_LICENCES: { key: LicenceType; i18n: string }[] = [
+  { key: 'scorer_vb', i18n: 'licenceScorer' },
+  { key: 'referee_vb', i18n: 'licenceReferee' },
+]
+
+const BB_LICENCES: { key: LicenceType; i18n: string }[] = [
+  { key: 'otr1_bb', i18n: 'licenceOTR1' },
+  { key: 'otr2_bb', i18n: 'licenceOTR2' },
+  { key: 'otn_bb', i18n: 'licenceOTN' },
+  { key: 'referee_bb', i18n: 'licenceRefereeBB' },
+]
+
 interface ProfileEditModalProps {
   open: boolean
   onClose: () => void
@@ -29,7 +41,7 @@ interface ProfileEditModalProps {
 }
 
 export default function ProfileEditModal({ open, onClose, onboarding }: ProfileEditModalProps) {
-  const { user } = useAuth()
+  const { user, primarySport } = useAuth()
   const { t, i18n } = useTranslation('auth')
   const { t: tc } = useTranslation('common')
   const { t: tt } = useTranslation('teams')
@@ -45,6 +57,9 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
   const [language, setLanguage] = useState<'german' | 'english'>('german')
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [selectedPositions, setSelectedPositions] = useState<MemberPosition[]>([])
+  const [selectedLicences, setSelectedLicences] = useState<LicenceType[]>([])
+  const [positionDropdownOpen, setPositionDropdownOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [resetSent, setResetSent] = useState(false)
@@ -61,6 +76,9 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
       setHidePhone(user.hide_phone ?? false)
       setBirthdateVisibility((user.birthdate_visibility as 'full' | 'year_only' | 'hidden') || 'full')
       setLanguage((user.language as 'german' | 'english') || 'german')
+      setSelectedPositions(coercePositions(user.position))
+      setSelectedLicences((user.licences ?? []) as LicenceType[])
+      setPositionDropdownOpen(false)
       setPhotoFile(null)
       setPhotoPreview(null)
       setError('')
@@ -135,24 +153,38 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
         }
       }
 
-      const formData = new FormData()
-      formData.append('first_name', firstName)
-      formData.append('last_name', lastName)
-      formData.append('email', email)
-      formData.append('phone', phone)
-      formData.append('number', String(number))
-      formData.append('hide_phone', String(hidePhone))
-      formData.append('birthdate_visibility', birthdateVisibility)
-      formData.append('language', language)
-      if (birthdate) {
-        formData.append('birthdate', birthdate)
+      const payload: Record<string, unknown> = {
+        first_name: firstName,
+        last_name: lastName,
+        email,
+        phone,
+        number,
+        hide_phone: hidePhone,
+        birthdate_visibility: birthdateVisibility,
+        language,
+        position: selectedPositions.length > 0 ? selectedPositions : ['other'],
+        licences: selectedLicences,
       }
-      if (photoFile) {
-        formData.append('photo', photoFile)
+      if (birthdate) {
+        payload.birthdate = birthdate
       }
 
-      await pb.collection('members').update(user.id, formData)
-      logActivity('update', 'members', user.id, { first_name: firstName, last_name: lastName, email, phone, language })
+      // Use FormData only when uploading a photo, otherwise plain object
+      if (photoFile) {
+        const formData = new FormData()
+        for (const [key, value] of Object.entries(payload)) {
+          if (Array.isArray(value)) {
+            formData.append(key, JSON.stringify(value))
+          } else {
+            formData.append(key, String(value))
+          }
+        }
+        formData.append('photo', photoFile)
+        await pb.collection('members').update(user.id, formData)
+      } else {
+        await pb.collection('members').update(user.id, payload)
+      }
+      logActivity('update', 'members', user.id, { first_name: firstName, last_name: lastName, email, phone, language, position: selectedPositions, licences: selectedLicences })
       // Persist language to localStorage
       localStorage.setItem('wiedisync-lang', pbLangToI18n(language))
       await pb.collection('members').authRefresh()
@@ -169,8 +201,6 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
   const initials = `${firstName?.[0] ?? ''}${lastName?.[0] ?? ''}`.toUpperCase()
   const currentPhoto = photoPreview
     ?? (user.photo ? getFileUrl('members', user.id, user.photo) : null)
-  const positions = coercePositions(user.position)
-
   // In onboarding mode, data is pre-populated if the member was imported from Clubdesk
   const hasExistingData = onboarding && !!user.first_name
 
@@ -291,6 +321,87 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
           />
         </div>
 
+        {/* Position (checkbox dropdown) */}
+        <FormField label={t('position')}>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setPositionDropdownOpen(!positionDropdownOpen)}
+              className="flex min-h-[44px] w-full items-center justify-between rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 transition-colors hover:border-brand-400 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:border-brand-500"
+            >
+              <span className={selectedPositions.length === 0 ? 'text-gray-400' : ''}>
+                {selectedPositions.length > 0
+                  ? selectedPositions.map((p) => (getPositionI18nKey(p) ? tt(getPositionI18nKey(p)!) : p)).join(', ')
+                  : '—'}
+              </span>
+              <svg className={`h-4 w-4 text-gray-400 transition-transform ${positionDropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {positionDropdownOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setPositionDropdownOpen(false)} />
+                <div className="absolute left-0 z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-600 dark:bg-gray-800">
+                  {getSelectablePositions(
+                    primarySport === 'both' ? undefined : primarySport,
+                    selectedPositions,
+                  ).map((p) => {
+                    const active = selectedPositions.includes(p)
+                    return (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => {
+                          setSelectedPositions((prev) =>
+                            active ? prev.filter((pos) => pos !== p) : [...prev, p],
+                          )
+                        }}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
+                      >
+                        <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${active ? 'border-brand-500 bg-brand-500 text-white' : 'border-gray-300 dark:border-gray-500'}`}>
+                          {active && (
+                            <svg className="h-3 w-3" viewBox="0 0 12 12">
+                              <path d="M10 3L4.5 8.5 2 6" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          )}
+                        </span>
+                        {getPositionI18nKey(p) ? tt(getPositionI18nKey(p)!) : p}
+                      </button>
+                    )
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+        </FormField>
+
+        {/* Licences (toggle buttons) */}
+        <FormField label={t('licences')}>
+          <div className="flex flex-wrap gap-2">
+            {(primarySport === 'basketball' ? BB_LICENCES : primarySport === 'volleyball' ? VB_LICENCES : [...VB_LICENCES, ...BB_LICENCES]).map((lic) => {
+              const active = selectedLicences.includes(lic.key)
+              return (
+                <button
+                  key={lic.key}
+                  type="button"
+                  onClick={() => {
+                    setSelectedLicences((prev) =>
+                      active ? prev.filter((l) => l !== lic.key) : [...prev, lic.key],
+                    )
+                  }}
+                  className={`min-h-[44px] rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                    active
+                      ? 'bg-brand-50 text-brand-700 ring-1 ring-brand-500/30 dark:bg-brand-900/30 dark:text-brand-300 dark:ring-brand-400/30'
+                      : 'bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  {tt(lic.i18n)}
+                </button>
+              )
+            })}
+          </div>
+        </FormField>
+
         {/* Privacy — hidden in onboarding */}
         {!onboarding && (
           <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-800">
@@ -351,28 +462,14 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
         )}
 
         {/* Read-only fields — hidden in onboarding */}
-        {!onboarding && (
+        {!onboarding && user.license_nr && (
           <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-3 dark:border-gray-600 dark:bg-gray-800">
             <p className="mb-2 text-xs font-medium text-gray-500 dark:text-gray-400">
               {t('managedByCoach')}
             </p>
-            <div className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
-              {user.license_nr && <span>{t('licenseNr')}: {user.license_nr}</span>}
-              <span>
-                {t('position')}: {positions.length > 0
-                  ? positions.map((p) => (getPositionI18nKey(p) ? tt(getPositionI18nKey(p)!) : p)).join(', ')
-                  : '—'}
-              </span>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              <span>{t('licenseNr')}: {user.license_nr}</span>
             </div>
-            {user.licences?.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {user.licences.map((l) => (
-                  <span key={l} className="inline-flex rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-medium text-brand-700 dark:bg-brand-900/30 dark:text-brand-300">
-                    {tt(LICENCE_LABELS[l as LicenceType])}
-                  </span>
-                ))}
-              </div>
-            )}
           </div>
         )}
 

@@ -38,20 +38,20 @@ function StatusBadge({ status }: { status: Game['status'] }) {
   switch (status) {
     case 'live':
       return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
+        <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-400">
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
           {t('statusLive')}
         </span>
       )
     case 'postponed':
       return (
-        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
+        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
           {t('statusPostponed')}
         </span>
       )
     case 'completed':
       return (
-        <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">
+        <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700 dark:bg-green-900/30 dark:text-green-400">
           {t('statusCompleted')}
         </span>
       )

@@ -16,6 +16,7 @@ import RecurringEditDialog from './RecurringEditDialog'
 import type { RecurringEditScope } from './RecurringEditDialog'
 import CoachDashboard from './CoachDashboard'
 import LoadingSpinner from '../../components/LoadingSpinner'
+import TabBar from '../../components/TabBar'
 import { Button } from '@/components/ui/button'
 import type { Training, Team, Hall, Member, Participation } from '../../types'
 
@@ -156,24 +157,14 @@ export default function TrainingsPage() {
       {/* Tabs (coach view) */}
       {(isCoach || effectiveIsAdmin) && selectedTeam && (
         <div className="mt-4">
-          <div className="flex gap-1 rounded-lg bg-gray-100 dark:bg-gray-700 p-1">
-            <button
-              onClick={() => setActiveTab('trainings')}
-              className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-                activeTab === 'trainings' ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-              }`}
-            >
-              {t('tabTrainings')}
-            </button>
-            <button
-              onClick={() => setActiveTab('dashboard')}
-              className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-                activeTab === 'dashboard' ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-              }`}
-            >
-              {t('tabCoachDashboard')}
-            </button>
-          </div>
+          <TabBar
+            tabs={[
+              { key: 'trainings' as const, label: t('tabTrainings') },
+              { key: 'dashboard' as const, label: t('tabCoachDashboard') },
+            ]}
+            active={activeTab}
+            onChange={setActiveTab}
+          />
         </div>
       )}
 

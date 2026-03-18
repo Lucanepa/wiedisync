@@ -245,7 +245,7 @@ export default function RankingsTable({ league, rankings }: RankingsTableProps) 
                                         {opponent}
                                       </span>
                                       {isFuture ? (
-                                        <span className="shrink-0 text-[10px] font-bold text-white">
+                                        <span className="shrink-0 text-[10px] font-bold text-brand-600 dark:text-brand-400">
                                           {t('comeAndSupport')}
                                         </span>
                                       ) : (

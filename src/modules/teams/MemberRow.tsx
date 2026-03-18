@@ -9,6 +9,8 @@ import { getFileUrl } from '../../utils/pbFile'
 import ImageLightbox from '../../components/ImageLightbox'
 import type { ExpandedMemberTeam } from '../../hooks/useTeamMembers'
 import type { Team } from '../../types'
+import { cn } from '@/lib/utils'
+import { Button } from '../../components/ui/button'
 
 interface MemberRowProps {
   memberTeam: ExpandedMemberTeam
@@ -19,6 +21,8 @@ interface MemberRowProps {
   isAdmin?: boolean
   showContact?: boolean
   onTeamUpdate?: (updated: Partial<Team>) => void
+  onExtendShell?: (memberId: string) => void
+  isEditing?: boolean
 }
 
 export const roleColors: Record<string, { bg: string; text: string }> = {
@@ -43,7 +47,7 @@ export function getMemberRole(memberId: string, team?: Team | null): string | nu
   return null
 }
 
-export default function MemberRow({ memberTeam, teamId: _teamId, teamSlug, team, canEdit, isAdmin, showContact = true, onTeamUpdate }: MemberRowProps) {
+export default function MemberRow({ memberTeam, teamId: _teamId, teamSlug, team, canEdit, isAdmin, showContact = true, onTeamUpdate, onExtendShell, isEditing }: MemberRowProps) {
   const { t } = useTranslation('teams')
   const member = memberTeam.expand?.member
   const [editingField, setEditingField] = useState<string | null>(null)
@@ -116,7 +120,7 @@ export default function MemberRow({ memberTeam, teamId: _teamId, teamSlug, team,
   }
 
   return (
-    <tr className="border-b last:border-0 hover:bg-gray-50 dark:hover:bg-gray-700">
+    <tr className={cn('border-b last:border-0 hover:bg-gray-50 dark:hover:bg-gray-700', member.shell && 'border-l-2 border-l-amber-400 bg-amber-400/5')}>
       <td className="px-4 py-3">
         <div className="flex items-center gap-3">
           {member.photo ? (
@@ -155,6 +159,33 @@ export default function MemberRow({ memberTeam, teamId: _teamId, teamSlug, team,
             </span>
           )}
         </div>
+        {member.shell && (
+          <div className="flex items-center gap-1 mt-0.5">
+            <span className="text-xs text-amber-500 dark:text-amber-400">
+              {t('shellAccount')}
+              {member.shell_expires && (
+                <>
+                  {' · '}
+                  {t('expiresIn', {
+                    days: Math.max(0, Math.ceil(
+                      (new Date(member.shell_expires).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+                    ))
+                  })}
+                </>
+              )}
+            </span>
+            {isEditing && onExtendShell && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs text-amber-500 dark:text-amber-400 h-auto py-0 px-1"
+                onClick={() => onExtendShell(member.id)}
+              >
+                {t('extend')}
+              </Button>
+            )}
+          </div>
+        )}
       </td>
 
       {/* Number — editable by coach, hidden for non-playing staff */}

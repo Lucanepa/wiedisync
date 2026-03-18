@@ -61,7 +61,7 @@ const dateFormatOptions: Intl.DateTimeFormatOptions = {
 
 export default function GameDetailModal({ game, onClose, readOnly }: GameDetailModalProps) {
   const { t, i18n } = useTranslation('games')
-  const { user, isCoachOf, canParticipateIn } = useAuth()
+  const { user, isCoachOf, canParticipateIn, isGuestIn } = useAuth()
   const [rosterOpen, setRosterOpen] = useState(false)
   const [editingDeadline, setEditingDeadline] = useState(false)
   const [deadlineValue, setDeadlineValue] = useState(game?.respond_by?.split(' ')[0] ?? '')
@@ -277,6 +277,13 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
 
         {/* Participation — only for own team's scheduled games */}
         {game.status === 'scheduled' && canParticipate && (
+          isGuestIn(game.kscw_team) ? (
+            <div className="border-t dark:border-gray-700 px-6 py-3">
+              <p className="text-sm text-muted-foreground py-4 text-center">
+                {t('games:guestsCannotParticipate')}
+              </p>
+            </div>
+          ) : (
           <div className="flex flex-wrap items-center gap-3 border-t dark:border-gray-700 px-6 py-3">
             {hasAbsence ? (
               <span className="text-sm text-gray-500 dark:text-gray-400">{t('participation:absent')}</span>
@@ -358,6 +365,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
               </div>
             )}
           </div>
+          )
         )}
 
         {/* Game info */}

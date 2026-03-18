@@ -41,20 +41,84 @@ import deNotifications from './locales/de/notifications'
 import deGameScheduling from './locales/de/gameScheduling'
 import deScorerAssign from './locales/de/scorerAssign'
 
+import frCommon from './locales/fr/common'
+import frNav from './locales/fr/nav'
+import frCalendar from './locales/fr/calendar'
+import frGames from './locales/fr/games'
+import frTrainings from './locales/fr/trainings'
+import frAbsences from './locales/fr/absences'
+import frScorer from './locales/fr/scorer'
+import frTeams from './locales/fr/teams'
+import frHallenplan from './locales/fr/hallenplan'
+import frSpielplanung from './locales/fr/spielplanung'
+import frAuth from './locales/fr/auth'
+import frEvents from './locales/fr/events'
+import frHome from './locales/fr/home'
+import frLegal from './locales/fr/legal'
+import frAdmin from './locales/fr/admin'
+import frParticipation from './locales/fr/participation'
+import frNotifications from './locales/fr/notifications'
+import frGameScheduling from './locales/fr/gameScheduling'
+import frScorerAssign from './locales/fr/scorerAssign'
+
+import itCommon from './locales/it/common'
+import itNav from './locales/it/nav'
+import itCalendar from './locales/it/calendar'
+import itGames from './locales/it/games'
+import itTrainings from './locales/it/trainings'
+import itAbsences from './locales/it/absences'
+import itScorer from './locales/it/scorer'
+import itTeams from './locales/it/teams'
+import itHallenplan from './locales/it/hallenplan'
+import itSpielplanung from './locales/it/spielplanung'
+import itAuth from './locales/it/auth'
+import itEvents from './locales/it/events'
+import itHome from './locales/it/home'
+import itLegal from './locales/it/legal'
+import itAdmin from './locales/it/admin'
+import itParticipation from './locales/it/participation'
+import itNotifications from './locales/it/notifications'
+import itGameScheduling from './locales/it/gameScheduling'
+import itScorerAssign from './locales/it/scorerAssign'
+
+import gswCommon from './locales/gsw/common'
+import gswNav from './locales/gsw/nav'
+import gswCalendar from './locales/gsw/calendar'
+import gswGames from './locales/gsw/games'
+import gswTrainings from './locales/gsw/trainings'
+import gswAbsences from './locales/gsw/absences'
+import gswScorer from './locales/gsw/scorer'
+import gswTeams from './locales/gsw/teams'
+import gswHallenplan from './locales/gsw/hallenplan'
+import gswSpielplanung from './locales/gsw/spielplanung'
+import gswAuth from './locales/gsw/auth'
+import gswEvents from './locales/gsw/events'
+import gswHome from './locales/gsw/home'
+import gswLegal from './locales/gsw/legal'
+import gswAdmin from './locales/gsw/admin'
+import gswParticipation from './locales/gsw/participation'
+import gswNotifications from './locales/gsw/notifications'
+import gswGameScheduling from './locales/gsw/gameScheduling'
+import gswScorerAssign from './locales/gsw/scorerAssign'
+
 function getInitialLanguage(): string {
   if (typeof window === 'undefined') return 'de'
   const saved = localStorage.getItem('wiedisync-lang')
   if (saved) return saved
   // Detect browser language, default to German for Swiss context
   const browserLang = navigator.language?.slice(0, 2)
-  return browserLang === 'en' ? 'en' : 'de'
+  const supported = ['de', 'en', 'fr', 'it']
+  return supported.includes(browserLang) ? browserLang : 'de'
 }
 
 const savedLng = getInitialLanguage()
 
 i18n.use(initReactI18next).init({
   lng: savedLng,
-  fallbackLng: 'en',
+  fallbackLng: {
+    gsw: ['de', 'en'],
+    default: ['en'],
+  },
   ns: [
     'common',
     'nav',
@@ -119,6 +183,69 @@ i18n.use(initReactI18next).init({
       notifications: deNotifications,
       gameScheduling: deGameScheduling,
       scorerAssign: deScorerAssign,
+    },
+    fr: {
+      common: frCommon,
+      nav: frNav,
+      calendar: frCalendar,
+      games: frGames,
+      trainings: frTrainings,
+      absences: frAbsences,
+      scorer: frScorer,
+      teams: frTeams,
+      hallenplan: frHallenplan,
+      spielplanung: frSpielplanung,
+      auth: frAuth,
+      events: frEvents,
+      home: frHome,
+      legal: frLegal,
+      admin: frAdmin,
+      participation: frParticipation,
+      notifications: frNotifications,
+      gameScheduling: frGameScheduling,
+      scorerAssign: frScorerAssign,
+    },
+    it: {
+      common: itCommon,
+      nav: itNav,
+      calendar: itCalendar,
+      games: itGames,
+      trainings: itTrainings,
+      absences: itAbsences,
+      scorer: itScorer,
+      teams: itTeams,
+      hallenplan: itHallenplan,
+      spielplanung: itSpielplanung,
+      auth: itAuth,
+      events: itEvents,
+      home: itHome,
+      legal: itLegal,
+      admin: itAdmin,
+      participation: itParticipation,
+      notifications: itNotifications,
+      gameScheduling: itGameScheduling,
+      scorerAssign: itScorerAssign,
+    },
+    gsw: {
+      common: gswCommon,
+      nav: gswNav,
+      calendar: gswCalendar,
+      games: gswGames,
+      trainings: gswTrainings,
+      absences: gswAbsences,
+      scorer: gswScorer,
+      teams: gswTeams,
+      hallenplan: gswHallenplan,
+      spielplanung: gswSpielplanung,
+      auth: gswAuth,
+      events: gswEvents,
+      home: gswHome,
+      legal: gswLegal,
+      admin: gswAdmin,
+      participation: gswParticipation,
+      notifications: gswNotifications,
+      gameScheduling: gswGameScheduling,
+      scorerAssign: gswScorerAssign,
     },
   },
   interpolation: {

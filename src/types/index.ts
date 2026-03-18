@@ -54,7 +54,7 @@ export interface Member extends RecordModel {
   licences: LicenceType[]
   approved: boolean
   requested_team: string
-  language: 'english' | 'german' | ''
+  language: 'english' | 'german' | 'french' | 'italian' | 'swiss_german' | ''
   hide_phone: boolean
   birthdate_visibility: 'full' | 'year_only' | 'hidden'
   member_active: boolean

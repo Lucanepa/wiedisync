@@ -1,0 +1,16 @@
+export default {
+  subtitle: 'depuis 1972',
+  events: 'Evenements',
+  allEvents: 'Tous les evenements',
+  noEvents: 'Aucun evenement a venir.',
+  nextGames: 'Prochains matchs',
+  allGames: 'Tous les matchs',
+  noUpcoming: 'Aucun match a venir.',
+  latestResults: 'Derniers resultats',
+  allResults: 'Tous les resultats',
+  noResults: 'Aucun resultat pour le moment.',
+  nextTrainings: 'Prochains entrainements',
+  allTrainings: 'Tous les entrainements',
+  noTrainings: 'Aucun entrainement a venir.',
+  myTeams: 'Mes equipes',
+} as const

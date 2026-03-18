@@ -1,0 +1,46 @@
+export default {
+  title: 'Evenements',
+  subtitle: 'Evenements et activites du club',
+  newEvent: 'Nouvel evenement',
+  editEvent: 'Modifier l\'evenement',
+  noEvents: 'Aucun evenement',
+  noEventsDescription: 'Aucun evenement prevu pour le moment.',
+  deleteEvent: 'Supprimer l\'evenement',
+  deleteConfirm: 'Voulez-vous vraiment supprimer cet evenement ?',
+
+  // Form fields
+  eventTitle: 'Titre',
+  eventType: 'Type',
+  startDate: 'Debut',
+  endDate: 'Fin',
+  allDay: 'Toute la journee',
+  location: 'Lieu',
+  description: 'Description',
+  teamsInvolved: 'Equipes',
+
+  // Event types
+  club: 'Club',
+  social: 'Social',
+  meeting: 'Reunion',
+  tournament: 'Tournoi',
+  other: 'Autre',
+  respondBy: 'Repondre avant le',
+  respondByHint: 'Rappel 1 jour avant',
+  maxPlayers: 'Nombre max. de joueurs',
+  participation: 'Participation',
+  viewRoster: 'Voir la liste',
+
+  // Session / participation mode
+  participationMode: 'Mode de participation',
+  modeWhole: 'Evenement entier',
+  modePerDay: 'Par jour',
+  modePerSession: 'Par creneau',
+  addTimeBlock: 'Ajouter un creneau',
+  sessions: 'Creneaux',
+  sessionLabel: 'Libelle',
+  sessionDate: 'Date',
+  removeSession: 'Supprimer le creneau',
+  sessionsConfirmed: '{{confirmed}}/{{total}} confirmes',
+  overallView: 'Vue d\'ensemble',
+  sessionParticipation: 'Participation par creneau',
+} as const

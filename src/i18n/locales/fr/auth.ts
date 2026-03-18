@@ -1,0 +1,120 @@
+export default {
+  // Login
+  signIn: 'Se connecter',
+  email: 'Email',
+  password: 'Mot de passe',
+  emailPlaceholder: 'nom@exemple.com',
+  passwordPlaceholder: 'Saisir le mot de passe',
+  signingIn: 'Connexion...',
+  invalidCredentials: 'Email ou mot de passe incorrect',
+  rememberMe: 'Se souvenir de moi',
+  orContinueWith: 'ou continuer avec',
+  signInWithGoogle: 'Se connecter avec Google',
+  oauthError: 'La connexion a echoue. Veuillez reessayer.',
+
+  // Profile
+  editProfile: 'Modifier le profil',
+  contact: 'Contact',
+  phone: 'Telephone',
+  licenseNr: 'N° de licence',
+  licences: 'Licences',
+  upcomingActivities: 'Activites a venir',
+  activeAbsences: 'Absences en cours',
+  showAll: 'Tout afficher',
+  noUpcomingActivities: 'Aucune activite dans les 4 prochaines semaines.',
+  noActiveAbsences: 'Aucune absence en cours.',
+  teams: 'Equipes',
+  roles: 'Roles',
+
+  contactPrivacyNotice: 'Votre email et numero de telephone ne sont visibles que par l\'entraineur et le responsable d\'equipe des equipes ou vous avez une charge officielle (p. ex. marqueur).',
+
+  // Profile Edit
+  firstName: 'Prenom',
+  lastName: 'Nom',
+  changePhoto: 'Changer la photo',
+  managedByCoach: 'Gere par l\'entraineur/admin',
+  position: 'Poste',
+  number: 'Numero',
+  changePassword: 'Changer le mot de passe',
+  sendResetLink: 'Envoyer le lien de reinitialisation',
+  numberTaken: 'Ce numero est deja utilise par {{name}}',
+  errorSaving: 'Erreur lors de l\'enregistrement',
+  fileTooLarge: 'Le fichier est trop volumineux (max 5 Mo)',
+  invalidImageType: 'Type de fichier invalide. Autorise : JPEG, PNG, WebP, GIF',
+
+  // Training label
+  training: 'Entrainement',
+
+  // Sign Up
+  signUp: 'S\'inscrire',
+  createAccount: 'Creer un compte',
+  confirmPassword: 'Confirmer le mot de passe',
+  passwordMismatch: 'Les mots de passe ne correspondent pas',
+  registrationFailed: 'L\'inscription a echoue. Veuillez reessayer.',
+  creatingAccount: 'Creation du compte...',
+  continue: 'Continuer',
+  checkingEmail: 'Verification de l\'email...',
+  alreadyHaveAccount: 'Vous avez deja un compte ?',
+  change: 'Modifier',
+
+  // Account claim
+  accountExists: 'Compte trouve',
+  accountExistsDescription: 'Un compte avec cet email existe deja. Nous vous avons envoye un lien de reinitialisation du mot de passe.',
+  resetLinkSent: 'Lien envoye ! Verifiez votre boite de reception.',
+  tryDifferentEmail: 'Essayer un autre email',
+
+  // Team selection
+  selectTeam: 'Selectionner une equipe',
+  selectTeamPlaceholder: 'Choisir une equipe...',
+  teamRequired: 'Veuillez selectionner une equipe.',
+
+  // Pending page
+  pendingApproval: 'En attente d\'approbation',
+  pendingDescription: 'Votre compte est en attente d\'approbation par l\'entraineur de votre equipe ou un administrateur.',
+  requestedTeam: 'Equipe demandee',
+  refreshStatus: 'Actualiser le statut',
+  checking: 'Verification...',
+  logout: 'Se deconnecter',
+
+  // Onboarding
+  onboardingTitle: 'Bienvenue au KSC Wiedikon',
+  onboardingSubtitle: 'Veuillez completer votre profil pour continuer.',
+  clubdeskNotice: 'Vos donnees ont ete importees depuis Clubdesk. Veuillez les verifier et confirmer.',
+  language: 'Langue',
+  languageGerman: 'Deutsch',
+  languageEnglish: 'English',
+  completeProfile: 'Confirmer le profil',
+  birthdate: 'Date de naissance',
+
+  // Privacy
+  privacySection: 'Confidentialite',
+  hidePhone: 'Masquer le numero de telephone',
+  hidePhoneHint: 'Votre numero de telephone ne sera pas visible par les autres membres.',
+  birthdateVisibility: 'Visibilite de la date de naissance',
+  birthdateVisibilityFull: 'Afficher la date complete',
+  birthdateVisibilityYearOnly: 'Annee uniquement',
+  birthdateVisibilityHidden: 'Masquer',
+  hidden: 'Masque',
+  yearOnly: 'Annee uniquement',
+
+  // Privacy consent
+  privacyConsent: 'En vous inscrivant, vous acceptez notre',
+  privacyPolicy: 'Politique de confidentialite',
+
+  // Password reset
+  resetPasswordTitle: 'Reinitialiser le mot de passe',
+  newPassword: 'Nouveau mot de passe',
+  resetPasswordButton: 'Enregistrer le mot de passe',
+  resettingPassword: 'Enregistrement...',
+  resetSuccess: 'Votre mot de passe a ete modifie avec succes. Vous pouvez maintenant vous connecter.',
+  resetError: 'Ce lien est invalide ou expire. Veuillez demander un nouveau lien de reinitialisation.',
+
+  // Danger Zone
+  dangerZone: 'Zone dangereuse',
+  deleteAccount: 'Supprimer le compte',
+  deleteAccountDescription: 'Votre compte et toutes les donnees associees seront definitivement supprimes. Cette action est irreversible.',
+  deleteAccountConfirm: 'Supprimer definitivement le compte',
+  deleteAccountEmailPrompt: 'Saisissez votre adresse email pour confirmer :',
+  deleteAccountEmailPlaceholder: 'Email de confirmation',
+  deleteAccountError: 'Impossible de supprimer le compte. Veuillez reessayer.',
+} as const

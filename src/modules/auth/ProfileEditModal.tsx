@@ -9,6 +9,14 @@ import { useAuth } from '../../hooks/useAuth'
 import { getFileUrl } from '../../utils/pbFile'
 import { coercePositions, getPositionI18nKey, getSelectablePositions } from '../../utils/memberPositions'
 import { pbLangToI18n } from '../../utils/languageMap'
+import { LANGUAGES, type PbLanguage } from '../../i18n/languageConfig'
+import deFlag from '../../assets/flags/de.svg'
+import gbFlag from '../../assets/flags/gb.svg'
+import frFlag from '../../assets/flags/fr.svg'
+import itFlag from '../../assets/flags/it.svg'
+import chFlag from '../../assets/flags/ch.svg'
+
+const flagMap: Record<string, string> = { de: deFlag, gb: gbFlag, fr: frFlag, it: itFlag, ch: chFlag }
 import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
 import type { LicenceType, MemberPosition } from '../../types'
@@ -45,7 +53,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
   const [birthdate, setBirthdate] = useState('')
   const [hidePhone, setHidePhone] = useState(false)
   const [birthdateVisibility, setBirthdateVisibility] = useState<'full' | 'year_only' | 'hidden'>('full')
-  const [language, setLanguage] = useState<'german' | 'english'>('german')
+  const [language, setLanguage] = useState<PbLanguage>('german')
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [selectedPositions, setSelectedPositions] = useState<MemberPosition[]>([])
@@ -66,7 +74,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
       setBirthdate(user.birthdate ? user.birthdate.slice(0, 10) : '')
       setHidePhone(user.hide_phone ?? false)
       setBirthdateVisibility((user.birthdate_visibility as 'full' | 'year_only' | 'hidden') || 'full')
-      setLanguage((user.language as 'german' | 'english') || 'german')
+      setLanguage((user.language as PbLanguage) || 'german')
       setSelectedPositions(coercePositions(user.position))
       setSelectedLicences((user.licences ?? []) as LicenceType[])
       setPositionDropdownOpen(false)
@@ -94,7 +102,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
     setPhotoPreview(URL.createObjectURL(file))
   }
 
-  function handleLanguageChange(val: 'german' | 'english') {
+  function handleLanguageChange(val: PbLanguage) {
     setLanguage(val)
     // Immediately preview the chosen language in the UI
     i18n.changeLanguage(pbLangToI18n(val))
@@ -220,13 +228,19 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
 
         {/* Language selector */}
         <FormField label={`${t('language')}${onboarding ? ' *' : ''}`}>
-          <Select value={language} onValueChange={(v) => handleLanguageChange(v as 'german' | 'english')}>
+          <Select value={language} onValueChange={(v) => handleLanguageChange(v as PbLanguage)}>
             <SelectTrigger className="min-h-[44px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="german">{t('languageGerman')}</SelectItem>
-              <SelectItem value="english">{t('languageEnglish')}</SelectItem>
+              {LANGUAGES.map((lang) => (
+                <SelectItem key={lang.pbValue} value={lang.pbValue}>
+                  <span className="flex items-center gap-2">
+                    <img src={flagMap[lang.flag]} alt="" className="w-5 h-[15px] rounded-[2px]" />
+                    {lang.nativeName}
+                  </span>
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </FormField>

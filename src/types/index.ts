@@ -58,6 +58,9 @@ export interface Member extends RecordModel {
   hide_phone: boolean
   birthdate_visibility: 'full' | 'year_only' | 'hidden'
   member_active: boolean
+  shell: boolean
+  shell_expires: string
+  shell_reminder_sent: boolean
 
 }
 
@@ -66,6 +69,17 @@ export interface MemberTeam extends RecordModel {
   team: string
   season: string
   guest_level: number  // 0=member, 1-3=guest levels
+
+}
+
+export interface TeamInvite extends RecordModel {
+  token: string
+  team: string
+  invited_by: string
+  guest_level: number // 0=player, 1-3=guest
+  status: 'pending' | 'claimed' | 'expired'
+  claimed_by: string
+  expires_at: string
 
 }
 

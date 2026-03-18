@@ -13,6 +13,7 @@ export type MemberPosition =
   | 'power_forward'
   | 'center'
   | 'coach'
+  | 'guest'
   | 'other'
 
 export interface Team extends RecordModel {

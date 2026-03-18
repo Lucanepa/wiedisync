@@ -13,6 +13,7 @@ import AbsenceCard from './AbsenceCard'
 import AbsenceForm from './AbsenceForm'
 import TeamAbsenceView from './TeamAbsenceView'
 import { Button } from '@/components/ui/button'
+import TabBar from '../../components/TabBar'
 import type { Absence, Member, Team } from '../../types'
 
 type AbsenceExpanded = Absence & { expand?: { member?: Member } }
@@ -93,24 +94,14 @@ export default function AbsencesPage() {
       {/* Tabs (any user with team memberships) */}
       {(memberTeamIds.length > 0 || coachTeamIds.length > 0 || effectiveIsAdmin) && (
         <div className="mt-6">
-          <div className="flex gap-1 rounded-lg bg-gray-100 dark:bg-gray-700 p-1">
-            <button
-              onClick={() => setActiveTab('mine')}
-              className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-                activeTab === 'mine' ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-              }`}
-            >
-              {t('tabMyAbsences')}
-            </button>
-            <button
-              onClick={() => setActiveTab('team')}
-              className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-                activeTab === 'team' ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-              }`}
-            >
-              {t('tabTeamAbsences')}
-            </button>
-          </div>
+          <TabBar
+            tabs={[
+              { key: 'mine' as const, label: t('tabMyAbsences') },
+              { key: 'team' as const, label: t('tabTeamAbsences') },
+            ]}
+            active={activeTab}
+            onChange={setActiveTab}
+          />
         </div>
       )}
 

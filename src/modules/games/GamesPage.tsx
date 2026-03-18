@@ -15,6 +15,8 @@ import RankingsTable from './components/RankingsTable'
 import KscwScoreboard from './components/KscwScoreboard'
 import GameDetailModal from './components/GameDetailModal'
 import LoadingSpinner from '../../components/LoadingSpinner'
+import SharedEmptyState from '../../components/EmptyState'
+import { Calendar, Trophy, BarChart3, LayoutGrid } from 'lucide-react'
 
 function buildTeamFilter(teamPbIds: string[]): string {
   if (teamPbIds.length === 0) return ''
@@ -199,7 +201,7 @@ export default function GamesPage() {
                 {!showAll && games.length >= INITIAL_LIMIT && (
                   <button
                     onClick={() => setShowAll(true)}
-                    className="mt-4 w-full rounded-lg border border-gray-200 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
+                    className="mt-4 w-full cursor-pointer rounded-lg border border-gray-200 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
                   >
                     {t('showMore')}
                   </button>
@@ -224,7 +226,7 @@ export default function GamesPage() {
                 {!showAll && games.length >= INITIAL_LIMIT && (
                   <button
                     onClick={() => setShowAll(true)}
-                    className="mt-4 w-full rounded-lg border border-gray-200 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
+                    className="mt-4 w-full cursor-pointer rounded-lg border border-gray-200 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
                   >
                     {t('showMore')}
                   </button>
@@ -260,6 +262,13 @@ export default function GamesPage() {
   )
 }
 
+const tabIcons: Record<string, React.ReactNode> = {
+  upcoming: <Calendar className="h-10 w-10" />,
+  results: <Trophy className="h-10 w-10" />,
+  rankings: <BarChart3 className="h-10 w-10" />,
+  scoreboard: <LayoutGrid className="h-10 w-10" />,
+}
+
 function EmptyState({ tab }: { tab: string }) {
   const { t } = useTranslation('games')
 
@@ -271,9 +280,10 @@ function EmptyState({ tab }: { tab: string }) {
   }
 
   return (
-    <div className="py-12 text-center text-gray-500 dark:text-gray-400">
-      <p>{messages[tab] ?? t('common:noData')}</p>
-      <p className="mt-1 text-sm">{t('common:tryAdjustingFilter')}</p>
-    </div>
+    <SharedEmptyState
+      icon={tabIcons[tab]}
+      title={messages[tab] ?? t('common:noData')}
+      description={t('common:tryAdjustingFilter')}
+    />
   )
 }

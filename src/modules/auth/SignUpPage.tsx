@@ -174,28 +174,23 @@ export default function SignUpPage() {
               />
 
               {/* Language */}
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t('language')}
-                </label>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  {LANGUAGES.map((lang) => (
-                    <button
-                      key={lang.pbValue}
-                      type="button"
-                      onClick={() => handleLanguageChange(lang.pbValue)}
-                      className={`flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
-                        selectedLanguage === lang.pbValue
-                          ? 'border-brand-500 bg-brand-50 text-brand-700 dark:border-brand-400 dark:bg-brand-900/30 dark:text-brand-300'
-                          : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-                      }`}
-                    >
-                      <img src={flagMap[lang.flag]} alt="" className="w-5 h-[15px] rounded-[2px]" />
-                      {lang.nativeName}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <FormField label={t('language')}>
+                <Select value={selectedLanguage} onValueChange={(v) => handleLanguageChange(v as PbLanguage)}>
+                  <SelectTrigger className="min-h-[44px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LANGUAGES.map((lang) => (
+                      <SelectItem key={lang.pbValue} value={lang.pbValue}>
+                        <span className="flex items-center gap-2">
+                          <img src={flagMap[lang.flag]} alt="" className="w-5 h-[15px] rounded-[2px]" />
+                          {lang.nativeName}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormField>
 
               {error && (
                 <p className="text-sm text-red-600 dark:text-red-400">{error}</p>

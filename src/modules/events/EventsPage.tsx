@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { PartyPopper } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
@@ -18,13 +18,21 @@ type EventExpanded = Event & { expand?: { teams?: Team[] } }
 
 export default function EventsPage() {
   const { t } = useTranslation('events')
-  const { isCoach } = useAuth()
+  const { isCoach, memberTeamIds } = useAuth()
   const [formOpen, setFormOpen] = useState(false)
   const [editingEvent, setEditingEvent] = useState<Event | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [rosterEvent, setRosterEvent] = useState<Event | null>(null)
 
+  // Non-admins: show events for own teams + club-wide events (no teams assigned)
+  const eventFilter = useMemo(() => {
+    if (memberTeamIds.length === 0) return ''
+    const teamClauses = memberTeamIds.map(id => `teams~"${id}"`).join(' || ')
+    return `teams:length = 0 || ${teamClauses}`
+  }, [memberTeamIds])
+
   const { data: events, isLoading, refetch } = usePB<EventExpanded>('events', {
+    filter: eventFilter,
     sort: '-start_date',
     expand: 'teams',
     perPage: 50,

@@ -134,9 +134,18 @@ export default function HomePage() {
   const nextGames = hasTeams && !showAllGames ? myNextGames : allNextGames
   const latestResults = hasTeams && !showAllResults ? myLatestResults : allLatestResults
 
-  // Upcoming events
+  // Upcoming events — scope to user's teams + club-wide events
+  const eventFilter = useMemo(() => {
+    const parts = [`end_date >= "${today}"`]
+    if (hasTeams) {
+      const teamClauses = userTeamIds.map(id => `teams~"${id}"`).join(' || ')
+      parts.push(`(teams:length = 0 || ${teamClauses})`)
+    }
+    return parts.join(' && ')
+  }, [today, hasTeams, userTeamIds])
+
   const { data: events, isLoading: eventsLoading } = usePB<EventExpanded>('events', {
-    filter: `end_date >= "${today}"`,
+    filter: eventFilter,
     sort: '+start_date',
     expand: 'teams',
     perPage: 10,

@@ -48,6 +48,7 @@ export default function ParticipationRosterModal({
 }: ParticipationRosterModalProps) {
   const { t } = useTranslation('participation')
   const { t: te } = useTranslation('events')
+  const { t: ta } = useTranslation('absences')
   const { members, isLoading: membersLoading } = useTeamMembers(teamId ?? undefined)
   const [absences, setAbsences] = useState<Absence[]>([])
   const [staffMembers, setStaffMembers] = useState<Member[]>([])
@@ -148,11 +149,16 @@ export default function ParticipationRosterModal({
   const tentativeParts = playerParticipations.filter(p => p.status === 'tentative')
   const tentative = tentativeParts.length
   const tentativeGuests = tentativeParts.reduce((sum, p) => sum + (p.guest_count ?? 0), 0)
-  const declined = playerParticipations.filter(p => p.status === 'declined').length
+  // Count absent members without a participation record as declined too
+  const absentMemberIds = new Set(absences.map(a => a.member))
+  const absentWithoutParticipation = memberList.filter(m =>
+    absentMemberIds.has(m.id) && !playerParticipations.some(p => p.member === m.id)
+  ).length
+  const declined = playerParticipations.filter(p => p.status === 'declined').length + absentWithoutParticipation
   const waitlistedParts = playerParticipations.filter(p => p.status === 'waitlisted')
     .sort((a, b) => (a.waitlisted_at ?? '').localeCompare(b.waitlisted_at ?? ''))
   const waitlisted = waitlistedParts.length
-  const notResponded = memberList.length - playerParticipations.length
+  const notResponded = memberList.length - playerParticipations.length - absentWithoutParticipation
   const totalGuests = confirmedGuests + tentativeGuests
 
   // Staff counts
@@ -168,11 +174,25 @@ export default function ParticipationRosterModal({
     return `${(member.first_name ?? '')[0] ?? ''}${(member.last_name ?? '')[0] ?? ''}`.toUpperCase()
   }
 
-  function getMemberStatus(memberId: string): Participation['status'] | 'absent' | null {
+  function getMemberStatus(memberId: string): Participation['status'] | null {
     const absence = absences.find(a => a.member === memberId)
-    if (absence) return 'absent'
+    if (absence) return 'declined'
     const p = participations.find(p => p.member === memberId)
     return p?.status ?? null
+  }
+
+  const reasonLabels: Record<string, string> = {
+    injury: ta('reasonInjury'),
+    vacation: ta('reasonVacation'),
+    work: ta('reasonWork'),
+    personal: ta('reasonPersonal'),
+    other: ta('reasonOther'),
+  }
+
+  function getMemberAbsenceReason(memberId: string): string | null {
+    const absence = absences.find(a => a.member === memberId)
+    if (!absence) return null
+    return reasonLabels[absence.reason] ?? null
   }
 
   function getStaffMemberStatus(memberId: string): Participation['status'] | null {
@@ -185,15 +205,6 @@ export default function ParticipationRosterModal({
     tentative: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
     declined: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
     waitlisted: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-    absent: 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400',
-  }
-
-  const statusLabels: Record<string, string> = {
-    confirmed: t('confirmed'),
-    tentative: t('tentative'),
-    declined: t('declined'),
-    waitlisted: t('waitlisted'),
-    absent: t('absent'),
   }
 
   return (
@@ -321,9 +332,11 @@ export default function ParticipationRosterModal({
                       </span>
                     )}
                   </p>
-                  {participation?.note && (
-                    <p className="truncate text-xs text-gray-400">{participation.note}</p>
-                  )}
+                  {(() => {
+                    const absenceReason = getMemberAbsenceReason(member.id)
+                    const note = absenceReason || participation?.note
+                    return note ? <p className="truncate text-xs italic text-gray-400">{note}</p> : null
+                  })()}
                 </div>
 
                 {/* Status badge — show session count in overall tab */}
@@ -345,7 +358,7 @@ export default function ParticipationRosterModal({
                   })()
                 ) : status ? (
                   <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[status] ?? ''}`}>
-                    {statusLabels[status] ?? t('notResponded')}
+                    {absentMemberIds.has(member.id) ? t('declinedAbsence') : t(status)}
                   </span>
                 ) : (
                   <span className="shrink-0 text-xs text-gray-400 dark:text-gray-500">

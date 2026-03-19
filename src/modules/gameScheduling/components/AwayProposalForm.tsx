@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { BookingData } from '../hooks/useAvailableSlots'
+import LocationCombobox from '@/components/LocationCombobox'
 
 interface Props {
   existingProposal?: BookingData
@@ -77,13 +78,10 @@ export default function AwayProposalForm({ existingProposal, onSubmit }: Props) 
             </div>
             <div>
               <label className="mb-1 block text-xs text-gray-600 dark:text-gray-400">{t('proposalPlace')}</label>
-              <input
-                type="text"
+              <LocationCombobox
                 value={p.place}
-                onChange={e => updateProposal(i, 'place', e.target.value)}
+                onChange={(v) => updateProposal(i, 'place', v)}
                 placeholder="z.B. Sporthalle Muster, Musterstr. 1"
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-500 dark:bg-gray-600 dark:text-gray-100"
-                required
               />
             </div>
           </div>

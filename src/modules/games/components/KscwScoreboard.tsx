@@ -272,7 +272,7 @@ export default function KscwScoreboard({ rankings }: KscwScoreboardProps) {
 
 function formatValue(value: number, mode: ScoreboardMode): string {
   if (mode === 'perGame') {
-    return value.toFixed(1).replace('.', ',')
+    return value.toFixed(1)
   }
   return formatNumberSwiss(value)
 }

@@ -34,6 +34,11 @@ function getAuth(e) {
   return auth
 }
 
+function isSuperuser(e) {
+  var auth = e.requestInfo().auth
+  return auth && auth.collection().name === "_superusers"
+}
+
 function getRoles(auth) {
   var roles = auth.get("role")
   if (!roles || !roles.length) return []
@@ -43,11 +48,14 @@ function getRoles(auth) {
 // ── assertTeamAccess ────────────────────────────────────────────────
 
 function assertTeamAccess(e, teamId) {
+  // PB _superusers (admin UI) bypass all checks
+  if (isSuperuser(e)) return
+
   var auth = getAuth(e)
   var authId = auth.id
   var roles = getRoles(auth)
 
-  // superuser or admin → allow
+  // superuser or admin role → allow
   if (arrayContains(roles, "superuser") || arrayContains(roles, "admin")) {
     return
   }
@@ -85,11 +93,14 @@ function assertTeamAccess(e, teamId) {
 // ── assertMemberFieldAccess ─────────────────────────────────────────
 
 function assertMemberFieldAccess(e) {
+  // PB _superusers (admin UI) bypass all checks
+  if (isSuperuser(e)) return
+
   var auth = getAuth(e)
   var authId = auth.id
   var roles = getRoles(auth)
 
-  // superuser/admin → allow all fields
+  // superuser/admin role → allow all fields
   if (arrayContains(roles, "superuser") || arrayContains(roles, "admin")) {
     return
   }
@@ -170,11 +181,14 @@ function assertMemberFieldAccess(e) {
 // ── assertAdminAccess ───────────────────────────────────────────────
 
 function assertAdminAccess(e, collectionHint) {
+  // PB _superusers (admin UI) bypass all checks
+  if (isSuperuser(e)) return
+
   var auth = getAuth(e)
   var authId = auth.id
   var roles = getRoles(auth)
 
-  // superuser/admin → allow
+  // superuser/admin role → allow
   if (arrayContains(roles, "superuser") || arrayContains(roles, "admin")) {
     return
   }
@@ -201,6 +215,7 @@ function assertAdminAccess(e, collectionHint) {
 // ── Exports ─────────────────────────────────────────────────────────
 
 module.exports = {
+  isSuperuser: isSuperuser,
   assertTeamAccess: assertTeamAccess,
   assertMemberFieldAccess: assertMemberFieldAccess,
   assertAdminAccess: assertAdminAccess,

@@ -9,7 +9,7 @@ import LanguageDropdown from '@/components/LanguageDropdown'
 import { getFileUrl } from '../utils/pbFile'
 import AdminToggle from './AdminToggle'
 import { useAdminMode } from '../hooks/useAdminMode'
-import { Bell, UserX, PenSquare, CalendarDays, ClipboardList, Building2, CalendarClock, Database, RefreshCcw, LogIn, User, Settings, ChevronDown, ScrollText } from 'lucide-react'
+import { Bell, UserX, PenSquare, CalendarDays, ClipboardList, Building2, CalendarClock, Database, RefreshCcw, LogIn, User, Settings, ChevronDown, ScrollText, MessageSquare } from 'lucide-react'
 import type { MemberTeam, Team } from '../types'
 
 type ExpandedMemberTeam = MemberTeam & { expand?: { team?: Team } }
@@ -89,6 +89,21 @@ function OptionsAccordion({ theme, toggleTheme, onClose }: { theme: string; togg
               <span className="text-base font-medium text-gray-700 dark:text-gray-300">{t('adminMode', 'Admin mode')}</span>
               <AdminToggle size="sm" />
             </div>
+            {/* Feedback row */}
+            <NavLink
+              to="/feedback"
+              onClick={onClose}
+              className={({ isActive }) =>
+                `flex min-h-[48px] items-center gap-3 rounded-lg px-4 py-3 transition-colors ${
+                  isActive
+                    ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/50 dark:text-gold-400'
+                    : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+                }`
+              }
+            >
+              <MessageSquare className="h-4 w-4" />
+              <span className="text-base font-medium">{t('feedback')}</span>
+            </NavLink>
             {/* Version / Changelog row */}
             <NavLink
               to="/changelog"

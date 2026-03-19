@@ -140,6 +140,20 @@ const CommandShortcut = ({
 }
 CommandShortcut.displayName = "CommandShortcut"
 
+const CommandLoading = ({
+  className,
+  children,
+  ...props
+}: React.ComponentPropsWithoutRef<typeof CommandPrimitive.Loading> & { className?: string }) => (
+  <CommandPrimitive.Loading
+    className={cn('py-2 px-3 text-sm text-muted-foreground', className)}
+    {...props}
+  >
+    {children}
+  </CommandPrimitive.Loading>
+)
+CommandLoading.displayName = 'CommandLoading'
+
 export {
   Command,
   CommandDialog,
@@ -150,4 +164,5 @@ export {
   CommandItem,
   CommandShortcut,
   CommandSeparator,
+  CommandLoading,
 }

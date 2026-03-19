@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import ViewToggle from '../../components/ViewToggle'
 import FilterChips from '../../components/FilterChips'
 import { useTeams } from '../../hooks/useTeams'
+import { Switch } from '@/components/ui/switch'
 import type { SpielplanungFilterState, SportFilter, GameTypeFilter } from '../../types/calendar'
 
 interface SpielplanungFiltersProps {
@@ -65,15 +66,10 @@ export default function SpielplanungFilters({ filters, onChange }: SpielplanungF
 
       <ViewToggle options={typeOptions} value={filters.gameType} onChange={handleTypeChange} />
 
-      <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-        <input
-          type="checkbox"
-          checked={filters.showAbsences}
-          onChange={handleAbsencesToggle}
-          className="rounded border-gray-300 dark:border-gray-600"
-        />
+      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+        <Switch checked={filters.showAbsences} onCheckedChange={(checked) => onChange({ ...filters, showAbsences: checked })} />
         {t('showAbsences')}
-      </label>
+      </div>
     </div>
   )
 }

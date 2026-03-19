@@ -5,6 +5,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useTheme } from '../../hooks/useTheme'
 import { Button } from '@/components/ui/button'
 import { FormInput } from '@/components/FormField'
+import { Switch } from '@/components/ui/switch'
 
 export default function LoginPage() {
   const { login, user } = useAuth()
@@ -78,15 +79,9 @@ export default function LoginPage() {
               placeholder={t('passwordPlaceholder')}
             />
 
-            <div className="flex items-center">
-              <input
-                id="remember-me"
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700"
-              />
-              <label htmlFor="remember-me" className="ml-2 text-sm text-gray-600 dark:text-gray-400">
+            <div className="flex items-center gap-2">
+              <Switch checked={rememberMe} onCheckedChange={setRememberMe} id="remember-me" />
+              <label htmlFor="remember-me" className="text-sm text-gray-600 dark:text-gray-400">
                 {t('rememberMe')}
               </label>
             </div>

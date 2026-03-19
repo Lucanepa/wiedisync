@@ -17,6 +17,8 @@ import itFlag from '../../assets/flags/it.svg'
 import chFlag from '../../assets/flags/ch.svg'
 
 const flagMap: Record<string, string> = { de: deFlag, gb: gbFlag, fr: frFlag, it: itFlag, ch: chFlag }
+import { Switch } from '@/components/ui/switch'
+import { Checkbox } from '@/components/ui/checkbox'
 import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
 import type { LicenceType, MemberPosition } from '../../types'
@@ -363,13 +365,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
                         }}
                         className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
                       >
-                        <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${active ? 'border-brand-500 bg-brand-500 text-white' : 'border-gray-300 dark:border-gray-500'}`}>
-                          {active && (
-                            <svg className="h-3 w-3" viewBox="0 0 12 12">
-                              <path d="M10 3L4.5 8.5 2 6" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                          )}
-                        </span>
+                        <Checkbox checked={active} tabIndex={-1} className="pointer-events-none" />
                         {getPositionI18nKey(p) ? tt(getPositionI18nKey(p)!) : p}
                       </button>
                     )
@@ -415,12 +411,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
             </p>
             <div className="space-y-3">
               <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={hidePhone}
-                  onChange={(e) => setHidePhone(e.target.checked)}
-                  className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 dark:border-gray-500 dark:bg-gray-700"
-                />
+                <Switch checked={hidePhone} onCheckedChange={setHidePhone} />
                 <div>
                   <span className="text-sm text-gray-700 dark:text-gray-300">{t('hidePhone')}</span>
                   <p className="text-xs text-gray-500 dark:text-gray-400">{t('hidePhoneHint')}</p>

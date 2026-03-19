@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { FormTextarea } from '@/components/FormField'
 import DatePicker from '@/components/ui/DatePicker'
 import SearchableSelect from '@/components/ui/SearchableSelect'
+import { Checkbox } from '@/components/ui/checkbox'
 import type { Absence, Member, MemberTeam } from '../../types'
 
 interface AbsenceFormProps {
@@ -190,12 +191,10 @@ export default function AbsenceForm({ open, absence, onSave, onCancel }: Absence
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('affects')}</label>
           <div className="mt-2 flex gap-4">
             {(['trainings', 'games', 'all'] as const).map((value) => (
-              <label key={value} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                <input
-                  type="checkbox"
+              <label key={value} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                <Checkbox
                   checked={affects.includes(value)}
-                  onChange={() => toggleAffect(value)}
-                  className="rounded border-gray-300 dark:border-gray-600"
+                  onCheckedChange={() => toggleAffect(value)}
                 />
                 {value === 'trainings' ? t('affectsTrainings') : value === 'games' ? t('affectsGames') : t('affectsAll')}
               </label>

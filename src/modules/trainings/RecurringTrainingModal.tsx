@@ -10,6 +10,7 @@ import { logActivity } from '../../utils/logActivity'
 import type { HallSlot, HallClosure, Team, Hall } from '../../types'
 import TeamChip from '../../components/TeamChip'
 import DatePicker from '@/components/ui/DatePicker'
+import { Switch } from '@/components/ui/switch'
 
 type SlotExpanded = HallSlot & { expand?: { team?: Team; hall?: Hall } }
 
@@ -332,18 +333,16 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
             />
           )}
           <div className="flex items-end">
-            <label className="flex min-h-[44px] w-full items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300">
-              <input
-                type="checkbox"
+            <div className="flex min-h-[44px] w-full items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300">
+              <Switch
                 checked={untilSeasonEnd}
-                onChange={(e) => {
-                  setUntilSeasonEnd(e.target.checked)
-                  if (e.target.checked) setEndDate(getSeasonEndDate())
+                onCheckedChange={(checked) => {
+                  setUntilSeasonEnd(checked)
+                  if (checked) setEndDate(getSeasonEndDate())
                 }}
-                className="rounded border-gray-300 dark:border-gray-600"
               />
               {t('untilSeasonEnd')}
-            </label>
+            </div>
           </div>
         </div>
 

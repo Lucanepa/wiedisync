@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { FormInput, FormTextarea, FormField } from '@/components/FormField'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import DatePicker from '@/components/ui/DatePicker'
+import { Switch } from '@/components/ui/switch'
 import pb from '../../../pb'
 import { logActivity } from '../../../utils/logActivity'
 import { useConflictChecker } from '../hooks/useConflictChecker'
@@ -342,15 +343,10 @@ export default function SlotEditor({
         </div>
 
         {/* Row 4: Recurring */}
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={form.recurring}
-            onChange={(e) => update('recurring', e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-brand-600 focus:ring-brand-500"
-          />
+        <div className="flex items-center gap-2">
+          <Switch checked={form.recurring} onCheckedChange={(checked) => update('recurring', checked)} />
           <span className="text-sm text-gray-700 dark:text-gray-300">{t('recurring')}</span>
-        </label>
+        </div>
 
         {/* Row 5: Validity dates (only if recurring) */}
         {form.recurring && (
@@ -371,22 +367,16 @@ export default function SlotEditor({
                     />
                   </div>
                 )}
-                <label className={`flex shrink-0 items-center gap-1.5 rounded-md border px-2 py-2 text-xs font-medium ${indefinitely ? 'border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 dark:border-brand-600' : 'border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700'}`}>
-                  <input
-                    type="checkbox"
+                <div className={`flex shrink-0 items-center gap-1.5 rounded-md border px-2 py-2 text-xs font-medium ${indefinitely ? 'border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 dark:border-brand-600' : 'border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700'}`}>
+                  <Switch
                     checked={indefinitely}
-                    onChange={(e) => {
-                      setIndefinitely(e.target.checked)
-                      if (e.target.checked) {
-                        update('valid_until', '')
-                      } else {
-                        update('valid_until', '')
-                      }
+                    onCheckedChange={(checked) => {
+                      setIndefinitely(checked)
+                      update('valid_until', '')
                     }}
-                    className="h-3.5 w-3.5 rounded border-gray-300 dark:border-gray-600 text-brand-600 focus:ring-brand-500"
                   />
                   {t('indefinitely')}
-                </label>
+                </div>
               </div>
             </div>
           </div>

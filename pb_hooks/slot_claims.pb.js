@@ -207,7 +207,7 @@ onRecordUpdate((e) => {
             html: tpl.buildEmailLayout(slotBody, {
               title: "Hallenzeit frei",
               greeting: "Hallo <strong style=\"color:#ffffff\">" + firstName + "</strong>,",
-              ctaUrl: "https://kscw.lucanepa.com/hallenplan",
+              ctaUrl: "https://wiedisync.kscw.ch/hallenplan",
               ctaLabel: "Zum Hallenplan",
               footerExtra: "Viele Gr\u00fcsse, KSCW",
             }),
@@ -218,7 +218,7 @@ onRecordUpdate((e) => {
                 (hallName ? " in " + hallName : "") + " wurde abgesagt.",
               "",
               "Die Hallenzeit ist ab sofort verfuegbar.",
-            ], { title: "Hallenzeit frei", url: "https://kscw.lucanepa.com/hallenplan" }),
+            ], { title: "Hallenzeit frei", url: "https://wiedisync.kscw.ch/hallenplan" }),
           })
 
           $app.newMailClient().send(message)

@@ -124,7 +124,7 @@ routerAdd("POST", "/api/team-invites/create", function (e) {
   record.set("created_by", auth.id)
   $app.save(record)
 
-  var qrUrl = "https://kscw.lucanepa.com/join?token=" + token
+  var qrUrl = "https://wiedisync.kscw.ch/join?token=" + token
 
   console.log("[ShellInvite] Created invite " + token + " for team " + team.getString("name") + " by " + auth.id)
 

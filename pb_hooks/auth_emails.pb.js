@@ -21,7 +21,7 @@ onMailerRecordPasswordResetSend(function(e) {
   var match = e.message.html.match(/confirm-password-reset\/([A-Za-z0-9_\-\.]+)/)
   if (match) token = match[1]
 
-  var resetUrl = "https://kscw.lucanepa.com/reset-password/" + token
+  var resetUrl = "https://wiedisync.kscw.ch/reset-password/" + token
 
   var subject = lang === "en"
     ? "Reset Password – Wiedisync"

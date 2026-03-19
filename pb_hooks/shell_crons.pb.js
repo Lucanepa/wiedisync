@@ -95,13 +95,13 @@ cronAdd("shell_reminder", "0 9 * * *", function() {
           html: "<p>Hi " + firstName + ",</p>" +
             "<p>Your guest access to the KSC Wiedikon platform will expire soon.</p>" +
             "<p>To keep your access permanently, please log in and set a password for your account at " +
-            "<a href=\"https://kscw.lucanepa.com\">kscw.lucanepa.com</a>.</p>" +
+            "<a href=\"https://wiedisync.kscw.ch\">wiedisync.kscw.ch</a>.</p>" +
             "<p>Once you set a password, your account will be automatically upgraded to a full member account.</p>" +
             "<p>If you have any questions, please contact your team coach.</p>" +
             "<p>Best regards,<br>KSC Wiedikon</p>",
           text: "Hi " + firstName + ",\n\n" +
             "Your guest access to the KSC Wiedikon platform will expire soon.\n\n" +
-            "To keep your access permanently, please log in and set a password for your account at https://kscw.lucanepa.com.\n\n" +
+            "To keep your access permanently, please log in and set a password for your account at https://wiedisync.kscw.ch.\n\n" +
             "Once you set a password, your account will be automatically upgraded to a full member account.\n\n" +
             "If you have any questions, please contact your team coach.\n\n" +
             "Best regards,\nKSC Wiedikon"

@@ -334,6 +334,21 @@ function syncGames() {
     try {
       // Try to find existing game
       var existing = $app.findFirstRecordByFilter("games", "game_id = {:gameId}", { gameId: gameId })
+      // Auto-adjust respond_by when game date changes (preserve offset)
+      var oldDate = existing.getString("date")
+      var respondBy = existing.getString("respond_by")
+      if (respondBy && oldDate && oldDate !== g.date) {
+        var oldMs = new Date(oldDate).getTime()
+        var rbMs = new Date(respondBy.split(" ")[0]).getTime()
+        var offsetMs = oldMs - rbMs
+        var newGameMs = new Date(g.date).getTime()
+        var newRb = new Date(newGameMs - offsetMs)
+        var yyyy = newRb.getFullYear()
+        var mm = String(newRb.getMonth() + 1).padStart(2, "0")
+        var dd = String(newRb.getDate()).padStart(2, "0")
+        gameData.respond_by = yyyy + "-" + mm + "-" + dd
+        console.log("[BP Sync] Game " + gameId + " date changed " + oldDate + " -> " + g.date + ", respond_by adjusted to " + yyyy + "-" + mm + "-" + dd)
+      }
       // Update existing
       existing.load(gameData)
       $app.save(existing)

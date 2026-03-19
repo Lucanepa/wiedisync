@@ -213,12 +213,32 @@ function syncGames() {
       var referees = mapReferees(g.referees)
 
       var record
+      var isUpdate = false
       try {
         record = $app.findFirstRecordByData("games", "game_id", "vb_" + gameId)
+        isUpdate = true
         updated++
       } catch (e) {
         record = new Record(gamesCol)
         created++
+      }
+
+      // Auto-adjust respond_by when game date changes (preserve offset)
+      if (isUpdate) {
+        var oldDate = record.getString("date")
+        var respondBy = record.getString("respond_by")
+        if (respondBy && oldDate && oldDate !== parsed.date) {
+          var oldMs = new Date(oldDate).getTime()
+          var rbMs = new Date(respondBy.split(" ")[0]).getTime()
+          var offsetMs = oldMs - rbMs
+          var newGameMs = new Date(parsed.date).getTime()
+          var newRb = new Date(newGameMs - offsetMs)
+          var yyyy = newRb.getFullYear()
+          var mm = String(newRb.getMonth() + 1).padStart(2, "0")
+          var dd = String(newRb.getDate()).padStart(2, "0")
+          record.set("respond_by", yyyy + "-" + mm + "-" + dd)
+          console.log("[SV Sync] Game vb_" + gameId + " date changed " + oldDate + " -> " + parsed.date + ", respond_by adjusted to " + yyyy + "-" + mm + "-" + dd)
+        }
       }
 
       record.set("game_id", "vb_" + gameId)

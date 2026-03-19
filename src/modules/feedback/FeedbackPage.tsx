@@ -1,7 +1,7 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
-import { Bug, Lightbulb, MessageCircle, Paperclip, X, ExternalLink } from 'lucide-react'
+import { Bug, Lightbulb, MessageCircle, Paperclip, X, ExternalLink, MessageSquare, ChevronDown, ChevronRight, CheckCircle2, AlertCircle } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { usePB } from '../../hooks/usePB'
 import pb from '../../pb'
@@ -44,6 +44,32 @@ interface FeedbackRecord {
   updated: string
 }
 
+interface GitHubLabel {
+  name: string
+  color: string
+}
+
+interface GitHubComment {
+  id: string
+  body: string
+  author: { login: string }
+  createdAt: string
+}
+
+interface GitHubIssue {
+  number: number
+  title: string
+  state: string
+  body: string
+  labels: GitHubLabel[]
+  comments: GitHubComment[]
+  createdAt: string
+  closedAt: string | null
+  url: string
+}
+
+const GITHUB_REPO = 'Lucanepa/wiedisync'
+
 export default function FeedbackPage() {
   const { t } = useTranslation('feedback')
   const { user } = useAuth()
@@ -59,6 +85,41 @@ export default function FeedbackPage() {
     sort: '-created',
     all: true,
   })
+
+  // GitHub issues
+  const [issues, setIssues] = useState<GitHubIssue[]>([])
+  const [issuesLoading, setIssuesLoading] = useState(true)
+  const [showClosed, setShowClosed] = useState(false)
+
+  useEffect(() => {
+    fetch(`https://api.github.com/repos/${GITHUB_REPO}/issues?state=all&per_page=50&sort=created&direction=desc`)
+      .then((r) => r.json())
+      .then((data: Array<Record<string, unknown>>) => {
+        // GitHub API returns PRs in issues endpoint — filter them out
+        const mapped: GitHubIssue[] = data
+          .filter((d) => !d.pull_request)
+          .map((d) => ({
+            number: d.number as number,
+            title: d.title as string,
+            state: d.state as string,
+            body: (d.body as string) ?? '',
+            labels: ((d.labels as Array<Record<string, string>>) ?? []).map((l) => ({
+              name: l.name,
+              color: l.color,
+            })),
+            comments: [],
+            createdAt: d.created_at as string,
+            closedAt: (d.closed_at as string) ?? null,
+            url: d.html_url as string,
+          }))
+        setIssues(mapped)
+      })
+      .catch(() => {})
+      .finally(() => setIssuesLoading(false))
+  }, [])
+
+  const openIssues = useMemo(() => issues.filter((i) => i.state === 'open'), [issues])
+  const closedIssues = useMemo(() => issues.filter((i) => i.state === 'closed'), [issues])
 
   const handleFile = useCallback((f: File) => {
     if (f.size > MAX_FILE_SIZE) {
@@ -240,42 +301,164 @@ export default function FeedbackPage() {
         </form>
       )}
 
-      {/* Submissions list */}
-      <div>
+      {/* GitHub Issues — public tracker */}
+      <div className="mb-8">
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-          {t('mySubmissions')}
+          {t('issueTracker')}
         </h2>
-        {submissions.length === 0 ? (
-          <p className="text-sm text-gray-400 dark:text-gray-500">{t('noSubmissions')}</p>
+
+        {issuesLoading ? (
+          <div className="py-4 text-center text-sm text-gray-400">{t('loadingIssues')}</div>
+        ) : issues.length === 0 ? (
+          <p className="text-sm text-gray-400 dark:text-gray-500">{t('noIssues')}</p>
         ) : (
-          <div className="space-y-2">
-            {submissions.map((item) => {
-              const config = TYPE_CONFIG[item.type] || TYPE_CONFIG.feedback
-              return (
-                <div key={item.id} className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800">
-                  <Badge variant={config.badgeVariant} className="text-xs uppercase">
-                    {item.type}
-                  </Badge>
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-medium text-gray-900 dark:text-white">{item.title}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">{formatDate(item.created)}</div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[item.status] || ''}`}>
-                      {t(`status${item.status.charAt(0).toUpperCase() + item.status.slice(1)}`)}
-                    </span>
-                    {item.github_issue && (
-                      <a href={item.github_issue} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-brand-600">
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
-                    )}
-                  </div>
+          <div className="space-y-4">
+            {/* Open issues */}
+            {openIssues.length > 0 && (
+              <div>
+                <div className="mb-2 flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    {t('openIssues')} ({openIssues.length})
+                  </span>
                 </div>
-              )
-            })}
+                <div className="space-y-1.5">
+                  {openIssues.map((issue) => (
+                    <IssueRow key={issue.number} issue={issue} formatDate={formatDate} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Closed issues — collapsible */}
+            {closedIssues.length > 0 && (
+              <div>
+                <button
+                  onClick={() => setShowClosed((v) => !v)}
+                  className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                >
+                  {showClosed ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  <CheckCircle2 className="h-4 w-4 text-purple-500 dark:text-purple-400" />
+                  <span>{t('closedIssues')} ({closedIssues.length})</span>
+                </button>
+                {showClosed && (
+                  <div className="space-y-1.5">
+                    {closedIssues.map((issue) => (
+                      <IssueRow key={issue.number} issue={issue} formatDate={formatDate} closed />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
+
+      {/* My submissions */}
+      {user && (
+        <div>
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            {t('mySubmissions')}
+          </h2>
+          {submissions.length === 0 ? (
+            <p className="text-sm text-gray-400 dark:text-gray-500">{t('noSubmissions')}</p>
+          ) : (
+            <div className="space-y-2">
+              {submissions.map((item) => {
+                const config = TYPE_CONFIG[item.type] || TYPE_CONFIG.feedback
+                return (
+                  <div key={item.id} className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800">
+                    <Badge variant={config.badgeVariant} className="text-xs uppercase">
+                      {item.type}
+                    </Badge>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium text-gray-900 dark:text-white">{item.title}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">{formatDate(item.created)}</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[item.status] || ''}`}>
+                        {t(`status${item.status.charAt(0).toUpperCase() + item.status.slice(1)}`)}
+                      </span>
+                      {item.github_issue && (
+                        <a href={item.github_issue} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-brand-600">
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function IssueRow({ issue, formatDate, closed }: { issue: GitHubIssue; formatDate: (d: string) => string; closed?: boolean }) {
+  const { t } = useTranslation('feedback')
+  const [expanded, setExpanded] = useState(false)
+
+  const labelColorMap: Record<string, string> = {
+    d73a4a: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+    '0075ca': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+    '008672': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+    a2eeef: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300',
+    e4e669: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+    d876e3: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+    ededed: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
+  }
+
+  return (
+    <div className={`rounded-lg border bg-white dark:bg-gray-800 ${closed ? 'border-gray-100 dark:border-gray-700/50 opacity-70' : 'border-gray-200 dark:border-gray-700'}`}>
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        className="flex w-full items-center gap-3 px-4 py-2.5 text-left"
+      >
+        {closed
+          ? <CheckCircle2 className="h-4 w-4 shrink-0 text-purple-500 dark:text-purple-400" />
+          : <AlertCircle className="h-4 w-4 shrink-0 text-green-600 dark:text-green-400" />
+        }
+        <span className="text-xs font-medium text-gray-400 dark:text-gray-500">#{issue.number}</span>
+        <span className={`min-w-0 flex-1 truncate text-sm font-medium ${closed ? 'text-gray-500 line-through dark:text-gray-400' : 'text-gray-900 dark:text-gray-100'}`}>
+          {issue.title}
+        </span>
+        <div className="flex shrink-0 items-center gap-2">
+          {issue.labels.filter(l => l.name !== 'user-reported').map((label) => (
+            <span
+              key={label.name}
+              className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${labelColorMap[label.color] ?? 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'}`}
+            >
+              {label.name}
+            </span>
+          ))}
+          <span className="text-xs text-gray-400 dark:text-gray-500">{formatDate(issue.createdAt)}</span>
+          {expanded ? <ChevronDown className="h-3.5 w-3.5 text-gray-400" /> : <ChevronRight className="h-3.5 w-3.5 text-gray-400" />}
+        </div>
+      </button>
+
+      {expanded && (
+        <div className="border-t border-gray-100 px-4 py-3 dark:border-gray-700">
+          {issue.body && (
+            <p className="mb-3 whitespace-pre-wrap text-sm text-gray-600 dark:text-gray-400">{issue.body}</p>
+          )}
+          {closed && issue.closedAt && (
+            <p className="mb-2 text-xs text-purple-600 dark:text-purple-400">
+              {t('resolvedOn')} {new Date(issue.closedAt).toLocaleDateString()}
+            </p>
+          )}
+          <a
+            href={issue.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
+          >
+            <ExternalLink className="h-3 w-3" />
+            {t('viewOnGithub')}
+          </a>
+        </div>
+      )}
     </div>
   )
 }

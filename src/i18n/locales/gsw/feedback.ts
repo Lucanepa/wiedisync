@@ -27,4 +27,11 @@ export default {
   validationDescription: 'Bitte beschrib dis Aliiege',
   validationFileSize: 'Datei isch z gross (max 5 MB)',
   validationFileType: 'Nur PNG, JPG und WebP erlaubt',
+  issueTracker: 'Issue Tracker',
+  loadingIssues: 'Issues wärde glade...',
+  noIssues: 'Käni Issues gfunde.',
+  openIssues: 'Offe',
+  closedIssues: 'Erledigt',
+  resolvedOn: 'Erledigt am',
+  viewOnGithub: 'Uf GitHub aaluege',
 } as const

@@ -27,4 +27,11 @@ export default {
   validationDescription: 'Veuillez décrire votre problème',
   validationFileSize: 'Le fichier est trop volumineux (max 5 Mo)',
   validationFileType: 'Seuls PNG, JPG et WebP sont acceptés',
+  issueTracker: 'Suivi des tickets',
+  loadingIssues: 'Chargement des tickets...',
+  noIssues: 'Aucun ticket trouvé.',
+  openIssues: 'Ouvert',
+  closedIssues: 'Résolu',
+  resolvedOn: 'Résolu le',
+  viewOnGithub: 'Voir sur GitHub',
 } as const

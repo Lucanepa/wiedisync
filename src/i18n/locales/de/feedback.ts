@@ -27,4 +27,11 @@ export default {
   validationDescription: 'Bitte beschreibe dein Anliegen',
   validationFileSize: 'Datei ist zu gross (max 5 MB)',
   validationFileType: 'Nur PNG, JPG und WebP erlaubt',
+  issueTracker: 'Issue Tracker',
+  loadingIssues: 'Issues werden geladen...',
+  noIssues: 'Keine Issues gefunden.',
+  openIssues: 'Offen',
+  closedIssues: 'Erledigt',
+  resolvedOn: 'Erledigt am',
+  viewOnGithub: 'Auf GitHub ansehen',
 } as const

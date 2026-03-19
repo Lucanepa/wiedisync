@@ -73,7 +73,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
       setNumber(user.number ?? 0)
       setBirthdate(user.birthdate ? user.birthdate.slice(0, 10) : '')
       setHidePhone(user.hide_phone ?? false)
-      setBirthdateVisibility((user.birthdate_visibility as 'full' | 'year_only' | 'hidden') || 'full')
+      setBirthdateVisibility((user.birthdate_visibility as 'full' | 'year_only' | 'hidden') || 'hidden')
       setLanguage((user.language as PbLanguage) || 'german')
       setSelectedPositions(coercePositions(user.position))
       setSelectedLicences((user.licences ?? []) as LicenceType[])

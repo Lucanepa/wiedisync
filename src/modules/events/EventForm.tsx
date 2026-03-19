@@ -155,7 +155,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
       date: d,
       start_time: '',
       end_time: '',
-      label: formatDateShort(d),
+      label: '',
       sort_order: i,
     })))
   }
@@ -431,13 +431,16 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
                   <span className="min-w-[100px] text-sm font-medium text-gray-700 dark:text-gray-300">
                     {formatDateShort(s.date)}
                   </span>
-                  <input
-                    type="text"
-                    value={s.label}
-                    onChange={(e) => updateSession(i, 'label', e.target.value)}
-                    placeholder={t('sessionLabel')}
-                    className="flex-1 rounded border border-gray-200 bg-transparent px-2 py-1 text-sm dark:border-gray-600 dark:text-gray-100"
-                  />
+                  <label className="flex-1">
+                    <span className="sr-only">{t('sessionLabel')}</span>
+                    <input
+                      type="text"
+                      value={s.label}
+                      onChange={(e) => updateSession(i, 'label', e.target.value)}
+                      placeholder={t('sessionLabel')}
+                      className="w-full rounded border border-gray-200 bg-transparent px-2 py-1 text-sm dark:border-gray-600 dark:text-gray-100"
+                    />
+                  </label>
                 </div>
               ))}
             </div>

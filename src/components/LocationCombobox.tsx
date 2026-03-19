@@ -1,16 +1,6 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { MapPin } from 'lucide-react'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import {
-  Command,
-  CommandInput,
-  CommandList,
-  CommandEmpty,
-  CommandGroup,
-  CommandItem,
-  CommandLoading,
-} from '@/components/ui/command'
 import { cn } from '@/lib/utils'
 import { usePhotonSearch } from '@/hooks/usePhotonSearch'
 import { useHallSearch } from '@/hooks/useHallSearch'
@@ -48,10 +38,25 @@ export default function LocationCombobox({
   const { t } = useTranslation('common')
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
+  const containerRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const { results: hallResults } = useHallSearch(search)
   const { results: photonResults, isLoading: photonLoading } = usePhotonSearch(search)
   const osmResults = photonResults.map(photonToLocationResult)
+
+  const hasResults = hallResults.length > 0 || osmResults.length > 0 || photonLoading
+
+  // Close on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    if (open) document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [open])
 
   const handleSelect = (result: LocationResult) => {
     const display = [result.name, result.address, result.city].filter(Boolean).join(', ')
@@ -61,45 +66,51 @@ export default function LocationCombobox({
     setSearch('')
   }
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value
+    onChange(val)
+    setSearch(val)
+    if (val.length > 0) setOpen(true)
+  }
+
+  const handleFocus = () => {
+    if (value.length > 0 || search.length > 0) setOpen(true)
+    setSearch(value)
+  }
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          role="combobox"
-          aria-expanded={open}
+    <div ref={containerRef} className="relative">
+      <div className="relative">
+        <input
+          ref={inputRef}
+          type="text"
+          value={value}
+          onChange={handleInputChange}
+          onFocus={handleFocus}
+          placeholder={placeholder || t('locationPlaceholder')}
           disabled={disabled}
           className={cn(
-            'flex min-h-[44px] w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-left text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
+            'flex min-h-[44px] w-full rounded-md border border-input bg-transparent px-3 py-2 pr-10 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
             className,
           )}
-        >
-          <span className={value ? '' : 'text-muted-foreground'}>
-            {value || placeholder || t('locationPlaceholder')}
-          </span>
-          <MapPin className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-        <Command shouldFilter={false}>
-          <CommandInput
-            placeholder={t('locationPlaceholder')}
-            value={search}
-            onValueChange={setSearch}
-          />
-          <CommandList>
-            <CommandEmpty>{t('noResults')}</CommandEmpty>
+        />
+        <MapPin className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-50" />
+      </div>
 
+      {open && hasResults && (
+        <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-popover shadow-md">
+          <div className="max-h-[200px] overflow-y-auto p-1">
             {hallResults.length > 0 && (
-              <CommandGroup heading={t('clubHalls')}>
+              <div>
+                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">{t('clubHalls')}</div>
                 {hallResults.map((r) => (
-                  <CommandItem
+                  <button
                     key={`hall-${r.name}-${r.address}`}
-                    value={`hall-${r.name}-${r.address}`}
-                    onSelect={() => handleSelect(r)}
-                    className="flex items-center gap-2"
+                    type="button"
+                    onClick={() => handleSelect(r)}
+                    className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"
                   >
-                    <div className="h-full w-0.5 self-stretch rounded bg-[#FFC832]" />
+                    <div className="h-full w-0.5 min-h-[24px] self-stretch rounded bg-[#FFC832]" />
                     <div className="min-w-0 flex-1">
                       <div className="truncate font-medium">{r.name}</div>
                       {(r.address || r.city) && (
@@ -108,19 +119,23 @@ export default function LocationCombobox({
                         </div>
                       )}
                     </div>
-                  </CommandItem>
+                  </button>
                 ))}
-              </CommandGroup>
+              </div>
             )}
 
             {(osmResults.length > 0 || photonLoading) && (
-              <CommandGroup heading={t('searchResults')}>
-                {photonLoading && <CommandLoading>{t('searching')}</CommandLoading>}
+              <div>
+                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">{t('searchResults')}</div>
+                {photonLoading && (
+                  <div className="px-2 py-1.5 text-xs text-muted-foreground">{t('searching')}</div>
+                )}
                 {osmResults.map((r, i) => (
-                  <CommandItem
+                  <button
                     key={`osm-${i}`}
-                    value={`osm-${r.name}-${r.address}-${r.city}`}
-                    onSelect={() => handleSelect(r)}
+                    type="button"
+                    onClick={() => handleSelect(r)}
+                    className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"
                   >
                     <div className="min-w-0 flex-1">
                       <div className="truncate font-medium">{r.name}</div>
@@ -130,13 +145,19 @@ export default function LocationCombobox({
                         </div>
                       )}
                     </div>
-                  </CommandItem>
+                  </button>
                 ))}
-              </CommandGroup>
+              </div>
             )}
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+          </div>
+        </div>
+      )}
+
+      {open && search.length > 0 && !hasResults && (
+        <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-popover p-2 shadow-md">
+          <div className="text-sm text-muted-foreground">{t('noResults')}</div>
+        </div>
+      )}
+    </div>
   )
 }

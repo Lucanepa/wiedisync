@@ -1,11 +1,11 @@
 #!/bin/bash
 # Auto-deploy PocketBase hooks on the VPS.
-# Called by the webhook listener when GitHub pushes to main/dev.
+# Called by the webhook listener when GitHub pushes to prod/dev.
 # Usage: ./vps-autodeploy.sh <branch>
 
 set -euo pipefail
 
-BRANCH="${1:-main}"
+BRANCH="${1:-prod}"
 REPO_DIR="/opt/wiedisync-repo"
 PROD_HOOKS="/opt/pocketbase-kscw/pb_hooks"
 DEV_HOOKS="/opt/pocketbase-kscw-dev/pb_hooks"
@@ -28,7 +28,7 @@ fi
 cd "$REPO_DIR"
 
 # Deploy based on branch (skip secrets.json — it lives only on the VPS)
-if [ "$BRANCH" = "main" ]; then
+if [ "$BRANCH" = "prod" ]; then
   log "Deploying hooks to PROD..."
   for f in pb_hooks/*.js; do
     cp "$f" "$PROD_HOOKS/"

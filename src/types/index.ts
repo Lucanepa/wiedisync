@@ -95,21 +95,18 @@ export interface Hall extends RecordModel {
 
 }
 
-export interface NominatimResult {
-  lat: string
-  lon: string
-  name: string
-  display_name: string
-  address: {
-    amenity?: string
-    building?: string
-    road?: string
-    house_number?: string
+export interface PhotonFeature {
+  geometry: { coordinates: [number, number] }
+  properties: {
+    name?: string
+    street?: string
+    housenumber?: string
     city?: string
-    town?: string
-    village?: string
     postcode?: string
     country?: string
+    state?: string
+    osm_key?: string
+    osm_value?: string
   }
 }
 
@@ -119,7 +116,7 @@ export interface LocationResult {
   city: string
   lat: number | null
   lon: number | null
-  source: 'pocketbase' | 'nominatim'
+  source: 'pocketbase' | 'photon'
 }
 
 export interface SlotClaim extends RecordModel {

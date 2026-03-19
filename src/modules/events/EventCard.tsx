@@ -38,7 +38,11 @@ export default function EventCard({ event, onEdit, onDelete, onOpenRoster }: Eve
   const { t } = useTranslation('events')
   const { user, canParticipateIn } = useAuth()
   const teams = event.expand?.teams ?? []
-  const canRSVP = user && event.teams?.some((tid) => canParticipateIn(tid))
+  // Club-wide events (no teams): all logged-in users can RSVP
+  // Team events: only members of those teams can RSVP
+  const canRSVP = user && (
+    !event.teams?.length || event.teams.some((tid) => canParticipateIn(tid))
+  )
 
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white p-3 shadow-card dark:border-gray-700 dark:bg-gray-800">

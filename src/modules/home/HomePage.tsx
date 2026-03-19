@@ -14,6 +14,7 @@ import BasketballIcon from '../../components/BasketballIcon'
 import NotificationPanel from '../../components/NotificationPanel'
 import GameDetailModal from '../games/components/GameDetailModal'
 import TrainingDetailModal from '../trainings/TrainingDetailModal'
+import ParticipationButton from '../../components/ParticipationButton'
 import ParticipationSummary from '../../components/ParticipationSummary'
 import { useParticipation } from '../../hooks/useParticipation'
 import type { Game, Event, Team, Training, Hall, Member, MemberTeam, Notification } from '../../types'
@@ -701,7 +702,10 @@ function HomeSections({
 }
 
 function EventRow({ event }: { event: EventExpanded }) {
+  const { user, canParticipateIn } = useAuth()
   const teams = event.expand?.teams ?? []
+  const canRSVP = user && (!event.teams?.length || event.teams.some((tid) => canParticipateIn(tid)))
+
   return (
     <Link to="/events" className="block overflow-hidden rounded-xl border border-gray-200 bg-white shadow-card transition-shadow hover:shadow-card-hover dark:border-gray-700 dark:bg-gray-800">
       <div className="flex items-start gap-3 p-4">
@@ -738,6 +742,21 @@ function EventRow({ event }: { event: EventExpanded }) {
             </div>
           )}
         </div>
+
+        {/* RSVP button */}
+        {canRSVP && (
+          <div className="shrink-0" onClick={(e) => e.preventDefault()}>
+            <ParticipationButton
+              activityType="event"
+              activityId={event.id}
+              activityDate={event.start_date?.split(' ')[0]}
+              teamId={event.teams?.[0]}
+              compact
+              respondBy={event.respond_by?.split(' ')[0]}
+              maxPlayers={event.max_players}
+            />
+          </div>
+        )}
       </div>
     </Link>
   )

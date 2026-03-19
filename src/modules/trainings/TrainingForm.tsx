@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import Modal from '@/components/Modal'
+import LocationCombobox from '@/components/LocationCombobox'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import { useMutation } from '../../hooks/useMutation'
@@ -442,13 +443,14 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
                   </Select>
                 </FormField>
                 {hallId === '__other__' && (
-                  <FormInput
-                    type="text"
-                    value={hallName}
-                    onChange={(e) => setHallName(e.target.value)}
-                    placeholder={tc('hallNamePlaceholder')}
-                    className="mt-2"
-                  />
+                  <div className="mt-2">
+                    <LocationCombobox
+                      value={hallName}
+                      onChange={setHallName}
+                      onSelect={(r) => setHallName(r.name)}
+                      placeholder={tc('hallNamePlaceholder')}
+                    />
+                  </div>
                 )}
               </div>
             </>

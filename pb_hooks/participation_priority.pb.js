@@ -10,17 +10,17 @@
 
 // Block guests from game participation
 // Platform-wide rule: guests (any level > 0) cannot participate in games
-onRecordBeforeCreateRequest("participations", function(e) {
+onRecordCreateRequest("participations", function(e) {
   var record = e.record
   var activityType = record.getString("activity_type")
   var status = record.getString("status")
 
   // Only block game confirmations/tentative
   if (activityType !== "game") {
-    return
+    return e.next()
   }
   if (status !== "confirmed" && status !== "tentative") {
-    return
+    return e.next()
   }
 
   var memberId = record.getString("member")
@@ -37,6 +37,8 @@ onRecordBeforeCreateRequest("participations", function(e) {
   if (guestLevel > 0) {
     throw new BadRequestError("Guests cannot participate in games")
   }
+
+  e.next()
 })
 
 // ═══════════════════════════════════════════════════

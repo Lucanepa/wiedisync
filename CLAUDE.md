@@ -107,6 +107,7 @@ See `INFRA.md → Domains & Hosting Overview` for full domain map, future migrat
 
 1. **Start of every chat**: Read `CLAUDE.md` and `INFRA.md` to get full project context before doing anything.
 2. **End of every chat**: After finishing changes, append a few context lines to the **Changelog** section below summarizing what was done (date, short description). If entries get stale or redundant, overwrite with newer comments — keep it concise.
+3. **Before finishing**: Ask the user "Should this commit be added to the changelog and version bumped?" If yes, update `CHANGELOG.md`, bump `package.json` version (semver: patch for fixes, minor for features, major for breaking), and update the version in `src/modules/changelog/ChangelogPage.tsx` (both the `APP_VERSION` constant and the `CHANGELOG` data array). The changelog is displayed in-app via Options → What's New.
 
 ## Changelog
 <!-- Grouped by feature domain. Overwrite when stale. -->

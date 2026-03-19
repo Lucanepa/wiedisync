@@ -9,7 +9,7 @@ import LanguageDropdown from '@/components/LanguageDropdown'
 import { getFileUrl } from '../utils/pbFile'
 import AdminToggle from './AdminToggle'
 import { useAdminMode } from '../hooks/useAdminMode'
-import { Bell, UserX, PenSquare, CalendarDays, ClipboardList, Building2, CalendarClock, Database, RefreshCcw, LogIn, User, Settings, ChevronDown } from 'lucide-react'
+import { Bell, UserX, PenSquare, CalendarDays, ClipboardList, Building2, CalendarClock, Database, RefreshCcw, LogIn, User, Settings, ChevronDown, ScrollText } from 'lucide-react'
 import type { MemberTeam, Team } from '../types'
 
 type ExpandedMemberTeam = MemberTeam & { expand?: { team?: Team } }
@@ -40,7 +40,7 @@ const adminItems = [
   { to: '/admin/terminplanung', labelKey: 'terminplanung', icon: <CalendarClock className={iconClass} /> },
 ]
 
-function OptionsAccordion({ theme, toggleTheme }: { theme: string; toggleTheme: () => void }) {
+function OptionsAccordion({ theme, toggleTheme, onClose }: { theme: string; toggleTheme: () => void; onClose?: () => void }) {
   const [open, setOpen] = useState(false)
   const { t } = useTranslation('nav')
 
@@ -89,6 +89,18 @@ function OptionsAccordion({ theme, toggleTheme }: { theme: string; toggleTheme: 
               <span className="text-base font-medium text-gray-700 dark:text-gray-300">{t('adminMode', 'Admin mode')}</span>
               <AdminToggle size="sm" />
             </div>
+            {/* Version / Changelog row */}
+            <NavLink
+              to="/changelog"
+              onClick={onClose}
+              className="flex min-h-[48px] items-center justify-between rounded-lg px-4 py-3 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <span className="flex items-center gap-2 text-base font-medium text-gray-700 dark:text-gray-300">
+                <ScrollText className="h-4 w-4" />
+                {t('whatsNew', "What's New")}
+              </span>
+              <span className="text-xs font-mono text-gray-400 dark:text-gray-500">v1.0.0</span>
+            </NavLink>
           </div>
         </div>
       </div>
@@ -289,7 +301,7 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
 
             {/* Options section — expandable */}
             <div className="mx-4 border-t border-gray-200 dark:border-gray-700" />
-            <OptionsAccordion theme={theme} toggleTheme={toggleTheme} />
+            <OptionsAccordion theme={theme} toggleTheme={toggleTheme} onClose={startClose} />
           </>
         ) : (
           <>
@@ -305,7 +317,7 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
               </NavLink>
 
               {/* Toggles — expandable */}
-              <OptionsAccordion theme={theme} toggleTheme={toggleTheme} />
+              <OptionsAccordion theme={theme} toggleTheme={toggleTheme} onClose={startClose} />
             </div>
           </>
         )}

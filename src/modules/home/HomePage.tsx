@@ -8,6 +8,7 @@ import { useSportPreference } from '../../hooks/useSportPreference'
 import { formatDate, formatDateCompact, formatTime, formatWeekday } from '../../utils/dateHelpers'
 import TeamChip from '../../components/TeamChip'
 import StatusBadge from '../../components/StatusBadge'
+import { stripHtml } from '../../components/RichText'
 import VolleyballIcon from '../../components/VolleyballIcon'
 import BasketballIcon from '../../components/BasketballIcon'
 import NotificationPanel from '../../components/NotificationPanel'
@@ -588,7 +589,7 @@ function EventRow({ event }: { event: EventExpanded }) {
           )}
           {event.description && (
             <p className="mt-1 line-clamp-2 text-xs text-gray-500 dark:text-gray-400">
-              {event.description}
+              {stripHtml(event.description)}
             </p>
           )}
           {teams.length > 0 && (

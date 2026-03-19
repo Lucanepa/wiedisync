@@ -218,11 +218,20 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
 
     const effectiveMode = isMultiDay ? participationMode : 'whole'
 
+    // Normalize dates: PocketBase datetime fields need full datetime string
+    const normalizeDate = (d: string) => {
+      if (!d) return d
+      // If already has time component (datetime-local value), keep as-is
+      if (d.includes('T') || d.includes(' ')) return d
+      // Date-only: append midnight
+      return `${d} 00:00:00`
+    }
+
     const data = {
       title,
       event_type: eventType,
-      start_date: startDate,
-      end_date: endDate || startDate,
+      start_date: normalizeDate(startDate),
+      end_date: normalizeDate(endDate || startDate),
       all_day: allDay,
       location,
       description,
@@ -328,7 +337,21 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
         </div>
 
         <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-          <Switch checked={allDay} onCheckedChange={setAllDay} />
+          <Switch
+            checked={allDay}
+            onCheckedChange={(checked) => {
+              setAllDay(checked)
+              if (!checked) {
+                // Switching to datetime-local: append T00:00 so browser input accepts the value
+                if (startDate && !startDate.includes('T')) setStartDate(`${startDate}T00:00`)
+                if (endDate && !endDate.includes('T')) setEndDate(`${endDate}T00:00`)
+              } else {
+                // Switching to date: strip time component
+                if (startDate.includes('T')) setStartDate(startDate.split('T')[0])
+                if (endDate.includes('T')) setEndDate(endDate.split('T')[0])
+              }
+            }}
+          />
           {t('allDay')}
         </div>
 

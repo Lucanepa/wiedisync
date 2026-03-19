@@ -44,7 +44,7 @@ export default function Modal({ open, onClose, title, children, size = 'md', hid
             <DialogTitle>{title}</DialogTitle>
             <DialogDescription className="sr-only">{title}</DialogDescription>
           </DialogHeader>
-          <div className="max-h-[calc(100vh-12rem)] overflow-y-auto">
+          <div className="max-h-[calc(100vh-10rem)] overflow-y-auto">
             {children}
           </div>
         </DialogContent>
@@ -58,7 +58,7 @@ export default function Modal({ open, onClose, title, children, size = 'md', hid
         <DrawerHeader>
           <DrawerTitle>{title}</DrawerTitle>
         </DrawerHeader>
-        <div className="max-h-[calc(100dvh-8rem)] overflow-y-auto px-4 pb-4">
+        <div className="max-h-[calc(100dvh-6rem)] overflow-y-auto overscroll-contain px-4 pb-4">
           {children}
         </div>
       </DrawerContent>

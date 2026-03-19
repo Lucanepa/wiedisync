@@ -18,7 +18,7 @@ type EventExpanded = Event & { expand?: { teams?: Team[] } }
 
 export default function EventsPage() {
   const { t } = useTranslation('events')
-  const { isCoach, memberTeamIds } = useAuth()
+  const { isCoach, isCoachOf, isAdmin, coachTeamIds, memberTeamIds } = useAuth()
   const [formOpen, setFormOpen] = useState(false)
   const [editingEvent, setEditingEvent] = useState<Event | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -89,15 +89,23 @@ export default function EventsPage() {
           />
         ) : (
           <div className="space-y-3">
-            {events.map((event) => (
-              <EventCard
-                key={event.id}
-                event={event}
-                onEdit={isCoach ? handleEdit : undefined}
-                onDelete={isCoach ? setDeletingId : undefined}
-                onOpenRoster={setRosterEvent}
-              />
-            ))}
+            {events.map((event) => {
+              // Coaches can only edit events linked to their teams (or club-wide with no teams)
+              // Admins can edit all events
+              const canEdit = isAdmin || (isCoach && (
+                event.teams.length === 0 ||
+                event.teams.some((tid) => isCoachOf(tid))
+              ))
+              return (
+                <EventCard
+                  key={event.id}
+                  event={event}
+                  onEdit={canEdit ? handleEdit : undefined}
+                  onDelete={canEdit ? setDeletingId : undefined}
+                  onOpenRoster={setRosterEvent}
+                />
+              )
+            })}
           </div>
         )}
       </div>

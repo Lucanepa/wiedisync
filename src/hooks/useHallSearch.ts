@@ -26,9 +26,9 @@ export function useHallSearch(query: string) {
     const filtered = halls
       .filter(
         (h) =>
-          h.name.toLowerCase().includes(q) ||
-          h.address.toLowerCase().includes(q) ||
-          h.city.toLowerCase().includes(q),
+          (h.name || '').toLowerCase().includes(q) ||
+          (h.address || '').toLowerCase().includes(q) ||
+          (h.city || '').toLowerCase().includes(q),
       )
       .slice(0, 5)
       .map(hallToLocationResult)

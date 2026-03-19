@@ -93,7 +93,7 @@ export default function LocationCombobox({
               <CommandGroup heading={t('clubHalls')}>
                 {hallResults.map((r, i) => (
                   <CommandItem
-                    key={`hall-${i}`}
+                    key={`hall-${r.name}-${r.address}`}
                     value={`hall-${r.name}-${r.address}`}
                     onSelect={() => handleSelect(r)}
                     className="flex items-center gap-2"

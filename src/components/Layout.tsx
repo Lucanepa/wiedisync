@@ -36,7 +36,6 @@ function useNavItems(isLoggedIn: boolean, isApproved: boolean) {
     { to: '/', label: t('home'), icon: <Home className={iconClass} /> },
     { to: '/calendar', label: t('calendar'), icon: <Calendar className={iconClass} /> },
     { to: '/games', label: t('games'), icon: <Trophy className={iconClass} /> },
-    { to: '/feedback', label: t('feedback'), icon: <MessageSquare className={iconClass} /> },
   ]
   const authItems = [
     {
@@ -72,7 +71,7 @@ function useNavItems(isLoggedIn: boolean, isApproved: boolean) {
 
 type SidebarView = 'closed' | 'nav' | 'notifications'
 
-function SidebarOptions({ isAdmin, theme, toggleTheme }: { isAdmin: boolean; theme: string; toggleTheme: () => void }) {
+function SidebarOptions({ isAdmin, theme, toggleTheme, onClose }: { isAdmin: boolean; theme: string; toggleTheme: () => void; onClose?: () => void }) {
   const [open, setOpen] = useState(false)
   const { t } = useTranslation('nav')
 
@@ -117,6 +116,20 @@ function SidebarOptions({ isAdmin, theme, toggleTheme }: { isAdmin: boolean; the
                 <AdminToggle />
               </div>
             )}
+            <NavLink
+              to="/feedback"
+              onClick={onClose}
+              className={({ isActive }) =>
+                `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/50 dark:text-gold-400'
+                    : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+                }`
+              }
+            >
+              <MessageSquare className="h-4 w-4" />
+              {t('feedback')}
+            </NavLink>
           </div>
         </div>
       </div>
@@ -332,7 +345,7 @@ export default function Layout() {
             <div className={`space-y-3 border-t p-4 ${
               theme === 'light' ? 'border-gray-200' : 'border-brand-800'
             }`}>
-              <SidebarOptions isAdmin={isAdmin} theme={theme} toggleTheme={toggleTheme} />
+              <SidebarOptions isAdmin={isAdmin} theme={theme} toggleTheme={toggleTheme} onClose={() => setSidebarView('closed')} />
 
               {user ? (
                 <div className="space-y-2">

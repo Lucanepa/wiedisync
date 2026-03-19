@@ -69,7 +69,7 @@ interface LocationComboboxProps {
 
 1. User types in the input field
 2. **Immediately**: filter PocketBase halls client-side by fuzzy match on `name`, `address`, `city`
-3. **After 400ms debounce**: query Nominatim API
+3. **After 600ms debounce**: query Nominatim API
 4. Display results in two `cmdk` groups:
    - **Vereinshallen** — PB matches, gold left border accent
    - **OpenStreetMap** — Nominatim results

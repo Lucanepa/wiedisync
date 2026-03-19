@@ -9,6 +9,8 @@ interface ParticipationSummaryProps {
   activityId: string
   compact?: boolean
   stacked?: boolean
+  /** Hide coach/guest breakdowns — show only raw counts */
+  hideExtras?: boolean
 }
 
 export default function ParticipationSummary({
@@ -16,6 +18,7 @@ export default function ParticipationSummary({
   activityId,
   compact = false,
   stacked = false,
+  hideExtras = false,
 }: ParticipationSummaryProps) {
   const { t } = useTranslation('participation')
 
@@ -59,7 +62,7 @@ export default function ParticipationSummary({
         <span className="inline-flex items-center gap-1 text-green-600 dark:text-green-400">
           {confirmedTotal}
           <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-green-600 text-white dark:bg-green-500"><Check className="h-2.5 w-2.5" /></span>
-          {hasGuestBreakdown && (
+          {!hideExtras && hasGuestBreakdown && (
             <span className="text-[10px] text-gray-500 dark:text-gray-400">
               ({confirmed}P {allGuests}G)
             </span>
@@ -67,7 +70,7 @@ export default function ParticipationSummary({
         </span>
         {tentative > 0 && (
           <span className="inline-flex items-center gap-1 text-yellow-600 dark:text-yellow-400">
-            {tentative}{tentativeGuests > 0 && <span className="text-[10px] opacity-75">+{tentativeGuests}</span>}
+            {tentative}{!hideExtras && tentativeGuests > 0 && <span className="text-[10px] opacity-75">+{tentativeGuests}</span>}
             <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-yellow-500 text-white"><HelpCircle className="h-2.5 w-2.5" /></span>
           </span>
         )}
@@ -77,7 +80,7 @@ export default function ParticipationSummary({
             <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-white dark:bg-red-500"><X className="h-2.5 w-2.5" /></span>
           </span>
         )}
-        {staffConfirmed > 0 && (
+        {!hideExtras && staffConfirmed > 0 && (
           <span className="text-[10px] text-gray-500 dark:text-gray-400">{t('coachPresent')}</span>
         )}
       </div>
@@ -92,7 +95,7 @@ export default function ParticipationSummary({
             <span className="inline-flex items-center gap-1 text-green-600 dark:text-green-400">
               {confirmedTotal}
               <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-green-600 text-white dark:bg-green-500"><Check className="h-2.5 w-2.5" /></span>
-              {hasGuestBreakdown && (
+              {!hideExtras && hasGuestBreakdown && (
                 <span className="text-[10px] text-gray-500 dark:text-gray-400">
                   ({confirmed}P {allGuests}G)
                 </span>
@@ -101,7 +104,7 @@ export default function ParticipationSummary({
           )}
           {tentative > 0 && (
             <span className="inline-flex items-center gap-1 text-yellow-600 dark:text-yellow-400">
-              {tentative}{tentativeGuests > 0 && <span className="text-[10px] opacity-75">+{tentativeGuests}</span>}
+              {tentative}{!hideExtras && tentativeGuests > 0 && <span className="text-[10px] opacity-75">+{tentativeGuests}</span>}
               <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-yellow-500 text-white"><HelpCircle className="h-2.5 w-2.5" /></span>
             </span>
           )}
@@ -118,7 +121,7 @@ export default function ParticipationSummary({
             </span>
           )}
         </span>
-        {staffConfirmed > 0 && (
+        {!hideExtras && staffConfirmed > 0 && (
           <span className="text-[10px] text-gray-500 dark:text-gray-400">{t('coachPresent')}</span>
         )}
       </div>
@@ -129,17 +132,17 @@ export default function ParticipationSummary({
     <div className="flex flex-col items-start gap-0.5">
       <div className="inline-flex items-center gap-2 text-xs">
         <span className="text-green-600 dark:text-green-400">
-          {confirmedTotal}{hasGuestBreakdown && ` (${confirmed}P ${allGuests}G)`} {t('confirmed')}
+          {confirmedTotal}{!hideExtras && hasGuestBreakdown && ` (${confirmed}P ${allGuests}G)`} {t('confirmed')}
         </span>
         <span className="text-yellow-600 dark:text-yellow-400">
-          {tentative}{tentativeGuests > 0 && `+${tentativeGuests}`} {t('tentative')}
+          {tentative}{!hideExtras && tentativeGuests > 0 && `+${tentativeGuests}`} {t('tentative')}
         </span>
         <span className="text-red-600 dark:text-red-400">{declined} {t('declined')}</span>
         {waitlisted > 0 && (
           <span className="text-orange-600 dark:text-orange-400">{waitlisted} {t('waitlisted')}</span>
         )}
       </div>
-      {staffConfirmed > 0 && (
+      {!hideExtras && staffConfirmed > 0 && (
         <span className="text-[10px] text-gray-500 dark:text-gray-400">{t('coachPresent')}</span>
       )}
     </div>

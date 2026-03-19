@@ -1,15 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Check, MessageSquare } from 'lucide-react'
 import StatusBadge from '../../components/StatusBadge'
 import TeamChip from '../../components/TeamChip'
 import RichText from '../../components/RichText'
+import ParticipationButton from '../../components/ParticipationButton'
 import ParticipationSummary from '../../components/ParticipationSummary'
 import { useAuth } from '../../hooks/useAuth'
-import { useMutation } from '../../hooks/useMutation'
 import { formatDate } from '../../utils/dateHelpers'
-import pb from '../../pb'
-import type { Event, Team, Participation } from '../../types'
+import type { Event, Team } from '../../types'
 
 type EventExpanded = Event & { expand?: { teams?: Team[] } }
 
@@ -53,9 +50,6 @@ export default function EventCard({ event, onEdit, onDelete, onOpenRoster }: Eve
           <h2 className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">{event.title}</h2>
         </div>
         <div className="flex shrink-0 items-center gap-1">
-          {user && (
-            <ParticipationSummary activityType="event" activityId={event.id} compact />
-          )}
           {onOpenRoster && (
             <button
               onClick={() => onOpenRoster(event)}
@@ -114,200 +108,21 @@ export default function EventCard({ event, onEdit, onDelete, onOpenRoster }: Eve
         </div>
       )}
 
-      {/* Bottom row: RSVP (inline yes/no/maybe like trainings) */}
+      {/* Bottom row: RSVP + participation counter */}
       {canRSVP && (
-        <div className="mt-2.5">
-          <EventParticipation event={event} />
-        </div>
-      )}
-    </div>
-  )
-}
-
-/** Inline Yes / Maybe / No participation buttons with note — mirrors TrainingParticipation */
-function EventParticipation({ event }: { event: EventExpanded }) {
-  const { t } = useTranslation('participation')
-  const { user, isCoachOf } = useAuth()
-  const isStaff = event.teams?.some((tid) => isCoachOf(tid)) ?? false
-  const { create, update } = useMutation<Participation>('participations')
-
-  const [optimisticStatus, setOptimisticStatus] = useState<Participation['status'] | null>(null)
-  const [saveConfirmed, setSaveConfirmed] = useState(false)
-  const [guestCount, setGuestCount] = useState(0)
-  const [noteText, setNoteText] = useState('')
-  const [noteSaved, setNoteSaved] = useState(false)
-  const [existing, setExisting] = useState<Participation | null>(null)
-  const noteInitRef = useRef('')
-
-  // Fetch existing participation on mount
-  useEffect(() => {
-    if (!user) return
-    pb.collection('participations')
-      .getFirstListItem<Participation>(
-        `member="${user.id}" && activity_type="event" && activity_id="${event.id}" && session_id=""`,
-      )
-      .then((p) => {
-        setExisting(p)
-        setGuestCount(p.guest_count ?? 0)
-        setNoteText(p.note ?? '')
-        noteInitRef.current = p.note ?? ''
-      })
-      .catch(() => { /* no existing participation */ })
-  }, [user, event.id])
-
-  const serverStatus = existing?.status ?? null
-  const displayStatus = optimisticStatus ?? serverStatus
-
-  useEffect(() => {
-    if (!saveConfirmed) return
-    const timer = setTimeout(() => setSaveConfirmed(false), 2000)
-    return () => clearTimeout(timer)
-  }, [saveConfirmed])
-
-  useEffect(() => {
-    if (!noteSaved) return
-    const timer = setTimeout(() => setNoteSaved(false), 2000)
-    return () => clearTimeout(timer)
-  }, [noteSaved])
-
-  const setStatus = useCallback(async (status: Participation['status'], guests?: number, note?: string) => {
-    if (!user) return
-    const gc = guests ?? guestCount
-    const n = note ?? noteText
-    setOptimisticStatus(status)
-    setSaveConfirmed(false)
-    try {
-      if (existing) {
-        await update(existing.id, { status, guest_count: gc, note: n })
-      } else {
-        const rec = await create({
-          member: user.id,
-          activity_type: 'event' as const,
-          activity_id: event.id,
-          status,
-          note: n,
-          guest_count: gc,
-          is_staff: isStaff,
-        })
-        setExisting(rec)
-      }
-      setSaveConfirmed(true)
-    } catch {
-      setOptimisticStatus(null)
-    }
-  }, [user, existing, event.id, isStaff, guestCount, noteText, create, update])
-
-  const serverNote = existing?.note ?? ''
-  const saveNote = () => {
-    if (noteText !== serverNote && displayStatus) {
-      setStatus(displayStatus, guestCount, noteText)
-      setNoteSaved(true)
-    }
-  }
-
-  async function handleGuestChange(delta: number) {
-    const newCount = Math.max(0, guestCount + delta)
-    setGuestCount(newCount)
-    if (displayStatus) {
-      await setStatus(displayStatus, newCount)
-    }
-  }
-
-  return (
-    <div className="space-y-1.5">
-      <div className="relative flex items-center gap-1.5">
-        <button
-          onClick={() => setStatus('confirmed')}
-          className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
-            displayStatus === 'confirmed'
-              ? 'bg-green-600 text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-green-900/30 dark:hover:text-green-400'
-          }`}
-        >
-          {t('yes')}
-        </button>
-        <button
-          onClick={() => setStatus('tentative')}
-          className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
-            displayStatus === 'tentative'
-              ? 'bg-yellow-500 text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-yellow-100 hover:text-yellow-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-yellow-900/30 dark:hover:text-yellow-400'
-          }`}
-        >
-          {t('maybe')}
-        </button>
-        <button
-          onClick={() => setStatus('declined')}
-          className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
-            displayStatus === 'declined'
-              ? 'bg-red-600 text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-red-900/30 dark:hover:text-red-400'
-          }`}
-        >
-          {t('no')}
-        </button>
-
-        {/* Inline guest counter — coaches/TR only */}
-        {displayStatus && isStaff && (
-          <div className="ml-1 flex items-center gap-1 border-l border-gray-200 pl-2 dark:border-gray-600">
-            <button
-              onClick={() => handleGuestChange(-1)}
-              disabled={guestCount <= 0}
-              className="flex h-5 w-5 items-center justify-center rounded text-xs font-medium text-gray-500 hover:bg-gray-100 disabled:opacity-30 dark:text-gray-400 dark:hover:bg-gray-700"
-            >
-              −
-            </button>
-            <span className="min-w-[1rem] text-center text-xs font-medium text-gray-700 dark:text-gray-300">
-              {guestCount}
-            </span>
-            <button
-              onClick={() => handleGuestChange(1)}
-              className="flex h-5 w-5 items-center justify-center rounded text-xs font-medium text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
-            >
-              +
-            </button>
-            <span className="text-[10px] text-gray-400 dark:text-gray-500">{t('guests')}</span>
-          </div>
-        )}
-
-        {/* Save confirmation popover */}
-        {saveConfirmed && (
-          <span className="absolute -top-7 left-1/2 -translate-x-1/2 flex items-center gap-1 whitespace-nowrap rounded-md bg-green-600 px-2 py-0.5 text-[11px] font-medium text-white shadow-lg animate-fade-in">
-            <Check className="h-3 w-3" />
-            {t('saved')}
-          </span>
-        )}
-      </div>
-
-      {/* Note input */}
-      {displayStatus && (
-        <div className="relative flex items-center gap-1.5">
-          <MessageSquare className="h-3.5 w-3.5 shrink-0 text-gray-400" />
-          <input
-            type="text"
-            value={noteText}
-            onChange={(e) => setNoteText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') saveNote()
-            }}
-            placeholder={t('notePlaceholder')}
-            className="min-w-0 flex-1 rounded-md border border-gray-200 bg-transparent px-2 py-0.5 text-xs text-gray-700 placeholder:text-gray-400 focus:border-brand-400 focus:outline-none dark:border-gray-600 dark:text-gray-300 dark:placeholder:text-gray-500 dark:focus:border-brand-500"
+        <div className="mt-2.5 flex items-center justify-between gap-2">
+          <ParticipationButton
+            activityType="event"
+            activityId={event.id}
+            activityDate={event.start_date?.split(' ')[0]}
+            teamId={event.teams?.[0]}
+            respondBy={event.respond_by?.split(' ')[0]}
+            maxPlayers={event.max_players}
           />
-          <button
-            onClick={saveNote}
-            disabled={noteText === serverNote}
-            className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-gray-400 transition-colors hover:bg-gray-100 hover:text-green-600 disabled:opacity-30 dark:hover:bg-gray-700 dark:hover:text-green-400"
-          >
-            <Check className="h-3 w-3" />
-          </button>
-          {noteSaved && (
-            <span className="absolute -top-6 right-0 flex items-center gap-1 whitespace-nowrap rounded-md bg-green-600 px-2 py-0.5 text-[10px] font-medium text-white shadow-lg animate-fade-in">
-              <Check className="h-2.5 w-2.5" />
-              {t('noteSaved')}
-            </span>
-          )}
+          <ParticipationSummary activityType="event" activityId={event.id} compact hideExtras />
         </div>
       )}
     </div>
   )
 }
+

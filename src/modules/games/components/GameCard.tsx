@@ -162,23 +162,46 @@ export default function GameCard({ game, onClick, variant = 'card' }: GameCardPr
             </p>
           </div>
 
-          {/* Col 6: Set scores */}
-          <div className="flex items-center gap-1">
-            {hasScore && sets.length > 0 && sets.map((s, i) => {
-              const homeSetWon = s.home > s.away
-              return (
-                <span
-                  key={i}
-                  className={`rounded px-1.5 py-0.5 text-xs font-mono tabular-nums ${
-                    homeSetWon === (game.type === 'home')
-                      ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                      : 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                  }`}
-                >
-                  {s.home}:{s.away}
-                </span>
-              )
-            })}
+          {/* Col 6: Set scores — two rows aligned with teams */}
+          <div>
+            {hasScore && sets.length > 0 && (
+              <>
+                <div className="flex items-center gap-1 leading-5">
+                  {sets.map((s, i) => {
+                    const homeSetWon = s.home > s.away
+                    return (
+                      <span
+                        key={i}
+                        className={`rounded px-1.5 py-0.5 text-xs font-mono tabular-nums ${
+                          homeSetWon === (game.type === 'home')
+                            ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                            : 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                        }`}
+                      >
+                        {s.home}
+                      </span>
+                    )
+                  })}
+                </div>
+                <div className="flex items-center gap-1 leading-5">
+                  {sets.map((s, i) => {
+                    const homeSetWon = s.home > s.away
+                    return (
+                      <span
+                        key={i}
+                        className={`rounded px-1.5 py-0.5 text-xs font-mono tabular-nums ${
+                          homeSetWon !== (game.type === 'home')
+                            ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                            : 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                        }`}
+                      >
+                        {s.away}
+                      </span>
+                    )
+                  })}
+                </div>
+              </>
+            )}
           </div>
 
           {/* Col 7: League */}

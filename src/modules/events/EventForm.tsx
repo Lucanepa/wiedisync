@@ -11,6 +11,7 @@ import { FormInput, FormTextarea, FormField } from '@/components/FormField'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import DatePicker from '@/components/ui/DatePicker'
 import TeamMultiSelect from '@/components/TeamMultiSelect'
+import LocationCombobox from '@/components/LocationCombobox'
 import { pbNameToColorKey } from '../../utils/teamColors'
 import type { Event, EventSession, Team } from '../../types'
 
@@ -335,12 +336,12 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
           {t('allDay')}
         </label>
 
-        <FormInput
-          label={t('location')}
-          type="text"
-          value={location}
-          onChange={(e) => setLocation(e.target.value)}
-        />
+        <FormField label={t('location')}>
+          <LocationCombobox
+            value={location}
+            onChange={setLocation}
+          />
+        </FormField>
 
         <FormTextarea
           label={t('description')}

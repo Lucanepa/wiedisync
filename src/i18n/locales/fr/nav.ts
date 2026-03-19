@@ -29,4 +29,7 @@ export default {
   memberMode: 'Mode membre',
   notifications: 'Notifications',
   feedback: 'Feedback',
+  version: 'Version',
+  changelog: 'Journal des modifications',
+  whatsNew: 'Nouveautes',
 } as const

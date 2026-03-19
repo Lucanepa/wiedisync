@@ -48,9 +48,6 @@ export default function SpielplanungFilters({ filters, onChange }: SpielplanungF
     onChange({ ...filters, gameType: value as GameTypeFilter })
   }
 
-  function handleAbsencesToggle() {
-    onChange({ ...filters, showAbsences: !filters.showAbsences })
-  }
 
   return (
     <div className="flex flex-wrap items-center gap-4">

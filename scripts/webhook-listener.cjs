@@ -54,7 +54,7 @@ const server = http.createServer((req, res) => {
     const ref = payload.ref || "";
     const branch = ref.replace("refs/heads/", "");
 
-    if (!["main", "dev"].includes(branch)) {
+    if (!["prod", "dev"].includes(branch)) {
       console.log(`[${new Date().toISOString()}] Ignoring branch: ${branch}`);
       res.writeHead(200);
       return res.end("Ignored branch");

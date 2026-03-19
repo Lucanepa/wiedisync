@@ -36,6 +36,8 @@ export default {
 
   // CRUD
   newTraining: 'Nouvel entrainement',
+  newSingleTraining: 'Entrainement unique',
+  newRecurringTraining: 'Entrainements recurrents',
   editTraining: 'Modifier l\'entrainement',
   deleteTraining: 'Supprimer l\'entrainement',
   deleteConfirm: 'Voulez-vous vraiment supprimer cet entrainement ?',

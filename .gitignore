@@ -15,8 +15,8 @@ dist-ssr
 # Environment
 .env
 
-# PocketBase hooks (deployed separately via rsync, may contain secrets)
-pb_hooks/
+# PocketBase hooks secrets (actual secrets stay on VPS only)
+pb_hooks/secrets.json
 
 # Infrastructure docs (contains credentials)
 INFRA.md

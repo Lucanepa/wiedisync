@@ -15,7 +15,7 @@ interface FormFieldProps {
 export function FormField({ label, error, helperText, children, className }: FormFieldProps) {
   return (
     <div className={className}>
-      {label && <Label className="mb-1.5">{label}</Label>}
+      {label && <Label className="mb-2">{label}</Label>}
       {children}
       {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
       {helperText && !error && <p className="mt-1 text-xs text-muted-foreground">{helperText}</p>}

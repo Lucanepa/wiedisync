@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import Modal from '@/components/Modal'
 import { useAuth } from '../../hooks/useAuth'
+import { useAdminMode } from '../../hooks/useAdminMode'
 import { useMutation } from '../../hooks/useMutation'
 import { usePB } from '../../hooks/usePB'
 import pb from '../../pb'
@@ -9,6 +10,8 @@ import { Button } from '@/components/ui/button'
 import { FormInput, FormTextarea, FormField } from '@/components/FormField'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import DatePicker from '@/components/ui/DatePicker'
+import TeamMultiSelect from '@/components/TeamMultiSelect'
+import { pbNameToColorKey } from '../../utils/teamColors'
 import type { Event, EventSession, Team } from '../../types'
 
 interface SessionDraft {
@@ -47,9 +50,28 @@ function formatDateShort(dateStr: string): string {
 export default function EventForm({ open, event, onSave, onCancel }: EventFormProps) {
   const { t } = useTranslation('events')
   const { t: tc } = useTranslation('common')
-  const { user } = useAuth()
+  const { user, coachTeamIds } = useAuth()
+  const { effectiveIsAdmin } = useAdminMode()
   const { create, update, isLoading } = useMutation<Event>('events')
-  const { data: teams } = usePB<Team>('teams', { filter: 'active=true', sort: 'name', perPage: 50 })
+  const { data: allTeams } = usePB<Team>('teams', { filter: 'active=true', sort: 'name', perPage: 50 })
+
+  // Filter teams by permissions: admins see all, coaches see only their teams
+  const availableTeams = useMemo(() => {
+    if (effectiveIsAdmin) return allTeams
+    if (coachTeamIds.length === 0) return allTeams
+    return allTeams.filter((t) => coachTeamIds.includes(t.id))
+  }, [allTeams, effectiveIsAdmin, coachTeamIds])
+
+  const teamOptions = useMemo(() =>
+    availableTeams.map((team) => ({
+      value: team.id,
+      label: team.name,
+      colorKey: pbNameToColorKey(team.name, team.sport),
+      group: team.sport === 'volleyball' ? tc('volleyball') : tc('basketball'),
+    })),
+  [availableTeams, tc])
+
+  const singleTeam = availableTeams.length === 1
 
   const [title, setTitle] = useState('')
   const [eventType, setEventType] = useState<Event['event_type']>('verein')
@@ -176,11 +198,12 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
     setSessions((prev) => prev.map((s, i) => i === index ? { ...s, [field]: value } : s))
   }
 
-  function toggleTeam(teamId: string) {
-    setSelectedTeams((prev) =>
-      prev.includes(teamId) ? prev.filter((id) => id !== teamId) : [...prev, teamId],
-    )
-  }
+  // Auto-select when user manages only one team
+  useEffect(() => {
+    if (singleTeam && !event && availableTeams.length === 1) {
+      setSelectedTeams([availableTeams[0].id])
+    }
+  }, [singleTeam, event, availableTeams])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -276,6 +299,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
               <SelectItem value="social">{t('social')}</SelectItem>
               <SelectItem value="meeting">{t('meeting')}</SelectItem>
               <SelectItem value="tournament">{t('tournament')}</SelectItem>
+              <SelectItem value="trainingsweekend">{t('trainingsweekend')}</SelectItem>
               <SelectItem value="other">{t('other')}</SelectItem>
             </SelectContent>
           </Select>
@@ -342,22 +366,15 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
           />
         )}
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('teamsInvolved')}</label>
-          <div className="mt-2 flex flex-wrap gap-3">
-            {teams.map((team) => (
-              <label key={team.id} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                <input
-                  type="checkbox"
-                  checked={selectedTeams.includes(team.id)}
-                  onChange={() => toggleTeam(team.id)}
-                  className="rounded border-gray-300 dark:border-gray-600"
-                />
-                {team.name}
-              </label>
-            ))}
-          </div>
-        </div>
+        {!singleTeam && (
+          <FormField label={t('teamsInvolved')}>
+            <TeamMultiSelect
+              options={teamOptions}
+              selected={selectedTeams}
+              onChange={setSelectedTeams}
+            />
+          </FormField>
+        )}
 
         {/* Participation mode selector — only for multi-day events */}
         {isMultiDay && (

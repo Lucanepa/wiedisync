@@ -489,15 +489,14 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
 
         {training && (
           <div>
-            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-              <input
-                type="checkbox"
-                checked={cancelled}
-                onChange={(e) => setCancelled(e.target.checked)}
-                className="rounded border-gray-300 dark:border-gray-600"
-              />
-              {t('cancelTraining')}
-            </label>
+            <Button
+              type="button"
+              variant={cancelled ? 'destructive' : 'outline'}
+              onClick={() => setCancelled(!cancelled)}
+              className={!cancelled ? 'border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-300' : ''}
+            >
+              {cancelled ? t('trainingCancelled') : t('cancelTraining')}
+            </Button>
             {cancelled && (
               <FormTextarea
                 value={cancelReason}

@@ -21,6 +21,7 @@ import notifications from './locales/en/notifications'
 import gameScheduling from './locales/en/gameScheduling'
 import scorerAssign from './locales/en/scorerAssign'
 import join from './locales/en/join'
+import feedback from './locales/en/feedback'
 
 import deCommon from './locales/de/common'
 import deNav from './locales/de/nav'
@@ -42,6 +43,7 @@ import deNotifications from './locales/de/notifications'
 import deGameScheduling from './locales/de/gameScheduling'
 import deScorerAssign from './locales/de/scorerAssign'
 import deJoin from './locales/de/join'
+import deFeedback from './locales/de/feedback'
 
 import frCommon from './locales/fr/common'
 import frNav from './locales/fr/nav'
@@ -62,6 +64,7 @@ import frParticipation from './locales/fr/participation'
 import frNotifications from './locales/fr/notifications'
 import frGameScheduling from './locales/fr/gameScheduling'
 import frScorerAssign from './locales/fr/scorerAssign'
+import frFeedback from './locales/fr/feedback'
 
 import itCommon from './locales/it/common'
 import itNav from './locales/it/nav'
@@ -82,6 +85,7 @@ import itParticipation from './locales/it/participation'
 import itNotifications from './locales/it/notifications'
 import itGameScheduling from './locales/it/gameScheduling'
 import itScorerAssign from './locales/it/scorerAssign'
+import itFeedback from './locales/it/feedback'
 
 import gswCommon from './locales/gsw/common'
 import gswNav from './locales/gsw/nav'
@@ -102,6 +106,7 @@ import gswParticipation from './locales/gsw/participation'
 import gswNotifications from './locales/gsw/notifications'
 import gswGameScheduling from './locales/gsw/gameScheduling'
 import gswScorerAssign from './locales/gsw/scorerAssign'
+import gswFeedback from './locales/gsw/feedback'
 
 function getInitialLanguage(): string {
   if (typeof window === 'undefined') return 'de'
@@ -142,6 +147,7 @@ i18n.use(initReactI18next).init({
     'gameScheduling',
     'scorerAssign',
     'join',
+    'feedback',
   ],
   defaultNS: 'common',
   resources: {
@@ -166,6 +172,7 @@ i18n.use(initReactI18next).init({
       gameScheduling,
       scorerAssign,
       join,
+      feedback,
     },
     de: {
       common: deCommon,
@@ -188,6 +195,7 @@ i18n.use(initReactI18next).init({
       gameScheduling: deGameScheduling,
       scorerAssign: deScorerAssign,
       join: deJoin,
+      feedback: deFeedback,
     },
     fr: {
       common: frCommon,
@@ -209,6 +217,7 @@ i18n.use(initReactI18next).init({
       notifications: frNotifications,
       gameScheduling: frGameScheduling,
       scorerAssign: frScorerAssign,
+      feedback: frFeedback,
     },
     it: {
       common: itCommon,
@@ -230,6 +239,7 @@ i18n.use(initReactI18next).init({
       notifications: itNotifications,
       gameScheduling: itGameScheduling,
       scorerAssign: itScorerAssign,
+      feedback: itFeedback,
     },
     gsw: {
       common: gswCommon,
@@ -251,6 +261,7 @@ i18n.use(initReactI18next).init({
       notifications: gswNotifications,
       gameScheduling: gswGameScheduling,
       scorerAssign: gswScorerAssign,
+      feedback: gswFeedback,
     },
   },
   interpolation: {

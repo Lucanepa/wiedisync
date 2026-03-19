@@ -22,7 +22,7 @@ import type { MemberTeam, Team } from '../types'
 import {
   Home, Calendar, Trophy, UserX, PenSquare, PartyPopper, Users,
   ClipboardList, Building2, CalendarClock, Database, RefreshCcw,
-  Settings, ChevronDown,
+  Settings, ChevronDown, MessageSquare,
 } from 'lucide-react'
 
 type ExpandedMemberTeam = MemberTeam & { expand?: { team?: Team } }
@@ -36,6 +36,7 @@ function useNavItems(isLoggedIn: boolean, isApproved: boolean) {
     { to: '/', label: t('home'), icon: <Home className={iconClass} /> },
     { to: '/calendar', label: t('calendar'), icon: <Calendar className={iconClass} /> },
     { to: '/games', label: t('games'), icon: <Trophy className={iconClass} /> },
+    { to: '/feedback', label: t('feedback'), icon: <MessageSquare className={iconClass} /> },
   ]
   const authItems = [
     {

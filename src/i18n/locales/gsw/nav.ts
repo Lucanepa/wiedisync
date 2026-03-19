@@ -28,4 +28,5 @@ export default {
   adminMode: 'Admin-Modus',
   memberMode: 'Mitglied-Modus',
   notifications: 'Benachrichtigunge',
+  feedback: 'Feedback',
 } as const

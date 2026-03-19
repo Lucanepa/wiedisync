@@ -8,7 +8,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useParticipation } from '../../hooks/useParticipation'
 import { formatDate, formatWeekday, formatTime } from '../../utils/dateHelpers'
 import type { Training, Team, Hall, Member } from '../../types'
-import { MapPin, Clock, MessageSquare, User, Users, Calendar, Check } from 'lucide-react'
+import { MapPin, Clock, MessageSquare, User, Users, Calendar, Check, UserPlus } from 'lucide-react'
 
 type TrainingExpanded = Training & {
   expand?: { team?: Team; hall?: Hall; coach?: Member }
@@ -126,7 +126,7 @@ export default function TrainingDetailModal({ training, onClose }: TrainingDetai
 
 function TrainingParticipation({ training, isStaff }: { training: TrainingExpanded; isStaff: boolean }) {
   const { t } = useTranslation('participation')
-  const { effectiveStatus, hasAbsence, note: savedNote, setStatus, saveConfirmed, dismissConfirmed } = useParticipation(
+  const { participation, effectiveStatus, hasAbsence, note: savedNote, setStatus, saveConfirmed, dismissConfirmed } = useParticipation(
     'training',
     training.id,
     training.date,
@@ -136,6 +136,12 @@ function TrainingParticipation({ training, isStaff }: { training: TrainingExpand
   const [noteText, setNoteText] = useState(savedNote)
   const [noteSaved, setNoteSaved] = useState(false)
   const noteInitRef = useRef(savedNote)
+  const [guestCount, setGuestCount] = useState(0)
+
+  // Sync guest count from existing participation
+  useEffect(() => {
+    setGuestCount(participation?.guest_count ?? 0)
+  }, [participation?.guest_count])
   // Sync note text when server data loads/changes
   if (savedNote !== noteInitRef.current) {
     noteInitRef.current = savedNote
@@ -158,8 +164,16 @@ function TrainingParticipation({ training, isStaff }: { training: TrainingExpand
 
   const saveNote = () => {
     if (noteText !== savedNote && effectiveStatus) {
-      setStatus(effectiveStatus as 'confirmed' | 'tentative' | 'declined', noteText)
+      setStatus(effectiveStatus as 'confirmed' | 'tentative' | 'declined', noteText, guestCount)
       setNoteSaved(true)
+    }
+  }
+
+  async function handleGuestChange(delta: number) {
+    const newCount = Math.max(0, guestCount + delta)
+    setGuestCount(newCount)
+    if (effectiveStatus) {
+      await setStatus(effectiveStatus as 'confirmed' | 'tentative' | 'declined', noteText, newCount)
     }
   }
 
@@ -188,7 +202,7 @@ function TrainingParticipation({ training, isStaff }: { training: TrainingExpand
             return (
               <button
                 key={status}
-                onClick={() => setStatus(status, noteText)}
+                onClick={() => setStatus(status, noteText, guestCount)}
                 className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${colors[status]}`}
               >
                 {labels[status]}
@@ -232,6 +246,31 @@ function TrainingParticipation({ training, isStaff }: { training: TrainingExpand
               {t('noteSaved')}
             </span>
           )}
+        </div>
+      )}
+      {/* Guest counter — coaches/TR only */}
+      {effectiveStatus && isStaff && (
+        <div className="flex items-center gap-2">
+          <UserPlus className="h-4 w-4 shrink-0 text-gray-400" />
+          <span className="text-sm text-gray-500 dark:text-gray-400">{t('guests')}</span>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => handleGuestChange(-1)}
+              disabled={guestCount <= 0}
+              className="flex h-7 w-7 items-center justify-center rounded-md bg-gray-100 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-30 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+            >
+              −
+            </button>
+            <span className="min-w-[1.5rem] text-center text-sm font-medium text-gray-900 dark:text-gray-100">
+              {guestCount}
+            </span>
+            <button
+              onClick={() => handleGuestChange(1)}
+              className="flex h-7 w-7 items-center justify-center rounded-md bg-gray-100 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+            >
+              +
+            </button>
+          </div>
         </div>
       )}
     </div>

@@ -42,6 +42,7 @@ export default {
   deleteTraining: 'Training löschen',
   deleteConfirm: 'Bist du sicher, dass du dieses Training löschen willst?',
   cancelTraining: 'Training absagen',
+  trainingCancelled: 'Training abgesagt',
   cancelReason: 'Grund der Absage',
 
   // Recurring

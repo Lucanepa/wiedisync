@@ -42,6 +42,7 @@ export default {
   deleteTraining: 'Elimina allenamento',
   deleteConfirm: 'Sei sicuro di voler eliminare questo allenamento?',
   cancelTraining: 'Annulla allenamento',
+  trainingCancelled: 'Allenamento annullato',
   cancelReason: 'Motivo annullamento',
 
   // Recurring

@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Check, X, HelpCircle, Hourglass, Award } from 'lucide-react'
+import { Check, X, HelpCircle, Hourglass, Award, MessageSquare } from 'lucide-react'
 import TeamChip from '../../components/TeamChip'
 import { useAuth } from '../../hooks/useAuth'
 import { useMutation } from '../../hooks/useMutation'
@@ -175,6 +175,22 @@ function TrainingParticipation({ training, existingParticipation }: { training: 
 
   const [optimisticStatus, setOptimisticStatus] = useState<Participation['status'] | null>(null)
   const [saveConfirmed, setSaveConfirmed] = useState(false)
+  const [guestCount, setGuestCount] = useState(existingParticipation?.guest_count ?? 0)
+  const [noteText, setNoteText] = useState(existingParticipation?.note ?? '')
+  const [noteSaved, setNoteSaved] = useState(false)
+  const noteInitRef = useRef(existingParticipation?.note ?? '')
+
+  // Sync guest count when participation data changes
+  useEffect(() => {
+    setGuestCount(existingParticipation?.guest_count ?? 0)
+  }, [existingParticipation?.guest_count])
+
+  // Sync note when participation data changes
+  const serverNote = existingParticipation?.note ?? ''
+  if (serverNote !== noteInitRef.current) {
+    noteInitRef.current = serverNote
+    setNoteText(serverNote)
+  }
 
   const serverStatus = existingParticipation?.status ?? null
   const displayStatus = optimisticStatus ?? serverStatus
@@ -186,21 +202,30 @@ function TrainingParticipation({ training, existingParticipation }: { training: 
     return () => clearTimeout(timer)
   }, [saveConfirmed])
 
-  const setStatus = useCallback(async (status: Participation['status']) => {
+  // Auto-dismiss note confirmation after 2s
+  useEffect(() => {
+    if (!noteSaved) return
+    const timer = setTimeout(() => setNoteSaved(false), 2000)
+    return () => clearTimeout(timer)
+  }, [noteSaved])
+
+  const setStatus = useCallback(async (status: Participation['status'], guests?: number, note?: string) => {
     if (!user) return
+    const gc = guests ?? guestCount
+    const n = note ?? noteText
     setOptimisticStatus(status)
     setSaveConfirmed(false)
     try {
       if (existingParticipation) {
-        await update(existingParticipation.id, { status })
+        await update(existingParticipation.id, { status, guest_count: gc, note: n })
       } else {
         await create({
           member: user.id,
           activity_type: 'training' as const,
           activity_id: training.id,
           status,
-          note: '',
-          guest_count: 0,
+          note: n,
+          guest_count: gc,
           is_staff: isStaff,
         })
       }
@@ -208,47 +233,117 @@ function TrainingParticipation({ training, existingParticipation }: { training: 
     } catch {
       setOptimisticStatus(null)
     }
-  }, [user, existingParticipation, training.id, isStaff, create, update])
+  }, [user, existingParticipation, training.id, isStaff, guestCount, noteText, create, update])
+
+  const saveNote = () => {
+    if (noteText !== serverNote && displayStatus) {
+      setStatus(displayStatus, guestCount, noteText)
+      setNoteSaved(true)
+    }
+  }
+
+  async function handleGuestChange(delta: number) {
+    const newCount = Math.max(0, guestCount + delta)
+    setGuestCount(newCount)
+    if (displayStatus) {
+      await setStatus(displayStatus, newCount)
+    }
+  }
 
   return (
-    <div className="relative flex items-center gap-1.5">
-      <button
-        onClick={() => setStatus('confirmed')}
-        className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
-          displayStatus === 'confirmed'
-            ? 'bg-green-600 text-white'
-            : 'bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-green-900/30 dark:hover:text-green-400'
-        }`}
-      >
-        {t('yes')}
-      </button>
-      <button
-        onClick={() => setStatus('tentative')}
-        className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
-          displayStatus === 'tentative'
-            ? 'bg-yellow-500 text-white'
-            : 'bg-gray-100 text-gray-600 hover:bg-yellow-100 hover:text-yellow-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-yellow-900/30 dark:hover:text-yellow-400'
-        }`}
-      >
-        {t('maybe')}
-      </button>
-      <button
-        onClick={() => setStatus('declined')}
-        className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
-          displayStatus === 'declined'
-            ? 'bg-red-600 text-white'
-            : 'bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-red-900/30 dark:hover:text-red-400'
-        }`}
-      >
-        {t('no')}
-      </button>
+    <div className="space-y-1.5">
+      <div className="relative flex items-center gap-1.5">
+        <button
+          onClick={() => setStatus('confirmed')}
+          className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
+            displayStatus === 'confirmed'
+              ? 'bg-green-600 text-white'
+              : 'bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-green-900/30 dark:hover:text-green-400'
+          }`}
+        >
+          {t('yes')}
+        </button>
+        <button
+          onClick={() => setStatus('tentative')}
+          className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
+            displayStatus === 'tentative'
+              ? 'bg-yellow-500 text-white'
+              : 'bg-gray-100 text-gray-600 hover:bg-yellow-100 hover:text-yellow-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-yellow-900/30 dark:hover:text-yellow-400'
+          }`}
+        >
+          {t('maybe')}
+        </button>
+        <button
+          onClick={() => setStatus('declined')}
+          className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
+            displayStatus === 'declined'
+              ? 'bg-red-600 text-white'
+              : 'bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-red-900/30 dark:hover:text-red-400'
+          }`}
+        >
+          {t('no')}
+        </button>
 
-      {/* Save confirmation popover */}
-      {saveConfirmed && (
-        <span className="absolute -top-7 left-1/2 -translate-x-1/2 flex items-center gap-1 whitespace-nowrap rounded-md bg-green-600 px-2 py-0.5 text-[11px] font-medium text-white shadow-lg animate-fade-in">
-          <Check className="h-3 w-3" />
-          {t('saved')}
-        </span>
+        {/* Inline guest counter — coaches/TR only */}
+        {displayStatus && isStaff && (
+          <div className="flex items-center gap-1 ml-1 border-l border-gray-200 pl-2 dark:border-gray-600">
+            <button
+              onClick={() => handleGuestChange(-1)}
+              disabled={guestCount <= 0}
+              className="flex h-5 w-5 items-center justify-center rounded text-xs font-medium text-gray-500 hover:bg-gray-100 disabled:opacity-30 dark:text-gray-400 dark:hover:bg-gray-700"
+            >
+              −
+            </button>
+            <span className="min-w-[1rem] text-center text-xs font-medium text-gray-700 dark:text-gray-300">
+              {guestCount}
+            </span>
+            <button
+              onClick={() => handleGuestChange(1)}
+              className="flex h-5 w-5 items-center justify-center rounded text-xs font-medium text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+            >
+              +
+            </button>
+            <span className="text-[10px] text-gray-400 dark:text-gray-500">{t('guests')}</span>
+          </div>
+        )}
+
+        {/* Save confirmation popover */}
+        {saveConfirmed && (
+          <span className="absolute -top-7 left-1/2 -translate-x-1/2 flex items-center gap-1 whitespace-nowrap rounded-md bg-green-600 px-2 py-0.5 text-[11px] font-medium text-white shadow-lg animate-fade-in">
+            <Check className="h-3 w-3" />
+            {t('saved')}
+          </span>
+        )}
+      </div>
+
+      {/* Note input */}
+      {displayStatus && (
+        <div className="relative flex items-center gap-1.5">
+          <MessageSquare className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+          <input
+            type="text"
+            value={noteText}
+            onChange={(e) => setNoteText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') saveNote()
+            }}
+            placeholder={t('notePlaceholder')}
+            className="min-w-0 flex-1 rounded-md border border-gray-200 bg-transparent px-2 py-0.5 text-xs text-gray-700 placeholder:text-gray-400 focus:border-brand-400 focus:outline-none dark:border-gray-600 dark:text-gray-300 dark:placeholder:text-gray-500 dark:focus:border-brand-500"
+          />
+          <button
+            onClick={saveNote}
+            disabled={noteText === serverNote}
+            className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-gray-400 transition-colors hover:bg-gray-100 hover:text-green-600 disabled:opacity-30 dark:hover:bg-gray-700 dark:hover:text-green-400"
+          >
+            <Check className="h-3 w-3" />
+          </button>
+          {noteSaved && (
+            <span className="absolute -top-6 right-0 flex items-center gap-1 whitespace-nowrap rounded-md bg-green-600 px-2 py-0.5 text-[10px] font-medium text-white shadow-lg animate-fade-in">
+              <Check className="h-2.5 w-2.5" />
+              {t('noteSaved')}
+            </span>
+          )}
+        </div>
       )}
     </div>
   )

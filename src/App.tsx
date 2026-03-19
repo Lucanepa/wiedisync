@@ -36,6 +36,7 @@ import ResetPasswordPage from './modules/auth/ResetPasswordPage'
 import JoinPage from './modules/auth/JoinPage'
 import PublicTerminplanungPage from './modules/gameScheduling/pages/PublicTerminplanungPage'
 import OpponentFlowPage from './modules/gameScheduling/pages/OpponentFlowPage'
+import FeedbackPage from './modules/feedback/FeedbackPage'
 
 export default function App() {
   return (
@@ -68,6 +69,7 @@ export default function App() {
             <Route path="events" element={<EventsPage />} />
             <Route path="datenschutz" element={<DatenschutzPage />} />
             <Route path="impressum" element={<ImpressumPage />} />
+            <Route path="feedback" element={<FeedbackPage />} />
             <Route path="profile" element={<AuthRoute><ProfilePage /></AuthRoute>} />
             <Route path="admin/spielplanung" element={<AdminRoute><SpielplanungPage /></AdminRoute>} />
             <Route path="admin/hallenplan" element={<AdminRoute><HallenplanPage /></AdminRoute>} />

@@ -8,6 +8,7 @@ routerAdd("POST", "/api/admin/sql", function(e) {
   // ── Auth check ──────────────────────────────────────────────────
   var info = e.requestInfo()
   if (!info.auth) {
+    $app.logger().warn("SQL admin: unauthenticated access attempt", "ip", e.remoteIP())
     e.json(401, { success: false, error: "Authentication required" })
     return
   }
@@ -33,6 +34,7 @@ routerAdd("POST", "/api/admin/sql", function(e) {
   }
 
   if (!authorized) {
+    $app.logger().warn("SQL admin: unauthorized access attempt", "user", info.auth.id, "ip", e.remoteIP())
     e.json(403, { success: false, error: "Superadmin role required" })
     return
   }
@@ -55,6 +57,8 @@ routerAdd("POST", "/api/admin/sql", function(e) {
                  upperQuery.indexOf("WITH") === 0
   var isPragma = upperQuery.indexOf("PRAGMA") === 0 ||
                  upperQuery.indexOf("EXPLAIN") === 0
+
+  $app.logger().info("SQL admin: query executed", "user", info.auth.id, "type", isSelect ? "read" : "write", "query", query.substring(0, 200))
 
   try {
     if (isSelect) {

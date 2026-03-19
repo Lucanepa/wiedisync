@@ -31,6 +31,9 @@ e2e/.auth/
 # Planning
 .planning/
 
+# Superpowers plugin artifacts
+.superpowers/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

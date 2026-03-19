@@ -268,6 +268,9 @@ routerAdd("POST", "/api/team-invites/claim", function (e) {
   member.set("member_active", true)
   member.set("shell_expires", shellExpiresStr)
   member.set("shell_reminder_sent", false)
+  member.set("birthdate_visibility", "hidden")
+  member.set("language", "german")
+  member.set("role", ["user"])
   $app.save(member)
 
   // Create member_teams record

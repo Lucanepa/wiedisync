@@ -312,6 +312,8 @@ function syncMembers(csvString) {
         record.set("role", ["player"])
         record.set("active", true)
         record.set("member_active", false)
+        record.set("birthdate_visibility", "hidden")
+        record.set("language", "german")
 
         // Auth collection requires a password
         record.setPassword(generatePassword())

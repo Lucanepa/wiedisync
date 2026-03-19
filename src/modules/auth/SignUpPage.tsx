@@ -132,6 +132,7 @@ export default function SignUpPage() {
         requested_team: selectedTeam,
         member_active: true,
         language: selectedLanguage,
+        birthdate_visibility: 'hidden',
         club: selectedTeamObj?.club || '',
       })
       await login(email.trim().toLowerCase(), password)

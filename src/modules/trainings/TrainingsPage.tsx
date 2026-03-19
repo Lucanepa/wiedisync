@@ -18,6 +18,12 @@ import CoachDashboard from './CoachDashboard'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import TabBar from '../../components/TabBar'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import type { Training, Team, Hall, Member, Participation } from '../../types'
 
 type TrainingExpanded = Training & {
@@ -140,23 +146,25 @@ export default function TrainingsPage() {
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('subtitle')}</p>
         </div>
         {(isCoach || effectiveIsAdmin) && (
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setRecurringOpen(true)}
-            >
-              {t('recurringTitle')}
-            </Button>
-            <Button
-              onClick={() => {
-                setEditingTraining(null)
-                setEditScope('this')
-                setFormOpen(true)
-              }}
-            >
-              {t('newTraining')}
-            </Button>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button>{t('newTraining')}</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={() => {
+                  setEditingTraining(null)
+                  setEditScope('this')
+                  setFormOpen(true)
+                }}
+              >
+                {t('newSingleTraining')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setRecurringOpen(true)}>
+                {t('newRecurringTraining')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
 

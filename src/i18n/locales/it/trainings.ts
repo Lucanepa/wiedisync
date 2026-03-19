@@ -36,6 +36,8 @@ export default {
 
   // CRUD
   newTraining: 'Nuovo allenamento',
+  newSingleTraining: 'Allenamento singolo',
+  newRecurringTraining: 'Allenamenti ricorrenti',
   editTraining: 'Modifica allenamento',
   deleteTraining: 'Elimina allenamento',
   deleteConfirm: 'Sei sicuro di voler eliminare questo allenamento?',

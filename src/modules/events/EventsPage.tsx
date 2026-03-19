@@ -18,7 +18,7 @@ type EventExpanded = Event & { expand?: { teams?: Team[] } }
 
 export default function EventsPage() {
   const { t } = useTranslation('events')
-  const { isCoach, isCoachOf, isAdmin, coachTeamIds, memberTeamIds } = useAuth()
+  const { isCoach, isCoachOf, isAdmin, memberTeamIds } = useAuth()
   const [formOpen, setFormOpen] = useState(false)
   const [editingEvent, setEditingEvent] = useState<Event | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)

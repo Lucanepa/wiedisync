@@ -71,6 +71,10 @@ export default {
   status: 'Status',
   select: 'Select...',
   allHalls: 'All halls',
+  clubHalls: 'Club Halls',
+  searchResults: 'More Results',
+  searching: 'Searching...',
+  locationPlaceholder: 'Search location...',
 
   // Status labels
   present: 'Present',

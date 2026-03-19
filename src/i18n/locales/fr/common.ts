@@ -71,6 +71,10 @@ export default {
   status: 'Statut',
   select: 'Selectionner...',
   allHalls: 'Toutes les salles',
+  clubHalls: 'Salles du club',
+  searchResults: 'Autres résultats',
+  searching: 'Recherche...',
+  locationPlaceholder: 'Rechercher un lieu...',
 
   // Status labels
   present: 'Present',

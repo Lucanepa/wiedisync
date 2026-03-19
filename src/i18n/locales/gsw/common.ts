@@ -71,6 +71,10 @@ export default {
   status: 'Status',
   select: 'Uswähle...',
   allHalls: 'Alli Halle',
+  clubHalls: 'Vereinshalle',
+  searchResults: 'Witeri Ergebnis',
+  searching: 'Sueche...',
+  locationPlaceholder: 'Ort sueche...',
 
   // Status labels
   present: 'Da',

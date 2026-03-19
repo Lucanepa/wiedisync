@@ -71,6 +71,10 @@ export default {
   status: 'Status',
   select: 'Auswählen...',
   allHalls: 'Alle Hallen',
+  clubHalls: 'Vereinshallen',
+  searchResults: 'Weitere Ergebnisse',
+  searching: 'Suche...',
+  locationPlaceholder: 'Ort suchen...',
 
   // Status labels
   present: 'Anwesend',

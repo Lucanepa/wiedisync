@@ -45,12 +45,16 @@ test.describe('Accessibility — login page keyboard navigation', () => {
     const focused1 = page.locator(':focus')
     await expect(focused1).toHaveAttribute('type', 'password')
 
-    // Tab through remaining form elements (remember me checkbox, then submit)
-    // Keep tabbing until we reach the submit button
-    for (let i = 0; i < 3; i++) {
+    // Tab through remaining form elements (remember me switch, then submit)
+    // Keep tabbing until we reach the submit button (skip the switch which is also a <button>)
+    for (let i = 0; i < 5; i++) {
       await page.keyboard.press('Tab')
-      const role = await page.locator(':focus').evaluate((el) => el.tagName.toLowerCase())
-      if (role === 'button') break
+      const ariaRole = await page.locator(':focus').evaluate((el) => el.getAttribute('role'))
+      // Submit button has no explicit role or role="button" — skip switch/checkbox
+      if (ariaRole !== 'switch' && ariaRole !== 'checkbox') {
+        const tag = await page.locator(':focus').evaluate((el) => el.tagName.toLowerCase())
+        if (tag === 'button') break
+      }
     }
     const submitBtn = page.locator(':focus')
     await expect(submitBtn).toHaveRole('button')

@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import TeamChip from '../../components/TeamChip'
+import RichText from '../../components/RichText'
 import type { CalendarEntry } from '../../types/calendar'
 import type { Training, Event as KscwEvent, Absence } from '../../types'
 import { formatDate } from '../../utils/dateUtils'
@@ -179,7 +180,13 @@ function renderEventDetails(event: KscwEvent, t: (key: string) => string) {
         <DetailRow label={t('common:type')} value={typeMap[event.event_type] ?? event.event_type} />
       )}
       {event.description && (
-        <DetailRow label={t('common:details')} value={event.description} />
+        <div className="flex items-start gap-3 text-sm">
+          <span className="w-20 shrink-0 text-gray-500 dark:text-gray-400">{t('common:details')}</span>
+          {/<[a-z][\s\S]*>/i.test(event.description)
+            ? <RichText html={event.description} className="text-gray-900 dark:text-gray-100" />
+            : <span className="text-gray-900 dark:text-gray-100">{event.description}</span>
+          }
+        </div>
       )}
     </>
   )

@@ -18,7 +18,7 @@ import crypto from 'crypto'
 const require = createRequire(import.meta.url)
 const XLSX = require('xlsx')
 
-const PB_URL = process.env.PB_URL || 'https://kscw-api.lucanepa.com'
+const PB_URL = process.env.PB_URL || 'https://api.kscw.ch'
 const PB_EMAIL = process.env.PB_EMAIL || ''
 const PB_PASSWORD = process.env.PB_PASSWORD || ''
 const DRY_RUN = !!process.env.DRY_RUN

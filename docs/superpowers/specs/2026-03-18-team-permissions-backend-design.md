@@ -222,7 +222,7 @@ Coach-editable fields on `members`: `position`, `number`, `licences`, `birthdate
 
 ### Test Script: `scripts/test-team-permissions.sh`
 
-Curl-based integration tests against dev PB (`kscw-api-dev.lucanepa.com`).
+Curl-based integration tests against dev PB (`api-dev.kscw.ch`).
 
 Authenticates as different test users and attempts each operation, asserting expected HTTP status codes.
 

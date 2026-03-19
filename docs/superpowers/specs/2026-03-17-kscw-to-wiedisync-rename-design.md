@@ -46,7 +46,7 @@ Rename the project from "kscw" to "wiedisync" to clearly separate the app platfo
 
 ### Out of scope (not changing)
 
-- Domain names (`kscw.lucanepa.com`, `kscw-api.lucanepa.com`)
+- Domain names (`wiedisync.kscw.ch`, `api.kscw.ch`)
 - Cloudflare Pages project name (may need manual repo reconnection after GitHub rename)
 - CF Worker name (`kscw-push`) and `workers/push/wrangler.toml`
 - PocketBase service names (`pocketbase-kscw`), collection prefixes, field names (`kscw_team`)

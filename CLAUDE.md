@@ -78,10 +78,10 @@ PocketBase uses SQLite. Violating these rules **will corrupt the database** (hap
 ## Domains & Hosting
 
 - **`kscw.ch`** — currently ClubDesk (external). Will eventually be migrated to point at KSCW platform. **Do NOT change until explicitly confirmed.**
-- **`kscw.lucanepa.com`** — React app (Wiedisync) production, CF Pages project `kscw`
-- **`dev-kscw.lucanepa.com`** — React app dev/preview, CF Pages project `kscw` (dev branch)
-- **`kscw-api.lucanepa.com`** — PocketBase API production, CF Tunnel → VPS `:8091`
-- **`kscw-api-dev.lucanepa.com`** — PocketBase API dev, CF Tunnel → VPS `:8092`
+- **`wiedisync.kscw.ch`** — React app (Wiedisync) production, CF Pages project `kscw`
+- **`dev.wiedisync.kscw.ch`** — React app dev/preview, CF Pages project `kscw` (dev branch)
+- **`api.kscw.ch`** — PocketBase API production, CF Tunnel → VPS `:8091`
+- **`api-dev.kscw.ch`** — PocketBase API dev, CF Tunnel → VPS `:8092`
 - **`kscw-website.pages.dev`** — Public club website (static HTML), CF Pages project `kscw-website`. **Deploy to dev/preview only** until further notice — do NOT push website changes to production.
 - **`kscw-push.lucanepa.workers.dev`** — Web push CF Worker
 
@@ -89,15 +89,15 @@ See `INFRA.md → Domains & Hosting Overview` for full domain map, future migrat
 
 ## Branches & Dev-First Workflow
 
-- `main` → production (`kscw.lucanepa.com`, PB: `kscw-api.lucanepa.com`)
-- `dev` → preview (`dev-kscw.lucanepa.com`, PB: `kscw-api-dev.lucanepa.com`)
+- `main` → production (`wiedisync.kscw.ch`, PB: `api.kscw.ch`)
+- `dev` → preview (`dev.wiedisync.kscw.ch`, PB: `api-dev.kscw.ch`)
 
 **All changes go through `dev` first.** Never push directly to `main`. When asked to push/deploy Wiedisync or the public website, always push to `dev` unless explicitly told to push to `main`/production. Workflow:
 
 1. Develop and commit on `dev` branch
 2. Deploy frontend to dev (push `dev` → Cloudflare Pages preview)
 3. Deploy hooks to dev PB (`/opt/pocketbase-kscw-dev/pb_hooks/`, restart `pocketbase-kscw-dev`)
-4. Test on `dev-kscw.lucanepa.com` against `kscw-api-dev.lucanepa.com`
+4. Test on `dev.wiedisync.kscw.ch` against `api-dev.kscw.ch`
 5. Once confirmed working, merge `dev` → `main` (with user approval)
 6. Deploy hooks to prod PB and push `main` to trigger production build
 
@@ -113,7 +113,7 @@ See `INFRA.md → Domains & Hosting Overview` for full domain map, future migrat
 - **2026-03-17** — Website: Instagram embeds on team pages. Scraped kscw.ch for team-specific IG accounts (H1: `kscw_h1`, H3: `h3_kscw`, D2: `kscwvolleyd2`, HU23: `kscw_vbu23`). Set `social_url` on teams in PB (prod+dev). Exposed `social_url` in public team API. Added `instagram-media` blockquote embed via IG `embed.js` at bottom of each team page (only shown when `social_url` is set). i18n keys for DE/EN. Website now dev-only deployment until further notice.
 - **2026-03-17** — KSCW public website (now in separate `kscw-website` repo, deployed to `kscw-website.pages.dev`; `website_draft/` deleted from this repo): Full static site with dynamic team pages. Single `team.html` template renders all 16+ teams via `/api/public/team/{id}` hook (roster, trainings, games, rankings, team photo, coach/captain). Clean URLs (`/volleyball/h1`, `/basketball/lions`) via CF Pages `_worker.js`. Shared nav from `partials/header.html` loaded dynamically. Samsung dark mode fix (`forced-color-adjust`). Mobile-responsive game rows. Team overview pages with PB team photos as card backgrounds. Promotion/relegation color bands on volleyball rankings. Public PB hook: `pb_hooks/public_team_data.pb.js` (GET `/api/public/team/{id}` + GET `/api/public/teams`). Opened `teams`, `games`, `rankings` collections for public read. Contact page with VB/BB contacts.
 - **2026-03-16** — Removed multi-club infrastructure entirely: deleted `clubs` collection, removed `club` relation field from all 20 domain collections (19 original + `news`), cleaned API rules referencing club, deleted `src/clubConfig.ts`, `pb_hooks/club_defaults.pb.js`, removed `clubId` from `useAuth` context and all auto-injection logic in `usePB`/`useMutation`/`useRealtime`/`useTeamMembers`. Cleaned `sv_sync_lib.js`, `bp_sync_lib.js`, `setup-collections.ts`, `RosterEditor`, `PlayerProfile`, `ProfileEditModal`. KSCW is a single-club platform — no multi-tenancy needed.
-- **2026-03-13** — KSCW PocketBase migrated from Synology NAS (Docker) to Infomaniak VPS (native systemd service at `/opt/pocketbase-kscw/`, port 8091). New Cloudflare tunnel `kscw-vps` routes `kscw-api.lucanepa.com` → VPS. Removed MinIO container (unused S3) and old KSCW containers from NAS. Updated all deploy commands in INFRA.md from NAS Docker to VPS scp+systemd pattern.
+- **2026-03-13** — KSCW PocketBase migrated from Synology NAS (Docker) to Infomaniak VPS (native systemd service at `/opt/pocketbase-kscw/`, port 8091). New Cloudflare tunnel `kscw-vps` routes `api.kscw.ch` → VPS. Removed MinIO container (unused S3) and old KSCW containers from NAS. Updated all deploy commands in INFRA.md from NAS Docker to VPS scp+systemd pattern.
 - **2026-03-12** — Scorer reminder routing refined on deployed NAS hooks: production sends go to the assigned duty member with `reminders@volleyball.lucanepa.com` in CC; dry-run endpoints now always send test emails directly to `reminders@volleyball.lucanepa.com`.
 - **2026-03-12** — Scorer reminder emails now route to `reminders@volleyball.lucanepa.com` for both real sends and dry-run endpoints (`/api/scorer-reminders/dry-run`, `/api/scorer-reminders/dry-run-game`) via deployed NAS hook updates.
 - **2026-03-12** — Scorer info panel is now volleyball-only in `ScorerPage`: the expandable duty-info block is hidden when the basketball tab is active to avoid showing volleyball-specific guidance in basketball context.

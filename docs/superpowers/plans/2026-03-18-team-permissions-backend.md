@@ -344,12 +344,12 @@ Expected: No goja load errors. If ANY hook file has a load-time error, ALL hooks
 
 ```bash
 # Authenticate as admin
-TOKEN=$(curl -s https://kscw-api-dev.lucanepa.com/api/collections/members/auth-with-password \
+TOKEN=$(curl -s https://api-dev.kscw.ch/api/collections/members/auth-with-password \
   -H 'Content-Type: application/json' \
   -d '{"identity":"<admin_email>","password":"<admin_pass>"}' | jq -r '.token')
 
 # Try listing teams (should still work — read is not gated)
-curl -s -o /dev/null -w "%{http_code}" https://kscw-api-dev.lucanepa.com/api/collections/teams/records \
+curl -s -o /dev/null -w "%{http_code}" https://api-dev.kscw.ch/api/collections/teams/records \
   -H "Authorization: $TOKEN"
 ```
 
@@ -381,7 +381,7 @@ The test script authenticates as different test users and attempts operations, a
 
 set -euo pipefail
 
-PB_URL="${PB_URL:-https://kscw-api-dev.lucanepa.com}"
+PB_URL="${PB_URL:-https://api-dev.kscw.ch}"
 PASS=0
 FAIL=0
 ERRORS=""
@@ -665,7 +665,7 @@ export BB_ADMIN_EMAIL="<bb_admin_test_email>"
 export BB_ADMIN_PASS="<bb_admin_test_password>"
 export USER_EMAIL="<user_test_email>"
 export USER_PASS="<user_test_password>"
-export PB_URL="https://kscw-api-dev.lucanepa.com"
+export PB_URL="https://api-dev.kscw.ch"
 ```
 
 - [ ] **Step 2: Run the tests**
@@ -707,7 +707,7 @@ ssh ubuntu@100.69.245.37 'sudo journalctl -u pocketbase-kscw --since "1 minute a
 
 ```bash
 # Test that a normal admin operation still works
-PB_URL=https://kscw-api.lucanepa.com source .env.test-permissions && ./scripts/test-team-permissions.sh
+PB_URL=https://api.kscw.ch source .env.test-permissions && ./scripts/test-team-permissions.sh
 ```
 
 Or manually verify in the UI that coaches can still edit their team's roster.

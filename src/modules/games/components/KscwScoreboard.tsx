@@ -6,6 +6,7 @@ import { teamIds } from '../../../utils/teamColors'
 import { formatNumberSwiss } from '../../../utils/formatNumber'
 
 type SportKey = 'volleyball' | 'basketball'
+type ScoreboardMode = 'absolute' | 'perGame'
 
 interface KscwScoreboardProps {
   rankings: Ranking[]
@@ -43,6 +44,7 @@ interface ScoreboardSection {
 export default function KscwScoreboard({ rankings }: KscwScoreboardProps) {
   const { t } = useTranslation('games')
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({})
+  const [mode, setMode] = useState<ScoreboardMode>('absolute')
 
   const sections = useMemo<ScoreboardSection[]>(() => {
     const out: ScoreboardSection[] = []
@@ -101,9 +103,24 @@ export default function KscwScoreboard({ rankings }: KscwScoreboardProps) {
 
   return (
     <div className="mb-6 space-y-4">
-      <div>
+      <div className="flex items-center justify-between gap-3">
         <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">{t('scoreboardTitle')}</h2>
-
+        <div className="inline-flex rounded-lg border border-gray-200 bg-gray-100 p-0.5 dark:border-gray-600 dark:bg-gray-700">
+          <button
+            type="button"
+            className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${mode === 'absolute' ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-600 dark:text-gray-100' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
+            onClick={() => setMode('absolute')}
+          >
+            {t('scoreboardAbsolute')}
+          </button>
+          <button
+            type="button"
+            className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${mode === 'perGame' ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-600 dark:text-gray-100' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
+            onClick={() => setMode('perGame')}
+          >
+            {t('scoreboardPerGame')}
+          </button>
+        </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -134,7 +151,7 @@ export default function KscwScoreboard({ rankings }: KscwScoreboardProps) {
                   <thead>
                     <tr className="border-b border-gray-200 bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
                       <th className="w-2/6 px-3 py-2 text-left">{t('scoreboardMetric')}</th>
-                      <th className="w-1/6 px-3 py-2 text-center">{t('breakdownTotal')}</th>
+                      <th className="w-1/6 px-3 py-2 text-center">{mode === 'perGame' ? t('scoreboardAvg') : t('breakdownTotal')}</th>
                       <th className="w-3/6 px-3 py-2 text-left">{t('scoreboardMost')}</th>
                     </tr>
                   </thead>
@@ -142,14 +159,17 @@ export default function KscwScoreboard({ rankings }: KscwScoreboardProps) {
                     {section.metrics.map((metric) => {
                       const rowKey = `${section.sportKey}:${metric.key}`
                       const isExpanded = !!expandedRows[rowKey]
-                      const total = section.totals.find((m) => m.key === metric.key)?.value ?? null
-                      const rankingRows = computeMetricRanking(section.rows, metric.getValue)
+                      const rankingRows = mode === 'perGame'
+                        ? computeMetricRankingPerGame(section.rows, metric.getValue)
+                        : computeMetricRanking(section.rows, metric.getValue)
+                      const total = mode === 'perGame'
+                        ? computePerGameAverage(section.rows, metric.getValue)
+                        : (section.totals.find((m) => m.key === metric.key)?.value ?? null)
                       const topValue = rankingRows.length > 0 ? rankingRows[0].value : null
                       const topTeams = topValue === null ? [] : rankingRows.filter((entry) => entry.value === topValue)
-                      const leaderPercent =
-                        topValue !== null && total !== null && total > 0
-                          ? Math.round((topValue / total) * 100)
-                          : null
+                      const leaderPercent = mode === 'absolute' && topValue !== null && total !== null && total > 0
+                        ? Math.round((topValue / total) * 100)
+                        : null
                       return (
                         <Fragment key={metric.key}>
                           <tr
@@ -168,7 +188,7 @@ export default function KscwScoreboard({ rankings }: KscwScoreboardProps) {
                               </span>
                             </td>
                             <td className="w-1/6 px-3 py-2 text-center font-semibold text-gray-900 dark:text-gray-100">
-                            {total === null ? t('scoreboardUnavailable') : formatNumberSwiss(total)}
+                            {total === null ? t('scoreboardUnavailable') : formatValue(total, mode)}
                             </td>
                             <td className="w-3/6 px-3 py-2">
                               {topValue === null || topTeams.length === 0 ? (
@@ -179,8 +199,8 @@ export default function KscwScoreboard({ rankings }: KscwScoreboardProps) {
                                     const shortTeam = teamIds[entry.teamId]
                                     if (!shortTeam) return null
                                     const valueLabel = leaderPercent === null
-                                      ? `${shortTeam} - ${formatNumberSwiss(topValue)}`
-                                      : `${shortTeam} - ${formatNumberSwiss(topValue)} (${leaderPercent}%)`
+                                      ? `${shortTeam} - ${formatValue(topValue, mode)}`
+                                      : `${shortTeam} - ${formatValue(topValue, mode)} (${leaderPercent}%)`
                                     return <TeamChip key={entry.teamId} team={shortTeam} size="sm" label={valueLabel} />
                                   })}
                                 </div>
@@ -210,7 +230,7 @@ export default function KscwScoreboard({ rankings }: KscwScoreboardProps) {
                                           if (!shortTeam) return null
                                           const prev = idx > 0 ? rankingRows[idx - 1] : null
                                           const rank = prev && prev.value === entry.value ? idx : idx + 1
-                                          const pct = Math.round((entry.value / total) * 100)
+                                          const pct = mode === 'absolute' && total > 0 ? Math.round((entry.value / total) * 100) : null
                                           return (
                                             <tr key={entry.teamId}>
                                               <td className="px-2 py-1.5 text-center text-xs text-gray-500 dark:text-gray-400">#{rank}</td>
@@ -220,10 +240,10 @@ export default function KscwScoreboard({ rankings }: KscwScoreboardProps) {
                                                 </span>
                                               </td>
                                               <td className="px-2 py-1.5 text-center font-medium text-gray-700 dark:text-gray-300">
-                                                {formatNumberSwiss(entry.value)}
+                                                {formatValue(entry.value, mode)}
                                               </td>
                                               <td className="px-2 py-1.5 text-center font-medium text-gray-700 dark:text-gray-300">
-                                                {pct}%
+                                                {pct !== null ? `${pct}%` : '–'}
                                               </td>
                                             </tr>
                                           )
@@ -248,6 +268,40 @@ export default function KscwScoreboard({ rankings }: KscwScoreboardProps) {
       </div>
     </div>
   )
+}
+
+function formatValue(value: number, mode: ScoreboardMode): string {
+  if (mode === 'perGame') {
+    return value.toFixed(1).replace('.', ',')
+  }
+  return formatNumberSwiss(value)
+}
+
+function computePerGameAverage(rows: Ranking[], getValue: (row: Ranking) => number | null): number | null {
+  const entries = rows
+    .map((row) => ({ value: getValue(row), played: row.played }))
+    .filter((e): e is { value: number; played: number } => e.value !== null && e.played > 0)
+  if (entries.length === 0) return null
+  const totalPerGame = entries.reduce((acc, e) => acc + e.value / e.played, 0)
+  return totalPerGame / entries.length
+}
+
+function computeMetricRankingPerGame(rows: Ranking[], getValue: (row: Ranking) => number | null): Array<{ teamId: string; value: number }> {
+  const bestByTeam = new Map<string, number>()
+
+  for (const row of rows) {
+    const value = getValue(row)
+    if (value === null || row.played <= 0) continue
+    const perGame = value / row.played
+    const current = bestByTeam.get(row.team_id)
+    if (current === undefined || perGame > current) {
+      bestByTeam.set(row.team_id, perGame)
+    }
+  }
+
+  return [...bestByTeam.entries()]
+    .map(([teamId, value]) => ({ teamId, value }))
+    .sort((a, b) => (b.value - a.value) || a.teamId.localeCompare(b.teamId))
 }
 
 function computeLeaders(rows: Ranking[], metrics: MetricDef[]): MetricLeader[] {

@@ -3,7 +3,7 @@
 // ── Contact Form API ────────────────────────────────────────────────
 // POST /api/contact — public endpoint with Turnstile verification
 // Resolves email recipients from team leadership relations in PB
-// Auto-deployed via GitHub webhook
+// Auto-deployed via GitHub webhook (verified working)
 
 var _secrets = JSON.parse(String.fromCharCode.apply(null, new Uint8Array($os.readFile(__hooks + "/secrets.json"))))
 var TURNSTILE_SECRET = _secrets.TURNSTILE_SECRET

@@ -581,7 +581,7 @@ routerAdd("POST", "/api/terminplanung/propose-away/{token}", function (e) {
       html: tpl.buildEmailLayout(proposalBody, {
         title: "Ausw\u00e4rtsvorschl\u00e4ge",
         sport: "vb",
-        ctaUrl: "https://kscw.lucanepa.com/admin/terminplanung/dashboard",
+        ctaUrl: "https://wiedisync.kscw.ch/admin/terminplanung/dashboard",
         ctaLabel: "Zum Dashboard",
       }),
       text: tpl.buildPlainLayout([
@@ -590,7 +590,7 @@ routerAdd("POST", "/api/terminplanung/propose-away/{token}", function (e) {
         "  1. " + (body.proposed_datetime_1 || "-") + " - " + (body.proposed_place_1 || "-"),
         "  2. " + (body.proposed_datetime_2 || "-") + " - " + (body.proposed_place_2 || "-"),
         "  3. " + (body.proposed_datetime_3 || "-") + " - " + (body.proposed_place_3 || "-"),
-      ], { title: "Auswaertsvorschlaege", url: "https://kscw.lucanepa.com/admin/terminplanung/dashboard" }),
+      ], { title: "Auswaertsvorschlaege", url: "https://wiedisync.kscw.ch/admin/terminplanung/dashboard" }),
     })
     $app.newMailClient().send(adminMessage)
   } catch (mailErr) {

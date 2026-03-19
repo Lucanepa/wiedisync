@@ -12,7 +12,7 @@ var ACCENT_COLORS = {
   neutral: "#4A55A2" // navy (brand)
 }
 
-var LOGO_IMG = '<img src="https://kscw.lucanepa.com/kscw_logo_vektoren.svg" alt="KSC Wiedikon" width="48" height="52" style="width:48px;height:52px">'
+var LOGO_IMG = '<img src="https://wiedisync.kscw.ch/wiedisync_logo.svg" alt="KSC Wiedikon" width="48" height="52" style="width:48px;height:52px">'
 
 var VB_ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="44" height="44" fill="none" stroke-linecap="round" stroke-linejoin="round">' +
   '<circle cx="12" cy="12" r="10" fill="#FFC832" stroke="#4A55A2" stroke-width="1.5"/>' +
@@ -221,7 +221,7 @@ function buildEmailLayout(bodyHtml, options) {
 
   // Bottom bar
   html += '<tr><td style="background:#0f172a;border-top:1px solid #334155;padding:14px 28px;text-align:center">' +
-    '<div style="font-size:11px;color:#64748b">KSC Wiedikon &middot; <a href="https://kscw.lucanepa.com" style="color:#64748b;text-decoration:none">kscw.lucanepa.com</a></div>' +
+    '<div style="font-size:11px;color:#64748b">KSC Wiedikon &middot; <a href="https://wiedisync.kscw.ch" style="color:#64748b;text-decoration:none">wiedisync.kscw.ch</a></div>' +
     '</td></tr>'
 
   html += '</table></td></tr></table></body></html>'
@@ -250,7 +250,7 @@ function buildPlainLayout(lines, options) {
   if (opts.url) out.push(opts.url)
   out.push("")
   out.push("KSC Wiedikon")
-  out.push("kscw.lucanepa.com")
+  out.push("wiedisync.kscw.ch")
 
   return out.join("\r\n")
 }

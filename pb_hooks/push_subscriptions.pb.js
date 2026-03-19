@@ -110,7 +110,7 @@ routerAdd("POST", "/api/web-push/test", function(e) {
     memberId,
     body.title || "Test Push",
     body.body || "This is a test notification from KSC Wiedikon.",
-    body.url || "https://kscw.lucanepa.com",
+    body.url || "https://wiedisync.kscw.ch",
     "test"
   )
 

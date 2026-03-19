@@ -165,7 +165,7 @@ function buildPushBody(titleKey, bodyData) {
 }
 
 function buildPushUrl(activityType, activityId) {
-  var base = "https://kscw.lucanepa.com"
+  var base = "https://wiedisync.kscw.ch"
   switch (activityType) {
     case "game": return base + "/games"
     case "training": return base + "/trainings"

@@ -266,7 +266,7 @@ function sendRemindersForActivity(activityType, activityId, teamId, activityDate
         : "Die Anmeldefrist l\u00e4uft morgen ab. Bitte \u00f6ffne die App und best\u00e4tige deine Teilnahme.")
       plainText = tpl.buildPlainLayout(plainLines, {
         title: subject,
-        url: "https://kscw.lucanepa.com",
+        url: "https://wiedisync.kscw.ch",
       })
 
       // HTML via shared branded layout
@@ -292,7 +292,7 @@ function sendRemindersForActivity(activityType, activityId, teamId, activityDate
         lang: isEn ? "en" : "de",
         title: isEn ? "RSVP Reminder" : "Teilnahme-Erinnerung",
         greeting: (isEn ? "Hi" : "Hoi") + ' <strong style="color:#ffffff">' + firstName + '</strong>,',
-        ctaUrl: "https://kscw.lucanepa.com",
+        ctaUrl: "https://wiedisync.kscw.ch",
         ctaLabel: isEn ? "Open App" : "App \u00f6ffnen",
       })
 

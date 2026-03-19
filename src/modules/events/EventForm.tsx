@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import DatePicker from '@/components/ui/DatePicker'
 import TeamMultiSelect from '@/components/TeamMultiSelect'
 import LocationCombobox from '@/components/LocationCombobox'
+import { Switch } from '@/components/ui/switch'
 import { pbNameToColorKey } from '../../utils/teamColors'
 import type { Event, EventSession, Team } from '../../types'
 
@@ -326,15 +327,10 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
           />
         </div>
 
-        <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-          <input
-            type="checkbox"
-            checked={allDay}
-            onChange={(e) => setAllDay(e.target.checked)}
-            className="rounded border-gray-300 dark:border-gray-600"
-          />
+        <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+          <Switch checked={allDay} onCheckedChange={setAllDay} />
           {t('allDay')}
-        </label>
+        </div>
 
         <FormField label={t('location')}>
           <LocationCombobox

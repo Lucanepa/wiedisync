@@ -7,6 +7,8 @@ import Modal from '@/components/Modal'
 import { Button } from '@/components/ui/button'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import LocationCombobox from '@/components/LocationCombobox'
+import { Switch } from '@/components/ui/switch'
+import { Checkbox } from '@/components/ui/checkbox'
 import type { LocationResult } from '@/types'
 
 interface SchemaField {
@@ -196,17 +198,12 @@ export default function RecordEditModal({
         )
       case 'bool':
         return (
-          <label className="mt-1 flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={Boolean(value)}
-              onChange={(e) => setField(field.name, e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
-            />
+          <div className="mt-1 flex items-center gap-2">
+            <Switch checked={Boolean(value)} onCheckedChange={(checked) => setField(field.name, checked)} />
             <span className="text-sm text-gray-600 dark:text-gray-400">
               {Boolean(value) ? 'true' : 'false'}
             </span>
-          </label>
+          </div>
         )
       case 'date':
       case 'autodate':
@@ -227,17 +224,15 @@ export default function RecordEditModal({
           return (
             <div className="mt-1 flex flex-wrap gap-2">
               {options.map((opt) => (
-                <label key={opt} className="flex items-center gap-1 text-sm">
-                  <input
-                    type="checkbox"
+                <label key={opt} className="flex items-center gap-1.5 text-sm cursor-pointer">
+                  <Checkbox
                     checked={selected.includes(opt)}
-                    onChange={(e) => {
-                      const next = e.target.checked
+                    onCheckedChange={(checked) => {
+                      const next = checked
                         ? [...selected, opt]
                         : selected.filter((s) => s !== opt)
                       setField(field.name, next)
                     }}
-                    className="h-4 w-4 rounded border-gray-300 text-brand-600"
                   />
                   <span className="text-gray-700 dark:text-gray-300">{opt}</span>
                 </label>

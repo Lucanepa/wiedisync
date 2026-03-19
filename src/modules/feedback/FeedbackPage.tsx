@@ -29,6 +29,8 @@ const STATUS_COLORS: Record<string, string> = {
 
 interface FeedbackRecord {
   id: string
+  collectionId: string
+  collectionName: string
   type: FeedbackType
   title: string
   description: string
@@ -39,6 +41,7 @@ interface FeedbackRecord {
   github_issue: string
   user: string
   created: string
+  updated: string
 }
 
 export default function FeedbackPage() {

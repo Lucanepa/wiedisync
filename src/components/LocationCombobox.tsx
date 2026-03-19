@@ -91,7 +91,7 @@ export default function LocationCombobox({
 
             {hallResults.length > 0 && (
               <CommandGroup heading={t('clubHalls')}>
-                {hallResults.map((r, i) => (
+                {hallResults.map((r) => (
                   <CommandItem
                     key={`hall-${r.name}-${r.address}`}
                     value={`hall-${r.name}-${r.address}`}

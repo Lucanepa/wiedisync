@@ -14,6 +14,7 @@ import TeamMultiSelect from '@/components/TeamMultiSelect'
 import LocationCombobox from '@/components/LocationCombobox'
 import { Switch } from '@/components/ui/switch'
 import { pbNameToColorKey } from '../../utils/teamColors'
+import { formatDateLocale } from '../../utils/dateUtils'
 import type { Event, EventSession, Team } from '../../types'
 
 interface SessionDraft {
@@ -50,7 +51,7 @@ function formatDateShort(dateStr: string): string {
 }
 
 export default function EventForm({ open, event, onSave, onCancel }: EventFormProps) {
-  const { t } = useTranslation('events')
+  const { t, i18n } = useTranslation('events')
   const { t: tc } = useTranslation('common')
   const { user, coachTeamIds } = useAuth()
   const { effectiveIsAdmin } = useAdminMode()
@@ -317,23 +318,37 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
         </FormField>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormInput
-            label={t('startDate')}
-            type={allDay ? 'date' : 'datetime-local'}
-            value={startDate}
-            onChange={(e) => {
-              setStartDate(e.target.value)
-              if (!endDate || endDate < e.target.value) setEndDate(e.target.value)
-            }}
-            required
-          />
-          <FormInput
-            label={t('endDate')}
-            type={allDay ? 'date' : 'datetime-local'}
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            min={startDate}
-          />
+          <div>
+            <FormInput
+              label={t('startDate')}
+              type={allDay ? 'date' : 'datetime-local'}
+              value={startDate}
+              onChange={(e) => {
+                setStartDate(e.target.value)
+                if (!endDate || endDate < e.target.value) setEndDate(e.target.value)
+              }}
+              required
+            />
+            {startDate && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                {formatDateLocale(new Date(startDate.split('T')[0] + 'T00:00:00'), 'EEEE', i18n.language)}
+              </p>
+            )}
+          </div>
+          <div>
+            <FormInput
+              label={t('endDate')}
+              type={allDay ? 'date' : 'datetime-local'}
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              min={startDate}
+            />
+            {endDate && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                {formatDateLocale(new Date(endDate.split('T')[0] + 'T00:00:00'), 'EEEE', i18n.language)}
+              </p>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">

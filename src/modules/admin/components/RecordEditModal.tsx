@@ -6,6 +6,8 @@ import { logActivity } from '../../../utils/logActivity'
 import Modal from '@/components/Modal'
 import { Button } from '@/components/ui/button'
 import ConfirmDialog from '@/components/ConfirmDialog'
+import LocationCombobox from '@/components/LocationCombobox'
+import type { LocationResult } from '@/types'
 
 interface SchemaField {
   id: string
@@ -58,6 +60,20 @@ export default function RecordEditModal({
 
   const setField = (name: string, value: unknown) => {
     setFormData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const isHallsCollection = collection === 'halls'
+
+  const handleLocationSelect = (result: LocationResult) => {
+    setFormData((prev) => ({
+      ...prev,
+      name: result.name,
+      address: result.address,
+      city: result.city,
+      ...(result.lat != null && result.lon != null
+        ? { maps_url: `https://www.google.com/maps/search/?api=1&query=${result.lat},${result.lon}` }
+        : {}),
+    }))
   }
 
   const handleSave = async () => {
@@ -141,6 +157,17 @@ export default function RecordEditModal({
       case 'text':
       case 'url':
       case 'editor':
+        // Show LocationCombobox for hall name field in halls collection
+        if (isHallsCollection && field.name === 'name') {
+          return (
+            <LocationCombobox
+              value={String(value ?? '')}
+              onChange={(v) => setField(field.name, v)}
+              onSelect={handleLocationSelect}
+              className="mt-1"
+            />
+          )
+        }
         return (
           <input
             type="text"

@@ -71,6 +71,10 @@ export default {
   status: 'Stato',
   select: 'Seleziona...',
   allHalls: 'Tutte le palestre',
+  clubHalls: 'Palestre del club',
+  searchResults: 'Altri risultati',
+  searching: 'Ricerca...',
+  locationPlaceholder: 'Cerca luogo...',
 
   // Status labels
   present: 'Presente',

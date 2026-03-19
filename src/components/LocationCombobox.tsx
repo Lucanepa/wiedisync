@@ -12,9 +12,9 @@ import {
   CommandLoading,
 } from '@/components/ui/command'
 import { cn } from '@/lib/utils'
-import { useNominatimSearch } from '@/hooks/useNominatimSearch'
+import { usePhotonSearch } from '@/hooks/usePhotonSearch'
 import { useHallSearch } from '@/hooks/useHallSearch'
-import type { LocationResult, NominatimResult } from '@/types'
+import type { LocationResult, PhotonFeature } from '@/types'
 
 interface LocationComboboxProps {
   value: string
@@ -25,14 +25,15 @@ interface LocationComboboxProps {
   className?: string
 }
 
-function nominatimToLocationResult(r: NominatimResult): LocationResult {
+function photonToLocationResult(f: PhotonFeature): LocationResult {
+  const p = f.properties
   return {
-    name: r.address.amenity || r.address.building || r.name,
-    address: `${r.address.road || ''} ${r.address.house_number || ''}`.trim(),
-    city: r.address.city || r.address.town || r.address.village || '',
-    lat: parseFloat(r.lat),
-    lon: parseFloat(r.lon),
-    source: 'nominatim',
+    name: p.name || '',
+    address: `${p.street || ''} ${p.housenumber || ''}`.trim(),
+    city: p.city || '',
+    lat: f.geometry.coordinates[1],
+    lon: f.geometry.coordinates[0],
+    source: 'photon',
   }
 }
 
@@ -49,8 +50,8 @@ export default function LocationCombobox({
   const [search, setSearch] = useState('')
 
   const { results: hallResults } = useHallSearch(search)
-  const { results: nominatimResults, isLoading: nominatimLoading } = useNominatimSearch(search)
-  const osmResults = nominatimResults.map(nominatimToLocationResult)
+  const { results: photonResults, isLoading: photonLoading } = usePhotonSearch(search)
+  const osmResults = photonResults.map(photonToLocationResult)
 
   const handleSelect = (result: LocationResult) => {
     const display = [result.name, result.address, result.city].filter(Boolean).join(', ')
@@ -112,9 +113,9 @@ export default function LocationCombobox({
               </CommandGroup>
             )}
 
-            {(osmResults.length > 0 || nominatimLoading) && (
+            {(osmResults.length > 0 || photonLoading) && (
               <CommandGroup heading={t('searchResults')}>
-                {nominatimLoading && <CommandLoading>{t('searching')}</CommandLoading>}
+                {photonLoading && <CommandLoading>{t('searching')}</CommandLoading>}
                 {osmResults.map((r, i) => (
                   <CommandItem
                     key={`osm-${i}`}

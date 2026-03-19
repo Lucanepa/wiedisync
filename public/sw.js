@@ -18,7 +18,7 @@ self.addEventListener('push', function(event) {
     tag: data.tag || 'wiedisync-notification',
     renotify: true,
     data: {
-      url: data.url || 'https://kscw.lucanepa.com',
+      url: data.url || 'https://wiedisync.kscw.ch',
     },
   }
 
@@ -30,16 +30,16 @@ self.addEventListener('push', function(event) {
 self.addEventListener('notificationclick', function(event) {
   event.notification.close()
 
-  var url = (event.notification.data && event.notification.data.url) || 'https://kscw.lucanepa.com'
+  var url = (event.notification.data && event.notification.data.url) || 'https://wiedisync.kscw.ch'
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
       // Focus existing tab if open
       for (var i = 0; i < clientList.length; i++) {
         var client = clientList[i]
-        if (client.url.indexOf('kscw.lucanepa.com') !== -1 && 'focus' in client) {
+        if (client.url.indexOf('wiedisync.kscw.ch') !== -1 && 'focus' in client) {
           client.focus()
-          if (url !== 'https://kscw.lucanepa.com') {
+          if (url !== 'https://wiedisync.kscw.ch') {
             client.navigate(url)
           }
           return

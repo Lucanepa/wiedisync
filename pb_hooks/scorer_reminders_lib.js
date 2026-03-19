@@ -5,7 +5,7 @@
 
 var tpl = require(__hooks + "/email_template_lib.js")
 
-var PB_URL = "https://kscw-api.lucanepa.com"
+var PB_URL = "https://api.kscw.ch"
 
 // ── Helpers ──────────────────────────────────────────────────────────
 

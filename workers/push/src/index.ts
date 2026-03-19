@@ -71,7 +71,7 @@ async function handlePush(request: Request, env: Env): Promise<Response> {
   const payload = JSON.stringify({
     title: body.title || 'KSC Wiedikon',
     body: body.body || '',
-    url: body.url || 'https://kscw.lucanepa.com',
+    url: body.url || 'https://wiedisync.kscw.ch',
     tag: body.tag || undefined,
   })
 

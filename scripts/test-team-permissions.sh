@@ -11,7 +11,7 @@
 set -euo pipefail
 
 # ── Config ────────────────────────────────────────────────────────────
-PB_URL="${PB_URL:-https://kscw-api-dev.lucanepa.com}"
+PB_URL="${PB_URL:-https://api-dev.kscw.ch}"
 AUTH_ENDPOINT="$PB_URL/api/collections/members/auth-with-password"
 
 # ── Colors ────────────────────────────────────────────────────────────

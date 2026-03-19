@@ -67,7 +67,7 @@ onMailerRecordVerificationSend(function(e) {
   var match = e.message.html.match(/confirm-verification\/([A-Za-z0-9_\-\.]+)/)
   if (match) token = match[1]
 
-  var verifyUrl = "https://kscw-api.lucanepa.com/_/#/auth/confirm-verification/" + token
+  var verifyUrl = "https://api.kscw.ch/_/#/auth/confirm-verification/" + token
 
   var subject = lang === "en" ? "Verify Email – Wiedisync" : "E-Mail bestätigen – Wiedisync"
   var title = lang === "en" ? "Verify Email" : "E-Mail bestätigen"
@@ -111,7 +111,7 @@ onMailerRecordEmailChangeSend(function(e) {
   var match = e.message.html.match(/confirm-email-change\/([A-Za-z0-9_\-\.]+)/)
   if (match) token = match[1]
 
-  var changeUrl = "https://kscw-api.lucanepa.com/_/#/auth/confirm-email-change/" + token
+  var changeUrl = "https://api.kscw.ch/_/#/auth/confirm-email-change/" + token
 
   var subject = lang === "en" ? "Confirm New Email – Wiedisync" : "Neue E-Mail bestätigen – Wiedisync"
   var title = lang === "en" ? "Confirm New Email" : "Neue E-Mail-Adresse bestätigen"

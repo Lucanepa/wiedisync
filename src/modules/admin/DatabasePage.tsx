@@ -5,7 +5,7 @@ import SqlEditor from './components/SqlEditor'
 import TableBrowser from './components/TableBrowser'
 import type { CollectionInfo, SchemaField } from './components/TableBrowser'
 
-const PB_ADMIN_URL = `${import.meta.env.VITE_PB_URL || 'https://kscw-api.lucanepa.com'}/_/`
+const PB_ADMIN_URL = `${import.meta.env.VITE_PB_URL || 'https://api.kscw.ch'}/_/`
 
 type Tab = 'sql' | 'tables'
 

@@ -1,0 +1,14 @@
+[Unit]
+Description=GitHub Webhook Listener for PocketBase auto-deploy
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+EnvironmentFile=/etc/webhook-listener.env
+ExecStart=/usr/bin/node /opt/wiedisync-repo/scripts/webhook-listener.cjs
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

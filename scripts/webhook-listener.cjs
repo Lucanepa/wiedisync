@@ -82,7 +82,7 @@ const server = http.createServer((req, res) => {
     );
 
     // Run deploy script (don't wait — respond immediately)
-    execFile("sudo", [DEPLOY_SCRIPT, branch], (err, stdout, stderr) => {
+    execFile("sudo", ["/bin/bash", DEPLOY_SCRIPT, branch], (err, stdout, stderr) => {
       if (err) console.error(`Deploy error: ${err.message}\n${stderr}`);
       else console.log(`Deploy output: ${stdout}`);
     });

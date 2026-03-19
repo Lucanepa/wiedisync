@@ -95,6 +95,33 @@ export interface Hall extends RecordModel {
 
 }
 
+export interface NominatimResult {
+  lat: string
+  lon: string
+  name: string
+  display_name: string
+  address: {
+    amenity?: string
+    building?: string
+    road?: string
+    house_number?: string
+    city?: string
+    town?: string
+    village?: string
+    postcode?: string
+    country?: string
+  }
+}
+
+export interface LocationResult {
+  name: string
+  address: string
+  city: string
+  lat: number | null
+  lon: number | null
+  source: 'pocketbase' | 'nominatim'
+}
+
 export interface SlotClaim extends RecordModel {
   hall_slot: string
   hall: string

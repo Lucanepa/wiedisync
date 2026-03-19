@@ -254,7 +254,7 @@ export interface Absence extends RecordModel {
 export interface Event extends RecordModel {
   title: string
   description: string
-  event_type: 'verein' | 'social' | 'meeting' | 'tournament' | 'other'
+  event_type: 'verein' | 'social' | 'meeting' | 'tournament' | 'trainingsweekend' | 'other'
   start_date: string
   end_date: string
   all_day: boolean

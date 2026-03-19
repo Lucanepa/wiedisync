@@ -23,6 +23,7 @@ export default {
   social: 'Sociale',
   meeting: 'Riunione',
   tournament: 'Torneo',
+  trainingsweekend: 'Trainingsweekend',
   other: 'Altro',
   respondBy: 'Rispondi entro',
   respondByHint: 'Promemoria 1 giorno prima',

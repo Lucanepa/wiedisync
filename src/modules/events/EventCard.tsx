@@ -14,6 +14,7 @@ const eventTypeColors: Record<string, { bg: string; text: string }> = {
   social: { bg: '#dcfce7', text: '#166534' },
   meeting: { bg: '#fef3c7', text: '#92400e' },
   tournament: { bg: '#fee2e2', text: '#991b1b' },
+  trainingsweekend: { bg: '#ffedd5', text: '#9a3412' },
   other: { bg: '#f3f4f6', text: '#374151' },
 }
 

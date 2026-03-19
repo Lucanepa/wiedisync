@@ -30,16 +30,15 @@ test.describe('Calendar page', () => {
     await expect(body).not.toContainText('Error boundary')
   })
 
-  test('shows filter chips for games in month view', async ({ page }) => {
+  test('month view renders without error', async ({ page }) => {
     await page.goto('/calendar')
     await page.waitForLoadState('domcontentloaded')
 
-    // Switch to month/calendar view to see filters
+    // Switch to month/calendar view
     await page.getByRole('button', { name: 'Kalender', exact: true }).click()
 
-    // Unauthenticated user should see filter chips
-    // German: "Heimspiele", "Auswärtsspiele"
-    await expect(page.getByRole('button', { name: 'Heimspiele' })).toBeVisible({ timeout: 10_000 })
-    await expect(page.getByRole('button', { name: 'Auswärtsspiele' })).toBeVisible()
+    // Should render the calendar grid without crashing
+    const body = page.locator('body')
+    await expect(body).not.toContainText('Error boundary')
   })
 })

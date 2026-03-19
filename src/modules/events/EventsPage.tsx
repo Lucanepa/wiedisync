@@ -23,17 +23,24 @@ export default function EventsPage() {
   const [editingEvent, setEditingEvent] = useState<Event | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [rosterEvent, setRosterEvent] = useState<Event | null>(null)
+  const [showPast, setShowPast] = useState(false)
+
+  const today = useMemo(() => new Date().toISOString().split('T')[0], [])
 
   // Non-admins: show events for own teams + club-wide events (no teams assigned)
   const eventFilter = useMemo(() => {
-    if (memberTeamIds.length === 0) return ''
-    const teamClauses = memberTeamIds.map(id => `teams~"${id}"`).join(' || ')
-    return `teams:length = 0 || ${teamClauses}`
-  }, [memberTeamIds])
+    const parts: string[] = []
+    if (!showPast) parts.push(`end_date >= "${today}" || (end_date = "" && start_date >= "${today}")`)
+    if (memberTeamIds.length > 0) {
+      const teamClauses = memberTeamIds.map(id => `teams~"${id}"`).join(' || ')
+      parts.push(`(teams:length = 0 || ${teamClauses})`)
+    }
+    return parts.join(' && ')
+  }, [memberTeamIds, showPast, today])
 
   const { data: events, isLoading, refetch } = usePB<EventExpanded>('events', {
     filter: eventFilter,
-    sort: '-start_date',
+    sort: '+start_date',
     expand: 'teams',
     perPage: 50,
   })
@@ -63,8 +70,18 @@ export default function EventsPage() {
   return (
     <div>
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
+        <div className="flex items-center gap-3">
           <h1 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-gray-100">{t('title')}</h1>
+          <button
+            onClick={() => setShowPast((v) => !v)}
+            className={`min-h-[36px] rounded-full px-2.5 py-1.5 text-xs font-medium transition-colors ${
+              showPast
+                ? 'bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300'
+                : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
+            }`}
+          >
+            {t('showPast')}
+          </button>
         </div>
         {isCoach && (
           <Button

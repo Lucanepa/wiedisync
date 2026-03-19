@@ -13,4 +13,5 @@ export default {
   allTrainings: 'Alli Trainings',
   noTrainings: 'Käni Trainings am Start.',
   myTeams: 'Mini Teams',
+  myNextAppointments: 'Mini nöchste Termin',
 } as const

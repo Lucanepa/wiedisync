@@ -7,6 +7,7 @@ export default {
   noEventsDescription: 'Noch keine Events geplant.',
   deleteEvent: 'Event löschen',
   deleteConfirm: 'Bist du sicher, dass du diesen Event löschen willst?',
+  showPast: 'Vergangene',
 
   // Form fields
   eventTitle: 'Titel',

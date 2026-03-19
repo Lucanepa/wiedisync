@@ -18,7 +18,7 @@ import ParticipationSummary from '../../components/ParticipationSummary'
 import { useParticipation } from '../../hooks/useParticipation'
 import type { Game, Event, Team, Training, Hall, Member, MemberTeam, Notification } from '../../types'
 import type { RecordModel } from 'pocketbase'
-import { ClipboardList, Clock, AlertTriangle, Trophy, Bell } from 'lucide-react'
+import { ClipboardList, Clock, AlertTriangle, Trophy, Bell, Calendar, Dumbbell } from 'lucide-react'
 
 type ExpandedGame = Game & {
   expand?: { kscw_team?: Team & RecordModel; hall?: RecordModel }
@@ -153,7 +153,7 @@ export default function HomePage() {
   })
 
   return (
-    <div className="mx-auto min-w-0 max-w-5xl">
+    <div className="min-w-0">
       {/* Hero with sport icons flanking logo */}
       <div className="flex flex-col items-center pb-6 pt-2 text-center">
         <div className="flex items-center gap-4">
@@ -228,42 +228,44 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Content grid: events left, games right */}
-      <div className={`grid min-w-0 gap-6 ${!eventsLoading && events.length > 0 ? 'lg:grid-cols-5' : ''}`}>
-        {/* Events — left column (wider) */}
-        {!eventsLoading && events.length > 0 && (
-          <div className="lg:col-span-2">
-            <SectionHeader
-              title={t('events')}
-              linkTo="/events"
-              linkLabel={t('allEvents')}
-            />
+      {/* My next appointments — unified list of next 5 across all types */}
+      {user && isApproved && <NextAppointments
+        games={nextGames}
+        trainings={nextTrainings}
+        events={events}
+        onGameClick={setSelectedGame}
+        onTrainingClick={setSelectedTraining}
+      />}
+
+      {/* Three sections: trainings, events, games — 1/3 each on desktop */}
+      {/* On mobile: ordered by which section has the closest upcoming item */}
+      <HomeSections
+        trainingsSection={hasTeams && !trainingsLoading && nextTrainings.length > 0 ? (
+          <div className="min-w-0">
+            <SectionHeader title={t('nextTrainings')} linkTo="/trainings" linkLabel={t('allTrainings')} />
+            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+              {nextTrainings.map((tr) => (
+                <CompactTrainingRow key={tr.id} training={tr} onClick={() => setSelectedTraining(tr)} />
+              ))}
+            </div>
+          </div>
+        ) : null}
+        trainingsDate={nextTrainings[0]?.date}
+        eventsSection={!eventsLoading && events.length > 0 ? (
+          <div className="min-w-0">
+            <SectionHeader title={t('events')} linkTo="/events" linkLabel={t('allEvents')} />
             <div className="space-y-3">
               {events.map((event) => (
                 <EventRow key={event.id} event={event} />
               ))}
             </div>
           </div>
-        )}
-
-        {/* Games — right column */}
-        <div className={`min-w-0 ${!eventsLoading && events.length > 0 ? 'lg:col-span-3' : ''}`}>
-          {/* Trainings, results & upcoming games — side by side on xl */}
-          <div className="grid min-w-0 gap-6 xl:grid-cols-2">
-            {/* Next trainings (logged-in only) */}
-            {hasTeams && !trainingsLoading && nextTrainings.length > 0 && (
-              <div className="min-w-0">
-                <SectionHeader title={t('nextTrainings')} linkTo="/trainings" linkLabel={t('allTrainings')} />
-                <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-                  {nextTrainings.map((tr) => (
-                    <CompactTrainingRow key={tr.id} training={tr} onClick={() => setSelectedTraining(tr)} />
-                  ))}
-                </div>
-              </div>
-            )}
-            {/* Latest results */}
+        ) : null}
+        eventsDate={events[0]?.start_date?.split(' ')[0]}
+        gamesSection={
+          <div className="min-w-0 space-y-6">
             {!resultsLoading && latestResults.length > 0 && (
-              <div className="min-w-0">
+              <div>
                 <SectionHeader
                   title={t('latestResults')}
                   linkTo="/games"
@@ -281,10 +283,8 @@ export default function HomePage() {
                 </div>
               </div>
             )}
-
-            {/* Next games */}
             {!gamesLoading && nextGames.length > 0 && (
-              <div className="min-w-0">
+              <div>
                 <SectionHeader
                   title={t('nextGames')}
                   linkTo="/games"
@@ -303,8 +303,9 @@ export default function HomePage() {
               </div>
             )}
           </div>
-        </div>
-      </div>
+        }
+        gamesDate={nextGames[0]?.date}
+      />
 
       <GameDetailModal game={selectedGame} onClose={() => setSelectedGame(null)} />
       <TrainingDetailModal training={selectedTraining} onClose={() => setSelectedTraining(null)} />
@@ -559,6 +560,143 @@ function ShrinkOnOverflow({ children, className }: { children: React.ReactNode; 
     <p ref={ref} className={`truncate text-sm ${className ?? ''}`}>
       {children}
     </p>
+  )
+}
+
+/** Unified "My next appointments" — merges games, trainings, events sorted by date, shows next 5 */
+function NextAppointments({
+  games,
+  trainings,
+  events,
+  onGameClick,
+  onTrainingClick,
+}: {
+  games: ExpandedGame[]
+  trainings: TrainingExpanded[]
+  events: EventExpanded[]
+  onGameClick: (g: ExpandedGame) => void
+  onTrainingClick: (t: TrainingExpanded) => void
+}) {
+  const { t } = useTranslation('home')
+  const navigate = useNavigate()
+
+  type Appointment = { type: 'game'; date: string; data: ExpandedGame }
+    | { type: 'training'; date: string; data: TrainingExpanded }
+    | { type: 'event'; date: string; data: EventExpanded }
+
+  const appointments = useMemo(() => {
+    const items: Appointment[] = []
+    for (const g of games) {
+      if (g.date) items.push({ type: 'game', date: g.date, data: g })
+    }
+    for (const tr of trainings) {
+      if (tr.date) items.push({ type: 'training', date: tr.date, data: tr })
+    }
+    for (const ev of events) {
+      if (ev.start_date) items.push({ type: 'event', date: ev.start_date.split(' ')[0], data: ev })
+    }
+    items.sort((a, b) => a.date.localeCompare(b.date))
+    return items.slice(0, 5)
+  }, [games, trainings, events])
+
+  if (appointments.length === 0) return null
+
+  const typeIcon = {
+    game: <VolleyballIcon className="h-4 w-4 shrink-0" filled />,
+    training: <Dumbbell className="h-4 w-4 shrink-0" />,
+    event: <Calendar className="h-4 w-4 shrink-0" />,
+  }
+
+  return (
+    <div className="mb-6">
+      <h2 className="mb-3 text-lg font-semibold text-gray-900 dark:text-gray-100">{t('myNextAppointments')}</h2>
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+        {appointments.map((apt, i) => {
+          const dateStr = formatDateCompact(apt.date)
+          const weekday = formatWeekday(apt.date)
+          let label = ''
+          let onClick: (() => void) | undefined
+
+          if (apt.type === 'game') {
+            const g = apt.data as ExpandedGame
+            label = `${g.home_team} vs ${g.away_team}`
+            onClick = () => onGameClick(g)
+          } else if (apt.type === 'training') {
+            const tr = apt.data as TrainingExpanded
+            const team = tr.expand?.team
+            const hall = tr.expand?.hall
+            label = [team?.name, hall?.name].filter(Boolean).join(' · ')
+            onClick = () => onTrainingClick(tr)
+          } else {
+            const ev = apt.data as EventExpanded
+            label = ev.title
+            onClick = () => navigate('/events')
+          }
+
+          return (
+            <div
+              key={`${apt.type}-${i}`}
+              className="flex cursor-pointer items-center gap-3 border-b border-gray-100 px-4 py-2.5 last:border-b-0 hover:bg-gray-50 active:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-700/50 dark:active:bg-gray-700"
+              onClick={onClick}
+            >
+              <div className="w-20 shrink-0 text-xs text-gray-500 dark:text-gray-400">
+                <div>{weekday}</div>
+                <div>{dateStr}</div>
+              </div>
+              <span className="text-gray-500 dark:text-gray-400">{typeIcon[apt.type]}</span>
+              <p className="min-w-0 flex-1 truncate text-sm text-gray-900 dark:text-gray-100">{label}</p>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+/** Renders 3 sections in 1/3 columns on desktop, ordered by closest date on mobile */
+function HomeSections({
+  trainingsSection,
+  trainingsDate,
+  eventsSection,
+  eventsDate,
+  gamesSection,
+  gamesDate,
+}: {
+  trainingsSection: React.ReactNode
+  trainingsDate?: string
+  eventsSection: React.ReactNode
+  eventsDate?: string
+  gamesSection: React.ReactNode
+  gamesDate?: string
+}) {
+  // Build sections with their earliest date for mobile ordering
+  const sections = useMemo(() => {
+    const items: { key: string; date: string; node: React.ReactNode }[] = []
+    if (trainingsSection) items.push({ key: 'trainings', date: trainingsDate ?? '9999', node: trainingsSection })
+    if (eventsSection) items.push({ key: 'events', date: eventsDate ?? '9999', node: eventsSection })
+    if (gamesSection) items.push({ key: 'games', date: gamesDate ?? '9999', node: gamesSection })
+    // Sort by closest date for mobile
+    items.sort((a, b) => a.date.localeCompare(b.date))
+    return items
+  }, [trainingsSection, trainingsDate, eventsSection, eventsDate, gamesSection, gamesDate])
+
+  if (sections.length === 0) return null
+
+  return (
+    <>
+      {/* Desktop: always 1/3 columns in fixed order */}
+      <div className="hidden gap-6 lg:grid lg:grid-cols-3">
+        {trainingsSection && <div className="min-w-0">{trainingsSection}</div>}
+        {eventsSection && <div className="min-w-0">{eventsSection}</div>}
+        {gamesSection && <div className="min-w-0">{gamesSection}</div>}
+      </div>
+      {/* Mobile: stacked, ordered by closest upcoming date */}
+      <div className="space-y-6 lg:hidden">
+        {sections.map((s) => (
+          <div key={s.key}>{s.node}</div>
+        ))}
+      </div>
+    </>
   )
 }
 

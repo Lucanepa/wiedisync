@@ -13,4 +13,5 @@ export default {
   allTrainings: 'Tous les entrainements',
   noTrainings: 'Aucun entrainement a venir.',
   myTeams: 'Mes equipes',
+  myNextAppointments: 'Mes prochains rendez-vous',
 } as const

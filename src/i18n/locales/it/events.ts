@@ -7,6 +7,7 @@ export default {
   noEventsDescription: 'Nessun evento in programma.',
   deleteEvent: 'Elimina evento',
   deleteConfirm: 'Sei sicuro di voler eliminare questo evento?',
+  showPast: 'Passati',
 
   // Form fields
   eventTitle: 'Titolo',

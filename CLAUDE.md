@@ -89,17 +89,17 @@ See `INFRA.md → Domains & Hosting Overview` for full domain map, future migrat
 
 ## Branches & Dev-First Workflow
 
-- `main` → production (`wiedisync.kscw.ch`, PB: `api.kscw.ch`)
+- `prod` → production (`wiedisync.kscw.ch`, PB: `api.kscw.ch`)
 - `dev` → preview (`dev.wiedisync.kscw.ch`, PB: `api-dev.kscw.ch`)
 
-**All changes go through `dev` first.** Never push directly to `main`. When asked to push/deploy Wiedisync or the public website, always push to `dev` unless explicitly told to push to `main`/production. Workflow:
+**All changes go through `dev` first.** Never push directly to `prod`. When asked to push/deploy Wiedisync or the public website, always push to `dev` unless explicitly told to push to `prod`/production. Workflow:
 
 1. Develop and commit on `dev` branch
 2. Deploy frontend to dev (push `dev` → Cloudflare Pages preview)
 3. Deploy hooks to dev PB (`/opt/pocketbase-kscw-dev/pb_hooks/`, restart `pocketbase-kscw-dev`)
 4. Test on `dev.wiedisync.kscw.ch` against `api-dev.kscw.ch`
-5. Once confirmed working, merge `dev` → `main` (with user approval)
-6. Deploy hooks to prod PB and push `main` to trigger production build
+5. Once confirmed working, merge `dev` → `prod` (with user approval)
+6. Deploy hooks to prod PB and push `prod` to trigger production build
 
 **Dev PB daily sync**: A cron job at 04:00 UTC copies prod `pb_data` to dev PB daily (script: `/opt/pocketbase-kscw-dev/sync-from-prod.sh`, log: `/var/log/pocketbase-kscw-dev-sync.log`). Hooks are NOT synced — they stay as deployed to dev.
 

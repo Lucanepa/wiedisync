@@ -136,17 +136,6 @@ export default function RosterEditor() {
     }
   }
 
-  const handleExtendShell = async (memberId: string) => {
-    try {
-      await pb.send('/api/team-invites/extend', {
-        method: 'POST',
-        body: { member_id: memberId },
-      })
-      refetch()
-    } catch (err: any) {
-      console.error('Failed to extend shell account:', err)
-    }
-  }
 
   const toggleRole = useCallback(async (memberId: string, role: LeadershipRole) => {
     if (!team) return

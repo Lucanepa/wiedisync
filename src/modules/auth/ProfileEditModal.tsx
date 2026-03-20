@@ -211,7 +211,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
       onClose={onClose}
       title={onboarding ? t('onboardingTitle') : t('editProfile')}
       size="lg"
-      hideClose={onboarding}
+      hideClose={false}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Onboarding subtitle */}
@@ -376,28 +376,23 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
           </div>
         </FormField>
 
-        {/* Licences (toggle buttons) */}
+        {/* Licences (toggle switches) */}
         <FormField label={t('licences')}>
-          <div className="flex flex-wrap gap-2">
+          <div className="space-y-3">
             {(primarySport === 'basketball' ? BB_LICENCES : primarySport === 'volleyball' ? VB_LICENCES : [...VB_LICENCES, ...BB_LICENCES]).map((lic) => {
               const active = selectedLicences.includes(lic.key)
               return (
-                <button
-                  key={lic.key}
-                  type="button"
-                  onClick={() => {
-                    setSelectedLicences((prev) =>
-                      active ? prev.filter((l) => l !== lic.key) : [...prev, lic.key],
-                    )
-                  }}
-                  className={`min-h-[44px] rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                    active
-                      ? 'bg-gold-100 text-gold-900 ring-1 ring-gold-400/50 dark:bg-gold-400/20 dark:text-gold-300 dark:ring-gold-400/40'
-                      : 'bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600'
-                  }`}
-                >
-                  {tt(lic.i18n)}
-                </button>
+                <label key={lic.key} className="flex items-center gap-3 cursor-pointer">
+                  <Switch
+                    checked={active}
+                    onCheckedChange={() => {
+                      setSelectedLicences((prev) =>
+                        active ? prev.filter((l) => l !== lic.key) : [...prev, lic.key],
+                      )
+                    }}
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">{tt(lic.i18n)}</span>
+                </label>
               )
             })}
           </div>
@@ -474,7 +469,15 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
         )}
 
         <div className="flex justify-end gap-3 pt-2">
-          {!onboarding && (
+          {onboarding ? (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={onClose}
+            >
+              {t('skipForNow')}
+            </Button>
+          ) : (
             <Button
               type="button"
               variant="ghost"

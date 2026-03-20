@@ -20,6 +20,7 @@ const defaultColors: Record<string, string> = {
   bb_admin: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
   superadmin: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
   superuser: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
+  website_admin: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
   // Event types
   verein: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
   social: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
@@ -50,6 +51,7 @@ const labelMap: Record<string, string> = {
   bb_admin: 'BB Admin',
   superadmin: 'SuperAdmin',
   superuser: 'Superuser',
+  website_admin: 'Website Admin',
   // Event types
   verein: 'Verein',
   social: 'Social',

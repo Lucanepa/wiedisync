@@ -52,7 +52,7 @@ export default function ScorerAssignPage() {
   })
 
   const { data: members } = usePB<Member>('members', {
-    filter: 'active=true',
+    filter: 'kscw_membership_active=true',
     fields: 'id,name,first_name,last_name,licences',
     all: true,
   })

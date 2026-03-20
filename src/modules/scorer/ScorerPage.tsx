@@ -103,10 +103,10 @@ export default function ScorerPage() {
   }
 
   const { data: members } = usePB<Member>('members', {
-    filter: 'active = true',
+    filter: 'kscw_membership_active = true',
     sort: '+last_name,+first_name',
     all: true,
-    fields: 'id,name,first_name,last_name,licences,active,phone,email',
+    fields: 'id,name,first_name,last_name,licences,kscw_membership_active,phone,email',
   })
 
   const { data: teams } = usePB<Team>('teams', {

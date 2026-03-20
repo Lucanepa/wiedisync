@@ -2,6 +2,12 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [1.0.1] — 2026-03-20
+
+### Renamed
+
+- Rename `active` field to `kscw_membership_active` on members collection to avoid confusion with `member_active` (claimed account status)
+
 ## [1.0.0] — 2026-03-19
 
 ### Core Platform

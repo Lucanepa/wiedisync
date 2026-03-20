@@ -7,7 +7,7 @@
 // unless coaches should be able to edit them (see COACH_EDITABLE_MEMBER_FIELDS below).
 var RESTRICTED_MEMBER_FIELDS = [
   "email", "name", "first_name", "last_name", "phone", "license_nr",
-  "photo", "role", "active", "birthdate", "yob", "approved",
+  "photo", "role", "kscw_membership_active", "birthdate", "yob", "approved",
   "requested_team", "language", "hide_phone", "member_active"
 ]
 

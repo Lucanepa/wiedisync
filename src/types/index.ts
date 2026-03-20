@@ -48,7 +48,7 @@ export interface Member extends RecordModel {
   position: MemberPosition[]
   photo: string
   role: ('user' | 'vorstand' | 'admin' | 'vb_admin' | 'bb_admin' | 'superuser')[]
-  active: boolean
+  kscw_membership_active: boolean
   birthdate: string
   yob: number
   licences: LicenceType[]

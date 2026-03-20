@@ -19,6 +19,7 @@ import PlayerProfile from './modules/teams/PlayerProfile'
 import RosterEditor from './modules/teams/RosterEditor'
 import DatabasePage from './modules/admin/DatabasePage'
 import ClubDeskSyncPage from './modules/admin/ClubDeskSyncPage'
+import InfraHealthPage from './modules/admin/InfraHealthPage'
 import HallenplanPage from './modules/hallenplan/HallenplanPage'
 import EmbedGamesPage from './modules/games/EmbedGamesPage'
 import LoginPage from './modules/auth/LoginPage'
@@ -80,6 +81,7 @@ export default function App() {
             <Route path="admin/scorer-assign" element={<AdminRoute><ScorerAssignPage /></AdminRoute>} />
             <Route path="admin/database" element={<SuperAdminRoute><DatabasePage /></SuperAdminRoute>} />
             <Route path="admin/clubdesk-sync" element={<SuperAdminRoute><ClubDeskSyncPage /></SuperAdminRoute>} />
+            <Route path="admin/infra" element={<SuperAdminRoute><InfraHealthPage /></SuperAdminRoute>} />
           </Route>
         </Routes>
       </BrowserRouter>

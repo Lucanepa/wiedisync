@@ -25,6 +25,7 @@ export default {
   privacy: 'Confidentialite',
   impressum: 'Mentions legales',
   clubdeskSync: 'Synchronisation ClubDesk',
+  infraHealth: 'Infrastructure',
   adminMode: 'Mode admin',
   memberMode: 'Mode membre',
   notifications: 'Notifications',

@@ -127,7 +127,7 @@ export default function SignUpPage() {
         password,
         passwordConfirm,
         role: ['user'],
-        active: true,
+        kscw_membership_active: true,
         approved: false,
         requested_team: selectedTeam,
         member_active: true,

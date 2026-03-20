@@ -183,7 +183,7 @@ async function main() {
         last_name: lastName,
         phone: (row.phone || '').trim(),
         role: ['user'],
-        active: true,
+        kscw_membership_active: true,
         approved: true,
         language: 'german',
         licences: rowLicences,

@@ -60,7 +60,7 @@ export default function AssignmentEditor({
   const { t } = useTranslation('scorer')
 
   const filteredMembers = useMemo(() => {
-    let list = members.filter((m) => m.active && !guestMemberIds?.has(m.id))
+    let list = members.filter((m) => m.kscw_membership_active && !guestMemberIds?.has(m.id))
     if (requiredLicence) {
       const licences = Array.isArray(requiredLicence) ? requiredLicence : [requiredLicence]
       list = list.filter((m) => licences.some((l) => m.licences?.includes(l)))

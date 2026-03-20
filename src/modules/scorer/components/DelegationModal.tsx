@@ -69,7 +69,7 @@ export default function DelegationModal({
     const requiredLicence = ROLE_LICENCE_MAP[role]
     return members.filter((m) => {
       if (m.id === currentUserId) return false
-      if (!m.active || guestsOnDutyTeam.has(m.id)) return false
+      if (!m.kscw_membership_active || guestsOnDutyTeam.has(m.id)) return false
       if (requiredLicence) {
         const licences = Array.isArray(requiredLicence) ? requiredLicence : [requiredLicence]
         if (!licences.some((l) => m.licences?.includes(l))) return false

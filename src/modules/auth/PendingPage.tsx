@@ -15,6 +15,7 @@ export default function PendingPage() {
   const navigate = useNavigate()
   const [team, setTeam] = useState<Team | null>(null)
   const [refreshing, setRefreshing] = useState(false)
+  const [skippedOnboarding, setSkippedOnboarding] = useState(false)
 
   // If not logged in, go to login
   useEffect(() => {
@@ -108,10 +109,10 @@ export default function PendingPage() {
         </div>
       </div>
       {/* Onboarding modal for unapproved users who haven't set language */}
-      {user && !isProfileComplete && (
+      {user && !isProfileComplete && !skippedOnboarding && (
         <ProfileEditModal
           open
-          onClose={() => {}}
+          onClose={() => setSkippedOnboarding(true)}
           onboarding
         />
       )}

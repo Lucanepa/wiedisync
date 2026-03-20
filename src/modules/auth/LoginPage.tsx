@@ -15,11 +15,27 @@ export default function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const locationState = location.state as { email?: string; accountExists?: boolean } | null
-  const [email, setEmail] = useState(() => locationState?.email ?? '')
+
+  // Persist redirect state to sessionStorage so it survives page refresh
+  const [email, setEmail] = useState(() => {
+    if (locationState?.email) {
+      sessionStorage.setItem('login-redirect-email', locationState.email)
+      return locationState.email
+    }
+    return sessionStorage.getItem('login-redirect-email') ?? ''
+  })
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [showAccountExists, setShowAccountExists] = useState(() => locationState?.accountExists ?? false)
+  const [showAccountExists, setShowAccountExists] = useState(() => {
+    if (locationState?.accountExists) {
+      sessionStorage.setItem('login-redirect-exists', 'true')
+      return true
+    }
+    const stored = sessionStorage.getItem('login-redirect-exists') === 'true'
+    if (stored) sessionStorage.removeItem('login-redirect-exists')
+    return stored
+  })
   const [resetLoading, setResetLoading] = useState(false)
   const [resetSent, setResetSent] = useState(false)
 
@@ -39,6 +55,8 @@ export default function LoginPage() {
     localStorage.setItem('wiedisync-remember-me', String(rememberMe))
     try {
       await login(email, password)
+      sessionStorage.removeItem('login-redirect-email')
+      sessionStorage.removeItem('login-redirect-exists')
       navigate('/', { replace: true })
     } catch {
       setError(t('invalidCredentials'))

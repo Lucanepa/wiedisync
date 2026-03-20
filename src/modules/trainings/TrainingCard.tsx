@@ -4,6 +4,7 @@ import { Check, X, HelpCircle, Hourglass, Award, MessageSquare } from 'lucide-re
 import TeamChip from '../../components/TeamChip'
 import { useAuth } from '../../hooks/useAuth'
 import { useMutation } from '../../hooks/useMutation'
+import { useParticipation } from '../../hooks/useParticipation'
 import { formatDate, formatWeekday, formatTime } from '../../utils/dateHelpers'
 import type { Training, Team, Hall, Member, Participation } from '../../types'
 
@@ -22,15 +23,29 @@ interface TrainingCardProps {
   onDelete?: (trainingId: string) => void
 }
 
+const statusBorderColor: Record<string, string> = {
+  confirmed: 'bg-green-500 dark:bg-green-400',
+  tentative: 'bg-yellow-500 dark:bg-yellow-400',
+  declined: 'bg-red-500 dark:bg-red-400',
+  waitlisted: 'bg-orange-500 dark:bg-orange-400',
+  absent: 'bg-gray-400 dark:bg-gray-500',
+}
+
 export default function TrainingCard({ training, participations, myParticipation, onOpenRoster, onEdit, onDelete }: TrainingCardProps) {
   const { t } = useTranslation('trainings')
   const { user, canParticipateIn } = useAuth()
   const team = training.expand?.team
   const hall = training.expand?.hall
   const coach = training.expand?.coach
+  const { effectiveStatus } = useParticipation('training', training.id, training.date)
 
   return (
-    <div className={`overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 shadow-card ${training.cancelled ? 'opacity-60' : ''}`}>
+    <div className={`flex items-stretch overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-card ${training.cancelled ? 'opacity-60' : ''}`}>
+      {/* Participation status vertical banner */}
+      {user && effectiveStatus && (
+        <div className={`w-1 shrink-0 ${statusBorderColor[effectiveStatus] ?? ''}`} />
+      )}
+      <div className="flex-1 p-3">
       {/* Top row: team chip + date + counters */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
@@ -110,6 +125,7 @@ export default function TrainingCard({ training, participations, myParticipation
           </div>
         </div>
       )}
+      </div>
     </div>
   )
 }

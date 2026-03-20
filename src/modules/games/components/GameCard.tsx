@@ -222,11 +222,25 @@ export default function GameCard({ game, onClick, variant = 'card' }: GameCardPr
     )
   }
 
+  const statusBorderColor: Record<string, string> = {
+    confirmed: 'bg-green-500 dark:bg-green-400',
+    tentative: 'bg-yellow-500 dark:bg-yellow-400',
+    declined: 'bg-red-500 dark:bg-red-400',
+    waitlisted: 'bg-orange-500 dark:bg-orange-400',
+    absent: 'bg-gray-400 dark:bg-gray-500',
+  }
+  const { effectiveStatus } = useParticipation('game', game.id, game.date)
+
   return (
     <div
       onClick={() => onClick?.(game)}
-      className={`overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 shadow-card transition-shadow ${onClick ? 'cursor-pointer hover:shadow-card-hover' : ''}`}
+      className={`flex items-stretch overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-card transition-shadow ${onClick ? 'cursor-pointer hover:shadow-card-hover' : ''}`}
     >
+      {/* Participation status vertical banner */}
+      {user && effectiveStatus && (
+        <div className={`w-1 shrink-0 ${statusBorderColor[effectiveStatus] ?? ''}`} />
+      )}
+      <div className="flex-1 p-3">
       {/* H/A badge + counters top-right */}
       <div className="flex items-center justify-end gap-2">
         {game.status === 'scheduled' && (
@@ -275,6 +289,7 @@ export default function GameCard({ game, onClick, variant = 'card' }: GameCardPr
             </div>
           )}
         </div>
+      </div>
       </div>
     </div>
   )

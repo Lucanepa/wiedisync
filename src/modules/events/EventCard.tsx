@@ -5,6 +5,7 @@ import RichText from '../../components/RichText'
 import ParticipationButton from '../../components/ParticipationButton'
 import ParticipationSummary from '../../components/ParticipationSummary'
 import { useAuth } from '../../hooks/useAuth'
+import { useParticipation } from '../../hooks/useParticipation'
 import { formatDate } from '../../utils/dateHelpers'
 import type { Event, Team } from '../../types'
 
@@ -31,6 +32,14 @@ interface EventCardProps {
   onOpenRoster?: (event: Event) => void
 }
 
+const statusBorderColor: Record<string, string> = {
+  confirmed: 'bg-green-500 dark:bg-green-400',
+  tentative: 'bg-yellow-500 dark:bg-yellow-400',
+  declined: 'bg-red-500 dark:bg-red-400',
+  waitlisted: 'bg-orange-500 dark:bg-orange-400',
+  absent: 'bg-gray-400 dark:bg-gray-500',
+}
+
 export default function EventCard({ event, onEdit, onDelete, onOpenRoster }: EventCardProps) {
   const { t } = useTranslation('events')
   const { user, canParticipateIn } = useAuth()
@@ -40,9 +49,15 @@ export default function EventCard({ event, onEdit, onDelete, onOpenRoster }: Eve
   const canRSVP = user && (
     !event.teams?.length || event.teams.some((tid) => canParticipateIn(tid))
   )
+  const { effectiveStatus } = useParticipation('event', event.id, event.start_date?.split(' ')[0])
 
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white p-3 shadow-card dark:border-gray-700 dark:bg-gray-800">
+    <div className="flex items-stretch overflow-hidden rounded-xl border border-gray-200 bg-white shadow-card dark:border-gray-700 dark:bg-gray-800">
+      {/* Participation status vertical banner */}
+      {user && effectiveStatus && (
+        <div className={`w-1 shrink-0 ${statusBorderColor[effectiveStatus] ?? ''}`} />
+      )}
+      <div className="flex-1 p-3">
       {/* Top row: badge + title + actions */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
@@ -123,6 +138,7 @@ export default function EventCard({ event, onEdit, onDelete, onOpenRoster }: Eve
           <ParticipationSummary activityType="event" activityId={event.id} compact hideExtras />
         </div>
       )}
+      </div>
     </div>
   )
 }

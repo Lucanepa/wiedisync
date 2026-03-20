@@ -118,6 +118,7 @@ export default function EventCard({ event, onEdit, onDelete, onOpenRoster }: Eve
             teamId={event.teams?.[0]}
             respondBy={event.respond_by?.split(' ')[0]}
             maxPlayers={event.max_players}
+            requireNoteIfAbsent={event.require_note_if_absent}
           />
           <ParticipationSummary activityType="event" activityId={event.id} compact hideExtras />
         </div>

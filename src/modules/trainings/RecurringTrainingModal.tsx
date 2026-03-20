@@ -70,6 +70,7 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
   const [respondByUnit, setRespondByUnit] = useState<'hours' | 'days' | 'weeks' | 'months'>('days')
   const [minParticipants, setMinParticipants] = useState('')
   const [maxParticipants, setMaxParticipants] = useState('')
+  const [requireNoteIfAbsent, setRequireNoteIfAbsent] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [generated, setGenerated] = useState(0)
@@ -88,6 +89,7 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
     setRespondByUnit('days')
     setMinParticipants('')
     setMaxParticipants('')
+    setRequireNoteIfAbsent(false)
     setLoading(false)
     setError('')
     setGenerated(0)
@@ -195,6 +197,7 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
           respond_by: computeRespondBy(date) || null,
           min_participants: minParticipants ? Number(minParticipants) : null,
           max_participants: maxParticipants ? Number(maxParticipants) : null,
+          require_note_if_absent: requireNoteIfAbsent,
         })
         logActivity('create', 'trainings', rec.id, { team: slot.team, date, hall: effectiveHallId })
         count++
@@ -391,6 +394,14 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
               <option value="months">{t('respondByMonths')}</option>
             </select>
             <span className="flex items-center justify-center text-sm text-gray-500 dark:text-gray-400">{t('respondByBefore')}</span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+          <Switch checked={requireNoteIfAbsent} onCheckedChange={setRequireNoteIfAbsent} />
+          <div>
+            <span>{t('requireNoteIfAbsent', { ns: 'participation' })}</span>
+            <p className="text-xs text-muted-foreground">{t('requireNoteIfAbsentHint', { ns: 'participation' })}</p>
           </div>
         </div>
 

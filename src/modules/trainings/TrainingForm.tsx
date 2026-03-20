@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { FormInput, FormTextarea, FormField } from '@/components/FormField'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import DatePicker from '@/components/ui/DatePicker'
+import { Switch } from '@/components/ui/switch'
 import type { Training, Team, Hall, HallSlot, SlotClaim } from '../../types'
 import type { RecurringEditScope } from './RecurringEditDialog'
 
@@ -70,6 +71,7 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
   const [respondBy, setRespondBy] = useState('')
   const [minParticipants, setMinParticipants] = useState('')
   const [maxParticipants, setMaxParticipants] = useState('')
+  const [requireNoteIfAbsent, setRequireNoteIfAbsent] = useState(false)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
@@ -184,6 +186,7 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
       setRespondBy(training.respond_by?.split(' ')[0] ?? '')
       setMinParticipants(training.min_participants ? String(training.min_participants) : '')
       setMaxParticipants(training.max_participants ? String(training.max_participants) : '')
+      setRequireNoteIfAbsent(!!training.require_note_if_absent)
       // Edit mode: if training has a hall_slot, start in auto mode with it pre-selected
       if (training.hall_slot) {
         setSlotMode('auto')
@@ -205,6 +208,7 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
       setRespondBy('')
       setMinParticipants('')
       setMaxParticipants('')
+      setRequireNoteIfAbsent(false)
       setSlotMode('auto')
       setSelectedSlotKey('')
     }
@@ -238,6 +242,7 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
       respond_by: respondBy || null,
       min_participants: minParticipants ? Number(minParticipants) : null,
       max_participants: maxParticipants ? Number(maxParticipants) : null,
+      require_note_if_absent: requireNoteIfAbsent,
     }
 
     setIsLoading(true)
@@ -273,6 +278,7 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
       respond_by: data.respond_by,
       min_participants: data.min_participants,
       max_participants: data.max_participants,
+      require_note_if_absent: data.require_note_if_absent,
     }
 
     // Find sibling trainings with same hall_slot, excluding the one we already updated
@@ -488,6 +494,14 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
           max={date}
           helperText={t('respondByHint')}
         />
+
+        <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+          <Switch checked={requireNoteIfAbsent} onCheckedChange={setRequireNoteIfAbsent} />
+          <div>
+            <span>{t('requireNoteIfAbsent', { ns: 'participation' })}</span>
+            <p className="text-xs text-muted-foreground">{t('requireNoteIfAbsentHint', { ns: 'participation' })}</p>
+          </div>
+        </div>
 
         {training && (
           <div>

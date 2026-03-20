@@ -261,6 +261,7 @@ export interface Training extends RecordModel {
   respond_by: string
   min_participants: number
   max_participants: number
+  require_note_if_absent: boolean
 
 }
 
@@ -289,6 +290,7 @@ export interface Event extends RecordModel {
   respond_by: string
   max_players: number
   participation_mode: 'whole' | 'per_day' | 'per_session' | ''
+  require_note_if_absent: boolean
 
 }
 

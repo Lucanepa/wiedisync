@@ -27,6 +27,7 @@ function isHtml(str: string): boolean {
 
 interface EventCardProps {
   event: EventExpanded
+  onClick?: () => void
   onEdit?: (event: Event) => void
   onDelete?: (eventId: string) => void
   onOpenRoster?: (event: Event) => void
@@ -40,7 +41,7 @@ const statusBorderColor: Record<string, string> = {
   absent: 'bg-gray-400 dark:bg-gray-500',
 }
 
-export default function EventCard({ event, onEdit, onDelete, onOpenRoster }: EventCardProps) {
+export default function EventCard({ event, onClick, onEdit, onDelete, onOpenRoster }: EventCardProps) {
   const { t } = useTranslation('events')
   const { user, canParticipateIn } = useAuth()
   const teams = event.expand?.teams ?? []
@@ -52,7 +53,13 @@ export default function EventCard({ event, onEdit, onDelete, onOpenRoster }: Eve
   const { effectiveStatus } = useParticipation('event', event.id, event.start_date?.split(' ')[0])
 
   return (
-    <div className="flex items-stretch overflow-hidden rounded-xl border border-gray-200 bg-white shadow-card dark:border-gray-700 dark:bg-gray-800">
+    <div
+      className={`flex items-stretch overflow-hidden rounded-xl border border-gray-200 bg-white shadow-card dark:border-gray-700 dark:bg-gray-800${onClick ? ' cursor-pointer transition-shadow hover:shadow-card-hover' : ''}`}
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick() } } : undefined}
+    >
       {/* Participation status vertical banner */}
       {user && effectiveStatus && (
         <div className={`w-1 shrink-0 ${statusBorderColor[effectiveStatus] ?? ''}`} />
@@ -64,7 +71,7 @@ export default function EventCard({ event, onEdit, onDelete, onOpenRoster }: Eve
           <StatusBadge status={event.event_type} colorMap={eventTypeColors} />
           <h2 className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">{event.title}</h2>
         </div>
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
           {onOpenRoster && (
             <button
               onClick={() => onOpenRoster(event)}
@@ -108,7 +115,17 @@ export default function EventCard({ event, onEdit, onDelete, onOpenRoster }: Eve
         {event.all_day && ` · ${t('allDay')}`}
       </p>
       {event.location && (
-        <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{event.location}</p>
+        <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-brand-600 hover:underline dark:hover:text-brand-400"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {event.location} ↗
+          </a>
+        </p>
       )}
       {event.description && (
         isHtml(event.description)
@@ -125,7 +142,7 @@ export default function EventCard({ event, onEdit, onDelete, onOpenRoster }: Eve
 
       {/* Bottom row: RSVP + participation counter */}
       {canRSVP && (
-        <div className="mt-2.5 flex items-center justify-between gap-2">
+        <div className="mt-2.5 flex items-center justify-between gap-2" onClick={(e) => e.stopPropagation()}>
           <ParticipationButton
             activityType="event"
             activityId={event.id}

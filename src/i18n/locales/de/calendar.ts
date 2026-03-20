@@ -46,11 +46,7 @@ export default {
   // iCal modal
   icalSubscribeTitle: 'Kalender abonnieren',
   icalDownloadTitle: 'Kalender exportieren',
-  icalFilterLabel: 'Was möchtest du?',
-  icalPresetAll: 'Alles',
-  icalPresetGames: 'Nur Spiele',
-  icalPresetHomeGames: 'Nur Heimspiele',
-  icalPresetTrainings: 'Nur Trainings',
+  icalFilterLabel: 'Was möchtest du abonnieren?',
   icalTeamFilter: 'Nach Team filtern',
   icalTeamHint: 'Leer = alle Teams',
 } as const

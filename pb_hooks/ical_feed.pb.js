@@ -7,14 +7,33 @@
 //   source  — comma-separated: games-home,games-away,trainings,events,closures,hall
 //             Default (empty): games-home,games-away
 //   team    — comma-separated team record IDs to filter games/trainings
+//   sport   — "volleyball" or "basketball" to filter by sport
+//
+// Convenience routes:
+//   /api/ical/volleyball  → games for volleyball teams only
+//   /api/ical/basketball  → games for basketball teams only
 //
 // Examples:
 //   /api/ical                              → all games
 //   /api/ical?source=games-home            → home games only
 //   /api/ical?source=games-home,trainings  → home games + trainings
 //   /api/ical?team=abc123,def456           → games/trainings for those teams
+//   /api/ical?sport=volleyball             → volleyball games only
+
+routerAdd("GET", "/api/ical/volleyball", function(e) {
+  return handleICalFeed(e, "volleyball")
+})
+
+routerAdd("GET", "/api/ical/basketball", function(e) {
+  return handleICalFeed(e, "basketball")
+})
 
 routerAdd("GET", "/api/ical", function(e) {
+  var sportParam = e.request.url.query().get("sport") || ""
+  return handleICalFeed(e, sportParam)
+})
+
+function handleICalFeed(e, sportFilter) {
   var sourceParam = e.request.url.query().get("source") || ""
   var teamParam = e.request.url.query().get("team") || ""
 
@@ -48,13 +67,41 @@ routerAdd("GET", "/api/ical", function(e) {
     }
   }
 
+  // Sport filter — look up all team IDs for the given sport
+  if (sportFilter === "volleyball" || sportFilter === "basketball") {
+    var sportTeams = $app.findRecordsByFilter("teams", 'sport = "' + sportFilter + '"', "", 0, 0)
+    var sportTeamIds = []
+    for (var i = 0; i < sportTeams.length; i++) {
+      sportTeamIds.push(sportTeams[i].id)
+    }
+    // If team param was also provided, intersect; otherwise use all sport teams
+    if (teamIds.length > 0) {
+      var intersection = []
+      for (var i = 0; i < teamIds.length; i++) {
+        for (var j = 0; j < sportTeamIds.length; j++) {
+          if (teamIds[i] === sportTeamIds[j]) {
+            intersection.push(teamIds[i])
+            break
+          }
+        }
+      }
+      teamIds = intersection
+    } else {
+      teamIds = sportTeamIds
+    }
+  }
+
+  var calName = "KSCW Kalender"
+  if (sportFilter === "volleyball") calName = "KSCW Volleyball"
+  if (sportFilter === "basketball") calName = "KSCW Basketball"
+
   var lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
     "PRODID:-//KSCW Volley//Calendar//EN",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
-    "X-WR-CALNAME:KSCW Kalender",
+    "X-WR-CALNAME:" + calName,
     "X-WR-TIMEZONE:Europe/Zurich",
     "REFRESH-INTERVAL;VALUE=DURATION:PT6H",
     "X-PUBLISHED-TTL:PT6H",
@@ -320,10 +367,13 @@ routerAdd("GET", "/api/ical", function(e) {
 
   var body = lines.join("\r\n")
   e.response.header().set("Content-Type", "text/calendar; charset=utf-8")
-  e.response.header().set("Content-Disposition", 'inline; filename="kscw.ics"')
+  var filename = "kscw"
+  if (sportFilter === "volleyball") filename = "kscw-volleyball"
+  if (sportFilter === "basketball") filename = "kscw-basketball"
+  e.response.header().set("Content-Disposition", 'inline; filename="' + filename + '.ics"')
   e.response.header().set("Cache-Control", "public, max-age=3600")
   return e.string(200, body)
-})
+}
 
 // ── Helpers ──
 

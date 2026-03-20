@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import Modal from '@/components/Modal'
 import { useTeams } from '../../hooks/useTeams'
+import { useAuth } from '../../hooks/useAuth'
+import { useAdminMode } from '../../hooks/useAdminMode'
 import { downloadICal } from '../../utils/icalGenerator'
 import type { CalendarEntry } from '../../types/calendar'
 
@@ -17,42 +19,71 @@ interface ICalModalProps {
   entries: CalendarEntry[]
 }
 
-type Preset = 'all' | 'games' | 'games-home' | 'trainings'
+type SourceCategory = 'trainings' | 'games' | 'events'
 
-const presetSources: Record<Preset, string[]> = {
-  all: ['games-home', 'games-away', 'trainings', 'events', 'closures', 'hall'],
-  games: ['games-home', 'games-away'],
-  'games-home': ['games-home'],
+/** Map each checkbox to the iCal API source values */
+const categoryToSources: Record<SourceCategory, string[]> = {
   trainings: ['trainings'],
+  games: ['games-home', 'games-away'],
+  events: ['events'],
 }
 
-function presetMatchesEntry(preset: Preset, entry: CalendarEntry): boolean {
-  if (preset === 'all') return true
-  if (preset === 'games') return entry.type === 'game'
-  if (preset === 'games-home') return entry.type === 'game' && entry.gameType === 'home'
-  if (preset === 'trainings') return entry.type === 'training'
+function categoryMatchesEntry(categories: SourceCategory[], entry: CalendarEntry): boolean {
+  for (const cat of categories) {
+    if (cat === 'games' && entry.type === 'game') return true
+    if (cat === 'trainings' && entry.type === 'training') return true
+    if (cat === 'events' && entry.type === 'event') return true
+  }
   return false
 }
 
 export default function ICalModal({ open, mode, onClose, entries }: ICalModalProps) {
   const { t } = useTranslation('calendar')
   const { data: teams } = useTeams()
-  const [preset, setPreset] = useState<Preset>('all')
+  const { memberTeamIds, coachTeamIds } = useAuth()
+  const { effectiveIsAdmin } = useAdminMode()
+
+  const [selectedCategories, setSelectedCategories] = useState<SourceCategory[]>([
+    'trainings',
+    'games',
+    'events',
+  ])
   const [selectedTeamIds, setSelectedTeamIds] = useState<string[]>([])
 
   const title = mode === 'subscribe' ? t('icalSubscribeTitle') : t('icalDownloadTitle')
 
-  const presetOptions: { value: Preset; label: string }[] = [
-    { value: 'all', label: t('icalPresetAll') },
-    { value: 'games', label: t('icalPresetGames') },
-    { value: 'games-home', label: t('icalPresetHomeGames') },
-    { value: 'trainings', label: t('icalPresetTrainings') },
+  const categoryOptions: { value: SourceCategory; label: string }[] = [
+    { value: 'trainings', label: t('sourceTrainings') },
+    { value: 'games', label: t('sourceGames') },
+    { value: 'events', label: t('sourceEvents') },
   ]
 
+  // Only show user's own teams (member + coach), unless admin
+  const userTeamIds = useMemo(() => {
+    const set = new Set([...memberTeamIds, ...coachTeamIds])
+    return [...set]
+  }, [memberTeamIds, coachTeamIds])
+
+  const visibleTeams = useMemo(() => {
+    if (effectiveIsAdmin) return teams
+    return teams.filter((t) => userTeamIds.includes(t.id))
+  }, [teams, effectiveIsAdmin, userTeamIds])
+
+  function toggleCategory(cat: SourceCategory) {
+    setSelectedCategories((prev) =>
+      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat],
+    )
+  }
+
   function handleConfirm() {
+    // Build combined sources from selected categories
+    const sources = selectedCategories.flatMap((cat) => categoryToSources[cat])
+
     if (mode === 'subscribe') {
       const params = new URLSearchParams()
-      params.set('source', presetSources[preset].join(','))
+      if (sources.length > 0) {
+        params.set('source', sources.join(','))
+      }
       if (selectedTeamIds.length > 0) {
         params.set('team', selectedTeamIds.join(','))
       }
@@ -62,8 +93,8 @@ export default function ICalModal({ open, mode, onClose, entries }: ICalModalPro
     } else {
       // Download: filter current entries client-side
       let filtered = entries
-      if (preset !== 'all') {
-        filtered = entries.filter((e) => presetMatchesEntry(preset, e))
+      if (selectedCategories.length < 3) {
+        filtered = entries.filter((e) => categoryMatchesEntry(selectedCategories, e))
       }
       if (selectedTeamIds.length > 0) {
         filtered = filtered.filter((e) => {
@@ -87,24 +118,22 @@ export default function ICalModal({ open, mode, onClose, entries }: ICalModalPro
   return (
     <Modal open={open} onClose={onClose} title={title} size="sm">
       <div className="space-y-5">
-        {/* Preset selection */}
+        {/* Category selection (checkboxes) */}
         <div>
           <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
             {t('icalFilterLabel')}
           </p>
           <div className="space-y-1">
-            {presetOptions.map((opt) => (
+            {categoryOptions.map((opt) => (
               <label
                 key={opt.value}
                 className="flex min-h-[44px] cursor-pointer items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-gray-50 sm:min-h-0 dark:hover:bg-gray-700"
               >
                 <input
-                  type="radio"
-                  name="ical-preset"
-                  value={opt.value}
-                  checked={preset === opt.value}
-                  onChange={() => setPreset(opt.value)}
-                  className="h-4 w-4 text-brand-600 focus:ring-brand-500"
+                  type="checkbox"
+                  checked={selectedCategories.includes(opt.value)}
+                  onChange={() => toggleCategory(opt.value)}
+                  className="h-4 w-4 rounded text-brand-600 focus:ring-brand-500"
                 />
                 <span className="text-sm text-gray-900 dark:text-gray-100">{opt.label}</span>
               </label>
@@ -112,18 +141,18 @@ export default function ICalModal({ open, mode, onClose, entries }: ICalModalPro
           </div>
         </div>
 
-        {/* Team filter */}
-        {teams.length > 0 && (
+        {/* Team filter — only user's own teams (admins see all) */}
+        {visibleTeams.length > 0 && (
           <div>
             <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
               {t('icalTeamFilter')}
             </p>
             {(() => {
-              const vbTeams = teams.filter((t) => t.sport === 'volleyball')
-              const bbTeams = teams.filter((t) => t.sport === 'basketball')
+              const vbTeams = visibleTeams.filter((t) => t.sport === 'volleyball')
+              const bbTeams = visibleTeams.filter((t) => t.sport === 'basketball')
               const hasBoth = vbTeams.length > 0 && bbTeams.length > 0
 
-              const renderChips = (list: typeof teams) =>
+              const renderChips = (list: typeof visibleTeams) =>
                 list.map((team) => {
                   const isSelected = selectedTeamIds.includes(team.id)
                   return (
@@ -143,7 +172,7 @@ export default function ICalModal({ open, mode, onClose, entries }: ICalModalPro
                 })
 
               if (!hasBoth) {
-                return <div className="flex flex-wrap gap-2">{renderChips(teams)}</div>
+                return <div className="flex flex-wrap gap-2">{renderChips(visibleTeams)}</div>
               }
 
               return (
@@ -171,7 +200,8 @@ export default function ICalModal({ open, mode, onClose, entries }: ICalModalPro
         <button
           type="button"
           onClick={handleConfirm}
-          className="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-700 active:bg-brand-800"
+          disabled={selectedCategories.length === 0}
+          className="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-700 active:bg-brand-800 disabled:opacity-50"
         >
           {mode === 'subscribe' ? t('subscribeICal') : t('exportICal')}
         </button>

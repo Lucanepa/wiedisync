@@ -387,22 +387,23 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
               {t('venue')}
             </h4>
             <DetailRow label={t('hallLabel')} value={hall.name} />
-            {hall.address && (
-              <DetailRow label={t('address')} value={[hall.address, hall.city].filter(Boolean).join(', ')} />
-            )}
-            {hall.maps_url && sanitizeUrl(hall.maps_url) && (
-              <div className="flex items-start gap-3 text-sm">
-                <span className="w-28 shrink-0 text-gray-500 dark:text-gray-400">{t('map')}</span>
-                <a
-                  href={sanitizeUrl(hall.maps_url)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-brand-600 hover:underline dark:text-brand-400"
-                >
-                  Google Maps ↗
-                </a>
-              </div>
-            )}
+            {hall.address && (() => {
+              const mapsUrl = (hall.maps_url && sanitizeUrl(hall.maps_url))
+                || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([hall.address, hall.city].filter(Boolean).join(', '))}`
+              return (
+                <div className="flex items-start gap-3 text-sm">
+                  <span className="w-28 shrink-0 text-gray-500 dark:text-gray-400">{t('address')}</span>
+                  <a
+                    href={mapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-brand-600 hover:underline dark:text-brand-400"
+                  >
+                    {[hall.address, hall.city].filter(Boolean).join(', ')} ↗
+                  </a>
+                </div>
+              )
+            })()}
           </div>
         )}
 

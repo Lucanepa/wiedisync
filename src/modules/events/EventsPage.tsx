@@ -10,6 +10,7 @@ import ConfirmDialog from '@/components/ConfirmDialog'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import ParticipationRosterModal from '../../components/ParticipationRosterModal'
 import EventCard from './EventCard'
+import EventDetailModal from './EventDetailModal'
 import EventForm from './EventForm'
 import { Button } from '@/components/ui/button'
 import type { Event, Team } from '../../types'
@@ -23,6 +24,7 @@ export default function EventsPage() {
   const [editingEvent, setEditingEvent] = useState<Event | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [rosterEvent, setRosterEvent] = useState<Event | null>(null)
+  const [selectedEvent, setSelectedEvent] = useState<EventExpanded | null>(null)
   const [showPast, setShowPast] = useState(false)
 
   const today = useMemo(() => new Date().toISOString().split('T')[0], [])
@@ -117,6 +119,7 @@ export default function EventsPage() {
                 <EventCard
                   key={event.id}
                   event={event}
+                  onClick={() => setSelectedEvent(event)}
                   onEdit={canEdit ? handleEdit : undefined}
                   onDelete={canEdit ? setDeletingId : undefined}
                   onOpenRoster={setRosterEvent}
@@ -146,6 +149,8 @@ export default function EventsPage() {
         confirmLabel={t('deleteEvent')}
         danger
       />
+
+      <EventDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)} />
 
       <ParticipationRosterModal
         open={rosterEvent !== null}

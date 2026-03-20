@@ -39,7 +39,10 @@ function getDateRange(start: string, end: string): string[] {
   const s = new Date(start + 'T00:00:00')
   const e = new Date(end + 'T00:00:00')
   while (s <= e) {
-    dates.push(s.toISOString().slice(0, 10))
+    const yyyy = s.getFullYear()
+    const mm = String(s.getMonth() + 1).padStart(2, '0')
+    const dd = String(s.getDate()).padStart(2, '0')
+    dates.push(`${yyyy}-${mm}-${dd}`)
     s.setDate(s.getDate() + 1)
   }
   return dates

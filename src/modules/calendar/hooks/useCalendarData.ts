@@ -47,6 +47,13 @@ function addTeamFilter(base: string, teamIds: string[], field: string): string {
   return `${base} && (${clauses})`
 }
 
+/** Filter events by team membership: show club-wide (no teams) + user's teams */
+function addEventTeamFilter(base: string, teamIds: string[]): string {
+  if (teamIds.length === 0) return base
+  const clauses = teamIds.map((id) => `teams~"${id}"`).join(' || ')
+  return `${base} && (teams:length = 0 || ${clauses})`
+}
+
 function gameToEntry(game: Game): CalendarEntry {
   const expandedTeam = (game.expand as { kscw_team?: Team })?.kscw_team
   const expandedHall = (game.expand as { hall?: { name: string } })?.hall
@@ -227,7 +234,10 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
 
   const { data: events, isLoading: eventsLoading } = usePB<Event>('events', {
     enabled: fetchEvents,
-    filter: buildDateFilter('start_date', fetchRange.start, fetchRange.end),
+    filter: addEventTeamFilter(
+      buildDateFilter('start_date', fetchRange.start, fetchRange.end),
+      filters.selectedTeamIds,
+    ),
     sort: 'start_date',
     all: true,
   })

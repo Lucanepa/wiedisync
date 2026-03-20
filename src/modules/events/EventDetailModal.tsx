@@ -1,157 +1,180 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Modal from '@/components/Modal'
+import StatusBadge from '../../components/StatusBadge'
 import TeamChip from '../../components/TeamChip'
+import RichText from '../../components/RichText'
 import ParticipationSummary from '../../components/ParticipationSummary'
 import ParticipationRosterModal from '../../components/ParticipationRosterModal'
+import SessionParticipationSheet from '../../components/SessionParticipationSheet'
 import { useAuth } from '../../hooks/useAuth'
 import { useParticipation } from '../../hooks/useParticipation'
-import { formatDate, formatWeekday, formatTime } from '../../utils/dateHelpers'
-import type { Training, Team, Hall, Member } from '../../types'
-import { MapPin, Clock, MessageSquare, User, Users, Calendar, Check, UserPlus } from 'lucide-react'
+import { usePB } from '../../hooks/usePB'
+import { formatDate, formatTime } from '../../utils/dateHelpers'
+import { Calendar, Clock, MapPin, Users, Check, MessageSquare, UserPlus } from 'lucide-react'
+import type { Event, Team, EventSession } from '../../types'
 
-type TrainingExpanded = Training & {
-  expand?: { team?: Team; hall?: Hall; coach?: Member }
+type EventExpanded = Event & { expand?: { teams?: Team[] } }
+
+const eventTypeColors: Record<string, { bg: string; text: string }> = {
+  verein: { bg: '#dbeafe', text: '#1e40af' },
+  social: { bg: '#dcfce7', text: '#166534' },
+  meeting: { bg: '#fef3c7', text: '#92400e' },
+  tournament: { bg: '#fee2e2', text: '#991b1b' },
+  trainingsweekend: { bg: '#ffedd5', text: '#9a3412' },
+  other: { bg: '#f3f4f6', text: '#374151' },
 }
 
-interface TrainingDetailModalProps {
-  training: TrainingExpanded | null
+function isHtml(str: string): boolean {
+  return /<[a-z][\s\S]*>/i.test(str)
+}
+
+interface EventDetailModalProps {
+  event: EventExpanded | null
   onClose: () => void
 }
 
-export default function TrainingDetailModal({ training, onClose }: TrainingDetailModalProps) {
-  const { t } = useTranslation('trainings')
+export default function EventDetailModal({ event, onClose }: EventDetailModalProps) {
+  const { t } = useTranslation('events')
+  const { t: tP } = useTranslation('participation')
   const { user, canParticipateIn, isCoachOf } = useAuth()
   const [rosterOpen, setRosterOpen] = useState(false)
+  const [sessionSheetOpen, setSessionSheetOpen] = useState(false)
 
-  const canParticipate = !!user && !!training?.team && canParticipateIn(training.team)
-  const isStaff = !!training?.team && isCoachOf(training.team)
+  const canParticipate = !!user && !!event && (
+    !event.teams?.length || event.teams.some((tid) => canParticipateIn(tid))
+  )
+  const isStaff = !!event?.teams?.[0] && isCoachOf(event.teams[0])
 
-  if (!training) return null
+  // Fetch sessions for multi-session events
+  const hasSessionMode = event?.participation_mode && event.participation_mode !== 'whole' && event.participation_mode !== ''
+  const { data: sessions } = usePB<EventSession>('event_sessions', {
+    filter: event ? `event="${event.id}"` : '',
+    sort: '+sort_order,+date,+start_time',
+    perPage: 100,
+    enabled: !!event && !!hasSessionMode,
+  })
 
-  const team = training.expand?.team
-  const hall = training.expand?.hall
-  const coach = training.expand?.coach
+  if (!event) return null
+
+  const teams = event.expand?.teams ?? []
 
   return (
     <>
-      <Modal open={!!training} onClose={onClose} title={t('title')} size="sm">
+      <Modal open={!!event} onClose={onClose} title={event.title} size="sm">
         <div className="space-y-4">
-          {/* Team + Date header */}
-          <div className="flex items-center gap-2">
-            {team && <TeamChip team={team.name} size="sm" />}
-            {training.cancelled && (
-              <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-400">
-                {t('cancelled')}
-              </span>
-            )}
+          {/* Type badge + teams */}
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusBadge status={event.event_type} colorMap={eventTypeColors} />
+            {teams.map((team) => (
+              <TeamChip key={team.id} team={team.name} size="sm" />
+            ))}
           </div>
 
           {/* Details */}
           <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400" />
-              <span>{formatWeekday(training.date)}, {formatDate(training.date)}</span>
+              <span>
+                {formatDate(event.start_date)}
+                {event.start_date !== event.end_date && ` — ${formatDate(event.end_date)}`}
+                {event.all_day && ` · ${t('allDay')}`}
+              </span>
             </div>
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400" />
-              <span>{formatTime(training.start_time)} – {formatTime(training.end_time)}</span>
-            </div>
-            {(hall || training.hall_name) && (
+            {!event.all_day && event.start_date && (
               <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400" />
-                {hall?.maps_url ? (
-                  <a
-                    href={hall.maps_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-brand-600 hover:underline dark:text-brand-400"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {hall.name} ↗
-                  </a>
-                ) : hall?.address ? (
-                  <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([hall.address, hall.city].filter(Boolean).join(', '))}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-brand-600 hover:underline dark:text-brand-400"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {hall.name} ↗
-                  </a>
-                ) : (
-                  <span>{hall?.name || training.hall_name}</span>
-                )}
+                <Clock className="h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400" />
+                <span>
+                  {formatTime(event.start_date)}
+                  {event.end_date && ` – ${formatTime(event.end_date)}`}
+                </span>
               </div>
             )}
-            {coach && (
+            {event.location && (
               <div className="flex items-center gap-2">
-                <User className="h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400" />
-                <span>{coach.first_name} {coach.last_name}</span>
+                <MapPin className="h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400" />
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-brand-600 hover:underline dark:text-brand-400"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {event.location} ↗
+                </a>
               </div>
             )}
           </div>
 
-          {/* Cancellation reason */}
-          {training.cancelled && training.cancel_reason && (
-            <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
-              {training.cancel_reason}
-            </p>
-          )}
-
-          {/* Notes */}
-          {training.notes && !training.cancelled && (
-            <p className="text-sm text-gray-500 dark:text-gray-400">{training.notes}</p>
+          {/* Description */}
+          {event.description && (
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              {isHtml(event.description)
+                ? <RichText html={event.description} />
+                : <p>{event.description}</p>
+              }
+            </div>
           )}
 
           {/* Participation section */}
-          {!training.cancelled && (
-            <div className="space-y-3 border-t border-gray-200 pt-3 dark:border-gray-700">
-              {/* Participation buttons */}
-              {canParticipate && (
-                <TrainingParticipation training={training} isStaff={isStaff} />
-              )}
-
-              {/* Summary + roster button */}
-              <div className="flex items-center justify-between">
-                <ParticipationSummary activityType="training" activityId={training.id} />
+          <div className="space-y-3 border-t border-gray-200 pt-3 dark:border-gray-700">
+            {/* Multi-session button */}
+            {hasSessionMode && sessions.length > 0 ? (
+              <>
                 <button
-                  onClick={() => setRosterOpen(true)}
-                  className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-900/20"
+                  onClick={() => setSessionSheetOpen(true)}
+                  className="inline-flex min-h-[44px] items-center gap-1 rounded-full bg-brand-100 px-2.5 py-1 text-xs font-medium text-brand-700 hover:bg-brand-200 dark:bg-brand-900/30 dark:text-brand-400 dark:hover:bg-brand-900/50 sm:min-h-0"
                 >
-                  <Users className="h-4 w-4" />
-                  {t('participation')}
+                  {t('sessionParticipation')}
                 </button>
-              </div>
+                {sessionSheetOpen && (
+                  <SessionParticipationSheet
+                    activityId={event.id}
+                    sessions={sessions}
+                    onClose={() => setSessionSheetOpen(false)}
+                  />
+                )}
+              </>
+            ) : canParticipate ? (
+              <EventParticipation event={event} isStaff={isStaff} />
+            ) : null}
+
+            {/* Summary + roster button */}
+            <div className="flex items-center justify-between">
+              <ParticipationSummary activityType="event" activityId={event.id} />
+              <button
+                onClick={() => setRosterOpen(true)}
+                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-900/20"
+              >
+                <Users className="h-4 w-4" />
+                {tP('participation')}
+              </button>
             </div>
-          )}
+          </div>
         </div>
       </Modal>
 
-      {training.team && (
-        <ParticipationRosterModal
-          open={rosterOpen}
-          onClose={() => setRosterOpen(false)}
-          activityType="training"
-          activityId={training.id}
-          activityDate={training.date}
-          teamId={training.team}
-          title={`${team?.name ?? ''} — ${formatDate(training.date)}`}
-          respondBy={training.respond_by}
-          activityStartTime={training.start_time}
-        />
-      )}
+      <ParticipationRosterModal
+        open={rosterOpen}
+        onClose={() => setRosterOpen(false)}
+        activityType="event"
+        activityId={event.id}
+        activityDate={event.start_date}
+        teamId={event.teams?.[0] ?? null}
+        title={`${event.title} — ${formatDate(event.start_date)}`}
+        respondBy={event.respond_by}
+        maxPlayers={event.max_players}
+      />
     </>
   )
 }
 
-function TrainingParticipation({ training, isStaff }: { training: TrainingExpanded; isStaff: boolean }) {
+function EventParticipation({ event, isStaff }: { event: EventExpanded; isStaff: boolean }) {
   const { t } = useTranslation('participation')
   const { participation, effectiveStatus, hasAbsence, note: savedNote, setStatus, saveConfirmed, dismissConfirmed } = useParticipation(
-    'training',
-    training.id,
-    training.date,
+    'event',
+    event.id,
+    event.start_date?.split(' ')[0],
     undefined,
     isStaff,
   )
@@ -160,26 +183,23 @@ function TrainingParticipation({ training, isStaff }: { training: TrainingExpand
   const noteInitRef = useRef(savedNote)
   const [guestCount, setGuestCount] = useState(0)
   const [noteRequiredError, setNoteRequiredError] = useState(false)
-  const requireNote = !!training.require_note_if_absent
+  const requireNote = !!event.require_note_if_absent
 
-  // Sync guest count from existing participation
   useEffect(() => {
     setGuestCount(participation?.guest_count ?? 0)
   }, [participation?.guest_count])
-  // Sync note text when server data loads/changes
+
   if (savedNote !== noteInitRef.current) {
     noteInitRef.current = savedNote
     setNoteText(savedNote)
   }
 
-  // Auto-dismiss status confirmation after 2s
   useEffect(() => {
     if (!saveConfirmed) return
     const timer = setTimeout(dismissConfirmed, 2000)
     return () => clearTimeout(timer)
   }, [saveConfirmed, dismissConfirmed])
 
-  // Auto-dismiss note confirmation after 2s
   useEffect(() => {
     if (!noteSaved) return
     const timer = setTimeout(() => setNoteSaved(false), 2000)
@@ -241,7 +261,6 @@ function TrainingParticipation({ training, isStaff }: { training: TrainingExpand
             )
           })}
         </div>
-        {/* Save confirmation popover */}
         {saveConfirmed && (
           <span className="absolute -top-7 left-1/2 -translate-x-1/2 flex items-center gap-1 whitespace-nowrap rounded-md bg-green-600 px-2 py-0.5 text-[11px] font-medium text-white shadow-lg animate-fade-in">
             <Check className="h-3 w-3" />
@@ -249,7 +268,8 @@ function TrainingParticipation({ training, isStaff }: { training: TrainingExpand
           </span>
         )}
       </div>
-      {/* Participation note */}
+
+      {/* Note field */}
       {(effectiveStatus || requireNote) && (
         <div className="relative">
           <div className="flex items-center gap-2">
@@ -258,9 +278,7 @@ function TrainingParticipation({ training, isStaff }: { training: TrainingExpand
               type="text"
               value={noteText}
               onChange={(e) => { setNoteText(e.target.value); setNoteRequiredError(false) }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') saveNote()
-              }}
+              onKeyDown={(e) => { if (e.key === 'Enter') saveNote() }}
               placeholder={requireNote ? t('noteRequiredError') : t('notePlaceholder')}
               className={`min-w-0 flex-1 rounded-md border bg-transparent px-2.5 py-1 text-sm text-gray-700 placeholder:text-gray-400 focus:border-brand-400 focus:outline-none dark:text-gray-300 dark:placeholder:text-gray-500 dark:focus:border-brand-500 ${
                 noteRequiredError ? 'border-red-400 dark:border-red-500' : 'border-gray-200 dark:border-gray-600'
@@ -277,7 +295,6 @@ function TrainingParticipation({ training, isStaff }: { training: TrainingExpand
           {noteRequiredError && (
             <p className="mt-0.5 ml-6 text-[11px] text-red-500 dark:text-red-400">{t('noteRequiredError')}</p>
           )}
-          {/* Note saved confirmation */}
           {noteSaved && (
             <span className="absolute -top-7 right-0 flex items-center gap-1 whitespace-nowrap rounded-md bg-green-600 px-2 py-0.5 text-[11px] font-medium text-white shadow-lg animate-fade-in">
               <Check className="h-3 w-3" />
@@ -286,7 +303,8 @@ function TrainingParticipation({ training, isStaff }: { training: TrainingExpand
           )}
         </div>
       )}
-      {/* Guest counter — coaches/TR only */}
+
+      {/* Guest counter — staff only */}
       {effectiveStatus && isStaff && (
         <div className="flex items-center gap-2">
           <UserPlus className="h-4 w-4 shrink-0 text-gray-400" />

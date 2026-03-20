@@ -14,6 +14,7 @@ import BasketballIcon from '../../components/BasketballIcon'
 import NotificationPanel from '../../components/NotificationPanel'
 import GameDetailModal from '../games/components/GameDetailModal'
 import TrainingDetailModal from '../trainings/TrainingDetailModal'
+import EventDetailModal from '../events/EventDetailModal'
 import ParticipationButton from '../../components/ParticipationButton'
 import ParticipationSummary from '../../components/ParticipationSummary'
 import { useParticipation } from '../../hooks/useParticipation'
@@ -44,6 +45,7 @@ export default function HomePage() {
   const showSportToggle = !user || primarySport === 'both'
   const [selectedGame, setSelectedGame] = useState<ExpandedGame | null>(null)
   const [selectedTraining, setSelectedTraining] = useState<TrainingExpanded | null>(null)
+  const [selectedEvent, setSelectedEvent] = useState<EventExpanded | null>(null)
   const [showAllGames, setShowAllGames] = useState(false)
   const [showAllResults, setShowAllResults] = useState(false)
   const [notifPanelOpen, setNotifPanelOpen] = useState(false)
@@ -257,7 +259,7 @@ export default function HomePage() {
             <SectionHeader title={t('events')} linkTo="/events" linkLabel={t('allEvents')} />
             <div className="space-y-3">
               {events.map((event) => (
-                <EventRow key={event.id} event={event} />
+                <EventRow key={event.id} event={event} onClick={() => setSelectedEvent(event)} />
               ))}
             </div>
           </div>
@@ -310,6 +312,7 @@ export default function HomePage() {
 
       <GameDetailModal game={selectedGame} onClose={() => setSelectedGame(null)} />
       <TrainingDetailModal training={selectedTraining} onClose={() => setSelectedTraining(null)} />
+      <EventDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)} />
 
       {notifPanelOpen && (
         <NotificationPanel
@@ -756,14 +759,23 @@ function HomeSections({
   )
 }
 
-function EventRow({ event }: { event: EventExpanded }) {
-  const { user, canParticipateIn } = useAuth()
+function EventRow({ event, onClick }: { event: EventExpanded; onClick: () => void }) {
+  const { effectiveStatus } = useParticipation('event', event.id, event.start_date?.split(' ')[0])
   const teams = event.expand?.teams ?? []
-  const canRSVP = user && (!event.teams?.length || event.teams.some((tid) => canParticipateIn(tid)))
+
+  const statusBorderColor: Record<string, string> = {
+    confirmed: 'bg-green-500 dark:bg-green-400',
+    tentative: 'bg-yellow-500 dark:bg-yellow-400',
+    declined: 'bg-red-500 dark:bg-red-400',
+    waitlisted: 'bg-orange-500 dark:bg-orange-400',
+  }
 
   return (
-    <Link to="/events" className="block overflow-hidden rounded-xl border border-gray-200 bg-white shadow-card transition-shadow hover:shadow-card-hover dark:border-gray-700 dark:bg-gray-800">
-      <div className="flex items-start gap-3 p-4">
+    <button onClick={onClick} className="flex w-full items-stretch overflow-hidden rounded-xl border border-gray-200 bg-white text-left shadow-card transition-shadow hover:shadow-card-hover dark:border-gray-700 dark:bg-gray-800">
+      {effectiveStatus && (
+        <div className={`w-1 shrink-0 ${statusBorderColor[effectiveStatus] ?? ''}`} />
+      )}
+      <div className="flex flex-1 items-start gap-3 p-4">
         {/* Date badge */}
         <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg bg-brand-50 dark:bg-brand-900/40">
           <span className="text-lg font-bold leading-none text-brand-600 dark:text-brand-400">
@@ -798,22 +810,11 @@ function EventRow({ event }: { event: EventExpanded }) {
           )}
         </div>
 
-        {/* RSVP button */}
-        {canRSVP && (
-          <div className="shrink-0" onClick={(e) => e.preventDefault()}>
-            <ParticipationButton
-              activityType="event"
-              activityId={event.id}
-              activityDate={event.start_date?.split(' ')[0]}
-              teamId={event.teams?.[0]}
-              compact
-              respondBy={event.respond_by?.split(' ')[0]}
-              maxPlayers={event.max_players}
-              requireNoteIfAbsent={event.require_note_if_absent}
-            />
-          </div>
+        {/* Participation status indicator */}
+        {effectiveStatus && (
+          <ParticipationSummary activityType="event" activityId={event.id} compact hideExtras />
         )}
       </div>
-    </Link>
+    </button>
   )
 }

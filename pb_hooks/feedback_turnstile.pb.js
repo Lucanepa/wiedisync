@@ -3,7 +3,7 @@
 // ─── Feedback: Turnstile Validation ───
 // Validates Cloudflare Turnstile token for unauthenticated feedback submissions.
 // Authenticated users (Wiedisync) skip validation.
-// Reads token from request body — no schema field needed.
+// Reads token from X-Turnstile-Token header (preferred) or request body fallback.
 
 onRecordCreateRequest((e) => {
   // Skip for authenticated users (Wiedisync members)
@@ -11,7 +11,14 @@ onRecordCreateRequest((e) => {
     return e.next()
   }
 
-  var token = e.requestInfo().body.turnstile_token || ""
+  var info = e.requestInfo()
+
+  // Read token: header (PocketBase normalizes keys to snake_case),
+  // then body fallback (works with JSON requests to custom endpoints).
+  var token = info.headers["x_turnstile_token"]
+    || info.body.turnstile_token
+    || ""
+
   if (!token) {
     throw new BadRequestError("Turnstile token required")
   }

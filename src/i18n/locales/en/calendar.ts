@@ -46,11 +46,7 @@ export default {
   // iCal modal
   icalSubscribeTitle: 'Subscribe to calendar',
   icalDownloadTitle: 'Export calendar',
-  icalFilterLabel: 'What do you want?',
-  icalPresetAll: 'Everything',
-  icalPresetGames: 'Games only',
-  icalPresetHomeGames: 'Home games only',
-  icalPresetTrainings: 'Trainings only',
+  icalFilterLabel: 'What do you want to subscribe to?',
   icalTeamFilter: 'Filter by team',
   icalTeamHint: 'Empty = all teams',
 } as const

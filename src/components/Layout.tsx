@@ -21,7 +21,7 @@ import ProfileEditModal from '../modules/auth/ProfileEditModal'
 import type { MemberTeam, Team } from '../types'
 import {
   Home, Calendar, Trophy, UserX, PenSquare, PartyPopper, Users,
-  ClipboardList, Building2, CalendarClock, Database, RefreshCcw,
+  ClipboardList, Building2, CalendarClock, Database, RefreshCcw, Activity,
   Settings, ChevronDown, MessageSquare,
 } from 'lucide-react'
 
@@ -65,6 +65,7 @@ function useNavItems(isLoggedIn: boolean, isApproved: boolean) {
     superadminItems: [
       { to: '/admin/database', label: t('manageDb'), icon: <Database className={iconClass} /> },
       { to: '/admin/clubdesk-sync', label: t('clubdeskSync'), icon: <RefreshCcw className={iconClass} /> },
+      { to: '/admin/infra', label: t('infraHealth'), icon: <Activity className={iconClass} /> },
     ],
   }
 }

@@ -47,7 +47,7 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
   const isStaff = !!event?.teams?.[0] && isCoachOf(event.teams[0])
 
   // Fetch sessions for multi-session events
-  const hasSessionMode = event?.participation_mode && event.participation_mode !== 'whole' && event.participation_mode !== ''
+  const hasSessionMode = event?.participation_mode && event.participation_mode !== 'whole'
   const { data: sessions } = usePB<EventSession>('event_sessions', {
     filter: event ? `event="${event.id}"` : '',
     sort: '+sort_order,+date,+start_time',

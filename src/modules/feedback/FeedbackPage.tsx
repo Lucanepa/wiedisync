@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
-import { Bug, Lightbulb, MessageCircle, Paperclip, X, ExternalLink, MessageSquare, ChevronDown, ChevronRight, CheckCircle2, AlertCircle } from 'lucide-react'
+import { Bug, Lightbulb, MessageCircle, Paperclip, X, ExternalLink, ChevronDown, ChevronRight, CheckCircle2, AlertCircle } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { usePB } from '../../hooks/usePB'
 import pb from '../../pb'

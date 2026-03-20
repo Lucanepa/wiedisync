@@ -7,7 +7,7 @@
 // Body: { email: string }
 // Returns: { exists: bool, claimed: bool }
 //   - exists: true if a member record with this email exists
-//   - claimed: true if the member has set a password (tokenKey present)
+//   - claimed: true if the member has logged in / signed up (member_active=true)
 
 routerAdd("POST", "/api/check-email", function (e) {
   var body = e.requestInfo().body
@@ -35,9 +35,10 @@ routerAdd("POST", "/api/check-email", function (e) {
   }
 
   var member = members[0]
-  // A member is "claimed" if they have set a password (tokenKey is rotated on password set)
-  var tokenKey = member.getString("tokenKey")
-  var claimed = !!tokenKey && tokenKey.length > 0
+  // A member is "claimed" if they have logged in or signed up directly (member_active=true).
+  // Imported accounts (ClubDesk/Excel) default to member_active=false.
+  // The member_active hook sets it to true on first successful auth.
+  var claimed = member.getBool("member_active")
 
   return e.json(200, { exists: true, claimed: claimed })
 })

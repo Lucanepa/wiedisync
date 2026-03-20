@@ -80,8 +80,8 @@ export default function SignUpPage() {
       })
 
       if (res.exists && res.claimed) {
-        // Account already claimed — redirect to login
-        navigate('/login', { state: { email: email.trim().toLowerCase() } })
+        // Account already claimed — redirect to login with notice
+        navigate('/login', { state: { email: email.trim().toLowerCase(), accountExists: true } })
         return
       } else if (res.exists) {
         // Account exists but not claimed — send password reset to claim

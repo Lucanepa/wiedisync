@@ -8,6 +8,11 @@ export default {
   signingIn: 'Ilogge...',
   invalidCredentials: 'E-Mail oder Passwort stimmt nöd',
   rememberMe: 'Igloggt blibe',
+  forgotPassword: 'Passwort vergässe?',
+  sendingResetLink: 'Link wird gschickt...',
+  enterEmailFirst: 'Bitte gib zersch dini E-Mail ii.',
+  accountAlreadyExists: 'Es Konto mit dere E-Mail gits scho. Bitte logg di ii.',
+  noAccountYet: 'No käs Konto?',
   orContinueWith: 'oder wiiter mit',
   signInWithGoogle: 'Mit Google ilogge',
   oauthError: 'S Ilogge het nöd klappt. Probiers nomal.',
@@ -84,6 +89,7 @@ export default {
   languageGerman: 'Düütsch',
   languageEnglish: 'English',
   completeProfile: 'Profil bestätige',
+  skipForNow: 'Spöter',
   birthdate: 'Geburtstag',
 
   // Privacy

@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
 import { useTheme } from '../../hooks/useTheme'
+import pb from '../../pb'
 import { Button } from '@/components/ui/button'
 import { FormInput } from '@/components/FormField'
 import { Switch } from '@/components/ui/switch'
@@ -13,10 +14,14 @@ export default function LoginPage() {
   const { t } = useTranslation('auth')
   const navigate = useNavigate()
   const location = useLocation()
-  const [email, setEmail] = useState(() => (location.state as { email?: string })?.email ?? '')
+  const locationState = location.state as { email?: string; accountExists?: boolean } | null
+  const [email, setEmail] = useState(() => locationState?.email ?? '')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showAccountExists, setShowAccountExists] = useState(() => locationState?.accountExists ?? false)
+  const [resetLoading, setResetLoading] = useState(false)
+  const [resetSent, setResetSent] = useState(false)
 
   const [rememberMe, setRememberMe] = useState(
     () => localStorage.getItem('wiedisync-remember-me') !== 'false',
@@ -30,6 +35,7 @@ export default function LoginPage() {
     e.preventDefault()
     setError('')
     setLoading(true)
+    setShowAccountExists(false)
     localStorage.setItem('wiedisync-remember-me', String(rememberMe))
     try {
       await login(email, password)
@@ -41,6 +47,23 @@ export default function LoginPage() {
     }
   }
 
+  async function handleForgotPassword() {
+    if (!email.trim()) {
+      setError(t('enterEmailFirst'))
+      return
+    }
+    setResetLoading(true)
+    setError('')
+    try {
+      await pb.collection('members').requestPasswordReset(email.trim().toLowerCase())
+      setResetSent(true)
+    } catch {
+      // PocketBase returns 200 even for non-existent emails (security), so this is unlikely
+      setResetSent(true)
+    } finally {
+      setResetLoading(false)
+    }
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 dark:bg-gray-900">
@@ -58,6 +81,18 @@ export default function LoginPage() {
             {t('signIn')}
           </h1>
 
+          {showAccountExists && (
+            <div className="mb-4 rounded-lg bg-blue-50 p-3 text-center text-sm text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
+              {t('accountAlreadyExists')}
+            </div>
+          )}
+
+          {resetSent && (
+            <div className="mb-4 rounded-lg bg-green-50 p-3 text-center text-sm text-green-700 dark:bg-green-900/20 dark:text-green-400">
+              {t('resetLinkSent')}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <FormInput
               type="email"
@@ -69,15 +104,27 @@ export default function LoginPage() {
               placeholder={t('emailPlaceholder')}
             />
 
-            <FormInput
-              type="password"
-              label={t('password')}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-              placeholder={t('passwordPlaceholder')}
-            />
+            <div>
+              <FormInput
+                type="password"
+                label={t('password')}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+                placeholder={t('passwordPlaceholder')}
+              />
+              <div className="mt-1 text-right">
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  disabled={resetLoading}
+                  className="text-sm text-brand-600 hover:text-brand-500 dark:text-brand-400 dark:hover:text-brand-300"
+                >
+                  {resetLoading ? t('sendingResetLink') : t('forgotPassword')}
+                </button>
+              </div>
+            </div>
 
             <div className="flex items-center gap-2">
               <Switch checked={rememberMe} onCheckedChange={setRememberMe} id="remember-me" />
@@ -93,6 +140,7 @@ export default function LoginPage() {
             <Button type="submit" loading={loading} className="w-full">
               {loading ? t('signingIn') : t('signIn')}
             </Button>
+
           </form>
         </div>
       </div>

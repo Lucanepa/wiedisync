@@ -8,6 +8,11 @@ export default {
   signingIn: 'Accesso in corso...',
   invalidCredentials: 'Email o password non validi',
   rememberMe: 'Ricordami',
+  forgotPassword: 'Password dimenticata?',
+  sendingResetLink: 'Invio link...',
+  enterEmailFirst: 'Inserisci prima la tua email.',
+  accountAlreadyExists: 'Esiste già un account con questa email. Accedi.',
+  noAccountYet: 'Non hai un account?',
   orContinueWith: 'oppure continua con',
   signInWithGoogle: 'Accedi con Google',
   oauthError: 'Accesso fallito. Riprova.',
@@ -84,6 +89,7 @@ export default {
   languageGerman: 'Deutsch',
   languageEnglish: 'English',
   completeProfile: 'Conferma profilo',
+  skipForNow: 'Più tardi',
   birthdate: 'Data di nascita',
 
   // Privacy

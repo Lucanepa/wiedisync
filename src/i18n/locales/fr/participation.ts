@@ -35,4 +35,7 @@ export default {
   saved: 'Enregistre',
   notePlaceholder: 'Ajouter une note...',
   noteSaved: 'Note enregistree',
+  requireNoteIfAbsent: 'Note obligatoire en cas d\'absence',
+  requireNoteIfAbsentHint: 'Une raison doit etre fournie en cas de refus ou de peut-etre',
+  noteRequiredError: 'Veuillez fournir une raison',
 } as const

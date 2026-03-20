@@ -35,4 +35,7 @@ export default {
   saved: 'Gespeichert',
   notePlaceholder: 'Notiz hinzufügen…',
   noteSaved: 'Notiz gespeichert',
+  requireNoteIfAbsent: 'Begründung bei Absage erforderlich',
+  requireNoteIfAbsentHint: 'Bei Absage oder Vielleicht muss eine Begründung angegeben werden',
+  noteRequiredError: 'Bitte gib einen Grund an',
 } as const

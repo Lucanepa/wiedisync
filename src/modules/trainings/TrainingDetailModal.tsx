@@ -137,6 +137,8 @@ function TrainingParticipation({ training, isStaff }: { training: TrainingExpand
   const [noteSaved, setNoteSaved] = useState(false)
   const noteInitRef = useRef(savedNote)
   const [guestCount, setGuestCount] = useState(0)
+  const [noteRequiredError, setNoteRequiredError] = useState(false)
+  const requireNote = !!training.require_note_if_absent
 
   // Sync guest count from existing participation
   useEffect(() => {
@@ -202,7 +204,14 @@ function TrainingParticipation({ training, isStaff }: { training: TrainingExpand
             return (
               <button
                 key={status}
-                onClick={() => setStatus(status, noteText, guestCount)}
+                onClick={() => {
+                  if (requireNote && (status === 'declined' || status === 'tentative') && !noteText.trim()) {
+                    setNoteRequiredError(true)
+                    return
+                  }
+                  setNoteRequiredError(false)
+                  setStatus(status, noteText, guestCount)
+                }}
                 className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${colors[status]}`}
               >
                 {labels[status]}
@@ -219,26 +228,33 @@ function TrainingParticipation({ training, isStaff }: { training: TrainingExpand
         )}
       </div>
       {/* Participation note */}
-      {effectiveStatus && (
-        <div className="relative flex items-center gap-2">
-          <MessageSquare className="h-4 w-4 shrink-0 text-gray-400" />
-          <input
-            type="text"
-            value={noteText}
-            onChange={(e) => setNoteText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') saveNote()
-            }}
-            placeholder={t('notePlaceholder')}
-            className="min-w-0 flex-1 rounded-md border border-gray-200 bg-transparent px-2.5 py-1 text-sm text-gray-700 placeholder:text-gray-400 focus:border-brand-400 focus:outline-none dark:border-gray-600 dark:text-gray-300 dark:placeholder:text-gray-500 dark:focus:border-brand-500"
-          />
-          <button
-            onClick={saveNote}
-            disabled={noteText === savedNote}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-green-600 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-green-400"
-          >
-            <Check className="h-4 w-4" />
-          </button>
+      {(effectiveStatus || requireNote) && (
+        <div className="relative">
+          <div className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4 shrink-0 text-gray-400" />
+            <input
+              type="text"
+              value={noteText}
+              onChange={(e) => { setNoteText(e.target.value); setNoteRequiredError(false) }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') saveNote()
+              }}
+              placeholder={requireNote ? t('noteRequiredError') : t('notePlaceholder')}
+              className={`min-w-0 flex-1 rounded-md border bg-transparent px-2.5 py-1 text-sm text-gray-700 placeholder:text-gray-400 focus:border-brand-400 focus:outline-none dark:text-gray-300 dark:placeholder:text-gray-500 dark:focus:border-brand-500 ${
+                noteRequiredError ? 'border-red-400 dark:border-red-500' : 'border-gray-200 dark:border-gray-600'
+              }`}
+            />
+            <button
+              onClick={saveNote}
+              disabled={noteText === savedNote}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-green-600 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-green-400"
+            >
+              <Check className="h-4 w-4" />
+            </button>
+          </div>
+          {noteRequiredError && (
+            <p className="mt-0.5 ml-6 text-[11px] text-red-500 dark:text-red-400">{t('noteRequiredError')}</p>
+          )}
           {/* Note saved confirmation */}
           {noteSaved && (
             <span className="absolute -top-7 right-0 flex items-center gap-1 whitespace-nowrap rounded-md bg-green-600 px-2 py-0.5 text-[11px] font-medium text-white shadow-lg animate-fade-in">

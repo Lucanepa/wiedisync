@@ -254,6 +254,7 @@ export default function ProfilePage() {
                 activityDate={tr.date}
                 teamId={tr.team}
                 compact
+                requireNoteIfAbsent={tr.require_note_if_absent}
               />
             </div>
           ))}
@@ -293,6 +294,7 @@ export default function ProfilePage() {
                 activityDate={ev.start_date}
                 teamId={ev.teams?.[0]}
                 compact
+                requireNoteIfAbsent={ev.require_note_if_absent}
               />
             </div>
           ))}

@@ -35,4 +35,7 @@ export default {
   saved: 'Salvato',
   notePlaceholder: 'Aggiungi una nota...',
   noteSaved: 'Nota salvata',
+  requireNoteIfAbsent: 'Nota obbligatoria in caso di assenza',
+  requireNoteIfAbsentHint: 'Un motivo deve essere fornito in caso di rifiuto o forse',
+  noteRequiredError: 'Indica un motivo',
 } as const

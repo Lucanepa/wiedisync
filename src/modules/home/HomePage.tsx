@@ -754,6 +754,7 @@ function EventRow({ event }: { event: EventExpanded }) {
               compact
               respondBy={event.respond_by?.split(' ')[0]}
               maxPlayers={event.max_players}
+              requireNoteIfAbsent={event.require_note_if_absent}
             />
           </div>
         )}

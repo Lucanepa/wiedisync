@@ -86,6 +86,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
   const [selectedTeams, setSelectedTeams] = useState<string[]>([])
   const [respondBy, setRespondBy] = useState('')
   const [maxPlayers, setMaxPlayers] = useState('')
+  const [requireNoteIfAbsent, setRequireNoteIfAbsent] = useState(false)
   const [participationMode, setParticipationMode] = useState<'whole' | 'per_day' | 'per_session'>('whole')
   const [sessions, setSessions] = useState<SessionDraft[]>([])
   const [error, setError] = useState('')
@@ -110,6 +111,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
       setSelectedTeams(event.teams ?? [])
       setRespondBy(event.respond_by?.split(' ')[0] ?? '')
       setMaxPlayers(event.max_players ? String(event.max_players) : '')
+      setRequireNoteIfAbsent(!!event.require_note_if_absent)
       setParticipationMode((event.participation_mode as 'whole' | 'per_day' | 'per_session') || 'whole')
     } else {
       setTitle('')
@@ -122,6 +124,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
       setSelectedTeams([])
       setRespondBy('')
       setMaxPlayers('')
+      setRequireNoteIfAbsent(false)
       setParticipationMode('whole')
       setSessions([])
     }
@@ -240,6 +243,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
       created_by: user?.id,
       respond_by: respondBy || null,
       max_players: maxPlayers ? Number(maxPlayers) : null,
+      require_note_if_absent: requireNoteIfAbsent,
       participation_mode: effectiveMode,
     }
 
@@ -390,6 +394,14 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
           onChange={setRespondBy}
           helperText={t('respondByHint')}
         />
+
+        <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+          <Switch checked={requireNoteIfAbsent} onCheckedChange={setRequireNoteIfAbsent} />
+          <div>
+            <span>{t('requireNoteIfAbsent', { ns: 'participation' })}</span>
+            <p className="text-xs text-muted-foreground">{t('requireNoteIfAbsentHint', { ns: 'participation' })}</p>
+          </div>
+        </div>
 
         {eventType === 'tournament' && (
           <FormInput

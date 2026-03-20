@@ -35,4 +35,7 @@ export default {
   saved: 'Saved',
   notePlaceholder: 'Add a note…',
   noteSaved: 'Note saved',
+  requireNoteIfAbsent: 'Require note if not joining',
+  requireNoteIfAbsentHint: 'A reason must be provided when declining or responding maybe',
+  noteRequiredError: 'Please provide a reason',
 } as const

@@ -3,16 +3,15 @@
 // ─── Feedback: Turnstile Validation ───
 // Validates Cloudflare Turnstile token for unauthenticated feedback submissions.
 // Authenticated users (Wiedisync) skip validation.
-// Clears the token field after validation so it's never stored.
+// Reads token from request body — no schema field needed.
 
 onRecordCreateRequest((e) => {
   // Skip for authenticated users (Wiedisync members)
   if (e.requestInfo().auth) {
-    e.record.set("turnstile_token", "")
     return e.next()
   }
 
-  var token = e.record.get("turnstile_token")
+  var token = e.requestInfo().body.turnstile_token || ""
   if (!token) {
     throw new BadRequestError("Turnstile token required")
   }
@@ -20,7 +19,6 @@ onRecordCreateRequest((e) => {
   var secret = $os.getenv("TURNSTILE_SECRET_KEY")
   if (!secret) {
     console.log("[feedback-turnstile] TURNSTILE_SECRET_KEY not set, skipping validation")
-    e.record.set("turnstile_token", "")
     return e.next()
   }
 
@@ -36,9 +34,6 @@ onRecordCreateRequest((e) => {
   if (!result.success) {
     throw new BadRequestError("Turnstile validation failed")
   }
-
-  // Clear token so it's not persisted
-  e.record.set("turnstile_token", "")
 
   return e.next()
 }, "feedback")

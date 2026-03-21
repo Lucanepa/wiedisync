@@ -128,7 +128,7 @@ export default function ProfilePage() {
               </div>
             )}
             {user.role.length > 0 && (
-              <div className={`flex items-center gap-1.5 ${memberTeams.length > 0 ? 'mt-2 border-t border-gray-100 pt-2 dark:border-gray-700' : ''}`}>
+              <div className={`flex flex-wrap items-center gap-1.5 ${memberTeams.length > 0 ? 'mt-2 border-t border-gray-100 pt-2 dark:border-gray-700' : ''}`}>
                 <span className="shrink-0 text-xs leading-none text-gray-500 dark:text-gray-400">{t('roles')}</span>
                 {[...user.role].sort((a, b) => {
                   const order = ['user', 'coach', 'team_responsible', 'vb_admin', 'bb_admin', 'vorstand', 'admin', 'superuser', 'superadmin']

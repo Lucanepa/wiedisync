@@ -745,6 +745,7 @@ function HomeSections({
 }
 
 function EventRow({ event, onClick }: { event: EventExpanded; onClick: () => void }) {
+  const { i18n } = useTranslation()
   const { effectiveStatus } = useParticipation('event', event.id, event.start_date?.split(' ')[0])
   const teams = event.expand?.teams ?? []
 
@@ -769,7 +770,7 @@ function EventRow({ event, onClick }: { event: EventExpanded; onClick: () => voi
               {new Date(event.start_date).getDate()}
             </span>
             <span className="text-[10px] font-medium uppercase text-brand-500 dark:text-brand-400">
-              {new Date(event.start_date).toLocaleString(undefined, { month: 'short' })}
+              {new Date(event.start_date).toLocaleString(i18n.language, { month: 'short' })}
             </span>
           </div>
         </div>

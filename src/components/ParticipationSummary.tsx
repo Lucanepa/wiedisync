@@ -33,9 +33,24 @@ export default function ParticipationSummary({
   // Auto-refresh when participations change (create/update/delete)
   useRealtime('participations', () => refetch())
 
+  // Deduplicate by member: when an event has multiple sessions, a member may
+  // have several participation records. Pick the "best" status per member
+  // (confirmed > tentative > waitlisted > declined) so counters reflect unique members.
+  const statusPriority: Record<string, number> = { confirmed: 4, tentative: 3, waitlisted: 2, declined: 1 }
+  const deduped = (() => {
+    const byMember = new Map<string, Participation>()
+    for (const p of data) {
+      const existing = byMember.get(p.member)
+      if (!existing || (statusPriority[p.status] ?? 0) > (statusPriority[existing.status] ?? 0)) {
+        byMember.set(p.member, p)
+      }
+    }
+    return Array.from(byMember.values())
+  })()
+
   // Separate player and staff participations — staff don't count towards totals
-  const playerData = data.filter(p => !p.is_staff)
-  const staffData = data.filter(p => p.is_staff)
+  const playerData = deduped.filter(p => !p.is_staff)
+  const staffData = deduped.filter(p => p.is_staff)
 
   const confirmedParts = playerData.filter(p => p.status === 'confirmed')
   const confirmed = confirmedParts.length

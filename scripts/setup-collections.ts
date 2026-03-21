@@ -321,7 +321,7 @@ console.log('\n=== Adding participations unique index ===')
 const participationsCol = await pb.collections.getOne('participations')
 await pb.collections.update(participationsCol.id, {
   indexes: [
-    'CREATE UNIQUE INDEX idx_participation_unique ON participations (member, activity_type, activity_id)',
+    'CREATE UNIQUE INDEX idx_participation_unique ON participations (member, activity_type, activity_id, COALESCE(session_id, \'\'))',
   ],
 })
 console.log('  ✓ participations unique index added')

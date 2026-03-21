@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
@@ -138,11 +138,14 @@ export default function HomePage() {
   const latestResults = hasTeams && !showAllResults ? myLatestResults : allLatestResults
 
   // Upcoming events — scope to user's teams + club-wide events
+  // Non-logged-in users only see club-wide events (no team-specific ones)
   const eventFilter = useMemo(() => {
     const parts = [`end_date >= "${today}"`]
     if (hasTeams) {
       const teamClauses = userTeamIds.map(id => `teams~"${id}"`).join(' || ')
       parts.push(`(teams:length = 0 || ${teamClauses})`)
+    } else {
+      parts.push('teams:length = 0')
     }
     return parts.join(' && ')
   }, [today, hasTeams, userTeamIds])
@@ -464,14 +467,14 @@ function CompactGameRow({ game, showScore, onClick }: { game: ExpandedGame; show
           ? <BasketballIcon className="h-5 w-5 shrink-0" filled />
           : <VolleyballIcon className="h-5 w-5 shrink-0" filled />}
 
-        {/* Team names — stacked, Wiedikon team bold */}
+        {/* Team names — stacked, Wiedikon team bold, wrap on small screens */}
         <div className="min-w-0 flex-1">
-          <ShrinkOnOverflow className={`text-gray-900 dark:text-gray-100 ${game.type === 'home' ? 'font-bold' : ''}`}>
+          <p className={`break-words text-sm leading-tight text-gray-900 dark:text-gray-100 ${game.type === 'home' ? 'font-bold' : ''}`}>
             {game.home_team}
-          </ShrinkOnOverflow>
-          <ShrinkOnOverflow className={`text-gray-900 dark:text-gray-100 ${game.type === 'away' ? 'font-bold' : ''}`}>
+          </p>
+          <p className={`break-words text-sm leading-tight text-gray-900 dark:text-gray-100 ${game.type === 'away' ? 'font-bold' : ''}`}>
             {game.away_team}
-          </ShrinkOnOverflow>
+          </p>
         </div>
 
         {/* Vertical score: KSCW line colored, opponent neutral */}
@@ -548,23 +551,6 @@ function CompactTrainingRow({ training, onClick }: { training: TrainingExpanded;
   )
 }
 
-/** Text that starts at text-sm and shrinks to text-xs only when it would overflow/truncate */
-function ShrinkOnOverflow({ children, className }: { children: React.ReactNode; className?: string }) {
-  const ref = useCallback((el: HTMLParagraphElement | null) => {
-    if (!el) return
-    // Reset to default size, check overflow, shrink if needed
-    el.style.fontSize = ''
-    if (el.scrollWidth > el.clientWidth) {
-      el.style.fontSize = '0.75rem'
-    }
-  }, [children]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  return (
-    <p ref={ref} className={`truncate text-sm ${className ?? ''}`}>
-      {children}
-    </p>
-  )
-}
 
 /** Inline cone SVG for training icon */
 function TrainingConeIcon({ className = '' }: { className?: string }) {
@@ -775,20 +761,22 @@ function EventRow({ event, onClick }: { event: EventExpanded; onClick: () => voi
         <div className={`w-1 shrink-0 ${statusBorderColor[effectiveStatus] ?? ''}`} />
       )}
       <div className="flex flex-1 items-start gap-3 p-4">
-        {/* Date badge */}
-        <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg bg-brand-50 dark:bg-brand-900/40">
-          <span className="text-lg font-bold leading-none text-brand-600 dark:text-brand-400">
-            {new Date(event.start_date).getDate()}
-          </span>
-          <span className="text-[10px] font-medium uppercase text-brand-500 dark:text-brand-400">
-            {new Date(event.start_date).toLocaleString('de-CH', { month: 'short' })}
-          </span>
+        {/* Date badge + event type */}
+        <div className="flex shrink-0 flex-col items-center gap-1">
+          <StatusBadge status={event.event_type} />
+          <div className="flex h-10 w-10 flex-col items-center justify-center rounded-lg bg-brand-50 dark:bg-brand-900/40">
+            <span className="text-base font-bold leading-none text-brand-600 dark:text-brand-400">
+              {new Date(event.start_date).getDate()}
+            </span>
+            <span className="text-[10px] font-medium uppercase text-brand-500 dark:text-brand-400">
+              {new Date(event.start_date).toLocaleString(undefined, { month: 'short' })}
+            </span>
+          </div>
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <StatusBadge status={event.event_type} />
-            <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
+          <div>
+            <p className="text-sm font-medium leading-snug text-gray-900 dark:text-gray-100">
               {event.title}
             </p>
           </div>

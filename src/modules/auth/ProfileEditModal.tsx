@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { FormInput, FormField } from '@/components/FormField'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import DatePicker from '@/components/ui/DatePicker'
+import { Switch } from '@/components/ui/switch'
 import { useAuth } from '../../hooks/useAuth'
 import { getFileUrl } from '../../utils/pbFile'
 import { coercePositions, getPositionI18nKey, getSelectablePositions } from '../../utils/memberPositions'
@@ -56,6 +57,8 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
   const [hidePhone, setHidePhone] = useState(false)
   const [birthdateVisibility, setBirthdateVisibility] = useState<'full' | 'year_only' | 'hidden'>('full')
   const [language, setLanguage] = useState<PbLanguage>('german')
+  const [websiteVisible, setWebsiteVisible] = useState(true)
+  const [infoOpen, setInfoOpen] = useState(false)
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [selectedPositions, setSelectedPositions] = useState<MemberPosition[]>([])
@@ -75,6 +78,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
       setNumber(user.number ?? 0)
       setBirthdate(user.birthdate ? user.birthdate.slice(0, 10) : '')
       setHidePhone(user.hide_phone ?? false)
+      setWebsiteVisible(user.website_visible ?? true)
       setBirthdateVisibility((user.birthdate_visibility as 'full' | 'year_only' | 'hidden') || 'hidden')
       setLanguage((user.language as PbLanguage) || 'german')
       setSelectedPositions(coercePositions(user.position))
@@ -162,6 +166,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
         number,
         hide_phone: hidePhone,
         birthdate_visibility: birthdateVisibility,
+        website_visible: websiteVisible,
         language,
         position: selectedPositions.length > 0 ? selectedPositions : ['other'],
         licences: selectedLicences,
@@ -260,24 +265,51 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
               {initials}
             </div>
           )}
-          <div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              {t('changePhoto')}
-            </Button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handlePhotoChange}
-              className="hidden"
-            />
+          <div className="space-y-2">
+            <div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {t('changePhoto')}
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoChange}
+                className="hidden"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={websiteVisible}
+                onCheckedChange={setWebsiteVisible}
+                id="website-visible"
+              />
+              <label htmlFor="website-visible" className="cursor-pointer text-sm text-gray-700 dark:text-gray-300">
+                {t('websiteVisible')}
+              </label>
+              <button
+                type="button"
+                onClick={() => setInfoOpen(true)}
+                className="flex h-4 w-4 items-center justify-center rounded-full bg-gray-200 text-[10px] font-bold text-gray-500 hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-400 dark:hover:bg-gray-500"
+              >
+                i
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* Website visibility info modal */}
+        <Modal open={infoOpen} onClose={() => setInfoOpen(false)} title={t('websiteVisible')} size="sm">
+          <p className="text-sm text-gray-600 dark:text-gray-400">{t('websiteVisibleInfo')}</p>
+          <div className="mt-4 flex justify-end">
+            <Button type="button" size="sm" onClick={() => setInfoOpen(false)}>OK</Button>
+          </div>
+        </Modal>
 
         <div className="grid grid-cols-1 gap-4">
           <FormInput

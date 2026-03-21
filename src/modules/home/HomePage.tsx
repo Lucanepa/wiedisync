@@ -145,7 +145,9 @@ export default function HomePage() {
       const teamClauses = userTeamIds.map(id => `teams~"${id}"`).join(' || ')
       parts.push(`(teams:length = 0 || ${teamClauses})`)
     } else {
+      // Non-logged-in: only club-wide events (no teams) with public event types
       parts.push('teams:length = 0')
+      parts.push('(event_type = "verein" || event_type = "social")')
     }
     return parts.join(' && ')
   }, [today, hasTeams, userTeamIds])
@@ -455,9 +457,9 @@ function CompactGameRow({ game, showScore, onClick }: { game: ExpandedGame; show
         <div className={`w-1 shrink-0 ${statusBorderColor[effectiveStatus] ?? ''}`} />
       )}
 
-      <div className="flex flex-1 items-center gap-3 px-4 py-2">
+      <div className="flex min-w-0 flex-1 items-center gap-3 px-4 py-2">
         {/* Date & time */}
-        <div className="w-16 shrink-0 text-xs text-gray-500 dark:text-gray-400">
+        <div className="w-14 shrink-0 text-xs text-gray-500 dark:text-gray-400">
           <div>{dateStr}</div>
           {game.time && <div>{formatTime(game.time)}</div>}
         </div>
@@ -761,47 +763,47 @@ function EventRow({ event, onClick }: { event: EventExpanded; onClick: () => voi
       {effectiveStatus && (
         <div className={`w-1 shrink-0 ${statusBorderColor[effectiveStatus] ?? ''}`} />
       )}
-      <div className="flex flex-1 items-start gap-3 p-4">
-        {/* Date badge + event type */}
-        <div className="flex shrink-0 flex-col items-center gap-1">
+      <div className="min-w-0 flex-1 p-3">
+        {/* Top row: event type badge */}
+        <div className="mb-2 flex items-center justify-between gap-2">
           <StatusBadge status={event.event_type} />
-          <div className="flex h-10 w-10 flex-col items-center justify-center rounded-lg bg-brand-50 dark:bg-brand-900/40">
-            <span className="text-base font-bold leading-none text-brand-600 dark:text-brand-400">
+          {effectiveStatus && (
+            <ParticipationSummary activityType="event" activityId={event.id} compact hideExtras />
+          )}
+        </div>
+
+        {/* Content row: date badge + details */}
+        <div className="flex items-start gap-2.5">
+          <div className="flex h-9 w-9 shrink-0 flex-col items-center justify-center rounded-lg bg-brand-50 dark:bg-brand-900/40">
+            <span className="text-sm font-bold leading-none text-brand-600 dark:text-brand-400">
               {new Date(event.start_date).getDate()}
             </span>
-            <span className="text-[10px] font-medium uppercase text-brand-500 dark:text-brand-400">
+            <span className="text-[9px] font-medium uppercase text-brand-500 dark:text-brand-400">
               {new Date(event.start_date).toLocaleString(i18n.language, { month: 'short' })}
             </span>
           </div>
-        </div>
 
-        <div className="min-w-0 flex-1">
-          <div>
+          <div className="min-w-0 flex-1">
             <p className="text-sm font-medium leading-snug text-gray-900 dark:text-gray-100">
               {event.title}
             </p>
+            {event.location && (
+              <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{event.location}</p>
+            )}
+            {event.description && (
+              <p className="mt-1 line-clamp-2 text-xs text-gray-500 dark:text-gray-400">
+                {stripHtml(event.description)}
+              </p>
+            )}
+            {teams.length > 0 && (
+              <div className="mt-1.5 flex flex-wrap gap-1">
+                {teams.map((team) => (
+                  <TeamChip key={team.id} team={team.name} size="sm" />
+                ))}
+              </div>
+            )}
           </div>
-          {event.location && (
-            <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{event.location}</p>
-          )}
-          {event.description && (
-            <p className="mt-1 line-clamp-2 text-xs text-gray-500 dark:text-gray-400">
-              {stripHtml(event.description)}
-            </p>
-          )}
-          {teams.length > 0 && (
-            <div className="mt-1.5 flex flex-wrap gap-1">
-              {teams.map((team) => (
-                <TeamChip key={team.id} team={team.name} size="sm" />
-              ))}
-            </div>
-          )}
         </div>
-
-        {/* Participation status indicator */}
-        {effectiveStatus && (
-          <ParticipationSummary activityType="event" activityId={event.id} compact hideExtras />
-        )}
       </div>
     </button>
   )

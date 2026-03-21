@@ -164,6 +164,8 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
         title={`${event.title} — ${formatDate(event.start_date)}`}
         respondBy={event.respond_by}
         maxPlayers={event.max_players}
+        participationMode={event.participation_mode}
+        eventSessions={hasSessionMode ? sessions : undefined}
       />
     </>
   )

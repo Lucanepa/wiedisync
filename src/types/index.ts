@@ -57,6 +57,7 @@ export interface Member extends RecordModel {
   language: 'english' | 'german' | 'french' | 'italian' | 'swiss_german' | ''
   hide_phone: boolean
   birthdate_visibility: 'full' | 'year_only' | 'hidden'
+  website_visible: boolean
   member_active: boolean
   shell: boolean
   shell_expires: string

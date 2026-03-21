@@ -102,6 +102,8 @@ export default {
   birthdateVisibilityHidden: 'Hide',
   hidden: 'Hidden',
   yearOnly: 'Year only',
+  websiteVisible: 'Website visibility',
+  websiteVisibleInfo: 'When enabled, your photo will be shown on the club website team roster.',
 
   // Privacy consent
   privacyConsent: 'By registering you accept our',

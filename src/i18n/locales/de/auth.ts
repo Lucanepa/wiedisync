@@ -102,6 +102,8 @@ export default {
   birthdateVisibilityHidden: 'Verbergen',
   hidden: 'Verborgen',
   yearOnly: 'Nur Jahrgang',
+  websiteVisible: 'Website-Sichtbarkeit',
+  websiteVisibleInfo: 'Wenn aktiviert, wird dein Foto auf der Vereinswebsite im Teamkader angezeigt.',
 
   // Privacy consent
   privacyConsent: 'Mit der Registrierung akzeptierst du unsere',

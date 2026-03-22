@@ -3,6 +3,9 @@ import { useTranslation } from 'react-i18next'
 import { Check, X, MessageSquare } from 'lucide-react'
 import Modal from '@/components/Modal'
 import { useParticipation } from '../hooks/useParticipation'
+import { useAuth } from '../hooks/useAuth'
+import { usePB } from '../hooks/usePB'
+import { useMutation } from '../hooks/useMutation'
 import type { EventSession, Participation } from '../types'
 
 interface Props {
@@ -63,13 +66,23 @@ function SessionRow({ activityId, session }: { activityId: string; session: Even
   )
 }
 
-/** Note field that saves against the first session's participation (shared note for the event) */
+/** Note field that saves against ALL session participations */
 function EventNote({ activityId, sessions }: { activityId: string; sessions: EventSession[] }) {
   const { t } = useTranslation('participation')
-  const firstDateStr = sessions[0]?.date?.split(' ')[0] ?? ''
-  const { participation, effectiveStatus, setStatus, note: savedNote } = useParticipation(
-    'event', activityId, firstDateStr, sessions[0]?.id,
-  )
+  const { user } = useAuth()
+  const { update } = useMutation<Participation>('participations')
+
+  // Fetch all participations for this event + user across sessions
+  const sessionFilter = sessions.map(s => `session_id="${s.id}"`).join(' || ')
+  const { data: allParts, refetch } = usePB<Participation>('participations', {
+    filter: user && activityId
+      ? `member="${user.id}" && activity_type="event" && activity_id="${activityId}" && (${sessionFilter})`
+      : '',
+    all: true,
+    enabled: !!user && !!activityId && sessions.length > 0,
+  })
+
+  const savedNote = allParts[0]?.note ?? ''
   const [noteText, setNoteText] = useState(savedNote)
   const [noteSaved, setNoteSaved] = useState(false)
   const noteInitRef = useRef(savedNote)
@@ -85,11 +98,11 @@ function EventNote({ activityId, sessions }: { activityId: string; sessions: Eve
     return () => clearTimeout(timer)
   }, [noteSaved])
 
-  const saveNote = () => {
-    if (noteText !== savedNote && effectiveStatus) {
-      setStatus(effectiveStatus as Participation['status'], noteText, participation?.guest_count ?? 0)
-      setNoteSaved(true)
-    }
+  const saveNote = async () => {
+    if (noteText === savedNote || allParts.length === 0) return
+    await Promise.all(allParts.map(p => update(p.id, { note: noteText })))
+    setNoteSaved(true)
+    refetch()
   }
 
   return (

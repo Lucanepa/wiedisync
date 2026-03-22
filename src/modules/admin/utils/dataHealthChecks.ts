@@ -110,10 +110,10 @@ async function checkGames(): Promise<CollectionHealth> {
 }
 
 async function checkMembers(): Promise<CollectionHealth> {
-  // Get all approved, active members
+  // Get all coach-approved, active members
   const members = await pb.collection('members').getFullList({
-    fields: 'id,first_name,last_name,approved,member_active',
-    filter: 'approved=true && member_active=true',
+    fields: 'id,first_name,last_name,coach_approved_team,wiedisync_active',
+    filter: 'coach_approved_team=true && wiedisync_active=true',
     sort: '+last_name,+first_name',
   })
 

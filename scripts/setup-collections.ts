@@ -101,7 +101,7 @@ const collections: CollectionDef[] = [
       select('role', ['user', 'vorstand', 'admin', 'superuser']),
       select('licences', ['scorer_vb', 'referee_vb', 'otr1_bb', 'otr2_bb', 'otn_bb', 'referee_bb'], { maxSelect: 6 }),
       bool('kscw_membership_active'),
-      bool('member_active'),
+      bool('wiedisync_active'),
     ],
   },
 
@@ -274,7 +274,6 @@ const dependentCollections: CollectionDef[] = [
       select('reason', ['injury', 'vacation', 'work', 'personal', 'other']),
       text('reason_detail'),
       json('affects'),
-      bool('approved'),
 
     ],
   },

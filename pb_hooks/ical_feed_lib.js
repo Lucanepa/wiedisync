@@ -40,7 +40,7 @@ function str(val) {
   return String(val)
 }
 
-module.exports.handleICalFeed = function(e, sportFilter) {
+function handleICalFeed(e, sportFilter) {
   var sourceParam = e.request.url.query().get("source") || ""
   var teamParam = e.request.url.query().get("team") || ""
 
@@ -98,9 +98,9 @@ module.exports.handleICalFeed = function(e, sportFilter) {
     }
   }
 
-  var calName = "KSCW Kalender"
-  if (sportFilter === "volleyball") calName = "KSCW Volleyball"
-  if (sportFilter === "basketball") calName = "KSCW Basketball"
+  var calName = "KSCW - Kalender"
+  if (sportFilter === "volleyball") calName = "KSCW - Volleyball"
+  if (sportFilter === "basketball") calName = "KSCW - Basketball"
 
   var lines = [
     "BEGIN:VCALENDAR",
@@ -377,4 +377,8 @@ module.exports.handleICalFeed = function(e, sportFilter) {
   e.response.header().set("Content-Disposition", 'inline; filename="' + filename + '.ics"')
   e.response.header().set("Cache-Control", "public, max-age=3600")
   return e.string(200, body)
+}
+
+module.exports = {
+  handleICalFeed: handleICalFeed,
 }

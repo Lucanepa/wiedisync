@@ -7,8 +7,8 @@
 // unless coaches should be able to edit them (see COACH_EDITABLE_MEMBER_FIELDS below).
 var RESTRICTED_MEMBER_FIELDS = [
   "email", "name", "first_name", "last_name", "phone", "license_nr",
-  "photo", "role", "kscw_membership_active", "birthdate", "yob", "approved",
-  "requested_team", "language", "hide_phone", "member_active"
+  "photo", "role", "kscw_membership_active", "birthdate", "yob", "coach_approved_team",
+  "requested_team", "language", "hide_phone", "wiedisync_active"
 ]
 
 // The only fields coaches/TR can edit on team members.

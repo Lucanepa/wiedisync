@@ -52,13 +52,13 @@ export interface Member extends RecordModel {
   birthdate: string
   yob: number
   licences: LicenceType[]
-  approved: boolean
+  coach_approved_team: boolean
   requested_team: string
   language: 'english' | 'german' | 'french' | 'italian' | 'swiss_german' | ''
   hide_phone: boolean
   birthdate_visibility: 'full' | 'year_only' | 'hidden'
   website_visible: boolean
-  member_active: boolean
+  wiedisync_active: boolean
   shell: boolean
   shell_expires: string
   shell_reminder_sent: boolean
@@ -273,7 +273,6 @@ export interface Absence extends RecordModel {
   reason: 'injury' | 'vacation' | 'work' | 'personal' | 'other'
   reason_detail: string
   affects: string[]
-  approved: boolean
 
 }
 

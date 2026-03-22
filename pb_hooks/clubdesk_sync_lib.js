@@ -311,7 +311,7 @@ function syncMembers(csvString) {
         record.set("clubdesk_id", mapped.clubdesk_id)
         record.set("role", ["player"])
         record.set("kscw_membership_active", true)
-        record.set("member_active", false)
+        record.set("wiedisync_active", false)
         record.set("birthdate_visibility", "hidden")
         record.set("language", "german")
 

@@ -184,7 +184,7 @@ async function main() {
         phone: (row.phone || '').trim(),
         role: ['user'],
         kscw_membership_active: true,
-        approved: true,
+        coach_approved_team: true,
         language: 'german',
         licences: rowLicences,
         license_nr: licenceNr,

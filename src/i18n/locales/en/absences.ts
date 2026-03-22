@@ -30,9 +30,6 @@ export default {
   affectsGames: 'Games',
   affectsAll: 'All',
 
-  // Status
-  approved: 'Approved',
-
   // Validation
   startDateRequired: 'Start date is required',
   endDateRequired: 'End date is required',

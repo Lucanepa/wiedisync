@@ -111,13 +111,13 @@ if (shellFields.length > 0) {
   console.log('  ⚠ All shell fields already exist — skipping update')
 }
 
-// ── Phase 4: Add index on members (shell, shell_expires, member_active) ──
+// ── Phase 4: Add index on members (shell, shell_expires, wiedisync_active) ──
 
 console.log('\n=== Phase 4: Add shell index to members collection ===')
 
 const membersColUpdated = await pb.collections.getOne('members')
 const existingIndexes: string[] = membersColUpdated.indexes ?? []
-const shellIndexDef = 'CREATE INDEX idx_members_shell ON members (shell, shell_expires, member_active)'
+const shellIndexDef = 'CREATE INDEX idx_members_shell ON members (shell, shell_expires, wiedisync_active)'
 
 if (existingIndexes.some((idx: string) => idx.includes('idx_members_shell'))) {
   console.log('  ⚠ idx_members_shell already exists — skipping')

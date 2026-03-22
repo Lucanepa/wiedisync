@@ -31,7 +31,7 @@ cronAdd("shell_expiry", "0 2 * * *", function() {
     var nowIso = shellCrons_nowIso()
     var expired = $app.findRecordsByFilter(
       "members",
-      'shell = true && member_active = true && shell_expires != "" && shell_expires <= "' + nowIso + '"',
+      'shell = true && wiedisync_active = true && shell_expires != "" && shell_expires <= "' + nowIso + '"',
       "",
       500,
       0
@@ -39,7 +39,7 @@ cronAdd("shell_expiry", "0 2 * * *", function() {
     var count = 0
     for (var i = 0; i < expired.length; i++) {
       try {
-        expired[i].set("member_active", false)
+        expired[i].set("wiedisync_active", false)
         $app.save(expired[i])
         count++
       } catch (e) {
@@ -64,7 +64,7 @@ cronAdd("shell_reminder", "0 9 * * *", function() {
 
     var upcoming = $app.findRecordsByFilter(
       "members",
-      'shell = true && member_active = true && shell_reminder_sent = false && shell_expires != "" && shell_expires <= "' + in10Iso + '"',
+      'shell = true && wiedisync_active = true && shell_reminder_sent = false && shell_expires != "" && shell_expires <= "' + in10Iso + '"',
       "",
       500,
       0

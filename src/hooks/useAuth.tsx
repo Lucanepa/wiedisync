@@ -204,7 +204,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [teamSportById, isGlobalAdmin, hasAdminAccessToSport],
   )
   const isAdmin = isGlobalAdmin || isVbAdmin || isBbAdmin
-  const isApproved = user?.approved === true || isAdmin
+  const isApproved = user?.coach_approved_team === true || isAdmin
   const isProfileComplete = !!user?.language && !!user?.first_name
   const isVorstand = roles.includes('vorstand') || isGlobalAdmin
   const getGuestLevel = useCallback(

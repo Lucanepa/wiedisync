@@ -10,6 +10,7 @@ import {
 import {
   Drawer,
   DrawerContent,
+  DrawerDescription,
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer'
@@ -57,6 +58,7 @@ export default function Modal({ open, onClose, title, children, size = 'md', hid
       <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>{title}</DrawerTitle>
+          <DrawerDescription className="sr-only">{title}</DrawerDescription>
         </DrawerHeader>
         <div className="max-h-[calc(100dvh-6rem)] overflow-y-auto overscroll-contain px-4 pb-4">
           {children}

@@ -17,6 +17,12 @@ export default {
   filterTitle: 'Filtrer',
   filterCategories: 'Categories',
 
+  // Filter groups
+  filterGroupGames: 'Matchs',
+  filterGroupActivities: 'Activités',
+  filterGroupVenue: 'Salle',
+  filterGroupOther: 'Autre',
+
   // Source filters
   sourceGames: 'Matchs',
   sourceTrainings: 'Entrainements',

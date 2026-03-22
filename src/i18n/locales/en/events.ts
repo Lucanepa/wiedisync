@@ -18,6 +18,7 @@ export default {
   location: 'Location',
   description: 'Description',
   teamsInvolved: 'Teams',
+  teamsInvolvedHint: 'Leave empty for club-wide events visible to all members',
 
   // Event types
   club: 'Club',

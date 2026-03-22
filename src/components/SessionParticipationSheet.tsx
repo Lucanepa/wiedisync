@@ -1,5 +1,6 @@
+import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Check, X } from 'lucide-react'
+import { Check, X, MessageSquare } from 'lucide-react'
 import Modal from '@/components/Modal'
 import { useParticipation } from '../hooks/useParticipation'
 import type { EventSession, Participation } from '../types'
@@ -62,6 +63,66 @@ function SessionRow({ activityId, session }: { activityId: string; session: Even
   )
 }
 
+/** Note field that saves against the first session's participation (shared note for the event) */
+function EventNote({ activityId, sessions }: { activityId: string; sessions: EventSession[] }) {
+  const { t } = useTranslation('participation')
+  const firstDateStr = sessions[0]?.date?.split(' ')[0] ?? ''
+  const { participation, effectiveStatus, setStatus, note: savedNote } = useParticipation(
+    'event', activityId, firstDateStr, sessions[0]?.id,
+  )
+  const [noteText, setNoteText] = useState(savedNote)
+  const [noteSaved, setNoteSaved] = useState(false)
+  const noteInitRef = useRef(savedNote)
+
+  if (savedNote !== noteInitRef.current) {
+    noteInitRef.current = savedNote
+    setNoteText(savedNote)
+  }
+
+  useEffect(() => {
+    if (!noteSaved) return
+    const timer = setTimeout(() => setNoteSaved(false), 2000)
+    return () => clearTimeout(timer)
+  }, [noteSaved])
+
+  const saveNote = () => {
+    if (noteText !== savedNote && effectiveStatus) {
+      setStatus(effectiveStatus as Participation['status'], noteText, participation?.guest_count ?? 0)
+      setNoteSaved(true)
+    }
+  }
+
+  return (
+    <div className="relative px-4 py-3">
+      <div className="flex items-center gap-2">
+        <MessageSquare className="h-4 w-4 shrink-0 text-gray-400" />
+        <input
+          type="text"
+          value={noteText}
+          onChange={(e) => setNoteText(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') saveNote() }}
+          onBlur={saveNote}
+          placeholder={t('notePlaceholder')}
+          className="min-w-0 flex-1 rounded-md border border-gray-200 bg-transparent px-2.5 py-1 text-sm text-gray-700 placeholder:text-gray-400 focus:border-brand-400 focus:outline-none dark:border-gray-600 dark:text-gray-300 dark:placeholder:text-gray-500 dark:focus:border-brand-500"
+        />
+        <button
+          onClick={saveNote}
+          disabled={noteText === savedNote}
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-green-600 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-green-400"
+        >
+          <Check className="h-4 w-4" />
+        </button>
+      </div>
+      {noteSaved && (
+        <span className="absolute -top-2 right-4 flex items-center gap-1 whitespace-nowrap rounded-md bg-green-600 px-2 py-0.5 text-[11px] font-medium text-white shadow-lg animate-fade-in">
+          <Check className="h-3 w-3" />
+          {t('saved')}
+        </span>
+      )}
+    </div>
+  )
+}
+
 export default function SessionParticipationSheet({ activityId, sessions, onClose }: Props) {
   const { t } = useTranslation('events')
 
@@ -72,6 +133,11 @@ export default function SessionParticipationSheet({ activityId, sessions, onClos
           <SessionRow key={session.id} activityId={activityId} session={session} />
         ))}
       </div>
+      {sessions.length > 0 && (
+        <div className="border-t border-gray-100 dark:border-gray-700">
+          <EventNote activityId={activityId} sessions={sessions} />
+        </div>
+      )}
     </Modal>
   )
 }

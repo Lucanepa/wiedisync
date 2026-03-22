@@ -122,14 +122,44 @@ export default function TeamMultiSelect({ options, selected, onChange, placehold
           </button>
 
           {hasGroups ? (
-            groups.map((group) => (
-              <div key={group}>
-                <div className="sticky top-0 bg-gray-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:bg-gray-900 dark:text-gray-400">
-                  {group}
-                </div>
-                {options
-                  .filter((o) => o.group === group)
-                  .map((o) => (
+            groups.map((group) => {
+              const groupOptions = options.filter((o) => o.group === group)
+              const groupIds = groupOptions.map((o) => o.value)
+              const allGroupSelected = !allSelected && groupIds.every((id) => selected.includes(id))
+              const someGroupSelected = !allSelected && groupIds.some((id) => selected.includes(id))
+
+              function toggleGroup() {
+                if (allGroupSelected) {
+                  // Deselect all in this group
+                  onChange(selected.filter((v) => !groupIds.includes(v)))
+                } else {
+                  // Select all in this group
+                  onChange([...new Set([...selected, ...groupIds])])
+                }
+              }
+
+              return (
+                <div key={group}>
+                  <button
+                    type="button"
+                    onClick={toggleGroup}
+                    className="sticky top-0 flex w-full items-center gap-2.5 bg-gray-50 px-3 py-1.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 hover:bg-gray-100 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800"
+                  >
+                    <span className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border-2 transition-colors ${
+                      allGroupSelected ? 'border-brand-500 bg-brand-500' : someGroupSelected ? 'border-brand-400 bg-brand-200 dark:bg-brand-800' : 'border-gray-300 dark:border-gray-500'
+                    }`}>
+                      {allGroupSelected && (
+                        <svg className="h-2 w-2 text-white" viewBox="0 0 12 12" fill="none">
+                          <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
+                      {someGroupSelected && !allGroupSelected && (
+                        <span className="block h-1.5 w-1.5 rounded-sm bg-brand-500" />
+                      )}
+                    </span>
+                    {group}
+                  </button>
+                  {groupOptions.map((o) => (
                     <DropdownOption
                       key={o.value}
                       option={o}
@@ -137,8 +167,9 @@ export default function TeamMultiSelect({ options, selected, onChange, placehold
                       onToggle={() => toggle(o.value)}
                     />
                   ))}
-              </div>
-            ))
+                </div>
+              )
+            })
           ) : (
             options.map((o) => (
               <DropdownOption

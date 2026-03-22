@@ -372,7 +372,7 @@ function sendReminders(app) {
 
   for (var i = 0; i < games.length; i++) {
     var game = games[i]
-    var gameId = game.getId()
+    var gameId = game.id
 
     var hallName = ""
     var hallUrl = ""
@@ -452,13 +452,15 @@ function sendReminders(app) {
         sent++
 
         try {
-          var log = new Record(app.findCollectionByNameOrId("scorer_reminder_logs"))
-          log.set("game", gameId)
-          log.set("member", a.memberId)
-          log.set("role", displayRole)
-          log.set("email", email)
+          var log = new Record(app.findCollectionByNameOrId("email_logs"))
+          log.set("type", "scorer_reminder")
+          log.set("to_address", email)
+          log.set("from_address", app.settings().meta.senderAddress)
+          log.set("from_name", lang === "en" ? "Wiedisync - Scorer Duty" : "Wiedisync - Schreibereinsätze")
+          log.set("subject", subject)
           log.set("success", true)
           log.set("error_message", "")
+          log.set("topic", displayRole + " | " + game.getString("home_team") + " vs " + game.getString("away_team"))
           app.save(log)
         } catch (logErr) {
           console.log("[Scorer Reminders] Could not save log: " + logErr)
@@ -469,13 +471,15 @@ function sendReminders(app) {
         errors.push(email + ": " + errMsg)
 
         try {
-          var logFail = new Record(app.findCollectionByNameOrId("scorer_reminder_logs"))
-          logFail.set("game", gameId)
-          logFail.set("member", a.memberId)
-          logFail.set("role", displayRole)
-          logFail.set("email", email)
+          var logFail = new Record(app.findCollectionByNameOrId("email_logs"))
+          logFail.set("type", "scorer_reminder")
+          logFail.set("to_address", email)
+          logFail.set("from_address", app.settings().meta.senderAddress)
+          logFail.set("from_name", lang === "en" ? "Wiedisync - Scorer Duty" : "Wiedisync - Schreibereinsätze")
+          logFail.set("subject", subject)
           logFail.set("success", false)
           logFail.set("error_message", errMsg)
+          logFail.set("topic", displayRole + " | " + game.getString("home_team") + " vs " + game.getString("away_team"))
           app.save(logFail)
         } catch (_) {}
       }

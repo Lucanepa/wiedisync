@@ -26,6 +26,7 @@ export default {
   impressum: 'Impressum',
   clubdeskSync: 'ClubDesk Sync',
   infraHealth: 'Infrastruktur',
+  dataHealth: 'Datenqualität',
   adminMode: 'Admin-Modus',
   memberMode: 'Mitglied-Modus',
   notifications: 'Benachrichtigungen',

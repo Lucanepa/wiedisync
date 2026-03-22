@@ -18,7 +18,7 @@ onMailerRecordPasswordResetSend(function(e) {
 
   // Extract token from default PB email body
   var token = ""
-  var match = e.message.html.match(/confirm-password-reset\/([A-Za-z0-9_\-\.]+)/)
+  var match = e.message.html.match(/confirm-password-reset\/([A-Za-z0-9_.-]+)/)
   if (match) token = match[1]
 
   var resetUrl = "https://wiedisync.kscw.ch/reset-password/" + token
@@ -64,7 +64,7 @@ onMailerRecordVerificationSend(function(e) {
   var name = record.getString("first_name") || record.getString("name").split(" ")[0] || ""
 
   var token = ""
-  var match = e.message.html.match(/confirm-verification\/([A-Za-z0-9_\-\.]+)/)
+  var match = e.message.html.match(/confirm-verification\/([A-Za-z0-9_.-]+)/)
   if (match) token = match[1]
 
   var verifyUrl = "https://api.kscw.ch/_/#/auth/confirm-verification/" + token
@@ -108,7 +108,7 @@ onMailerRecordEmailChangeSend(function(e) {
   var name = record.getString("first_name") || record.getString("name").split(" ")[0] || ""
 
   var token = ""
-  var match = e.message.html.match(/confirm-email-change\/([A-Za-z0-9_\-\.]+)/)
+  var match = e.message.html.match(/confirm-email-change\/([A-Za-z0-9_.-]+)/)
   if (match) token = match[1]
 
   var changeUrl = "https://api.kscw.ch/_/#/auth/confirm-email-change/" + token

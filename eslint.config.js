@@ -77,9 +77,9 @@ export default defineConfig([
     },
     rules: {
       'no-var': 'off',
-      'no-unused-vars': ['warn', { vars: 'all', args: 'none' }],
+      'no-unused-vars': ['warn', { vars: 'all', args: 'none', caughtErrors: 'none' }],
       'no-redeclare': 'off',
-      'no-empty': 'warn',
+      'no-empty': ['warn', { allowEmptyCatch: true }],
       'no-useless-escape': 'warn',
       'no-prototype-builtins': 'off',
     },

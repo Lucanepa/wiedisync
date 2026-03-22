@@ -442,6 +442,7 @@ function sendReminders(app) {
             name: lang === "en" ? "Wiedisync - Scorer Duty" : "Wiedisync - Schreibereins\u00e4tze",
           },
           to: [{ address: email, name: firstName }],
+          cc: [{ address: "reminders@volleyball.lucanepa.com" }],
           subject: subject,
           text: plainText,
           html: html,

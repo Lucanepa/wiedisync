@@ -2,11 +2,24 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [1.1.0] — 2026-03-22
+
+### Infrastructure
+- Migrated PocketBase from bare systemd services to Coolify (self-hosted PaaS) on VPS
+- Dockerized PocketBase with `Dockerfile` for reproducible deployments
+- Refactored hook secrets from `secrets.json` to environment variables (`$os.getenv()`)
+- Added ESLint config + CI job for PocketBase hook validation (`lint:hooks`)
+- Consolidated all URLs to `kscw.ch` domain (removed `lucanepa.com` tunnel routes)
+- Set up Uptime Kuma at `status.kscw.ch` for external monitoring
+- Added Telegram alerting via `@kscw_alerts_bot` for deploy/container notifications
+- Updated dev data sync script for Docker containers
+- Cleaned up old systemd unit files (`pocketbase-kscw`, `pocketbase-kscw-dev`, `webhook-listener`)
+
 ## [1.0.1] — 2026-03-20
 
 ### Renamed
 
-- Rename `active` field to `kscw_membership_active` on members collection to avoid confusion with `member_active` (claimed account status)
+- Rename `active` field to `kscw_membership_active` on members collection to avoid confusion with `wiedisync_active` (claimed account status)
 
 ## [1.0.0] — 2026-03-19
 
@@ -20,10 +33,10 @@ All notable changes to Wiedisync are documented in this file.
 ### Authentication & Accounts
 - Email login, signup with team selection, password reset
 - OAuth login (Google) with onboarding for missing profile data
-- Role approval system (pending → approved flow)
+- Role approval system (pending → coach_approved_team flow)
 - Superadmin / admin / member role hierarchy
 - Privacy settings and GDPR-compliant account deletion
-- Claimed vs unclaimed account distinction (`member_active`)
+- Claimed vs unclaimed account distinction (`wiedisync_active`)
 
 ### Games
 - Upcoming games with compact cards and score display

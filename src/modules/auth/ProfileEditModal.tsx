@@ -18,7 +18,6 @@ import itFlag from '../../assets/flags/it.svg'
 import chFlag from '../../assets/flags/ch.svg'
 
 const flagMap: Record<string, string> = { de: deFlag, gb: gbFlag, fr: frFlag, it: itFlag, ch: chFlag }
-import { Switch } from '@/components/ui/switch'
 import { Checkbox } from '@/components/ui/checkbox'
 import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'

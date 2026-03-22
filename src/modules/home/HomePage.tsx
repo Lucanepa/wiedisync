@@ -16,10 +16,11 @@ import GameDetailModal from '../games/components/GameDetailModal'
 import TrainingDetailModal from '../trainings/TrainingDetailModal'
 import EventDetailModal from '../events/EventDetailModal'
 import ParticipationSummary from '../../components/ParticipationSummary'
-import { useParticipation } from '../../hooks/useParticipation'
+import { useBulkParticipationStatuses } from '../../hooks/useBulkParticipationStatuses'
 import type { Game, Event, Team, Training, Hall, Member, MemberTeam, Notification } from '../../types'
 import type { RecordModel } from 'pocketbase'
 import { ClipboardList, Clock, AlertTriangle, Trophy, Bell, Calendar } from 'lucide-react'
+import LoadingSpinner from '../../components/LoadingSpinner'
 
 type ExpandedGame = Game & {
   expand?: { kscw_team?: Team & RecordModel; hall?: RecordModel }
@@ -61,7 +62,7 @@ export default function HomePage() {
   }, [sport])
 
   // Fetch user's team memberships (only when logged in)
-  const { data: memberTeams } = usePB<MemberTeamExpanded>('member_teams', {
+  const { data: memberTeams, isLoading: memberTeamsLoading } = usePB<MemberTeamExpanded>('member_teams', {
     filter: user ? `member="${user.id}"` : '',
     expand: 'team',
     perPage: 20,
@@ -159,6 +160,30 @@ export default function HomePage() {
     perPage: 10,
   })
 
+  // Bulk-fetch participation statuses for all displayed activities (2 queries total
+  // instead of 2 per row) so banners appear together with everything else
+  const allActivities = useMemo(() => {
+    const items: Array<{ id: string; type: 'game' | 'training' | 'event'; date: string }> = []
+    for (const g of nextGames) items.push({ id: g.id, type: 'game', date: g.date })
+    for (const g of latestResults) items.push({ id: g.id, type: 'game', date: g.date })
+    for (const tr of nextTrainings) items.push({ id: tr.id, type: 'training', date: tr.date })
+    for (const ev of events) items.push({ id: ev.id, type: 'event', date: ev.start_date?.split(' ')[0] ?? '' })
+    return items
+  }, [nextGames, latestResults, nextTrainings, events])
+
+  const { statusMap: participationStatuses, isLoading: bulkPartLoading } = useBulkParticipationStatuses(allActivities)
+
+  // Combined loading: wait for all primary data + participation statuses
+  // For logged-in users, we need member_teams + all dependent queries + participation statuses
+  // For guests, just the public queries (games, results, events)
+  const isInitialLoading = user
+    ? memberTeamsLoading || gamesLoading || resultsLoading || eventsLoading || (hasTeams && trainingsLoading) || bulkPartLoading
+    : gamesLoading || resultsLoading || eventsLoading
+
+  if (isInitialLoading) {
+    return <LoadingSpinner label={t('loading', { defaultValue: 'Loading...' })} />
+  }
+
   return (
     <div className="min-w-0">
       {/* Hero with sport icons flanking logo */}
@@ -242,28 +267,29 @@ export default function HomePage() {
         events={events}
         onGameClick={setSelectedGame}
         onTrainingClick={setSelectedTraining}
+        participationStatuses={participationStatuses}
       />}
 
       {/* Three sections: trainings, events, games — 1/3 each on desktop */}
       {/* On mobile: ordered by which section has the closest upcoming item */}
       <HomeSections
-        trainingsSection={hasTeams && !trainingsLoading && nextTrainings.length > 0 ? (
+        trainingsSection={hasTeams && nextTrainings.length > 0 ? (
           <div className="min-w-0">
             <SectionHeader title={t('nextTrainings')} linkTo="/trainings" linkLabel={t('allTrainings')} />
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
               {nextTrainings.map((tr) => (
-                <CompactTrainingRow key={tr.id} training={tr} onClick={() => setSelectedTraining(tr)} />
+                <CompactTrainingRow key={tr.id} training={tr} onClick={() => setSelectedTraining(tr)} participationStatus={participationStatuses.get(tr.id)} />
               ))}
             </div>
           </div>
         ) : null}
         trainingsDate={nextTrainings[0]?.date}
-        eventsSection={!eventsLoading && events.length > 0 ? (
+        eventsSection={events.length > 0 ? (
           <div className="min-w-0">
             <SectionHeader title={t('events')} linkTo="/events" linkLabel={t('allEvents')} />
             <div className="space-y-3">
               {events.map((event) => (
-                <EventRow key={event.id} event={event} onClick={() => setSelectedEvent(event)} />
+                <EventRow key={event.id} event={event} onClick={() => setSelectedEvent(event)} participationStatus={participationStatuses.get(event.id)} />
               ))}
             </div>
           </div>
@@ -271,7 +297,7 @@ export default function HomePage() {
         eventsDate={events[0]?.start_date?.split(' ')[0]}
         gamesSection={
           <div className="min-w-0 space-y-6">
-            {!resultsLoading && latestResults.length > 0 && (
+            {latestResults.length > 0 && (
               <div>
                 <SectionHeader
                   title={t('latestResults')}
@@ -285,12 +311,12 @@ export default function HomePage() {
                 />
                 <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
                   {latestResults.map((g) => (
-                    <CompactGameRow key={g.id} game={g} showScore onClick={() => setSelectedGame(g)} />
+                    <CompactGameRow key={g.id} game={g} showScore onClick={() => setSelectedGame(g)} participationStatus={participationStatuses.get(g.id)} />
                   ))}
                 </div>
               </div>
             )}
-            {!gamesLoading && nextGames.length > 0 && (
+            {nextGames.length > 0 && (
               <div>
                 <SectionHeader
                   title={t('nextGames')}
@@ -304,7 +330,7 @@ export default function HomePage() {
                 />
                 <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
                   {nextGames.map((g) => (
-                    <CompactGameRow key={g.id} game={g} showScore={false} onClick={() => setSelectedGame(g)} />
+                    <CompactGameRow key={g.id} game={g} showScore={false} onClick={() => setSelectedGame(g)} participationStatus={participationStatuses.get(g.id)} />
                   ))}
                 </div>
               </div>
@@ -429,7 +455,7 @@ function NewsRow({ notification, onMarkAsRead }: { notification: Notification; o
   )
 }
 
-function CompactGameRow({ game, showScore, onClick }: { game: ExpandedGame; showScore: boolean; onClick?: () => void }) {
+function CompactGameRow({ game, showScore, onClick, participationStatus }: { game: ExpandedGame; showScore: boolean; onClick?: () => void; participationStatus?: string }) {
   const { user } = useAuth()
   const dateStr = game.date ? formatDateCompact(game.date) : ''
   const homeWon = Number(game.home_score) > Number(game.away_score)
@@ -437,7 +463,7 @@ function CompactGameRow({ game, showScore, onClick }: { game: ExpandedGame; show
   const kscwWon = game.type === 'home' ? homeWon : awayWon
   const kscwLost = game.type === 'home' ? awayWon : homeWon
 
-  const { effectiveStatus } = useParticipation('game', game.id, game.date)
+  const effectiveStatus = participationStatus
 
   const statusBorderColor: Record<string, string> = {
     confirmed: 'bg-green-500 dark:bg-green-400',
@@ -502,14 +528,14 @@ function CompactGameRow({ game, showScore, onClick }: { game: ExpandedGame; show
   )
 }
 
-function CompactTrainingRow({ training, onClick }: { training: TrainingExpanded; onClick?: () => void }) {
+function CompactTrainingRow({ training, onClick, participationStatus }: { training: TrainingExpanded; onClick?: () => void; participationStatus?: string }) {
   const { user } = useAuth()
   const team = training.expand?.team
   const hall = training.expand?.hall
   const dateStr = training.date ? formatDate(training.date) : ''
   const weekday = training.date ? formatWeekday(training.date) : ''
 
-  const { effectiveStatus } = useParticipation('training', training.id, training.date)
+  const effectiveStatus = participationStatus
 
   const statusBorderColor: Record<string, string> = {
     confirmed: 'bg-green-500 dark:bg-green-400',
@@ -567,19 +593,14 @@ function TrainingConeIcon({ className = '' }: { className?: string }) {
 }
 
 /** Single appointment row with participation banner */
-function AppointmentRow({ appointment, onClick }: {
+function AppointmentRow({ appointment, onClick, participationStatus }: {
   appointment: { type: 'game' | 'training' | 'event'; date: string; data: ExpandedGame | TrainingExpanded | EventExpanded }
   onClick?: () => void
+  participationStatus?: string
 }) {
   const { user } = useAuth()
 
-  const activityType = appointment.type
-  const activityId = appointment.data.id
-  const activityDate = appointment.type === 'event'
-    ? (appointment.data as EventExpanded).start_date?.split(' ')[0]
-    : appointment.date
-
-  const { effectiveStatus } = useParticipation(activityType, activityId, activityDate)
+  const effectiveStatus = participationStatus
 
   const statusBorderColor: Record<string, string> = {
     confirmed: 'bg-green-500 dark:bg-green-400',
@@ -645,12 +666,14 @@ function NextAppointments({
   events,
   onGameClick,
   onTrainingClick,
+  participationStatuses,
 }: {
   games: ExpandedGame[]
   trainings: TrainingExpanded[]
   events: EventExpanded[]
   onGameClick: (g: ExpandedGame) => void
   onTrainingClick: (t: TrainingExpanded) => void
+  participationStatuses: Map<string, string>
 }) {
   const { t } = useTranslation('home')
   const navigate = useNavigate()
@@ -691,6 +714,7 @@ function NextAppointments({
               key={`${apt.type}-${i}`}
               appointment={apt}
               onClick={onClick}
+              participationStatus={participationStatuses.get(apt.data.id)}
             />
           )
         })}
@@ -746,9 +770,9 @@ function HomeSections({
   )
 }
 
-function EventRow({ event, onClick }: { event: EventExpanded; onClick: () => void }) {
+function EventRow({ event, onClick, participationStatus }: { event: EventExpanded; onClick: () => void; participationStatus?: string }) {
   const { i18n } = useTranslation()
-  const { effectiveStatus } = useParticipation('event', event.id, event.start_date?.split(' ')[0])
+  const effectiveStatus = participationStatus
   const teams = event.expand?.teams ?? []
 
   const statusBorderColor: Record<string, string> = {

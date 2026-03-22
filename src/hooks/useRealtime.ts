@@ -26,13 +26,21 @@ export function useRealtime<T extends RecordModel>(
         }
       })
       .then((unsub) => {
-        if (cancelled) unsub()
-        else unsubscribe = unsub
+        if (cancelled) {
+          // Component already unmounted (e.g. React Strict Mode double-mount).
+          // Swallow 404s from stale/missing client IDs.
+          try { unsub() } catch { /* ignore */ }
+        } else {
+          unsubscribe = unsub
+        }
+      })
+      .catch(() => {
+        // Subscribe itself failed (e.g. SSE connection refused) — ignore
       })
 
     return () => {
       cancelled = true
-      unsubscribe?.()
+      try { unsubscribe?.() } catch { /* ignore stale client ID errors */ }
     }
   }, [collection])
 }

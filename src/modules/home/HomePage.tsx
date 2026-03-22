@@ -19,7 +19,7 @@ import ParticipationSummary from '../../components/ParticipationSummary'
 import { useBulkParticipationStatuses } from '../../hooks/useBulkParticipationStatuses'
 import type { Game, Event, Team, Training, Hall, Member, MemberTeam, Notification } from '../../types'
 import type { RecordModel } from 'pocketbase'
-import { ClipboardList, Clock, AlertTriangle, Trophy, Bell, Calendar } from 'lucide-react'
+import { ClipboardList, Clock, AlertTriangle, Trophy, Bell, Calendar, LayoutGrid, List } from 'lucide-react'
 import LoadingSpinner from '../../components/LoadingSpinner'
 
 type ExpandedGame = Game & {
@@ -48,6 +48,7 @@ export default function HomePage() {
   const [selectedEvent, setSelectedEvent] = useState<EventExpanded | null>(null)
   const [showAllGames, setShowAllGames] = useState(false)
   const [showAllResults, setShowAllResults] = useState(false)
+  const [showCategorized, setShowCategorized] = useState(false)
   const [notifPanelOpen, setNotifPanelOpen] = useState(false)
   const { notifications: allNotifs, unreadCount, markAsRead, markAllAsRead } = useNotifications()
   const latestNews = allNotifs.slice(0, 3)
@@ -180,12 +181,12 @@ export default function HomePage() {
     ? memberTeamsLoading || gamesLoading || resultsLoading || eventsLoading || (hasTeams && trainingsLoading) || bulkPartLoading
     : gamesLoading || resultsLoading || eventsLoading
 
-  if (isInitialLoading) {
-    return <LoadingSpinner label={t('loading', { defaultValue: 'Loading...' })} />
-  }
-
   return (
     <div className="min-w-0">
+      {isInitialLoading ? (
+        <LoadingSpinner label={t('loading', { defaultValue: 'Loading...' })} />
+      ) : (<>
+
       {/* Hero with sport icons flanking logo */}
       <div className="flex flex-col items-center pb-6 pt-2 text-center">
         <div className="flex items-center gap-4">
@@ -260,85 +261,106 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* My next appointments — unified list of next 5 across all types */}
-      {user && isApproved && <NextAppointments
-        games={nextGames}
-        trainings={nextTrainings}
-        events={events}
-        onGameClick={setSelectedGame}
-        onTrainingClick={setSelectedTraining}
-        participationStatuses={participationStatuses}
-      />}
+      {/* View toggle: unified appointments vs categorized sections */}
+      {user && isApproved && (
+        <div className="mb-4 flex justify-end">
+          <button
+            onClick={() => setShowCategorized((v) => !v)}
+            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+          >
+            {showCategorized ? (
+              <><List className="h-4 w-4" />{t('showAppointments', { defaultValue: 'My appointments' })}</>
+            ) : (
+              <><LayoutGrid className="h-4 w-4" />{t('showCategories', { defaultValue: 'By category' })}</>
+            )}
+          </button>
+        </div>
+      )}
 
-      {/* Three sections: trainings, events, games — 1/3 each on desktop */}
-      {/* On mobile: ordered by which section has the closest upcoming item */}
-      <HomeSections
-        trainingsSection={hasTeams && nextTrainings.length > 0 ? (
-          <div className="min-w-0">
-            <SectionHeader title={t('nextTrainings')} linkTo="/trainings" linkLabel={t('allTrainings')} />
-            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-              {nextTrainings.map((tr) => (
-                <CompactTrainingRow key={tr.id} training={tr} onClick={() => setSelectedTraining(tr)} participationStatus={participationStatuses.get(tr.id)} />
-              ))}
-            </div>
-          </div>
-        ) : null}
-        trainingsDate={nextTrainings[0]?.date}
-        eventsSection={events.length > 0 ? (
-          <div className="min-w-0">
-            <SectionHeader title={t('events')} linkTo="/events" linkLabel={t('allEvents')} />
-            <div className="space-y-3">
-              {events.map((event) => (
-                <EventRow key={event.id} event={event} onClick={() => setSelectedEvent(event)} participationStatus={participationStatuses.get(event.id)} />
-              ))}
-            </div>
-          </div>
-        ) : null}
-        eventsDate={events[0]?.start_date?.split(' ')[0]}
-        gamesSection={
-          <div className="min-w-0 space-y-6">
-            {latestResults.length > 0 && (
-              <div>
-                <SectionHeader
-                  title={t('latestResults')}
-                  linkTo="/games"
-                  linkLabel={t('allResults')}
-                  filterToggle={hasTeams ? {
-                    active: !showAllResults,
-                    label: t('myTeams'),
-                    onToggle: () => setShowAllResults((v) => !v),
-                  } : undefined}
-                />
-                <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-                  {latestResults.map((g) => (
-                    <CompactGameRow key={g.id} game={g} showScore onClick={() => setSelectedGame(g)} participationStatus={participationStatuses.get(g.id)} />
-                  ))}
-                </div>
+      {/* Unified "My next appointments" view (default for logged-in users) */}
+      {user && isApproved && !showCategorized && (
+        <NextAppointments
+          games={nextGames}
+          trainings={nextTrainings}
+          events={events}
+          onGameClick={setSelectedGame}
+          onTrainingClick={setSelectedTraining}
+          onEventClick={setSelectedEvent}
+          participationStatuses={participationStatuses}
+        />
+      )}
+
+      {/* Categorized view: trainings, events, games in columns */}
+      {/* Default for guests, toggle for logged-in users */}
+      {(!user || !isApproved || showCategorized) && (
+        <HomeSections
+          trainingsSection={hasTeams && nextTrainings.length > 0 ? (
+            <div className="min-w-0">
+              <SectionHeader title={t('nextTrainings')} linkTo="/trainings" linkLabel={t('allTrainings')} />
+              <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+                {nextTrainings.map((tr) => (
+                  <CompactTrainingRow key={tr.id} training={tr} onClick={() => setSelectedTraining(tr)} participationStatus={participationStatuses.get(tr.id)} />
+                ))}
               </div>
-            )}
-            {nextGames.length > 0 && (
-              <div>
-                <SectionHeader
-                  title={t('nextGames')}
-                  linkTo="/games"
-                  linkLabel={t('allGames')}
-                  filterToggle={hasTeams ? {
-                    active: !showAllGames,
-                    label: t('myTeams'),
-                    onToggle: () => setShowAllGames((v) => !v),
-                  } : undefined}
-                />
-                <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-                  {nextGames.map((g) => (
-                    <CompactGameRow key={g.id} game={g} showScore={false} onClick={() => setSelectedGame(g)} participationStatus={participationStatuses.get(g.id)} />
-                  ))}
-                </div>
+            </div>
+          ) : null}
+          trainingsDate={nextTrainings[0]?.date}
+          eventsSection={events.length > 0 ? (
+            <div className="min-w-0">
+              <SectionHeader title={t('events')} linkTo="/events" linkLabel={t('allEvents')} />
+              <div className="space-y-3">
+                {events.map((event) => (
+                  <EventRow key={event.id} event={event} onClick={() => setSelectedEvent(event)} participationStatus={participationStatuses.get(event.id)} />
+                ))}
               </div>
-            )}
-          </div>
-        }
-        gamesDate={nextGames[0]?.date}
-      />
+            </div>
+          ) : null}
+          eventsDate={events[0]?.start_date?.split(' ')[0]}
+          gamesSection={
+            <div className="min-w-0 space-y-6">
+              {latestResults.length > 0 && (
+                <div>
+                  <SectionHeader
+                    title={t('latestResults')}
+                    linkTo="/games"
+                    linkLabel={t('allResults')}
+                    filterToggle={hasTeams ? {
+                      active: !showAllResults,
+                      label: t('myTeams'),
+                      onToggle: () => setShowAllResults((v) => !v),
+                    } : undefined}
+                  />
+                  <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+                    {latestResults.map((g) => (
+                      <CompactGameRow key={g.id} game={g} showScore onClick={() => setSelectedGame(g)} participationStatus={participationStatuses.get(g.id)} />
+                    ))}
+                  </div>
+                </div>
+              )}
+              {nextGames.length > 0 && (
+                <div>
+                  <SectionHeader
+                    title={t('nextGames')}
+                    linkTo="/games"
+                    linkLabel={t('allGames')}
+                    filterToggle={hasTeams ? {
+                      active: !showAllGames,
+                      label: t('myTeams'),
+                      onToggle: () => setShowAllGames((v) => !v),
+                    } : undefined}
+                  />
+                  <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+                    {nextGames.map((g) => (
+                      <CompactGameRow key={g.id} game={g} showScore={false} onClick={() => setSelectedGame(g)} participationStatus={participationStatuses.get(g.id)} />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          }
+          gamesDate={nextGames[0]?.date}
+        />
+      )}
 
       <GameDetailModal game={selectedGame} onClose={() => setSelectedGame(null)} />
       <TrainingDetailModal training={selectedTraining} onClose={() => setSelectedTraining(null)} />
@@ -353,6 +375,7 @@ export default function HomePage() {
           onClose={() => setNotifPanelOpen(false)}
         />
       )}
+      </>)}
     </div>
   )
 }
@@ -620,16 +643,22 @@ function AppointmentRow({ appointment, onClick, participationStatus }: {
   const weekday = formatWeekday(appointment.date)
 
   let label = ''
+  let timeStr = ''
   if (appointment.type === 'game') {
     const g = appointment.data as ExpandedGame
     label = `${g.home_team} vs ${g.away_team}`
+    if (g.time) timeStr = formatTime(g.time)
   } else if (appointment.type === 'training') {
     const tr = appointment.data as TrainingExpanded
     const team = tr.expand?.team
     const hall = tr.expand?.hall
     label = [team?.name, hall?.name].filter(Boolean).join(' · ')
+    if (tr.start_time) timeStr = formatTime(tr.start_time)
   } else {
-    label = (appointment.data as EventExpanded).title
+    const ev = appointment.data as EventExpanded
+    label = ev.title
+    const timePart = ev.start_date?.split(' ')[1]
+    if (timePart) timeStr = formatTime(timePart)
   }
 
   return (
@@ -646,13 +675,14 @@ function AppointmentRow({ appointment, onClick, participationStatus }: {
         <div className="w-20 shrink-0 text-xs text-gray-500 dark:text-gray-400">
           <div>{weekday}</div>
           <div>{dateStr}</div>
+          {timeStr && <div>{timeStr}</div>}
         </div>
         <span className="text-gray-500 dark:text-gray-400">{typeIcon[appointment.type]}</span>
         <p className="min-w-0 flex-1 truncate text-sm text-gray-900 dark:text-gray-100">{label}</p>
 
         {/* Participation summary */}
         <div className="ml-auto shrink-0">
-          <ParticipationSummary activityType={activityType} activityId={activityId} stacked />
+          <ParticipationSummary activityType={appointment.type} activityId={appointment.data.id} stacked />
         </div>
       </div>
     </div>
@@ -666,6 +696,7 @@ function NextAppointments({
   events,
   onGameClick,
   onTrainingClick,
+  onEventClick,
   participationStatuses,
 }: {
   games: ExpandedGame[]
@@ -673,16 +704,17 @@ function NextAppointments({
   events: EventExpanded[]
   onGameClick: (g: ExpandedGame) => void
   onTrainingClick: (t: TrainingExpanded) => void
+  onEventClick: (e: EventExpanded) => void
   participationStatuses: Map<string, string>
 }) {
   const { t } = useTranslation('home')
-  const navigate = useNavigate()
+  const [visibleCount, setVisibleCount] = useState(10)
 
   type Appointment = { type: 'game'; date: string; data: ExpandedGame }
     | { type: 'training'; date: string; data: TrainingExpanded }
     | { type: 'event'; date: string; data: EventExpanded }
 
-  const appointments = useMemo(() => {
+  const allAppointments = useMemo(() => {
     const items: Appointment[] = []
     for (const g of games) {
       if (g.date) items.push({ type: 'game', date: g.date, data: g })
@@ -694,8 +726,11 @@ function NextAppointments({
       if (ev.start_date) items.push({ type: 'event', date: ev.start_date.split(' ')[0], data: ev })
     }
     items.sort((a, b) => a.date.localeCompare(b.date))
-    return items.slice(0, 5)
+    return items
   }, [games, trainings, events])
+
+  const appointments = allAppointments.slice(0, visibleCount)
+  const hasMore = allAppointments.length > visibleCount
 
   if (appointments.length === 0) return null
 
@@ -707,11 +742,11 @@ function NextAppointments({
           let onClick: (() => void) | undefined
           if (apt.type === 'game') onClick = () => onGameClick(apt.data as ExpandedGame)
           else if (apt.type === 'training') onClick = () => onTrainingClick(apt.data as TrainingExpanded)
-          else onClick = () => navigate('/events')
+          else onClick = () => onEventClick(apt.data as EventExpanded)
 
           return (
             <AppointmentRow
-              key={`${apt.type}-${i}`}
+              key={`${apt.type}-${apt.data.id}`}
               appointment={apt}
               onClick={onClick}
               participationStatus={participationStatuses.get(apt.data.id)}
@@ -719,6 +754,14 @@ function NextAppointments({
           )
         })}
       </div>
+      {hasMore && (
+        <button
+          onClick={() => setVisibleCount((v) => v + 10)}
+          className="mt-2 w-full rounded-lg py-2 text-sm text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+        >
+          {t('showMore', { defaultValue: 'Show more' })}
+        </button>
+      )}
     </div>
   )
 }

@@ -63,11 +63,6 @@ export default function AbsenceCard({ absence, onEdit, onDelete, showMemberName,
           ))}
         </div>
       )}
-      {absence.approved && (
-        <span className="mt-2 inline-block rounded bg-green-100 px-2 py-0.5 text-xs text-green-700">
-          {t('approved')}
-        </span>
-      )}
     </div>
   )
 }

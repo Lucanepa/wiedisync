@@ -116,7 +116,6 @@ export default function AbsenceForm({ open, absence, onSave, onCancel }: Absence
       reason,
       reason_detail: reasonDetail,
       affects,
-      approved: false,
     }
 
     try {

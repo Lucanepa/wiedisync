@@ -30,9 +30,6 @@ export default {
   affectsGames: 'Partite',
   affectsAll: 'Tutto',
 
-  // Status
-  approved: 'Approvata',
-
   // Validation
   startDateRequired: 'La data di inizio è obbligatoria',
   endDateRequired: 'La data di fine è obbligatoria',

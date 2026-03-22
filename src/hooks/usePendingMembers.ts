@@ -3,8 +3,8 @@ import type { Member } from '../types'
 
 export function usePendingMembers(teamId?: string) {
   const filter = teamId
-    ? `approved=false && requested_team="${teamId}"`
-    : 'approved=false'
+    ? `coach_approved_team=false && requested_team="${teamId}"`
+    : 'coach_approved_team=false'
 
   return usePB<Member>('members', {
     filter,

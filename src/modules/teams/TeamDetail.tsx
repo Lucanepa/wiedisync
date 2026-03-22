@@ -147,8 +147,8 @@ export default function TeamDetail() {
 
   async function handleApprove(member: Member) {
     try {
-      await pb.collection('members').update(member.id, { approved: true })
-      logActivity('update', 'members', member.id, { approved: true })
+      await pb.collection('members').update(member.id, { coach_approved_team: true })
+      logActivity('update', 'members', member.id, { coach_approved_team: true })
       const mt = await pb.collection('member_teams').create({
         member: member.id,
         team: teamId!,

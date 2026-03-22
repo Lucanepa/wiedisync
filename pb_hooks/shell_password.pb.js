@@ -34,7 +34,7 @@ onRecordAfterUpdateSuccess("members", function(e) {
   }
 
   // Only convert if the account is still active
-  if (!record.getBool("member_active")) {
+  if (!record.getBool("wiedisync_active")) {
     console.log("[shell_password] Shell member " + record.id + " set a password but account is inactive — coach must extend first")
     return
   }

@@ -29,7 +29,7 @@ const CHANGELOG: ChangelogEntry[] = [
         items: [
           'Email login, signup, password reset',
           'Google OAuth with onboarding',
-          'Role approval system (pending → approved)',
+          'Role approval system (pending → coach approved)',
           'Privacy settings and account deletion',
         ],
       },

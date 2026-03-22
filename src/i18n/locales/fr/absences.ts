@@ -30,9 +30,6 @@ export default {
   affectsGames: 'Matchs',
   affectsAll: 'Tout',
 
-  // Status
-  approved: 'Approuvee',
-
   // Validation
   startDateRequired: 'La date de debut est requise',
   endDateRequired: 'La date de fin est requise',

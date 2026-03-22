@@ -264,8 +264,8 @@ routerAdd("POST", "/api/team-invites/claim", function (e) {
   member.set("name", firstName + " " + lastName)
   member.set("email", email)
   member.set("shell", true)
-  member.set("approved", true)
-  member.set("member_active", true)
+  member.set("coach_approved_team", true)
+  member.set("wiedisync_active", true)
   member.set("shell_expires", shellExpiresStr)
   member.set("shell_reminder_sent", false)
   member.set("birthdate_visibility", "hidden")
@@ -370,7 +370,7 @@ routerAdd("POST", "/api/team-invites/extend", function (e) {
   var newExpiryStr = toIsoString(newExpiry)
 
   member.set("shell_expires", newExpiryStr)
-  member.set("member_active", true)
+  member.set("wiedisync_active", true)
   member.set("shell_reminder_sent", false)
   $app.save(member)
 

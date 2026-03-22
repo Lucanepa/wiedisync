@@ -738,7 +738,7 @@ function NextAppointments({
     <div className="mb-6">
       <h2 className="mb-3 text-lg font-semibold text-gray-900 dark:text-gray-100">{t('myNextAppointments')}</h2>
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-        {appointments.map((apt, i) => {
+        {appointments.map((apt) => {
           let onClick: (() => void) | undefined
           if (apt.type === 'game') onClick = () => onGameClick(apt.data as ExpandedGame)
           else if (apt.type === 'training') onClick = () => onTrainingClick(apt.data as TrainingExpanded)

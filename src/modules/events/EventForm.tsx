@@ -207,12 +207,12 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
     setSessions((prev) => prev.map((s, i) => i === index ? { ...s, [field]: value } : s))
   }
 
-  // Auto-select when user manages only one team
+  // Auto-select when user manages only one team (pre-fill, user can still remove)
   useEffect(() => {
-    if (singleTeam && !event && availableTeams.length === 1) {
+    if (singleTeam && !event && availableTeams.length === 1 && selectedTeams.length === 0) {
       setSelectedTeams([availableTeams[0].id])
     }
-  }, [singleTeam, event, availableTeams])
+  }, [singleTeam, event, availableTeams, selectedTeams.length])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -416,15 +416,13 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
           />
         )}
 
-        {!singleTeam && (
-          <FormField label={t('teamsInvolved')}>
-            <TeamMultiSelect
-              options={teamOptions}
-              selected={selectedTeams}
-              onChange={setSelectedTeams}
-            />
-          </FormField>
-        )}
+        <FormField label={t('teamsInvolved')} helperText={t('teamsInvolvedHint')}>
+          <TeamMultiSelect
+            options={teamOptions}
+            selected={selectedTeams}
+            onChange={setSelectedTeams}
+          />
+        </FormField>
 
         {/* Participation mode selector — only for multi-day events */}
         {isMultiDay && (

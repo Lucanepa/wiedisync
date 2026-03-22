@@ -18,6 +18,7 @@ export default {
   location: 'Ort',
   description: 'Beschreibung',
   teamsInvolved: 'Teams',
+  teamsInvolvedHint: 'Leer lassen für vereinsweite Events, sichtbar für alle Mitglieder',
 
   // Event types
   club: 'Verein',

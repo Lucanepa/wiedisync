@@ -5,8 +5,7 @@
 // Resolves email recipients from team leadership relations in PB
 // Auto-deployed via GitHub webhook (verified working)
 
-var _secrets = JSON.parse(String.fromCharCode.apply(null, new Uint8Array($os.readFile(__hooks + "/secrets.json"))))
-var TURNSTILE_SECRET = _secrets.TURNSTILE_SECRET
+var TURNSTILE_SECRET = $os.getenv("TURNSTILE_SECRET")
 
 // General sport email routing (no specific team selected)
 var SPORT_EMAILS = {

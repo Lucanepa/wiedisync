@@ -1,8 +1,7 @@
 // Shared Swiss Volley sync logic — loaded via require() from hooks
 
 var SV_API_BASE = "https://api.volleyball.ch"
-var _secrets = JSON.parse(String.fromCharCode.apply(null, new Uint8Array($os.readFile(__hooks + "/secrets.json"))))
-var SV_API_KEY = _secrets.SV_API_KEY
+var SV_API_KEY = $os.getenv("SV_API_KEY")
 
 var SV_TEAM_IDS = {
   "12747": "H3",

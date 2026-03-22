@@ -7,8 +7,7 @@
 
 // Configuration — update after deploying the CF Worker
 var PUSH_WORKER_URL = "https://kscw-push.lucanepa.workers.dev"
-var _secrets = JSON.parse(String.fromCharCode.apply(null, new Uint8Array($os.readFile(__hooks + "/secrets.json"))))
-var PUSH_AUTH_SECRET = _secrets.PUSH_AUTH_SECRET
+var PUSH_AUTH_SECRET = $os.getenv("PUSH_AUTH_SECRET")
 
 /**
  * Send push notification to all active subscriptions for a member.

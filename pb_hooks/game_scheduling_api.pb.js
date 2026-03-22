@@ -4,8 +4,7 @@
 
 var lib = require(__hooks + "/game_scheduling_lib.js")
 
-var _secrets = JSON.parse(String.fromCharCode.apply(null, new Uint8Array($os.readFile(__hooks + "/secrets.json"))))
-var TURNSTILE_SECRET = _secrets.TURNSTILE_SECRET
+var TURNSTILE_SECRET = $os.getenv("TURNSTILE_SECRET")
 
 function verifyTurnstile(token) {
   if (!token) return false

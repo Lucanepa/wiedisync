@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import Modal from '@/components/Modal'
 import { useTeamMembers } from '../hooks/useTeamMembers'
 import { useTeamParticipations, useAllEventParticipations } from '../hooks/useParticipation'
+import { usePB } from '../hooks/usePB'
 import pb from '../pb'
 import { getFileUrl } from '../utils/pbFile'
 import type { Participation, Absence, Member, EventSession } from '../types'
@@ -54,12 +55,46 @@ export default function ParticipationRosterModal({
   const [staffMembers, setStaffMembers] = useState<Member[]>([])
   const [activeSessionTab, setActiveSessionTab] = useState<string | null>(null) // null = overall
 
+  // For club-wide events (no team), fetch all participations and resolve members from them
+  const [clubWideMembers, setClubWideMembers] = useState<Member[]>([])
+  const [clubWideLoading, setClubWideLoading] = useState(false)
+  const isClubWide = !teamId
+
   const hasSessionMode = participationMode && participationMode !== 'whole' && eventSessions && eventSessions.length > 0
 
-  const memberList: Member[] = members
-    .map((mt) => mt.expand?.member)
-    .filter((m): m is Member => m !== undefined)
-    .sort((a, b) => (a.last_name ?? '').localeCompare(b.last_name ?? ''))
+  // Club-wide: fetch all participations for the event, then resolve member info
+  const { data: clubWideParticipations, isLoading: clubWidePartsLoading } = usePB<Participation>('participations', {
+    filter: isClubWide && activityId
+      ? `activity_type="${activityType}" && activity_id="${activityId}"`
+      : '',
+    all: true,
+    enabled: isClubWide && !!activityId && open,
+  })
+
+  useEffect(() => {
+    if (!isClubWide || !open || clubWideParticipations.length === 0) {
+      setClubWideMembers([])
+      return
+    }
+    setClubWideLoading(true)
+    const uniqueMemberIds = [...new Set(clubWideParticipations.map(p => p.member))]
+    const filter = uniqueMemberIds.map(id => `id="${id}"`).join(' || ')
+    pb.collection('members').getFullList<Member>({
+      filter,
+      fields: 'id,first_name,last_name,photo',
+    })
+      .then(m => setClubWideMembers(m.sort((a, b) => (a.last_name ?? '').localeCompare(b.last_name ?? ''))))
+      .catch(() => setClubWideMembers([]))
+      .finally(() => setClubWideLoading(false))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isClubWide, open, clubWideParticipations.length])
+
+  const memberList: Member[] = isClubWide
+    ? clubWideMembers
+    : members
+        .map((mt) => mt.expand?.member)
+        .filter((m): m is Member => m !== undefined)
+        .sort((a, b) => (a.last_name ?? '').localeCompare(b.last_name ?? ''))
 
   const memberIds = memberList.map((m) => m.id)
 
@@ -67,23 +102,31 @@ export default function ParticipationRosterModal({
   const { participations: regularParticipations, isLoading: regularLoading } = useTeamParticipations(
     activityType,
     activityId ?? '',
-    memberIds,
+    isClubWide ? [] : memberIds, // skip for club-wide (we use clubWideParticipations)
     hasSessionMode ? (activeSessionTab ?? undefined) : undefined,
   )
 
   // For session mode overall tab: fetch ALL participations across sessions
   const { participations: allParticipations, isLoading: allLoading } = useAllEventParticipations(
-    hasSessionMode && activeSessionTab === null ? (activityId ?? '') : '',
-    memberIds,
+    hasSessionMode && activeSessionTab === null && !isClubWide ? (activityId ?? '') : '',
+    isClubWide ? [] : memberIds,
   )
 
-  const participations = hasSessionMode && activeSessionTab === null ? allParticipations : regularParticipations
-  const participationsLoading = hasSessionMode && activeSessionTab === null ? allLoading : regularLoading
-  const isLoading = membersLoading || participationsLoading
+  const participations = isClubWide
+    ? clubWideParticipations
+    : hasSessionMode && activeSessionTab === null
+      ? allParticipations
+      : regularParticipations
+  const participationsLoading = isClubWide
+    ? clubWidePartsLoading
+    : hasSessionMode && activeSessionTab === null
+      ? allLoading
+      : regularLoading
+  const isLoading = (isClubWide ? clubWideLoading || clubWidePartsLoading : membersLoading) || participationsLoading
 
   // Fetch staff participations (coaches/team_responsible who aren't in member_teams)
   useEffect(() => {
-    if (!open || !activityId) return
+    if (!open || !activityId || isClubWide) return
     pb.collection('participations')
       .getFullList<Participation>({
         filter: `activity_type="${activityType}" && activity_id="${activityId}" && is_staff=true`,
@@ -106,7 +149,7 @@ export default function ParticipationRosterModal({
       })
       .catch(() => setStaffMembers([]))
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, activityId, activityType, memberIds.join(',')])
+  }, [open, activityId, activityType, isClubWide, memberIds.join(',')])
 
   // For the overall tab, compute per-member session counts
   const memberSessionCounts = useMemo(() => {

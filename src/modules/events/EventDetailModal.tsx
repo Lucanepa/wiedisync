@@ -10,9 +10,10 @@ import SessionParticipationSheet from '../../components/SessionParticipationShee
 import { useAuth } from '../../hooks/useAuth'
 import { useParticipation } from '../../hooks/useParticipation'
 import { usePB } from '../../hooks/usePB'
+import { useMutation } from '../../hooks/useMutation'
 import { formatDate, formatTime } from '../../utils/dateHelpers'
 import { Calendar, Clock, MapPin, Users, Check, MessageSquare, UserPlus } from 'lucide-react'
-import type { Event, Team, EventSession } from '../../types'
+import type { Event, Team, EventSession, Participation } from '../../types'
 
 type EventExpanded = Event & { expand?: { teams?: Team[] } }
 
@@ -118,7 +119,7 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
 
           {/* Participation section */}
           <div className="space-y-3 border-t border-gray-200 pt-3 dark:border-gray-700">
-            {/* Multi-session button */}
+            {/* Multi-session button + note */}
             {hasSessionMode && sessions.length > 0 ? (
               <>
                 <button
@@ -133,6 +134,9 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
                     sessions={sessions}
                     onClose={() => setSessionSheetOpen(false)}
                   />
+                )}
+                {canParticipate && (
+                  <EventSessionNote eventId={event.id} sessions={sessions} />
                 )}
               </>
             ) : canParticipate ? (
@@ -330,6 +334,78 @@ function EventParticipation({ event, isStaff }: { event: EventExpanded; isStaff:
             </button>
           </div>
         </div>
+      )}
+    </div>
+  )
+}
+
+/** Note field for per-session events — saves the same note to all session participations */
+function EventSessionNote({ eventId, sessions }: { eventId: string; sessions: EventSession[] }) {
+  const { t } = useTranslation('participation')
+  const { user } = useAuth()
+  const { update } = useMutation<Participation>('participations')
+
+  const sessionFilter = sessions.map(s => `session_id="${s.id}"`).join(' || ')
+  const { data: allParts, refetch } = usePB<Participation>('participations', {
+    filter: user && eventId
+      ? `member="${user.id}" && activity_type="event" && activity_id="${eventId}" && (${sessionFilter})`
+      : '',
+    all: true,
+    enabled: !!user && !!eventId && sessions.length > 0,
+  })
+
+  const savedNote = allParts[0]?.note ?? ''
+  const [noteText, setNoteText] = useState(savedNote)
+  const [noteSaved, setNoteSaved] = useState(false)
+  const noteInitRef = useRef(savedNote)
+
+  if (savedNote !== noteInitRef.current) {
+    noteInitRef.current = savedNote
+    setNoteText(savedNote)
+  }
+
+  useEffect(() => {
+    if (!noteSaved) return
+    const timer = setTimeout(() => setNoteSaved(false), 2000)
+    return () => clearTimeout(timer)
+  }, [noteSaved])
+
+  const saveNote = async () => {
+    if (noteText === savedNote || allParts.length === 0) return
+    await Promise.all(allParts.map(p => update(p.id, { note: noteText })))
+    setNoteSaved(true)
+    refetch()
+  }
+
+  // Only show if user has at least one session participation
+  if (allParts.length === 0) return null
+
+  return (
+    <div className="relative">
+      <div className="flex items-center gap-2">
+        <MessageSquare className="h-4 w-4 shrink-0 text-gray-400" />
+        <input
+          type="text"
+          value={noteText}
+          onChange={(e) => setNoteText(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') saveNote() }}
+          onBlur={saveNote}
+          placeholder={t('notePlaceholder')}
+          className="min-w-0 flex-1 rounded-md border border-gray-200 bg-transparent px-2.5 py-1 text-sm text-gray-700 placeholder:text-gray-400 focus:border-brand-400 focus:outline-none dark:border-gray-600 dark:text-gray-300 dark:placeholder:text-gray-500 dark:focus:border-brand-500"
+        />
+        <button
+          onClick={saveNote}
+          disabled={noteText === savedNote}
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-green-600 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-green-400"
+        >
+          <Check className="h-4 w-4" />
+        </button>
+      </div>
+      {noteSaved && (
+        <span className="absolute -top-7 left-1/2 -translate-x-1/2 flex items-center gap-1 whitespace-nowrap rounded-md bg-green-600 px-2 py-0.5 text-[11px] font-medium text-white shadow-lg animate-fade-in">
+          <Check className="h-3 w-3" />
+          {t('saved')}
+        </span>
       )}
     </div>
   )

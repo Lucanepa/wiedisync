@@ -22,7 +22,7 @@ import type { MemberTeam, Team } from '../types'
 import {
   Home, Calendar, Trophy, UserX, PenSquare, PartyPopper, Users,
   ClipboardList, Building2, CalendarClock, Database, RefreshCcw, Activity,
-  Settings, ChevronDown, MessageSquare,
+  HeartPulse, Settings, ChevronDown, MessageSquare,
 } from 'lucide-react'
 
 type ExpandedMemberTeam = MemberTeam & { expand?: { team?: Team } }
@@ -66,6 +66,7 @@ function useNavItems(isLoggedIn: boolean, isApproved: boolean) {
       { to: '/admin/database', label: t('manageDb'), icon: <Database className={iconClass} /> },
       { to: '/admin/clubdesk-sync', label: t('clubdeskSync'), icon: <RefreshCcw className={iconClass} /> },
       { to: '/admin/infra', label: t('infraHealth'), icon: <Activity className={iconClass} /> },
+      { to: '/admin/data-health', label: t('dataHealth'), icon: <HeartPulse className={iconClass} /> },
     ],
   }
 }

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import Modal from '@/components/Modal'
-import FilterChips from '../../components/FilterChips'
+import CategoryMultiSelect from '../../components/CategoryMultiSelect'
 import TeamMultiSelect from '../../components/TeamMultiSelect'
 import { useTeams } from '../../hooks/useTeams'
 import { pbNameToColorKey } from '../../utils/teamColors'
@@ -19,13 +19,13 @@ export default function CalendarFilters({ open, onClose, filters, onChange, allo
   const { t: tc } = useTranslation('common')
 
   const allSourceOptions = [
-    { value: 'game-home', label: t('gameTypeHome'), colorClasses: 'bg-brand-100 text-brand-800 border-brand-200' },
-    { value: 'game-away', label: t('gameTypeAway'), colorClasses: 'bg-amber-100 text-amber-800 border-amber-200' },
-    { value: 'training', label: t('sourceTrainings'), colorClasses: 'bg-green-100 text-green-800 border-green-200' },
-    { value: 'closure', label: t('sourceClosures'), colorClasses: 'bg-red-100 text-red-800 border-red-200' },
-    { value: 'event', label: t('sourceEvents'), colorClasses: 'bg-purple-100 text-purple-800 border-purple-200' },
-    { value: 'hall', label: t('sourceHallHW'), colorClasses: 'bg-cyan-100 text-cyan-800 border-cyan-200' },
-    { value: 'absence', label: t('sourceAbsences'), colorClasses: 'bg-gray-900 text-white border-gray-700' },
+    { value: 'game-home', label: t('gameTypeHome'), color: { bg: '#4A55A2', text: '#ffffff', border: '#3b4590' }, group: t('filterGroupGames') },
+    { value: 'game-away', label: t('gameTypeAway'), color: { bg: '#FFC832', text: '#78350f', border: '#e6b42d' }, group: t('filterGroupGames') },
+    { value: 'training', label: t('sourceTrainings'), color: { bg: '#16a34a', text: '#ffffff', border: '#15803d' }, group: t('filterGroupActivities') },
+    { value: 'event', label: t('sourceEvents'), color: { bg: '#7e22ce', text: '#ffffff', border: '#6b21a8' }, group: t('filterGroupActivities') },
+    { value: 'hall', label: t('sourceHallHW'), color: { bg: '#0891b2', text: '#ffffff', border: '#0e7490' }, group: t('filterGroupVenue') },
+    { value: 'closure', label: t('sourceClosures'), color: { bg: '#dc2626', text: '#ffffff', border: '#b91c1c' }, group: t('filterGroupVenue') },
+    { value: 'absence', label: t('sourceAbsences'), color: { bg: '#374151', text: '#ffffff', border: '#1f2937' }, group: t('filterGroupOther') },
   ]
   const sourceOptions = allowedSources
     ? allSourceOptions.filter((o) => allowedSources.includes(o.value as SourceFilter))
@@ -50,16 +50,16 @@ export default function CalendarFilters({ open, onClose, filters, onChange, allo
   return (
     <Modal open={open} onClose={onClose} title={t('filterTitle')} size="sm">
       <div className="space-y-5">
-        {/* Source type chips */}
+        {/* Source type dropdown */}
         <div>
           <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
             {t('filterCategories')}
           </label>
-          <FilterChips
+          <CategoryMultiSelect
             options={sourceOptions}
             selected={filters.sources}
             onChange={(sources) => onChange({ ...filters, sources: sources as SourceFilter[] })}
-            showBulkToggle
+            placeholder={tc('all')}
           />
         </div>
 

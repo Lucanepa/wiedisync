@@ -17,6 +17,12 @@ export default {
   filterTitle: 'Filter',
   filterCategories: 'Categories',
 
+  // Filter groups
+  filterGroupGames: 'Games',
+  filterGroupActivities: 'Activities',
+  filterGroupVenue: 'Venue',
+  filterGroupOther: 'Other',
+
   // Source filters
   sourceGames: 'Games',
   sourceTrainings: 'Trainings',

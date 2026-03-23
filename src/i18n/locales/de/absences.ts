@@ -28,6 +28,7 @@ export default {
   // Affects options
   affectsTrainings: 'Trainings',
   affectsGames: 'Spiele',
+  affectsEvents: 'Events',
   affectsAll: 'Alles',
 
   // Validation
@@ -70,4 +71,31 @@ export default {
   importInvalidReason: 'Ungültiger Grund: "{{value}}"',
   importInvalidDate: 'Ungültiges Datumsformat',
   importParseError: 'Datei konnte nicht gelesen werden',
+
+  // Indefinite
+  indefinite: 'Unbefristet',
+  indefiniteHint: 'kein Enddatum',
+
+  // Weekly unavailability
+  tabWeeklyUnavailability: 'Wöchentliche Abwesenheit',
+  newWeekly: 'Neue Wöchentliche',
+  newWeeklyTitle: 'Neue wöchentliche Abwesenheit',
+  editWeeklyTitle: 'Wöchentliche Abwesenheit bearbeiten',
+  daysOfWeek: 'Wochentage',
+  noteOptional: 'Notiz (optional)',
+  notePlaceholder: 'Zusätzliche Informationen...',
+  atLeastOneDay: 'Mindestens ein Tag wählen',
+  noWeeklyAbsences: 'Keine wöchentlichen Abwesenheiten',
+  noWeeklyAbsencesDescription: 'Richte regelmässige wöchentliche Abwesenheiten ein.',
+  deleteWeeklyTitle: 'Wöchentliche Abwesenheit löschen',
+  deleteWeeklyMessage: 'Bist du sicher, dass du diese wöchentliche Abwesenheit löschen willst?',
+
+  // Day abbreviations
+  dayMon: 'Mo',
+  dayTue: 'Di',
+  dayWed: 'Mi',
+  dayThu: 'Do',
+  dayFri: 'Fr',
+  daySat: 'Sa',
+  daySun: 'So',
 } as const

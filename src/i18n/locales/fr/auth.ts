@@ -115,6 +115,15 @@ export default {
   resetSuccess: 'Votre mot de passe a ete modifie avec succes. Vous pouvez maintenant vous connecter.',
   resetError: 'Ce lien est invalide ou expire. Veuillez demander un nouveau lien de reinitialisation.',
 
+  // Team requests
+  addTeam: 'Ajouter une equipe',
+  addTeamTitle: 'Rejoindre une equipe',
+  addTeamDescription: 'Selectionnez une equipe que vous souhaitez rejoindre. L\'entraineur doit approuver votre demande.',
+  noTeamsAvailable: 'Aucune equipe supplementaire disponible.',
+  sendRequest: 'Envoyer la demande',
+  teamRequestError: 'Erreur lors de l\'envoi de la demande',
+  teamRequestSent: 'Demande envoyee',
+
   // Danger Zone
   dangerZone: 'Zone dangereuse',
   deleteAccount: 'Supprimer le compte',

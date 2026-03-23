@@ -272,8 +272,10 @@ export interface Absence extends RecordModel {
   end_date: string
   reason: 'injury' | 'vacation' | 'work' | 'personal' | 'other'
   reason_detail: string
-  affects: string[]
-
+  affects: string[] // 'all', 'trainings', 'games', 'events'
+  type: 'standard' | 'weekly'
+  days_of_week: number[] // 0=Mon..6=Sun (only for type='weekly')
+  indefinite: boolean
 }
 
 export interface Event extends RecordModel {

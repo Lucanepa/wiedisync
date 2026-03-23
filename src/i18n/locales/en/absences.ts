@@ -28,6 +28,7 @@ export default {
   // Affects options
   affectsTrainings: 'Trainings',
   affectsGames: 'Games',
+  affectsEvents: 'Events',
   affectsAll: 'All',
 
   // Validation
@@ -70,4 +71,31 @@ export default {
   importInvalidReason: 'Invalid reason: "{{value}}"',
   importInvalidDate: 'Invalid date format',
   importParseError: 'Could not read file',
+
+  // Indefinite
+  indefinite: 'Indefinite',
+  indefiniteHint: 'no end date',
+
+  // Weekly unavailability
+  tabWeeklyUnavailability: 'Weekly Unavailability',
+  newWeekly: 'New Weekly',
+  newWeeklyTitle: 'New Weekly Unavailability',
+  editWeeklyTitle: 'Edit Weekly Unavailability',
+  daysOfWeek: 'Days of week',
+  noteOptional: 'Note (optional)',
+  notePlaceholder: 'Additional information...',
+  atLeastOneDay: 'Select at least one day',
+  noWeeklyAbsences: 'No weekly unavailabilities',
+  noWeeklyAbsencesDescription: 'Set up recurring weekly unavailabilities.',
+  deleteWeeklyTitle: 'Delete Weekly Unavailability',
+  deleteWeeklyMessage: 'Are you sure you want to delete this weekly unavailability?',
+
+  // Day abbreviations
+  dayMon: 'Mon',
+  dayTue: 'Tue',
+  dayWed: 'Wed',
+  dayThu: 'Thu',
+  dayFri: 'Fri',
+  daySat: 'Sat',
+  daySun: 'Sun',
 } as const

@@ -28,6 +28,7 @@ export default {
   // Affects options
   affectsTrainings: 'Allenamenti',
   affectsGames: 'Partite',
+  affectsEvents: 'Eventi',
   affectsAll: 'Tutto',
 
   // Validation
@@ -70,4 +71,31 @@ export default {
   importInvalidReason: 'Motivo non valido: "{{value}}"',
   importInvalidDate: 'Formato data non valido',
   importParseError: 'Impossibile leggere il file',
+
+  // Indefinite
+  indefinite: 'Indefinito',
+  indefiniteHint: 'nessuna data di fine',
+
+  // Weekly unavailability
+  tabWeeklyUnavailability: 'Indisponibilità settimanale',
+  newWeekly: 'Nuova settimanale',
+  newWeeklyTitle: 'Nuova indisponibilità settimanale',
+  editWeeklyTitle: 'Modifica indisponibilità settimanale',
+  daysOfWeek: 'Giorni della settimana',
+  noteOptional: 'Nota (facoltativo)',
+  notePlaceholder: 'Informazioni aggiuntive...',
+  atLeastOneDay: 'Seleziona almeno un giorno',
+  noWeeklyAbsences: 'Nessuna indisponibilità settimanale',
+  noWeeklyAbsencesDescription: 'Configura indisponibilità settimanali ricorrenti.',
+  deleteWeeklyTitle: 'Elimina indisponibilità settimanale',
+  deleteWeeklyMessage: 'Sei sicuro di voler eliminare questa indisponibilità settimanale?',
+
+  // Day abbreviations
+  dayMon: 'Lun',
+  dayTue: 'Mar',
+  dayWed: 'Mer',
+  dayThu: 'Gio',
+  dayFri: 'Ven',
+  daySat: 'Sab',
+  daySun: 'Dom',
 } as const

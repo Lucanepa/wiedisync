@@ -18,6 +18,7 @@ export default function AbsenceCard({ absence, onEdit, onDelete, showMemberName,
   const affectsLabels: Record<string, string> = {
     trainings: t('affectsTrainings'),
     games: t('affectsGames'),
+    events: t('affectsEvents'),
     all: t('affectsAll'),
   }
 
@@ -28,7 +29,12 @@ export default function AbsenceCard({ absence, onEdit, onDelete, showMemberName,
           <StatusBadge status={absence.reason} />
           <span className="text-sm text-gray-700 dark:text-gray-300">
             {formatDate(absence.start_date)}
-            {absence.start_date !== absence.end_date && ` — ${formatDate(absence.end_date)}`}
+            {absence.indefinite
+              ? ` — ${t('indefinite')}`
+              : absence.start_date !== absence.end_date
+                ? ` — ${formatDate(absence.end_date)}`
+                : ''
+            }
           </span>
           {showMemberName && memberName && (
             <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{memberName}</span>

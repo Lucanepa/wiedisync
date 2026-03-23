@@ -115,6 +115,15 @@ export default {
   resetSuccess: 'La tua password è stata cambiata con successo. Ora puoi accedere.',
   resetError: 'Questo link non è valido o è scaduto. Richiedi un nuovo link di reset.',
 
+  // Team requests
+  addTeam: 'Aggiungi squadra',
+  addTeamTitle: 'Unisciti a una squadra',
+  addTeamDescription: 'Seleziona una squadra a cui vorresti unirti. L\'allenatore deve approvare la tua richiesta.',
+  noTeamsAvailable: 'Nessuna altra squadra disponibile.',
+  sendRequest: 'Invia richiesta',
+  teamRequestError: 'Errore nell\'invio della richiesta',
+  teamRequestSent: 'Richiesta inviata',
+
   // Danger Zone
   dangerZone: 'Zona pericolosa',
   deleteAccount: 'Elimina account',

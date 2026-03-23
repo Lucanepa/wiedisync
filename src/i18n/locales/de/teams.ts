@@ -94,6 +94,7 @@ export default {
   pendingRequests: '{{count}} ausstehende Beitrittsanfrage(n)',
   approve: 'Annehmen',
   reject: 'Ablehnen',
+  teamJoinRequest: 'Beitrittsanfrage',
 
   // QR invite / external user
   inviteExternalUser: 'Externen Benutzer hinzufügen',

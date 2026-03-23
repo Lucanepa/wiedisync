@@ -5,9 +5,8 @@ import RichText from '../../components/RichText'
 import ParticipationButton from '../../components/ParticipationButton'
 import ParticipationSummary from '../../components/ParticipationSummary'
 import { useAuth } from '../../hooks/useAuth'
-import { useParticipation } from '../../hooks/useParticipation'
 import { formatDate } from '../../utils/dateHelpers'
-import type { Event, Team } from '../../types'
+import type { Event, Team, Participation } from '../../types'
 
 type EventExpanded = Event & { expand?: { teams?: Team[] } }
 
@@ -31,6 +30,10 @@ interface EventCardProps {
   onEdit?: (event: Event) => void
   onDelete?: (eventId: string) => void
   onOpenRoster?: (event: Event) => void
+  /** Pre-fetched participations for this event (from batch query) */
+  participations?: Participation[]
+  /** Pre-fetched current user's participation (from batch query) */
+  myParticipation?: Participation
 }
 
 const statusBorderColor: Record<string, string> = {
@@ -41,7 +44,7 @@ const statusBorderColor: Record<string, string> = {
   absent: 'bg-gray-400 dark:bg-gray-500',
 }
 
-export default function EventCard({ event, onClick, onEdit, onDelete, onOpenRoster }: EventCardProps) {
+export default function EventCard({ event, onClick, onEdit, onDelete, onOpenRoster, participations, myParticipation }: EventCardProps) {
   const { t } = useTranslation('events')
   const { user, canParticipateIn } = useAuth()
   const teams = event.expand?.teams ?? []
@@ -50,7 +53,7 @@ export default function EventCard({ event, onClick, onEdit, onDelete, onOpenRost
   const canRSVP = user && (
     !event.teams?.length || event.teams.some((tid) => canParticipateIn(tid))
   )
-  const { effectiveStatus } = useParticipation('event', event.id, event.start_date?.split(' ')[0])
+  const myStatus = myParticipation?.status ?? null
 
   return (
     <div
@@ -61,8 +64,8 @@ export default function EventCard({ event, onClick, onEdit, onDelete, onOpenRost
       onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick() } } : undefined}
     >
       {/* Participation status vertical banner */}
-      {user && effectiveStatus && (
-        <div className={`w-1 shrink-0 ${statusBorderColor[effectiveStatus] ?? ''}`} />
+      {user && myStatus && (
+        <div className={`w-1 shrink-0 ${statusBorderColor[myStatus] ?? ''}`} />
       )}
       <div className="flex-1 p-3">
       {/* Top row: badge + title + actions */}
@@ -151,8 +154,9 @@ export default function EventCard({ event, onClick, onEdit, onDelete, onOpenRost
             respondBy={event.respond_by?.split(' ')[0]}
             maxPlayers={event.max_players}
             requireNoteIfAbsent={event.require_note_if_absent}
+            existingParticipation={myParticipation}
           />
-          <ParticipationSummary activityType="event" activityId={event.id} compact hideExtras />
+          <ParticipationSummary activityType="event" activityId={event.id} compact hideExtras participations={participations} />
         </div>
       )}
       </div>

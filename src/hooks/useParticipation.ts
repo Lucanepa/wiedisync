@@ -117,12 +117,12 @@ export function useParticipation(
         })
       }
       setSaveConfirmed(true)
-      refetch()
+      // Skip explicit refetch — realtime subscription handles data sync
     } catch {
       // Revert optimistic update on failure
       setOptimisticStatus(null)
     }
-  }, [user, participation, activityType, activityId, isStaff, sessionId, create, update, refetch])
+  }, [user, participation, activityType, activityId, isStaff, sessionId, create, update])
 
   const clearStatus = useCallback(async () => {
     if (participation) {
@@ -130,13 +130,13 @@ export function useParticipation(
       setSaveConfirmed(false)
       try {
         await remove(participation.id)
-        refetch()
+        // Skip explicit refetch — realtime subscription handles data sync
       } catch {
         // Revert — restore the original status
         setOptimisticStatus(participation.status)
       }
     }
-  }, [participation, remove, refetch])
+  }, [participation, remove])
 
   // Clear optimistic status once server data catches up
   const serverStatus = participation?.status ?? null

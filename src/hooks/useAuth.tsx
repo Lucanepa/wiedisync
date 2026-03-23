@@ -31,7 +31,7 @@ interface AuthContextValue {
   getGuestLevel: (teamId: string) => number
   isGuestIn: (teamId: string) => boolean
   isLoading: boolean
-  login: (email: string, password: string) => Promise<void>
+  login: (email: string, password: string, turnstileToken?: string) => Promise<void>
   loginWithOAuth: (provider: string) => Promise<void>
   logout: () => void
 }
@@ -172,8 +172,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
   }, [user?.id])
 
-  const login = useCallback(async (email: string, password: string) => {
-    await pb.collection('members').authWithPassword(email, password)
+  const login = useCallback(async (email: string, password: string, turnstileToken?: string) => {
+    await pb.collection('members').authWithPassword(email, password, {
+      headers: turnstileToken ? { 'X-Turnstile-Token': turnstileToken } : {},
+    })
   }, [])
 
   const loginWithOAuth = useCallback(async (provider: string) => {

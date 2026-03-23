@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
 import { useAuth } from '../../hooks/useAuth'
 import { useTheme } from '../../hooks/useTheme'
 import { usePB } from '../../hooks/usePB'
@@ -22,6 +23,7 @@ import chFlag from '../../assets/flags/ch.svg'
 import type { Team } from '../../types'
 
 const flagMap: Record<string, string> = { de: deFlag, gb: gbFlag, fr: frFlag, it: itFlag, ch: chFlag }
+const TURNSTILE_SITE_KEY = '0x4AAAAAACoYmx3xiDfRbmv9'
 
 type Step = 'email' | 'claim' | 'register'
 
@@ -52,6 +54,8 @@ export default function SignUpPage() {
   const [loading, setLoading] = useState(false)
   const [resetSent, setResetSent] = useState(false)
   const [showPrivacy, setShowPrivacy] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const turnstileRef = useRef<TurnstileInstance>(null)
 
   const { data: teams } = usePB<Team>('teams', {
     filter: 'active=true',
@@ -75,7 +79,10 @@ export default function SignUpPage() {
     try {
       const res = await pb.send('/api/check-email', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(turnstileToken ? { 'X-Turnstile-Token': turnstileToken } : {}),
+        },
         body: JSON.stringify({ email: email.trim().toLowerCase() }),
       })
 
@@ -94,6 +101,8 @@ export default function SignUpPage() {
       }
     } catch {
       setError(t('registrationFailed'))
+      turnstileRef.current?.reset()
+      setTurnstileToken('')
     } finally {
       setLoading(false)
     }
@@ -134,12 +143,16 @@ export default function SignUpPage() {
         language: selectedLanguage,
         birthdate_visibility: 'hidden',
         club: selectedTeamObj?.club || '',
+      }, {
+        headers: turnstileToken ? { 'X-Turnstile-Token': turnstileToken } : {},
       })
       await login(email.trim().toLowerCase(), password)
       logActivity('create', 'members', newMember.id, { first_name: firstName, last_name: lastName, requested_team: selectedTeam })
       navigate('/pending', { replace: true })
     } catch {
       setError(t('registrationFailed'))
+      turnstileRef.current?.reset()
+      setTurnstileToken('')
     } finally {
       setLoading(false)
     }
@@ -160,6 +173,14 @@ export default function SignUpPage() {
           <h1 className="mb-6 text-center text-xl font-bold text-gray-900 dark:text-gray-100">
             {t('createAccount')}
           </h1>
+
+          <Turnstile
+            ref={turnstileRef}
+            siteKey={TURNSTILE_SITE_KEY}
+            onSuccess={setTurnstileToken}
+            onExpire={() => setTurnstileToken('')}
+            options={{ theme: 'auto', size: 'invisible' }}
+          />
 
           {/* Step 1: Email check */}
           {step === 'email' && (

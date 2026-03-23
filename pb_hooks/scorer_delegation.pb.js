@@ -296,6 +296,7 @@ onRecordAfterUpdateSuccess("scorer_delegations", function(e) {
 
 // ── Cron: expire pending delegations for past games ───────────────────
 cronAdd("scorer-delegation-expire", "0 5 * * *", function() {
+  if ($os.getenv("DISABLE_CRONS") === "true") return
   console.log("[Scorer Delegation] Starting expiry cron...")
   var today = new Date().toISOString().split("T")[0]
   var count = 0

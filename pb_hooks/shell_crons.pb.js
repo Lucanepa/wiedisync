@@ -26,6 +26,7 @@ function shellCrons_plusDaysIso(days) {
 // Deactivate shell members whose shell_expires has passed.
 
 cronAdd("shell_expiry", "0 2 * * *", function() {
+  if ($os.getenv("DISABLE_CRONS") === "true") return
   console.log("[shell_expiry] Cron started")
   try {
     var nowIso = shellCrons_nowIso()
@@ -57,6 +58,7 @@ cronAdd("shell_expiry", "0 2 * * *", function() {
 // who have not yet received a reminder.
 
 cronAdd("shell_reminder", "0 9 * * *", function() {
+  if ($os.getenv("DISABLE_CRONS") === "true") return
   console.log("[shell_reminder] Cron started")
   try {
     var nowIso = shellCrons_nowIso()
@@ -129,6 +131,7 @@ cronAdd("shell_reminder", "0 9 * * *", function() {
 // Mark pending team_invites as expired when their expires_at has passed.
 
 cronAdd("invite_expiry", "0 3 * * *", function() {
+  if ($os.getenv("DISABLE_CRONS") === "true") return
   console.log("[invite_expiry] Cron started")
   try {
     var nowIso = shellCrons_nowIso()

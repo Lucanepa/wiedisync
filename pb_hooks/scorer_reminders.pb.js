@@ -10,6 +10,7 @@
 // In winter it fires at 10:00 Zurich, in summer at 11:00 Zurich.
 
 cronAdd("scorer-reminders", "0 9 * * *", function() {
+  if ($os.getenv("DISABLE_CRONS") === "true") return
   var lib = require(__hooks + "/scorer_reminders_lib.js")
   console.log("[Scorer Reminders] Starting daily reminder cron...")
   try {

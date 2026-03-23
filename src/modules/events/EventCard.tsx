@@ -151,7 +151,7 @@ export default function EventCard({ event, onClick, onEdit, onDelete, onOpenRost
             activityId={event.id}
             activityDate={event.start_date?.split(' ')[0]}
             teamId={event.teams?.[0]}
-            respondBy={event.respond_by?.split(' ')[0]}
+            respondBy={event.respond_by}
             maxPlayers={event.max_players}
             requireNoteIfAbsent={event.require_note_if_absent}
             existingParticipation={myParticipation}

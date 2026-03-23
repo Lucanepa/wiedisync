@@ -12,11 +12,8 @@
  */
 
 import PocketBase from 'pocketbase'
-import { createRequire } from 'module'
+import readXlsxFile from 'read-excel-file/node'
 import crypto from 'crypto'
-
-const require = createRequire(import.meta.url)
-const XLSX = require('xlsx')
 
 const PB_URL = process.env.PB_URL || 'https://api.kscw.ch'
 const PB_EMAIL = process.env.PB_EMAIL || ''
@@ -67,9 +64,13 @@ async function main() {
   }
 
   // Read Excel
-  const wb = XLSX.readFile(filePath)
-  const ws = wb.Sheets[wb.SheetNames[0]]
-  const rows: ExcelRow[] = XLSX.utils.sheet_to_json(ws)
+  const rawRows = await readXlsxFile(filePath)
+  const headers = rawRows[0].map((h) => String(h).trim())
+  const rows: ExcelRow[] = rawRows.slice(1).map((row) => {
+    const obj: Record<string, any> = {}
+    headers.forEach((h, i) => (obj[h] = row[i]))
+    return obj as ExcelRow
+  })
   console.log(`Read ${rows.length} rows from ${filePath}`)
 
   // Auth

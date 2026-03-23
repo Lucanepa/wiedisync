@@ -61,18 +61,20 @@ export function toAlignedText(columns: string[], rows: unknown[][]): string {
   return `${header}\n${separator}\n${body}`
 }
 
-/** Excel .xlsx via dynamic import of xlsx package — returns Blob */
+/** Excel .xlsx via dynamic import of exceljs — returns Blob */
 export async function toXlsx(
   columns: string[],
   rows: unknown[][],
 ): Promise<Blob> {
-  const XLSX = await import('xlsx')
-  const data = [columns, ...rows.map((r) => r.map(serializeCell))]
-  const ws = XLSX.utils.aoa_to_sheet(data)
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, 'Results')
-  const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
-  return new Blob([buf], { type: 'application/octet-stream' })
+  const ExcelJS = await import('exceljs')
+  const wb = new ExcelJS.Workbook()
+  const ws = wb.addWorksheet('Results')
+  ws.addRow(columns)
+  for (const row of rows) {
+    ws.addRow(row.map(serializeCell))
+  }
+  const buffer = await wb.xlsx.writeBuffer()
+  return new Blob([buffer], { type: 'application/octet-stream' })
 }
 
 export function downloadBlob(blob: Blob, filename: string): void {

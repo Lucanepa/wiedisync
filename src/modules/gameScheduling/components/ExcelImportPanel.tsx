@@ -21,11 +21,15 @@ export default function ExcelImportPanel() {
     const file = e.target.files?.[0]
     if (!file) return
 
-    const XLSX = await import('xlsx')
-    const buffer = await file.arrayBuffer()
-    const wb = XLSX.read(buffer)
-    const ws = wb.Sheets[wb.SheetNames[0]]
-    const rows = XLSX.utils.sheet_to_json<ImportRow>(ws)
+    const { default: readXlsxFile } = await import('read-excel-file/browser')
+    const rawRows = await readXlsxFile(file)
+    if (rawRows.length === 0) return
+    const headers = rawRows[0].map((h) => String(h).trim())
+    const rows = rawRows.slice(1).map((row) => {
+      const obj: Record<string, string> = {}
+      headers.forEach((h, i) => (obj[h] = String(row[i] ?? '')))
+      return obj as unknown as ImportRow
+    })
     setPreview(rows.slice(0, 20))
     setResult(null)
   }

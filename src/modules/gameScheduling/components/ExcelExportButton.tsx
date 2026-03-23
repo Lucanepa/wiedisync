@@ -12,8 +12,7 @@ export default function ExcelExportButton({ bookings, opponents, slots, teams }:
   const { t } = useTranslation('gameScheduling')
 
   const handleExport = async () => {
-    // Dynamic import of xlsx to keep bundle small
-    const XLSX = await import('xlsx')
+    const ExcelJS = await import('exceljs')
 
     const teamMap = Object.fromEntries(teams.map(t => [t.id, t.name]))
     const oppMap = Object.fromEntries(opponents.map(o => [o.id, o]))
@@ -52,10 +51,20 @@ export default function ExcelExportButton({ bookings, opponents, slots, teams }:
         }
       })
 
-    const ws = XLSX.utils.json_to_sheet(rows)
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, 'Spielplan')
-    XLSX.writeFile(wb, 'spielplan_export.xlsx')
+    const wb = new ExcelJS.Workbook()
+    const ws = wb.addWorksheet('Spielplan')
+    if (rows.length > 0) {
+      ws.columns = Object.keys(rows[0]).map(key => ({ header: key, key }))
+      rows.forEach(row => ws.addRow(row))
+    }
+    const buffer = await wb.xlsx.writeBuffer()
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'spielplan_export.xlsx'
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   return (

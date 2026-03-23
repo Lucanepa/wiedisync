@@ -64,3 +64,70 @@ export function useTeamMembers(teamId: string | undefined, season?: string) {
 
   return { members, isLoading, error, refetch: fetch }
 }
+
+/** Fetch members from multiple teams, deduplicating by member ID. */
+export function useMultiTeamMembers(teamIds: string[]) {
+  const [members, setMembers] = useState<ExpandedMemberTeam[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+  const key = teamIds.slice().sort().join(',')
+
+  const fetch = useCallback(async () => {
+    if (teamIds.length === 0) {
+      setMembers([])
+      setIsLoading(false)
+      return
+    }
+
+    // Single team — delegate to simpler path
+    if (teamIds.length === 1) {
+      setIsLoading(true)
+      setError(null)
+      try {
+        const filter = `team="${teamIds[0]}"`
+        const result = await pb.collection('member_teams').getFullList<ExpandedMemberTeam>({
+          filter,
+          expand: 'member',
+          sort: 'member',
+        })
+        setMembers(result)
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error(String(err)))
+      } finally {
+        setIsLoading(false)
+      }
+      return
+    }
+
+    setIsLoading(true)
+    setError(null)
+    try {
+      const filter = teamIds.map(id => `team="${id}"`).join(' || ')
+      const result = await pb.collection('member_teams').getFullList<ExpandedMemberTeam>({
+        filter,
+        expand: 'member',
+        sort: 'member',
+      })
+      // Deduplicate by member ID — keep the first occurrence
+      const seen = new Set<string>()
+      const deduped = result.filter(mt => {
+        const memberId = mt.expand?.member?.id ?? mt.member
+        if (seen.has(memberId)) return false
+        seen.add(memberId)
+        return true
+      })
+      setMembers(deduped)
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error(String(err)))
+    } finally {
+      setIsLoading(false)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key])
+
+  useEffect(() => {
+    fetch()
+  }, [fetch])
+
+  return { members, isLoading, error, refetch: fetch }
+}

@@ -158,7 +158,7 @@ export default function EventsPage() {
         activityType="event"
         activityId={rosterEvent?.id ?? ''}
         activityDate={rosterEvent?.start_date ?? ''}
-        teamId={rosterEvent?.teams?.[0] ?? null}
+        teamIds={rosterEvent?.teams ?? []}
         title={t('participation')}
         respondBy={rosterEvent?.respond_by}
         maxPlayers={rosterEvent?.max_players}

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import Modal from '@/components/Modal'
-import { useTeamMembers } from '../hooks/useTeamMembers'
+import { useMultiTeamMembers } from '../hooks/useTeamMembers'
 import { useTeamParticipations, useAllEventParticipations } from '../hooks/useParticipation'
 import { usePB } from '../hooks/usePB'
 import pb from '../pb'
@@ -15,7 +15,7 @@ interface ParticipationRosterModalProps {
   activityType: Participation['activity_type']
   activityId: string | null
   activityDate: string
-  teamId: string | null
+  teamIds: string[]
   title: string
   respondBy?: string
   activityStartTime?: string
@@ -39,7 +39,7 @@ export default function ParticipationRosterModal({
   activityType,
   activityId,
   activityDate,
-  teamId,
+  teamIds,
   title,
   respondBy,
   activityStartTime,
@@ -50,7 +50,7 @@ export default function ParticipationRosterModal({
   const { t } = useTranslation('participation')
   const { t: te } = useTranslation('events')
   const { t: ta } = useTranslation('absences')
-  const { members, isLoading: membersLoading } = useTeamMembers(teamId ?? undefined)
+  const { members, isLoading: membersLoading } = useMultiTeamMembers(teamIds)
   const [absences, setAbsences] = useState<Absence[]>([])
   const [staffMembers, setStaffMembers] = useState<Member[]>([])
   const [activeSessionTab, setActiveSessionTab] = useState<string | null>(null) // null = overall
@@ -58,7 +58,7 @@ export default function ParticipationRosterModal({
   // For club-wide events (no team), fetch all participations and resolve members from them
   const [clubWideMembers, setClubWideMembers] = useState<Member[]>([])
   const [clubWideLoading, setClubWideLoading] = useState(false)
-  const isClubWide = !teamId
+  const isClubWide = teamIds.length === 0
 
   const hasSessionMode = participationMode && participationMode !== 'whole' && eventSessions && eventSessions.length > 0
 
@@ -186,22 +186,40 @@ export default function ParticipationRosterModal({
 
   // Counts — only players (non-staff)
   const playerParticipations = participations.filter(p => !p.is_staff)
-  const confirmedParts = playerParticipations.filter(p => p.status === 'confirmed')
+
+  // For the overall tab on multi-session events, deduplicate by member so summary
+  // counts reflect unique people, not slot-count. Use "best status" priority:
+  // confirmed > tentative > waitlisted > declined (same logic as ParticipationSummary).
+  const statusPriority: Record<string, number> = { confirmed: 4, tentative: 3, waitlisted: 2, declined: 1 }
+  const summaryParticipations = (hasSessionMode && activeSessionTab === null)
+    ? (() => {
+        const byMember = new Map<string, Participation>()
+        for (const p of playerParticipations) {
+          const existing = byMember.get(p.member)
+          if (!existing || (statusPriority[p.status] ?? 0) > (statusPriority[existing.status] ?? 0)) {
+            byMember.set(p.member, p)
+          }
+        }
+        return Array.from(byMember.values())
+      })()
+    : playerParticipations
+
+  const confirmedParts = summaryParticipations.filter(p => p.status === 'confirmed')
   const confirmed = confirmedParts.length
   const confirmedGuests = confirmedParts.reduce((sum, p) => sum + (p.guest_count ?? 0), 0)
-  const tentativeParts = playerParticipations.filter(p => p.status === 'tentative')
+  const tentativeParts = summaryParticipations.filter(p => p.status === 'tentative')
   const tentative = tentativeParts.length
   const tentativeGuests = tentativeParts.reduce((sum, p) => sum + (p.guest_count ?? 0), 0)
   // Count absent members without a participation record as declined too
   const absentMemberIds = new Set(absences.map(a => a.member))
   const absentWithoutParticipation = memberList.filter(m =>
-    absentMemberIds.has(m.id) && !playerParticipations.some(p => p.member === m.id)
+    absentMemberIds.has(m.id) && !summaryParticipations.some(p => p.member === m.id)
   ).length
-  const declined = playerParticipations.filter(p => p.status === 'declined').length + absentWithoutParticipation
-  const waitlistedParts = playerParticipations.filter(p => p.status === 'waitlisted')
+  const declined = summaryParticipations.filter(p => p.status === 'declined').length + absentWithoutParticipation
+  const waitlistedParts = summaryParticipations.filter(p => p.status === 'waitlisted')
     .sort((a, b) => (a.waitlisted_at ?? '').localeCompare(b.waitlisted_at ?? ''))
   const waitlisted = waitlistedParts.length
-  const notResponded = memberList.length - playerParticipations.length - absentWithoutParticipation
+  const notResponded = memberList.length - summaryParticipations.length - absentWithoutParticipation
   const totalGuests = confirmedGuests + tentativeGuests
 
   // Staff counts

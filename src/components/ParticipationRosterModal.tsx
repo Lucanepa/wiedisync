@@ -7,7 +7,7 @@ import { usePB } from '../hooks/usePB'
 import pb from '../pb'
 import { getFileUrl } from '../utils/pbFile'
 import type { Participation, Absence, Member, EventSession } from '../types'
-import { formatDate } from '../utils/dateHelpers'
+import { formatDate, getDeadlineDate } from '../utils/dateHelpers'
 
 interface ParticipationRosterModalProps {
   open: boolean
@@ -226,10 +226,9 @@ export default function ParticipationRosterModal({
   const staffParticipations = participations.filter(p => p.is_staff)
   const staffConfirmed = staffParticipations.filter(p => p.status === 'confirmed').length
 
-  const deadlinePassed = respondBy ? (() => {
-    const deadlineDate = new Date(`${respondBy}T${activityStartTime || '23:59'}`)
-    return deadlineDate < new Date()
-  })() : false
+  const deadlinePassed = respondBy
+    ? getDeadlineDate(respondBy, activityStartTime) < new Date()
+    : false
 
   function getInitials(member: Member) {
     return `${(member.first_name ?? '')[0] ?? ''}${(member.last_name ?? '')[0] ?? ''}`.toUpperCase()
@@ -341,7 +340,10 @@ export default function ParticipationRosterModal({
             ? 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400'
             : 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
         }`}>
-          {t('respondBy')}: {formatDate(respondBy)}
+          {t('respondBy')}: {formatDate(respondBy.split(' ')[0])}{(() => {
+            const [, rbTime] = (respondBy || '').split(' ')
+            return rbTime && rbTime !== '00:00:00' ? `, ${rbTime.slice(0, 5)}` : ''
+          })()}
           {deadlinePassed && ` — ${t('deadlinePassed')}`}
         </div>
       )}

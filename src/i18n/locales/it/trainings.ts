@@ -31,7 +31,7 @@ export default {
   trendCol: 'Tendenza',
 
   // Filter
-  showPast: 'Mostra precedenti',
+  showPast: 'Mostra allenamenti precedenti',
 
   // Empty states
   noTrainings: 'Nessun allenamento',

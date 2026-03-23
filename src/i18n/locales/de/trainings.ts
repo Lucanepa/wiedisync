@@ -30,6 +30,9 @@ export default {
   rateCol: 'Quote',
   trendCol: 'Trend',
 
+  // Filter
+  showPast: 'Ältere anzeigen',
+
   // Empty states
   noTrainings: 'Keine Trainings',
   noTrainingsDescription: 'Keine Trainings für die ausgewählten Filter gefunden.',

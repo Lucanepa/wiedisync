@@ -36,6 +36,9 @@ export default function TrainingsPage() {
   const { effectiveIsAdmin } = useAdminMode()
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null)
   const [autoSelected, setAutoSelected] = useState(false)
+  const [showPast, setShowPast] = useState(false)
+
+  const today = useMemo(() => new Date().toISOString().split('T')[0], [])
 
   // Auto-select user's first team on initial load
   useEffect(() => {
@@ -47,12 +50,14 @@ export default function TrainingsPage() {
 
   // Non-admins: always scope to own teams (never show all teams' trainings)
   const effectiveFilter = useMemo(() => {
-    if (selectedTeam) return `team="${selectedTeam}"`
-    if (!effectiveIsAdmin && memberTeamIds.length > 0) {
-      return memberTeamIds.map(id => `team="${id}"`).join(' || ')
+    const parts: string[] = []
+    if (selectedTeam) parts.push(`team="${selectedTeam}"`)
+    else if (!effectiveIsAdmin && memberTeamIds.length > 0) {
+      parts.push(`(${memberTeamIds.map(id => `team="${id}"`).join(' || ')})`)
     }
-    return ''
-  }, [selectedTeam, effectiveIsAdmin, memberTeamIds])
+    if (!showPast) parts.push(`date >= "${today}"`)
+    return parts.join(' && ')
+  }, [selectedTeam, effectiveIsAdmin, memberTeamIds, showPast, today])
 
   const [activeTab, setActiveTab] = useState<'trainings' | 'dashboard'>('trainings')
   const [formOpen, setFormOpen] = useState(false)
@@ -142,7 +147,19 @@ export default function TrainingsPage() {
     <div>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-gray-100">{t('title')}</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-gray-100">{t('title')}</h1>
+            <button
+              onClick={() => setShowPast((v) => !v)}
+              className={`min-h-[36px] rounded-full px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                showPast
+                  ? 'bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300'
+                  : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
+              }`}
+            >
+              {t('showPast')}
+            </button>
+          </div>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('subtitle')}</p>
         </div>
         {(isCoach || effectiveIsAdmin) && (

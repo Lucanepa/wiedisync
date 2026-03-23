@@ -272,7 +272,7 @@ export default function TrainingsPage() {
         activityType="training"
         activityId={rosterTraining?.id ?? ''}
         activityDate={rosterTraining?.date ?? ''}
-        teamId={rosterTraining?.teamId ?? null}
+        teamIds={rosterTraining?.teamId ? [rosterTraining.teamId] : []}
         title={t('participation')}
       />
     </div>

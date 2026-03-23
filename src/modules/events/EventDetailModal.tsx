@@ -164,7 +164,7 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
         activityType="event"
         activityId={event.id}
         activityDate={event.start_date}
-        teamId={event.teams?.[0] ?? null}
+        teamIds={event.teams ?? []}
         title={`${event.title} — ${formatDate(event.start_date)}`}
         respondBy={event.respond_by}
         maxPlayers={event.max_players}

@@ -6,7 +6,7 @@ import ParticipationSummary from '../../components/ParticipationSummary'
 import ParticipationRosterModal from '../../components/ParticipationRosterModal'
 import { useAuth } from '../../hooks/useAuth'
 import { useParticipation } from '../../hooks/useParticipation'
-import { formatDate, formatWeekday, formatTime } from '../../utils/dateHelpers'
+import { formatDate, formatWeekday, formatTime, getDeadlineDate } from '../../utils/dateHelpers'
 import type { Training, Team, Hall, Member } from '../../types'
 import { MapPin, Clock, MessageSquare, User, Users, Calendar, Check, UserPlus } from 'lucide-react'
 
@@ -150,10 +150,9 @@ function TrainingParticipation({ training, isStaff }: { training: TrainingExpand
   const { t } = useTranslation('participation')
   const { t: tTrainings } = useTranslation('trainings')
 
-  const deadlinePassed = training.respond_by ? (() => {
-    const deadlineDate = new Date(`${training.respond_by.split(' ')[0]}T${training.start_time || '23:59'}`)
-    return deadlineDate < new Date()
-  })() : false
+  const deadlinePassed = training.respond_by
+    ? getDeadlineDate(training.respond_by, training.start_time) < new Date()
+    : false
 
   const { participation, effectiveStatus, hasAbsence, note: savedNote, setStatus, saveConfirmed, dismissConfirmed } = useParticipation(
     'training',
@@ -272,7 +271,11 @@ function TrainingParticipation({ training, isStaff }: { training: TrainingExpand
       )}
       {training.respond_by && !isLocked && !deadlinePassed && (
         <p className="text-xs text-gray-400 dark:text-gray-500">
-          {tTrainings('respondBy')}: {formatDate(training.respond_by.split(' ')[0])}{training.start_time ? ` ${formatTime(training.start_time)}` : ''}
+          {tTrainings('respondBy')}: {formatDate(training.respond_by.split(' ')[0])}, {(() => {
+            const [, rbTime] = training.respond_by.split(' ')
+            const time = rbTime && rbTime !== '00:00:00' ? rbTime.slice(0, 5) : training.start_time
+            return time ? formatTime(time) : ''
+          })()}
         </p>
       )}
       {/* Participation note */}

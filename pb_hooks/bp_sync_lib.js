@@ -299,6 +299,13 @@ function syncGames() {
       continue
     }
 
+    // Skip games with no away team (incomplete data from Basketplan)
+    if (!g.guestTeam || !g.guestTeam.trim()) {
+      console.log("[BP Sync] Skipping game " + gameId + " — no away team (home: " + (g.homeTeam || "?") + ")")
+      skipped++
+      continue
+    }
+
     // Resolve hall for home games
     var hallId = ""
     if (g.isHome && g.location) {

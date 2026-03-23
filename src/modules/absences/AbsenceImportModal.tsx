@@ -182,7 +182,7 @@ export default function AbsenceImportModal({ open, onClose, onComplete }: Absenc
                 loading={importing}
               >
                 <Upload className="mr-2 h-4 w-4" />
-                {t('importButton', { count: String(validRows.length) })}
+                {t('importButton', { count: validRows.length })}
               </Button>
             </div>
           </>
@@ -203,7 +203,7 @@ export default function AbsenceImportModal({ open, onClose, onComplete }: Absenc
               <AlertCircle className="h-4 w-4 shrink-0" />
             )}
             {result.failed === 0
-              ? t('importSuccess', { count: String(result.created) })
+              ? t('importSuccess', { count: result.created })
               : t('importPartialSuccess', { created: String(result.created), failed: String(result.failed) })}
           </div>
         )}

@@ -42,7 +42,7 @@ export default function ProfilePage() {
   })
 
   // Pending team requests
-  interface TeamRequest { id: string; member: string; team: string; status: string; expand?: { team?: Team } }
+  interface TeamRequest { id: string; collectionId: string; collectionName: string; member: string; team: string; status: string; expand?: { team?: Team } }
   const { data: pendingRequests, refetch: refetchRequests } = usePB<TeamRequest>('team_requests', {
     filter: user ? `member="${user.id}" && status="pending"` : '',
     expand: 'team',

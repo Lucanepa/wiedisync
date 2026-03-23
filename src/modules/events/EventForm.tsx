@@ -15,6 +15,7 @@ import LocationCombobox from '@/components/LocationCombobox'
 import { Switch } from '@/components/ui/switch'
 import { pbNameToColorKey } from '../../utils/teamColors'
 import { formatDateLocale } from '../../utils/dateUtils'
+import { parseRespondByTime } from '../../utils/dateHelpers'
 import type { Event, EventSession, Team } from '../../types'
 
 interface SessionDraft {
@@ -88,6 +89,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
   const [description, setDescription] = useState('')
   const [selectedTeams, setSelectedTeams] = useState<string[]>([])
   const [respondBy, setRespondBy] = useState('')
+  const [respondByTime, setRespondByTime] = useState('')
   const [maxPlayers, setMaxPlayers] = useState('')
   const [requireNoteIfAbsent, setRequireNoteIfAbsent] = useState(false)
   const [participationMode, setParticipationMode] = useState<'whole' | 'per_day' | 'per_session'>('whole')
@@ -112,7 +114,9 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
       setLocation(event.location ?? '')
       setDescription(event.description ?? '')
       setSelectedTeams(event.teams ?? [])
-      setRespondBy(event.respond_by?.split(' ')[0] ?? '')
+      const rbParsed = parseRespondByTime(event.respond_by)
+      setRespondBy(rbParsed.date)
+      setRespondByTime(rbParsed.time)
       setMaxPlayers(event.max_players ? String(event.max_players) : '')
       setRequireNoteIfAbsent(!!event.require_note_if_absent)
       setParticipationMode((event.participation_mode as 'whole' | 'per_day' | 'per_session') || 'whole')
@@ -126,6 +130,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
       setDescription('')
       setSelectedTeams([])
       setRespondBy('')
+      setRespondByTime('')
       setMaxPlayers('')
       setRequireNoteIfAbsent(false)
       setParticipationMode('whole')
@@ -244,7 +249,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
       description,
       teams: selectedTeams,
       created_by: user?.id,
-      respond_by: respondBy || null,
+      respond_by: respondBy ? `${respondBy} ${respondByTime || '23:59'}:00` : null,
       max_players: maxPlayers ? Number(maxPlayers) : null,
       require_note_if_absent: requireNoteIfAbsent,
       participation_mode: effectiveMode,
@@ -391,12 +396,25 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
           rows={3}
         />
 
-        <DatePicker
-          label={t('respondBy')}
-          value={respondBy}
-          onChange={setRespondBy}
-          helperText={t('respondByHint')}
-        />
+        <div className="space-y-2">
+          <DatePicker
+            label={t('respondBy')}
+            value={respondBy}
+            onChange={(v) => {
+              setRespondBy(v)
+              if (v && !respondByTime) setRespondByTime('23:59')
+            }}
+            helperText={t('respondByHint')}
+          />
+          {respondBy && (
+            <FormInput
+              label={t('respondByTime')}
+              type="time"
+              value={respondByTime || '23:59'}
+              onChange={(e) => setRespondByTime(e.target.value)}
+            />
+          )}
+        </div>
 
         <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
           <Switch checked={requireNoteIfAbsent} onCheckedChange={setRequireNoteIfAbsent} />

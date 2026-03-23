@@ -58,6 +58,7 @@ export default {
   trainingsSkipped: '{{count}} ignore(s) (existaient deja)',
   respondBy: 'Repondre avant le',
   respondByHint: 'Rappel 1 jour avant',
+  respondByTime: "Heure limite d'inscription",
   respondByHours: 'heures',
   respondByDays: 'jours',
   respondByWeeks: 'semaines',

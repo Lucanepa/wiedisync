@@ -58,6 +58,7 @@ export default {
   trainingsSkipped: '{{count}} saltati (già esistenti)',
   respondBy: 'Rispondi entro',
   respondByHint: 'Promemoria 1 giorno prima',
+  respondByTime: 'Ora limite di iscrizione',
   respondByHours: 'ore',
   respondByDays: 'giorni',
   respondByWeeks: 'settimane',

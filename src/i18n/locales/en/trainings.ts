@@ -58,6 +58,7 @@ export default {
   trainingsSkipped: '{{count}} skipped (already existed)',
   respondBy: 'Respond by',
   respondByHint: 'Reminder 1 day before',
+  respondByTime: 'Deadline time',
   respondByHours: 'hours',
   respondByDays: 'days',
   respondByWeeks: 'weeks',

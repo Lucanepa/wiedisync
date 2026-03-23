@@ -58,6 +58,7 @@ export default {
   trainingsSkipped: '{{count}} übersprungen (bereits vorhanden)',
   respondBy: 'Antwort bis',
   respondByHint: 'Erinnerung 1 Tag vorher',
+  respondByTime: 'Anmeldefrist Uhrzeit',
   respondByHours: 'Stunden',
   respondByDays: 'Tage',
   respondByWeeks: 'Wochen',

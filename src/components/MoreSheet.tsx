@@ -9,7 +9,7 @@ import LanguageDropdown from '@/components/LanguageDropdown'
 import { getFileUrl } from '../utils/pbFile'
 import AdminToggle from './AdminToggle'
 import { useAdminMode } from '../hooks/useAdminMode'
-import { Bell, UserX, PenSquare, CalendarDays, ClipboardList, Building2, CalendarClock, Database, RefreshCcw, HeartPulse, LogIn, User, Settings, ChevronDown, ScrollText, MessageSquare } from 'lucide-react'
+import { Bell, UserX, PenSquare, CalendarDays, ClipboardList, Building2, CalendarClock, Database, RefreshCcw, HeartPulse, LogIn, User, Settings, ChevronDown, ScrollText, MessageSquare, FileText } from 'lucide-react'
 import type { MemberTeam, Team } from '../types'
 
 type ExpandedMemberTeam = MemberTeam & { expand?: { team?: Team } }
@@ -274,6 +274,20 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
               >
                 <HeartPulse className={iconClass} />
                 {t('dataHealth')}
+              </NavLink>
+              <NavLink
+                to="/admin/audit-log"
+                onClick={startClose}
+                className={({ isActive }) =>
+                  `flex min-h-[48px] items-center gap-4 rounded-lg px-4 py-3 text-base font-medium transition-colors ${
+                    isActive
+                      ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/50 dark:text-gold-400'
+                      : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+                  }`
+                }
+              >
+                <ScrollText className={iconClass} />
+                {t('auditLog')}
               </NavLink>
             </>
           )}

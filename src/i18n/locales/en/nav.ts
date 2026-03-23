@@ -27,6 +27,7 @@ export default {
   clubdeskSync: 'ClubDesk Sync',
   infraHealth: 'Infrastructure',
   dataHealth: 'Data Health',
+  auditLog: 'Audit Log',
   adminMode: 'Admin Mode',
   memberMode: 'Member Mode',
   notifications: 'Notifications',

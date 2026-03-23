@@ -32,6 +32,7 @@ export default {
 
   // Filter
   showPast: 'Show older trainings',
+  hidePast: 'Hide older trainings',
 
   // Empty states
   noTrainings: 'No trainings',

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Check, X, HelpCircle, Hourglass } from 'lucide-react'
 import { useParticipation } from '../hooks/useParticipation'
+import { getDeadlineDate } from '../utils/dateHelpers'
 import { useMutation } from '../hooks/useMutation'
 import { useAuth } from '../hooks/useAuth'
 import type { Participation, EventSession } from '../types'
@@ -174,10 +175,9 @@ function ParticipationButtonInner({
     waitlisted: t('waitlisted'),
   }
 
-  const deadlinePassed = respondBy ? (() => {
-    const deadlineDate = new Date(`${respondBy}T${activityStartTime || '23:59'}`)
-    return deadlineDate < new Date()
-  })() : false
+  const deadlinePassed = respondBy
+    ? getDeadlineDate(respondBy, activityStartTime) < new Date()
+    : false
   const isFull = maxPlayers != null && confirmedCount != null && confirmedCount >= maxPlayers
 
   const currentStyle = effectiveStatus ? statusStyles[effectiveStatus as keyof typeof statusStyles] : null

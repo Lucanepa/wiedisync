@@ -39,8 +39,8 @@ const TypeIcon = ({ type, sport, className = '' }: { type: string; sport?: 'voll
   }
   if (type === 'game' || type === 'game-home' || type === 'game-away') {
     return sport === 'basketball'
-      ? <BasketballIcon className="inline-block h-2.5 w-2.5 shrink-0" filled />
-      : <VolleyballIcon className="inline-block h-2.5 w-2.5 shrink-0" filled />
+      ? <BasketballIcon className="inline-block h-3.5 w-3.5 shrink-0" filled />
+      : <VolleyballIcon className="inline-block h-3.5 w-3.5 shrink-0" filled />
   }
   if (type === 'event') {
     // Star
@@ -61,7 +61,7 @@ const TypeIcon = ({ type, sport, className = '' }: { type: string; sport?: 'voll
   }
   if (type === 'hall') {
     // Hall events — default to basketball ball (most GCal hall events are BB games)
-    return <BasketballIcon className="inline-block h-2.5 w-2.5 shrink-0" filled />
+    return <BasketballIcon className="inline-block h-3.5 w-3.5 shrink-0" filled />
   }
   // Fallback dot
   return <span className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-current ${className}`} />
@@ -426,12 +426,18 @@ export default function MonthGrid({
                               {entry.startTime && (
                                 <span className="font-medium">{entry.startTime}</span>
                               )}
-                              {entry.type === 'game' && entry.gameType ? (
+                              {entry.type === 'game' ? (
                                 <>
-                                  <span className={`hidden lg:inline-flex h-3.5 w-3.5 items-center justify-center rounded-sm text-[8px] font-bold leading-none text-white ${entry.gameType === 'home' ? 'bg-brand-500' : 'bg-amber-500'}`}>
-                                    {entry.gameType === 'home' ? 'H' : 'A'}
-                                  </span>
-                                  {entry.teamNames[0] ? <span className="hidden lg:inline truncate">{entry.teamNames[0]}</span> : null}
+                                  {entry.gameType && (
+                                    <span className={`hidden lg:inline-flex h-3.5 w-3.5 items-center justify-center rounded text-[8px] font-extrabold leading-none ${
+                                      entry.gameType === 'home'
+                                        ? 'bg-brand-200 text-brand-800 dark:bg-brand-300 dark:text-brand-900'
+                                        : 'bg-amber-200 text-amber-800 dark:bg-amber-300 dark:text-amber-900'
+                                    }`}>
+                                      {entry.gameType === 'home' ? 'H' : 'A'}
+                                    </span>
+                                  )}
+                                  <span className="hidden lg:inline truncate">{entry.teamNames[0] || entry.title}</span>
                                 </>
                               ) : (
                                 <span className="hidden lg:inline truncate">{entry.title}</span>

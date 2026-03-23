@@ -148,6 +148,13 @@ export default function TrainingDetailModal({ training, onClose }: TrainingDetai
 
 function TrainingParticipation({ training, isStaff }: { training: TrainingExpanded; isStaff: boolean }) {
   const { t } = useTranslation('participation')
+  const { t: tTrainings } = useTranslation('trainings')
+
+  const deadlinePassed = training.respond_by ? (() => {
+    const deadlineDate = new Date(`${training.respond_by.split(' ')[0]}T${training.start_time || '23:59'}`)
+    return deadlineDate < new Date()
+  })() : false
+
   const { participation, effectiveStatus, hasAbsence, note: savedNote, setStatus, saveConfirmed, dismissConfirmed } = useParticipation(
     'training',
     training.id,
@@ -201,6 +208,8 @@ function TrainingParticipation({ training, isStaff }: { training: TrainingExpand
     }
   }
 
+  const isLocked = deadlinePassed && !effectiveStatus
+
   if (hasAbsence) {
     return <p className="text-sm text-gray-500 dark:text-gray-400">{t('absent')}</p>
   }
@@ -213,20 +222,28 @@ function TrainingParticipation({ training, isStaff }: { training: TrainingExpand
           {(['confirmed', 'tentative', 'declined'] as const).map((status) => {
             const labels = { confirmed: t('yes'), tentative: t('maybe'), declined: t('no') }
             const colors = {
-              confirmed: effectiveStatus === 'confirmed'
-                ? 'bg-green-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-green-900/30 dark:hover:text-green-400',
-              tentative: effectiveStatus === 'tentative'
-                ? 'bg-yellow-500 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-yellow-100 hover:text-yellow-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-yellow-900/30 dark:hover:text-yellow-400',
-              declined: effectiveStatus === 'declined'
-                ? 'bg-red-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-red-900/30 dark:hover:text-red-400',
+              confirmed: isLocked
+                ? 'cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500'
+                : effectiveStatus === 'confirmed'
+                  ? 'bg-green-600 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-green-900/30 dark:hover:text-green-400',
+              tentative: isLocked
+                ? 'cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500'
+                : effectiveStatus === 'tentative'
+                  ? 'bg-yellow-500 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-yellow-100 hover:text-yellow-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-yellow-900/30 dark:hover:text-yellow-400',
+              declined: isLocked
+                ? 'cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500'
+                : effectiveStatus === 'declined'
+                  ? 'bg-red-600 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-red-900/30 dark:hover:text-red-400',
             }
             return (
               <button
                 key={status}
+                disabled={isLocked}
                 onClick={() => {
+                  if (isLocked) return
                   if (requireNote && (status === 'declined' || status === 'tentative') && !noteText.trim()) {
                     setNoteRequiredError(true)
                     return
@@ -249,6 +266,15 @@ function TrainingParticipation({ training, isStaff }: { training: TrainingExpand
           </span>
         )}
       </div>
+      {/* Deadline info */}
+      {isLocked && (
+        <p className="text-xs text-red-500 dark:text-red-400">{t('deadlinePassed')}</p>
+      )}
+      {training.respond_by && !isLocked && !deadlinePassed && (
+        <p className="text-xs text-gray-400 dark:text-gray-500">
+          {tTrainings('respondBy')}: {formatDate(training.respond_by.split(' ')[0])}{training.start_time ? ` ${formatTime(training.start_time)}` : ''}
+        </p>
+      )}
       {/* Participation note */}
       {(effectiveStatus || requireNote) && (
         <div className="relative">

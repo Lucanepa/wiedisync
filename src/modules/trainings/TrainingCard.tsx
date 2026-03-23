@@ -185,9 +185,15 @@ function InlineParticipationSummary({ participations }: { participations: Partic
 /** Participation buttons using pre-fetched data — only writes trigger API calls */
 function TrainingParticipation({ training, existingParticipation }: { training: TrainingExpanded; existingParticipation?: Participation }) {
   const { t } = useTranslation('participation')
+  const { t: tTrainings } = useTranslation('trainings')
   const { user, isCoachOf } = useAuth()
   const isStaff = isCoachOf(training.team)
   const { create, update } = useMutation<Participation>('participations')
+
+  const deadlinePassed = training.respond_by ? (() => {
+    const deadlineDate = new Date(`${training.respond_by.split(' ')[0]}T${training.start_time || '23:59'}`)
+    return deadlineDate < new Date()
+  })() : false
 
   const [optimisticStatus, setOptimisticStatus] = useState<Participation['status'] | null>(null)
   const [saveConfirmed, setSaveConfirmed] = useState(false)
@@ -266,35 +272,46 @@ function TrainingParticipation({ training, existingParticipation }: { training: 
     }
   }
 
+  const isLocked = deadlinePassed && !displayStatus
+
   return (
     <div className="space-y-1.5">
       <div className="relative flex items-center gap-1.5">
         <button
-          onClick={() => setStatus('confirmed')}
+          onClick={() => !isLocked && setStatus('confirmed')}
+          disabled={isLocked}
           className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
-            displayStatus === 'confirmed'
-              ? 'bg-green-600 text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-green-900/30 dark:hover:text-green-400'
+            isLocked
+              ? 'cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500'
+              : displayStatus === 'confirmed'
+                ? 'bg-green-600 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-green-900/30 dark:hover:text-green-400'
           }`}
         >
           {t('yes')}
         </button>
         <button
-          onClick={() => setStatus('tentative')}
+          onClick={() => !isLocked && setStatus('tentative')}
+          disabled={isLocked}
           className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
-            displayStatus === 'tentative'
-              ? 'bg-yellow-500 text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-yellow-100 hover:text-yellow-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-yellow-900/30 dark:hover:text-yellow-400'
+            isLocked
+              ? 'cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500'
+              : displayStatus === 'tentative'
+                ? 'bg-yellow-500 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-yellow-100 hover:text-yellow-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-yellow-900/30 dark:hover:text-yellow-400'
           }`}
         >
           {t('maybe')}
         </button>
         <button
-          onClick={() => setStatus('declined')}
+          onClick={() => !isLocked && setStatus('declined')}
+          disabled={isLocked}
           className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
-            displayStatus === 'declined'
-              ? 'bg-red-600 text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-red-900/30 dark:hover:text-red-400'
+            isLocked
+              ? 'cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500'
+              : displayStatus === 'declined'
+                ? 'bg-red-600 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-red-900/30 dark:hover:text-red-400'
           }`}
         >
           {t('no')}
@@ -331,6 +348,18 @@ function TrainingParticipation({ training, existingParticipation }: { training: 
           </span>
         )}
       </div>
+
+      {/* Deadline info */}
+      {isLocked && (
+        <p className="text-[10px] leading-tight text-red-500 dark:text-red-400">
+          {t('deadlinePassed')}
+        </p>
+      )}
+      {training.respond_by && !isLocked && !deadlinePassed && (
+        <p className="text-[10px] leading-tight text-gray-400 dark:text-gray-500">
+          {tTrainings('respondBy')}: {formatDate(training.respond_by.split(' ')[0])}{training.start_time ? ` ${formatTime(training.start_time)}` : ''}
+        </p>
+      )}
 
       {/* Note input */}
       {displayStatus && (

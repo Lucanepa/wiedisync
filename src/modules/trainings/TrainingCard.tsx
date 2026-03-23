@@ -82,13 +82,13 @@ export default function TrainingCard({ training, participations, myParticipation
 
       {/* Bottom row: participation + actions */}
       {!training.cancelled && (
-        <div className="mt-2.5 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
+        <div className="mt-2.5 flex flex-wrap items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
             {user && canParticipateIn(training.team) && (
               <TrainingParticipation training={training} existingParticipation={myParticipation} />
             )}
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex shrink-0 items-center gap-1">
             {onOpenRoster && (
               <button
                 onClick={() => onOpenRoster(training.id, training.team, training.date)}
@@ -276,7 +276,7 @@ function TrainingParticipation({ training, existingParticipation }: { training: 
 
   return (
     <div className="space-y-1.5">
-      <div className="relative flex items-center gap-1.5">
+      <div className="relative flex flex-wrap items-center gap-1.5">
         <button
           onClick={() => !isLocked && setStatus('confirmed')}
           disabled={isLocked}

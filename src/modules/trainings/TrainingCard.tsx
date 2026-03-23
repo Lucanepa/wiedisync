@@ -4,7 +4,7 @@ import { Check, X, HelpCircle, Hourglass, Award, MessageSquare } from 'lucide-re
 import TeamChip from '../../components/TeamChip'
 import { useAuth } from '../../hooks/useAuth'
 import { useMutation } from '../../hooks/useMutation'
-import { useParticipation } from '../../hooks/useParticipation'
+
 import { formatDate, formatWeekday, formatTime } from '../../utils/dateHelpers'
 import type { Training, Team, Hall, Member, Participation } from '../../types'
 
@@ -37,13 +37,13 @@ export default function TrainingCard({ training, participations, myParticipation
   const team = training.expand?.team
   const hall = training.expand?.hall
   const coach = training.expand?.coach
-  const { effectiveStatus } = useParticipation('training', training.id, training.date)
+  const myStatus = myParticipation?.status ?? null
 
   return (
     <div className={`flex items-stretch overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-card ${training.cancelled ? 'opacity-60' : ''}`}>
       {/* Participation status vertical banner */}
-      {user && effectiveStatus && (
-        <div className={`w-1 shrink-0 ${statusBorderColor[effectiveStatus] ?? ''}`} />
+      {user && myStatus && (
+        <div className={`w-1 shrink-0 ${statusBorderColor[myStatus] ?? ''}`} />
       )}
       <div className="flex-1 p-3">
       {/* Top row: team chip + date + counters */}

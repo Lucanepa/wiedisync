@@ -80,7 +80,10 @@ export function useParticipation(
         guest_count: 0,
         is_staff: isStaff ?? false,
         ...(sessionId ? { session_id: sessionId } : {}),
-      }).then(() => refetch()).catch(() => {})
+      }).then(() => refetch()).catch(() => {
+        // Record may already exist (race with another hook instance) — refetch to pick it up
+        refetch()
+      })
     } else if (participation.status !== 'declined') {
       autoDeclineRef.current = true
       update(participation.id, { status: 'declined', note: absenceNote, guest_count: 0 })

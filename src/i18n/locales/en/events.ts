@@ -29,6 +29,7 @@ export default {
   other: 'Other',
   respondBy: 'Respond by',
   respondByHint: 'Reminder 1 day before',
+  respondByTime: 'Deadline time',
   maxPlayers: 'Max players',
   participation: 'Participation',
   viewRoster: 'View roster',

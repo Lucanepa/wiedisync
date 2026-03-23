@@ -29,6 +29,7 @@ export default {
   other: 'Andere',
   respondBy: 'Antwort bis',
   respondByHint: 'Erinnerung 1 Tag vorher',
+  respondByTime: 'Anmeldefrist Uhrzeit',
   maxPlayers: 'Max. Spieler',
   participation: 'Teilnahme',
   viewRoster: 'Aufgebot anzeigen',

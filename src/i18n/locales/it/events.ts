@@ -28,6 +28,7 @@ export default {
   other: 'Altro',
   respondBy: 'Rispondi entro',
   respondByHint: 'Promemoria 1 giorno prima',
+  respondByTime: 'Ora limite di iscrizione',
   maxPlayers: 'Max giocatori',
   participation: 'Partecipazione',
   viewRoster: 'Vedi lista',

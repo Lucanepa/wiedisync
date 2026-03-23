@@ -152,18 +152,24 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
     return dates
   }, [slot, startDate, effectiveEndDate, effectiveHallId, closures, existingDates])
 
-  function computeRespondBy(trainingDate: string): string {
+  function computeRespondBy(trainingDate: string, trainingStartTime: string): string {
     if (!respondByAmount) return ''
     const amount = Number(respondByAmount)
     if (!amount || amount <= 0) return ''
-    const d = new Date(trainingDate)
+    // Use full datetime to avoid UTC/local timezone mismatch with date-only strings
+    const d = new Date(`${trainingDate}T${trainingStartTime || '23:59'}`)
     switch (respondByUnit) {
       case 'hours': d.setHours(d.getHours() - amount); break
       case 'days': d.setDate(d.getDate() - amount); break
       case 'weeks': d.setDate(d.getDate() - amount * 7); break
       case 'months': d.setMonth(d.getMonth() - amount); break
     }
-    return toISODate(d)
+    // For 'hours', date may change so compute both date and time
+    // For days/weeks/months, keep the training start time as the deadline time
+    if (respondByUnit === 'hours') {
+      return `${toISODate(d)} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:00`
+    }
+    return `${toISODate(d)} ${trainingStartTime || '23:59'}:00`
   }
 
   async function handleGenerate() {
@@ -194,7 +200,7 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
           hall: effectiveHallId,
           cancelled: false,
           notes,
-          respond_by: computeRespondBy(date) || null,
+          respond_by: computeRespondBy(date, slot.start_time) || null,
           min_participants: minParticipants ? Number(minParticipants) : null,
           max_participants: maxParticipants ? Number(maxParticipants) : null,
           require_note_if_absent: requireNoteIfAbsent,

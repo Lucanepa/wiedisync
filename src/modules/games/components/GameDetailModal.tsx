@@ -14,7 +14,7 @@ import { useMutation } from '../../../hooks/useMutation'
 import pb from '../../../pb'
 import { sanitizeUrl } from '../../../utils/sanitizeUrl'
 import DatePicker from '@/components/ui/DatePicker'
-import { formatDate, formatTime } from '../../../utils/dateHelpers'
+import { formatDate, formatTime, parseRespondByTime } from '../../../utils/dateHelpers'
 
 const GAME_EXPAND = 'kscw_team,hall,scorer_member,scoreboard_member,scorer_scoreboard_member,scorer_duty_team,scoreboard_duty_team,scorer_scoreboard_duty_team,bb_scorer_member,bb_timekeeper_member,bb_24s_official,bb_duty_team,bb_scorer_duty_team,bb_timekeeper_duty_team,bb_24s_duty_team'
 
@@ -65,6 +65,10 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
   const [rosterOpen, setRosterOpen] = useState(false)
   const [editingDeadline, setEditingDeadline] = useState(false)
   const [deadlineValue, setDeadlineValue] = useState(game?.respond_by?.split(' ')[0] ?? '')
+  const [deadlineTime, setDeadlineTime] = useState(() => {
+    const parsed = parseRespondByTime(game?.respond_by, game?.start_time)
+    return parsed.time
+  })
   const [fullGame, setFullGame] = useState<Game | null>(null)
   const { update: updateGame } = useMutation<Game>('games')
   const canParticipate = !!user && !!game?.kscw_team && canParticipateIn(game.kscw_team)
@@ -497,7 +501,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
         {game.status === 'scheduled' && (
           <div className="space-y-3 border-t dark:border-gray-700 px-6 py-4">
             {game.respond_by && !editingDeadline && (
-              <DetailRow label={t('respondBy')} value={formatDate(game.respond_by.split(' ')[0])} />
+              <DetailRow label={t('respondBy')} value={`${formatDate(game.respond_by.split(' ')[0])}${(() => { const { time } = parseRespondByTime(game.respond_by, game.start_time); return time ? `, ${time}` : '' })()}`} />
             )}
             {!readOnly && isCoachOf(game.kscw_team) && (
               editingDeadline ? (
@@ -507,10 +511,16 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
                     onChange={setDeadlineValue}
                     max={game.date?.split(' ')[0]}
                   />
+                  <input
+                    type="time"
+                    value={deadlineTime || game?.start_time?.slice(0, 5) || ''}
+                    onChange={(e) => setDeadlineTime(e.target.value)}
+                    className="w-24 rounded-lg border px-2 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                  />
                   <Button
                     size="sm"
                     onClick={async () => {
-                      await updateGame(game.id, { respond_by: deadlineValue || null })
+                      await updateGame(game.id, { respond_by: deadlineValue ? `${deadlineValue} ${deadlineTime || game?.start_time?.slice(0, 5) || '23:59'}:00` : null })
                       setEditingDeadline(false)
                     }}
                   >
@@ -526,7 +536,9 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
               ) : (
                 <button
                   onClick={() => {
-                    setDeadlineValue(game.respond_by?.split(' ')[0] ?? '')
+                    const parsed = parseRespondByTime(game.respond_by, game.start_time)
+                    setDeadlineValue(parsed.date)
+                    setDeadlineTime(parsed.time)
                     setEditingDeadline(true)
                   }}
                   className="text-xs text-brand-600 hover:underline dark:text-brand-400"

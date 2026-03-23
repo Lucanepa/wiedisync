@@ -8,6 +8,7 @@ import { useMutation } from '../../hooks/useMutation'
 import { usePB } from '../../hooks/usePB'
 import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
+import { parseRespondByTime } from '../../utils/dateHelpers'
 import { Button } from '@/components/ui/button'
 import { FormInput, FormTextarea, FormField } from '@/components/FormField'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -69,6 +70,7 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
   const [cancelled, setCancelled] = useState(false)
   const [cancelReason, setCancelReason] = useState('')
   const [respondBy, setRespondBy] = useState('')
+  const [respondByTime, setRespondByTime] = useState('')
   const [minParticipants, setMinParticipants] = useState('')
   const [maxParticipants, setMaxParticipants] = useState('')
   const [requireNoteIfAbsent, setRequireNoteIfAbsent] = useState(false)
@@ -183,7 +185,9 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
       setNotes(training.notes ?? '')
       setCancelled(training.cancelled)
       setCancelReason(training.cancel_reason ?? '')
-      setRespondBy(training.respond_by?.split(' ')[0] ?? '')
+      const rbParsed = parseRespondByTime(training.respond_by, training.start_time)
+      setRespondBy(rbParsed.date)
+      setRespondByTime(rbParsed.time)
       setMinParticipants(training.min_participants ? String(training.min_participants) : '')
       setMaxParticipants(training.max_participants ? String(training.max_participants) : '')
       setRequireNoteIfAbsent(!!training.require_note_if_absent)
@@ -206,6 +210,7 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
       setCancelled(false)
       setCancelReason('')
       setRespondBy('')
+      setRespondByTime('')
       setMinParticipants('')
       setMaxParticipants('')
       setRequireNoteIfAbsent(false)
@@ -239,7 +244,7 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
       notes,
       cancelled,
       cancel_reason: cancelled ? cancelReason : '',
-      respond_by: respondBy || null,
+      respond_by: respondBy ? `${respondBy} ${respondByTime || startTime || '23:59'}:00` : null,
       min_participants: minParticipants ? Number(minParticipants) : null,
       max_participants: maxParticipants ? Number(maxParticipants) : null,
       require_note_if_absent: requireNoteIfAbsent,
@@ -487,13 +492,26 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
           rows={2}
         />
 
-        <DatePicker
-          label={t('respondBy')}
-          value={respondBy}
-          onChange={setRespondBy}
-          max={date}
-          helperText={t('respondByHint')}
-        />
+        <div className="space-y-2">
+          <DatePicker
+            label={t('respondBy')}
+            value={respondBy}
+            onChange={(v) => {
+              setRespondBy(v)
+              if (v && !respondByTime) setRespondByTime(startTime?.slice(0, 5) || '')
+            }}
+            max={date}
+            helperText={t('respondByHint')}
+          />
+          {respondBy && (
+            <FormInput
+              label={t('respondByTime')}
+              type="time"
+              value={respondByTime || startTime?.slice(0, 5) || ''}
+              onChange={(e) => setRespondByTime(e.target.value)}
+            />
+          )}
+        </div>
 
         <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
           <Switch checked={requireNoteIfAbsent} onCheckedChange={setRequireNoteIfAbsent} />

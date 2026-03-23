@@ -324,6 +324,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
               <SelectItem value="meeting">{t('meeting')}</SelectItem>
               <SelectItem value="tournament">{t('tournament')}</SelectItem>
               <SelectItem value="trainingsweekend">{t('trainingsweekend')}</SelectItem>
+              <SelectItem value="friendly">{t('friendly')}</SelectItem>
               <SelectItem value="other">{t('other')}</SelectItem>
             </SelectContent>
           </Select>

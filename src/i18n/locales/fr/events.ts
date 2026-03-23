@@ -25,6 +25,7 @@ export default {
   meeting: 'Reunion',
   tournament: 'Tournoi',
   trainingsweekend: 'Trainingsweekend',
+  friendly: 'Match amical',
   other: 'Autre',
   respondBy: 'Repondre avant le',
   respondByHint: 'Rappel 1 jour avant',

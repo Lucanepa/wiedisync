@@ -16,6 +16,7 @@ const eventTypeColors: Record<string, { bg: string; text: string }> = {
   meeting: { bg: '#fef3c7', text: '#92400e' },
   tournament: { bg: '#fee2e2', text: '#991b1b' },
   trainingsweekend: { bg: '#ffedd5', text: '#9a3412' },
+  friendly: { bg: '#ccfbf1', text: '#115e59' },
   other: { bg: '#f3f4f6', text: '#374151' },
 }
 

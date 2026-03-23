@@ -3,8 +3,9 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import { useSportPreference } from '../../hooks/useSportPreference'
-import type { Game, Ranking, Team } from '../../types'
+import type { Game, Ranking, Team, Participation } from '../../types'
 import { usePB } from '../../hooks/usePB'
+import { useRealtime } from '../../hooks/useRealtime'
 import { teamIds } from '../../utils/teamColors'
 import SportToggle from '../../components/SportToggle'
 import TeamFilterBar from './components/TeamFilterBar'
@@ -113,6 +114,37 @@ export default function GamesPage() {
       : { filter: 'id = ""', perPage: 1 },
   )
 
+  // Batch-fetch ALL participations for visible games in ONE request
+  const gameIds = useMemo(() => games.map((g) => g.id), [games])
+  const participationFilter = useMemo(() => {
+    if (gameIds.length === 0) return ''
+    const idClauses = gameIds.map((id) => `activity_id="${id}"`).join(' || ')
+    return `activity_type="game" && (${idClauses})`
+  }, [gameIds])
+
+  const { data: allParticipations, refetch: refetchParticipations } = usePB<Participation>('participations', {
+    filter: participationFilter,
+    all: true,
+    enabled: gameIds.length > 0,
+  })
+
+  useRealtime('participations', () => refetchParticipations())
+
+  // Build maps: gameId → participations[], gameId → user's participation
+  const { participationsByGame, myParticipationByGame } = useMemo(() => {
+    const byGame = new Map<string, Participation[]>()
+    const myByGame = new Map<string, Participation>()
+    for (const p of allParticipations) {
+      const list = byGame.get(p.activity_id) ?? []
+      list.push(p)
+      byGame.set(p.activity_id, list)
+      if (user && p.member === user.id) {
+        myByGame.set(p.activity_id, p)
+      }
+    }
+    return { participationsByGame: byGame, myParticipationByGame: myByGame }
+  }, [allParticipations, user])
+
   // Rankings — always fetch (small dataset), group client-side
   const { data: allRankings, isLoading: rankingsLoading } = usePB<Ranking>('rankings', {
     sort: '+league,+rank',
@@ -195,7 +227,7 @@ export default function GamesPage() {
               <>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {games.map((g) => (
-                    <GameCard key={g.id} game={g} onClick={setSelectedGame} />
+                    <GameCard key={g.id} game={g} onClick={setSelectedGame} participations={participationsByGame.get(g.id)} myParticipation={myParticipationByGame.get(g.id)} />
                   ))}
                 </div>
                 {!showAll && games.length >= INITIAL_LIMIT && (
@@ -220,7 +252,7 @@ export default function GamesPage() {
               <>
                 <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white md:mx-auto md:w-fit dark:bg-gray-800 md:grid md:grid-cols-[auto_auto_auto_auto_auto_auto_auto_1fr]">
                   {games.map((g) => (
-                    <GameCard key={g.id} game={g} onClick={setSelectedGame} variant="compact" />
+                    <GameCard key={g.id} game={g} onClick={setSelectedGame} variant="compact" participations={participationsByGame.get(g.id)} myParticipation={myParticipationByGame.get(g.id)} />
                   ))}
                 </div>
                 {!showAll && games.length >= INITIAL_LIMIT && (

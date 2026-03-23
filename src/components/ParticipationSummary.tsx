@@ -11,6 +11,8 @@ interface ParticipationSummaryProps {
   stacked?: boolean
   /** Hide coach/guest breakdowns — show only raw counts */
   hideExtras?: boolean
+  /** Pre-fetched participations — skips internal API call when provided */
+  participations?: Participation[]
 }
 
 export default function ParticipationSummary({
@@ -19,19 +21,23 @@ export default function ParticipationSummary({
   compact = false,
   stacked = false,
   hideExtras = false,
+  participations: prefetched,
 }: ParticipationSummaryProps) {
   const { t } = useTranslation('participation')
 
-  const { data, refetch } = usePB<Participation>('participations', {
+  const skipFetch = !!prefetched
+  const { data: fetched, refetch } = usePB<Participation>('participations', {
     filter: activityId
       ? `activity_type="${activityType}" && activity_id="${activityId}"`
       : '',
     all: true,
-    enabled: !!activityId,
+    enabled: !!activityId && !skipFetch,
   })
 
   // Auto-refresh when participations change (create/update/delete)
-  useRealtime('participations', () => refetch())
+  useRealtime('participations', () => { if (!skipFetch) refetch() })
+
+  const data = prefetched ?? fetched
 
   // Deduplicate by member: when an event has multiple sessions, a member may
   // have several participation records. Pick the "best" status per member

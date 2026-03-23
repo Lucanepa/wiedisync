@@ -1,3 +1,4 @@
+import { useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { RecordModel } from 'pocketbase'
 import type { Game, Team, Hall } from '../../../types'
@@ -9,7 +10,8 @@ import VolleyballIcon from '../../../components/VolleyballIcon'
 import BasketballIcon from '../../../components/BasketballIcon'
 import ParticipationSummary from '../../../components/ParticipationSummary'
 import { useAuth } from '../../../hooks/useAuth'
-import { useParticipation } from '../../../hooks/useParticipation'
+import { useMutation } from '../../../hooks/useMutation'
+import type { Participation } from '../../../types'
 
 function parseSets(json: unknown): Array<{ home: number; away: number }> {
   if (!Array.isArray(json)) return []
@@ -23,6 +25,10 @@ interface GameCardProps {
   game: Game
   onClick?: (game: Game) => void
   variant?: 'card' | 'compact'
+  /** Pre-fetched participations for this game (from batch query) */
+  participations?: Participation[]
+  /** Pre-fetched current user's participation (from batch query) */
+  myParticipation?: Participation
 }
 
 type ExpandedGame = Game & {
@@ -60,7 +66,7 @@ function StatusBadge({ status }: { status: Game['status'] }) {
   }
 }
 
-export default function GameCard({ game, onClick, variant = 'card' }: GameCardProps) {
+export default function GameCard({ game, onClick, variant = 'card', participations, myParticipation }: GameCardProps) {
   const { t } = useTranslation('games')
   const { user, canParticipateIn } = useAuth()
   const canParticipate = !!user && !!game.kscw_team && canParticipateIn(game.kscw_team)
@@ -229,7 +235,7 @@ export default function GameCard({ game, onClick, variant = 'card' }: GameCardPr
     waitlisted: 'bg-orange-500 dark:bg-orange-400',
     absent: 'bg-gray-400 dark:bg-gray-500',
   }
-  const { effectiveStatus } = useParticipation('game', game.id, game.date)
+  const myStatus = myParticipation?.status ?? null
 
   return (
     <div
@@ -237,14 +243,14 @@ export default function GameCard({ game, onClick, variant = 'card' }: GameCardPr
       className={`flex items-stretch overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-card transition-shadow ${onClick ? 'cursor-pointer hover:shadow-card-hover' : ''}`}
     >
       {/* Participation status vertical banner */}
-      {user && effectiveStatus && (
-        <div className={`w-1 shrink-0 ${statusBorderColor[effectiveStatus] ?? ''}`} />
+      {user && myStatus && (
+        <div className={`w-1 shrink-0 ${statusBorderColor[myStatus] ?? ''}`} />
       )}
       <div className="flex-1 p-3">
       {/* H/A badge + counters top-right */}
       <div className="flex items-center justify-end gap-2">
         {game.status === 'scheduled' && (
-          <ParticipationSummary activityType="game" activityId={game.id} compact />
+          <ParticipationSummary activityType="game" activityId={game.id} compact participations={participations} />
         )}
         <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold leading-none ${
           game.type === 'home'
@@ -285,7 +291,7 @@ export default function GameCard({ game, onClick, variant = 'card' }: GameCardPr
           </div>
           {game.status === 'scheduled' && canParticipate && (
             <div className="mt-1.5">
-              <GameCardParticipation game={game} />
+              <GameCardParticipation game={game} existingParticipation={myParticipation} />
             </div>
           )}
         </div>
@@ -295,18 +301,44 @@ export default function GameCard({ game, onClick, variant = 'card' }: GameCardPr
   )
 }
 
-function GameCardParticipation({ game }: { game: Game }) {
+function GameCardParticipation({ game, existingParticipation }: { game: Game; existingParticipation?: Participation }) {
   const { t } = useTranslation('participation')
-  const { isCoachOf } = useAuth()
+  const { user, isCoachOf } = useAuth()
   const isStaff = !!game.kscw_team && isCoachOf(game.kscw_team)
-  const { effectiveStatus, setStatus } = useParticipation('game', game.id, game.date, undefined, isStaff)
+  const { create, update } = useMutation<Participation>('participations')
+  const [optimisticStatus, setOptimisticStatus] = useState<Participation['status'] | null>(null)
+
+  const serverStatus = existingParticipation?.status ?? null
+  const displayStatus = optimisticStatus ?? serverStatus
+
+  const setStatus = useCallback(async (status: Participation['status']) => {
+    if (!user) return
+    setOptimisticStatus(status)
+    try {
+      if (existingParticipation) {
+        await update(existingParticipation.id, { status })
+      } else {
+        await create({
+          member: user.id,
+          activity_type: 'game' as const,
+          activity_id: game.id,
+          status,
+          note: '',
+          guest_count: 0,
+          is_staff: isStaff,
+        })
+      }
+    } catch {
+      setOptimisticStatus(null)
+    }
+  }, [user, existingParticipation, game.id, isStaff, create, update])
 
   return (
     <div className="flex items-center gap-1.5">
       <button
         onClick={(e) => { e.stopPropagation(); setStatus('confirmed') }}
         className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
-          effectiveStatus === 'confirmed'
+          displayStatus === 'confirmed'
             ? 'bg-green-600 text-white'
             : 'bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-green-900/30 dark:hover:text-green-400'
         }`}
@@ -316,7 +348,7 @@ function GameCardParticipation({ game }: { game: Game }) {
       <button
         onClick={(e) => { e.stopPropagation(); setStatus('tentative') }}
         className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
-          effectiveStatus === 'tentative'
+          displayStatus === 'tentative'
             ? 'bg-yellow-500 text-white'
             : 'bg-gray-100 text-gray-600 hover:bg-yellow-100 hover:text-yellow-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-yellow-900/30 dark:hover:text-yellow-400'
         }`}
@@ -326,7 +358,7 @@ function GameCardParticipation({ game }: { game: Game }) {
       <button
         onClick={(e) => { e.stopPropagation(); setStatus('declined') }}
         className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
-          effectiveStatus === 'declined'
+          displayStatus === 'declined'
             ? 'bg-red-600 text-white'
             : 'bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-red-900/30 dark:hover:text-red-400'
         }`}

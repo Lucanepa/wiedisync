@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ClipboardList } from 'lucide-react'
+import { ClipboardList, Upload } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import { usePB } from '../../hooks/usePB'
@@ -11,6 +11,7 @@ import EmptyState from '../../components/EmptyState'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import AbsenceCard from './AbsenceCard'
 import AbsenceForm from './AbsenceForm'
+import AbsenceImportModal from './AbsenceImportModal'
 import TeamAbsenceView from './TeamAbsenceView'
 import { Button } from '@/components/ui/button'
 import TabBar from '../../components/TabBar'
@@ -27,6 +28,7 @@ export default function AbsencesPage() {
   const [formOpen, setFormOpen] = useState(false)
   const [editingAbsence, setEditingAbsence] = useState<Absence | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [importOpen, setImportOpen] = useState(false)
 
   // Fetch all active teams (needed to resolve "Alle" selection to actual IDs)
   const { data: allTeams } = usePB<Team>('teams', { filter: 'active=true', sort: 'name', perPage: 50 })
@@ -81,14 +83,20 @@ export default function AbsencesPage() {
           <h1 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-gray-100">{t('title')}</h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('subtitle')}</p>
         </div>
-        <Button
-          onClick={() => {
-            setEditingAbsence(null)
-            setFormOpen(true)
-          }}
-        >
-          {t('newAbsence')}
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setImportOpen(true)}>
+            <Upload className="mr-2 h-4 w-4" />
+            {t('importAbsences')}
+          </Button>
+          <Button
+            onClick={() => {
+              setEditingAbsence(null)
+              setFormOpen(true)
+            }}
+          >
+            {t('newAbsence')}
+          </Button>
+        </div>
       </div>
 
       {/* Tabs (any user with team memberships) */}
@@ -144,6 +152,15 @@ export default function AbsencesPage() {
         onCancel={() => {
           setFormOpen(false)
           setEditingAbsence(null)
+        }}
+      />
+
+      <AbsenceImportModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onComplete={() => {
+          setImportOpen(false)
+          refetch()
         }}
       />
 

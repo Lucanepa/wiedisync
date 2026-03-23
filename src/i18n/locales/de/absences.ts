@@ -55,4 +55,19 @@ export default {
   // Team absence view
   fromTo: 'Von',
   until: 'Bis',
+
+  // Import
+  importAbsences: 'Importieren',
+  importTitle: 'Absenzen importieren',
+  importDescription: 'Lade eine CSV- oder Excel-Datei mit mehreren Absenzen hoch.',
+  importDownloadTemplate: 'Vorlage herunterladen',
+  importPreview: 'Vorschau',
+  importValidRows: '{{valid}} gültig von {{total}}',
+  importButton: 'Importieren ({{count}})',
+  importSuccess: '{{count}} Absenzen erfolgreich importiert',
+  importPartialSuccess: '{{created}} importiert, {{failed}} fehlgeschlagen',
+  importNoValidRows: 'Keine gültigen Zeilen gefunden',
+  importInvalidReason: 'Ungültiger Grund: "{{value}}"',
+  importInvalidDate: 'Ungültiges Datumsformat',
+  importParseError: 'Datei konnte nicht gelesen werden',
 } as const

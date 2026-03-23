@@ -1,0 +1,213 @@
+import { useState, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Download, Upload, AlertCircle, CheckCircle2 } from 'lucide-react'
+import Modal from '@/components/Modal'
+import { Button } from '@/components/ui/button'
+import { useAuth } from '../../hooks/useAuth'
+import pb from '../../pb'
+import {
+  parseAbsenceFile,
+  validateRow,
+  downloadTemplate,
+  type RawAbsenceRow,
+  type ValidatedRow,
+} from './absenceImportUtils'
+
+interface AbsenceImportModalProps {
+  open: boolean
+  onClose: () => void
+  onComplete: () => void
+}
+
+export default function AbsenceImportModal({ open, onClose, onComplete }: AbsenceImportModalProps) {
+  const { t } = useTranslation('absences')
+  const { user } = useAuth()
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  const [rows, setRows] = useState<ValidatedRow[]>([])
+  const [importing, setImporting] = useState(false)
+  const [result, setResult] = useState<{ created: number; failed: number } | null>(null)
+  const [parseError, setParseError] = useState('')
+
+  const validRows = rows.filter((r) => r.errors.length === 0)
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setResult(null)
+    setParseError('')
+
+    try {
+      const rawRows: RawAbsenceRow[] = await parseAbsenceFile(file)
+      const validated = rawRows.map((r) => validateRow(r, t))
+      setRows(validated)
+    } catch {
+      setParseError(t('importParseError'))
+      setRows([])
+    }
+  }
+
+  async function handleImport() {
+    if (validRows.length === 0 || !user) return
+    setImporting(true)
+    setResult(null)
+
+    let created = 0
+    let failed = 0
+
+    for (const row of validRows) {
+      try {
+        await pb.collection('absences').create({
+          member: user.id,
+          start_date: row.start_date,
+          end_date: row.end_date,
+          reason: row.normalizedReason,
+          reason_detail: row.reason_detail,
+          affects: row.normalizedAffects,
+        })
+        created++
+      } catch {
+        failed++
+      }
+    }
+
+    setResult({ created, failed })
+    setImporting(false)
+
+    if (created > 0 && failed === 0) {
+      // All succeeded — close after short delay
+      setTimeout(() => {
+        handleClose()
+        onComplete()
+      }, 1500)
+    }
+  }
+
+  function handleClose() {
+    setRows([])
+    setResult(null)
+    setParseError('')
+    if (fileRef.current) fileRef.current.value = ''
+    onClose()
+  }
+
+  return (
+    <Modal open={open} onClose={handleClose} title={t('importTitle')} size="lg">
+      <div className="space-y-4">
+        <p className="text-sm text-gray-500 dark:text-gray-400">{t('importDescription')}</p>
+
+        {/* File input + template download */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".csv,.xlsx,.xls"
+            onChange={handleFileChange}
+            className="text-sm text-gray-700 dark:text-gray-300 file:mr-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-gray-700 dark:file:bg-gray-700 dark:file:text-gray-300"
+          />
+          <button
+            type="button"
+            onClick={downloadTemplate}
+            className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+          >
+            <Download className="h-3.5 w-3.5" />
+            {t('importDownloadTemplate')}
+          </button>
+        </div>
+
+        {parseError && (
+          <div className="flex items-center gap-2 rounded-md bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            {parseError}
+          </div>
+        )}
+
+        {/* Preview table */}
+        {rows.length > 0 && (
+          <>
+            <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {t('importPreview')} — {t('importValidRows', { valid: String(validRows.length), total: String(rows.length) })}
+            </div>
+
+            <div className="max-h-64 overflow-auto rounded-md border border-gray-200 dark:border-gray-700">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-gray-50 dark:bg-gray-800">
+                  <tr>
+                    <th className="px-3 py-2 text-left text-gray-600 dark:text-gray-400">#</th>
+                    <th className="px-3 py-2 text-left text-gray-600 dark:text-gray-400">{t('startDate')}</th>
+                    <th className="px-3 py-2 text-left text-gray-600 dark:text-gray-400">{t('endDate')}</th>
+                    <th className="px-3 py-2 text-left text-gray-600 dark:text-gray-400">{t('reason')}</th>
+                    <th className="px-3 py-2 text-left text-gray-600 dark:text-gray-400">{t('detailsOptional')}</th>
+                    <th className="px-3 py-2 text-left text-gray-600 dark:text-gray-400">{t('affects')}</th>
+                    <th className="w-8 px-3 py-2"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row, i) => {
+                    const hasErrors = row.errors.length > 0
+                    return (
+                      <tr
+                        key={i}
+                        className={`border-t border-gray-100 dark:border-gray-700 ${hasErrors ? 'bg-red-50/50 dark:bg-red-900/10' : ''}`}
+                        title={hasErrors ? row.errors.join('\n') : undefined}
+                      >
+                        <td className="px-3 py-1.5 text-gray-400">{i + 1}</td>
+                        <td className="px-3 py-1.5 text-gray-900 dark:text-gray-100">{row.start_date || '—'}</td>
+                        <td className="px-3 py-1.5 text-gray-900 dark:text-gray-100">{row.end_date || '—'}</td>
+                        <td className="px-3 py-1.5 text-gray-900 dark:text-gray-100">{row.reason || '—'}</td>
+                        <td className="px-3 py-1.5 text-gray-500 dark:text-gray-400">{row.reason_detail || ''}</td>
+                        <td className="px-3 py-1.5 text-gray-500 dark:text-gray-400">{row.affects || 'all'}</td>
+                        <td className="px-3 py-1.5">
+                          {hasErrors ? (
+                            <AlertCircle className="h-4 w-4 text-red-500" />
+                          ) : (
+                            <CheckCircle2 className="h-4 w-4 text-green-500" />
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Import button */}
+            <div className="flex justify-end gap-3 pt-2">
+              <Button variant="ghost" onClick={handleClose}>
+                {t('common:cancel')}
+              </Button>
+              <Button
+                onClick={handleImport}
+                disabled={validRows.length === 0 || importing}
+                loading={importing}
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                {t('importButton', { count: String(validRows.length) })}
+              </Button>
+            </div>
+          </>
+        )}
+
+        {/* Result banner */}
+        {result && (
+          <div
+            className={`flex items-center gap-2 rounded-md p-3 text-sm ${
+              result.failed === 0
+                ? 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400'
+                : 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400'
+            }`}
+          >
+            {result.failed === 0 ? (
+              <CheckCircle2 className="h-4 w-4 shrink-0" />
+            ) : (
+              <AlertCircle className="h-4 w-4 shrink-0" />
+            )}
+            {result.failed === 0
+              ? t('importSuccess', { count: String(result.created) })
+              : t('importPartialSuccess', { created: String(result.created), failed: String(result.failed) })}
+          </div>
+        )}
+      </div>
+    </Modal>
+  )
+}

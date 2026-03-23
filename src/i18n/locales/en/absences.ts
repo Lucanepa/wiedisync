@@ -55,4 +55,19 @@ export default {
   // Team absence view
   fromTo: 'From',
   until: 'To',
+
+  // Import
+  importAbsences: 'Import',
+  importTitle: 'Import Absences',
+  importDescription: 'Upload a CSV or Excel file with multiple absences.',
+  importDownloadTemplate: 'Download template',
+  importPreview: 'Preview',
+  importValidRows: '{{valid}} valid of {{total}}',
+  importButton: 'Import ({{count}})',
+  importSuccess: '{{count}} absences imported successfully',
+  importPartialSuccess: '{{created}} imported, {{failed}} failed',
+  importNoValidRows: 'No valid rows found',
+  importInvalidReason: 'Invalid reason: "{{value}}"',
+  importInvalidDate: 'Invalid date format',
+  importParseError: 'Could not read file',
 } as const

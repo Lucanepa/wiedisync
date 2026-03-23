@@ -184,16 +184,25 @@ export default function TeamDetail() {
     }
   }
 
+  // Track selected guest_level per team request
+  const [requestGuestLevels, setRequestGuestLevels] = useState<Record<string, number>>({})
+
+  function setRequestGuestLevel(requestId: string, level: number) {
+    setRequestGuestLevels((prev) => ({ ...prev, [requestId]: level }))
+  }
+
   async function handleApproveRequest(request: TeamRequest) {
     const member = request.expand?.member
     if (!member) return
+    const guestLevel = requestGuestLevels[request.id] ?? 0
     try {
       const mt = await pb.collection('member_teams').create({
         member: member.id,
         team: teamId!,
         season: getCurrentSeason(),
+        guest_level: guestLevel,
       })
-      logActivity('create', 'member_teams', mt.id, { member: member.id, team: teamId })
+      logActivity('create', 'member_teams', mt.id, { member: member.id, team: teamId, guest_level: guestLevel })
       await pb.collection('team_requests').update(request.id, { status: 'approved' })
       refetchTeamRequests()
     } catch {
@@ -382,31 +391,50 @@ export default function TeamDetail() {
             {/* Team join requests from existing members */}
             {teamRequests.map((req) => {
               const member = req.expand?.member
+              const selectedLevel = requestGuestLevels[req.id] ?? 0
               return (
-                <div key={req.id} className="flex items-center justify-between rounded-lg bg-white p-3 dark:bg-gray-800">
-                  <div className="min-w-0">
-                    <p className="font-medium text-gray-900 dark:text-gray-100">
-                      {member?.first_name} {member?.last_name}
-                    </p>
-                    <p className="truncate text-sm text-gray-500 dark:text-gray-400">
-                      {member?.email} · {t('teamJoinRequest')}
-                    </p>
+                <div key={req.id} className="rounded-lg bg-white p-3 dark:bg-gray-800">
+                  <div className="flex items-center justify-between">
+                    <div className="min-w-0">
+                      <p className="font-medium text-gray-900 dark:text-gray-100">
+                        {member?.first_name} {member?.last_name}
+                      </p>
+                      <p className="truncate text-sm text-gray-500 dark:text-gray-400">
+                        {member?.email} · {t('teamJoinRequest')}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => handleApproveRequest(req)}
+                        className="bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
+                      >
+                        {t('approve')}
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleRejectRequest(req.id)}
+                      >
+                        {t('reject')}
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex shrink-0 gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() => handleApproveRequest(req)}
-                      className="bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
-                    >
-                      {t('approve')}
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleRejectRequest(req.id)}
-                    >
-                      {t('reject')}
-                    </Button>
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">{t('joinAs')}</span>
+                    {[0, 1, 2, 3].map((level) => (
+                      <button
+                        key={level}
+                        onClick={() => setRequestGuestLevel(req.id, level)}
+                        className={`rounded border px-2 py-0.5 text-xs font-medium transition-colors ${
+                          selectedLevel === level
+                            ? 'border-brand-500 bg-brand-500 text-white'
+                            : 'border-gray-300 text-gray-600 hover:border-brand-400 dark:border-gray-600 dark:text-gray-400 dark:hover:border-brand-500'
+                        }`}
+                      >
+                        {level === 0 ? t('rolePlayer') : `${t('positionGuest')} L${level}`}
+                      </button>
+                    ))}
                   </div>
                 </div>
               )

@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { Check, ChevronsUpDown, X } from 'lucide-react'
 import { Label } from '@/components/ui/label'
@@ -33,12 +34,37 @@ export default function SearchableSelect({
   const [search, setSearch] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLDivElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({})
 
   const selectedLabel = options.find((o) => o.value === value)?.label ?? ''
 
   const filtered = search
     ? options.filter((o) => o.label.toLowerCase().includes(search.toLowerCase()))
     : options
+
+  // Position dropdown relative to trigger via portal
+  useLayoutEffect(() => {
+    if (!open || !triggerRef.current) return
+    function updatePosition() {
+      const rect = triggerRef.current!.getBoundingClientRect()
+      setDropdownStyle({
+        position: 'fixed',
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+        zIndex: 9999,
+      })
+    }
+    updatePosition()
+    window.addEventListener('scroll', updatePosition, true)
+    window.addEventListener('resize', updatePosition)
+    return () => {
+      window.removeEventListener('scroll', updatePosition, true)
+      window.removeEventListener('resize', updatePosition)
+    }
+  }, [open])
 
   // Focus input when dropdown opens
   useEffect(() => {
@@ -53,7 +79,11 @@ export default function SearchableSelect({
   useEffect(() => {
     if (!open) return
     function handleClick(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      const target = e.target as Node
+      if (
+        containerRef.current && !containerRef.current.contains(target) &&
+        dropdownRef.current && !dropdownRef.current.contains(target)
+      ) {
         setOpen(false)
       }
     }
@@ -65,6 +95,7 @@ export default function SearchableSelect({
     <div ref={containerRef} className="relative">
       {label && <Label className="mb-1.5">{label}</Label>}
       <div
+        ref={triggerRef}
         className={cn(
           'flex min-h-[44px] w-full items-center rounded-md border border-input bg-transparent text-sm shadow-sm ring-offset-background transition-colors',
           open && 'ring-1 ring-ring',
@@ -111,8 +142,8 @@ export default function SearchableSelect({
           </button>
         )}
       </div>
-      {open && (
-        <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-md">
+      {open && createPortal(
+        <div ref={dropdownRef} style={dropdownStyle} className="rounded-md border bg-popover shadow-md">
           <ul className="max-h-60 overflow-auto py-1" role="listbox">
             {filtered.length === 0 && (
               <li className="px-3 py-2 text-sm text-muted-foreground">{t('noResults')}</li>
@@ -142,7 +173,8 @@ export default function SearchableSelect({
               </li>
             ))}
           </ul>
-        </div>
+        </div>,
+        document.body,
       )}
       {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
     </div>

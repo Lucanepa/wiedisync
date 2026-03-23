@@ -7,6 +7,7 @@
 // ── Cron: daily at 06:00 ────────────────────────────────────────────
 
 cronAdd("gcal-sync", "0 6 * * *", function() {
+  if ($os.getenv("DISABLE_CRONS") === "true") return
   var lib = require(__hooks + "/gcal_sync_lib.js")
   console.log("[GCal Sync] Starting daily sync...")
   try {

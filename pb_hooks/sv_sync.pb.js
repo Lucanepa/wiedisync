@@ -7,6 +7,7 @@
 // ── Cron: daily at 06:00 ────────────────────────────────────────────
 
 cronAdd("sv-sync", "0 6 * * *", function() {
+  if ($os.getenv("DISABLE_CRONS") === "true") return
   var lib = require(__hooks + "/sv_sync_lib.js")
   console.log("[SV Sync] Starting daily sync...")
   try {

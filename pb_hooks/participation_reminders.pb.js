@@ -8,6 +8,7 @@
 
 // ─── Cron job ───
 cronAdd("participation-reminders", "0 7 * * *", function() {
+  if ($os.getenv("DISABLE_CRONS") === "true") return
   console.log("[participation-reminders] Cron started")
   try {
     runReminders()

@@ -171,6 +171,7 @@ onRecordAfterDeleteSuccess("events", function(e) {
 // ═══════════════════════════════════════════════════
 
 cronAdd("notification-reminders", "30 6 * * *", function() {
+  if ($os.getenv("DISABLE_CRONS") === "true") return
   var lib = require(__hooks + "/notifications_lib.js")
   console.log("[notification-reminders] Cron started")
   try {

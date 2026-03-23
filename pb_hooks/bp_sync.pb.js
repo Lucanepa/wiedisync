@@ -7,6 +7,7 @@
 // ── Cron: daily at 06:05 ────────────────────────────────────────────
 
 cronAdd("bp-sync", "5 6 * * *", function() {
+  if ($os.getenv("DISABLE_CRONS") === "true") return
   var lib = require(__hooks + "/bp_sync_lib.js")
   console.log("[BP Sync] Starting daily sync...")
   try {

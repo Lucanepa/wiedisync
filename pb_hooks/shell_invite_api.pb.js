@@ -256,43 +256,56 @@ routerAdd("POST", "/api/team-invites/claim", function (e) {
   var shellExpires = addDays(now, 30)
   var shellExpiresStr = toIsoString(shellExpires)
 
-  // Create Member record
-  var memberCol = $app.findCollectionByNameOrId("members")
-  var member = new Record(memberCol)
-  member.set("first_name", firstName)
-  member.set("last_name", lastName)
-  member.set("name", firstName + " " + lastName)
-  member.set("email", email)
-  member.set("shell", true)
-  member.set("coach_approved_team", true)
-  member.set("wiedisync_active", true)
-  member.set("shell_expires", shellExpiresStr)
-  member.set("shell_reminder_sent", false)
-  member.set("birthdate_visibility", "hidden")
-  member.set("language", "german")
-  member.set("role", ["user"])
-  $app.save(member)
+  // Create member + member_teams + claim invite atomically
+  // (if any step fails, all are rolled back)
+  var memberIdOut = ""
+  $app.runInTransaction(function(txApp) {
+    // Create Member record (without approval yet)
+    var memberCol = txApp.findCollectionByNameOrId("members")
+    var member = new Record(memberCol)
+    member.set("first_name", firstName)
+    member.set("last_name", lastName)
+    member.set("name", firstName + " " + lastName)
+    member.set("email", email)
+    member.set("shell", true)
+    member.set("coach_approved_team", false) // set after member_teams exists
+    member.set("wiedisync_active", true)
+    member.set("shell_expires", shellExpiresStr)
+    member.set("shell_reminder_sent", false)
+    member.set("birthdate_visibility", "hidden")
+    member.set("language", "german")
+    member.set("role", ["user"])
+    txApp.save(member)
 
-  // Create member_teams record
-  var mtCol = $app.findCollectionByNameOrId("member_teams")
-  var mt = new Record(mtCol)
-  mt.set("member", member.id)
-  mt.set("team", teamId)
-  mt.set("season", getCurrentSeason())
-  mt.set("guest_level", guestLevel)
-  $app.save(mt)
+    // Create member_teams record first, so the link exists
+    var mtCol = txApp.findCollectionByNameOrId("member_teams")
+    var mt = new Record(mtCol)
+    mt.set("member", member.id)
+    mt.set("team", teamId)
+    mt.set("season", getCurrentSeason())
+    mt.set("guest_level", guestLevel)
+    txApp.save(mt)
 
-  // Mark invite as claimed
-  invite.set("status", "claimed")
-  invite.set("claimed_by", member.id)
-  invite.set("claimed_at", toIsoString(now))
-  $app.save(invite)
+    // Now set coach_approved_team (member_teams exists)
+    member.set("coach_approved_team", true)
+    txApp.save(member)
 
-  console.log("[ShellInvite] Claimed: " + email + " joined team " + team.getString("name") + " as shell member " + member.id)
+    // Mark invite as claimed
+    invite.set("status", "claimed")
+    invite.set("claimed_by", member.id)
+    invite.set("claimed_at", toIsoString(now))
+    txApp.save(invite)
+
+    // Store member ref for response
+    memberIdOut = member.id
+  })
+  var memberIdResult = memberIdOut
+
+  console.log("[ShellInvite] Claimed: " + email + " joined team " + team.getString("name") + " as shell member " + memberIdOut)
 
   return e.json(200, {
     success: true,
-    member_id: member.id,
+    member_id: memberIdOut,
     team_name: team.getString("name"),
     email: email,
   })

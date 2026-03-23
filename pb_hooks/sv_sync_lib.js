@@ -180,6 +180,13 @@ function syncGames() {
       var homeId = String(home.teamId)
       var awayId = String(away.teamId)
 
+      // Skip games with no away team (incomplete data from Swiss Volley)
+      if (!away.caption || !away.caption.trim()) {
+        console.log("[SV Sync] Skipping game " + gameId + " — no away team (home: " + (home.caption || "?") + ")")
+        errors++
+        continue
+      }
+
       var parsed = parsePlayDate(g.playDate)
       var resultSummary = g.resultSummary || {}
 

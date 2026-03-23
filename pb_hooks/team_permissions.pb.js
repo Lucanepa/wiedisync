@@ -60,6 +60,24 @@ onRecordUpdateRequest(function(e) {
   e.next()
 }, "members")
 
+// Guard: coach_approved_team can only be set to true if member_teams exists
+onRecordUpdate(function(e) {
+  var wasApproved = e.record.original().getBool("coach_approved_team")
+  var isApproved = e.record.getBool("coach_approved_team")
+
+  // Only check when changing from false → true
+  if (!wasApproved && isApproved) {
+    var memberId = e.record.id
+    try {
+      $app.findFirstRecordByFilter("member_teams", "member = {:id}", { id: memberId })
+    } catch (_) {
+      throw new BadRequestError("Cannot approve member: no member_teams record exists. Assign a team first.")
+    }
+  }
+
+  e.next()
+}, "members")
+
 // ── hall_slots ──────────────────────────────────────────────────────
 
 onRecordCreateRequest(function(e) {

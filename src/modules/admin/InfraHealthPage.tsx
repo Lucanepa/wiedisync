@@ -37,13 +37,21 @@ function timeAgo(dateStr: string, t: (k: string) => string): string {
   return `${days}d ${t('infraAgo')}`
 }
 
-async function checkEndpoint(url: string): Promise<{ ok: boolean; ms: number; status: number; cors: boolean }> {
+async function checkEndpoint(url: string, noCorsOk = false): Promise<{ ok: boolean; ms: number; status: number; cors: boolean }> {
   const start = Date.now()
   try {
     const res = await fetch(url, { method: 'GET', mode: 'cors' })
     return { ok: res.ok, ms: Date.now() - start, status: res.status, cors: false }
   } catch {
-    // status 0 + fetch error = likely CORS block, not actually down
+    if (noCorsOk) {
+      // Retry with no-cors — opaque response means server is reachable
+      try {
+        const res = await fetch(url, { method: 'GET', mode: 'no-cors' })
+        return { ok: res.type === 'opaque', ms: Date.now() - start, status: 0, cors: false }
+      } catch {
+        return { ok: false, ms: Date.now() - start, status: 0, cors: true }
+      }
+    }
     return { ok: false, ms: Date.now() - start, status: 0, cors: true }
   }
 }
@@ -109,8 +117,8 @@ export default function InfraHealthPage() {
       responseTime: pbProd.ms,
     })
 
-    // PocketBase Dev
-    const pbDev = await checkEndpoint(`${PB_DEV_URL}/api/health`)
+    // PocketBase Dev (no-cors fallback — dev PB may not whitelist this origin)
+    const pbDev = await checkEndpoint(`${PB_DEV_URL}/api/health`, true)
     svcResults.push({
       name: t('infraPbDev'),
       status: pbDev.ok ? 'healthy' : pbDev.cors ? 'unknown' : 'down',
@@ -125,8 +133,8 @@ export default function InfraHealthPage() {
       detail: pbProd.ok ? 'kscw-vps tunnel active' : 'Tunnel unreachable',
     })
 
-    // Push Worker
-    const push = await checkEndpoint(PUSH_WORKER_URL)
+    // Push Worker (uses dedicated /health endpoint with permissive CORS)
+    const push = await checkEndpoint(`${PUSH_WORKER_URL}/health`)
     svcResults.push({
       name: t('infraPushWorker'),
       status: (push.ok || push.status === 405 || push.status === 404) ? 'healthy' : push.cors ? 'unknown' : 'down',

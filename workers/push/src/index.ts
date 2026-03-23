@@ -34,6 +34,17 @@ interface PushResult {
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
+    const url = new URL(request.url)
+
+    // Health endpoint — public, permissive CORS (used by infra dashboard)
+    if (url.pathname === '/health') {
+      const origin = request.headers.get('Origin') || '*'
+      if (request.method === 'OPTIONS') {
+        return new Response(null, { headers: corsHeaders(origin) })
+      }
+      return json({ ok: true }, 200, origin)
+    }
+
     // CORS preflight
     if (request.method === 'OPTIONS') {
       return new Response(null, {
@@ -47,14 +58,8 @@ export default {
       return json({ error: 'unauthorized' }, 401, env.ALLOWED_ORIGIN)
     }
 
-    const url = new URL(request.url)
-
     if (request.method === 'POST' && url.pathname === '/push') {
       return handlePush(request, env)
-    }
-
-    if (request.method === 'GET' && url.pathname === '/health') {
-      return json({ ok: true }, 200, env.ALLOWED_ORIGIN)
     }
 
     return json({ error: 'not found' }, 404, env.ALLOWED_ORIGIN)

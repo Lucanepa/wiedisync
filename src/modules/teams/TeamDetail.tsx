@@ -8,6 +8,7 @@ import { useTeamMembers } from '../../hooks/useTeamMembers'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import { usePendingMembers } from '../../hooks/usePendingMembers'
+import { usePB } from '../../hooks/usePB'
 import { Button } from '@/components/ui/button'
 import TeamChip from '../../components/TeamChip'
 import EmptyState from '../../components/EmptyState'
@@ -35,6 +36,16 @@ export default function TeamDetail() {
   const { members, isLoading: membersLoading } = useTeamMembers(teamId)
   const canManage = isCoachOf(teamId ?? '') || (effectiveIsAdmin && hasAdminAccessToTeam(teamId ?? ''))
   const { data: pendingMembers, refetch: refetchPending } = usePendingMembers(canManage ? teamId : undefined)
+
+  // Team join requests from existing members
+  interface TeamRequest { id: string; member: string; team: string; status: string; expand?: { member?: Member } }
+  const { data: teamRequests, refetch: refetchTeamRequests } = usePB<TeamRequest>('team_requests', {
+    filter: canManage && teamId ? `team="${teamId}" && status="pending"` : '',
+    expand: 'member',
+    perPage: 50,
+    enabled: canManage && !!teamId,
+  })
+
   const [sortKey, setSortKey] = useState<SortKey>('name')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
   const [lightboxOpen, setLightboxOpen] = useState(false)
@@ -166,6 +177,32 @@ export default function TeamDetail() {
       await pb.collection('members').delete(memberId)
       logActivity('delete', 'members', memberId)
       refetchPending()
+    } catch {
+      // ignore
+    }
+  }
+
+  async function handleApproveRequest(request: TeamRequest) {
+    const member = request.expand?.member
+    if (!member) return
+    try {
+      const mt = await pb.collection('member_teams').create({
+        member: member.id,
+        team: teamId!,
+        season: getCurrentSeason(),
+      })
+      logActivity('create', 'member_teams', mt.id, { member: member.id, team: teamId })
+      await pb.collection('team_requests').update(request.id, { status: 'approved' })
+      refetchTeamRequests()
+    } catch {
+      // ignore
+    }
+  }
+
+  async function handleRejectRequest(requestId: string) {
+    try {
+      await pb.collection('team_requests').update(requestId, { status: 'rejected' })
+      refetchTeamRequests()
     } catch {
       // ignore
     }
@@ -306,13 +343,14 @@ export default function TeamDetail() {
         )}
       </div>
 
-      {/* Pending member requests */}
-      {canManage && pendingMembers.length > 0 && (
+      {/* Pending member requests (signup + team join requests) */}
+      {canManage && (pendingMembers.length > 0 || teamRequests.length > 0) && (
         <div className="mt-6 rounded-lg border-2 border-amber-300 bg-amber-50 p-4 dark:border-amber-600 dark:bg-amber-900/20">
           <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-300">
-            {t('pendingRequests', { count: pendingMembers.length })}
+            {t('pendingRequests', { count: pendingMembers.length + teamRequests.length })}
           </h3>
           <div className="mt-3 space-y-3">
+            {/* Signup requests */}
             {pendingMembers.map((member) => (
               <div key={member.id} className="flex items-center justify-between rounded-lg bg-white p-3 dark:bg-gray-800">
                 <div className="min-w-0">
@@ -339,6 +377,38 @@ export default function TeamDetail() {
                 </div>
               </div>
             ))}
+            {/* Team join requests from existing members */}
+            {teamRequests.map((req) => {
+              const member = req.expand?.member
+              return (
+                <div key={req.id} className="flex items-center justify-between rounded-lg bg-white p-3 dark:bg-gray-800">
+                  <div className="min-w-0">
+                    <p className="font-medium text-gray-900 dark:text-gray-100">
+                      {member?.first_name} {member?.last_name}
+                    </p>
+                    <p className="truncate text-sm text-gray-500 dark:text-gray-400">
+                      {member?.email} · {t('teamJoinRequest')}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => handleApproveRequest(req)}
+                      className="bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
+                    >
+                      {t('approve')}
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleRejectRequest(req.id)}
+                    >
+                      {t('reject')}
+                    </Button>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
       )}

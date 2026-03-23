@@ -4,16 +4,7 @@ import { useMutation } from './useMutation'
 import { useAuth } from './useAuth'
 import { useRealtime } from './useRealtime'
 import type { Participation, Absence } from '../types'
-
-/** Check if an absence's `affects` field matches the given activity type */
-function absenceAffectsActivity(absence: Absence, activityType: Participation['activity_type']): boolean {
-  const affects = absence.affects
-  if (!affects || affects.length === 0 || affects.includes('all')) return true
-  if (activityType === 'training' && affects.includes('trainings')) return true
-  if (activityType === 'game' && affects.includes('games')) return true
-  if (activityType === 'event') return true // events always affected
-  return false
-}
+import { absenceCoversActivity } from '../utils/absenceHelpers'
 
 export function useParticipation(
   activityType: Participation['activity_type'],
@@ -57,7 +48,7 @@ export function useParticipation(
   const participation = participations[0] ?? null
 
   // Filter absences to those that actually affect this activity type
-  const matchingAbsence = absencesRaw.find((a) => absenceAffectsActivity(a, activityType))
+  const matchingAbsence = absencesRaw.find((a) => activityDate ? absenceCoversActivity(a, activityType, activityDate) : false)
   const hasAbsence = !!matchingAbsence
 
   // Auto-decline when absent and no participation exists yet (or existing is not declined)

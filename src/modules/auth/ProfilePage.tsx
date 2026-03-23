@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { Plus, X, Clock } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { usePB } from '../../hooks/usePB'
 import { Button } from '@/components/ui/button'
@@ -11,6 +12,8 @@ import { coercePositions, getPositionI18nKey } from '../../utils/memberPositions
 import { formatDate, toISODate } from '../../utils/dateHelpers'
 import ProfileEditModal from './ProfileEditModal'
 import DeleteAccountModal from './DeleteAccountModal'
+import TeamRequestModal from './TeamRequestModal'
+import pb from '../../pb'
 import type { MemberTeam, Team, Absence, LicenceType } from '../../types'
 
 const LICENCE_LABELS: Record<LicenceType, string> = {
@@ -30,12 +33,35 @@ export default function ProfilePage() {
   const { t: tt } = useTranslation('teams')
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [teamRequestOpen, setTeamRequestOpen] = useState(false)
 
   const { data: memberTeams } = usePB<ExpandedMemberTeam>('member_teams', {
     filter: user ? `member="${user.id}"` : '',
     expand: 'team',
     perPage: 20,
   })
+
+  // Pending team requests
+  interface TeamRequest { id: string; member: string; team: string; status: string; expand?: { team?: Team } }
+  const { data: pendingRequests, refetch: refetchRequests } = usePB<TeamRequest>('team_requests', {
+    filter: user ? `member="${user.id}" && status="pending"` : '',
+    expand: 'team',
+    perPage: 20,
+  })
+
+  const currentTeamIds = useMemo(
+    () => memberTeams.map((mt) => mt.expand?.team?.id ?? mt.team),
+    [memberTeams],
+  )
+
+  async function handleCancelRequest(requestId: string) {
+    try {
+      await pb.collection('team_requests').update(requestId, { status: 'cancelled' })
+      refetchRequests()
+    } catch {
+      // ignore
+    }
+  }
 
   const today = toISODate(new Date())
 
@@ -127,6 +153,36 @@ export default function ProfilePage() {
                 })}
               </div>
             )}
+
+            {/* Pending team requests */}
+            {pendingRequests.length > 0 && (
+              <div className="mt-1 space-y-1">
+                {pendingRequests.map((req) => (
+                  <div key={req.id} className="flex items-center gap-2.5 py-1.5 pl-5">
+                    <Clock className="h-3.5 w-3.5 text-amber-500" />
+                    <TeamChip team={req.expand?.team?.name ?? '?'} size="sm" />
+                    <span className="text-xs text-amber-600 dark:text-amber-400">{t('pendingApproval')}</span>
+                    <button
+                      onClick={() => handleCancelRequest(req.id)}
+                      className="ml-auto rounded-full p-0.5 text-gray-400 hover:bg-gray-100 hover:text-red-500 dark:hover:bg-gray-700 dark:hover:text-red-400"
+                      title={t('common:cancel')}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Add Team button */}
+            <button
+              onClick={() => setTeamRequestOpen(true)}
+              className="mt-1 flex items-center gap-1.5 py-1.5 pl-5 text-xs text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              {t('addTeam')}
+            </button>
+
             {user.role.length > 0 && (
               <div className={`flex flex-wrap items-center gap-1.5 ${memberTeams.length > 0 ? 'mt-2 border-t border-gray-100 pt-2 dark:border-gray-700' : ''}`}>
                 <span className="shrink-0 text-xs leading-none text-gray-500 dark:text-gray-400">{t('roles')}</span>
@@ -238,6 +294,15 @@ export default function ProfilePage() {
       <ProfileEditModal
         open={editOpen}
         onClose={() => setEditOpen(false)}
+      />
+      <TeamRequestModal
+        open={teamRequestOpen}
+        onClose={() => setTeamRequestOpen(false)}
+        onComplete={() => {
+          setTeamRequestOpen(false)
+          refetchRequests()
+        }}
+        currentTeamIds={currentTeamIds}
       />
       <DeleteAccountModal
         open={deleteOpen}

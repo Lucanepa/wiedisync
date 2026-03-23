@@ -117,6 +117,15 @@ export default {
   resetSuccess: 'Your password has been changed successfully. You can now sign in.',
   resetError: 'This link is invalid or expired. Please request a new reset link.',
 
+  // Team requests
+  addTeam: 'Add Team',
+  addTeamTitle: 'Join a Team',
+  addTeamDescription: 'Select a team you\'d like to join. The coach needs to approve your request.',
+  noTeamsAvailable: 'No more teams available.',
+  sendRequest: 'Send Request',
+  teamRequestError: 'Error sending request',
+  teamRequestSent: 'Request sent',
+
   // Danger Zone
   dangerZone: 'Danger Zone',
   deleteAccount: 'Delete Account',

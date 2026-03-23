@@ -94,4 +94,5 @@ export default {
   pendingRequests: '{{count}} demande(s) en attente',
   approve: 'Approuver',
   reject: 'Rejeter',
+  teamJoinRequest: 'Demande d\'adhesion',
 } as const

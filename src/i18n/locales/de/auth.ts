@@ -117,6 +117,15 @@ export default {
   resetSuccess: 'Dein Passwort wurde erfolgreich geändert. Du kannst dich jetzt anmelden.',
   resetError: 'Der Link ist ungültig oder abgelaufen. Bitte fordere einen neuen Link an.',
 
+  // Team requests
+  addTeam: 'Team hinzufügen',
+  addTeamTitle: 'Team beitreten',
+  addTeamDescription: 'Wähle ein Team, dem du beitreten möchtest. Der Trainer muss die Anfrage bestätigen.',
+  noTeamsAvailable: 'Keine weiteren Teams verfügbar.',
+  sendRequest: 'Anfrage senden',
+  teamRequestError: 'Fehler beim Senden der Anfrage',
+  teamRequestSent: 'Anfrage gesendet',
+
   // Danger Zone
   dangerZone: 'Gefahrenbereich',
   deleteAccount: 'Konto löschen',

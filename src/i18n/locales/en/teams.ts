@@ -94,6 +94,7 @@ export default {
   pendingRequests: '{{count}} pending request(s)',
   approve: 'Approve',
   reject: 'Reject',
+  teamJoinRequest: 'Join request',
 
   // QR invite / external user
   inviteExternalUser: 'Add External User',

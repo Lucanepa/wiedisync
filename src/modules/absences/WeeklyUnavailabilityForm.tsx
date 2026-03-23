@@ -13,19 +13,22 @@ import { Checkbox } from '@/components/ui/checkbox'
 import AffectsMultiSelect from '@/components/AffectsMultiSelect'
 import type { Absence, Member, MemberTeam } from '../../types'
 
-interface AbsenceFormProps {
+const DAY_KEYS = ['dayMon', 'dayTue', 'dayWed', 'dayThu', 'dayFri', 'daySat', 'daySun'] as const
+
+interface WeeklyUnavailabilityFormProps {
   open: boolean
   absence?: Absence | null
   onSave: () => void
   onCancel: () => void
 }
 
-export default function AbsenceForm({ open, absence, onSave, onCancel }: AbsenceFormProps) {
+export default function WeeklyUnavailabilityForm({ open, absence, onSave, onCancel }: WeeklyUnavailabilityFormProps) {
   const { t } = useTranslation('absences')
   const { user, coachTeamIds } = useAuth()
   const { effectiveIsCoach, effectiveIsAdmin } = useAdminMode()
   const { create, update, isLoading } = useMutation<Absence>('absences')
-  // Admins: fetch all active members directly
+
+  // Admins: fetch all active members
   const { data: allMembers } = usePB<Member>('members', {
     filter: 'kscw_membership_active=true',
     sort: 'last_name',
@@ -34,7 +37,7 @@ export default function AbsenceForm({ open, absence, onSave, onCancel }: Absence
     enabled: effectiveIsAdmin,
   })
 
-  // Coaches: fetch team members via member_teams with expanded member data
+  // Coaches: fetch team members
   const { data: memberTeams, error: memberTeamsError } = usePB<MemberTeam & { expand?: { member?: Member } }>('member_teams', {
     filter: coachTeamIds.map((id) => `team="${id}"`).join(' || '),
     expand: 'member',
@@ -42,10 +45,8 @@ export default function AbsenceForm({ open, absence, onSave, onCancel }: Absence
     enabled: effectiveIsCoach && !effectiveIsAdmin && coachTeamIds.length > 0,
   })
 
-  // Build visible members: admins see all, coaches see their team members
   const visibleMembers = useMemo(() => {
     if (effectiveIsAdmin) return allMembers
-    // Deduplicate members (same member on multiple teams)
     const seen = new Set<string>()
     const members: Member[] = []
     for (const mt of memberTeams) {
@@ -59,34 +60,40 @@ export default function AbsenceForm({ open, absence, onSave, onCancel }: Absence
   }, [allMembers, memberTeams, effectiveIsAdmin])
 
   const [memberId, setMemberId] = useState('')
+  const [daysOfWeek, setDaysOfWeek] = useState<number[]>([])
+  const [affects, setAffects] = useState<string[]>(['all'])
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
-  const [reason, setReason] = useState<Absence['reason']>('other')
-  const [reasonDetail, setReasonDetail] = useState('')
-  const [affects, setAffects] = useState<string[]>(['all'])
-  const [indefinite, setIndefinite] = useState(false)
+  const [indefinite, setIndefinite] = useState(true)
+  const [note, setNote] = useState('')
   const [validationError, setValidationError] = useState('')
 
   useEffect(() => {
     if (absence) {
       setMemberId(absence.member)
+      setDaysOfWeek(absence.days_of_week ?? [])
+      setAffects(absence.affects ?? ['all'])
       setStartDate(absence.start_date.split(' ')[0])
       setEndDate(absence.indefinite ? '' : absence.end_date.split(' ')[0])
-      setReason(absence.reason)
-      setReasonDetail(absence.reason_detail)
-      setAffects(absence.affects ?? ['all'])
       setIndefinite(absence.indefinite ?? false)
+      setNote(absence.reason_detail ?? '')
     } else {
       setMemberId(user?.id ?? '')
+      setDaysOfWeek([])
+      setAffects(['all'])
       setStartDate('')
       setEndDate('')
-      setReason('other')
-      setReasonDetail('')
-      setAffects(['all'])
-      setIndefinite(false)
+      setIndefinite(true)
+      setNote('')
     }
     setValidationError('')
   }, [absence, user, open])
+
+  function toggleDay(day: number) {
+    setDaysOfWeek((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort()
+    )
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -94,6 +101,10 @@ export default function AbsenceForm({ open, absence, onSave, onCancel }: Absence
 
     if (effectiveIsCoach && !memberId) {
       setValidationError(t('memberRequired'))
+      return
+    }
+    if (daysOfWeek.length === 0) {
+      setValidationError(t('atLeastOneDay'))
       return
     }
     if (!startDate) {
@@ -111,13 +122,14 @@ export default function AbsenceForm({ open, absence, onSave, onCancel }: Absence
 
     const data = {
       member: memberId || user?.id,
+      type: 'weekly' as const,
+      days_of_week: daysOfWeek,
       start_date: startDate,
       end_date: indefinite ? '2099-12-31' : endDate,
-      reason,
-      reason_detail: reasonDetail,
-      affects,
-      type: 'standard' as const,
       indefinite,
+      affects,
+      reason: 'other' as const,
+      reason_detail: note,
     }
 
     try {
@@ -136,7 +148,7 @@ export default function AbsenceForm({ open, absence, onSave, onCancel }: Absence
     <Modal
       open={open}
       onClose={onCancel}
-      title={absence ? t('editAbsenceTitle') : t('newAbsenceTitle')}
+      title={absence ? t('editWeeklyTitle') : t('newWeeklyTitle')}
       size="md"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -150,6 +162,36 @@ export default function AbsenceForm({ open, absence, onSave, onCancel }: Absence
             error={memberTeamsError ? t('common:errorLoading') : undefined}
           />
         )}
+
+        {/* Days of week selector */}
+        <div>
+          <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('daysOfWeek')}</label>
+          <div className="flex flex-wrap gap-2">
+            {DAY_KEYS.map((key, index) => {
+              const isSelected = daysOfWeek.includes(index)
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => toggleDay(index)}
+                  className={`min-h-[44px] rounded-full px-4 py-2 text-sm font-medium transition-colors sm:min-h-0 sm:px-3 sm:py-1.5 ${
+                    isSelected
+                      ? 'bg-brand-500 text-white shadow-sm'
+                      : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  {t(key)}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <AffectsMultiSelect
+          label={t('affects')}
+          selected={affects}
+          onChange={setAffects}
+        />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <DatePicker
@@ -178,31 +220,12 @@ export default function AbsenceForm({ open, absence, onSave, onCancel }: Absence
           <span className="text-gray-400 dark:text-gray-500">({t('indefiniteHint')})</span>
         </label>
 
-        <SearchableSelect
-          label={t('reason')}
-          value={reason}
-          onChange={(v) => setReason(v as Absence['reason'])}
-          options={[
-            { value: 'injury', label: t('reasonInjury') },
-            { value: 'vacation', label: t('reasonVacation') },
-            { value: 'work', label: t('reasonWork') },
-            { value: 'personal', label: t('reasonPersonal') },
-            { value: 'other', label: t('reasonOther') },
-          ]}
-        />
-
         <FormTextarea
-          label={t('detailsOptional')}
-          value={reasonDetail}
-          onChange={(e) => setReasonDetail(e.target.value)}
+          label={t('noteOptional')}
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
           rows={2}
-          placeholder={t('detailsPlaceholder')}
-        />
-
-        <AffectsMultiSelect
-          label={t('affects')}
-          selected={affects}
-          onChange={setAffects}
+          placeholder={t('notePlaceholder')}
         />
 
         {validationError && (

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ClipboardList, Upload } from 'lucide-react'
+import { ClipboardList, Upload, CalendarClock } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import { usePB } from '../../hooks/usePB'
@@ -13,6 +13,8 @@ import AbsenceCard from './AbsenceCard'
 import AbsenceForm from './AbsenceForm'
 import AbsenceImportModal from './AbsenceImportModal'
 import TeamAbsenceView from './TeamAbsenceView'
+import WeeklyUnavailabilityCard from './WeeklyUnavailabilityCard'
+import WeeklyUnavailabilityForm from './WeeklyUnavailabilityForm'
 import { Button } from '@/components/ui/button'
 import TabBar from '../../components/TabBar'
 import type { Absence, Member, Team } from '../../types'
@@ -23,12 +25,14 @@ export default function AbsencesPage() {
   const { t } = useTranslation('absences')
   const { user, isCoach, memberTeamIds, coachTeamIds } = useAuth()
   const { effectiveIsAdmin, effectiveIsCoach } = useAdminMode()
-  const [activeTab, setActiveTab] = useState<'mine' | 'team'>('mine')
+  const [activeTab, setActiveTab] = useState<'mine' | 'team' | 'weekly'>('mine')
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null)
   const [formOpen, setFormOpen] = useState(false)
   const [editingAbsence, setEditingAbsence] = useState<Absence | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [importOpen, setImportOpen] = useState(false)
+  const [weeklyFormOpen, setWeeklyFormOpen] = useState(false)
+  const [editingWeekly, setEditingWeekly] = useState<Absence | null>(null)
 
   // Fetch all active teams (needed to resolve "Alle" selection to actual IDs)
   const { data: allTeams } = usePB<Team>('teams', { filter: 'active=true', sort: 'name', perPage: 50 })
@@ -47,8 +51,17 @@ export default function AbsencesPage() {
     return allTeams.map((t) => t.id)
   }, [selectedTeam, visibleTeamIds, allTeams])
 
+  // Standard absences (exclude weekly)
   const { data: myAbsences, refetch } = usePB<AbsenceExpanded>('absences', {
-    filter: user ? `member="${user.id}"` : '',
+    filter: user ? `member="${user.id}" && type!="weekly"` : '',
+    sort: '-start_date',
+    expand: 'member',
+    perPage: 50,
+  })
+
+  // Weekly unavailabilities
+  const { data: myWeekly, refetch: refetchWeekly } = usePB<AbsenceExpanded>('absences', {
+    filter: user ? `member="${user.id}" && type="weekly"` : '',
     sort: '-start_date',
     expand: 'member',
     perPage: 50,
@@ -56,13 +69,17 @@ export default function AbsencesPage() {
 
   const { remove } = useMutation<Absence>('absences')
 
-  useRealtime('absences', () => refetch())
+  useRealtime('absences', () => {
+    refetch()
+    refetchWeekly()
+  })
 
   async function handleDelete() {
     if (!deletingId) return
     await remove(deletingId)
     setDeletingId(null)
     refetch()
+    refetchWeekly()
   }
 
   function handleEdit(absence: Absence) {
@@ -76,6 +93,20 @@ export default function AbsencesPage() {
     refetch()
   }
 
+  function handleWeeklyEdit(absence: Absence) {
+    setEditingWeekly(absence)
+    setWeeklyFormOpen(true)
+  }
+
+  function handleWeeklyFormSave() {
+    setWeeklyFormOpen(false)
+    setEditingWeekly(null)
+    refetchWeekly()
+  }
+
+  const hasTeams = memberTeamIds.length > 0 || coachTeamIds.length > 0 || effectiveIsAdmin
+  const showMineContent = activeTab === 'mine' || !hasTeams
+
   return (
     <div>
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -84,28 +115,42 @@ export default function AbsencesPage() {
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('subtitle')}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setImportOpen(true)}>
-            <Upload className="mr-2 h-4 w-4" />
-            {t('importAbsences')}
-          </Button>
-          <Button
-            onClick={() => {
-              setEditingAbsence(null)
-              setFormOpen(true)
-            }}
-          >
-            {t('newAbsence')}
-          </Button>
+          {activeTab !== 'weekly' && (
+            <Button variant="outline" onClick={() => setImportOpen(true)}>
+              <Upload className="mr-2 h-4 w-4" />
+              {t('importAbsences')}
+            </Button>
+          )}
+          {activeTab === 'weekly' ? (
+            <Button
+              onClick={() => {
+                setEditingWeekly(null)
+                setWeeklyFormOpen(true)
+              }}
+            >
+              {t('newWeekly')}
+            </Button>
+          ) : (
+            <Button
+              onClick={() => {
+                setEditingAbsence(null)
+                setFormOpen(true)
+              }}
+            >
+              {t('newAbsence')}
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* Tabs (any user with team memberships) */}
-      {(memberTeamIds.length > 0 || coachTeamIds.length > 0 || effectiveIsAdmin) && (
+      {/* Tabs */}
+      {hasTeams && (
         <div className="mt-6">
           <TabBar
             tabs={[
               { key: 'mine' as const, label: t('tabMyAbsences') },
               { key: 'team' as const, label: t('tabTeamAbsences') },
+              { key: 'weekly' as const, label: t('tabWeeklyUnavailability') },
             ]}
             active={activeTab}
             onChange={setActiveTab}
@@ -114,7 +159,7 @@ export default function AbsencesPage() {
       )}
 
       {/* Content */}
-      {activeTab === 'mine' || (memberTeamIds.length === 0 && coachTeamIds.length === 0 && !effectiveIsAdmin) ? (
+      {showMineContent ? (
         <div className="mt-6">
           {myAbsences.length === 0 ? (
             <EmptyState
@@ -136,14 +181,36 @@ export default function AbsencesPage() {
             </div>
           )}
         </div>
-      ) : (
+      ) : activeTab === 'team' ? (
         <div className="mt-6">
           <TeamFilter selected={selectedTeam} onChange={setSelectedTeam} limitToTeamIds={visibleTeamIds} />
           <div className="mt-4">
             <TeamAbsenceView teamIds={effectiveTeamIds} />
           </div>
         </div>
-      )}
+      ) : activeTab === 'weekly' ? (
+        <div className="mt-6">
+          {myWeekly.length === 0 ? (
+            <EmptyState
+              icon={<CalendarClock className="h-10 w-10" />}
+              title={t('noWeeklyAbsences')}
+              description={t('noWeeklyAbsencesDescription')}
+            />
+          ) : (
+            <div className="space-y-3">
+              {myWeekly.map((a) => (
+                <WeeklyUnavailabilityCard
+                  key={a.id}
+                  absence={a}
+                  onEdit={handleWeeklyEdit}
+                  onDelete={setDeletingId}
+                  canEdit={a.member === user?.id || isCoach || effectiveIsCoach}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      ) : null}
 
       <AbsenceForm
         open={formOpen}
@@ -152,6 +219,16 @@ export default function AbsencesPage() {
         onCancel={() => {
           setFormOpen(false)
           setEditingAbsence(null)
+        }}
+      />
+
+      <WeeklyUnavailabilityForm
+        open={weeklyFormOpen}
+        absence={editingWeekly}
+        onSave={handleWeeklyFormSave}
+        onCancel={() => {
+          setWeeklyFormOpen(false)
+          setEditingWeekly(null)
         }}
       />
 
@@ -168,8 +245,8 @@ export default function AbsencesPage() {
         open={deletingId !== null}
         onClose={() => setDeletingId(null)}
         onConfirm={handleDelete}
-        title={t('deleteTitle')}
-        message={t('deleteMessage')}
+        title={activeTab === 'weekly' ? t('deleteWeeklyTitle') : t('deleteTitle')}
+        message={activeTab === 'weekly' ? t('deleteWeeklyMessage') : t('deleteMessage')}
         confirmLabel={t('common:delete')}
         danger
       />

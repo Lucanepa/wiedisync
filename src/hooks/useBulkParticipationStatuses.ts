@@ -3,6 +3,7 @@ import { usePB } from './usePB'
 import { useAuth } from './useAuth'
 import { useRealtime } from './useRealtime'
 import type { Participation, Absence } from '../types'
+import { absenceCoversActivity } from '../utils/absenceHelpers'
 
 /**
  * Bulk-fetch participation statuses for multiple activities in just 2 queries
@@ -72,15 +73,7 @@ export function useBulkParticipationStatuses(
       const participation = partByActivity.get(activity.id)
 
       // Check if any absence covers this activity's date and type
-      const hasAbsence = absences.some((a) => {
-        if (a.start_date > activity.date || a.end_date < activity.date) return false
-        const affects = a.affects
-        if (!affects || affects.length === 0 || affects.includes('all')) return true
-        if (activity.type === 'training' && affects.includes('trainings')) return true
-        if (activity.type === 'game' && affects.includes('games')) return true
-        if (activity.type === 'event') return true
-        return false
-      })
+      const hasAbsence = absences.some((a) => absenceCoversActivity(a, activity.type, activity.date))
 
       if (participation) {
         map.set(activity.id, participation.status)

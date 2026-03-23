@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import type { RecordModel, ListResult, RecordListOptions } from 'pocketbase'
 import pb from '../pb'
 
@@ -15,6 +15,7 @@ export function usePB<T extends RecordModel>(
   const [total, setTotal] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
+  const hasLoaded = useRef(false)
 
   const enabled = options?.enabled ?? true
   const all = options?.all ?? false
@@ -32,7 +33,8 @@ export function usePB<T extends RecordModel>(
       setIsLoading(false)
       return
     }
-    setIsLoading(true)
+    // Only show loading spinner on initial load, not background refetches
+    if (!hasLoaded.current) setIsLoading(true)
     setError(null)
     try {
       const queryOpts: Record<string, string> = {}
@@ -50,6 +52,7 @@ export function usePB<T extends RecordModel>(
         setData(result.items)
         setTotal(result.totalItems)
       }
+      hasLoaded.current = true
     } catch (err) {
       setError(err instanceof Error ? err : new Error(String(err)))
     } finally {

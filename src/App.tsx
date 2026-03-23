@@ -21,6 +21,7 @@ import DatabasePage from './modules/admin/DatabasePage'
 import ClubDeskSyncPage from './modules/admin/ClubDeskSyncPage'
 import InfraHealthPage from './modules/admin/InfraHealthPage'
 import DataHealthPage from './modules/admin/DataHealthPage'
+import AuditLogPage from './modules/admin/AuditLogPage'
 import HallenplanPage from './modules/hallenplan/HallenplanPage'
 import EmbedGamesPage from './modules/games/EmbedGamesPage'
 import LoginPage from './modules/auth/LoginPage'
@@ -84,6 +85,7 @@ export default function App() {
             <Route path="admin/clubdesk-sync" element={<SuperAdminRoute><ClubDeskSyncPage /></SuperAdminRoute>} />
             <Route path="admin/infra" element={<SuperAdminRoute><InfraHealthPage /></SuperAdminRoute>} />
             <Route path="admin/data-health" element={<SuperAdminRoute><DataHealthPage /></SuperAdminRoute>} />
+            <Route path="admin/audit-log" element={<SuperAdminRoute><AuditLogPage /></SuperAdminRoute>} />
           </Route>
         </Routes>
       </BrowserRouter>

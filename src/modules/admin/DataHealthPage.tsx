@@ -1,9 +1,10 @@
 import { useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   AlertTriangle, CheckCircle2, ChevronDown, ChevronRight,
-  Wrench, XCircle, RefreshCcw,
+  Wrench, XCircle, RefreshCcw, ScrollText,
 } from 'lucide-react'
 import {
   runAllChecks, autoFix, autoFixAll,
@@ -153,8 +154,15 @@ function CollectionCard({
                       <p className="truncate text-xs text-gray-600 dark:text-gray-300">
                         {issue.detail}
                       </p>
-                      <p className="text-[10px] text-gray-400 dark:text-gray-500">
+                      <p className="flex items-center gap-1.5 text-[10px] text-gray-400 dark:text-gray-500">
                         ID: {issue.id} &middot; {t('dhField')}: {issue.field}
+                        <Link
+                          to={`/admin/audit-log?collection=${health.collection}&record_id=${issue.id}`}
+                          className="inline-flex items-center gap-0.5 text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
+                        >
+                          <ScrollText className="h-2.5 w-2.5" />
+                          {t('dhViewHistory')}
+                        </Link>
                       </p>
                     </div>
                     {issue.autoFixable && (

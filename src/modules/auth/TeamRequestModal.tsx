@@ -3,11 +3,10 @@ import { useTranslation } from 'react-i18next'
 import Modal from '@/components/Modal'
 import { Button } from '@/components/ui/button'
 import SearchableSelect from '@/components/ui/SearchableSelect'
-import TeamChip from '../../components/TeamChip'
 import { useAuth } from '../../hooks/useAuth'
 import { usePB } from '../../hooks/usePB'
 import pb from '../../pb'
-import type { Team, MemberTeam } from '../../types'
+import type { Team } from '../../types'
 
 interface TeamRequestModalProps {
   open: boolean
@@ -18,6 +17,8 @@ interface TeamRequestModalProps {
 
 interface TeamRequest {
   id: string
+  collectionId: string
+  collectionName: string
   member: string
   team: string
   status: 'pending' | 'approved' | 'rejected' | 'cancelled'

@@ -38,7 +38,7 @@ export default function TeamDetail() {
   const { data: pendingMembers, refetch: refetchPending } = usePendingMembers(canManage ? teamId : undefined)
 
   // Team join requests from existing members
-  interface TeamRequest { id: string; member: string; team: string; status: string; expand?: { member?: Member } }
+  interface TeamRequest { id: string; collectionId: string; collectionName: string; member: string; team: string; status: string; expand?: { member?: Member } }
   const { data: teamRequests, refetch: refetchTeamRequests } = usePB<TeamRequest>('team_requests', {
     filter: canManage && teamId ? `team="${teamId}" && status="pending"` : '',
     expand: 'member',

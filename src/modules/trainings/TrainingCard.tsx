@@ -5,7 +5,7 @@ import TeamChip from '../../components/TeamChip'
 import { useAuth } from '../../hooks/useAuth'
 import { useMutation } from '../../hooks/useMutation'
 
-import { formatDate, formatWeekday, formatTime } from '../../utils/dateHelpers'
+import { formatDate, formatWeekday, formatTime, getDeadlineDate } from '../../utils/dateHelpers'
 import type { Training, Team, Hall, Member, Participation } from '../../types'
 
 type TrainingExpanded = Training & {
@@ -190,10 +190,9 @@ function TrainingParticipation({ training, existingParticipation }: { training: 
   const isStaff = isCoachOf(training.team)
   const { create, update } = useMutation<Participation>('participations')
 
-  const deadlinePassed = training.respond_by ? (() => {
-    const deadlineDate = new Date(`${training.respond_by.split(' ')[0]}T${training.start_time || '23:59'}`)
-    return deadlineDate < new Date()
-  })() : false
+  const deadlinePassed = training.respond_by
+    ? getDeadlineDate(training.respond_by, training.start_time) < new Date()
+    : false
 
   const [optimisticStatus, setOptimisticStatus] = useState<Participation['status'] | null>(null)
   const [saveConfirmed, setSaveConfirmed] = useState(false)
@@ -357,7 +356,11 @@ function TrainingParticipation({ training, existingParticipation }: { training: 
       )}
       {training.respond_by && !isLocked && !deadlinePassed && (
         <p className="text-[10px] leading-tight text-gray-400 dark:text-gray-500">
-          {tTrainings('respondBy')}: {formatDate(training.respond_by.split(' ')[0])}{training.start_time ? ` ${formatTime(training.start_time)}` : ''}
+          {tTrainings('respondBy')}: {formatDate(training.respond_by.split(' ')[0])}, {(() => {
+            const [, rbTime] = training.respond_by.split(' ')
+            const time = rbTime && rbTime !== '00:00:00' ? rbTime.slice(0, 5) : training.start_time
+            return time ? formatTime(time) : ''
+          })()}
         </p>
       )}
 

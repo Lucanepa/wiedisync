@@ -12,6 +12,8 @@ import { useParticipation } from '../../hooks/useParticipation'
 import { usePB } from '../../hooks/usePB'
 import { useMutation } from '../../hooks/useMutation'
 import { formatDate, formatTime } from '../../utils/dateHelpers'
+import TasksSection from '../tasks/TasksSection'
+import { isFeatureEnabled } from '../../utils/featureToggles'
 import { Calendar, Clock, MapPin, Users, Check, MessageSquare, UserPlus } from 'lucide-react'
 import type { Event, Team, EventSession, Participation } from '../../types'
 
@@ -115,6 +117,18 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
                 ? <RichText html={event.description} />
                 : <p>{event.description}</p>
               }
+            </div>
+          )}
+
+          {/* Tasks — enabled per-event by creator, or inherited from first team */}
+          {user && event && isFeatureEnabled(event.features_enabled, 'tasks') && (
+            <div className="border-t border-gray-200 pt-3 dark:border-gray-700">
+              <TasksSection
+                activityType="event"
+                activityId={event.id}
+                teamId={event.teams?.[0]}
+                canManage={isStaff}
+              />
             </div>
           )}
 

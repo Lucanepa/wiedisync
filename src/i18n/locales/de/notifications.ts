@@ -32,6 +32,16 @@ export default {
   deadline_game: 'Anmeldefrist morgen: {{home_team}} vs {{away_team}}',
   deadline_training: 'Anmeldefrist morgen: Training am {{date}}',
   deadline_event: 'Anmeldefrist morgen: {{title}}',
+  // Neue Feature-Benachrichtigungen
+  poll_created: '{{creator}} hat eine Umfrage erstellt: {{question}}',
+  carpool_offered: '{{driver}} bietet eine Fahrt zu {{game}} an',
+  carpool_joined: '{{passenger}} fährt bei deiner Fahrt zu {{game}} mit',
+  carpool_cancelled: '{{driver}} hat die Fahrt zu {{game}} abgesagt',
+  task_assigned: 'Dir wurde eine Aufgabe zugewiesen: {{label}}',
+  // Typ-Labels für neue Features
+  pollCreated: 'Umfrage',
+  carpoolUpdate: 'Fahrgemeinschaft',
+  taskAssigned: 'Aufgabe',
   // Push notifications
   pushNotifications: 'Push-Benachrichtigungen',
   pushEnable: 'Aktivieren',

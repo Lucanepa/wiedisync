@@ -32,6 +32,16 @@ export default {
   deadline_game: 'RSVP deadline tomorrow: {{home_team}} vs {{away_team}}',
   deadline_training: 'RSVP deadline tomorrow: Training on {{date}}',
   deadline_event: 'RSVP deadline tomorrow: {{title}}',
+  // New feature notifications
+  poll_created: '{{creator}} created a poll: {{question}}',
+  carpool_offered: '{{driver}} is offering a ride to {{game}}',
+  carpool_joined: '{{passenger}} joined your ride to {{game}}',
+  carpool_cancelled: '{{driver}} cancelled the ride to {{game}}',
+  task_assigned: 'You have been assigned: {{label}}',
+  // Type labels for new features
+  pollCreated: 'Poll',
+  carpoolUpdate: 'Carpool',
+  taskAssigned: 'Task',
   // Push notifications
   pushNotifications: 'Push Notifications',
   pushEnable: 'Enable',

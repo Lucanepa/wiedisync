@@ -16,7 +16,7 @@ import InviteExternalUserModal from './InviteExternalUserModal'
 import EmptyState from '../../components/EmptyState'
 import { getFileUrl } from '../../utils/pbFile'
 import { getCurrentSeason } from '../../utils/dateHelpers'
-import type { Team, Member, MemberPosition, MemberTeam, LicenceType } from '../../types'
+import type { Team, Member, MemberPosition, MemberTeam, LicenceType, FeatureToggles } from '../../types'
 import { Button } from '../../components/ui/button'
 
 type LeadershipRole = 'coach' | 'captain' | 'team_responsible'
@@ -558,6 +558,49 @@ export default function RosterEditor() {
         teamId={team?.id ?? ''}
         teamName={team?.full_name ?? team?.name ?? ''}
       />
+
+      {/* Feature toggles */}
+      {team && (
+        <FeatureTogglesSection team={team} onUpdate={(f) => setTeam((prev) => prev ? { ...prev, features_enabled: f } : prev)} />
+      )}
+    </div>
+  )
+}
+
+function FeatureTogglesSection({ team, onUpdate }: { team: Team; onUpdate: (f: FeatureToggles) => void }) {
+  const { t } = useTranslation('teams')
+  const { update } = useMutation<Team>('teams')
+  const features = team.features_enabled ?? {}
+
+  const toggle = async (key: keyof FeatureToggles) => {
+    const next = { ...features, [key]: !features[key] }
+    await update(team.id, { features_enabled: next })
+    onUpdate(next)
+  }
+
+  const FEATURE_KEYS: { key: keyof FeatureToggles; labelKey: string }[] = [
+    { key: 'tasks', labelKey: 'featureTasks' },
+    { key: 'carpool', labelKey: 'featureCarpool' },
+    { key: 'polls', labelKey: 'featurePolls' },
+  ]
+
+  return (
+    <div className="mt-8">
+      <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('featureToggles')}</h2>
+      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('featureTogglesDescription')}</p>
+      <div className="mt-3 space-y-2">
+        {FEATURE_KEYS.map(({ key, labelKey }) => (
+          <label key={key} className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800">
+            <input
+              type="checkbox"
+              checked={features[key] === true}
+              onChange={() => toggle(key)}
+              className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 dark:border-gray-600"
+            />
+            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{t(labelKey)}</span>
+          </label>
+        ))}
+      </div>
     </div>
   )
 }

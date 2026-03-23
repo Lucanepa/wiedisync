@@ -32,6 +32,15 @@ export default {
   deadline_game: 'Aamäldefrischt morn: {{home_team}} gege {{away_team}}',
   deadline_training: 'Aamäldefrischt morn: Training am {{date}}',
   deadline_event: 'Aamäldefrischt morn: {{title}}',
+  // Nöii Feature-Benachrichtigunge
+  poll_created: '{{creator}} het e Umfrag erstellt: {{question}}',
+  carpool_offered: '{{driver}} bietet e Fahrt zu {{game}} a',
+  carpool_joined: '{{passenger}} fahrt bi dinere Fahrt zu {{game}} mit',
+  carpool_cancelled: '{{driver}} het d Fahrt zu {{game}} abgseit',
+  task_assigned: 'Dir isch e Ufgab zuegwise worde: {{label}}',
+  pollCreated: 'Umfrag',
+  carpoolUpdate: 'Fahrgmeinschaft',
+  taskAssigned: 'Ufgab',
   // Push notifications
   pushNotifications: 'Push-Benachrichtigunge',
   pushEnable: 'Aktiviere',

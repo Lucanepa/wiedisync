@@ -21,6 +21,8 @@ import { coercePositions } from '../../utils/memberPositions'
 import { getCurrentSeason } from '../../utils/dateHelpers'
 import ImageLightbox from '../../components/ImageLightbox'
 import type { Team, Member } from '../../types'
+import PollsSection from '../polls/PollsSection'
+import { isFeatureEnabled } from '../../utils/featureToggles'
 
 type SortKey = 'name' | 'number' | 'position' | 'email' | 'phone' | 'birthdate' | 'role'
 type SortDir = 'asc' | 'desc'
@@ -465,6 +467,13 @@ export default function TeamDetail() {
           </div>
         )}
       </div>
+
+      {/* Polls */}
+      {teamId && isFeatureEnabled(team.features_enabled, 'polls') && (
+        <div className="mt-8">
+          <PollsSection teamId={teamId} canManage={canManage} />
+        </div>
+      )}
 
       {/* Sponsors */}
       {team.sponsors && team.sponsors.length > 0 && (

@@ -48,4 +48,6 @@ export default {
   sessionsConfirmed: '{{confirmed}}/{{total}} confirmed',
   overallView: 'Overall',
   sessionParticipation: 'Participation per time slot',
+  enableTasks: 'Enable tasks',
+  enableTasksHint: 'Let participants assign and claim duties for this event.',
 } as const

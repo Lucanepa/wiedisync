@@ -32,6 +32,15 @@ export default {
   deadline_game: 'Scadenza RSVP domani: {{home_team}} vs {{away_team}}',
   deadline_training: 'Scadenza RSVP domani: Allenamento del {{date}}',
   deadline_event: 'Scadenza RSVP domani: {{title}}',
+  // Notifiche nuove funzionalità
+  poll_created: '{{creator}} ha creato un sondaggio: {{question}}',
+  carpool_offered: '{{driver}} offre un passaggio per {{game}}',
+  carpool_joined: '{{passenger}} si è unito al tuo passaggio per {{game}}',
+  carpool_cancelled: '{{driver}} ha annullato il passaggio per {{game}}',
+  task_assigned: 'Ti è stato assegnato un compito: {{label}}',
+  pollCreated: 'Sondaggio',
+  carpoolUpdate: 'Carpooling',
+  taskAssigned: 'Compito',
   // Push notifications
   pushNotifications: 'Notifiche push',
   pushEnable: 'Attiva',

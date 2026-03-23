@@ -109,4 +109,10 @@ export default {
   shellAccount: 'Temporary',
   expiresIn: 'expires in {{days}}d',
   extend: 'Extend',
+  // Feature toggles
+  featureToggles: 'Features',
+  featureTogglesDescription: 'Enable or disable optional features for this team.',
+  featureTasks: 'Tasks (assign duties per game/training/event)',
+  featureCarpool: 'Carpool (organise rides for away games)',
+  featurePolls: 'Polls (team voting & decisions)',
 } as const

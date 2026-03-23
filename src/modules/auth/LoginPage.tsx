@@ -1,12 +1,15 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
 import { useAuth } from '../../hooks/useAuth'
 import { useTheme } from '../../hooks/useTheme'
 import pb from '../../pb'
 import { Button } from '@/components/ui/button'
 import { FormInput } from '@/components/FormField'
 import { Switch } from '@/components/ui/switch'
+
+const TURNSTILE_SITE_KEY = '0x4AAAAAACoYmx3xiDfRbmv9'
 
 export default function LoginPage() {
   const { login, user } = useAuth()
@@ -38,6 +41,8 @@ export default function LoginPage() {
   })
   const [resetLoading, setResetLoading] = useState(false)
   const [resetSent, setResetSent] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const turnstileRef = useRef<TurnstileInstance>(null)
 
   const [rememberMe, setRememberMe] = useState(
     () => localStorage.getItem('wiedisync-remember-me') !== 'false',
@@ -54,12 +59,14 @@ export default function LoginPage() {
     setShowAccountExists(false)
     localStorage.setItem('wiedisync-remember-me', String(rememberMe))
     try {
-      await login(email, password)
+      await login(email, password, turnstileToken)
       sessionStorage.removeItem('login-redirect-email')
       sessionStorage.removeItem('login-redirect-exists')
       navigate('/', { replace: true })
     } catch {
       setError(t('invalidCredentials'))
+      turnstileRef.current?.reset()
+      setTurnstileToken('')
     } finally {
       setLoading(false)
     }
@@ -154,6 +161,14 @@ export default function LoginPage() {
             {error && (
               <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
             )}
+
+            <Turnstile
+              ref={turnstileRef}
+              siteKey={TURNSTILE_SITE_KEY}
+              onSuccess={setTurnstileToken}
+              onExpire={() => setTurnstileToken('')}
+              options={{ theme: 'auto', size: 'invisible' }}
+            />
 
             <Button type="submit" loading={loading} className="w-full">
               {loading ? t('signingIn') : t('signIn')}

@@ -79,17 +79,18 @@ export function normalizeAffects(input: string | undefined): string[] {
 }
 
 export async function parseAbsenceFile(file: File): Promise<RawAbsenceRow[]> {
-  const XLSX = await import('xlsx')
-  const buffer = await file.arrayBuffer()
-  const wb = XLSX.read(buffer)
-  const ws = wb.Sheets[wb.SheetNames[0]]
-  const rawRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { raw: true })
+  const { default: readXlsxFile } = await import('read-excel-file/browser')
+  const rawRows = await readXlsxFile(file)
+  if (rawRows.length === 0) return []
 
-  return rawRows.map((raw) => {
+  const headers = rawRows[0].map((h) => String(h).trim())
+
+  return rawRows.slice(1).map((row) => {
     const mapped: Partial<RawAbsenceRow> = {}
-    for (const [key, value] of Object.entries(raw)) {
-      const canonical = COLUMN_ALIASES[key.trim().toLowerCase()]
+    for (let i = 0; i < headers.length; i++) {
+      const canonical = COLUMN_ALIASES[headers[i].toLowerCase()]
       if (canonical) {
+        const value = row[i]
         if (canonical === 'start_date' || canonical === 'end_date') {
           mapped[canonical] = normalizeDate(value)
         } else {

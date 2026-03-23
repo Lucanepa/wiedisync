@@ -79,13 +79,14 @@ export default function HomePage() {
     return userTeamIds.map((id) => `kscw_team="${id}"`).join(' || ')
   }, [userTeamIds, hasTeams])
 
-  // Next 5 upcoming games (all)
+  // Next 5 upcoming games (all) — only fetch when user toggled "show all" or has no teams
   const allGamesFilter = [`status = "scheduled"`, `date >= "${today}"`, sportFilter].filter(Boolean).join(' && ')
   const { data: allNextGames, isLoading: gamesLoading } = usePB<ExpandedGame>('games', {
     filter: allGamesFilter,
     sort: '+date,+time',
     expand: 'kscw_team,hall',
     perPage: 5,
+    enabled: showAllGames || !hasTeams,
   })
 
   // Next 5 upcoming games (my teams only)
@@ -98,13 +99,14 @@ export default function HomePage() {
     enabled: hasTeams && !showAllGames,
   })
 
-  // Latest 5 results (all)
+  // Latest 5 results (all) — only fetch when user toggled "show all" or has no teams
   const allResultsFilter = [`status = "completed"`, sportFilter].filter(Boolean).join(' && ')
   const { data: allLatestResults, isLoading: resultsLoading } = usePB<ExpandedGame>('games', {
     filter: allResultsFilter,
     sort: '-date,-time',
     expand: 'kscw_team,hall',
     perPage: 5,
+    enabled: showAllResults || !hasTeams,
   })
 
   // Latest 5 results (my teams only)

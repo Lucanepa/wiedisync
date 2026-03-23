@@ -13,13 +13,13 @@ import EventCard from './EventCard'
 import EventDetailModal from './EventDetailModal'
 import EventForm from './EventForm'
 import { Button } from '@/components/ui/button'
-import type { Event, Team } from '../../types'
+import type { Event, Team, Participation } from '../../types'
 
 type EventExpanded = Event & { expand?: { teams?: Team[] } }
 
 export default function EventsPage() {
   const { t } = useTranslation('events')
-  const { isCoach, isCoachOf, isAdmin, memberTeamIds } = useAuth()
+  const { user, isCoach, isCoachOf, isAdmin, memberTeamIds } = useAuth()
   const [formOpen, setFormOpen] = useState(false)
   const [editingEvent, setEditingEvent] = useState<Event | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -50,6 +50,36 @@ export default function EventsPage() {
   const { remove } = useMutation<Event>('events')
 
   useRealtime('events', () => refetch())
+
+  // Batch-fetch ALL participations for visible events in ONE request
+  const eventIds = useMemo(() => events.map((e) => e.id), [events])
+  const participationFilter = useMemo(() => {
+    if (eventIds.length === 0) return ''
+    const idClauses = eventIds.map((id) => `activity_id="${id}"`).join(' || ')
+    return `activity_type="event" && (${idClauses})`
+  }, [eventIds])
+
+  const { data: allParticipations, refetch: refetchParticipations } = usePB<Participation>('participations', {
+    filter: participationFilter,
+    all: true,
+    enabled: eventIds.length > 0,
+  })
+
+  useRealtime('participations', () => refetchParticipations())
+
+  const { participationsByEvent, myParticipationByEvent } = useMemo(() => {
+    const byEvent = new Map<string, Participation[]>()
+    const myByEvent = new Map<string, Participation>()
+    for (const p of allParticipations) {
+      const list = byEvent.get(p.activity_id) ?? []
+      list.push(p)
+      byEvent.set(p.activity_id, list)
+      if (user && p.member === user.id) {
+        myByEvent.set(p.activity_id, p)
+      }
+    }
+    return { participationsByEvent: byEvent, myParticipationByEvent: myByEvent }
+  }, [allParticipations, user])
 
   function handleEdit(event: Event) {
     setEditingEvent(event)
@@ -123,6 +153,8 @@ export default function EventsPage() {
                   onEdit={canEdit ? handleEdit : undefined}
                   onDelete={canEdit ? setDeletingId : undefined}
                   onOpenRoster={setRosterEvent}
+                  participations={participationsByEvent.get(event.id)}
+                  myParticipation={myParticipationByEvent.get(event.id)}
                 />
               )
             })}

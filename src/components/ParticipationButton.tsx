@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Check, X, HelpCircle, Hourglass } from 'lucide-react'
 import { useParticipation } from '../hooks/useParticipation'
+import { useMutation } from '../hooks/useMutation'
 import { useAuth } from '../hooks/useAuth'
 import type { Participation, EventSession } from '../types'
 import SessionParticipationSheet from './SessionParticipationSheet'
@@ -22,6 +23,8 @@ interface ParticipationButtonProps {
   eventSessions?: EventSession[]
   /** When true, declining or tentative requires a note */
   requireNoteIfAbsent?: boolean
+  /** Pre-fetched participation — skips internal API call when provided */
+  existingParticipation?: Participation
 }
 
 const statusStyles = {
@@ -31,31 +34,108 @@ const statusStyles = {
   waitlisted: { icon: <Hourglass className="h-3.5 w-3.5" />, bg: 'bg-orange-100 dark:bg-orange-900/30', text: 'text-orange-700 dark:text-orange-400' },
 }
 
-export default function ParticipationButton({
-  activityType,
+/** Shared data interface for both hooked and prefetched modes */
+interface ParticipationData {
+  participation: Participation | null
+  effectiveStatus: Participation['status'] | null
+  setStatus: (status: Participation['status'], note?: string, guestCount?: number) => Promise<void>
+  saveConfirmed: boolean
+  dismissConfirmed: () => void
+}
+
+/**
+ * Entry point: routes to hooked or prefetched version based on props.
+ * This avoids conditional hooks — each branch always calls the same hooks.
+ */
+export default function ParticipationButton(props: ParticipationButtonProps) {
+  if (props.existingParticipation !== undefined) {
+    return <PrefetchedParticipationButton {...props} />
+  }
+  return <HookedParticipationButton {...props} />
+}
+
+/** Uses useParticipation hook to fetch data (for detail modals / standalone use) */
+function HookedParticipationButton(props: ParticipationButtonProps) {
+  const { isCoachOf } = useAuth()
+  const isStaff = !!props.teamId && isCoachOf(props.teamId)
+  const { participation, effectiveStatus, setStatus, saveConfirmed, dismissConfirmed } = useParticipation(
+    props.activityType,
+    props.activityId,
+    props.activityDate,
+    props.sessionId,
+    isStaff,
+  )
+  return (
+    <ParticipationButtonInner
+      {...props}
+      data={{ participation, effectiveStatus, setStatus, saveConfirmed, dismissConfirmed }}
+    />
+  )
+}
+
+/** Uses pre-fetched participation + useMutation for writes (for list cards) */
+function PrefetchedParticipationButton(props: ParticipationButtonProps) {
+  const { user, isCoachOf } = useAuth()
+  const isStaff = !!props.teamId && isCoachOf(props.teamId)
+  const { create, update } = useMutation<Participation>('participations')
+  const [optimisticStatus, setOptimisticStatus] = useState<Participation['status'] | null>(null)
+  const [saveConfirmed, setSaveConfirmed] = useState(false)
+
+  const participation = props.existingParticipation ?? null
+  const serverStatus = participation?.status ?? null
+  const effectiveStatus = optimisticStatus ?? serverStatus
+
+  const setStatus = useCallback(async (status: Participation['status'], note = '', guestCount = 0) => {
+    if (!user) return
+    setOptimisticStatus(status)
+    setSaveConfirmed(false)
+    try {
+      if (participation) {
+        await update(participation.id, { status, note, guest_count: guestCount })
+      } else {
+        await create({
+          member: user.id,
+          activity_type: props.activityType,
+          activity_id: props.activityId,
+          status,
+          note,
+          guest_count: guestCount,
+          is_staff: isStaff,
+          ...(props.sessionId ? { session_id: props.sessionId } : {}),
+        })
+      }
+      setSaveConfirmed(true)
+    } catch {
+      setOptimisticStatus(null)
+    }
+  }, [user, participation, props.activityType, props.activityId, props.sessionId, isStaff, create, update])
+
+  const dismissConfirmed = useCallback(() => setSaveConfirmed(false), [])
+
+  return (
+    <ParticipationButtonInner
+      {...props}
+      data={{ participation, effectiveStatus, setStatus, saveConfirmed, dismissConfirmed }}
+    />
+  )
+}
+
+/** Shared UI — receives participation data from either provider */
+function ParticipationButtonInner({
   activityId,
-  activityDate,
   teamId,
   compact = false,
   respondBy,
   activityStartTime,
   maxPlayers,
   confirmedCount,
-  sessionId,
   participationMode,
   eventSessions,
   requireNoteIfAbsent = false,
-}: ParticipationButtonProps) {
+  data: { participation, effectiveStatus, setStatus, saveConfirmed, dismissConfirmed },
+}: ParticipationButtonProps & { data: ParticipationData }) {
   const { t } = useTranslation('participation')
-  const { isGuestIn, isCoachOf } = useAuth()
-  const isStaff = !!teamId && isCoachOf(teamId)
-  const { participation, effectiveStatus, setStatus, saveConfirmed, dismissConfirmed } = useParticipation(
-    activityType,
-    activityId,
-    activityDate,
-    sessionId,
-    isStaff,
-  )
+  const { isGuestIn } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
   const [sessionSheetOpen, setSessionSheetOpen] = useState(false)
   const [guestCount, setGuestCount] = useState(0)

@@ -32,6 +32,7 @@ export default {
 
   // Filter
   showPast: 'Afficher anciens entraînements',
+  hidePast: 'Masquer anciens entraînements',
 
   // Empty states
   noTrainings: 'Aucun entrainement',

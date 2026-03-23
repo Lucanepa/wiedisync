@@ -2,6 +2,19 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [2.0.0] — 2026-03-23
+
+### Security
+
+- **Server-side Row Level Security (RLS)** — Added PocketBase API rules (listRule/viewRule) to all 24 collections. Data access is now enforced at the database level, not just client-side filters.
+  - **Team-scoped**: trainings, member_teams — only visible to team members and coaches
+  - **Teammate-scoped**: members, absences, participations — only see people on your team(s)
+  - **Per-member**: notifications — strictly own records
+  - **Public**: games, events, halls, teams, hall_closures — public club data
+  - **Locked**: app_settings, user_logs, push_subscriptions — superuser-only
+  - Coach + player dual-role supported (different access paths per team)
+- Added `scripts/apply-api-rules.ts` — idempotent migration script to apply all rules
+
 ## [1.1.0] — 2026-03-22
 
 ### Infrastructure

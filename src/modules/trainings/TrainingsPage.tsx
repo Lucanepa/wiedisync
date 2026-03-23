@@ -147,19 +147,7 @@ export default function TrainingsPage() {
     <div>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-gray-100">{t('title')}</h1>
-            <button
-              onClick={() => setShowPast((v) => !v)}
-              className={`min-h-[36px] rounded-full px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                showPast
-                  ? 'bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300'
-                  : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
-              }`}
-            >
-              {t('showPast')}
-            </button>
-          </div>
+          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-gray-100">{t('title')}</h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('subtitle')}</p>
         </div>
         {(isCoach || effectiveIsAdmin) && (
@@ -223,7 +211,24 @@ export default function TrainingsPage() {
             description={t('noTrainingsDescription')}
           />
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="space-y-4">
+            {!showPast && (
+              <button
+                onClick={() => setShowPast(true)}
+                className="w-full rounded-md border border-gray-200 bg-gray-50 px-4 py-2 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
+              >
+                {t('showPast')}
+              </button>
+            )}
+            {showPast && (
+              <button
+                onClick={() => setShowPast(false)}
+                className="w-full rounded-md border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-100 dark:border-brand-700 dark:bg-brand-900/40 dark:text-brand-300 dark:hover:bg-brand-900/60"
+              >
+                {t('hidePast')}
+              </button>
+            )}
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {trainings.map((training) => (
               <TrainingCard
                 key={training.id}
@@ -235,6 +240,7 @@ export default function TrainingsPage() {
                 onDelete={(effectiveIsAdmin || isCoachOf(training.team)) ? setDeletingId : undefined}
               />
             ))}
+            </div>
           </div>
         )}
       </div>

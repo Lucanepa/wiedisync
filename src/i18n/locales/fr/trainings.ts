@@ -30,6 +30,9 @@ export default {
   rateCol: 'Taux',
   trendCol: 'Tendance',
 
+  // Filter
+  showPast: 'Afficher anciens',
+
   // Empty states
   noTrainings: 'Aucun entrainement',
   noTrainingsDescription: 'Aucun entrainement trouve pour les filtres selectionnes.',

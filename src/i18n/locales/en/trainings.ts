@@ -30,6 +30,9 @@ export default {
   rateCol: 'Rate',
   trendCol: 'Trend',
 
+  // Filter
+  showPast: 'Show older',
+
   // Empty states
   noTrainings: 'No trainings',
   noTrainingsDescription: 'No trainings found for the selected filters.',

@@ -30,6 +30,9 @@ export default {
   rateCol: 'Tasso',
   trendCol: 'Tendenza',
 
+  // Filter
+  showPast: 'Mostra precedenti',
+
   // Empty states
   noTrainings: 'Nessun allenamento',
   noTrainingsDescription: 'Nessun allenamento trovato per i filtri selezionati.',

@@ -123,3 +123,25 @@ const DAY_NAMES_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as con
 export function getDayName(dayOfWeek: number): string {
   return DAY_NAMES_SHORT[dayOfWeek]
 }
+
+/**
+ * Parse a respond_by datetime into { date, time } with backward-compatible fallback.
+ * Legacy records have 00:00:00 (midnight) — treat as "no time set".
+ */
+export function parseRespondByTime(respondBy: string | undefined | null, fallbackTime?: string): { date: string; time: string } {
+  if (!respondBy) return { date: '', time: '' }
+  const [date, rawTime] = respondBy.split(' ')
+  const hasExplicitTime = rawTime && rawTime !== '00:00:00'
+  const time = hasExplicitTime ? rawTime.slice(0, 5) : (fallbackTime || '')
+  return { date: date || '', time }
+}
+
+/**
+ * Compute deadline Date from respond_by string with backward-compatible fallback.
+ * Legacy 00:00:00 records fall back to activityStartTime or 23:59.
+ */
+export function getDeadlineDate(respondBy: string, activityStartTime?: string): Date {
+  const [rbDate, rbTime] = respondBy.split(' ')
+  const effectiveTime = rbTime && rbTime !== '00:00:00' ? rbTime.slice(0, 5) : (activityStartTime || '23:59')
+  return new Date(`${rbDate}T${effectiveTime}`)
+}

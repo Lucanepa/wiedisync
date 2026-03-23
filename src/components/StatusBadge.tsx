@@ -27,6 +27,7 @@ const defaultColors: Record<string, string> = {
   meeting: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
   tournament: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
   trainingsweekend: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
+  friendly: 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400',
 }
 
 const labelMap: Record<string, string> = {
@@ -58,6 +59,7 @@ const labelMap: Record<string, string> = {
   meeting: 'Meeting',
   tournament: 'Tournament',
   trainingsweekend: 'Trainingsweekend',
+  friendly: 'Friendly',
 }
 
 interface StatusBadgeProps {

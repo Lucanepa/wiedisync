@@ -24,27 +24,37 @@ export default function AbsenceForm({ open, absence, onSave, onCancel }: Absence
   const { user, coachTeamIds } = useAuth()
   const { effectiveIsCoach, effectiveIsAdmin } = useAdminMode()
   const { create, update, isLoading } = useMutation<Absence>('absences')
+  // Admins: fetch all active members directly
   const { data: allMembers } = usePB<Member>('members', {
-    filter: 'active=true',
+    filter: 'kscw_membership_active=true',
     sort: 'last_name',
     all: true,
     fields: 'id,first_name,last_name,name',
+    enabled: effectiveIsAdmin,
   })
 
-  // Fetch member-team mappings to scope the dropdown for coaches
-  const { data: memberTeams } = usePB<MemberTeam>('member_teams', {
-    filter: coachTeamIds.length > 0 && !effectiveIsAdmin
-      ? coachTeamIds.map((id) => `team="${id}"`).join(' || ')
-      : '',
+  // Coaches: fetch team members via member_teams with expanded member data
+  const { data: memberTeams, error: memberTeamsError } = usePB<MemberTeam & { expand?: { member?: Member } }>('member_teams', {
+    filter: coachTeamIds.map((id) => `team="${id}"`).join(' || '),
+    expand: 'member',
     all: true,
     enabled: effectiveIsCoach && !effectiveIsAdmin && coachTeamIds.length > 0,
   })
 
-  // Admins see all members; coaches see only members from their teams
+  // Build visible members: admins see all, coaches see their team members
   const visibleMembers = useMemo(() => {
     if (effectiveIsAdmin) return allMembers
-    const teamMemberIds = new Set(memberTeams.map((mt) => mt.member))
-    return allMembers.filter((m) => teamMemberIds.has(m.id))
+    // Deduplicate members (same member on multiple teams)
+    const seen = new Set<string>()
+    const members: Member[] = []
+    for (const mt of memberTeams) {
+      const m = mt.expand?.member
+      if (m && !seen.has(m.id)) {
+        seen.add(m.id)
+        members.push(m)
+      }
+    }
+    return members.sort((a, b) => (a.last_name ?? '').localeCompare(b.last_name ?? ''))
   }, [allMembers, memberTeams, effectiveIsAdmin])
 
   const [memberId, setMemberId] = useState('')
@@ -96,6 +106,10 @@ export default function AbsenceForm({ open, absence, onSave, onCancel }: Absence
     e.preventDefault()
     setValidationError('')
 
+    if (effectiveIsCoach && !memberId) {
+      setValidationError(t('memberRequired'))
+      return
+    }
     if (!startDate) {
       setValidationError(t('startDateRequired'))
       return
@@ -145,6 +159,7 @@ export default function AbsenceForm({ open, absence, onSave, onCancel }: Absence
             value={memberId}
             onChange={setMemberId}
             options={visibleMembers.map((m) => ({ value: m.id, label: m.name || `${m.first_name} ${m.last_name}` }))}
+            error={memberTeamsError ? t('common:errorLoading') : undefined}
           />
         )}
 

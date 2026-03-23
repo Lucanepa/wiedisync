@@ -7,6 +7,8 @@ import ParticipationRosterModal from '../../components/ParticipationRosterModal'
 import { useAuth } from '../../hooks/useAuth'
 import { useParticipation } from '../../hooks/useParticipation'
 import { formatDate, formatWeekday, formatTime, getDeadlineDate } from '../../utils/dateHelpers'
+import TasksSection from '../tasks/TasksSection'
+import { isFeatureEnabled } from '../../utils/featureToggles'
 import type { Training, Team, Hall, Member } from '../../types'
 import { MapPin, Clock, MessageSquare, User, Users, Calendar, Check, UserPlus } from 'lucide-react'
 
@@ -103,6 +105,18 @@ export default function TrainingDetailModal({ training, onClose }: TrainingDetai
           {/* Notes */}
           {training.notes && !training.cancelled && (
             <p className="text-sm text-gray-500 dark:text-gray-400">{training.notes}</p>
+          )}
+
+          {/* Tasks */}
+          {user && !training.cancelled && isFeatureEnabled(training.expand?.team?.features_enabled, 'tasks') && (
+            <div className="border-t border-gray-200 pt-3 dark:border-gray-700">
+              <TasksSection
+                activityType="training"
+                activityId={training.id}
+                teamId={training.team}
+                canManage={isStaff}
+              />
+            </div>
           )}
 
           {/* Participation section */}

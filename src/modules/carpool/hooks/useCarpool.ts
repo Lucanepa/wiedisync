@@ -1,0 +1,105 @@
+import { useCallback } from 'react'
+import { usePB } from '../../../hooks/usePB'
+import { useMutation } from '../../../hooks/useMutation'
+import { useAuth } from '../../../hooks/useAuth'
+import { useRealtime } from '../../../hooks/useRealtime'
+import type { Carpool, CarpoolPassenger } from '../../../types'
+
+export function useCarpool(gameId: string) {
+  const { user } = useAuth()
+
+  const { data: carpools, refetch: refetchCarpools, isLoading } = usePB<Carpool>('carpools', {
+    filter: gameId ? `game="${gameId}"` : '',
+    all: true,
+    expand: 'driver',
+    enabled: !!gameId,
+  })
+
+  const { data: passengers, refetch: refetchPassengers } = usePB<CarpoolPassenger>('carpool_passengers', {
+    filter: gameId ? carpools.map(c => `carpool="${c.id}"`).join(' || ') || 'carpool=""' : '',
+    all: true,
+    expand: 'passenger',
+    enabled: !!gameId && carpools.length > 0,
+  })
+
+  const { create: createCarpool, update: updateCarpool } = useMutation<Carpool>('carpools')
+  const { create: createPassenger, remove: removePassenger } = useMutation<CarpoolPassenger>('carpool_passengers')
+
+  useRealtime<Carpool>('carpools', (e) => {
+    if (e.record.game === gameId) refetchCarpools()
+  })
+  useRealtime<CarpoolPassenger>('carpool_passengers', () => {
+    refetchPassengers()
+  })
+
+  const offerRide = useCallback(async (data: { seats_available: number; departure_time: string; departure_location: string; notes?: string }) => {
+    if (!user) return
+    await createCarpool({
+      game: gameId,
+      driver: user.id,
+      seats_available: data.seats_available,
+      departure_time: data.departure_time,
+      departure_location: data.departure_location,
+      notes: data.notes || '',
+      status: 'open',
+    })
+    refetchCarpools()
+  }, [user, gameId, createCarpool, refetchCarpools])
+
+  const joinRide = useCallback(async (carpoolId: string) => {
+    if (!user) return
+    await createPassenger({
+      carpool: carpoolId,
+      passenger: user.id,
+      status: 'confirmed',
+    })
+    // Check if full
+    const carpool = carpools.find(c => c.id === carpoolId)
+    const currentPassengers = passengers.filter(p => p.carpool === carpoolId && p.status === 'confirmed')
+    if (carpool && currentPassengers.length + 1 >= carpool.seats_available) {
+      await updateCarpool(carpoolId, { status: 'full' })
+    }
+    refetchPassengers()
+    refetchCarpools()
+  }, [user, carpools, passengers, createPassenger, updateCarpool, refetchPassengers, refetchCarpools])
+
+  const leaveRide = useCallback(async (carpoolId: string) => {
+    if (!user) return
+    const myRecord = passengers.find(p => p.carpool === carpoolId && p.passenger === user.id && p.status === 'confirmed')
+    if (myRecord) {
+      await removePassenger(myRecord.id)
+      // Reopen if was full
+      const carpool = carpools.find(c => c.id === carpoolId)
+      if (carpool?.status === 'full') {
+        await updateCarpool(carpoolId, { status: 'open' })
+      }
+      refetchPassengers()
+      refetchCarpools()
+    }
+  }, [user, passengers, carpools, removePassenger, updateCarpool, refetchPassengers, refetchCarpools])
+
+  const cancelRide = useCallback(async (carpoolId: string) => {
+    await updateCarpool(carpoolId, { status: 'cancelled' })
+    refetchCarpools()
+  }, [updateCarpool, refetchCarpools])
+
+  // Helpers
+  const getPassengersForCarpool = (carpoolId: string) =>
+    passengers.filter(p => p.carpool === carpoolId && p.status === 'confirmed')
+
+  const isDriverOfAny = carpools.some(c => c.driver === user?.id && c.status !== 'cancelled')
+  const isPassengerOfAny = passengers.some(p => p.passenger === user?.id && p.status === 'confirmed')
+
+  return {
+    carpools: carpools.filter(c => c.status !== 'cancelled'),
+    isLoading,
+    offerRide,
+    joinRide,
+    leaveRide,
+    cancelRide,
+    getPassengersForCarpool,
+    isDriverOfAny,
+    isPassengerOfAny,
+    currentUserId: user?.id,
+  }
+}

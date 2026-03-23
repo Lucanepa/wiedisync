@@ -95,4 +95,10 @@ export default {
   approve: 'Approuver',
   reject: 'Rejeter',
   teamJoinRequest: 'Demande d\'adhesion',
+  // Fonctionnalites
+  featureToggles: 'Fonctionnalites',
+  featureTogglesDescription: 'Activer ou desactiver les fonctionnalites optionnelles pour cette equipe.',
+  featureTasks: 'Taches (assigner des responsabilites par match/entrainement/evenement)',
+  featureCarpool: 'Covoiturage (organiser les trajets pour les matchs a l\'exterieur)',
+  featurePolls: 'Sondages (votes et decisions d\'equipe)',
 } as const

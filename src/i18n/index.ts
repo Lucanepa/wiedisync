@@ -22,6 +22,9 @@ import gameScheduling from './locales/en/gameScheduling'
 import scorerAssign from './locales/en/scorerAssign'
 import join from './locales/en/join'
 import feedback from './locales/en/feedback'
+import tasks from './locales/en/tasks'
+import carpool from './locales/en/carpool'
+import polls from './locales/en/polls'
 
 import deCommon from './locales/de/common'
 import deNav from './locales/de/nav'
@@ -44,6 +47,9 @@ import deGameScheduling from './locales/de/gameScheduling'
 import deScorerAssign from './locales/de/scorerAssign'
 import deJoin from './locales/de/join'
 import deFeedback from './locales/de/feedback'
+import deTasks from './locales/de/tasks'
+import deCarpool from './locales/de/carpool'
+import dePolls from './locales/de/polls'
 
 import frCommon from './locales/fr/common'
 import frNav from './locales/fr/nav'
@@ -65,6 +71,9 @@ import frNotifications from './locales/fr/notifications'
 import frGameScheduling from './locales/fr/gameScheduling'
 import frScorerAssign from './locales/fr/scorerAssign'
 import frFeedback from './locales/fr/feedback'
+import frTasks from './locales/fr/tasks'
+import frCarpool from './locales/fr/carpool'
+import frPolls from './locales/fr/polls'
 
 import itCommon from './locales/it/common'
 import itNav from './locales/it/nav'
@@ -86,6 +95,9 @@ import itNotifications from './locales/it/notifications'
 import itGameScheduling from './locales/it/gameScheduling'
 import itScorerAssign from './locales/it/scorerAssign'
 import itFeedback from './locales/it/feedback'
+import itTasks from './locales/it/tasks'
+import itCarpool from './locales/it/carpool'
+import itPolls from './locales/it/polls'
 
 import gswCommon from './locales/gsw/common'
 import gswNav from './locales/gsw/nav'
@@ -107,6 +119,9 @@ import gswNotifications from './locales/gsw/notifications'
 import gswGameScheduling from './locales/gsw/gameScheduling'
 import gswScorerAssign from './locales/gsw/scorerAssign'
 import gswFeedback from './locales/gsw/feedback'
+import gswTasks from './locales/gsw/tasks'
+import gswCarpool from './locales/gsw/carpool'
+import gswPolls from './locales/gsw/polls'
 
 function getInitialLanguage(): string {
   if (typeof window === 'undefined') return 'de'
@@ -148,6 +163,9 @@ i18n.use(initReactI18next).init({
     'scorerAssign',
     'join',
     'feedback',
+    'tasks',
+    'carpool',
+    'polls',
   ],
   defaultNS: 'common',
   resources: {
@@ -173,6 +191,9 @@ i18n.use(initReactI18next).init({
       scorerAssign,
       join,
       feedback,
+      tasks,
+      carpool,
+      polls,
     },
     de: {
       common: deCommon,
@@ -196,6 +217,9 @@ i18n.use(initReactI18next).init({
       scorerAssign: deScorerAssign,
       join: deJoin,
       feedback: deFeedback,
+      tasks: deTasks,
+      carpool: deCarpool,
+      polls: dePolls,
     },
     fr: {
       common: frCommon,
@@ -218,6 +242,9 @@ i18n.use(initReactI18next).init({
       gameScheduling: frGameScheduling,
       scorerAssign: frScorerAssign,
       feedback: frFeedback,
+      tasks: frTasks,
+      carpool: frCarpool,
+      polls: frPolls,
     },
     it: {
       common: itCommon,
@@ -240,6 +267,9 @@ i18n.use(initReactI18next).init({
       gameScheduling: itGameScheduling,
       scorerAssign: itScorerAssign,
       feedback: itFeedback,
+      tasks: itTasks,
+      carpool: itCarpool,
+      polls: itPolls,
     },
     gsw: {
       common: gswCommon,
@@ -262,6 +292,9 @@ i18n.use(initReactI18next).init({
       gameScheduling: gswGameScheduling,
       scorerAssign: gswScorerAssign,
       feedback: gswFeedback,
+      tasks: gswTasks,
+      carpool: gswCarpool,
+      polls: gswPolls,
     },
   },
   interpolation: {

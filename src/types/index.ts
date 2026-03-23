@@ -34,7 +34,14 @@ export interface Team extends RecordModel {
   sponsors: string[]
   sponsors_logos: string[]
   bb_source_id: string
+  features_enabled: FeatureToggles
 
+}
+
+export interface FeatureToggles {
+  polls?: boolean
+  carpool?: boolean
+  tasks?: boolean
 }
 
 export interface Member extends RecordModel {
@@ -293,6 +300,7 @@ export interface Event extends RecordModel {
   max_players: number
   participation_mode: 'whole' | 'per_day' | 'per_session' | ''
   require_note_if_absent: boolean
+  features_enabled: FeatureToggles
 
 }
 
@@ -420,11 +428,70 @@ export interface ScorerDelegation extends RecordModel {
 
 export interface Notification extends RecordModel {
   member: string
-  type: 'activity_change' | 'upcoming_activity' | 'deadline_reminder' | 'result_available' | 'duty_delegation_request'
+  type: 'activity_change' | 'upcoming_activity' | 'deadline_reminder' | 'result_available' | 'duty_delegation_request' | 'poll_created' | 'carpool_update' | 'task_assigned'
   title: string
   body: string
-  activity_type: 'game' | 'training' | 'event' | 'scorer_duty' | ''
+  activity_type: 'game' | 'training' | 'event' | 'scorer_duty' | 'poll' | 'carpool' | 'task' | ''
   activity_id: string
   team: string
   read: boolean
+}
+
+export type TaskCategory = 'setup' | 'equipment' | 'food' | 'firstAid' | 'other'
+
+export interface Task extends RecordModel {
+  activity_type: 'game' | 'training' | 'event'
+  activity_id: string
+  label: string
+  category: TaskCategory | ''
+  assigned_to: string
+  claimed_by: string
+  completed: boolean
+  completed_at: string
+  sort_order: number
+  created_by: string
+}
+
+export interface TaskTemplate extends RecordModel {
+  name: string
+  team: string
+  tasks_json: Array<{ label: string; category: TaskCategory | '' }>
+  created_by: string
+}
+
+// ── Carpool ─────────────────────────────────────────────────────────────
+
+export interface Carpool extends RecordModel {
+  game: string
+  driver: string
+  seats_available: number
+  departure_time: string
+  departure_location: string
+  notes: string
+  status: 'open' | 'full' | 'cancelled'
+}
+
+export interface CarpoolPassenger extends RecordModel {
+  carpool: string
+  passenger: string
+  status: 'confirmed' | 'cancelled'
+}
+
+// ── Polls ───────────────────────────────────────────────────────────────
+
+export interface Poll extends RecordModel {
+  team: string
+  question: string
+  options: string[]
+  mode: 'single' | 'multi'
+  deadline: string
+  created_by: string
+  status: 'open' | 'closed'
+  anonymous: boolean
+}
+
+export interface PollVote extends RecordModel {
+  poll: string
+  member: string
+  selected_options: number[]
 }

@@ -92,6 +92,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
   const [respondByTime, setRespondByTime] = useState('')
   const [maxPlayers, setMaxPlayers] = useState('')
   const [requireNoteIfAbsent, setRequireNoteIfAbsent] = useState(false)
+  const [enableTasks, setEnableTasks] = useState(false)
   const [participationMode, setParticipationMode] = useState<'whole' | 'per_day' | 'per_session'>('whole')
   const [sessions, setSessions] = useState<SessionDraft[]>([])
   const [error, setError] = useState('')
@@ -120,6 +121,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
       setMaxPlayers(event.max_players ? String(event.max_players) : '')
       setRequireNoteIfAbsent(!!event.require_note_if_absent)
       setParticipationMode((event.participation_mode as 'whole' | 'per_day' | 'per_session') || 'whole')
+      setEnableTasks(event.features_enabled?.tasks === true)
     } else {
       setTitle('')
       setEventType('verein')
@@ -253,6 +255,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
       max_players: maxPlayers ? Number(maxPlayers) : null,
       require_note_if_absent: requireNoteIfAbsent,
       participation_mode: effectiveMode,
+      features_enabled: { tasks: enableTasks },
     }
 
     try {
@@ -422,6 +425,14 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
           <div>
             <span>{t('requireNoteIfAbsent', { ns: 'participation' })}</span>
             <p className="text-xs text-muted-foreground">{t('requireNoteIfAbsentHint', { ns: 'participation' })}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+          <Switch checked={enableTasks} onCheckedChange={setEnableTasks} />
+          <div>
+            <span>{t('enableTasks')}</span>
+            <p className="text-xs text-muted-foreground">{t('enableTasksHint')}</p>
           </div>
         </div>
 

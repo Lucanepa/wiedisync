@@ -15,6 +15,9 @@ import pb from '../../../pb'
 import { sanitizeUrl } from '../../../utils/sanitizeUrl'
 import DatePicker from '@/components/ui/DatePicker'
 import { formatDate, formatTime, parseRespondByTime } from '../../../utils/dateHelpers'
+import TasksSection from '../../tasks/TasksSection'
+import CarpoolSection from '../../carpool/CarpoolSection'
+import { isFeatureEnabled } from '../../../utils/featureToggles'
 
 const GAME_EXPAND = 'kscw_team,hall,scorer_member,scoreboard_member,scorer_scoreboard_member,scorer_duty_team,scoreboard_duty_team,scorer_scoreboard_duty_team,bb_scorer_member,bb_timekeeper_member,bb_24s_official,bb_duty_team,bb_scorer_duty_team,bb_timekeeper_duty_team,bb_24s_duty_team'
 
@@ -494,6 +497,25 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
                 showContact={showScorerContact}
               />
             )}
+          </div>
+        )}
+
+        {/* Tasks */}
+        {game.status === 'scheduled' && user && isFeatureEnabled(expanded.expand?.kscw_team?.features_enabled, 'tasks') && (
+          <div className="border-t dark:border-gray-700 px-6 py-4">
+            <TasksSection
+              activityType="game"
+              activityId={game.id}
+              teamId={game.kscw_team}
+              canManage={isCoachOf(game.kscw_team)}
+            />
+          </div>
+        )}
+
+        {/* Carpool — away games only */}
+        {game.type === 'away' && game.status === 'scheduled' && user && isFeatureEnabled(expanded.expand?.kscw_team?.features_enabled, 'carpool') && (
+          <div className="border-t dark:border-gray-700 px-6 py-4">
+            <CarpoolSection gameId={game.id} />
           </div>
         )}
 

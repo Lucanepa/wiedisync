@@ -48,4 +48,6 @@ export default {
   sessionsConfirmed: '{{confirmed}}/{{total}} zugesagt',
   overallView: 'Gesamt',
   sessionParticipation: 'Teilnahme pro Zeitblock',
+  enableTasks: 'Aufgaben aktivieren',
+  enableTasksHint: 'Teilnehmer können Pflichten für diesen Event zuweisen und übernehmen.',
 } as const

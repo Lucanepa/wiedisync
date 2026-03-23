@@ -32,6 +32,15 @@ export default {
   deadline_game: 'Delai de reponse demain : {{home_team}} vs {{away_team}}',
   deadline_training: 'Delai de reponse demain : Entrainement du {{date}}',
   deadline_event: 'Delai de reponse demain : {{title}}',
+  // Nouvelles notifications de fonctionnalités
+  poll_created: '{{creator}} a créé un sondage : {{question}}',
+  carpool_offered: '{{driver}} propose un trajet pour {{game}}',
+  carpool_joined: '{{passenger}} a rejoint votre trajet pour {{game}}',
+  carpool_cancelled: '{{driver}} a annulé le trajet pour {{game}}',
+  task_assigned: 'Une tâche vous a été assignée : {{label}}',
+  pollCreated: 'Sondage',
+  carpoolUpdate: 'Covoiturage',
+  taskAssigned: 'Tâche',
   // Push notifications
   pushNotifications: 'Notifications push',
   pushEnable: 'Activer',

@@ -109,4 +109,10 @@ export default {
   shellAccount: 'Temporär',
   expiresIn: 'läuft in {{days}}T ab',
   extend: 'Verlängern',
+  // Feature-Toggles
+  featureToggles: 'Funktionen',
+  featureTogglesDescription: 'Optionale Funktionen für dieses Team ein- oder ausschalten.',
+  featureTasks: 'Aufgaben (Pflichten pro Spiel/Training/Event zuweisen)',
+  featureCarpool: 'Fahrgemeinschaft (Fahrten zu Auswärtsspielen organisieren)',
+  featurePolls: 'Umfragen (Team-Abstimmungen & Entscheidungen)',
 } as const

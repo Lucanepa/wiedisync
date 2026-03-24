@@ -58,8 +58,10 @@ export default function LoginPage() {
   const [passwordResetSuccess, setPasswordResetSuccess] = useState(false)
 
   useEffect(() => {
+    // Don't redirect when user is setting password after OTP
+    if (mode === 'forgot-set-password') return
     if (user) navigate('/', { replace: true })
-  }, [user, navigate])
+  }, [user, navigate, mode])
 
   function resetToLogin() {
     setMode('login')

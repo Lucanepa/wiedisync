@@ -16,13 +16,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { LANGUAGES, type PbLanguage } from '../../i18n/languageConfig'
 import { pbLangToI18n } from '../../utils/languageMap'
 import { OtpInput } from '../../components/OtpInput'
-import { SetPasswordForm } from '../../components/SetPasswordForm'
+import { getCurrentSeason } from '../../utils/dateHelpers'
+import { Checkbox } from '@/components/ui/checkbox'
 import deFlag from '../../assets/flags/de.svg'
 import gbFlag from '../../assets/flags/gb.svg'
 import frFlag from '../../assets/flags/fr.svg'
 import itFlag from '../../assets/flags/it.svg'
 import chFlag from '../../assets/flags/ch.svg'
-import type { Team } from '../../types'
+import type { Team, MemberTeam } from '../../types'
 
 const flagMap: Record<string, string> = { de: deFlag, gb: gbFlag, fr: frFlag, it: itFlag, ch: chFlag }
 const TURNSTILE_SITE_KEY = '0x4AAAAAACoYmx3xiDfRbmv9'
@@ -62,6 +63,10 @@ export default function SignUpPage() {
   const [otpId, setOtpId] = useState('')
   const [verificationToken, setVerificationToken] = useState('')
   const [otpError, setOtpError] = useState('')
+
+  // Multi-team state (for ClubDesk imports)
+  const [existingTeams, setExistingTeams] = useState<(MemberTeam & { expand?: { team?: Team } })[]>([])
+  const [additionalTeamIds, setAdditionalTeamIds] = useState<string[]>([])
 
   const { data: teams } = usePB<Team>('teams', {
     filter: 'active=true',
@@ -159,6 +164,17 @@ export default function SignUpPage() {
         if (member.first_name) setFirstName(member.first_name)
         if (member.last_name) setLastName(member.last_name)
       }
+      // Fetch existing member_teams for the current season
+      try {
+        const season = getCurrentSeason()
+        const mts = await pb.collection('member_teams').getFullList<MemberTeam & { expand?: { team?: Team } }>({
+          filter: `member="${pb.authStore.record!.id}" && season="${season}"`,
+          expand: 'team',
+        })
+        setExistingTeams(mts)
+      } catch {
+        // No existing teams — that's fine
+      }
       setStep('complete-profile')
     } catch {
       setOtpError(t('otpInvalid'))
@@ -176,6 +192,20 @@ export default function SignUpPage() {
     }
   }
 
+  // Existing team IDs for filtering
+  const existingTeamIds = existingTeams.map((mt) => mt.team)
+  const hasExistingTeams = existingTeams.length > 0
+
+  // Toggle additional team selection
+  function toggleAdditionalTeam(teamId: string) {
+    setAdditionalTeamIds((prev) =>
+      prev.includes(teamId) ? prev.filter((id) => id !== teamId) : [...prev, teamId],
+    )
+  }
+
+  // Available teams for additional selection (exclude existing)
+  const availableTeams = filteredTeams.filter((t) => !existingTeamIds.includes(t.id))
+
   // Complete profile handler (ClubDesk import: set password + profile + team)
   async function handleCompleteProfile(e: React.FormEvent) {
     e.preventDefault()
@@ -189,7 +219,8 @@ export default function SignUpPage() {
       setError(t('passwordMismatch'))
       return
     }
-    if (!selectedTeam) {
+    // Require at least one team (existing or new)
+    if (!hasExistingTeams && additionalTeamIds.length === 0) {
       setError(t('teamRequired'))
       return
     }
@@ -202,17 +233,37 @@ export default function SignUpPage() {
         body: { password, passwordConfirm },
       })
 
-      // Update profile fields + team
-      await pb.collection('members').update(pb.authStore.record!.id, {
+      // Update profile fields
+      const updateData: Record<string, string> = {
         first_name: firstName,
         last_name: lastName,
         name: `${firstName} ${lastName}`,
-        requested_team: selectedTeam,
-      })
+      }
+      // Set requested_team to the first additional team (for pending page display)
+      if (additionalTeamIds.length > 0) {
+        updateData.requested_team = additionalTeamIds[0]
+      }
+      await pb.collection('members').update(pb.authStore.record!.id, updateData)
 
-      // Refresh auth to pick up changes
+      // Create team_requests for additional teams
+      for (const teamId of additionalTeamIds) {
+        await pb.collection('team_requests').create({
+          member: pb.authStore.record!.id,
+          team: teamId,
+          status: 'pending',
+        })
+      }
+
+      // Refresh auth to pick up approval status
       await pb.collection('members').authRefresh()
-      navigate('/', { replace: true })
+
+      // If user has existing teams → auto-approved → home
+      // If only new teams requested → pending
+      if (hasExistingTeams) {
+        navigate('/', { replace: true })
+      } else {
+        navigate('/pending', { replace: true })
+      }
     } catch {
       setError(t('registrationFailed'))
     } finally {
@@ -443,17 +494,45 @@ export default function SignUpPage() {
                 />
               </div>
 
-              {/* Sport toggle */}
+              {/* Existing teams (pre-assigned from ClubDesk) */}
+              {hasExistingTeams && (
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {t('yourTeams')}
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {existingTeams.map((mt) => {
+                      const teamName = mt.expand?.team?.name || mt.team
+                      const league = mt.expand?.team?.league
+                      return (
+                        <span
+                          key={mt.id}
+                          className="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                        >
+                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                          </svg>
+                          {teamName}{league ? ` — ${league}` : ''}
+                        </span>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Additional team selection */}
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {tc('sport')}
+                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {hasExistingTeams ? t('joinAdditionalTeams') : t('selectTeam')}
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+
+                {/* Sport toggle */}
+                <div className="mb-2 grid grid-cols-2 gap-2">
                   {(['volleyball', 'basketball'] as const).map((sport) => (
                     <button
                       key={sport}
                       type="button"
-                      onClick={() => { setSelectedSport(sport); setSelectedTeam('') }}
+                      onClick={() => setSelectedSport(sport)}
                       className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
                         selectedSport === sport
                           ? 'border-gold-400 bg-gold-100 text-gold-900 dark:border-gold-400/50 dark:bg-gold-400/20 dark:text-gold-300'
@@ -464,22 +543,34 @@ export default function SignUpPage() {
                     </button>
                   ))}
                 </div>
-              </div>
 
-              <FormField label={t('selectTeam')}>
-                <Select value={selectedTeam} onValueChange={setSelectedTeam}>
-                  <SelectTrigger className="min-h-[44px]">
-                    <SelectValue placeholder={t('selectTeamPlaceholder')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredTeams.map((team) => (
-                      <SelectItem key={team.id} value={team.id}>
-                        {team.name}{team.league ? ` — ${team.league}` : ''}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormField>
+                {/* Team checkboxes */}
+                <div className="max-h-40 space-y-1 overflow-y-auto rounded-lg border border-gray-200 p-2 dark:border-gray-600">
+                  {availableTeams.length === 0 ? (
+                    <p className="py-2 text-center text-sm text-gray-400">{t('noTeamsForSport')}</p>
+                  ) : (
+                    availableTeams.map((team) => (
+                      <label
+                        key={team.id}
+                        className="flex min-h-[36px] cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-700"
+                      >
+                        <Checkbox
+                          checked={additionalTeamIds.includes(team.id)}
+                          onCheckedChange={() => toggleAdditionalTeam(team.id)}
+                        />
+                        <span className="text-gray-900 dark:text-gray-100">
+                          {team.name}{team.league ? ` — ${team.league}` : ''}
+                        </span>
+                      </label>
+                    ))
+                  )}
+                </div>
+                {hasExistingTeams && (
+                  <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                    {t('additionalTeamsNote')}
+                  </p>
+                )}
+              </div>
 
               <FormInput
                 type="password"

@@ -149,6 +149,12 @@ export default {
   backToLogin: 'Zrugg zur Aamäldig',
   otpRequestFailed: 'Code het nöd chönne gschickt werde. Bitte probier\'s nomal.',
 
+  // Multi-team onboarding
+  yourTeams: 'Dini Teams',
+  joinAdditionalTeams: 'Wiitere Teams biitrete',
+  noTeamsForSport: 'Kei Teams für die Sportart verfüegbar',
+  additionalTeamsNote: 'Zuesätzlichi Teams bruuched d Genehmigung vom Trainer',
+
   // Danger Zone
   dangerZone: 'Gfahrezone',
   deleteAccount: 'Konto lösche',

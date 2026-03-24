@@ -149,6 +149,12 @@ export default {
   backToLogin: 'Torna al login',
   otpRequestFailed: 'Impossibile inviare il codice. Riprova.',
 
+  // Multi-team onboarding
+  yourTeams: 'Le tue squadre',
+  joinAdditionalTeams: 'Unisciti ad altre squadre',
+  noTeamsForSport: 'Nessuna squadra disponibile per questo sport',
+  additionalTeamsNote: "Le squadre aggiuntive richiedono l'approvazione dell'allenatore",
+
   // Team requests
   addTeam: 'Aggiungi squadra',
   addTeamTitle: 'Unisciti a una squadra',

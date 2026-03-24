@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '2.2.0'
+const APP_VERSION = '2.3.0'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,20 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.3.0',
+    date: '2026-03-24',
+    sections: [
+      {
+        title: 'Features',
+        items: [
+          'Admin Dashboard: new overview page with KPI strip (members, teams, pending approvals, PB health, sync status) and collapsible sections for Members & Teams, Games & Season, Activity & Participation, and Infrastructure',
+          'Query Workspace: enhanced SQL editor with saved queries, 10 pre-built query templates with parameters, visual point-and-click query builder, and chart visualization (bar, line, pie) for results',
+          'Dashboard visible to all admins; Query and Tables tabs restricted to superadmins',
+        ],
+      },
+    ],
+  },
   {
     version: '2.2.0',
     date: '2026-03-24',

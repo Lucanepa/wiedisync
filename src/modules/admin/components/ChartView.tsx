@@ -268,7 +268,7 @@ function LineChart({ data, columns }: ChartViewProps) {
         const step = Math.max(1, Math.ceil(n / 10))
         return sorted
           .filter((_, i) => i % step === 0 || i === n - 1)
-          .map((row, _, arr) => {
+          .map((row) => {
             const i = sorted.indexOf(row)
             const { x } = px(i, 0)
             const label = xCol ? shortLabel(row[xCol], 8) : String(i + 1)

@@ -2,6 +2,15 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [2.3.0] — 2026-03-24
+
+### Features
+
+- **Admin Dashboard** — New overview page (`/admin/database` → Dashboard tab) with sticky KPI strip showing member count, team count, pending approvals, PB health, and sync freshness. Four collapsible sections: Members & Teams (bar chart + team table + unapproved list), Games & Season (upcoming games, results, win/loss, scorer coverage), Activity & Participation (RSVP rates, notifications, recent user activity), Infrastructure (compact health/sync summary with link to full InfraHealth page). Visible to all admins.
+- **Query Workspace** — Enhanced query tab (superadmin only) with: horizontal chip strip for saved/template/recent queries, 10 pre-built parameterized query templates (members in team, games by date, scorer gaps, etc.), visual point-and-click SQL builder, SQL/Visual mode toggle, chart visualization for results (auto-detects bar/line/pie from data shape), save queries for reuse. New `query_templates` PB collection.
+- **Shared `useInfraHealth` hook** — Extracted PB health and sync freshness logic into a reusable hook shared between Dashboard and InfraHealthPage.
+- **shadcn Tabs** — Added Tabs component for the 3-tab DatabasePage layout.
+
 ## [2.2.0] — 2026-03-24
 
 ### Features

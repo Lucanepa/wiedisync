@@ -2,6 +2,12 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [2.1.1] — 2026-03-24
+
+### Bug Fixes
+
+- **Auth email hooks re-enabled** — After Coolify redeploy, the `auth_emails.pb.js` file was disabled on running containers. Removed the broken `onMailerRecordOTPSend` hook that silently blocked all OTP email sending when it threw. The 4 working branded hooks (password reset, verification, email change, login alert) are now active again. PB-native OTP emails use PocketBase's default template (functional, not branded).
+
 ## [2.1.0] — 2026-03-24
 
 ### Features

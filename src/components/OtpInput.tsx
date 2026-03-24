@@ -126,7 +126,7 @@ export function OtpInput({ onComplete, onResend, loading, error, email }: OtpInp
   return (
     <div className="flex flex-col items-center gap-4">
       {/* Digit boxes */}
-      <div className="flex gap-2" onPaste={handlePaste}>
+      <div className="flex w-full justify-center gap-1.5 sm:gap-2" onPaste={handlePaste}>
         {digits.map((digit, index) => (
           <input
             key={index}
@@ -141,7 +141,7 @@ export function OtpInput({ onComplete, onResend, loading, error, email }: OtpInp
             disabled={loading}
             autoComplete={index === 0 ? "one-time-code" : "off"}
             className={cn(
-              "w-10 h-12 sm:w-12 sm:h-14 rounded-lg border text-center text-xl sm:text-2xl font-bold",
+              "h-11 w-9 sm:h-12 sm:w-10 rounded-md border text-center text-lg sm:text-xl font-bold",
               "bg-background text-foreground",
               "outline-none transition-colors",
               "focus:border-brand-500 focus:ring-1 focus:ring-brand-500",

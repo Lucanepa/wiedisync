@@ -142,26 +142,69 @@ onMailerRecordEmailChangeSend(function(e) {
   ], { title: title })
 }, "members")
 
-// ── Login Alert ─────────────────────────────────────────────────────
+// ── Login Alert (region-aware) ──────────────────────────────────────
+// Only sends the "new login" email when the login region (country+region)
+// differs from the member's last known auth region. Same-region logins
+// from new devices/IPs are silently accepted.
 
 onMailerRecordAuthAlertSend(function(e) {
-  var tpl = require(__hooks + "/email_template_lib.js")
   var record = e.record
-  var rawLang = record.getString("language") || ""
-  var lang = (rawLang === "english" || rawLang === "en") ? "en" : "de"
-  var name = record.getString("first_name") || record.getString("name").split(" ")[0] || ""
 
-  // Extract alert info from default PB email (between <em> tags)
+  // Extract IP from PB's default alert email (between <em> tags)
   var alertInfo = ""
   var alertMatch = e.message.html.match(/<em>([\s\S]*?)<\/em>/)
   if (alertMatch) alertInfo = alertMatch[1].trim()
 
+  var ip = ""
+  var ipMatch = alertInfo.match(/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/)
+  if (ipMatch) ip = ipMatch[1]
+
+  // Geo-lookup the IP to get region
+  var currentRegion = ""
+  if (ip) {
+    try {
+      var res = $http.send({
+        url: "http://ip-api.com/json/" + ip + "?fields=status,country,regionName",
+        method: "GET",
+        timeout: 5
+      })
+      if (res.statusCode === 200) {
+        var geo = res.json
+        if (geo.status === "success") {
+          currentRegion = geo.country + "/" + geo.regionName
+        }
+      }
+    } catch(err) {
+      // Geo-lookup failed — fall through to send the email as safety fallback
+    }
+  }
+
+  // Compare to stored region — suppress email if same region
+  if (currentRegion) {
+    var storedRegion = record.getString("last_auth_region") || ""
+
+    // Update stored region regardless
+    record.set("last_auth_region", currentRegion)
+    $app.save(record)
+
+    if (storedRegion && storedRegion === currentRegion) {
+      // Same region — skip the alert email
+      return
+    }
+  }
+
+  // Different region (or first login / lookup failed) — send branded alert
+  var tpl = require(__hooks + "/email_template_lib.js")
+  var rawLang = record.getString("language") || ""
+  var lang = (rawLang === "english" || rawLang === "en") ? "en" : "de"
+  var name = record.getString("first_name") || record.getString("name").split(" ")[0] || ""
+
   var subject = lang === "en" ? "New Login – Wiedisync" : "Neuer Login – Wiedisync"
-  var title = lang === "en" ? "New Login Detected" : "Neuer Login erkannt"
+  var title = lang === "en" ? "New Login from New Region" : "Neuer Login aus neuer Region"
   var greeting = lang === "en" ? "Hello " + name + "," : "Hallo " + name + ","
   var body = lang === "en"
-    ? "We noticed a login to your Wiedisync account from a new location:"
-    : "Wir haben einen Login in dein Wiedisync-Konto von einem neuen Standort erkannt:"
+    ? "We noticed a login to your Wiedisync account from a new region:"
+    : "Wir haben einen Login in dein Wiedisync-Konto aus einer neuen Region erkannt:"
   var warning = lang === "en"
     ? "If this wasn't you, you should immediately change your password."
     : "Falls das nicht du warst, solltest du sofort dein Passwort ändern."
@@ -170,9 +213,16 @@ onMailerRecordAuthAlertSend(function(e) {
     : "Falls du dich gerade eingeloggt hast, kannst du diese E-Mail ignorieren."
   var footer = lang === "en" ? "Your Wiedisync Team" : "Dein Wiedisync Team"
 
+  // Include region info in the alert box
+  var displayInfo = alertInfo
+  if (currentRegion) {
+    displayInfo = (lang === "en" ? "Region: " : "Region: ") + currentRegion
+    if (alertInfo) displayInfo += "<br>" + alertInfo
+  }
+
   var bodyHtml = tpl.buildParagraph(body)
-  if (alertInfo) {
-    bodyHtml += tpl.buildAlertBox("info", "Info", alertInfo)
+  if (displayInfo) {
+    bodyHtml += tpl.buildAlertBox("info", "Info", displayInfo)
   }
   bodyHtml += '<div style="height:12px"></div>'
   bodyHtml += tpl.buildAlertBox("warning", lang === "de" ? "Achtung" : "Warning", warning)
@@ -187,6 +237,6 @@ onMailerRecordAuthAlertSend(function(e) {
     footerExtra: footer
   })
   e.message.text = tpl.buildPlainLayout([
-    greeting, "", body, alertInfo || "", "", warning, "", ignore
+    greeting, "", body, displayInfo || "", "", warning, "", ignore
   ], { title: title })
 }, "members")

@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '2.1.0'
+const APP_VERSION = '2.1.1'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,19 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.1.1',
+    date: '2026-03-24',
+    sections: [
+      {
+        title: 'Bug Fixes',
+        items: [
+          'Re-enabled branded auth emails (password reset, verification, email change, login alert) after Coolify redeploy disabled the hook file',
+          'Removed broken OTP email branding hook that silently blocked all OTP email sending — PB now sends default-styled OTP emails reliably',
+        ],
+      },
+    ],
+  },
   {
     version: '2.1.0',
     date: '2026-03-24',

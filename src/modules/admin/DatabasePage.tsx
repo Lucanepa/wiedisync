@@ -1,22 +1,24 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import pb from '../../pb'
-import SqlEditor from './components/SqlEditor'
+import { useAuth } from '../../hooks/useAuth'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../components/ui/tabs'
+import DashboardTab from './DashboardTab'
+import QueryTab from './QueryTab'
 import TableBrowser from './components/TableBrowser'
 import type { CollectionInfo, SchemaField } from './components/TableBrowser'
 
 const PB_ADMIN_URL = `${import.meta.env.VITE_PB_URL || 'https://api.kscw.ch'}/_/`
 
-type Tab = 'sql' | 'tables'
-
 export default function DatabasePage() {
   const { t } = useTranslation('admin')
-  const [tab, setTab] = useState<Tab>('sql')
+  const { isSuperAdmin } = useAuth()
   const [collections, setCollections] = useState<CollectionInfo[]>([])
   const [loadingCollections, setLoadingCollections] = useState(true)
 
-  // Fetch all collection schemas (shared by SqlEditor autocomplete + TableBrowser)
+  // Fetch all collection schemas (shared by QueryTab autocomplete + TableBrowser)
   useEffect(() => {
+    if (!isSuperAdmin) return
     setLoadingCollections(true)
     pb.send('/api/admin/sql', {
       method: 'POST',
@@ -58,7 +60,7 @@ export default function DatabasePage() {
       })
       .catch(() => {})
       .finally(() => setLoadingCollections(false))
-  }, [])
+  }, [isSuperAdmin])
 
   return (
     <div className="flex h-[calc(100vh-6rem)] flex-col">
@@ -77,33 +79,37 @@ export default function DatabasePage() {
         </a>
       </div>
 
-      {/* Tab bar */}
-      <div className="flex gap-1 border-b border-gray-200 dark:border-gray-700">
-        {(['sql', 'tables'] as Tab[]).map((key) => (
-          <button
-            key={key}
-            onClick={() => setTab(key)}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
-              tab === key
-                ? 'border-b-2 border-brand-600 text-brand-700 dark:text-brand-400'
-                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-            }`}
-          >
-            {t(`tab_${key}`)}
-          </button>
-        ))}
-      </div>
+      {/* Tabs */}
+      <Tabs defaultValue="dashboard" className="flex flex-1 flex-col overflow-hidden">
+        <TabsList variant="line">
+          <TabsTrigger value="dashboard">{t('dashboardTab')}</TabsTrigger>
+          {isSuperAdmin && (
+            <TabsTrigger value="query">{t('queryTab')}</TabsTrigger>
+          )}
+          {isSuperAdmin && (
+            <TabsTrigger value="tables">{t('tablesTab')}</TabsTrigger>
+          )}
+        </TabsList>
 
-      {/* Content */}
-      <div className="mt-4 flex-1 overflow-auto">
-        {tab === 'sql' && <SqlEditor collections={collections} />}
-        {tab === 'tables' && (
-          <TableBrowser
-            collections={collections}
-            loadingCollections={loadingCollections}
-          />
+        <TabsContent value="dashboard" className="mt-4 flex-1 overflow-auto">
+          <DashboardTab />
+        </TabsContent>
+
+        {isSuperAdmin && (
+          <TabsContent value="query" className="mt-4 flex-1 overflow-auto">
+            <QueryTab collections={collections} />
+          </TabsContent>
         )}
-      </div>
+
+        {isSuperAdmin && (
+          <TabsContent value="tables" className="mt-4 flex-1 overflow-auto">
+            <TableBrowser
+              collections={collections}
+              loadingCollections={loadingCollections}
+            />
+          </TabsContent>
+        )}
+      </Tabs>
     </div>
   )
 }

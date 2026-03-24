@@ -81,7 +81,7 @@ export default function App() {
             <Route path="admin/terminplanung" element={<AdminRoute><AdminSetupPage /></AdminRoute>} />
             <Route path="admin/terminplanung/dashboard" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
             <Route path="admin/scorer-assign" element={<AdminRoute><ScorerAssignPage /></AdminRoute>} />
-            <Route path="admin/database" element={<SuperAdminRoute><DatabasePage /></SuperAdminRoute>} />
+            <Route path="admin/database" element={<AdminRoute><DatabasePage /></AdminRoute>} />
             <Route path="admin/clubdesk-sync" element={<SuperAdminRoute><ClubDeskSyncPage /></SuperAdminRoute>} />
             <Route path="admin/infra" element={<SuperAdminRoute><InfraHealthPage /></SuperAdminRoute>} />
             <Route path="admin/data-health" element={<SuperAdminRoute><DataHealthPage /></SuperAdminRoute>} />

@@ -192,7 +192,10 @@ onMailerRecordAuthAlertSend(function(e) {
 }, "members")
 
 // ── OTP Code ──────────────────────────────────────────────────────────
+// TODO: branded OTP email template — disabled for now (silently blocks sending)
+// Will debug and re-enable once the base flow is verified.
 
+/*
 onMailerRecordOTPSend(function(e) {
   var tpl = require(__hooks + "/email_template_lib.js")
   var record = e.record
@@ -245,3 +248,4 @@ onMailerRecordOTPSend(function(e) {
     greeting, "", body, "", otpCode || "(code)", "", expiry, "", ignore
   ], { title: title })
 }, "members")
+*/

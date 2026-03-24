@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import pb from '../../pb'
+import { useInfraHealth } from '../../hooks/useInfraHealth'
 
 const PB_URL = import.meta.env.VITE_PB_URL || 'https://api.kscw.ch'
 const PB_DEV_URL = 'https://api-dev.kscw.ch'
@@ -96,11 +97,28 @@ function Section({ title, checks }: { title: string; checks: HealthCheck[] }) {
 
 export default function InfraHealthPage() {
   const { t } = useTranslation('admin')
+  const infraHealth = useInfraHealth()
   const [services, setServices] = useState<HealthCheck[]>([])
   const [syncs, setSyncs] = useState<HealthCheck[]>([])
   const [crons, setCrons] = useState<HealthCheck[]>([])
   const [lastCheck, setLastCheck] = useState<string>('')
   const [loading, setLoading] = useState(false)
+
+  // Map hook sync statuses → page HealthCheck shape whenever hook data updates
+  useEffect(() => {
+    const sourceNameMap: Record<string, string> = {
+      swiss_volley: t('infraSvSync'),
+      basketplan: t('infraBpSync'),
+      gcal: t('infraGcalSync'),
+    }
+    setSyncs(
+      infraHealth.syncs.map(s => ({
+        name: sourceNameMap[s.source] ?? s.source,
+        status: s.lastUpdated === null ? 'unknown' : s.isStale ? 'stale' : 'healthy',
+        detail: s.lastUpdated ? timeAgo(s.lastUpdated, t) : t('infraNoData'),
+      }))
+    )
+  }, [infraHealth.syncs, t])
 
   const runChecks = useCallback(async () => {
     setLoading(true)
@@ -108,13 +126,14 @@ export default function InfraHealthPage() {
     // ── Services ──
     const svcResults: HealthCheck[] = []
 
-    // PocketBase Prod
-    const pbProd = await checkEndpoint(`${PB_URL}/api/health`)
+    // PocketBase Prod — use shared hook result (already fetched on mount/refresh)
+    const hookPbService = infraHealth.services.find(s => s.name === 'PocketBase')
+    const pbProdOk = hookPbService?.status === 'ok'
     svcResults.push({
       name: t('infraPbProd'),
-      status: pbProd.ok ? 'healthy' : 'down',
-      detail: pbProd.ok ? PB_URL.replace('https://', '') : `HTTP ${pbProd.status}`,
-      responseTime: pbProd.ms,
+      status: pbProdOk ? 'healthy' : 'down',
+      detail: pbProdOk ? PB_URL.replace('https://', '') : 'Unreachable',
+      responseTime: hookPbService?.latency ?? null,
     })
 
     // PocketBase Dev (no-cors fallback — dev PB may not whitelist this origin)
@@ -129,8 +148,8 @@ export default function InfraHealthPage() {
     // Cloudflare Tunnel (implied by PB Prod reachability)
     svcResults.push({
       name: t('infraCfTunnel'),
-      status: pbProd.ok ? 'healthy' : 'down',
-      detail: pbProd.ok ? 'kscw-vps tunnel active' : 'Tunnel unreachable',
+      status: pbProdOk ? 'healthy' : 'down',
+      detail: pbProdOk ? 'kscw-vps tunnel active' : 'Tunnel unreachable',
     })
 
     // Push Worker (uses dedicated /health endpoint with permissive CORS)
@@ -153,68 +172,8 @@ export default function InfraHealthPage() {
 
     setServices(svcResults)
 
-    // ── Data Syncs ──
-    const syncResults: HealthCheck[] = []
-    const STALE_THRESHOLD = 36 * 3600000 // 36h
-
-    // Swiss Volley
-    try {
-      const sv = await pb.collection('games').getList(1, 1, {
-        sort: '-updated', filter: 'source="swiss_volley"', fields: 'updated',
-      })
-      if (sv.items.length) {
-        const diff = Date.now() - new Date(sv.items[0].updated).getTime()
-        syncResults.push({
-          name: t('infraSvSync'),
-          status: diff > STALE_THRESHOLD ? 'stale' : 'healthy',
-          detail: timeAgo(sv.items[0].updated, t),
-        })
-      } else {
-        syncResults.push({ name: t('infraSvSync'), status: 'unknown', detail: t('infraNoData') })
-      }
-    } catch {
-      syncResults.push({ name: t('infraSvSync'), status: 'unknown', detail: '' })
-    }
-
-    // Basketplan
-    try {
-      const bp = await pb.collection('games').getList(1, 1, {
-        sort: '-updated', filter: 'source="basketplan"', fields: 'updated',
-      })
-      if (bp.items.length) {
-        const diff = Date.now() - new Date(bp.items[0].updated).getTime()
-        syncResults.push({
-          name: t('infraBpSync'),
-          status: diff > STALE_THRESHOLD ? 'stale' : 'healthy',
-          detail: timeAgo(bp.items[0].updated, t),
-        })
-      } else {
-        syncResults.push({ name: t('infraBpSync'), status: 'unknown', detail: t('infraNoData') })
-      }
-    } catch {
-      syncResults.push({ name: t('infraBpSync'), status: 'unknown', detail: '' })
-    }
-
-    // Google Calendar
-    try {
-      const gcal = await pb.collection('hall_events').getList(1, 1, {
-        sort: '-updated', fields: 'updated',
-      })
-      if (gcal.items.length) {
-        const diff = Date.now() - new Date(gcal.items[0].updated).getTime()
-        syncResults.push({
-          name: t('infraGcalSync'),
-          status: diff > STALE_THRESHOLD ? 'stale' : 'healthy',
-          detail: timeAgo(gcal.items[0].updated, t),
-        })
-      } else {
-        syncResults.push({ name: t('infraGcalSync'), status: 'unknown', detail: t('infraNoData') })
-      }
-    } catch {
-      syncResults.push({ name: t('infraGcalSync'), status: 'unknown', detail: '' })
-    }
-
-    setSyncs(syncResults)
+    // Trigger shared hook refresh (updates syncs via useEffect above)
+    infraHealth.refresh()
 
     // ── Cron Jobs ──
     const cronResults: HealthCheck[] = []
@@ -240,7 +199,7 @@ export default function InfraHealthPage() {
     setCrons(cronResults)
     setLastCheck(new Date().toLocaleTimeString())
     setLoading(false)
-  }, [t])
+  }, [t, infraHealth])
 
   useEffect(() => { runChecks() }, [runChecks])
 

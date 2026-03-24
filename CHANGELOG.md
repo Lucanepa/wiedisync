@@ -2,6 +2,25 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [2.1.0] — 2026-03-24
+
+### Features
+
+- **OTP-based authentication** — Replaced all token-link-based password flows with email OTP verification (8-digit codes). Four flows redesigned:
+  - **New member signup**: Email → OTP verification → registration form (prevents fake signups)
+  - **Existing member activation** (ClubDesk imports): Email → OTP → set password (no more confusing "password reset" for first-time users)
+  - **Shell invite (QR join)**: Claim invite → OTP → set password inline (no separate email needed)
+  - **Forgot password**: Inline on login page → OTP → set new password (no more token links)
+- **Shared OTP input component** — 8-digit input with auto-advance, paste support, backspace navigation, resend countdown, mobile-friendly (`inputMode="numeric"`)
+- **Context-aware labeling** — OTP screens show different titles per flow: "Activate Account", "Verify Email", "Reset Password", "Set Password"
+- **PB native OTP** — Uses PocketBase v0.36's built-in `requestOTP`/`authWithOTP` for existing users. Custom `/api/verify-email` hook for pre-registration verification.
+- **Custom `/api/set-password` endpoint** — Allows password setting after OTP auth without requiring old password (admin-level DAO)
+- **Branded OTP emails** — KSCW-themed email template with prominent code display, language-aware (DE/EN)
+
+### Removed
+
+- `ResetPasswordPage.tsx` and `/reset-password/:token` route — fully replaced by OTP flow
+
 ## [2.0.1] — 2026-03-24
 
 ### Bug Fixes

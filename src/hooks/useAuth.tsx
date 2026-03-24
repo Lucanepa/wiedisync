@@ -25,6 +25,7 @@ interface AuthContextValue {
   coachTeamNames: string[]
   memberTeamIds: string[]
   memberTeamNames: string[]
+  teamsLoading: boolean
   memberSports: Set<'volleyball' | 'basketball'>
   primarySport: 'volleyball' | 'basketball' | 'both'
   canViewTeam: (teamId: string) => boolean
@@ -51,6 +52,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [memberSports, setMemberSports] = useState<Set<'volleyball' | 'basketball'>>(new Set())
   const [teamSportById, setTeamSportById] = useState<Record<string, 'volleyball' | 'basketball'>>({})
   const [guestLevelByTeam, setGuestLevelByTeam] = useState<Record<string, number>>({})
+  const [coachTeamsLoaded, setCoachTeamsLoaded] = useState(false)
+  const [memberTeamsLoaded, setMemberTeamsLoaded] = useState(false)
+  const teamsLoading = !!user && (!coachTeamsLoaded || !memberTeamsLoaded)
 
   // Auth refresh — skip if token was just issued (within last 5s, e.g. right after login)
   useEffect(() => {
@@ -99,6 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!user?.id) {
       setCoachTeamIds([])
       setCoachTeamNames([])
+      setCoachTeamsLoaded(false)
       return
     }
 
@@ -110,10 +115,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .then((teams) => {
         setCoachTeamIds(teams.map((t) => t.id))
         setCoachTeamNames(teams.map((t) => t.name).filter((n): n is string => !!n))
+        setCoachTeamsLoaded(true)
       })
       .catch(() => {
         setCoachTeamIds([])
         setCoachTeamNames([])
+        setCoachTeamsLoaded(true)
       })
   }, [user?.id])
 
@@ -148,6 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setMemberTeamNames([])
       setMemberSports(new Set())
       setGuestLevelByTeam({})
+      setMemberTeamsLoaded(false)
       return
     }
     const season = getCurrentSeason()
@@ -170,12 +178,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           glMap[mt.team] = mt.guest_level ?? 0
         }
         setGuestLevelByTeam(glMap)
+        setMemberTeamsLoaded(true)
       })
       .catch(() => {
         setMemberTeamIds([])
         setMemberTeamNames([])
         setMemberSports(new Set())
         setGuestLevelByTeam({})
+        setMemberTeamsLoaded(true)
       })
   }, [user?.id])
 
@@ -257,7 +267,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   return (
-    <AuthContext.Provider value={{ user, isSuperAdmin, isAdmin, isGlobalAdmin, isVbAdmin, isBbAdmin, hasAdminAccessToSport, hasAdminAccessToTeam, isApproved, isProfileComplete, isCoach, isCoachOf, canParticipateIn, isStaffOnly, coachTeamIds, coachTeamNames, memberTeamIds, memberTeamNames, memberSports, primarySport, canViewTeam, isVorstand, getGuestLevel, isGuestIn, isLoading, login, loginWithOAuth, logout }}>
+    <AuthContext.Provider value={{ user, isSuperAdmin, isAdmin, isGlobalAdmin, isVbAdmin, isBbAdmin, hasAdminAccessToSport, hasAdminAccessToTeam, isApproved, isProfileComplete, isCoach, isCoachOf, canParticipateIn, isStaffOnly, coachTeamIds, coachTeamNames, memberTeamIds, memberTeamNames, teamsLoading, memberSports, primarySport, canViewTeam, isVorstand, getGuestLevel, isGuestIn, isLoading, login, loginWithOAuth, logout }}>
       {children}
     </AuthContext.Provider>
   )

@@ -27,7 +27,7 @@ function buildTeamFilter(teamPbIds: string[]): string {
 
 export default function GamesPage() {
   const { t } = useTranslation('games')
-  const { user, memberTeamIds, memberTeamNames, coachTeamIds, coachTeamNames, primarySport } = useAuth()
+  const { user, memberTeamIds, memberTeamNames, coachTeamIds, coachTeamNames, primarySport, teamsLoading } = useAuth()
   // Merge member + coach teams for visibility (coaches see teams they manage)
   const allUserTeamIds = useMemo(() => [...new Set([...memberTeamIds, ...coachTeamIds])], [memberTeamIds, coachTeamIds])
   const allUserTeamNames = useMemo(() => [...new Set([...memberTeamNames, ...coachTeamNames])], [memberTeamNames, coachTeamNames])
@@ -112,7 +112,7 @@ export default function GamesPage() {
 
   const { data: games, isLoading: gamesLoading } = usePB<Game>(
     'games',
-    gameQuery
+    gameQuery && !teamsLoading
       ? { filter: gameQuery.filter, sort: gameQuery.sort, expand: 'kscw_team,hall,scorer_member,scoreboard_member,scorer_scoreboard_member,scorer_duty_team,scoreboard_duty_team,scorer_scoreboard_duty_team,bb_scorer_member,bb_timekeeper_member,bb_24s_official,bb_duty_team,bb_scorer_duty_team,bb_timekeeper_duty_team,bb_24s_duty_team', perPage }
       : { filter: 'id = ""', perPage: 1 },
   )

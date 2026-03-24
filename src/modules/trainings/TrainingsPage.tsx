@@ -33,7 +33,7 @@ type TrainingExpanded = Training & {
 
 export default function TrainingsPage() {
   const { t } = useTranslation('trainings')
-  const { user, isCoach, isCoachOf, memberTeamIds, coachTeamIds } = useAuth()
+  const { user, isCoach, isCoachOf, memberTeamIds, coachTeamIds, teamsLoading } = useAuth()
   // Merge member + coach teams for visibility
   const allUserTeamIds = useMemo(() => [...new Set([...memberTeamIds, ...coachTeamIds])], [memberTeamIds, coachTeamIds])
   const { effectiveIsAdmin } = useAdminMode()
@@ -77,6 +77,7 @@ export default function TrainingsPage() {
     sort: 'date',
     expand: 'team,hall,coach',
     perPage: 50,
+    enabled: !teamsLoading,
   })
 
   // Batch-fetch ALL participations for visible trainings in ONE request (fixes N+1 / 429 storm)

@@ -21,7 +21,7 @@ type EventExpanded = Event & { expand?: { teams?: Team[] } }
 
 export default function EventsPage() {
   const { t } = useTranslation('events')
-  const { user, isCoach, isCoachOf, isAdmin, memberTeamIds, coachTeamIds } = useAuth()
+  const { user, isCoach, isCoachOf, isAdmin, memberTeamIds, coachTeamIds, teamsLoading } = useAuth()
   // Merge member + coach teams for visibility
   const allUserTeamIds = useMemo(() => [...new Set([...memberTeamIds, ...coachTeamIds])], [memberTeamIds, coachTeamIds])
   const [formOpen, setFormOpen] = useState(false)
@@ -52,6 +52,7 @@ export default function EventsPage() {
     sort: '+start_date',
     expand: 'teams',
     perPage: 50,
+    enabled: !teamsLoading,
   })
 
   const { remove } = useMutation<Event>('events')

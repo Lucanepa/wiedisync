@@ -26,7 +26,7 @@ export default function ParticipationSummary({
   const { t } = useTranslation('participation')
 
   const skipFetch = !!prefetched
-  const { data: fetched, refetch } = usePB<Participation>('participations', {
+  const { data: fetched, isLoading, refetch } = usePB<Participation>('participations', {
     filter: activityId
       ? `activity_type="${activityType}" && activity_id="${activityId}"`
       : '',
@@ -75,7 +75,9 @@ export default function ParticipationSummary({
   const confirmedTotal = confirmed + allGuests
   const hasGuestBreakdown = allGuests > 0
 
-  if (data.length === 0) return null
+  // Don't hide during loading — only hide when fetch completed with no data
+  if (data.length === 0 && !isLoading) return null
+  if (data.length === 0) return <span className="text-xs text-gray-400">…</span>
 
   if (stacked) {
     return (

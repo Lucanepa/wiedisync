@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '1.0.0'
+const APP_VERSION = '2.0.1'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,25 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.0.1',
+    date: '2026-03-24',
+    sections: [
+      {
+        title: 'Bug Fixes',
+        items: [
+          'Feedback submissions now visible under "My Submissions" (missing timestamp field fixed)',
+          'Participation counts no longer vanish briefly when opening game/training details',
+        ],
+      },
+      {
+        title: 'Features',
+        items: [
+          'Attach up to 5 screenshots per feedback submission (was 1)',
+        ],
+      },
+    ],
+  },
   {
     version: '1.0.0',
     date: '2026-03-19',

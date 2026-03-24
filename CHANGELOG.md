@@ -2,6 +2,18 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [2.0.1] — 2026-03-24
+
+### Bug Fixes
+
+- **Feedback submissions not listed** — Added missing `created`/`updated` autodate fields to PocketBase `feedback` collection (both prod and dev). The `sort: '-created'` query was silently failing, causing "Noch kein Feedback eingereicht" for all users.
+- **Participation counts vanishing in detail views** — `ParticipationSummary` now distinguishes "still loading" from "no data" instead of returning null during fetch, preventing the brief disappearance of confirmed/declined counts when opening game or training detail modals.
+- **Empty dates handled gracefully** — `formatDate()` on feedback page no longer crashes on empty or invalid date strings from backfilled records.
+
+### Features
+
+- **Multiple screenshots in feedback** — Users can now attach up to 5 screenshots per feedback submission (was limited to 1). Drag-and-drop, file picker with multi-select, and individual remove buttons.
+
 ## [2.0.0] — 2026-03-23
 
 ### Security

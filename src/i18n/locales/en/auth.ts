@@ -117,6 +117,40 @@ export default {
   resetSuccess: 'Your password has been changed successfully. You can now sign in.',
   resetError: 'This link is invalid or expired. Please request a new reset link.',
 
+  // OTP verification
+  otpSentTo: 'Code sent to {{email}}',
+  otpResendIn: 'Resend in {{seconds}}s',
+  otpResend: 'Resend code',
+  otpInvalid: 'Invalid code. Please try again.',
+  otpExpired: 'Code expired. Please request a new one.',
+  otpError: 'Failed to send code. Please try again.',
+  codeSentTo: 'We sent an 8-digit code to',
+
+  // Context-aware OTP titles
+  activateAccount: 'Activate Account',
+  activateAccountDescription: 'Your account has been prepared. Enter the code to get started.',
+  verifyEmail: 'Verify Email',
+  verifyEmailDescription: 'Verify your email address to continue registration.',
+  resetPasswordOtp: 'Reset Password',
+  resetPasswordOtpDescription: 'Enter the code to reset your password.',
+  resetPasswordOtpEmailDescription: 'Enter your email address to receive a reset code.',
+  resetPasswordOtpSetDescription: 'Choose a new password for your account.',
+  setPasswordTitle: 'Set Password',
+  setPasswordDescription: 'Welcome! Set your password to complete setup.',
+
+  // Password setting form
+  setPasswordButton: 'Set Password',
+  settingPassword: 'Setting password...',
+  passwordSetSuccess: 'Password set successfully!',
+  passwordTooShort: 'Password must be at least 8 characters.',
+  passwordResetSuccess: 'Your password has been changed successfully. You can now sign in.',
+
+  // OTP forgot-password flow
+  sendingOtp: 'Sending code...',
+  sendOtp: 'Send code',
+  backToLogin: 'Back to sign in',
+  otpRequestFailed: 'Could not send code. Please try again.',
+
   // Team requests
   addTeam: 'Add Team',
   addTeamTitle: 'Join a Team',

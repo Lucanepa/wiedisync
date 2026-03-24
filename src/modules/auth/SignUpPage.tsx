@@ -15,6 +15,8 @@ import { FormInput, FormField } from '@/components/FormField'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { LANGUAGES, type PbLanguage } from '../../i18n/languageConfig'
 import { pbLangToI18n } from '../../utils/languageMap'
+import { OtpInput } from '../../components/OtpInput'
+import { SetPasswordForm } from '../../components/SetPasswordForm'
 import deFlag from '../../assets/flags/de.svg'
 import gbFlag from '../../assets/flags/gb.svg'
 import frFlag from '../../assets/flags/fr.svg'
@@ -25,7 +27,7 @@ import type { Team } from '../../types'
 const flagMap: Record<string, string> = { de: deFlag, gb: gbFlag, fr: frFlag, it: itFlag, ch: chFlag }
 const TURNSTILE_SITE_KEY = '0x4AAAAAACoYmx3xiDfRbmv9'
 
-type Step = 'email' | 'claim' | 'register'
+type Step = 'email' | 'otp-verify' | 'otp-claim' | 'register' | 'set-password'
 
 export default function SignUpPage() {
   const { login, user, isApproved } = useAuth()
@@ -52,10 +54,14 @@ export default function SignUpPage() {
   const [selectedSport, setSelectedSport] = useState<'volleyball' | 'basketball'>('volleyball')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [resetSent, setResetSent] = useState(false)
   const [showPrivacy, setShowPrivacy] = useState(false)
   const [turnstileToken, setTurnstileToken] = useState('')
   const turnstileRef = useRef<TurnstileInstance>(null)
+
+  // OTP state
+  const [otpId, setOtpId] = useState('')
+  const [verificationToken, setVerificationToken] = useState('')
+  const [otpError, setOtpError] = useState('')
 
   const { data: teams } = usePB<Team>('teams', {
     filter: 'active=true',
@@ -91,13 +97,17 @@ export default function SignUpPage() {
         navigate('/login', { state: { email: email.trim().toLowerCase(), accountExists: true } })
         return
       } else if (res.exists) {
-        // Account exists but not claimed — send password reset to claim
-        await pb.collection('members').requestPasswordReset(email.trim().toLowerCase())
-        setStep('claim')
-        setResetSent(true)
+        // Account exists but not claimed — request OTP for claim
+        const otpRes = await pb.collection('members').requestOTP(email.trim().toLowerCase())
+        setOtpId(otpRes.otpId)
+        setStep('otp-claim')
       } else {
-        // New member — show full registration form
-        setStep('register')
+        // New member — send verification email OTP
+        await pb.send('/api/verify-email', {
+          method: 'POST',
+          body: { email: email.trim().toLowerCase() },
+        })
+        setStep('otp-verify')
       }
     } catch {
       setError(t('registrationFailed'))
@@ -108,7 +118,64 @@ export default function SignUpPage() {
     }
   }
 
-  // Step 3: Register new member
+  // OTP verify complete (new member email verification)
+  async function handleOtpVerifyComplete(code: string) {
+    setOtpError('')
+    try {
+      const res = await pb.send('/api/verify-email/confirm', {
+        method: 'POST',
+        body: { email: email.trim().toLowerCase(), code },
+      })
+      setVerificationToken(res.verificationToken)
+      setStep('register')
+    } catch {
+      setOtpError(t('otpInvalid'))
+    }
+  }
+
+  // OTP verify resend
+  async function handleOtpVerifyResend() {
+    try {
+      await pb.send('/api/verify-email', {
+        method: 'POST',
+        body: { email: email.trim().toLowerCase() },
+      })
+    } catch {
+      setOtpError(t('registrationFailed'))
+    }
+  }
+
+  // OTP claim complete (existing member activation)
+  async function handleOtpClaimComplete(code: string) {
+    setOtpError('')
+    try {
+      await pb.collection('members').authWithOTP(otpId, code)
+      setStep('set-password')
+    } catch {
+      setOtpError(t('otpInvalid'))
+    }
+  }
+
+  // OTP claim resend
+  async function handleOtpClaimResend() {
+    try {
+      const otpRes = await pb.collection('members').requestOTP(email.trim().toLowerCase())
+      setOtpId(otpRes.otpId)
+    } catch {
+      setOtpError(t('registrationFailed'))
+    }
+  }
+
+  // Set password success handler
+  function handleSetPasswordSuccess() {
+    if (isApproved) {
+      navigate('/', { replace: true })
+    } else {
+      navigate('/pending', { replace: true })
+    }
+  }
+
+  // Register new member
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault()
     setError('')
@@ -144,7 +211,10 @@ export default function SignUpPage() {
         birthdate_visibility: 'hidden',
         club: selectedTeamObj?.club || '',
       }, {
-        headers: turnstileToken ? { 'X-Turnstile-Token': turnstileToken } : {},
+        headers: {
+          ...(turnstileToken ? { 'X-Turnstile-Token': turnstileToken } : {}),
+          ...(verificationToken ? { 'X-Verification-Token': verificationToken } : {}),
+        },
       })
       await login(email.trim().toLowerCase(), password)
       logActivity('create', 'members', newMember.id, { first_name: firstName, last_name: lastName, requested_team: selectedTeam })
@@ -156,6 +226,14 @@ export default function SignUpPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  function handleBackToEmail() {
+    setStep('email')
+    setError('')
+    setOtpError('')
+    setOtpId('')
+    setVerificationToken('')
   }
 
   return (
@@ -171,7 +249,10 @@ export default function SignUpPage() {
 
         <div className="rounded-xl bg-white p-6 shadow-lg sm:p-8 dark:bg-gray-800">
           <h1 className="mb-6 text-center text-xl font-bold text-gray-900 dark:text-gray-100">
-            {t('createAccount')}
+            {step === 'otp-verify' && t('verifyEmail')}
+            {step === 'otp-claim' && t('activateAccount')}
+            {step === 'set-password' && t('setPasswordTitle')}
+            {(step === 'email' || step === 'register') && t('createAccount')}
           </h1>
 
           <Turnstile
@@ -242,50 +323,56 @@ export default function SignUpPage() {
             </form>
           )}
 
-          {/* Step 2: Account claim (email exists) */}
-          {step === 'claim' && (
+          {/* Step 2: OTP verification for new members */}
+          {step === 'otp-verify' && (
             <div className="space-y-4">
-              <div className="flex justify-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-                  <svg className="h-7 w-7 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-                  </svg>
-                </div>
-              </div>
+              <p className="text-center text-sm text-gray-500 dark:text-gray-400">
+                {t('verifyEmailDescription')}
+              </p>
 
-              <div className="text-center">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                  {t('accountExists')}
-                </h2>
-                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                  {t('accountExistsDescription')}
-                </p>
-                <p className="mt-3 rounded-lg bg-gray-50 px-3 py-2 text-sm font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                  {email}
-                </p>
-              </div>
+              <OtpInput
+                email={email}
+                onComplete={handleOtpVerifyComplete}
+                onResend={handleOtpVerifyResend}
+                error={otpError}
+              />
 
-              {resetSent && (
-                <div className="rounded-lg bg-green-50 p-3 text-center text-sm text-green-700 dark:bg-green-900/20 dark:text-green-400">
-                  {t('resetLinkSent')}
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Link
-                  to="/login"
-                  className="block w-full rounded-lg bg-brand-500 px-4 py-2.5 text-center text-sm font-medium text-white hover:bg-brand-600"
-                >
-                  {t('signIn')}
-                </Link>
-                <Button variant="outline" onClick={() => { setStep('email'); setError(''); setResetSent(false) }} className="w-full">
-                  {t('tryDifferentEmail')}
-                </Button>
-              </div>
+              <Button variant="outline" onClick={handleBackToEmail} className="w-full">
+                {t('tryDifferentEmail')}
+              </Button>
             </div>
           )}
 
-          {/* Step 3: New member registration */}
+          {/* Step 3: OTP claim for existing members */}
+          {step === 'otp-claim' && (
+            <div className="space-y-4">
+              <p className="text-center text-sm text-gray-500 dark:text-gray-400">
+                {t('activateAccountDescription')}
+              </p>
+
+              <OtpInput
+                email={email}
+                onComplete={handleOtpClaimComplete}
+                onResend={handleOtpClaimResend}
+                error={otpError}
+              />
+
+              <Button variant="outline" onClick={handleBackToEmail} className="w-full">
+                {t('tryDifferentEmail')}
+              </Button>
+            </div>
+          )}
+
+          {/* Step 4: Set password after OTP claim */}
+          {step === 'set-password' && (
+            <SetPasswordForm
+              title={t('setPasswordTitle')}
+              description={t('setPasswordDescription')}
+              onSuccess={handleSetPasswordSuccess}
+            />
+          )}
+
+          {/* Step 5: New member registration */}
           {step === 'register' && (
             <form onSubmit={handleRegister} className="space-y-4">
               {/* Email (read-only) */}
@@ -300,7 +387,7 @@ export default function SignUpPage() {
                   />
                   <button
                     type="button"
-                    onClick={() => { setStep('email'); setError('') }}
+                    onClick={handleBackToEmail}
                     className="mt-6 shrink-0 text-sm text-brand-600 hover:text-brand-500 dark:text-brand-400"
                   >
                     {t('change')}

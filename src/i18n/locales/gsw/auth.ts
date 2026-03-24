@@ -115,6 +115,40 @@ export default {
   resetSuccess: 'Dis Passwort isch gänderet worde. Du chasch dich jetzt ilogge.',
   resetError: 'De Link isch ungültig oder abgloffe. Bitte fordere en neue Link aa.',
 
+  // OTP verification
+  otpSentTo: 'Code gschickt an {{email}}',
+  otpResendIn: 'Nochmal schicke in {{seconds}}s',
+  otpResend: 'Code nochmal schicke',
+  otpInvalid: 'Ungültige Code. Bitte probier\'s nomal.',
+  otpExpired: 'Code abglaufe. Bitte fordere en neue ah.',
+  otpError: 'Code het nöd chönne gschickt werde. Bitte probier\'s nomal.',
+  codeSentTo: 'Mir hend en 8-stellige Code gschickt an',
+
+  // Context-aware OTP titles
+  activateAccount: 'Konto aktiviere',
+  activateAccountDescription: 'Dis Konto isch parat. Gib de Code ih zum loslege.',
+  verifyEmail: 'E-Mail bestätige',
+  verifyEmailDescription: 'Bestätig dini E-Mail-Adrässe zum mit de Registrierig wiitermache.',
+  resetPasswordOtp: 'Passwort zruggsetze',
+  resetPasswordOtpDescription: 'Gib de Code ih zum dis Passwort zruggzsetze.',
+  resetPasswordOtpEmailDescription: 'Gib dini E-Mail-Adrässe ih zum en Code zum Zruggsetze z\'becho.',
+  resetPasswordOtpSetDescription: 'Wähl es neus Passwort für dis Konto.',
+  setPasswordTitle: 'Passwort setze',
+  setPasswordDescription: 'Willkomme! Setz dis Passwort zum d\'Iirichtig abzschliesse.',
+
+  // Password setting form
+  setPasswordButton: 'Passwort setze',
+  settingPassword: 'Passwort wird gsetzt...',
+  passwordSetSuccess: 'Passwort erfolgriich gsetzt!',
+  passwordTooShort: 'S\'Passwort muess mindestens 8 Zeiche lang sii.',
+  passwordResetSuccess: 'Dis Passwort isch erfolgriich gänderet worde. Du chasch dich jetzt aamelde.',
+
+  // OTP forgot-password flow
+  sendingOtp: 'Code wird gschickt...',
+  sendOtp: 'Code schicke',
+  backToLogin: 'Zrugg zur Aamäldig',
+  otpRequestFailed: 'Code het nöd chönne gschickt werde. Bitte probier\'s nomal.',
+
   // Danger Zone
   dangerZone: 'Gfahrezone',
   deleteAccount: 'Konto lösche',

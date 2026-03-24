@@ -190,3 +190,58 @@ onMailerRecordAuthAlertSend(function(e) {
     greeting, "", body, alertInfo || "", "", warning, "", ignore
   ], { title: title })
 }, "members")
+
+// ── OTP Code ──────────────────────────────────────────────────────────
+
+onMailerRecordOTPSend(function(e) {
+  var tpl = require(__hooks + "/email_template_lib.js")
+  var record = e.record
+  var rawLang = record.getString("language") || ""
+  var lang = (rawLang === "english" || rawLang === "en") ? "en" : "de"
+  var name = record.getString("first_name") || record.getString("name").split(" ")[0] || ""
+
+  // Extract OTP code from PB's default email body (8-digit code)
+  var otpCode = ""
+  var match = e.message.html.match(/\b(\d{8})\b/)
+  if (match) otpCode = match[1]
+
+  var subject = lang === "en"
+    ? "Your One-Time Code \u2013 Wiedisync"
+    : "Dein Einmalpasswort \u2013 Wiedisync"
+  var title = lang === "en" ? "One-Time Code" : "Einmalpasswort"
+  var greeting = lang === "en" ? "Hello " + name + "," : "Hallo " + name + ","
+  var body = lang === "en"
+    ? "Here is your verification code:"
+    : "Hier ist dein Best\u00e4tigungscode:"
+  var expiry = lang === "en"
+    ? "The code expires in 10 minutes."
+    : "Der Code ist 10 Minuten g\u00fcltig."
+  var ignore = lang === "en"
+    ? "If you didn't request this code, you can ignore this email."
+    : "Falls du diesen Code nicht angefordert hast, kannst du diese E-Mail ignorieren."
+  var footer = lang === "en" ? "Your Wiedisync Team" : "Dein Wiedisync Team"
+
+  var codeDisplay = ""
+  if (otpCode) {
+    codeDisplay = '<div style="text-align:center;margin:16px 0">' +
+      '<span style="display:inline-block;font-size:32px;font-weight:700;letter-spacing:8px;color:#FFC832;background:#0f172a;padding:16px 28px;border-radius:8px;border:1px solid #334155">' +
+      otpCode +
+      '</span></div>'
+  }
+
+  var bodyHtml = tpl.buildParagraph(body) +
+    codeDisplay +
+    tpl.buildParagraph(expiry, { color: "#94a3b8", size: "12px" }) +
+    tpl.buildParagraph("<em>" + ignore + "</em>", { color: "#94a3b8", size: "12px" })
+
+  e.message.subject = subject
+  e.message.html = tpl.buildEmailLayout(bodyHtml, {
+    lang: lang,
+    title: title,
+    greeting: greeting,
+    footerExtra: footer
+  })
+  e.message.text = tpl.buildPlainLayout([
+    greeting, "", body, "", otpCode || "(code)", "", expiry, "", ignore
+  ], { title: title })
+}, "members")

@@ -117,6 +117,40 @@ export default {
   resetSuccess: 'Dein Passwort wurde erfolgreich geändert. Du kannst dich jetzt anmelden.',
   resetError: 'Der Link ist ungültig oder abgelaufen. Bitte fordere einen neuen Link an.',
 
+  // OTP verification
+  otpSentTo: 'Code gesendet an {{email}}',
+  otpResendIn: 'Erneut senden in {{seconds}}s',
+  otpResend: 'Code erneut senden',
+  otpInvalid: 'Ungültiger Code. Bitte versuche es erneut.',
+  otpExpired: 'Code abgelaufen. Bitte fordere einen neuen an.',
+  otpError: 'Code konnte nicht gesendet werden. Bitte versuche es erneut.',
+  codeSentTo: 'Wir haben einen 8-stelligen Code gesendet an',
+
+  // Context-aware OTP titles
+  activateAccount: 'Konto aktivieren',
+  activateAccountDescription: 'Dein Konto wurde vorbereitet. Gib den Code ein, um loszulegen.',
+  verifyEmail: 'E-Mail bestätigen',
+  verifyEmailDescription: 'Bestätige deine E-Mail-Adresse, um mit der Registrierung fortzufahren.',
+  resetPasswordOtp: 'Passwort zurücksetzen',
+  resetPasswordOtpDescription: 'Gib den Code ein, um dein Passwort zurückzusetzen.',
+  resetPasswordOtpEmailDescription: 'Gib deine E-Mail-Adresse ein, um einen Code zum Zurücksetzen zu erhalten.',
+  resetPasswordOtpSetDescription: 'Wähle ein neues Passwort für dein Konto.',
+  setPasswordTitle: 'Passwort setzen',
+  setPasswordDescription: 'Willkommen! Setze dein Passwort, um die Einrichtung abzuschliessen.',
+
+  // Password setting form
+  setPasswordButton: 'Passwort setzen',
+  settingPassword: 'Passwort wird gesetzt...',
+  passwordSetSuccess: 'Passwort erfolgreich gesetzt!',
+  passwordTooShort: 'Das Passwort muss mindestens 8 Zeichen lang sein.',
+  passwordResetSuccess: 'Dein Passwort wurde erfolgreich geändert. Du kannst dich jetzt anmelden.',
+
+  // OTP forgot-password flow
+  sendingOtp: 'Code wird gesendet...',
+  sendOtp: 'Code senden',
+  backToLogin: 'Zurück zur Anmeldung',
+  otpRequestFailed: 'Code konnte nicht gesendet werden. Bitte versuche es erneut.',
+
   // Team requests
   addTeam: 'Team hinzufügen',
   addTeamTitle: 'Team beitreten',

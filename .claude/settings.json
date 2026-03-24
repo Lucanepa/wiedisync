@@ -7,7 +7,10 @@
       "Bash(/home/luca-canepa/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.5/skills/brainstorming/scripts/start-server.sh --project-dir /home/luca-canepa/Desktop/Github/kscw)",
       "Read(//home/luca-canepa/Desktop/Github/kscw/**)",
       "Bash(/home/luca-canepa/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.5/skills/brainstorming/scripts/stop-server.sh /home/luca-canepa/Desktop/Github/kscw/.superpowers/brainstorm/235041-1773785365)",
-      "Bash(git mv:*)"
+      "Bash(git mv:*)",
+      "Read(//home/luca-canepa/Desktop/Github/wiedisync/**)",
+      "Bash(bash /tmp/compare_translations.sh)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb2xsZWN0aW9uSWQiOiJwYmNfMzE0MjYzNTgyMyIsImV4cCI6MTc3NDQzNDg3NSwiaWQiOiJ1b3ZsajNyM2dnenE5eG8iLCJyZWZyZXNoYWJsZSI6dHJ1ZSwidHlwZSI6ImF1dGgifQ.weG5cVMrwJDx7cGJvqPfbiekdnXy8N0higVnFQWZQcY\")"
     ],
     "additionalDirectories": [
       "/home/luca-canepa/Desktop/Github/kscw-website/public/js"

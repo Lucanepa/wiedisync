@@ -72,9 +72,11 @@ export default function SignUpPage() {
   const filteredTeams = teams.filter((t) => t.sport === selectedSport)
 
   useEffect(() => {
+    // Don't redirect when user is setting password after OTP claim
+    if (step === 'set-password') return
     if (user && isApproved) navigate('/', { replace: true })
     if (user && !isApproved) navigate('/pending', { replace: true })
-  }, [user, isApproved, navigate])
+  }, [user, isApproved, navigate, step])
 
   // Step 1: Check if email exists
   async function handleEmailCheck(e: React.FormEvent) {

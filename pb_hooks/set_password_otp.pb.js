@@ -7,12 +7,13 @@
 // All helpers and strings MUST be defined inside each callback (or via require).
 
 routerAdd("POST", "/api/set-password", function(e) {
-  var auth = e.auth
+  var info = e.requestInfo()
+  var auth = info.auth
   if (!auth) {
     throw new BadRequestError("Authentication required")
   }
 
-  var body = $apis.requestInfo(e).body
+  var body = info.body || {}
   var password = body.password || ""
   var passwordConfirm = body.passwordConfirm || ""
 
@@ -29,7 +30,7 @@ routerAdd("POST", "/api/set-password", function(e) {
   }
 
   // Update the authenticated member's password
-  var record = auth
+  var record = $app.findRecordById("members", auth.id)
   record.setPassword(password)
   $app.save(record)
 
@@ -51,4 +52,4 @@ routerAdd("POST", "/api/set-password", function(e) {
   }
 
   return e.json(200, { success: true, approved: approved })
-})
+}, $apis.requireAuth())

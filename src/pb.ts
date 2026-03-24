@@ -23,7 +23,12 @@ const store = new AsyncAuthStore({
   initial: getStorage().getItem(AUTH_KEY) || '',
 })
 
-const pb = new PocketBase(import.meta.env.VITE_PB_URL, store)
+// Auto-detect API: dev/preview domains use dev API, production uses prod API
+const host = typeof window !== 'undefined' ? window.location.hostname : ''
+const isDevDomain = host.startsWith('dev.') || (host.endsWith('.pages.dev') && !host.startsWith('wiedisync.pages.dev'))
+const pbUrl = isDevDomain ? 'https://api-dev.kscw.ch' : (import.meta.env.VITE_PB_URL || 'https://api.kscw.ch')
+
+const pb = new PocketBase(pbUrl, store)
 
 pb.autoCancellation(false)
 

@@ -15,11 +15,6 @@ interface TeamRecord {
   }
 }
 
-interface MemberCountRow {
-  team: string
-  cnt: number
-}
-
 interface UnapprovedMember {
   id: string
   name: string

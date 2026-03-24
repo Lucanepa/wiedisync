@@ -27,7 +27,7 @@ import type { Team } from '../../types'
 const flagMap: Record<string, string> = { de: deFlag, gb: gbFlag, fr: frFlag, it: itFlag, ch: chFlag }
 const TURNSTILE_SITE_KEY = '0x4AAAAAACoYmx3xiDfRbmv9'
 
-type Step = 'email' | 'otp-verify' | 'otp-claim' | 'register' | 'set-password'
+type Step = 'email' | 'otp-verify' | 'otp-claim' | 'register' | 'complete-profile'
 
 export default function SignUpPage() {
   const { login, user, isApproved } = useAuth()
@@ -72,8 +72,8 @@ export default function SignUpPage() {
   const filteredTeams = teams.filter((t) => t.sport === selectedSport)
 
   useEffect(() => {
-    // Don't redirect when user is setting password after OTP claim
-    if (step === 'set-password') return
+    // Don't redirect during OTP claim flow steps
+    if (step === 'complete-profile') return
     if (user && isApproved) navigate('/', { replace: true })
     if (user && !isApproved) navigate('/pending', { replace: true })
   }, [user, isApproved, navigate, step])
@@ -153,7 +153,13 @@ export default function SignUpPage() {
     setOtpError('')
     try {
       await pb.collection('members').authWithOTP(otpId, code)
-      setStep('set-password')
+      // Pre-fill form with existing member data
+      const member = pb.authStore.record
+      if (member) {
+        if (member.first_name) setFirstName(member.first_name)
+        if (member.last_name) setLastName(member.last_name)
+      }
+      setStep('complete-profile')
     } catch {
       setOtpError(t('otpInvalid'))
     }
@@ -170,15 +176,48 @@ export default function SignUpPage() {
     }
   }
 
-  // Set password success handler
-  async function handleSetPasswordSuccess() {
-    // Refresh auth to pick up auto-approval from /api/set-password
-    try {
-      await pb.collection('members').authRefresh()
-    } catch {
-      // ignore — user is still authenticated
+  // Complete profile handler (ClubDesk import: set password + profile + team)
+  async function handleCompleteProfile(e: React.FormEvent) {
+    e.preventDefault()
+    setError('')
+
+    if (password.length < 8) {
+      setError(t('passwordTooShort'))
+      return
     }
-    navigate('/', { replace: true })
+    if (password !== passwordConfirm) {
+      setError(t('passwordMismatch'))
+      return
+    }
+    if (!selectedTeam) {
+      setError(t('teamRequired'))
+      return
+    }
+
+    setLoading(true)
+    try {
+      // Set password via custom endpoint (also attempts auto-approve)
+      await pb.send('/api/set-password', {
+        method: 'POST',
+        body: { password, passwordConfirm },
+      })
+
+      // Update profile fields + team
+      await pb.collection('members').update(pb.authStore.record!.id, {
+        first_name: firstName,
+        last_name: lastName,
+        name: `${firstName} ${lastName}`,
+        requested_team: selectedTeam,
+      })
+
+      // Refresh auth to pick up changes
+      await pb.collection('members').authRefresh()
+      navigate('/', { replace: true })
+    } catch {
+      setError(t('registrationFailed'))
+    } finally {
+      setLoading(false)
+    }
   }
 
   // Register new member
@@ -257,7 +296,7 @@ export default function SignUpPage() {
           <h1 className="mb-6 text-center text-xl font-bold text-gray-900 dark:text-gray-100">
             {step === 'otp-verify' && t('verifyEmail')}
             {step === 'otp-claim' && t('activateAccount')}
-            {step === 'set-password' && t('setPasswordTitle')}
+            {step === 'complete-profile' && t('activateAccount')}
             {(step === 'email' || step === 'register') && t('createAccount')}
           </h1>
 
@@ -369,13 +408,108 @@ export default function SignUpPage() {
             </div>
           )}
 
-          {/* Step 4: Set password after OTP claim */}
-          {step === 'set-password' && (
-            <SetPasswordForm
-              title={t('setPasswordTitle')}
-              description={t('setPasswordDescription')}
-              onSuccess={handleSetPasswordSuccess}
-            />
+          {/* Step 4: Complete profile after OTP claim (ClubDesk imports) */}
+          {step === 'complete-profile' && (
+            <form onSubmit={handleCompleteProfile} className="space-y-4">
+              <p className="text-center text-sm text-gray-500 dark:text-gray-400">
+                {t('activateAccountDescription')}
+              </p>
+
+              {/* Email (read-only) */}
+              <FormInput
+                type="email"
+                label={t('email')}
+                value={email}
+                readOnly
+                className="bg-gray-50 dark:bg-gray-600"
+              />
+
+              <div className="grid grid-cols-2 gap-3">
+                <FormInput
+                  type="text"
+                  label={t('firstName')}
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required
+                  autoComplete="given-name"
+                />
+                <FormInput
+                  type="text"
+                  label={t('lastName')}
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  required
+                  autoComplete="family-name"
+                />
+              </div>
+
+              {/* Sport toggle */}
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {tc('sport')}
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(['volleyball', 'basketball'] as const).map((sport) => (
+                    <button
+                      key={sport}
+                      type="button"
+                      onClick={() => { setSelectedSport(sport); setSelectedTeam('') }}
+                      className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                        selectedSport === sport
+                          ? 'border-gold-400 bg-gold-100 text-gold-900 dark:border-gold-400/50 dark:bg-gold-400/20 dark:text-gold-300'
+                          : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      {tc(sport)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <FormField label={t('selectTeam')}>
+                <Select value={selectedTeam} onValueChange={setSelectedTeam}>
+                  <SelectTrigger className="min-h-[44px]">
+                    <SelectValue placeholder={t('selectTeamPlaceholder')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredTeams.map((team) => (
+                      <SelectItem key={team.id} value={team.id}>
+                        {team.name}{team.league ? ` — ${team.league}` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormField>
+
+              <FormInput
+                type="password"
+                label={t('password')}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={8}
+                autoComplete="new-password"
+                placeholder={t('passwordPlaceholder')}
+              />
+
+              <FormInput
+                type="password"
+                label={t('confirmPassword')}
+                value={passwordConfirm}
+                onChange={(e) => setPasswordConfirm(e.target.value)}
+                required
+                minLength={8}
+                autoComplete="new-password"
+              />
+
+              {error && (
+                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+              )}
+
+              <Button type="submit" loading={loading} className="w-full">
+                {loading ? t('settingPassword') : t('activateAccount')}
+              </Button>
+            </form>
           )}
 
           {/* Step 5: New member registration */}

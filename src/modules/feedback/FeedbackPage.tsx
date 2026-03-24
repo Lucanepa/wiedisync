@@ -36,7 +36,7 @@ interface FeedbackRecord {
   description: string
   source: string
   source_url: string
-  screenshot: string
+  screenshot: string | string[]
   status: string
   github_issue: string
   user: string
@@ -77,7 +77,7 @@ export default function FeedbackPage() {
   const [selectedType, setSelectedType] = useState<FeedbackType>('bug')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [file, setFile] = useState<File | null>(null)
+  const [files, setFiles] = useState<File[]>([])
   const [submitting, setSubmitting] = useState(false)
 
   const { data: submissions, refetch } = usePB<FeedbackRecord>('feedback', {
@@ -121,27 +121,25 @@ export default function FeedbackPage() {
   const openIssues = useMemo(() => issues.filter((i) => i.state === 'open'), [issues])
   const closedIssues = useMemo(() => issues.filter((i) => i.state === 'closed'), [issues])
 
-  const handleFile = useCallback((f: File) => {
-    if (f.size > MAX_FILE_SIZE) {
-      toast.error(t('validationFileSize'))
-      return
+  const addFiles = useCallback((incoming: FileList | File[]) => {
+    const valid: File[] = []
+    for (const f of Array.from(incoming)) {
+      if (f.size > MAX_FILE_SIZE) { toast.error(t('validationFileSize')); continue }
+      if (!ALLOWED_TYPES.includes(f.type)) { toast.error(t('validationFileType')); continue }
+      valid.push(f)
     }
-    if (!ALLOWED_TYPES.includes(f.type)) {
-      toast.error(t('validationFileType'))
-      return
-    }
-    setFile(f)
+    setFiles((prev) => [...prev, ...valid].slice(0, 5))
   }, [t])
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
-    if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0])
-  }, [handleFile])
+    if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files)
+  }, [addFiles])
 
   const resetForm = () => {
     setTitle('')
     setDescription('')
-    setFile(null)
+    setFiles([])
     setSelectedType('bug')
     setShowForm(false)
   }
@@ -161,7 +159,7 @@ export default function FeedbackPage() {
       formData.append('status', 'new')
       formData.append('source_url', window.location.origin)
       if (user) formData.append('user', user.id)
-      if (file) formData.append('screenshot', file)
+      for (const f of files) formData.append('screenshot', f)
 
       await pb.collection('feedback').create(formData)
 
@@ -179,7 +177,9 @@ export default function FeedbackPage() {
   }
 
   const formatDate = (dateStr: string) => {
+    if (!dateStr) return ''
     const date = new Date(dateStr)
+    if (isNaN(date.getTime())) return ''
     const now = new Date()
     const diffMs = now.getTime() - date.getTime()
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
@@ -257,12 +257,12 @@ export default function FeedbackPage() {
             />
           </div>
 
-          {/* Screenshot */}
+          {/* Screenshots (up to 5) */}
           <div className="mb-4">
             <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              {t('fieldScreenshot')}
+              {t('fieldScreenshot')} ({files.length}/5)
             </label>
-            {!file ? (
+            {files.length < 5 && (
               <div
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={handleDrop}
@@ -275,16 +275,22 @@ export default function FeedbackPage() {
                   id="feedback-file"
                   type="file"
                   accept="image/png,image/jpeg,image/webp"
+                  multiple
                   className="hidden"
-                  onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+                  onChange={(e) => { if (e.target.files?.length) addFiles(e.target.files); e.target.value = '' }}
                 />
               </div>
-            ) : (
-              <div className="flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2 text-sm dark:bg-gray-700">
-                <span className="flex-1 truncate">{file.name}</span>
-                <button type="button" onClick={() => setFile(null)} className="text-gray-400 hover:text-red-500">
-                  <X className="h-4 w-4" />
-                </button>
+            )}
+            {files.length > 0 && (
+              <div className="mt-2 space-y-1">
+                {files.map((f, i) => (
+                  <div key={`${f.name}-${i}`} className="flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-1.5 text-sm dark:bg-gray-700">
+                    <span className="flex-1 truncate">{f.name}</span>
+                    <button type="button" onClick={() => setFiles((prev) => prev.filter((_, j) => j !== i))} className="text-gray-400 hover:text-red-500">
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
           </div>

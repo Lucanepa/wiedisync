@@ -39,7 +39,7 @@ export default function HomePage() {
   const { t } = useTranslation('home')
   const { t: tn } = useTranslation('notifications')
 
-  const { user, isApproved, primarySport } = useAuth()
+  const { user, isApproved, primarySport, coachTeamIds } = useAuth()
   const { sport, setSport } = useSportPreference()
   // Hide sport toggle for logged-in users who play only one sport
   const showSportToggle = !user || primarySport === 'both'
@@ -70,7 +70,7 @@ export default function HomePage() {
     enabled: !!user,
   })
 
-  const userTeamIds = useMemo(() => memberTeams.map((mt) => mt.team), [memberTeams])
+  const userTeamIds = useMemo(() => [...new Set([...memberTeams.map((mt) => mt.team), ...coachTeamIds])], [memberTeams, coachTeamIds])
   const hasTeams = userTeamIds.length > 0
 
   // Build team filter for games

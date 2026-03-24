@@ -9,6 +9,7 @@ import EmptyState from '../../components/EmptyState'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import ParticipationRosterModal from '../../components/ParticipationRosterModal'
+import TeamFilter from '../../components/TeamFilter'
 import EventCard from './EventCard'
 import EventDetailModal from './EventDetailModal'
 import EventForm from './EventForm'
@@ -20,26 +21,31 @@ type EventExpanded = Event & { expand?: { teams?: Team[] } }
 
 export default function EventsPage() {
   const { t } = useTranslation('events')
-  const { user, isCoach, isCoachOf, isAdmin, memberTeamIds } = useAuth()
+  const { user, isCoach, isCoachOf, isAdmin, memberTeamIds, coachTeamIds } = useAuth()
+  // Merge member + coach teams for visibility
+  const allUserTeamIds = useMemo(() => [...new Set([...memberTeamIds, ...coachTeamIds])], [memberTeamIds, coachTeamIds])
   const [formOpen, setFormOpen] = useState(false)
   const [editingEvent, setEditingEvent] = useState<Event | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [rosterEvent, setRosterEvent] = useState<EventExpanded | null>(null)
   const [selectedEvent, setSelectedEvent] = useState<EventExpanded | null>(null)
   const [showPast, setShowPast] = useState(false)
+  const [selectedTeam, setSelectedTeam] = useState<string | null>(null)
 
   const today = useMemo(() => new Date().toISOString().split('T')[0], [])
 
-  // Non-admins: show events for own teams + club-wide events (no teams assigned)
+  // Show events for selected team, or all user teams + club-wide events
   const eventFilter = useMemo(() => {
     const parts: string[] = []
     if (!showPast) parts.push(`end_date >= "${today}" || (end_date = "" && start_date >= "${today}")`)
-    if (memberTeamIds.length > 0) {
-      const teamClauses = memberTeamIds.map(id => `teams~"${id}"`).join(' || ')
+    if (selectedTeam) {
+      parts.push(`(teams:length = 0 || teams~"${selectedTeam}")`)
+    } else if (allUserTeamIds.length > 0) {
+      const teamClauses = allUserTeamIds.map(id => `teams~"${id}"`).join(' || ')
       parts.push(`(teams:length = 0 || ${teamClauses})`)
     }
     return parts.join(' && ')
-  }, [memberTeamIds, showPast, today])
+  }, [allUserTeamIds, selectedTeam, showPast, today])
 
   const { data: events, isLoading, refetch } = usePB<EventExpanded>('events', {
     filter: eventFilter,
@@ -127,6 +133,12 @@ export default function EventsPage() {
           </Button>
         )}
       </div>
+
+      {allUserTeamIds.length > 1 && (
+        <div className="mt-6">
+          <TeamFilter selected={selectedTeam} onChange={setSelectedTeam} limitToTeamIds={isAdmin ? undefined : allUserTeamIds} groupBySport={isAdmin} />
+        </div>
+      )}
 
       <div className="mt-6">
         {isLoading ? (

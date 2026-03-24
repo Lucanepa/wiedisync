@@ -33,7 +33,9 @@ type TrainingExpanded = Training & {
 
 export default function TrainingsPage() {
   const { t } = useTranslation('trainings')
-  const { user, isCoach, isCoachOf, memberTeamIds } = useAuth()
+  const { user, isCoach, isCoachOf, memberTeamIds, coachTeamIds } = useAuth()
+  // Merge member + coach teams for visibility
+  const allUserTeamIds = useMemo(() => [...new Set([...memberTeamIds, ...coachTeamIds])], [memberTeamIds, coachTeamIds])
   const { effectiveIsAdmin } = useAdminMode()
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null)
   const [autoSelected, setAutoSelected] = useState(false)
@@ -43,22 +45,22 @@ export default function TrainingsPage() {
 
   // Auto-select user's first team on initial load
   useEffect(() => {
-    if (!autoSelected && memberTeamIds.length > 0) {
-      setSelectedTeam(memberTeamIds[0])
+    if (!autoSelected && allUserTeamIds.length > 0) {
+      setSelectedTeam(allUserTeamIds[0])
       setAutoSelected(true)
     }
-  }, [memberTeamIds, autoSelected])
+  }, [allUserTeamIds, autoSelected])
 
-  // Non-admins: always scope to own teams (never show all teams' trainings)
+  // Non-admins: always scope to own teams + coached teams
   const effectiveFilter = useMemo(() => {
     const parts: string[] = []
     if (selectedTeam) parts.push(`team="${selectedTeam}"`)
-    else if (!effectiveIsAdmin && memberTeamIds.length > 0) {
-      parts.push(`(${memberTeamIds.map(id => `team="${id}"`).join(' || ')})`)
+    else if (!effectiveIsAdmin && allUserTeamIds.length > 0) {
+      parts.push(`(${allUserTeamIds.map(id => `team="${id}"`).join(' || ')})`)
     }
     if (!showPast) parts.push(`date >= "${today}"`)
     return parts.join(' && ')
-  }, [selectedTeam, effectiveIsAdmin, memberTeamIds, showPast, today])
+  }, [selectedTeam, effectiveIsAdmin, allUserTeamIds, showPast, today])
 
   const [activeTab, setActiveTab] = useState<'trainings' | 'dashboard'>('trainings')
   const [formOpen, setFormOpen] = useState(false)
@@ -175,7 +177,7 @@ export default function TrainingsPage() {
       </div>
 
       <div className="mt-6">
-        <TeamFilter selected={selectedTeam} onChange={setSelectedTeam} limitToTeamIds={effectiveIsAdmin ? undefined : memberTeamIds} groupBySport={effectiveIsAdmin} />
+        <TeamFilter selected={selectedTeam} onChange={setSelectedTeam} limitToTeamIds={effectiveIsAdmin ? undefined : allUserTeamIds} groupBySport={effectiveIsAdmin} />
       </div>
 
       {/* Tabs (coach view) */}

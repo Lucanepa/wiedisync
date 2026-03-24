@@ -100,6 +100,8 @@ const collections: CollectionDef[] = [
       file('photo', { maxSize: 5242880, mimeTypes: ['image/jpeg', 'image/png', 'image/webp'] }),
       select('role', ['user', 'vorstand', 'admin', 'superuser']),
       select('licences', ['scorer_vb', 'referee_vb', 'otr1_bb', 'otr2_bb', 'otn_bb', 'referee_bb'], { maxSelect: 6 }),
+      bool('coach_approved_team'),
+      relation('requested_team', '' /* teams collection ID — filled after creation */),
       bool('kscw_membership_active'),
       bool('wiedisync_active'),
     ],

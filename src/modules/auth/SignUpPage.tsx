@@ -135,6 +135,7 @@ export default function SignUpPage() {
 
   // OTP verify resend
   async function handleOtpVerifyResend() {
+    setOtpError('')
     try {
       await pb.send('/api/verify-email', {
         method: 'POST',
@@ -158,6 +159,7 @@ export default function SignUpPage() {
 
   // OTP claim resend
   async function handleOtpClaimResend() {
+    setOtpError('')
     try {
       const otpRes = await pb.collection('members').requestOTP(email.trim().toLowerCase())
       setOtpId(otpRes.otpId)

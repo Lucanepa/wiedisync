@@ -14,6 +14,7 @@ import TrainingForm from './TrainingForm'
 import RecurringTrainingModal from './RecurringTrainingModal'
 import RecurringEditDialog from './RecurringEditDialog'
 import type { RecurringEditScope } from './RecurringEditDialog'
+import { isFeatureEnabled } from '../../utils/featureToggles'
 import CoachDashboard from './CoachDashboard'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import TabBar from '../../components/TabBar'
@@ -66,7 +67,7 @@ export default function TrainingsPage() {
   const [recurringEditDialogOpen, setRecurringEditDialogOpen] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [recurringOpen, setRecurringOpen] = useState(false)
-  const [rosterTraining, setRosterTraining] = useState<{ id: string; teamId: string; date: string } | null>(null)
+  const [rosterTraining, setRosterTraining] = useState<{ id: string; teamId: string; date: string; showRsvpTime?: boolean } | null>(null)
   const recurringSelectionMade = useRef(false)
 
   const { data: trainings, isLoading, refetch } = usePB<TrainingExpanded>('trainings', {
@@ -235,7 +236,7 @@ export default function TrainingsPage() {
                 training={training}
                 participations={participationsByActivity.get(training.id)}
                 myParticipation={myParticipationByActivity.get(training.id)}
-                onOpenRoster={(id, teamId, date) => setRosterTraining({ id, teamId, date })}
+                onOpenRoster={(id, teamId, date) => setRosterTraining({ id, teamId, date, showRsvpTime: isFeatureEnabled(training.expand?.team?.features_enabled, 'show_rsvp_time') })}
                 onEdit={(effectiveIsAdmin || isCoachOf(training.team)) ? handleEdit : undefined}
                 onDelete={(effectiveIsAdmin || isCoachOf(training.team)) ? setDeletingId : undefined}
               />
@@ -297,6 +298,7 @@ export default function TrainingsPage() {
         activityDate={rosterTraining?.date ?? ''}
         teamIds={rosterTraining?.teamId ? [rosterTraining.teamId] : []}
         title={t('participation')}
+        showRsvpTime={rosterTraining?.showRsvpTime}
       />
     </div>
   )

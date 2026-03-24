@@ -2,6 +2,13 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [2.2.0] — 2026-03-24
+
+### Features
+
+- **RSVP response timestamps** — Participation Roster modal now shows when each team member responded, displayed as locale-aware relative time (e.g., "vor 2 Std.", "gestern"). Works for games, trainings, and events. Uses PocketBase's existing `updated` field — no backend changes needed.
+- **Team toggle for RSVP visibility** — New `show_rsvp_time` feature toggle in team settings (RosterEditor). Coaches and team responsible can enable/disable RSVP timestamp visibility per team. Off by default. For multi-team events, timestamps show if any associated team has the toggle enabled.
+
 ## [2.1.1] — 2026-03-24
 
 ### Bug Fixes

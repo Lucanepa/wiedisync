@@ -108,6 +108,31 @@ export function addDays(date: Date, days: number): Date {
   return d
 }
 
+/** Format a datetime as dd.mm.yy HH:mm */
+export function formatDateTimeCompact(datetime: string): string {
+  const d = new Date(datetime)
+  const dd = String(d.getDate()).padStart(2, '0')
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const yy = String(d.getFullYear()).slice(-2)
+  const hh = String(d.getHours()).padStart(2, '0')
+  const min = String(d.getMinutes()).padStart(2, '0')
+  return `${dd}.${mm}.${yy} ${hh}:${min}`
+}
+
+/** Format a datetime as locale-aware relative time (e.g. "vor 2 Std.", "2 hr. ago"). */
+export function formatRelativeTime(datetime: string, locale: string = 'de-CH'): string {
+  const diffMs = Date.now() - new Date(datetime).getTime()
+  const diffMin = Math.floor(diffMs / 60000)
+  const diffHr = Math.floor(diffMin / 60)
+  const diffDay = Math.floor(diffHr / 24)
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto', style: 'short' })
+  if (diffMin < 1) return rtf.format(0, 'minute')
+  if (diffMin < 60) return rtf.format(-diffMin, 'minute')
+  if (diffHr < 24) return rtf.format(-diffHr, 'hour')
+  if (diffDay < 7) return rtf.format(-diffDay, 'day')
+  return formatDateCompact(datetime)
+}
+
 /** Returns ISO week number */
 export function getISOWeekNumber(date: Date): number {
   const d = new Date(date)

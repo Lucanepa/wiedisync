@@ -13,6 +13,7 @@ import EventCard from './EventCard'
 import EventDetailModal from './EventDetailModal'
 import EventForm from './EventForm'
 import { Button } from '@/components/ui/button'
+import { isFeatureEnabled } from '../../utils/featureToggles'
 import type { Event, Team, Participation } from '../../types'
 
 type EventExpanded = Event & { expand?: { teams?: Team[] } }
@@ -23,7 +24,7 @@ export default function EventsPage() {
   const [formOpen, setFormOpen] = useState(false)
   const [editingEvent, setEditingEvent] = useState<Event | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [rosterEvent, setRosterEvent] = useState<Event | null>(null)
+  const [rosterEvent, setRosterEvent] = useState<EventExpanded | null>(null)
   const [selectedEvent, setSelectedEvent] = useState<EventExpanded | null>(null)
   const [showPast, setShowPast] = useState(false)
 
@@ -194,6 +195,7 @@ export default function EventsPage() {
         title={t('participation')}
         respondBy={rosterEvent?.respond_by}
         maxPlayers={rosterEvent?.max_players}
+        showRsvpTime={(rosterEvent?.expand?.teams ?? []).some(t => isFeatureEnabled(t.features_enabled, 'show_rsvp_time'))}
       />
     </div>
   )

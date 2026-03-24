@@ -101,4 +101,5 @@ export default {
   featureTasks: 'Compiti (assegna doveri per partita/allenamento/evento)',
   featureCarpool: 'Carpooling (organizza passaggi per le trasferte)',
   featurePolls: 'Sondaggi (votazioni e decisioni di squadra)',
+  featureShowRsvpTime: 'Mostra orario di risposta (quando i membri hanno risposto)',
 } as const

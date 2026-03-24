@@ -141,7 +141,7 @@ export function OtpInput({ onComplete, onResend, loading, error, email }: OtpInp
             disabled={loading}
             autoComplete={index === 0 ? "one-time-code" : "off"}
             className={cn(
-              "h-11 w-9 sm:h-12 sm:w-10 rounded-md border text-center text-lg sm:text-xl font-bold",
+              "h-10 w-8 sm:h-11 sm:w-9 rounded-md border text-center text-base sm:text-lg font-bold",
               "bg-background text-foreground",
               "outline-none transition-colors",
               "focus:border-brand-500 focus:ring-1 focus:ring-brand-500",

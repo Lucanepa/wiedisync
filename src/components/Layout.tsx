@@ -61,9 +61,9 @@ function useNavItems(isLoggedIn: boolean, isApproved: boolean) {
       { to: '/admin/spielplanung', label: t('gameplan'), icon: <ClipboardList className={iconClass} /> },
       { to: '/admin/hallenplan', label: t('hallenplan'), icon: <Building2 className={iconClass} /> },
       { to: '/admin/terminplanung', label: t('terminplanung'), icon: <CalendarClock className={iconClass} /> },
+      { to: '/admin/database', label: t('manageDb'), icon: <Database className={iconClass} /> },
     ],
     superadminItems: [
-      { to: '/admin/database', label: t('manageDb'), icon: <Database className={iconClass} /> },
       { to: '/admin/clubdesk-sync', label: t('clubdeskSync'), icon: <RefreshCcw className={iconClass} /> },
       { to: '/admin/infra', label: t('infraHealth'), icon: <Activity className={iconClass} /> },
       { to: '/admin/data-health', label: t('dataHealth'), icon: <HeartPulse className={iconClass} /> },

@@ -38,6 +38,7 @@ const adminItems = [
   { to: '/admin/spielplanung', labelKey: 'gameplan', icon: <ClipboardList className={iconClass} /> },
   { to: '/admin/hallenplan', labelKey: 'hallenplan', icon: <Building2 className={iconClass} /> },
   { to: '/admin/terminplanung', labelKey: 'terminplanung', icon: <CalendarClock className={iconClass} /> },
+  { to: '/admin/database', labelKey: 'manageDb', icon: <Database className={iconClass} /> },
 ]
 
 function OptionsAccordion({ theme, toggleTheme, onClose }: { theme: string; toggleTheme: () => void; onClose?: () => void }) {
@@ -233,20 +234,6 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
               <p className="mb-1 px-4 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
                 {t('superadmin')}
               </p>
-              <NavLink
-                to="/admin/database"
-                onClick={startClose}
-                className={({ isActive }) =>
-                  `flex min-h-[48px] items-center gap-4 rounded-lg px-4 py-3 text-base font-medium transition-colors ${
-                    isActive
-                      ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/50 dark:text-gold-400'
-                      : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
-                  }`
-                }
-              >
-                <Database className={iconClass} />
-                {t('manageDb')}
-              </NavLink>
               <NavLink
                 to="/admin/clubdesk-sync"
                 onClick={startClose}

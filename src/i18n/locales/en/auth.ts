@@ -151,6 +151,12 @@ export default {
   backToLogin: 'Back to sign in',
   otpRequestFailed: 'Could not send code. Please try again.',
 
+  // Multi-team onboarding
+  yourTeams: 'Your teams',
+  joinAdditionalTeams: 'Join additional teams',
+  noTeamsForSport: 'No teams available for this sport',
+  additionalTeamsNote: 'Additional teams require coach approval',
+
   // Team requests
   addTeam: 'Add Team',
   addTeamTitle: 'Join a Team',

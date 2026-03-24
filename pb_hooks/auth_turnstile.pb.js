@@ -8,6 +8,12 @@
 onRecordAuthRequest((e) => {
   var info = e.requestInfo()
 
+  // Skip Turnstile for OTP auth (no browser widget involved)
+  var body = info.body || {}
+  if (body.otpId) {
+    return e.next()
+  }
+
   var token = info.headers["x_turnstile_token"] || ""
 
   if (!token) {

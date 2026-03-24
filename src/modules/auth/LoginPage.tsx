@@ -8,8 +8,12 @@ import pb from '../../pb'
 import { Button } from '@/components/ui/button'
 import { FormInput } from '@/components/FormField'
 import { Switch } from '@/components/ui/switch'
+import { OtpInput } from '../../components/OtpInput'
+import { SetPasswordForm } from '../../components/SetPasswordForm'
 
 const TURNSTILE_SITE_KEY = '0x4AAAAAACoYmx3xiDfRbmv9'
+
+type Mode = 'login' | 'forgot-email' | 'forgot-otp' | 'forgot-set-password'
 
 export default function LoginPage() {
   const { login, user } = useAuth()
@@ -39,8 +43,6 @@ export default function LoginPage() {
     if (stored) sessionStorage.removeItem('login-redirect-exists')
     return stored
   })
-  const [resetLoading, setResetLoading] = useState(false)
-  const [resetSent, setResetSent] = useState(false)
   const [turnstileToken, setTurnstileToken] = useState('')
   const turnstileRef = useRef<TurnstileInstance>(null)
 
@@ -48,9 +50,23 @@ export default function LoginPage() {
     () => localStorage.getItem('wiedisync-remember-me') !== 'false',
   )
 
+  // OTP forgot-password flow state
+  const [mode, setMode] = useState<Mode>('login')
+  const [otpId, setOtpId] = useState('')
+  const [otpError, setOtpError] = useState('')
+  const [otpLoading, setOtpLoading] = useState(false)
+  const [passwordResetSuccess, setPasswordResetSuccess] = useState(false)
+
   useEffect(() => {
     if (user) navigate('/', { replace: true })
   }, [user, navigate])
+
+  function resetToLogin() {
+    setMode('login')
+    setOtpId('')
+    setOtpError('')
+    setOtpLoading(false)
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -72,22 +88,60 @@ export default function LoginPage() {
     }
   }
 
-  async function handleForgotPassword() {
-    if (!email.trim()) {
-      setError(t('enterEmailFirst'))
-      return
-    }
-    setResetLoading(true)
+  async function requestOtp(targetEmail: string) {
+    setOtpLoading(true)
     setError('')
+    setOtpError('')
     try {
-      await pb.collection('members').requestPasswordReset(email.trim().toLowerCase())
-      setResetSent(true)
+      const result = await pb.collection('members').requestOTP(targetEmail.trim().toLowerCase())
+      setOtpId(result.otpId)
+      setEmail(targetEmail.trim().toLowerCase())
+      setMode('forgot-otp')
     } catch {
-      // PocketBase returns 200 even for non-existent emails (security), so this is unlikely
-      setResetSent(true)
+      // Generic error — don't reveal if email exists
+      setError(t('otpRequestFailed'))
     } finally {
-      setResetLoading(false)
+      setOtpLoading(false)
     }
+  }
+
+  function handleForgotPasswordClick() {
+    setError('')
+    setPasswordResetSuccess(false)
+    if (email.trim()) {
+      requestOtp(email)
+    } else {
+      setMode('forgot-email')
+    }
+  }
+
+  async function handleOtpComplete(code: string) {
+    setOtpError('')
+    setOtpLoading(true)
+    try {
+      await pb.collection('members').authWithOTP(otpId, code)
+      setMode('forgot-set-password')
+    } catch {
+      setOtpError(t('otpInvalid'))
+    } finally {
+      setOtpLoading(false)
+    }
+  }
+
+  async function handleOtpResend() {
+    setOtpError('')
+    try {
+      const result = await pb.collection('members').requestOTP(email.trim().toLowerCase())
+      setOtpId(result.otpId)
+    } catch {
+      setOtpError(t('otpRequestFailed'))
+    }
+  }
+
+  function handlePasswordSetSuccess() {
+    pb.authStore.clear()
+    setPasswordResetSuccess(true)
+    resetToLogin()
   }
 
   return (
@@ -102,79 +156,185 @@ export default function LoginPage() {
         </div>
 
         <div className="rounded-xl bg-white p-6 shadow-lg sm:p-8 dark:bg-gray-800">
-          <h1 className="mb-6 text-center text-xl font-bold text-gray-900 dark:text-gray-100">
-            {t('signIn')}
-          </h1>
 
-          {showAccountExists && (
-            <div className="mb-4 rounded-lg bg-blue-50 p-3 text-center text-sm text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
-              {t('accountAlreadyExists')}
-            </div>
+          {/* ── LOGIN MODE ── */}
+          {mode === 'login' && (
+            <>
+              <h1 className="mb-6 text-center text-xl font-bold text-gray-900 dark:text-gray-100">
+                {t('signIn')}
+              </h1>
+
+              {showAccountExists && (
+                <div className="mb-4 rounded-lg bg-blue-50 p-3 text-center text-sm text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
+                  {t('accountAlreadyExists')}
+                </div>
+              )}
+
+              {passwordResetSuccess && (
+                <div className="mb-4 rounded-lg bg-green-50 p-3 text-center text-sm text-green-700 dark:bg-green-900/20 dark:text-green-400">
+                  {t('passwordResetSuccess')}
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <FormInput
+                  type="email"
+                  label={t('email')}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                  placeholder={t('emailPlaceholder')}
+                />
+
+                <div>
+                  <FormInput
+                    type="password"
+                    label={t('password')}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    autoComplete="current-password"
+                    placeholder={t('passwordPlaceholder')}
+                  />
+                  <div className="mt-1 text-right">
+                    <button
+                      type="button"
+                      onClick={handleForgotPasswordClick}
+                      disabled={otpLoading}
+                      className="text-sm text-brand-600 hover:text-brand-500 dark:text-brand-400 dark:hover:text-brand-300"
+                    >
+                      {otpLoading ? t('sendingOtp') : t('forgotPassword')}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Switch checked={rememberMe} onCheckedChange={setRememberMe} id="remember-me" />
+                  <label htmlFor="remember-me" className="text-sm text-gray-600 dark:text-gray-400">
+                    {t('rememberMe')}
+                  </label>
+                </div>
+
+                {error && (
+                  <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                )}
+
+                <Turnstile
+                  ref={turnstileRef}
+                  siteKey={TURNSTILE_SITE_KEY}
+                  onSuccess={setTurnstileToken}
+                  onExpire={() => setTurnstileToken('')}
+                  options={{ theme: 'auto', size: 'invisible' }}
+                />
+
+                <Button type="submit" loading={loading} className="w-full">
+                  {loading ? t('signingIn') : t('signIn')}
+                </Button>
+
+              </form>
+            </>
           )}
 
-          {resetSent && (
-            <div className="mb-4 rounded-lg bg-green-50 p-3 text-center text-sm text-green-700 dark:bg-green-900/20 dark:text-green-400">
-              {t('resetLinkSent')}
-            </div>
-          )}
+          {/* ── FORGOT EMAIL MODE ── */}
+          {mode === 'forgot-email' && (
+            <>
+              <h1 className="mb-2 text-center text-xl font-bold text-gray-900 dark:text-gray-100">
+                {t('resetPasswordOtp')}
+              </h1>
+              <p className="mb-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                {t('resetPasswordOtpEmailDescription')}
+              </p>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <FormInput
-              type="email"
-              label={t('email')}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-              placeholder={t('emailPlaceholder')}
-            />
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  if (email.trim()) requestOtp(email)
+                }}
+                className="space-y-4"
+              >
+                <FormInput
+                  type="email"
+                  label={t('email')}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                  placeholder={t('emailPlaceholder')}
+                />
 
-            <div>
-              <FormInput
-                type="password"
-                label={t('password')}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoComplete="current-password"
-                placeholder={t('passwordPlaceholder')}
-              />
-              <div className="mt-1 text-right">
+                {error && (
+                  <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                )}
+
+                <Button type="submit" loading={otpLoading} className="w-full">
+                  {otpLoading ? t('sendingOtp') : t('sendOtp')}
+                </Button>
+              </form>
+
+              <div className="mt-4 text-center">
                 <button
                   type="button"
-                  onClick={handleForgotPassword}
-                  disabled={resetLoading}
+                  onClick={resetToLogin}
                   className="text-sm text-brand-600 hover:text-brand-500 dark:text-brand-400 dark:hover:text-brand-300"
                 >
-                  {resetLoading ? t('sendingResetLink') : t('forgotPassword')}
+                  {t('backToLogin')}
                 </button>
               </div>
-            </div>
+            </>
+          )}
 
-            <div className="flex items-center gap-2">
-              <Switch checked={rememberMe} onCheckedChange={setRememberMe} id="remember-me" />
-              <label htmlFor="remember-me" className="text-sm text-gray-600 dark:text-gray-400">
-                {t('rememberMe')}
-              </label>
-            </div>
+          {/* ── FORGOT OTP MODE ── */}
+          {mode === 'forgot-otp' && (
+            <>
+              <h1 className="mb-2 text-center text-xl font-bold text-gray-900 dark:text-gray-100">
+                {t('resetPasswordOtp')}
+              </h1>
+              <p className="mb-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                {t('resetPasswordOtpDescription')}
+              </p>
 
-            {error && (
-              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-            )}
+              <OtpInput
+                email={email}
+                onComplete={handleOtpComplete}
+                onResend={handleOtpResend}
+                loading={otpLoading}
+                error={otpError}
+              />
 
-            <Turnstile
-              ref={turnstileRef}
-              siteKey={TURNSTILE_SITE_KEY}
-              onSuccess={setTurnstileToken}
-              onExpire={() => setTurnstileToken('')}
-              options={{ theme: 'auto', size: 'invisible' }}
-            />
+              <div className="mt-4 text-center">
+                <button
+                  type="button"
+                  onClick={resetToLogin}
+                  className="text-sm text-brand-600 hover:text-brand-500 dark:text-brand-400 dark:hover:text-brand-300"
+                >
+                  {t('backToLogin')}
+                </button>
+              </div>
+            </>
+          )}
 
-            <Button type="submit" loading={loading} className="w-full">
-              {loading ? t('signingIn') : t('signIn')}
-            </Button>
+          {/* ── FORGOT SET PASSWORD MODE ── */}
+          {mode === 'forgot-set-password' && (
+            <>
+              <SetPasswordForm
+                title={t('resetPasswordOtp')}
+                description={t('resetPasswordOtpSetDescription')}
+                onSuccess={handlePasswordSetSuccess}
+              />
 
-          </form>
+              <div className="mt-4 text-center">
+                <button
+                  type="button"
+                  onClick={resetToLogin}
+                  className="text-sm text-brand-600 hover:text-brand-500 dark:text-brand-400 dark:hover:text-brand-300"
+                >
+                  {t('backToLogin')}
+                </button>
+              </div>
+            </>
+          )}
+
         </div>
       </div>
     </div>

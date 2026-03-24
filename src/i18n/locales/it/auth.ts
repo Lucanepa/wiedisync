@@ -115,6 +115,40 @@ export default {
   resetSuccess: 'La tua password è stata cambiata con successo. Ora puoi accedere.',
   resetError: 'Questo link non è valido o è scaduto. Richiedi un nuovo link di reset.',
 
+  // OTP verification
+  otpSentTo: 'Codice inviato a {{email}}',
+  otpResendIn: 'Reinvia tra {{seconds}}s',
+  otpResend: 'Reinvia codice',
+  otpInvalid: 'Codice non valido. Riprova.',
+  otpExpired: 'Codice scaduto. Richiedine uno nuovo.',
+  otpError: 'Impossibile inviare il codice. Riprova.',
+  codeSentTo: 'Abbiamo inviato un codice a 8 cifre a',
+
+  // Context-aware OTP titles
+  activateAccount: 'Attiva account',
+  activateAccountDescription: 'Il tuo account è stato preparato. Inserisci il codice per iniziare.',
+  verifyEmail: 'Verifica e-mail',
+  verifyEmailDescription: 'Verifica il tuo indirizzo e-mail per continuare la registrazione.',
+  resetPasswordOtp: 'Reimposta password',
+  resetPasswordOtpDescription: 'Inserisci il codice per reimpostare la password.',
+  resetPasswordOtpEmailDescription: 'Inserisci il tuo indirizzo e-mail per ricevere un codice di reimpostazione.',
+  resetPasswordOtpSetDescription: 'Scegli una nuova password per il tuo account.',
+  setPasswordTitle: 'Imposta password',
+  setPasswordDescription: 'Benvenuto! Imposta la tua password per completare la configurazione.',
+
+  // Password setting form
+  setPasswordButton: 'Imposta password',
+  settingPassword: 'Impostazione password...',
+  passwordSetSuccess: 'Password impostata con successo!',
+  passwordTooShort: 'La password deve contenere almeno 8 caratteri.',
+  passwordResetSuccess: 'La tua password è stata cambiata con successo. Ora puoi accedere.',
+
+  // OTP forgot-password flow
+  sendingOtp: 'Invio del codice...',
+  sendOtp: 'Invia codice',
+  backToLogin: 'Torna al login',
+  otpRequestFailed: 'Impossibile inviare il codice. Riprova.',
+
   // Team requests
   addTeam: 'Aggiungi squadra',
   addTeamTitle: 'Unisciti a una squadra',

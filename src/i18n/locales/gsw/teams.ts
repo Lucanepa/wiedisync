@@ -1,1 +1,118 @@
-export default {} as const
+export default {
+  title: 'Teams & Mitglieder',
+  subtitleSeason: 'Saison {{season}}',
+
+  // Positions
+  positionSetter: 'Passeuse/Passeur',
+  positionOutside: 'Usseaagrifer/in',
+  positionMiddle: 'Mittelblocker/in',
+  positionOpposite: 'Diagonal',
+  positionLibero: 'Libero',
+  positionPointGuard: 'Point Guard',
+  positionShootingGuard: 'Shooting Guard',
+  positionSmallForward: 'Small Forward',
+  positionPowerForward: 'Power Forward',
+  positionCenter: 'Center',
+  positionCoach: 'Trainer/in',
+  positionGuest: 'Gascht',
+  positionOther: 'Anderi',
+
+  // Roles
+  rolePlayer: 'Spieler/in',
+  roleCaptain: 'Captain',
+  roleCoach: 'Trainer/in',
+  roleTeamResponsible: 'Teamverantwortlich/r',
+
+  // Table headers
+  playerCol: 'Spieler',
+  numberCol: '#',
+  positionCol: 'Position',
+  emailCol: 'E-Mail',
+  phoneCol: 'Telefon',
+  birthdateCol: 'Geburtstag',
+  roleCol: 'Rolle',
+
+  // Roster editor
+  teamLeadership: 'Teamführig',
+  editTeam: 'Team bearbeite',
+  adjustCrop: 'Bildusschnitt aapasse',
+  editRoster: 'Kader bearbeite',
+  addPlayer: 'Spieler dezuetuä',
+  searchPlaceholder: 'Nach Name sueche...',
+  noSearchResults: 'Käni Ergebnis',
+  currentRoster: 'Aktuells Kader ({{count}})',
+  removeConfirmTitle: 'Spieler entferne',
+  removeConfirmMessage: '{{name}} us em Kader entferne?',
+
+  // Team picture
+  teamPicture: 'Teambild',
+  uploadPicture: 'Bild ufelade',
+  removePicture: 'Bild entferne',
+  pictureHint: 'JPG oder PNG, max. 10 MB',
+  pictureTooLarge: 'Datei isch z gross (max. 10 MB)',
+  errorUploadingPicture: 'Fähler bim Ufelade vom Bild',
+
+  // Spielerprofil
+  statistics: 'Statistike',
+  trainingsAttended: 'Trainings',
+  gamesAttended: 'Spiel',
+  trainingRate: 'Trainingsquote',
+  activeAbsences: 'Absänze',
+  currentAbsences: 'Aktuelli Absänze',
+
+  // Team detail
+  sponsors: 'Sponsore',
+  age: '{{years}} Jahr',
+
+  // Empty state
+  noTeams: 'Käni Teams',
+  noTeamsDescription: 'Käni Teams gfunde.',
+  noTeamMembership: 'Käs Team zuewise',
+  noTeamMembershipDescription: 'Du bisch aktuell käm Team zuegordnet.',
+  noMembers: 'Käni Mitglieder',
+  noMembersDescription: 'Das Team het no käni Mitglieder.',
+
+  // Licences
+  licenceScorer: 'Schriiber-Lizänz',
+  licenceReferee: 'Schiedsrichter-Lizänz',
+  licenceOTR1: 'OTR1-Lizänz',
+  licenceOTR2: 'OTR2-Lizänz',
+  licenceOTN: 'OTN-Lizänz',
+  licenceRefereeBB: 'Schiedsrichter-Lizänz (Basketball)',
+
+  // Gaststufen
+  guestBadge: 'G',
+  guestLevel0: 'Käs Gascht',
+  guestLevel1: 'Gascht Stufe 1',
+  guestLevel2: 'Gascht Stufe 2',
+  guestLevel3: 'Gascht Stufe 3',
+  guestLevelTooltip: 'Gascht Stufe {{level}} — tüüferi Priorität bi volle Trainings',
+  guestExplanation: 'Gaschtstufe 1-3 bestimmed d Priorität bi volle Trainings. Stufe 1 het di höchscht Gascht-Priorität, Stufe 3 di tüüfschti.',
+
+  // Pending requests
+  pendingRequests: '{{count}} usstehendi Biitrittsaafrag(e)',
+  approve: 'Aanneh',
+  reject: 'Ablehne',
+  teamJoinRequest: 'Biitrittsaafrag',
+
+  // QR invite / external user
+  inviteExternalUser: 'Externe Benutzer dezuetuä',
+  inviteExternalUserDesc: 'QR-Code generiere, damit öpper {{teamName}} biiträtte cha',
+  joinAs: 'Biiträtte als:',
+  player: 'Spieler/in',
+  guest: 'Gascht',
+  generateQR: 'QR-Code generiere',
+  inviteLinkExpiry: 'Link lauft in 24 Stund ab · Einmalig verwendbar',
+  copyLink: 'Link kopiere',
+  addExternalUser: 'Externe Benutzer dezuetuä',
+  shellAccount: 'Temporär',
+  expiresIn: 'lauft in {{days}}T ab',
+  extend: 'Verlängere',
+
+  // Feature-Toggles
+  featureToggles: 'Funktione',
+  featureTogglesDescription: 'Optionali Funktione für das Team ii- oder usschalte.',
+  featureTasks: 'Ufgabe (Pflichte pro Spiel/Training/Event zuewise)',
+  featureCarpool: 'Fahrgmeinschaft (Fahrte zu Uswärtsspiel organisiere)',
+  featurePolls: 'Umfrage (Team-Abstimmige & Entscheidige)',
+} as const

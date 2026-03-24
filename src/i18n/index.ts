@@ -120,6 +120,7 @@ import gswGameScheduling from './locales/gsw/gameScheduling'
 import gswScorerAssign from './locales/gsw/scorerAssign'
 import gswFeedback from './locales/gsw/feedback'
 import gswTasks from './locales/gsw/tasks'
+import gswJoin from './locales/gsw/join'
 import gswCarpool from './locales/gsw/carpool'
 import gswPolls from './locales/gsw/polls'
 
@@ -291,6 +292,7 @@ i18n.use(initReactI18next).init({
       notifications: gswNotifications,
       gameScheduling: gswGameScheduling,
       scorerAssign: gswScorerAssign,
+      join: gswJoin,
       feedback: gswFeedback,
       tasks: gswTasks,
       carpool: gswCarpool,

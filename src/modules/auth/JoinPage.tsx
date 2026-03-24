@@ -5,11 +5,15 @@ import { useTheme } from '../../hooks/useTheme'
 import pb from '../../pb'
 import { Button } from '@/components/ui/button'
 import { FormInput } from '@/components/FormField'
+import { OtpInput } from '../../components/OtpInput'
+import { SetPasswordForm } from '../../components/SetPasswordForm'
 
 interface InviteInfo {
   team_name: string
   role: 'player' | 'guest'
 }
+
+type Phase = 'loading' | 'error' | 'form' | 'otp' | 'set-password' | 'success'
 
 export default function JoinPage() {
   const { token } = useParams<{ token: string }>()
@@ -17,33 +21,32 @@ export default function JoinPage() {
   const { t } = useTranslation(['join', 'teams', 'auth', 'common'])
   const navigate = useNavigate()
 
+  const [phase, setPhase] = useState<Phase>('loading')
   const [inviteInfo, setInviteInfo] = useState<InviteInfo | null>(null)
-  const [inviteError, setInviteError] = useState(false)
-  const [loadingInfo, setLoadingInfo] = useState(true)
 
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
-  const [success, setSuccess] = useState(false)
+
   const [claimedEmail, setClaimedEmail] = useState('')
+  const [otpId, setOtpId] = useState('')
+  const [otpError, setOtpError] = useState('')
+  const [otpLoading, setOtpLoading] = useState(false)
 
   useEffect(() => {
     if (!token) {
-      setInviteError(true)
-      setLoadingInfo(false)
+      setPhase('error')
       return
     }
     pb.send('/api/team-invites/info/' + token, { method: 'GET' })
       .then((res: InviteInfo) => {
         setInviteInfo(res)
+        setPhase('form')
       })
       .catch(() => {
-        setInviteError(true)
-      })
-      .finally(() => {
-        setLoadingInfo(false)
+        setPhase('error')
       })
   }, [token])
 
@@ -56,18 +59,68 @@ export default function JoinPage() {
         method: 'POST',
         body: { token, first_name: firstName, last_name: lastName, email: email.trim().toLowerCase() },
       })
-      setClaimedEmail(res.email ?? email.trim().toLowerCase())
-      setSuccess(true)
-      try {
-        await pb.collection('members').requestPasswordReset(res.email ?? email.trim().toLowerCase())
-      } catch {
-        // Non-critical — ignore errors
-      }
+      const finalEmail = res.email ?? email.trim().toLowerCase()
+      setClaimedEmail(finalEmail)
+
+      // Request OTP instead of password reset
+      const otpRes = await pb.collection('members').requestOTP(finalEmail)
+      setOtpId(otpRes.otpId)
+      setPhase('otp')
     } catch {
       setSubmitError(t('join:error'))
     } finally {
       setSubmitting(false)
     }
+  }
+
+  async function handleOtpComplete(code: string) {
+    setOtpError('')
+    setOtpLoading(true)
+    try {
+      await pb.collection('members').authWithOTP(otpId, code)
+      setPhase('set-password')
+    } catch {
+      setOtpError(t('auth:otpInvalid'))
+    } finally {
+      setOtpLoading(false)
+    }
+  }
+
+  async function handleOtpResend() {
+    setOtpError('')
+    try {
+      const otpRes = await pb.collection('members').requestOTP(claimedEmail)
+      setOtpId(otpRes.otpId)
+    } catch {
+      setOtpError(t('auth:otpResendError'))
+    }
+  }
+
+  function handlePasswordSuccess() {
+    pb.authStore.clear()
+    setPhase('success')
+  }
+
+  /** Invite header shown on form, OTP, and set-password phases */
+  function InviteHeader() {
+    if (!inviteInfo) return null
+    return (
+      <div className="text-center">
+        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+          {t('join:title', { teamName: inviteInfo.team_name })}
+        </h1>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">KSC Wiedikon</p>
+        <span className={`mt-2 inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
+          inviteInfo.role === 'player'
+            ? 'bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300'
+            : 'bg-gold-100 text-gold-800 dark:bg-gold-400/20 dark:text-gold-300'
+        }`}>
+          {t('join:joiningAs', {
+            role: inviteInfo.role === 'player' ? t('teams:player') : t('teams:guest'),
+          })}
+        </span>
+      </div>
+    )
   }
 
   return (
@@ -82,11 +135,15 @@ export default function JoinPage() {
         </div>
 
         <div className="rounded-xl bg-white p-6 shadow-lg sm:p-8 dark:bg-gray-800">
-          {loadingInfo ? (
+          {/* Loading */}
+          {phase === 'loading' && (
             <p className="text-center text-sm text-gray-500 dark:text-gray-400">
               {t('common:loading')}
             </p>
-          ) : inviteError ? (
+          )}
+
+          {/* Error — invalid / expired invite */}
+          {phase === 'error' && (
             <div className="space-y-3 text-center">
               <div className="flex justify-center">
                 <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
@@ -102,55 +159,13 @@ export default function JoinPage() {
                 {t('join:invalidLink')}
               </p>
             </div>
-          ) : success ? (
-            <div className="space-y-4">
-              <div className="flex justify-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-                  <svg className="h-7 w-7 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                  </svg>
-                </div>
-              </div>
-              <div className="text-center">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                  {t('join:success')}
-                </h2>
-                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                  {t('join:successDesc', { teamName: inviteInfo?.team_name })}
-                </p>
-                {claimedEmail && (
-                  <p className="mt-3 rounded-lg bg-gray-50 px-3 py-2 text-sm font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                    {claimedEmail}
-                  </p>
-                )}
-                <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">
-                  {t('join:passwordLater')}
-                </p>
-              </div>
-              <Button onClick={() => navigate('/login', { replace: true })} className="w-full">
-                {t('join:goToLogin')}
-              </Button>
-            </div>
-          ) : inviteInfo ? (
-            <div className="space-y-5">
-              {/* Header: team name + role badge */}
-              <div className="text-center">
-                <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                  {t('join:title', { teamName: inviteInfo.team_name })}
-                </h1>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">KSC Wiedikon</p>
-                <span className={`mt-2 inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
-                  inviteInfo.role === 'player'
-                    ? 'bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300'
-                    : 'bg-gold-100 text-gold-800 dark:bg-gold-400/20 dark:text-gold-300'
-                }`}>
-                  {t('join:joiningAs', {
-                    role: inviteInfo.role === 'player' ? t('teams:player') : t('teams:guest'),
-                  })}
-                </span>
-              </div>
+          )}
 
-              {/* Form */}
+          {/* Form — enter name + email */}
+          {phase === 'form' && inviteInfo && (
+            <div className="space-y-5">
+              <InviteHeader />
+
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <FormInput
@@ -190,7 +205,72 @@ export default function JoinPage() {
                 </Button>
               </form>
             </div>
-          ) : null}
+          )}
+
+          {/* OTP — verify email with one-time code */}
+          {phase === 'otp' && (
+            <div className="space-y-5">
+              <InviteHeader />
+
+              <div className="text-center">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  {t('auth:setPasswordTitle')}
+                </h2>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  {t('auth:setPasswordDescription')}
+                </p>
+              </div>
+
+              <OtpInput
+                onComplete={handleOtpComplete}
+                onResend={handleOtpResend}
+                loading={otpLoading}
+                error={otpError}
+                email={claimedEmail}
+              />
+            </div>
+          )}
+
+          {/* Set password — after OTP verified */}
+          {phase === 'set-password' && (
+            <div className="space-y-5">
+              <InviteHeader />
+
+              <SetPasswordForm
+                title={t('auth:setPasswordTitle')}
+                onSuccess={handlePasswordSuccess}
+              />
+            </div>
+          )}
+
+          {/* Success — password set, go to login */}
+          {phase === 'success' && (
+            <div className="space-y-4">
+              <div className="flex justify-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+                  <svg className="h-7 w-7 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                </div>
+              </div>
+              <div className="text-center">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  {t('join:success')}
+                </h2>
+                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                  {t('join:successDesc', { teamName: inviteInfo?.team_name })}
+                </p>
+                {claimedEmail && (
+                  <p className="mt-3 rounded-lg bg-gray-50 px-3 py-2 text-sm font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+                    {claimedEmail}
+                  </p>
+                )}
+              </div>
+              <Button onClick={() => navigate('/login', { replace: true })} className="w-full">
+                {t('join:goToLogin')}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </div>

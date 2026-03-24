@@ -115,6 +115,40 @@ export default {
   resetSuccess: 'Votre mot de passe a ete modifie avec succes. Vous pouvez maintenant vous connecter.',
   resetError: 'Ce lien est invalide ou expire. Veuillez demander un nouveau lien de reinitialisation.',
 
+  // OTP verification
+  otpSentTo: 'Code envoyé à {{email}}',
+  otpResendIn: 'Renvoyer dans {{seconds}}s',
+  otpResend: 'Renvoyer le code',
+  otpInvalid: 'Code invalide. Veuillez réessayer.',
+  otpExpired: 'Code expiré. Veuillez en demander un nouveau.',
+  otpError: 'Impossible d\'envoyer le code. Veuillez réessayer.',
+  codeSentTo: 'Nous avons envoyé un code à 8 chiffres à',
+
+  // Context-aware OTP titles
+  activateAccount: 'Activer le compte',
+  activateAccountDescription: 'Votre compte a été préparé. Entrez le code pour commencer.',
+  verifyEmail: 'Vérifier l\'e-mail',
+  verifyEmailDescription: 'Vérifiez votre adresse e-mail pour continuer l\'inscription.',
+  resetPasswordOtp: 'Réinitialiser le mot de passe',
+  resetPasswordOtpDescription: 'Entrez le code pour réinitialiser votre mot de passe.',
+  resetPasswordOtpEmailDescription: 'Entrez votre adresse e-mail pour recevoir un code de réinitialisation.',
+  resetPasswordOtpSetDescription: 'Choisissez un nouveau mot de passe pour votre compte.',
+  setPasswordTitle: 'Définir le mot de passe',
+  setPasswordDescription: 'Bienvenue ! Définissez votre mot de passe pour terminer la configuration.',
+
+  // Password setting form
+  setPasswordButton: 'Définir le mot de passe',
+  settingPassword: 'Définition du mot de passe...',
+  passwordSetSuccess: 'Mot de passe défini avec succès !',
+  passwordTooShort: 'Le mot de passe doit contenir au moins 8 caractères.',
+  passwordResetSuccess: 'Votre mot de passe a été modifié avec succès. Vous pouvez maintenant vous connecter.',
+
+  // OTP forgot-password flow
+  sendingOtp: 'Envoi du code...',
+  sendOtp: 'Envoyer le code',
+  backToLogin: 'Retour à la connexion',
+  otpRequestFailed: 'Impossible d\'envoyer le code. Veuillez réessayer.',
+
   // Team requests
   addTeam: 'Ajouter une equipe',
   addTeamTitle: 'Rejoindre une equipe',

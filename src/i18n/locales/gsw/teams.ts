@@ -115,4 +115,5 @@ export default {
   featureTasks: 'Ufgabe (Pflichte pro Spiel/Training/Event zuewise)',
   featureCarpool: 'Fahrgmeinschaft (Fahrte zu Uswärtsspiel organisiere)',
   featurePolls: 'Umfrage (Team-Abstimmige & Entscheidige)',
+  featureShowRsvpTime: 'Antwortziit aazeige (wenn Mitglieder gantwortet händ)',
 } as const

@@ -582,6 +582,7 @@ function FeatureTogglesSection({ team, onUpdate }: { team: Team; onUpdate: (f: F
     { key: 'tasks', labelKey: 'featureTasks' },
     { key: 'carpool', labelKey: 'featureCarpool' },
     { key: 'polls', labelKey: 'featurePolls' },
+    { key: 'show_rsvp_time', labelKey: 'featureShowRsvpTime' },
   ]
 
   return (

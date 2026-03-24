@@ -115,4 +115,5 @@ export default {
   featureTasks: 'Tasks (assign duties per game/training/event)',
   featureCarpool: 'Carpool (organise rides for away games)',
   featurePolls: 'Polls (team voting & decisions)',
+  featureShowRsvpTime: 'Show response time (when members responded)',
 } as const

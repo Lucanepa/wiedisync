@@ -154,6 +154,7 @@ export default function TrainingDetailModal({ training, onClose }: TrainingDetai
           title={`${team?.name ?? ''} — ${formatDate(training.date)}`}
           respondBy={training.respond_by}
           activityStartTime={training.start_time}
+          showRsvpTime={isFeatureEnabled(training.expand?.team?.features_enabled, 'show_rsvp_time')}
         />
       )}
     </>

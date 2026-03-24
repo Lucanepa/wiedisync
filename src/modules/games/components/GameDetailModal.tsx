@@ -590,6 +590,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
       title={t('participationRoster')}
       respondBy={game?.respond_by}
       activityStartTime={game?.time}
+      showRsvpTime={isFeatureEnabled(expanded.expand?.kscw_team?.features_enabled, 'show_rsvp_time')}
     />
     </>
   )

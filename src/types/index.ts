@@ -42,6 +42,7 @@ export interface FeatureToggles {
   polls?: boolean
   carpool?: boolean
   tasks?: boolean
+  show_rsvp_time?: boolean
 }
 
 export interface Member extends RecordModel {

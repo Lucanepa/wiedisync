@@ -185,6 +185,7 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
         maxPlayers={event.max_players}
         participationMode={event.participation_mode}
         eventSessions={hasSessionMode ? sessions : undefined}
+        showRsvpTime={(event.expand?.teams ?? []).some(t => isFeatureEnabled(t.features_enabled, 'show_rsvp_time'))}
       />
     </>
   )

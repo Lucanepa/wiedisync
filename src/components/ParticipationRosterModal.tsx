@@ -7,7 +7,7 @@ import { usePB } from '../hooks/usePB'
 import pb from '../pb'
 import { getFileUrl } from '../utils/pbFile'
 import type { Participation, Absence, Member, EventSession } from '../types'
-import { formatDate, getDeadlineDate } from '../utils/dateHelpers'
+import { formatDate, getDeadlineDate, formatRelativeTime, formatDateTimeCompact } from '../utils/dateHelpers'
 
 interface ParticipationRosterModalProps {
   open: boolean
@@ -22,6 +22,7 @@ interface ParticipationRosterModalProps {
   maxPlayers?: number
   eventSessions?: EventSession[]
   participationMode?: 'whole' | 'per_day' | 'per_session' | ''
+  showRsvpTime?: boolean
 }
 
 function formatSessionLabel(session: EventSession): string {
@@ -31,6 +32,20 @@ function formatSessionLabel(session: EventSession): string {
   if (session.label) return session.label
   if (session.start_time) return `${datePart} ${session.start_time}${session.end_time ? '–' + session.end_time : ''}`
   return datePart
+}
+
+/** Clickable relative timestamp that toggles to absolute dd.mm.yy HH:mm on tap */
+function RsvpTimestamp({ datetime, locale }: { datetime: string; locale: string }) {
+  const [showAbsolute, setShowAbsolute] = useState(false)
+  return (
+    <button
+      type="button"
+      onClick={() => setShowAbsolute(v => !v)}
+      className="truncate text-[11px] text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
+    >
+      {showAbsolute ? formatDateTimeCompact(datetime) : formatRelativeTime(datetime, locale)}
+    </button>
+  )
 }
 
 export default function ParticipationRosterModal({
@@ -46,8 +61,9 @@ export default function ParticipationRosterModal({
   maxPlayers,
   eventSessions,
   participationMode,
+  showRsvpTime,
 }: ParticipationRosterModalProps) {
-  const { t } = useTranslation('participation')
+  const { t, i18n } = useTranslation('participation')
   const { t: te } = useTranslation('events')
   const { t: ta } = useTranslation('absences')
   const { members, isLoading: membersLoading } = useMultiTeamMembers(teamIds)
@@ -402,6 +418,9 @@ export default function ParticipationRosterModal({
                       </span>
                     )}
                   </p>
+                  {showRsvpTime && participation?.updated && (
+                    <RsvpTimestamp datetime={participation.updated} locale={i18n.language} />
+                  )}
                   {(() => {
                     const absenceReason = getMemberAbsenceReason(member.id)
                     const note = absenceReason || participation?.note
@@ -509,6 +528,12 @@ export default function ParticipationRosterModal({
                       <p className="truncate text-sm text-gray-900 dark:text-gray-100">
                         {member.first_name} {member.last_name}
                       </p>
+                      {showRsvpTime && (() => {
+                        const sp = staffParticipations.find(p => p.member === member.id)
+                        return sp?.updated ? (
+                          <RsvpTimestamp datetime={sp.updated} locale={i18n.language} />
+                        ) : null
+                      })()}
                     </div>
                     {status ? (
                       <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[status] ?? ''}`}>

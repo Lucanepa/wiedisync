@@ -99,9 +99,10 @@ const RULES: Record<string, { listRule: string | null; viewRule: string | null }
   // C. Teammate-scoped — self + people on same team(s) + admin
   members: {
     // Can see self + teammates (share a team) + members of coached teams
+    // + pending members whose requested_team is coached by the auth user (relation field)
     // Note: on the members collection itself, back-relations start from current record (no field prefix)
-    listRule: `${ANY_ADMIN} || id = @request.auth.id || @request.auth.id ?= member_teams_via_member.team.member_teams_via_team.member || member_teams_via_member.team.coach ?~ @request.auth.id || member_teams_via_member.team.team_responsible ?~ @request.auth.id`,
-    viewRule: `${ANY_ADMIN} || id = @request.auth.id || @request.auth.id ?= member_teams_via_member.team.member_teams_via_team.member || member_teams_via_member.team.coach ?~ @request.auth.id || member_teams_via_member.team.team_responsible ?~ @request.auth.id`,
+    listRule: `${ANY_ADMIN} || id = @request.auth.id || @request.auth.id ?= member_teams_via_member.team.member_teams_via_team.member || member_teams_via_member.team.coach ?~ @request.auth.id || member_teams_via_member.team.team_responsible ?~ @request.auth.id || requested_team.coach ?~ @request.auth.id || requested_team.team_responsible ?~ @request.auth.id`,
+    viewRule: `${ANY_ADMIN} || id = @request.auth.id || @request.auth.id ?= member_teams_via_member.team.member_teams_via_team.member || member_teams_via_member.team.coach ?~ @request.auth.id || member_teams_via_member.team.team_responsible ?~ @request.auth.id || requested_team.coach ?~ @request.auth.id || requested_team.team_responsible ?~ @request.auth.id`,
   },
   absences: {
     // Own + teammate absences + absences of coached team members

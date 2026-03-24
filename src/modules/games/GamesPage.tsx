@@ -27,7 +27,10 @@ function buildTeamFilter(teamPbIds: string[]): string {
 
 export default function GamesPage() {
   const { t } = useTranslation('games')
-  const { user, memberTeamIds, memberTeamNames, primarySport } = useAuth()
+  const { user, memberTeamIds, memberTeamNames, coachTeamIds, coachTeamNames, primarySport } = useAuth()
+  // Merge member + coach teams for visibility (coaches see teams they manage)
+  const allUserTeamIds = useMemo(() => [...new Set([...memberTeamIds, ...coachTeamIds])], [memberTeamIds, coachTeamIds])
+  const allUserTeamNames = useMemo(() => [...new Set([...memberTeamNames, ...coachTeamNames])], [memberTeamNames, coachTeamNames])
   const { effectiveIsAdmin } = useAdminMode()
   const { sport, setSport } = useSportPreference()
   const showSportToggle = effectiveIsAdmin || !user || primarySport === 'both'
@@ -39,16 +42,16 @@ export default function GamesPage() {
 
   // Auto-select user's teams on initial load
   useEffect(() => {
-    if (!autoSelected && memberTeamNames.length > 0) {
-      setSelectedTeams(memberTeamNames)
+    if (!autoSelected && allUserTeamNames.length > 0) {
+      setSelectedTeams(allUserTeamNames)
       setAutoSelected(true)
     }
-  }, [memberTeamNames, autoSelected])
+  }, [allUserTeamNames, autoSelected])
 
   // Reset team selection when sport changes (old selections may not match new sport)
   useEffect(() => {
     // Non-admin users: reset to their own teams; admins: show all
-    setSelectedTeams(effectiveIsAdmin ? [] : memberTeamNames)
+    setSelectedTeams(effectiveIsAdmin ? [] : allUserTeamNames)
   }, [sport]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const INITIAL_LIMIT = 20
@@ -65,15 +68,15 @@ export default function GamesPage() {
   // For non-admins, always scope to their teams (even if filter cleared)
   const effectiveTeams = selectedTeams.length > 0
     ? selectedTeams
-    : (!effectiveIsAdmin && memberTeamNames.length > 0 ? memberTeamNames : [])
+    : (!effectiveIsAdmin && allUserTeamNames.length > 0 ? allUserTeamNames : [])
   // Convert name codes to PB record IDs for the kscw_team filter
   const effectiveTeamIds = effectiveTeams
     .map((name) => teamNameToId.get(name))
     .filter((id): id is string => !!id)
-  // For non-admins, also include their memberTeamIds as fallback
+  // For non-admins, also include their team IDs as fallback
   const filterTeamIds = effectiveTeamIds.length > 0
     ? effectiveTeamIds
-    : (!effectiveIsAdmin && memberTeamIds.length > 0 ? memberTeamIds : [])
+    : (!effectiveIsAdmin && allUserTeamIds.length > 0 ? allUserTeamIds : [])
   const teamFilter = buildTeamFilter(filterTeamIds)
 
   // Sport filter clause for PB queries
@@ -211,7 +214,7 @@ export default function GamesPage() {
             <SportToggle value={sport} onChange={setSport} />
           </div>
         )}
-        <TeamFilterBar selected={selectedTeams} onChange={setSelectedTeams} sport={sport} limitToTeams={effectiveIsAdmin || !user ? undefined : memberTeamNames} />
+        <TeamFilterBar selected={selectedTeams} onChange={setSelectedTeams} sport={sport} limitToTeams={effectiveIsAdmin || !user ? undefined : allUserTeamNames} />
         <GameTabs activeTab={activeTab} onChange={(tab) => { setActiveTab(tab); setShowAll(false) }} />
       </div>
 

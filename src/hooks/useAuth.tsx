@@ -22,6 +22,7 @@ interface AuthContextValue {
   canParticipateIn: (teamId: string) => boolean
   isStaffOnly: (teamId: string) => boolean
   coachTeamIds: string[]
+  coachTeamNames: string[]
   memberTeamIds: string[]
   memberTeamNames: string[]
   memberSports: Set<'volleyball' | 'basketball'>
@@ -44,6 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
   const [isLoading, setIsLoading] = useState(true)
   const [coachTeamIds, setCoachTeamIds] = useState<string[]>([])
+  const [coachTeamNames, setCoachTeamNames] = useState<string[]>([])
   const [memberTeamIds, setMemberTeamIds] = useState<string[]>([])
   const [memberTeamNames, setMemberTeamNames] = useState<string[]>([])
   const [memberSports, setMemberSports] = useState<Set<'volleyball' | 'basketball'>>(new Set())
@@ -96,6 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user?.id) {
       setCoachTeamIds([])
+      setCoachTeamNames([])
       return
     }
 
@@ -106,8 +109,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       .then((teams) => {
         setCoachTeamIds(teams.map((t) => t.id))
+        setCoachTeamNames(teams.map((t) => t.name).filter((n): n is string => !!n))
       })
-      .catch(() => setCoachTeamIds([]))
+      .catch(() => {
+        setCoachTeamIds([])
+        setCoachTeamNames([])
+      })
   }, [user?.id])
 
   // Team sport lookup map (used for scoped admin checks by teamId)
@@ -250,7 +257,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   return (
-    <AuthContext.Provider value={{ user, isSuperAdmin, isAdmin, isGlobalAdmin, isVbAdmin, isBbAdmin, hasAdminAccessToSport, hasAdminAccessToTeam, isApproved, isProfileComplete, isCoach, isCoachOf, canParticipateIn, isStaffOnly, coachTeamIds, memberTeamIds, memberTeamNames, memberSports, primarySport, canViewTeam, isVorstand, getGuestLevel, isGuestIn, isLoading, login, loginWithOAuth, logout }}>
+    <AuthContext.Provider value={{ user, isSuperAdmin, isAdmin, isGlobalAdmin, isVbAdmin, isBbAdmin, hasAdminAccessToSport, hasAdminAccessToTeam, isApproved, isProfileComplete, isCoach, isCoachOf, canParticipateIn, isStaffOnly, coachTeamIds, coachTeamNames, memberTeamIds, memberTeamNames, memberSports, primarySport, canViewTeam, isVorstand, getGuestLevel, isGuestIn, isLoading, login, loginWithOAuth, logout }}>
       {children}
     </AuthContext.Provider>
   )

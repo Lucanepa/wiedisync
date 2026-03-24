@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '2.0.1'
+const APP_VERSION = '2.1.0'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,23 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.1.0',
+    date: '2026-03-24',
+    sections: [
+      {
+        title: 'Features',
+        items: [
+          'OTP-based authentication: all auth flows now use 8-digit email codes instead of token links',
+          'New signup: email verified via OTP before registration',
+          'Existing member activation: OTP replaces confusing "password reset" for ClubDesk imports',
+          'Shell invite (QR join): set password inline after claiming invite',
+          'Forgot password: inline OTP flow on login page',
+          'Context-aware labels: "Activate Account", "Verify Email", "Reset Password", "Set Password"',
+        ],
+      },
+    ],
+  },
   {
     version: '2.0.1',
     date: '2026-03-24',

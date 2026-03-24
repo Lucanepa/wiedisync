@@ -171,12 +171,14 @@ export default function SignUpPage() {
   }
 
   // Set password success handler
-  function handleSetPasswordSuccess() {
-    if (isApproved) {
-      navigate('/', { replace: true })
-    } else {
-      navigate('/pending', { replace: true })
+  async function handleSetPasswordSuccess() {
+    // Refresh auth to pick up auto-approval from /api/set-password
+    try {
+      await pb.collection('members').authRefresh()
+    } catch {
+      // ignore — user is still authenticated
     }
+    navigate('/', { replace: true })
   }
 
   // Register new member

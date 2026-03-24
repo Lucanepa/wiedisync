@@ -33,5 +33,22 @@ routerAdd("POST", "/api/set-password", function(e) {
   record.setPassword(password)
   $app.save(record)
 
-  return e.json(200, { success: true })
+  // Auto-approve ClubDesk imports: they verified email ownership via OTP,
+  // so no coach approval needed. Only for members who have a member_teams
+  // record (real ClubDesk imports). Graceful — approval failure doesn't
+  // block password setting.
+  var approved = false
+  if (!record.getBool("coach_approved_team")) {
+    try {
+      // Re-fetch to avoid stale data after password save
+      var fresh = $app.findRecordById("members", record.id)
+      fresh.set("coach_approved_team", true)
+      $app.save(fresh)
+      approved = true
+    } catch (_) {
+      // Guard rejected (no member_teams) — that's OK, user goes to pending
+    }
+  }
+
+  return e.json(200, { success: true, approved: approved })
 })

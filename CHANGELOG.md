@@ -2,6 +2,14 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [2.3.1] — 2026-03-24
+
+### Bug Fixes
+
+- **Coach visibility** — Coaches and team responsibles now see trainings, games, events, and participation for teams they manage, even if they're not a player on that team. Merged `coachTeamIds` into page filters (GamesPage, TrainingsPage, EventsPage, HomePage).
+- **Events team filter** — Added `TeamFilter` component to EventsPage (shown when user has >1 team).
+- **Pending members 400 error** — Created missing `requested_team` relation field on `members` collection (dev+prod). Updated members API rule to allow coaches to see members whose `requested_team` points to their team.
+
 ## [2.3.0] — 2026-03-24
 
 ### Features

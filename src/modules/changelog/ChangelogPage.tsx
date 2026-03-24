@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '2.3.0'
+const APP_VERSION = '2.3.1'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,21 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.3.1',
+    date: '2026-03-24',
+    sections: [
+      {
+        title: 'Bug Fixes',
+        items: [
+          'Coach visibility: coaches and team responsibles now see trainings, games, events, and participation for teams they manage (even without being a player)',
+          'Team filter added to Events page for users with multiple teams',
+          'Fixed 400 error on pending members query — created missing requested_team relation field on members collection',
+          'Updated members API rule so coaches can view pending members requesting to join their team',
+        ],
+      },
+    ],
+  },
   {
     version: '2.3.0',
     date: '2026-03-24',

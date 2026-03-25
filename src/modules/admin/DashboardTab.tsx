@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { useInfraHealth } from '../../hooks/useInfraHealth'
 import KpiStrip from './components/KpiStrip'
 import DashboardSection from './components/DashboardSection'
 import MembersTeamsSection from './components/MembersTeamsSection'
@@ -8,10 +9,11 @@ import InfraSection from './components/InfraSection'
 
 export default function DashboardTab() {
   const { t } = useTranslation('admin')
+  const infraHealth = useInfraHealth()
 
   return (
     <div className="space-y-4">
-      <KpiStrip />
+      <KpiStrip infraHealth={infraHealth} />
       <div className="space-y-2">
         <DashboardSection id="members-teams" title={t('sectionMembersTeams')} icon="👥">
           <MembersTeamsSection />
@@ -23,7 +25,7 @@ export default function DashboardTab() {
           <ActivitySection />
         </DashboardSection>
         <DashboardSection id="infra" title={t('sectionInfra')} icon="🔧">
-          <InfraSection />
+          <InfraSection infraHealth={infraHealth} />
         </DashboardSection>
       </div>
     </div>

@@ -162,7 +162,7 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
             {/* Summary + roster button */}
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <ParticipationSummary activityType="event" activityId={event.id} />
+                <ParticipationSummary activityType="event" activityId={event.id} coachMemberIds={teams.flatMap(t => [...(t.coach ?? []), ...(t.captain ?? []), ...(t.team_responsible ?? [])])} />
               </div>
               <button
                 onClick={() => setRosterOpen(true)}

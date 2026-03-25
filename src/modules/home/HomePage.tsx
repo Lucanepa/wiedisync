@@ -164,15 +164,19 @@ export default function HomePage() {
   })
 
   // Bulk-fetch participation statuses for all displayed activities (2 queries total
-  // instead of 2 per row) so banners appear together with everything else
+  // instead of 2 per row) so banners appear together with everything else.
+  // Gate on all sub-queries being done so the participation fetch fires once with
+  // the complete activity list — prevents partial results overwriting full results.
+  const allDataLoaded = !gamesLoading && !resultsLoading && !eventsLoading && !(hasTeams && trainingsLoading)
   const allActivities = useMemo(() => {
+    if (!allDataLoaded) return []
     const items: Array<{ id: string; type: 'game' | 'training' | 'event'; date: string }> = []
     for (const g of nextGames) items.push({ id: g.id, type: 'game', date: g.date })
     for (const g of latestResults) items.push({ id: g.id, type: 'game', date: g.date })
     for (const tr of nextTrainings) items.push({ id: tr.id, type: 'training', date: tr.date })
     for (const ev of events) items.push({ id: ev.id, type: 'event', date: ev.start_date?.split(' ')[0] ?? '' })
     return items
-  }, [nextGames, latestResults, nextTrainings, events])
+  }, [allDataLoaded, nextGames, latestResults, nextTrainings, events])
 
   const { statusMap: participationStatuses, isLoading: bulkPartLoading } = useBulkParticipationStatuses(allActivities)
 

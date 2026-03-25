@@ -6,8 +6,8 @@
 // Response: {
 //   roster: [{ first_name, last_name, initials, number, position, photo_url }],
 //   trainings: [{ day, start_time, end_time, hall_name, hall_address }],
-//   coach: [{ first_name, last_name }],
-//   captain: [{ first_name, last_name }]
+//   coach: [{ first_name, last_name, initials, photo_url }],
+//   captain: [{ first_name, last_name, initials, photo_url }]
 // }
 //
 // Only exposes public-safe fields (no email, phone, birthdate, etc.)
@@ -133,9 +133,21 @@ routerAdd("GET", "/api/public/team/{teamId}", function (e) {
     for (var m = 0; m < ids.length; m++) {
       try {
         var rec = $app.findRecordById("members", ids[m])
+        var fn = rec.getString("first_name") || ""
+        var ln = rec.getString("last_name") || ""
+        var initials = ""
+        if (fn) initials += fn.charAt(0).toUpperCase()
+        if (ln) initials += ln.charAt(0).toUpperCase()
+        var photoUrl = ""
+        var photo = rec.getString("photo")
+        if (photo) {
+          photoUrl = "/api/files/" + rec.collection().id + "/" + rec.id + "/" + photo + "?thumb=100x100"
+        }
         result.push({
-          first_name: rec.getString("first_name"),
-          last_name: rec.getString("last_name"),
+          first_name: fn,
+          last_name: ln,
+          initials: initials,
+          photo_url: photoUrl,
         })
       } catch (err) {}
     }

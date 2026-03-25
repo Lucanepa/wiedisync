@@ -96,7 +96,7 @@ const collections: CollectionDef[] = [
       text('phone'),
       text('license_nr'),
       number('number'),
-      select('position', ['setter', 'outside', 'middle', 'opposite', 'libero', 'coach', 'other']),
+      select('position', ['setter', 'outside', 'middle', 'opposite', 'libero', 'point_guard', 'shooting_guard', 'small_forward', 'power_forward', 'center', 'other']),
       file('photo', { maxSize: 5242880, mimeTypes: ['image/jpeg', 'image/png', 'image/webp'] }),
       select('role', ['user', 'vorstand', 'admin', 'superuser']),
       select('licences', ['scorer_vb', 'referee_vb', 'otr1_bb', 'otr2_bb', 'otn_bb', 'referee_bb'], { maxSelect: 6 }),

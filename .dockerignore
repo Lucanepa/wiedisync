@@ -10,6 +10,7 @@ docs
 *.md
 *.config.*
 *.json
+!pb_hooks
 !pb_hooks/**
 tsconfig*.json
 index.html

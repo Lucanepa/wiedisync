@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import pb from '../pb'
 
-const PB_URL = import.meta.env.VITE_PB_URL as string
+const PB_URL = pb.baseUrl
 
 interface PushState {
   /** Browser supports push notifications */

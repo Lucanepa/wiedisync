@@ -22,7 +22,7 @@ export interface InfraHealth {
 
 const STALE_THRESHOLD_MS = 36 * 60 * 60 * 1000 // 36 hours
 
-const PB_URL = import.meta.env.VITE_PB_URL || 'https://api.kscw.ch'
+const PB_URL = pb.baseUrl
 
 export function useInfraHealth(): InfraHealth {
   const [services, setServices] = useState<ServiceHealth[]>([])

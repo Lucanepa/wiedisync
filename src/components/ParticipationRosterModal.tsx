@@ -61,7 +61,7 @@ export default function ParticipationRosterModal({
   maxPlayers,
   eventSessions,
   participationMode,
-  showRsvpTime,
+  showRsvpTime = true,
 }: ParticipationRosterModalProps) {
   const { t, i18n } = useTranslation('participation')
   const { t: te } = useTranslation('events')

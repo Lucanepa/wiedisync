@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import pb from '../../pb'
 import { useInfraHealth } from '../../hooks/useInfraHealth'
 
-const PB_URL = import.meta.env.VITE_PB_URL || 'https://api.kscw.ch'
+const PB_URL = pb.baseUrl
 const PB_DEV_URL = 'https://api-dev.kscw.ch'
 const PUSH_WORKER_URL = 'https://kscw-push.lucanepa.workers.dev'
 

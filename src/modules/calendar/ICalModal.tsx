@@ -7,7 +7,9 @@ import { useAdminMode } from '../../hooks/useAdminMode'
 import { downloadICal } from '../../utils/icalGenerator'
 import type { CalendarEntry } from '../../types/calendar'
 
-const PB_URL = import.meta.env.VITE_PB_URL as string
+import pb from '../../pb'
+
+const PB_URL = pb.baseUrl
 
 type ICalMode = 'subscribe' | 'download'
 

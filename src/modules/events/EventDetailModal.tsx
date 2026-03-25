@@ -159,11 +159,13 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
             ) : null}
 
             {/* Summary + roster button */}
-            <div className="flex items-center justify-between">
-              <ParticipationSummary activityType="event" activityId={event.id} />
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <ParticipationSummary activityType="event" activityId={event.id} />
+              </div>
               <button
                 onClick={() => setRosterOpen(true)}
-                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-900/20"
+                className="flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-900/20"
               >
                 <Users className="h-4 w-4" />
                 {tP('participation')}

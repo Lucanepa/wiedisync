@@ -32,7 +32,11 @@ routerAdd("GET", "/api/public/team/{teamId}", function (e) {
     throw new NotFoundError("Team not found")
   }
 
-  // ── Roster: member_teams → members ──
+  // ── Roster: member_teams → members (excluding coaches of THIS team) ──
+  var coachIds = team.get("coach") || []
+  var coachIdSet = {}
+  for (var c = 0; c < coachIds.length; c++) coachIdSet[coachIds[c]] = true
+
   var roster = []
   try {
     var memberTeams = $app.findRecordsByFilter(
@@ -48,6 +52,7 @@ routerAdd("GET", "/api/public/team/{teamId}", function (e) {
       var mt = memberTeams[i]
       var memberId = mt.getString("member")
       if (!memberId) continue
+      if (coachIdSet[memberId]) continue // coach of THIS team → shown in coach section
 
       try {
         var member = $app.findRecordById("members", memberId)

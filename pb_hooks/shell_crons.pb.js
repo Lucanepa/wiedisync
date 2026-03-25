@@ -6,19 +6,21 @@
 // 3. invite_expiry   — daily 03:00 UTC — mark stale pending invites as expired
 
 // ── Helpers ──────────────────────────────────────────────────────────
+// NOTE: PB goja isolates each callback scope, so helpers must be
+// defined as vars before cronAdd to be accessible inside callbacks.
 
 // toIsoString — formats a Date as PocketBase datetime string
-function shellCrons_toIsoString(date) {
+var shellCrons_toIsoString = function(date) {
   return date.toISOString().replace("T", " ").slice(0, 23) + "Z"
 }
 
 // nowIsoString — current UTC time as PB datetime string
-function shellCrons_nowIso() {
+var shellCrons_nowIso = function() {
   return shellCrons_toIsoString(new Date())
 }
 
 // plusDaysIso — UTC time N days from now as PB datetime string
-function shellCrons_plusDaysIso(days) {
+var shellCrons_plusDaysIso = function(days) {
   return shellCrons_toIsoString(new Date(new Date().getTime() + days * 24 * 60 * 60 * 1000))
 }
 

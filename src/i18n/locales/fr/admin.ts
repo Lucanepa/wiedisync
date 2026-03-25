@@ -72,4 +72,18 @@ export default {
   deleteRecordMessage: 'Cet enregistrement sera definitivement supprime.',
   save: 'Enregistrer',
   cancel: 'Annuler',
+
+  // Referee expenses
+  refereeExpensesTitle: 'Frais d\'arbitrage',
+  refereeExpensesDescription: 'Tous les frais d\'arbitrage enregistrés par équipe et saison.',
+  refereeExpensesNoRecords: 'Aucun frais d\'arbitrage enregistré.',
+  refereeExpensesGame: 'Match',
+  refereeExpensesDate: 'Date',
+  refereeExpensesPaidBy: 'Payé par',
+  refereeExpensesTeam: 'Équipe',
+  refereeExpensesAmount: 'Montant',
+  refereeExpensesNotes: 'Remarques',
+  refereeExpensesExport: 'Export CSV',
+  refereeExpensesAllTeams: 'Toutes les équipes',
+  refereeExpensesAllSeasons: 'Toutes les saisons',
 } as const

@@ -122,4 +122,16 @@ export default {
   comeAndSupport: 'Chum und unterstütz eus!',
   guestsCannotParticipate: 'Gäst chönd nöd a Spiel teilneh',
   minParticipants: 'Min. Spieler',
+
+  // Referee expenses
+  refereeExpenses: 'Schiedsrichterchöschte',
+  refereeExpensesPaidBy: 'Zahlt vo',
+  refereeExpensesAmount: 'Betrag (CHF)',
+  refereeExpensesNotes: 'Bemerkige',
+  refereeExpensesOtherPerson: 'Anderi Person',
+  refereeExpensesOtherName: 'Name iitippe…',
+  refereeExpensesSave: 'Speichere',
+  refereeExpensesSaved: 'Gspeicheret',
+  refereeExpensesEdit: 'Bearbeite',
+  refereeExpensesNotRecorded: 'Nonig erfasst',
 } as const

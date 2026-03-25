@@ -212,4 +212,18 @@ export default {
   paramDateFrom: 'From',
   paramDateTo: 'To',
   runTemplate: 'Run',
+
+  // Referee expenses
+  refereeExpensesTitle: 'Referee Expenses',
+  refereeExpensesDescription: 'All recorded referee expenses by team and season.',
+  refereeExpensesNoRecords: 'No referee expenses recorded.',
+  refereeExpensesGame: 'Game',
+  refereeExpensesDate: 'Date',
+  refereeExpensesPaidBy: 'Paid by',
+  refereeExpensesTeam: 'Team',
+  refereeExpensesAmount: 'Amount',
+  refereeExpensesNotes: 'Notes',
+  refereeExpensesExport: 'CSV Export',
+  refereeExpensesAllTeams: 'All teams',
+  refereeExpensesAllSeasons: 'All seasons',
 } as const

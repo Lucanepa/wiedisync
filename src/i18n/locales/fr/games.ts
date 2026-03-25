@@ -119,4 +119,16 @@ export default {
   comeAndSupport: 'Venez encourager !',
   guestsCannotParticipate: 'Les invités ne peuvent pas participer aux matchs',
   minParticipants: 'Min. joueurs',
+
+  // Referee expenses
+  refereeExpenses: 'Frais d\'arbitrage',
+  refereeExpensesPaidBy: 'Payé par',
+  refereeExpensesAmount: 'Montant (CHF)',
+  refereeExpensesNotes: 'Remarques',
+  refereeExpensesOtherPerson: 'Autre personne',
+  refereeExpensesOtherName: 'Entrer le nom…',
+  refereeExpensesSave: 'Enregistrer',
+  refereeExpensesSaved: 'Enregistré',
+  refereeExpensesEdit: 'Modifier',
+  refereeExpensesNotRecorded: 'Pas encore enregistré',
 } as const

@@ -22,6 +22,7 @@ import ClubDeskSyncPage from './modules/admin/ClubDeskSyncPage'
 import InfraHealthPage from './modules/admin/InfraHealthPage'
 import DataHealthPage from './modules/admin/DataHealthPage'
 import AuditLogPage from './modules/admin/AuditLogPage'
+import RefereeExpensesPage from './modules/admin/RefereeExpensesPage'
 import HallenplanPage from './modules/hallenplan/HallenplanPage'
 import EmbedGamesPage from './modules/games/EmbedGamesPage'
 import LoginPage from './modules/auth/LoginPage'
@@ -81,6 +82,7 @@ export default function App() {
             <Route path="admin/terminplanung" element={<AdminRoute><AdminSetupPage /></AdminRoute>} />
             <Route path="admin/terminplanung/dashboard" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
             <Route path="admin/scorer-assign" element={<AdminRoute><ScorerAssignPage /></AdminRoute>} />
+            <Route path="admin/referee-expenses" element={<AdminRoute><RefereeExpensesPage /></AdminRoute>} />
             <Route path="admin/database" element={<AdminRoute><DatabasePage /></AdminRoute>} />
             <Route path="admin/clubdesk-sync" element={<SuperAdminRoute><ClubDeskSyncPage /></SuperAdminRoute>} />
             <Route path="admin/infra" element={<SuperAdminRoute><InfraHealthPage /></SuperAdminRoute>} />

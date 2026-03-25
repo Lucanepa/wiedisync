@@ -212,4 +212,18 @@ export default {
   paramDateFrom: 'Von',
   paramDateTo: 'Bis',
   runTemplate: 'Ausführen',
+
+  // Referee expenses
+  refereeExpensesTitle: 'Schiedsrichterkosten',
+  refereeExpensesDescription: 'Alle erfassten Schiedsrichterkosten nach Team und Saison.',
+  refereeExpensesNoRecords: 'Keine Schiedsrichterkosten erfasst.',
+  refereeExpensesGame: 'Spiel',
+  refereeExpensesDate: 'Datum',
+  refereeExpensesPaidBy: 'Bezahlt von',
+  refereeExpensesTeam: 'Team',
+  refereeExpensesAmount: 'Betrag',
+  refereeExpensesNotes: 'Bemerkungen',
+  refereeExpensesExport: 'CSV Export',
+  refereeExpensesAllTeams: 'Alle Teams',
+  refereeExpensesAllSeasons: 'Alle Saisons',
 } as const

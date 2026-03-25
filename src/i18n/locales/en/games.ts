@@ -122,4 +122,16 @@ export default {
   comeAndSupport: 'Come and support!',
   guestsCannotParticipate: 'Guests cannot participate in games',
   minParticipants: 'Min. players',
+
+  // Referee expenses
+  refereeExpenses: 'Referee expenses',
+  refereeExpensesPaidBy: 'Paid by',
+  refereeExpensesAmount: 'Amount (CHF)',
+  refereeExpensesNotes: 'Notes',
+  refereeExpensesOtherPerson: 'Other person',
+  refereeExpensesOtherName: 'Enter name…',
+  refereeExpensesSave: 'Save',
+  refereeExpensesSaved: 'Saved',
+  refereeExpensesEdit: 'Edit',
+  refereeExpensesNotRecorded: 'Not recorded yet',
 } as const

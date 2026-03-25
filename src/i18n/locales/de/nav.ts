@@ -35,4 +35,5 @@ export default {
   version: 'Version',
   changelog: 'Änderungsprotokoll',
   whatsNew: 'Was ist neu',
+  refereeExpenses: 'Schiedsrichterkosten',
 } as const

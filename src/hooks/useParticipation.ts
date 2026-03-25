@@ -94,7 +94,7 @@ export function useParticipation(
     setSaveConfirmed(false)
     try {
       if (participation) {
-        await update(participation.id, { status, note, guest_count: guestCount })
+        await update(participation.id, { status, note, guest_count: guestCount, is_staff: isStaff ?? false })
       } else {
         await create({
           member: user.id,

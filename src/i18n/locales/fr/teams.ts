@@ -13,7 +13,6 @@ export default {
   positionSmallForward: 'Ailier',
   positionPowerForward: 'Ailier fort',
   positionCenter: 'Pivot',
-  positionCoach: 'Entraineur',
   positionGuest: 'Invite',
   positionOther: 'Autre',
 

@@ -59,7 +59,7 @@ export default function MemberRow({ memberTeam, teamId: _teamId, teamSlug, team,
   const displayName = [member.last_name, member.first_name].filter(Boolean).join(' ') || member.name || '—'
   const memberPositions = coercePositions(member.position)
   const nonPlaying = isNonPlayingStaff(member.id, team, memberPositions)
-  const selectablePositions = nonPlaying ? ['coach' as const] : getSelectablePositions(team?.sport, memberPositions)
+  const selectablePositions = getSelectablePositions(team?.sport, memberPositions)
   const initials = `${member.first_name?.[0] ?? ''}${member.last_name?.[0] ?? ''}`.toUpperCase()
   const role = getMemberRole(member.id, team)
 

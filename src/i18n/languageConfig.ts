@@ -3,7 +3,7 @@ export const LANGUAGES = [
   { code: 'en', pbValue: 'english', nativeName: 'English', flag: 'gb' },
   { code: 'fr', pbValue: 'french', nativeName: 'Français', flag: 'fr' },
   { code: 'it', pbValue: 'italian', nativeName: 'Italiano', flag: 'it' },
-  { code: 'gsw', pbValue: 'swiss_german', nativeName: 'Schwiizerdütsch', flag: 'ch', isCasual: true },
+  { code: 'gsw', pbValue: 'swiss_german', nativeName: 'CH-DE', flag: 'ch', isCasual: true },
 ] as const
 
 export type I18nCode = (typeof LANGUAGES)[number]['code']

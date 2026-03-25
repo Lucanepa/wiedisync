@@ -19,7 +19,7 @@ export default {
   affects: 'Betrifft',
 
   // Reason options
-  reasonInjury: 'Verletzung',
+  reasonInjury: 'Verletztig',
   reasonVacation: 'Ferie',
   reasonWork: 'Schaffe',
   reasonPersonal: 'Persönlich',

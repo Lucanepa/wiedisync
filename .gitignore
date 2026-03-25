@@ -31,6 +31,9 @@ e2e/.auth/
 # Planning
 .planning/
 
+# Claude Code settings (contains permission tokens/credentials)
+.claude/settings.json
+
 # Superpowers plugin artifacts
 .superpowers/
 

@@ -39,6 +39,7 @@ export default function LanguageDropdown({ size = 'sm' }: LanguageDropdownProps)
   const casualLanguages = LANGUAGES.filter((l) => 'isCasual' in l && l.isCasual)
 
   const flagSize = size === 'sm' ? 'w-5 h-[15px]' : 'w-6 h-[18px]'
+  const squareFlagSize = size === 'sm' ? 'w-[15px] h-[15px]' : 'w-[18px] h-[18px]'
   const textSize = size === 'sm' ? 'text-sm' : 'text-base'
 
   async function handleSelect(code: string) {
@@ -67,7 +68,7 @@ export default function LanguageDropdown({ size = 'sm' }: LanguageDropdownProps)
           <img
             src={flagMap[currentLang.flag]}
             alt=""
-            className={`${flagSize} rounded-[3px] object-cover`}
+            className={`${currentLang.flag === 'ch' ? squareFlagSize : flagSize} rounded-[3px] object-cover`}
           />
           <span className={`${textSize} text-gray-700 dark:text-gray-200`}>
             {currentLang.nativeName}
@@ -85,7 +86,7 @@ export default function LanguageDropdown({ size = 'sm' }: LanguageDropdownProps)
             <img
               src={flagMap[lang.flag]}
               alt=""
-              className="w-5 h-[15px] rounded-[2px] object-cover"
+              className={`${lang.flag === 'ch' ? 'w-[15px] h-[15px]' : 'w-5 h-[15px]'} rounded-[2px] object-cover`}
             />
             <span className="flex-1">{lang.nativeName}</span>
             {i18n.language === lang.code && (
@@ -105,7 +106,7 @@ export default function LanguageDropdown({ size = 'sm' }: LanguageDropdownProps)
                 <img
                   src={flagMap[lang.flag]}
                   alt=""
-                  className="w-5 h-[15px] rounded-[2px] object-cover"
+                  className={`${lang.flag === 'ch' ? 'w-[15px] h-[15px]' : 'w-5 h-[15px]'} rounded-[2px] object-cover`}
                 />
                 <span className="flex-1">{lang.nativeName}</span>
                 {i18n.language === lang.code ? (

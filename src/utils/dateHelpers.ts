@@ -119,13 +119,19 @@ export function formatDateTimeCompact(datetime: string): string {
   return `${dd}.${mm}.${yy} ${hh}:${min}`
 }
 
+/** Map i18n language codes to Intl-compatible locales (gsw isn't supported by browsers) */
+function toIntlLocale(locale: string): string {
+  if (locale === 'gsw') return 'de-CH'
+  return locale
+}
+
 /** Format a datetime as locale-aware relative time (e.g. "vor 2 Std.", "2 hr. ago"). */
 export function formatRelativeTime(datetime: string, locale: string = 'de-CH'): string {
   const diffMs = Date.now() - new Date(datetime).getTime()
   const diffMin = Math.floor(diffMs / 60000)
   const diffHr = Math.floor(diffMin / 60)
   const diffDay = Math.floor(diffHr / 24)
-  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto', style: 'short' })
+  const rtf = new Intl.RelativeTimeFormat(toIntlLocale(locale), { numeric: 'auto', style: 'short' })
   if (diffMin < 1) {
     const justNow: Record<string, string> = { de: 'Gerade eben', gsw: 'Grad ebe', fr: "A l'instant", it: 'Proprio ora', en: 'Just now' }
     return justNow[locale.split('-')[0]] ?? justNow.en!

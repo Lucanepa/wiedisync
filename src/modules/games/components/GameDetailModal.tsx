@@ -163,7 +163,8 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
   const kscwSport = expanded.expand?.kscw_team?.sport as 'volleyball' | 'basketball' | undefined
   const kscwTeam = rawKscwTeam && kscwSport ? pbNameToColorKey(rawKscwTeam, kscwSport) : rawKscwTeam
   const sets = parseSets(game.sets_json)
-  const dateStr = game.date ? new Intl.DateTimeFormat(i18n.language, dateFormatOptions).format(new Date(game.date)) : ''
+  const intlLocale = i18n.language === 'gsw' ? 'de-CH' : i18n.language
+  const dateStr = game.date ? new Intl.DateTimeFormat(intlLocale, dateFormatOptions).format(new Date(game.date)) : ''
   const showScorerContact = isCoachOf(game.kscw_team)
   const homeWon = Number(game.home_score) > Number(game.away_score)
   const awayWon = Number(game.away_score) > Number(game.home_score)

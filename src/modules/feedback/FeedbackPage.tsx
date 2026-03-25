@@ -5,6 +5,7 @@ import { Bug, Lightbulb, MessageCircle, Paperclip, X, ExternalLink, ChevronDown,
 import { useAuth } from '../../hooks/useAuth'
 import { usePB } from '../../hooks/usePB'
 import pb from '../../pb'
+import { formatRelativeTime } from '../../utils/dateHelpers'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
 import { Textarea } from '../../components/ui/textarea'
@@ -71,7 +72,7 @@ interface GitHubIssue {
 const GITHUB_REPO = 'Lucanepa/wiedisync'
 
 export default function FeedbackPage() {
-  const { t } = useTranslation('feedback')
+  const { t, i18n } = useTranslation('feedback')
   const { user } = useAuth()
   const [showForm, setShowForm] = useState(false)
   const [selectedType, setSelectedType] = useState<FeedbackType>('bug')
@@ -178,15 +179,8 @@ export default function FeedbackPage() {
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return ''
-    const date = new Date(dateStr)
-    if (isNaN(date.getTime())) return ''
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-    if (diffDays === 0) return 'today'
-    if (diffDays === 1) return 'yesterday'
-    if (diffDays < 7) return `${diffDays}d ago`
-    return date.toLocaleDateString()
+    if (isNaN(new Date(dateStr).getTime())) return ''
+    return formatRelativeTime(dateStr, i18n.language)
   }
 
   return (

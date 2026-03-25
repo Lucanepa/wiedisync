@@ -303,8 +303,8 @@ export default function GameCard({ game, onClick, variant = 'card', participatio
 
 function GameCardParticipation({ game, existingParticipation }: { game: Game; existingParticipation?: Participation }) {
   const { t } = useTranslation('participation')
-  const { user, isCoachOf } = useAuth()
-  const isStaff = !!game.kscw_team && isCoachOf(game.kscw_team)
+  const { user, isStaffOnly } = useAuth()
+  const isStaff = !!game.kscw_team && isStaffOnly(game.kscw_team)
   const { create, update } = useMutation<Participation>('participations')
   const [optimisticStatus, setOptimisticStatus] = useState<Participation['status'] | null>(null)
 

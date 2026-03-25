@@ -186,8 +186,8 @@ function InlineParticipationSummary({ participations }: { participations: Partic
 function TrainingParticipation({ training, existingParticipation }: { training: TrainingExpanded; existingParticipation?: Participation }) {
   const { t } = useTranslation('participation')
   const { t: tTrainings } = useTranslation('trainings')
-  const { user, isCoachOf } = useAuth()
-  const isStaff = isCoachOf(training.team)
+  const { user, isStaffOnly } = useAuth()
+  const isStaff = isStaffOnly(training.team)
   const { create, update } = useMutation<Participation>('participations')
 
   const deadlinePassed = training.respond_by

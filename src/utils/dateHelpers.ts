@@ -126,7 +126,10 @@ export function formatRelativeTime(datetime: string, locale: string = 'de-CH'): 
   const diffHr = Math.floor(diffMin / 60)
   const diffDay = Math.floor(diffHr / 24)
   const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto', style: 'short' })
-  if (diffMin < 1) return rtf.format(0, 'minute')
+  if (diffMin < 1) {
+    const justNow: Record<string, string> = { de: 'Gerade eben', gsw: 'Grad ebe', fr: "A l'instant", it: 'Proprio ora', en: 'Just now' }
+    return justNow[locale.split('-')[0]] ?? justNow.en!
+  }
   if (diffMin < 60) return rtf.format(-diffMin, 'minute')
   if (diffHr < 24) return rtf.format(-diffHr, 'hour')
   if (diffDay < 7) return rtf.format(-diffDay, 'day')

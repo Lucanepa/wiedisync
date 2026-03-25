@@ -57,8 +57,8 @@ export default function ParticipationButton(props: ParticipationButtonProps) {
 
 /** Uses useParticipation hook to fetch data (for detail modals / standalone use) */
 function HookedParticipationButton(props: ParticipationButtonProps) {
-  const { isCoachOf } = useAuth()
-  const isStaff = !!props.teamId && isCoachOf(props.teamId)
+  const { isStaffOnly } = useAuth()
+  const isStaff = !!props.teamId && isStaffOnly(props.teamId)
   const { participation, effectiveStatus, setStatus, saveConfirmed, dismissConfirmed } = useParticipation(
     props.activityType,
     props.activityId,
@@ -76,8 +76,8 @@ function HookedParticipationButton(props: ParticipationButtonProps) {
 
 /** Uses pre-fetched participation + useMutation for writes (for list cards) */
 function PrefetchedParticipationButton(props: ParticipationButtonProps) {
-  const { user, isCoachOf } = useAuth()
-  const isStaff = !!props.teamId && isCoachOf(props.teamId)
+  const { user, isStaffOnly } = useAuth()
+  const isStaff = !!props.teamId && isStaffOnly(props.teamId)
   const { create, update } = useMutation<Participation>('participations')
   const [optimisticStatus, setOptimisticStatus] = useState<Participation['status'] | null>(null)
   const [saveConfirmed, setSaveConfirmed] = useState(false)

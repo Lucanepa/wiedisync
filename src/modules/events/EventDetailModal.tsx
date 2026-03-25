@@ -41,7 +41,7 @@ interface EventDetailModalProps {
 export default function EventDetailModal({ event, onClose }: EventDetailModalProps) {
   const { t } = useTranslation('events')
   const { t: tP } = useTranslation('participation')
-  const { user, canParticipateIn, isCoachOf } = useAuth()
+  const { user, canParticipateIn, isCoachOf, isStaffOnly } = useAuth()
   const [rosterOpen, setRosterOpen] = useState(false)
   const [sessionSheetOpen, setSessionSheetOpen] = useState(false)
 
@@ -49,6 +49,7 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
     !event.teams?.length || event.teams.some((tid) => canParticipateIn(tid))
   )
   const isStaff = !!event?.teams?.[0] && isCoachOf(event.teams[0])
+  const isStaffParticipant = !!event?.teams?.[0] && isStaffOnly(event.teams[0])
 
   // Fetch sessions for multi-session events
   const hasSessionMode = event?.participation_mode && event.participation_mode !== 'whole'
@@ -155,7 +156,7 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
                 )}
               </>
             ) : canParticipate ? (
-              <EventParticipation event={event} isStaff={isStaff} />
+              <EventParticipation event={event} isStaff={isStaff} isStaffParticipant={isStaffParticipant} />
             ) : null}
 
             {/* Summary + roster button */}
@@ -193,14 +194,14 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
   )
 }
 
-function EventParticipation({ event, isStaff }: { event: EventExpanded; isStaff: boolean }) {
+function EventParticipation({ event, isStaff, isStaffParticipant }: { event: EventExpanded; isStaff: boolean; isStaffParticipant: boolean }) {
   const { t } = useTranslation('participation')
   const { participation, effectiveStatus, hasAbsence, note: savedNote, setStatus, saveConfirmed, dismissConfirmed } = useParticipation(
     'event',
     event.id,
     event.start_date?.split(' ')[0],
     undefined,
-    isStaff,
+    isStaffParticipant,
   )
   const [noteText, setNoteText] = useState(savedNote)
   const [noteSaved, setNoteSaved] = useState(false)

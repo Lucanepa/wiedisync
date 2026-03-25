@@ -12,7 +12,6 @@ export type MemberPosition =
   | 'small_forward'
   | 'power_forward'
   | 'center'
-  | 'coach'
   | 'guest'
   | 'other'
 

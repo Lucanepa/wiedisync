@@ -314,7 +314,7 @@ export default function RosterEditor() {
               const roles = team ? getMemberRoles(member.id, team) : []
               const memberPositions = coercePositions(member.position)
               const nonPlaying = isNonPlayingStaff(member.id, team, memberPositions)
-              const selectablePositions = nonPlaying ? ['coach' as const] : getSelectablePositions(team?.sport, memberPositions)
+              const selectablePositions = getSelectablePositions(team?.sport, memberPositions)
               return (
                 <div key={mt.id} className="flex items-center gap-3 rounded-lg border bg-white dark:bg-gray-800 dark:border-gray-700 px-4 py-2.5">
                   {member.photo ? (

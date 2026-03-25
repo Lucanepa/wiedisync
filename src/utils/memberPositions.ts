@@ -1,7 +1,7 @@
 import type { MemberPosition, Team } from '../types'
 
-const VB_POSITIONS: MemberPosition[] = ['setter', 'outside', 'middle', 'opposite', 'libero', 'coach', 'guest', 'other']
-const BB_POSITIONS: MemberPosition[] = ['point_guard', 'shooting_guard', 'small_forward', 'power_forward', 'center', 'coach', 'guest', 'other']
+const VB_POSITIONS: MemberPosition[] = ['setter', 'outside', 'middle', 'opposite', 'libero', 'guest', 'other']
+const BB_POSITIONS: MemberPosition[] = ['point_guard', 'shooting_guard', 'small_forward', 'power_forward', 'center', 'guest', 'other']
 
 const POSITION_I18N_KEYS: Record<MemberPosition, string> = {
   setter: 'positionSetter',
@@ -14,7 +14,6 @@ const POSITION_I18N_KEYS: Record<MemberPosition, string> = {
   small_forward: 'positionSmallForward',
   power_forward: 'positionPowerForward',
   center: 'positionCenter',
-  coach: 'positionCoach',
   guest: 'positionGuest',
   other: 'positionOther',
 }
@@ -52,7 +51,7 @@ export function getSelectablePositions(sport?: Team['sport'], current?: unknown)
 
 /**
  * A member is "non-playing staff" if they are in team.coach or team.team_responsible
- * AND have no player positions (only 'coach' / 'other' or empty).
+ * AND have no player positions (only 'other' or empty).
  */
 export function isNonPlayingStaff(
   memberId: string,
@@ -62,7 +61,7 @@ export function isNonPlayingStaff(
   if (!team) return false
   const isStaff = team.coach?.includes(memberId) || team.team_responsible?.includes(memberId)
   if (!isStaff) return false
-  const playerPositions = positions.filter((p) => p !== 'coach' && p !== 'other')
+  const playerPositions = positions.filter((p) => p !== 'other')
   return playerPositions.length === 0
 }
 

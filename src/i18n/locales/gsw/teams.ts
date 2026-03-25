@@ -13,7 +13,6 @@ export default {
   positionSmallForward: 'Small Forward',
   positionPowerForward: 'Power Forward',
   positionCenter: 'Center',
-  positionCoach: 'Trainer/in',
   positionGuest: 'Gascht',
   positionOther: 'Anderi',
 

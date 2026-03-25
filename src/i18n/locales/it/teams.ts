@@ -13,7 +13,6 @@ export default {
   positionSmallForward: 'Ala piccola',
   positionPowerForward: 'Ala grande',
   positionCenter: 'Centro',
-  positionCoach: 'Allenatore',
   positionGuest: 'Ospite',
   positionOther: 'Altro',
 

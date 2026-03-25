@@ -294,6 +294,157 @@ var runReminders = function() {
     console.log("[participation-reminders] Error processing events: " + e)
   }
 
+  // ─── Pre-deadline alerts: games with insufficient players ───
+  try {
+    var preDeadlineGames = $app.findRecordsByFilter(
+      "games",
+      'respond_by ~ "' + tomorrowStr + '" && status = "scheduled"',
+      "", 200, 0
+    )
+    console.log("[participation-reminders] Checking " + preDeadlineGames.length + " games for pre-deadline roster alerts")
+    for (var pg = 0; pg < preDeadlineGames.length; pg++) {
+      var pdGame = preDeadlineGames[pg]
+      var pdTeamId = pdGame.getString("kscw_team")
+      if (!pdTeamId) continue
+
+      // Determine sport and default minimum
+      var pdTeam = null
+      try { pdTeam = $app.findRecordById("teams", pdTeamId) } catch (e) { continue }
+      var pdSport = pdTeam.getString("sport")
+      var pdDefaultMin = pdSport === "basketball" ? 5 : 6
+      var pdMin = pdGame.getInt("min_participants") || pdDefaultMin
+
+      // Count confirmed non-staff
+      var pdConfirmed = 0
+      try {
+        var pdParts = $app.findRecordsByFilter(
+          "participations",
+          'activity_type = "game" && activity_id = "' + pdGame.id + '" && status = "confirmed" && is_staff = false',
+          "", 500, 0
+        )
+        pdConfirmed = pdParts.length
+      } catch (e) { /* ignore */ }
+
+      if (pdConfirmed < pdMin) {
+        console.log("[participation-reminders] Game " + pdGame.id + " has " + pdConfirmed + "/" + pdMin + " players, sending alert")
+        var pdAlertSent = sendRemindersForActivity(
+          "game",
+          pdGame.id,
+          pdTeamId,
+          pdGame.getString("date").split(" ")[0],
+          pdGame.getString("time"),
+          pdGame.getString("home_team") + " vs " + pdGame.getString("away_team") + " ⚠ " + pdConfirmed + "/" + pdMin
+        )
+        totalSent += pdAlertSent
+      }
+    }
+  } catch (e) {
+    console.log("[participation-reminders] Error processing pre-deadline game alerts: " + e)
+  }
+
+  // ─── Pre-deadline alerts: trainings with insufficient players ───
+  try {
+    var preDeadlineTrainings = $app.findRecordsByFilter(
+      "trainings",
+      'respond_by ~ "' + tomorrowStr + '" && cancelled = false && min_participants > 0',
+      "", 200, 0
+    )
+    console.log("[participation-reminders] Checking " + preDeadlineTrainings.length + " trainings for pre-deadline min alerts")
+    for (var pt = 0; pt < preDeadlineTrainings.length; pt++) {
+      var pdTraining = preDeadlineTrainings[pt]
+      var ptMin = pdTraining.getInt("min_participants")
+
+      var ptConfirmed = 0
+      try {
+        var ptParts = $app.findRecordsByFilter(
+          "participations",
+          'activity_type = "training" && activity_id = "' + pdTraining.id + '" && status = "confirmed" && is_staff = false',
+          "", 500, 0
+        )
+        ptConfirmed = ptParts.length
+      } catch (e) { /* ignore */ }
+
+      if (ptConfirmed < ptMin) {
+        console.log("[participation-reminders] Training " + pdTraining.id + " has " + ptConfirmed + "/" + ptMin + " players, sending alert")
+        var ptAlertSent = sendRemindersForActivity(
+          "training",
+          pdTraining.id,
+          pdTraining.getString("team"),
+          pdTraining.getString("date").split(" ")[0],
+          pdTraining.getString("start_time"),
+          "Training ⚠ " + ptConfirmed + "/" + ptMin
+        )
+        totalSent += ptAlertSent
+      }
+    }
+  } catch (e) {
+    console.log("[participation-reminders] Error processing pre-deadline training alerts: " + e)
+  }
+
+  // ─── Auto-cancel trainings where deadline passed and min not reached ───
+  var todayStr = zurichNow.getUTCFullYear() + "-" +
+    String(zurichNow.getUTCMonth() + 1).padStart(2, "0") + "-" +
+    String(zurichNow.getUTCDate()).padStart(2, "0")
+
+  try {
+    var autoCancelTrainings = $app.findRecordsByFilter(
+      "trainings",
+      'auto_cancel_on_min = true && cancelled = false && min_participants > 0 && date >= "' + todayStr + '" && respond_by <= "' + todayStr + ' 23:59:59"',
+      "", 200, 0
+    )
+    console.log("[participation-reminders] Checking " + autoCancelTrainings.length + " trainings for auto-cancel")
+    for (var ac = 0; ac < autoCancelTrainings.length; ac++) {
+      var acTraining = autoCancelTrainings[ac]
+      var acMin = acTraining.getInt("min_participants")
+
+      var acConfirmed = 0
+      try {
+        var acParts = $app.findRecordsByFilter(
+          "participations",
+          'activity_type = "training" && activity_id = "' + acTraining.id + '" && status = "confirmed" && is_staff = false',
+          "", 500, 0
+        )
+        acConfirmed = acParts.length
+      } catch (e) { /* ignore */ }
+
+      if (acConfirmed < acMin) {
+        console.log("[participation-reminders] Auto-cancelling training " + acTraining.id + " (" + acConfirmed + "/" + acMin + ")")
+        acTraining.set("cancelled", true)
+        acTraining.set("cancel_reason", "Automatisch abgesagt: Minimum von " + acMin + " Teilnehmern nicht erreicht (" + acConfirmed + " Zusagen)")
+        $app.save(acTraining)
+
+        // Send notification
+        try {
+          var notifCollection = $app.findCollectionByNameOrId("notifications")
+          var acTeamId = acTraining.getString("team")
+          var acMembers = $app.findRecordsByFilter(
+            "member_teams",
+            'team = "' + acTeamId + '"',
+            "", 200, 0
+          )
+          for (var nm = 0; nm < acMembers.length; nm++) {
+            var notif = new Record(notifCollection)
+            notif.set("member", acMembers[nm].getString("member"))
+            notif.set("type", "activity_change")
+            notif.set("title", "training_cancelled")
+            notif.set("body", JSON.stringify({
+              date: acTraining.getString("date").split(" ")[0],
+              reason: "auto_cancel_min"
+            }))
+            notif.set("activity_type", "training")
+            notif.set("activity_id", acTraining.id)
+            notif.set("read", false)
+            $app.save(notif)
+          }
+        } catch (ne) {
+          console.log("[participation-reminders] Error sending auto-cancel notifications: " + ne)
+        }
+      }
+    }
+  } catch (e) {
+    console.log("[participation-reminders] Error processing auto-cancel: " + e)
+  }
+
   console.log("[participation-reminders] Total emails sent: " + totalSent)
   return totalSent
 }

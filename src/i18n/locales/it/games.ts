@@ -117,4 +117,6 @@ export default {
   setDeadline: 'Imposta scadenza',
   respondBy: 'Rispondi entro',
   comeAndSupport: 'Vieni a fare il tifo!',
+  guestsCannotParticipate: 'Gli ospiti non possono partecipare alle partite',
+  minParticipants: 'Min. giocatori',
 } as const

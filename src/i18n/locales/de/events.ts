@@ -50,4 +50,5 @@ export default {
   sessionParticipation: 'Teilnahme pro Zeitblock',
   enableTasks: 'Aufgaben aktivieren',
   enableTasksHint: 'Teilnehmer können Pflichten für diesen Event zuweisen und übernehmen.',
+  minParticipants: 'Min. Teilnehmer',
 } as const

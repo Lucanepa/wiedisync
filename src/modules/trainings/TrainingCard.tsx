@@ -6,6 +6,8 @@ import { useAuth } from '../../hooks/useAuth'
 import { useMutation } from '../../hooks/useMutation'
 
 import { formatDate, formatWeekday, formatTime, getDeadlineDate } from '../../utils/dateHelpers'
+import ParticipationWarningBadge from '../../components/ParticipationWarningBadge'
+import { getTrainingWarnings } from '../../utils/participationWarnings'
 import type { Training, Team, Hall, Member, Participation } from '../../types'
 
 type TrainingExpanded = Training & {
@@ -38,6 +40,7 @@ export default function TrainingCard({ training, participations, myParticipation
   const hall = training.expand?.hall
   const coach = training.expand?.coach
   const myStatus = myParticipation?.status ?? null
+  const warnings = getTrainingWarnings(participations ?? [], training.min_participants)
 
   return (
     <div className={`flex items-stretch overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-card ${training.cancelled ? 'opacity-60' : ''}`}>
@@ -55,6 +58,9 @@ export default function TrainingCard({ training, participations, myParticipation
           </span>
         </div>
         <div className="flex items-center gap-2">
+          {!training.cancelled && warnings.length > 0 && (
+            <ParticipationWarningBadge warnings={warnings} namespace="participation" />
+          )}
           {!training.cancelled && participations && participations.length > 0 && (
             <InlineParticipationSummary participations={participations} />
           )}

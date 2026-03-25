@@ -4,6 +4,8 @@ import TeamChip from '../../components/TeamChip'
 import RichText from '../../components/RichText'
 import ParticipationButton from '../../components/ParticipationButton'
 import ParticipationSummary from '../../components/ParticipationSummary'
+import ParticipationWarningBadge from '../../components/ParticipationWarningBadge'
+import { getEventWarnings } from '../../utils/participationWarnings'
 import { useAuth } from '../../hooks/useAuth'
 import { formatDate } from '../../utils/dateHelpers'
 import type { Event, Team, Participation } from '../../types'
@@ -55,6 +57,7 @@ export default function EventCard({ event, onClick, onEdit, onDelete, onOpenRost
     !event.teams?.length || event.teams.some((tid) => canParticipateIn(tid))
   )
   const myStatus = myParticipation?.status ?? null
+  const warnings = getEventWarnings(participations ?? [], event.min_participants)
 
   return (
     <div
@@ -157,7 +160,17 @@ export default function EventCard({ event, onClick, onEdit, onDelete, onOpenRost
             requireNoteIfAbsent={event.require_note_if_absent}
             existingParticipation={myParticipation}
           />
-          <ParticipationSummary activityType="event" activityId={event.id} compact hideExtras participations={participations} />
+          <div className="flex items-center gap-2">
+            {warnings.length > 0 && (
+              <ParticipationWarningBadge warnings={warnings} namespace="participation" />
+            )}
+            <ParticipationSummary activityType="event" activityId={event.id} compact hideExtras participations={participations} />
+          </div>
+        </div>
+      )}
+      {!canRSVP && warnings.length > 0 && (
+        <div className="mt-2 flex items-center gap-2">
+          <ParticipationWarningBadge warnings={warnings} namespace="participation" />
         </div>
       )}
       </div>

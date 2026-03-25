@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import { useSportPreference } from '../../hooks/useSportPreference'
-import type { Game, Ranking, Team, Participation } from '../../types'
+import type { Game, Ranking, Team, Participation, ParticipationWithMember } from '../../types'
 import { usePB } from '../../hooks/usePB'
 import { useRealtime } from '../../hooks/useRealtime'
 import { teamIds } from '../../utils/teamColors'
@@ -17,6 +17,7 @@ import KscwScoreboard from './components/KscwScoreboard'
 import GameDetailModal from './components/GameDetailModal'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import SharedEmptyState from '../../components/EmptyState'
+import { getGameWarnings, type Warning } from '../../utils/participationWarnings'
 import { Calendar, Trophy, BarChart3, LayoutGrid } from 'lucide-react'
 
 function buildTeamFilter(teamPbIds: string[]): string {
@@ -128,13 +129,14 @@ export default function GamesPage() {
   const { data: allParticipations, refetch: refetchParticipations } = usePB<Participation>('participations', {
     filter: participationFilter,
     all: true,
+    expand: 'member',
     enabled: gameIds.length > 0,
   })
 
   useRealtime('participations', () => refetchParticipations())
 
   // Build maps: gameId → participations[], gameId → user's participation
-  const { participationsByGame, myParticipationByGame } = useMemo(() => {
+  const { participationsByGame, myParticipationByGame, warningsByGame } = useMemo(() => {
     const byGame = new Map<string, Participation[]>()
     const myByGame = new Map<string, Participation>()
     for (const p of allParticipations) {
@@ -145,8 +147,17 @@ export default function GamesPage() {
         myByGame.set(p.activity_id, p)
       }
     }
-    return { participationsByGame: byGame, myParticipationByGame: myByGame }
-  }, [allParticipations, user])
+    // Compute warnings per game
+    const warnsByGame = new Map<string, Warning[]>()
+    for (const g of games) {
+      const sport = (g as any).expand?.kscw_team?.sport as 'volleyball' | 'basketball' | undefined
+      if (!sport) continue
+      const parts = (byGame.get(g.id) ?? []) as ParticipationWithMember[]
+      const warnings = getGameWarnings(parts, sport, g.min_participants || undefined)
+      if (warnings.length > 0) warnsByGame.set(g.id, warnings)
+    }
+    return { participationsByGame: byGame, myParticipationByGame: myByGame, warningsByGame: warnsByGame }
+  }, [allParticipations, user, games])
 
   // Rankings — always fetch (small dataset), group client-side
   const { data: allRankings, isLoading: rankingsLoading } = usePB<Ranking>('rankings', {
@@ -230,7 +241,7 @@ export default function GamesPage() {
               <>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {games.map((g) => (
-                    <GameCard key={g.id} game={g} onClick={setSelectedGame} participations={participationsByGame.get(g.id)} myParticipation={myParticipationByGame.get(g.id)} />
+                    <GameCard key={g.id} game={g} onClick={setSelectedGame} participations={participationsByGame.get(g.id)} myParticipation={myParticipationByGame.get(g.id)} warnings={warningsByGame.get(g.id)} />
                   ))}
                 </div>
                 {!showAll && games.length >= INITIAL_LIMIT && (
@@ -255,7 +266,7 @@ export default function GamesPage() {
               <>
                 <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white md:mx-auto md:w-fit dark:bg-gray-800 md:grid md:grid-cols-[auto_auto_auto_auto_auto_auto_auto_1fr]">
                   {games.map((g) => (
-                    <GameCard key={g.id} game={g} onClick={setSelectedGame} variant="compact" participations={participationsByGame.get(g.id)} myParticipation={myParticipationByGame.get(g.id)} />
+                    <GameCard key={g.id} game={g} onClick={setSelectedGame} variant="compact" participations={participationsByGame.get(g.id)} myParticipation={myParticipationByGame.get(g.id)} warnings={warningsByGame.get(g.id)} />
                   ))}
                 </div>
                 {!showAll && games.length >= INITIAL_LIMIT && (

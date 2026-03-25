@@ -38,4 +38,8 @@ export default {
   requireNoteIfAbsent: 'Require note if not joining',
   requireNoteIfAbsentHint: 'A reason must be provided when declining or responding maybe',
   noteRequiredError: 'Please provide a reason',
+  warningIncompleteTeam: 'WARNING: Incomplete team ({{count}}/{{min}})',
+  warningNoCoach: 'No coach present',
+  warningBelowMin: 'Less than {{min}} participants ({{count}}/{{min}})',
+  warnings: 'Warnings',
 } as const

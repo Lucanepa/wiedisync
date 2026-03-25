@@ -38,4 +38,8 @@ export default {
   requireNoteIfAbsent: 'Begründig bi Absag nötig',
   requireNoteIfAbsentHint: 'Bi Absag oder Villicht muäss e Begründig aagäh werde',
   noteRequiredError: 'Bitte gib en Grund ah',
+  warningIncompleteTeam: 'WARNIG: Team nöd vollständig ({{count}}/{{min}})',
+  warningNoCoach: 'Kein Coach debi',
+  warningBelowMin: 'Weniger als {{min}} Teilnehmer ({{count}}/{{min}})',
+  warnings: 'Warnige',
 } as const

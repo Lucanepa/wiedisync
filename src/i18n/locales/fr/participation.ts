@@ -38,4 +38,8 @@ export default {
   requireNoteIfAbsent: 'Note obligatoire en cas d\'absence',
   requireNoteIfAbsentHint: 'Une raison doit etre fournie en cas de refus ou de peut-etre',
   noteRequiredError: 'Veuillez fournir une raison',
+  warningIncompleteTeam: 'ATTENTION: Équipe incomplète ({{count}}/{{min}})',
+  warningNoCoach: 'Pas de coach présent',
+  warningBelowMin: 'Moins de {{min}} participants ({{count}}/{{min}})',
+  warnings: 'Avertissements',
 } as const

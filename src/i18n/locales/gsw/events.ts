@@ -50,4 +50,5 @@ export default {
   sessionParticipation: 'Teilnahm pro Zitblock',
   enableTasks: 'Ufgabe aktiviere',
   enableTasksHint: 'Teilnehmer chönd Pflichte für de Event zuewise und überneh.',
+  minParticipants: 'Min. Teilnehmer',
 } as const

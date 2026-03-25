@@ -91,6 +91,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
   const [respondBy, setRespondBy] = useState('')
   const [respondByTime, setRespondByTime] = useState('')
   const [maxPlayers, setMaxPlayers] = useState('')
+  const [minParticipants, setMinParticipants] = useState('')
   const [requireNoteIfAbsent, setRequireNoteIfAbsent] = useState(false)
   const [enableTasks, setEnableTasks] = useState(false)
   const [participationMode, setParticipationMode] = useState<'whole' | 'per_day' | 'per_session'>('whole')
@@ -119,6 +120,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
       setRespondBy(rbParsed.date)
       setRespondByTime(rbParsed.time)
       setMaxPlayers(event.max_players ? String(event.max_players) : '')
+      setMinParticipants(event.min_participants ? String(event.min_participants) : '')
       setRequireNoteIfAbsent(!!event.require_note_if_absent)
       setParticipationMode((event.participation_mode as 'whole' | 'per_day' | 'per_session') || 'whole')
       setEnableTasks(event.features_enabled?.tasks === true)
@@ -134,6 +136,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
       setRespondBy('')
       setRespondByTime('')
       setMaxPlayers('')
+      setMinParticipants('')
       setRequireNoteIfAbsent(false)
       setParticipationMode('whole')
       setSessions([])
@@ -253,6 +256,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
       created_by: user?.id,
       respond_by: respondBy ? `${respondBy} ${respondByTime || '23:59'}:00` : null,
       max_players: maxPlayers ? Number(maxPlayers) : null,
+      min_participants: minParticipants ? Number(minParticipants) : null,
       require_note_if_absent: requireNoteIfAbsent,
       participation_mode: effectiveMode,
       features_enabled: { tasks: enableTasks },
@@ -437,13 +441,22 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
         </div>
 
         {eventType === 'tournament' && (
-          <FormInput
-            label={t('maxPlayers')}
-            type="number"
-            value={maxPlayers}
-            onChange={(e) => setMaxPlayers(e.target.value)}
-            min={0}
-          />
+          <div className="grid grid-cols-2 gap-4">
+            <FormInput
+              label={t('minParticipants')}
+              type="number"
+              value={minParticipants}
+              onChange={(e) => setMinParticipants(e.target.value)}
+              min={0}
+            />
+            <FormInput
+              label={t('maxPlayers')}
+              type="number"
+              value={maxPlayers}
+              onChange={(e) => setMaxPlayers(e.target.value)}
+              min={0}
+            />
+          </div>
         )}
 
         <FormField label={t('teamsInvolved')} helperText={t('teamsInvolvedHint')}>

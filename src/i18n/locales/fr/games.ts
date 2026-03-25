@@ -117,4 +117,6 @@ export default {
   setDeadline: 'Fixer le delai',
   respondBy: 'Repondre avant le',
   comeAndSupport: 'Venez encourager !',
+  guestsCannotParticipate: 'Les invités ne peuvent pas participer aux matchs',
+  minParticipants: 'Min. joueurs',
 } as const

@@ -38,4 +38,8 @@ export default {
   requireNoteIfAbsent: 'Begründung bei Absage erforderlich',
   requireNoteIfAbsentHint: 'Bei Absage oder Vielleicht muss eine Begründung angegeben werden',
   noteRequiredError: 'Bitte gib einen Grund an',
+  warningIncompleteTeam: 'WARNUNG: Unvollständiges Team ({{count}}/{{min}})',
+  warningNoCoach: 'Kein Coach anwesend',
+  warningBelowMin: 'Weniger als {{min}} Teilnehmer ({{count}}/{{min}})',
+  warnings: 'Warnungen',
 } as const

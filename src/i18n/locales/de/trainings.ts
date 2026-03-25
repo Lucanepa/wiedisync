@@ -87,4 +87,6 @@ export default {
   noSlotForDay: 'Kein Hallenslot an diesem Tag',
   useSlot: 'Hallenslot verwenden',
   enterManually: 'Manuell eingeben',
+  autoCancelOnMin: 'Automatisch absagen',
+  autoCancelOnMinHint: 'Training wird bei Fristablauf automatisch abgesagt, wenn weniger Zusagen als das Minimum vorliegen',
 } as const

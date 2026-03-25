@@ -6,7 +6,7 @@ import { useTeamParticipations, useAllEventParticipations } from '../hooks/usePa
 import { usePB } from '../hooks/usePB'
 import pb from '../pb'
 import { getFileUrl } from '../utils/pbFile'
-import type { Participation, Absence, Member, EventSession } from '../types'
+import type { Participation, Absence, Member, Team, EventSession } from '../types'
 import { formatDate, getDeadlineDate, formatRelativeTime, formatDateTimeCompact } from '../utils/dateHelpers'
 
 interface ParticipationRosterModalProps {
@@ -70,6 +70,22 @@ export default function ParticipationRosterModal({
   const [absences, setAbsences] = useState<Absence[]>([])
   const [staffMembers, setStaffMembers] = useState<Member[]>([])
   const [activeSessionTab, setActiveSessionTab] = useState<string | null>(null) // null = overall
+
+  // Fetch team leadership roles (coach, captain, team_responsible)
+  const { data: teams } = usePB<Team>('teams', {
+    filter: teamIds.length > 0 ? teamIds.map(id => `id="${id}"`).join(' || ') : '',
+    fields: 'id,coach,captain,team_responsible',
+    enabled: teamIds.length > 0 && open,
+  })
+  const leadershipRoles = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const team of teams) {
+      for (const id of team.coach ?? []) if (!map.has(id)) map.set(id, 'coach')
+      for (const id of team.captain ?? []) if (!map.has(id)) map.set(id, 'captain')
+      for (const id of team.team_responsible ?? []) if (!map.has(id)) map.set(id, 'tr')
+    }
+    return map
+  }, [teams])
 
   // For club-wide events (no team), fetch all participations and resolve members from them
   const [clubWideMembers, setClubWideMembers] = useState<Member[]>([])
@@ -412,6 +428,11 @@ export default function ParticipationRosterModal({
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm text-gray-900 dark:text-gray-100">
                     {member.first_name} {member.last_name}
+                    {leadershipRoles.has(member.id) && (
+                      <span className="ml-1.5 inline-block rounded bg-brand-100 px-1 py-px text-[10px] font-medium leading-tight text-brand-700 dark:bg-brand-900/30 dark:text-brand-400">
+                        {leadershipRoles.get(member.id) === 'coach' ? 'Coach' : leadershipRoles.get(member.id) === 'captain' ? 'C' : 'TR'}
+                      </span>
+                    )}
                     {participation && (participation.guest_count ?? 0) > 0 && (
                       <span className="ml-1 text-xs text-brand-600 dark:text-brand-400">
                         +{participation.guest_count} {t('guests')}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import pb from '../../pb'
 import { useInfraHealth } from '../../hooks/useInfraHealth'
@@ -98,6 +98,9 @@ function Section({ title, checks }: { title: string; checks: HealthCheck[] }) {
 export default function InfraHealthPage() {
   const { t } = useTranslation('admin')
   const infraHealth = useInfraHealth()
+  const infraRef = useRef(infraHealth)
+  infraRef.current = infraHealth
+
   const [services, setServices] = useState<HealthCheck[]>([])
   const [syncs, setSyncs] = useState<HealthCheck[]>([])
   const [crons, setCrons] = useState<HealthCheck[]>([])
@@ -127,7 +130,7 @@ export default function InfraHealthPage() {
     const svcResults: HealthCheck[] = []
 
     // PocketBase Prod — use shared hook result (already fetched on mount/refresh)
-    const hookPbService = infraHealth.services.find(s => s.name === 'PocketBase')
+    const hookPbService = infraRef.current.services.find(s => s.name === 'PocketBase')
     const pbProdOk = hookPbService?.status === 'ok'
     svcResults.push({
       name: t('infraPbProd'),
@@ -173,7 +176,7 @@ export default function InfraHealthPage() {
     setServices(svcResults)
 
     // Trigger shared hook refresh (updates syncs via useEffect above)
-    infraHealth.refresh()
+    infraRef.current.refresh()
 
     // ── Cron Jobs ──
     const cronResults: HealthCheck[] = []
@@ -199,9 +202,10 @@ export default function InfraHealthPage() {
     setCrons(cronResults)
     setLastCheck(new Date().toLocaleTimeString())
     setLoading(false)
-  }, [t, infraHealth])
+  }, [t])
 
-  useEffect(() => { runChecks() }, [runChecks])
+  // Run once on mount — no deps to avoid re-trigger loop
+  useEffect(() => { runChecks() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-4">

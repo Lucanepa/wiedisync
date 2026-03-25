@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import pb from '../pb'
 
 export interface ServiceHealth {
@@ -83,5 +83,8 @@ export function useInfraHealth(): InfraHealth {
 
   useEffect(() => { checkHealth() }, [checkHealth])
 
-  return { services, syncs, isLoading, refresh: checkHealth }
+  return useMemo(
+    () => ({ services, syncs, isLoading, refresh: checkHealth }),
+    [services, syncs, isLoading, checkHealth],
+  )
 }

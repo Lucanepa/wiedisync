@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import pb from '../../../pb'
-import { useInfraHealth } from '../../../hooks/useInfraHealth'
+import type { InfraHealth } from '../../../hooks/useInfraHealth'
 
 interface KpiData {
   totalMembers: number
@@ -56,9 +56,8 @@ function KpiCard({ label, value, subtitle, highlight, highlightColor = 'gold', i
   )
 }
 
-export default function KpiStrip() {
+export default function KpiStrip({ infraHealth: infra }: { infraHealth: InfraHealth }) {
   const { t } = useTranslation('admin')
-  const infra = useInfraHealth()
   const [data, setData] = useState<KpiData | null>(null)
 
   // Fetch PB counts once on mount — empty deps to avoid re-fetch loop

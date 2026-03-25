@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import pb from '../../../pb'
-import { useInfraHealth } from '../../../hooks/useInfraHealth'
+import type { InfraHealth } from '../../../hooks/useInfraHealth'
 
 function timeAgo(dateStr: string, t: (k: string) => string): string {
   if (!dateStr) return t('infraNever')
@@ -22,9 +22,9 @@ const SOURCE_LABELS: Record<string, string> = {
   gcal: 'Google Calendar',
 }
 
-export default function InfraSection() {
+export default function InfraSection({ infraHealth }: { infraHealth: InfraHealth }) {
   const { t } = useTranslation('admin')
-  const { services, syncs, isLoading } = useInfraHealth()
+  const { services, syncs, isLoading } = infraHealth
   const [auditErrors, setAuditErrors] = useState<number | null>(null)
 
   useEffect(() => {

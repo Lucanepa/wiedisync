@@ -340,7 +340,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
               </>
             )}
             <div className="ml-auto border-l pl-3 dark:border-gray-600">
-              <ParticipationSummary activityType="game" activityId={game.id} compact />
+              <ParticipationSummary activityType="game" activityId={game.id} compact coachMemberIds={[...(expanded.expand?.kscw_team?.coach ?? []), ...(expanded.expand?.kscw_team?.captain ?? []), ...(expanded.expand?.kscw_team?.team_responsible ?? [])]} />
             </div>
             {/* Participation note */}
             {!hasAbsence && effectiveStatus && (

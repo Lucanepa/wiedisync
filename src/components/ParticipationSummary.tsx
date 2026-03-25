@@ -13,6 +13,8 @@ interface ParticipationSummaryProps {
   hideExtras?: boolean
   /** Pre-fetched participations — skips internal API call when provided */
   participations?: Participation[]
+  /** Coach/captain/TR member IDs — used to detect "Coach present" for player-coaches */
+  coachMemberIds?: string[]
 }
 
 export default function ParticipationSummary({
@@ -22,6 +24,7 @@ export default function ParticipationSummary({
   stacked = false,
   hideExtras = false,
   participations: prefetched,
+  coachMemberIds,
 }: ParticipationSummaryProps) {
   const { t } = useTranslation('participation')
 
@@ -67,8 +70,13 @@ export default function ParticipationSummary({
   const declined = playerData.filter(p => p.status === 'declined').length
   const waitlisted = playerData.filter(p => p.status === 'waitlisted').length
 
-  const staffConfirmed = staffData.filter(p => p.status === 'confirmed').length
-  const staffConfirmedGuests = staffData.filter(p => p.status === 'confirmed').reduce((sum, p) => sum + (p.guest_count ?? 0), 0)
+  // Coach present: count staff-only confirmed + player-coaches confirmed (via coachMemberIds)
+  const staffOnlyConfirmed = staffData.filter(p => p.status === 'confirmed')
+  const playerCoachConfirmed = coachMemberIds?.length
+    ? playerData.filter(p => p.status === 'confirmed' && coachMemberIds.includes(p.member))
+    : []
+  const staffConfirmed = staffOnlyConfirmed.length + playerCoachConfirmed.length
+  const staffConfirmedGuests = staffOnlyConfirmed.reduce((sum, p) => sum + (p.guest_count ?? 0), 0)
 
   // Total for green counter = players + all guests (coaches excluded from number)
   const allGuests = confirmedGuests + staffConfirmedGuests

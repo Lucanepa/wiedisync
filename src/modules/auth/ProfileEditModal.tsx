@@ -242,7 +242,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
               {LANGUAGES.map((lang) => (
                 <SelectItem key={lang.pbValue} value={lang.pbValue}>
                   <span className="flex items-center gap-2">
-                    <img src={flagMap[lang.flag]} alt="" className="w-5 h-[15px] rounded-[2px]" />
+                    <img src={flagMap[lang.flag]} alt="" className={`${lang.flag === 'ch' ? 'w-[15px] h-[15px]' : 'w-5 h-[15px]'} rounded-[2px]`} />
                     {lang.nativeName}
                   </span>
                 </SelectItem>

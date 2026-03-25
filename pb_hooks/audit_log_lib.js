@@ -12,11 +12,17 @@
 
 var LOG_PATH = $os.getenv("AUDIT_LOG_PATH") || ($app.dataDir() + "/audit.log")
 
+// Go os package constants — use $os bindings if available, otherwise hardcoded values
+// O_WRONLY=1, O_CREATE=64 (0x40), O_APPEND=1024 (0x400)
+var OPEN_FLAGS = (typeof $os.O_APPEND !== "undefined" ? $os.O_APPEND : 1024) |
+                 (typeof $os.O_CREATE !== "undefined" ? $os.O_CREATE : 64) |
+                 (typeof $os.O_WRONLY !== "undefined" ? $os.O_WRONLY : 1)
+
 function writeLogLine(obj) {
   obj.ts = new Date().toISOString()
   var line = JSON.stringify(obj) + "\n"
   try {
-    var f = $os.openFile(LOG_PATH, $os.O_APPEND | $os.O_CREATE | $os.O_WRONLY, 0o644)
+    var f = $os.openFile(LOG_PATH, OPEN_FLAGS, 0o644)
     f.writeString(line)
     f.close()
   } catch (e) {

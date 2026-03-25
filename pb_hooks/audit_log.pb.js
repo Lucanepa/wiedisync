@@ -37,54 +37,61 @@ for (var i = 0; i < ALL_COLLECTIONS.length; i++) {
 
     // CREATE
     onRecordAfterCreateSuccess(function(e) {
-      var audit = require(__hooks + "/audit_log_lib.js")
-      var details = {}
-      // For members, log key fields on creation
-      if (colName === "members") {
-        details.email = e.record.getString("email")
-        details.first_name = e.record.getString("first_name")
-        details.last_name = e.record.getString("last_name")
-        details.shell = e.record.getBool("shell")
-        details.coach_approved_team = e.record.getBool("coach_approved_team")
+      try {
+        var audit = require(__hooks + "/audit_log_lib.js")
+        var details = {}
+        if (colName === "members") {
+          details.email = e.record.getString("email")
+          details.first_name = e.record.getString("first_name")
+          details.last_name = e.record.getString("last_name")
+          details.shell = e.record.getBool("shell")
+          details.coach_approved_team = e.record.getBool("coach_approved_team")
+        }
+        if (colName === "member_teams") {
+          details.member = e.record.getString("member")
+          details.team = e.record.getString("team")
+          details.season = e.record.getString("season")
+        }
+        audit.log("info", "create", colName, e.record.id, audit.getActor(e), details)
+      } catch (err) {
+        console.log("[audit-log] Create hook error (" + colName + "): " + err)
       }
-      // For member_teams, log the team + member link
-      if (colName === "member_teams") {
-        details.member = e.record.getString("member")
-        details.team = e.record.getString("team")
-        details.season = e.record.getString("season")
-      }
-      audit.log("info", "create", colName, e.record.id, audit.getActor(e), details)
       e.next()
     }, colName)
 
     // UPDATE
     onRecordAfterUpdateSuccess(function(e) {
-      var audit = require(__hooks + "/audit_log_lib.js")
-      var changes = audit.diffRecord(e.record)
-      // Skip logging if nothing actually changed (e.g. autodate-only updates)
-      var keys = Object.keys(changes)
-      if (keys.length === 0) {
-        e.next()
-        return
+      try {
+        var audit = require(__hooks + "/audit_log_lib.js")
+        var changes = audit.diffRecord(e.record)
+        var keys = Object.keys(changes)
+        if (keys.length > 0) {
+          audit.log("info", "update", colName, e.record.id, audit.getActor(e), { changes: changes })
+        }
+      } catch (err) {
+        console.log("[audit-log] Update hook error (" + colName + "): " + err)
       }
-      audit.log("info", "update", colName, e.record.id, audit.getActor(e), { changes: changes })
       e.next()
     }, colName)
 
     // DELETE
     onRecordAfterDeleteSuccess(function(e) {
-      var audit = require(__hooks + "/audit_log_lib.js")
-      var details = {}
-      if (colName === "members") {
-        details.email = e.record.getString("email")
-        details.first_name = e.record.getString("first_name")
-        details.last_name = e.record.getString("last_name")
+      try {
+        var audit = require(__hooks + "/audit_log_lib.js")
+        var details = {}
+        if (colName === "members") {
+          details.email = e.record.getString("email")
+          details.first_name = e.record.getString("first_name")
+          details.last_name = e.record.getString("last_name")
+        }
+        if (colName === "member_teams") {
+          details.member = e.record.getString("member")
+          details.team = e.record.getString("team")
+        }
+        audit.log("warn", "delete", colName, e.record.id, audit.getActor(e), details)
+      } catch (err) {
+        console.log("[audit-log] Delete hook error (" + colName + "): " + err)
       }
-      if (colName === "member_teams") {
-        details.member = e.record.getString("member")
-        details.team = e.record.getString("team")
-      }
-      audit.log("warn", "delete", colName, e.record.id, audit.getActor(e), details)
       e.next()
     }, colName)
 
@@ -94,31 +101,43 @@ for (var i = 0; i < ALL_COLLECTIONS.length; i++) {
 // ── Auth events (members only) ──────────────────────────────────────
 
 onRecordAuthRequest(function(e) {
-  var audit = require(__hooks + "/audit_log_lib.js")
-  audit.log("info", "auth", "members", e.record.id, e.record.id, {
-    email: e.record.getString("email"),
-    method: e.method || "unknown",
-  })
+  try {
+    var audit = require(__hooks + "/audit_log_lib.js")
+    audit.log("info", "auth", "members", e.record.id, e.record.id, {
+      email: e.record.getString("email"),
+      method: e.method || "unknown",
+    })
+  } catch (err) {
+    console.log("[audit-log] Auth hook error: " + err)
+  }
   e.next()
 }, "members")
 
 // ── Auth email events ───────────────────────────────────────────────
 
 onMailerRecordPasswordResetSend(function(e) {
-  var audit = require(__hooks + "/audit_log_lib.js")
-  audit.log("info", "system", "members", e.record.id, e.record.id, {
-    event: "password_reset_requested",
-    email: e.record.getString("email"),
-  })
+  try {
+    var audit = require(__hooks + "/audit_log_lib.js")
+    audit.log("info", "system", "members", e.record.id, e.record.id, {
+      event: "password_reset_requested",
+      email: e.record.getString("email"),
+    })
+  } catch (err) {
+    console.log("[audit-log] Password reset hook error: " + err)
+  }
   e.next()
 }, "members")
 
 onMailerRecordVerificationSend(function(e) {
-  var audit = require(__hooks + "/audit_log_lib.js")
-  audit.log("info", "system", "members", e.record.id, e.record.id, {
-    event: "verification_email_sent",
-    email: e.record.getString("email"),
-  })
+  try {
+    var audit = require(__hooks + "/audit_log_lib.js")
+    audit.log("info", "system", "members", e.record.id, e.record.id, {
+      event: "verification_email_sent",
+      email: e.record.getString("email"),
+    })
+  } catch (err) {
+    console.log("[audit-log] Verification hook error: " + err)
+  }
   e.next()
 }, "members")
 

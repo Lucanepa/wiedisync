@@ -5,134 +5,10 @@
 // when the respond_by deadline is tomorrow.
 // Cron: daily at 07:00 UTC (= 09:00 CEST / 08:00 CET)
 // Manual: POST /api/participation-reminders (superuser)
+// NOTE: PB goja isolates each callback scope, so functions must be
+// defined as vars before cronAdd/routerAdd to be accessible inside callbacks.
 
-// ─── Cron job ───
-cronAdd("participation-reminders", "0 7 * * *", function() {
-  if ($os.getenv("DISABLE_CRONS") === "true") return
-  console.log("[participation-reminders] Cron started")
-  try {
-    runReminders()
-  } catch (e) {
-    console.log("[participation-reminders] Cron error: " + e)
-  }
-})
-
-// ─── Manual trigger ───
-routerAdd("POST", "/api/participation-reminders", function(e) {
-  console.log("[participation-reminders] Manual trigger")
-  try {
-    var count = runReminders()
-    return e.json(200, { sent: count })
-  } catch (err) {
-    console.log("[participation-reminders] Manual trigger error: " + err)
-    return e.json(500, { error: String(err) })
-  }
-}, $apis.requireSuperuserAuth())
-
-function runReminders() {
-  var totalSent = 0
-
-  // Calculate tomorrow's date in Zurich timezone
-  var now = new Date()
-  // Zurich offset: UTC+1 (winter) or UTC+2 (summer)
-  // Determine DST: last Sunday of March to last Sunday of October
-  var year = now.getUTCFullYear()
-  var marchLast = new Date(Date.UTC(year, 2, 31))
-  var dstStart = new Date(Date.UTC(year, 2, 31 - marchLast.getUTCDay(), 1, 0, 0))
-  var octLast = new Date(Date.UTC(year, 9, 31))
-  var dstEnd = new Date(Date.UTC(year, 9, 31 - octLast.getUTCDay(), 1, 0, 0))
-  var isDST = now >= dstStart && now < dstEnd
-  var zurichOffset = isDST ? 2 : 1
-
-  var zurichNow = new Date(now.getTime() + zurichOffset * 3600000)
-  var tomorrow = new Date(zurichNow.getTime() + 86400000)
-  var tomorrowStr = tomorrow.getUTCFullYear() + "-" +
-    String(tomorrow.getUTCMonth() + 1).padStart(2, "0") + "-" +
-    String(tomorrow.getUTCDate()).padStart(2, "0")
-
-  console.log("[participation-reminders] Tomorrow (Zurich): " + tomorrowStr)
-
-  // ─── Trainings ───
-  try {
-    var trainings = $app.findRecordsByFilter(
-      "trainings",
-      'respond_by ~ "' + tomorrowStr + '" && cancelled = false',
-      "", 200, 0
-    )
-    console.log("[participation-reminders] Found " + trainings.length + " trainings with deadline tomorrow")
-    for (var i = 0; i < trainings.length; i++) {
-      var training = trainings[i]
-      var sent = sendRemindersForActivity(
-        "training",
-        training.id,
-        training.getString("team"),
-        training.getString("date").split(" ")[0],
-        training.getString("start_time"),
-        "Training"
-      )
-      totalSent += sent
-    }
-  } catch (e) {
-    console.log("[participation-reminders] Error processing trainings: " + e)
-  }
-
-  // ─── Games ───
-  try {
-    var games = $app.findRecordsByFilter(
-      "games",
-      'respond_by ~ "' + tomorrowStr + '" && status != "postponed" && status != "completed"',
-      "", 200, 0
-    )
-    console.log("[participation-reminders] Found " + games.length + " games with deadline tomorrow")
-    for (var j = 0; j < games.length; j++) {
-      var game = games[j]
-      var gameSent = sendRemindersForActivity(
-        "game",
-        game.id,
-        game.getString("kscw_team"),
-        game.getString("date").split(" ")[0],
-        game.getString("time"),
-        game.getString("home_team") + " vs " + game.getString("away_team")
-      )
-      totalSent += gameSent
-    }
-  } catch (e) {
-    console.log("[participation-reminders] Error processing games: " + e)
-  }
-
-  // ─── Events ───
-  try {
-    var events = $app.findRecordsByFilter(
-      "events",
-      'respond_by ~ "' + tomorrowStr + '"',
-      "", 200, 0
-    )
-    console.log("[participation-reminders] Found " + events.length + " events with deadline tomorrow")
-    for (var k = 0; k < events.length; k++) {
-      var evt = events[k]
-      var teamIds = evt.get("teams")
-      if (!teamIds || teamIds.length === 0) continue
-      for (var ti = 0; ti < teamIds.length; ti++) {
-        var evtSent = sendRemindersForActivity(
-          "event",
-          evt.id,
-          teamIds[ti],
-          evt.getString("start_date").split(" ")[0],
-          "",
-          evt.getString("title")
-        )
-        totalSent += evtSent
-      }
-    }
-  } catch (e) {
-    console.log("[participation-reminders] Error processing events: " + e)
-  }
-
-  console.log("[participation-reminders] Total emails sent: " + totalSent)
-  return totalSent
-}
-
-function sendRemindersForActivity(activityType, activityId, teamId, activityDate, activityTime, activityLabel) {
+var sendRemindersForActivity = function(activityType, activityId, teamId, activityDate, activityTime, activityLabel) {
   var tpl = require(__hooks + "/email_template_lib.js")
   var sent = 0
 
@@ -318,3 +194,129 @@ function sendRemindersForActivity(activityType, activityId, teamId, activityDate
 
   return sent
 }
+
+var runReminders = function() {
+  var totalSent = 0
+
+  // Calculate tomorrow's date in Zurich timezone
+  var now = new Date()
+  // Zurich offset: UTC+1 (winter) or UTC+2 (summer)
+  // Determine DST: last Sunday of March to last Sunday of October
+  var year = now.getUTCFullYear()
+  var marchLast = new Date(Date.UTC(year, 2, 31))
+  var dstStart = new Date(Date.UTC(year, 2, 31 - marchLast.getUTCDay(), 1, 0, 0))
+  var octLast = new Date(Date.UTC(year, 9, 31))
+  var dstEnd = new Date(Date.UTC(year, 9, 31 - octLast.getUTCDay(), 1, 0, 0))
+  var isDST = now >= dstStart && now < dstEnd
+  var zurichOffset = isDST ? 2 : 1
+
+  var zurichNow = new Date(now.getTime() + zurichOffset * 3600000)
+  var tomorrow = new Date(zurichNow.getTime() + 86400000)
+  var tomorrowStr = tomorrow.getUTCFullYear() + "-" +
+    String(tomorrow.getUTCMonth() + 1).padStart(2, "0") + "-" +
+    String(tomorrow.getUTCDate()).padStart(2, "0")
+
+  console.log("[participation-reminders] Tomorrow (Zurich): " + tomorrowStr)
+
+  // ─── Trainings ───
+  try {
+    var trainings = $app.findRecordsByFilter(
+      "trainings",
+      'respond_by ~ "' + tomorrowStr + '" && cancelled = false',
+      "", 200, 0
+    )
+    console.log("[participation-reminders] Found " + trainings.length + " trainings with deadline tomorrow")
+    for (var i = 0; i < trainings.length; i++) {
+      var training = trainings[i]
+      var sent = sendRemindersForActivity(
+        "training",
+        training.id,
+        training.getString("team"),
+        training.getString("date").split(" ")[0],
+        training.getString("start_time"),
+        "Training"
+      )
+      totalSent += sent
+    }
+  } catch (e) {
+    console.log("[participation-reminders] Error processing trainings: " + e)
+  }
+
+  // ─── Games ───
+  try {
+    var games = $app.findRecordsByFilter(
+      "games",
+      'respond_by ~ "' + tomorrowStr + '" && status != "postponed" && status != "completed"',
+      "", 200, 0
+    )
+    console.log("[participation-reminders] Found " + games.length + " games with deadline tomorrow")
+    for (var j = 0; j < games.length; j++) {
+      var game = games[j]
+      var gameSent = sendRemindersForActivity(
+        "game",
+        game.id,
+        game.getString("kscw_team"),
+        game.getString("date").split(" ")[0],
+        game.getString("time"),
+        game.getString("home_team") + " vs " + game.getString("away_team")
+      )
+      totalSent += gameSent
+    }
+  } catch (e) {
+    console.log("[participation-reminders] Error processing games: " + e)
+  }
+
+  // ─── Events ───
+  try {
+    var events = $app.findRecordsByFilter(
+      "events",
+      'respond_by ~ "' + tomorrowStr + '"',
+      "", 200, 0
+    )
+    console.log("[participation-reminders] Found " + events.length + " events with deadline tomorrow")
+    for (var k = 0; k < events.length; k++) {
+      var evt = events[k]
+      var teamIds = evt.get("teams")
+      if (!teamIds || teamIds.length === 0) continue
+      for (var ti = 0; ti < teamIds.length; ti++) {
+        var evtSent = sendRemindersForActivity(
+          "event",
+          evt.id,
+          teamIds[ti],
+          evt.getString("start_date").split(" ")[0],
+          "",
+          evt.getString("title")
+        )
+        totalSent += evtSent
+      }
+    }
+  } catch (e) {
+    console.log("[participation-reminders] Error processing events: " + e)
+  }
+
+  console.log("[participation-reminders] Total emails sent: " + totalSent)
+  return totalSent
+}
+
+// ─── Cron job ───
+cronAdd("participation-reminders", "0 7 * * *", function() {
+  if ($os.getenv("DISABLE_CRONS") === "true") return
+  console.log("[participation-reminders] Cron started")
+  try {
+    runReminders()
+  } catch (e) {
+    console.log("[participation-reminders] Cron error: " + e)
+  }
+})
+
+// ─── Manual trigger ───
+routerAdd("POST", "/api/participation-reminders", function(e) {
+  console.log("[participation-reminders] Manual trigger")
+  try {
+    var count = runReminders()
+    return e.json(200, { sent: count })
+  } catch (err) {
+    console.log("[participation-reminders] Manual trigger error: " + err)
+    return e.json(500, { error: String(err) })
+  }
+}, $apis.requireSuperuserAuth())

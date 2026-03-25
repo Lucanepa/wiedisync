@@ -34,8 +34,10 @@ var ROLE_LICENCE = {
   // taefeler has no licence requirement
 }
 
+// NOTE: PB goja isolates each callback scope — use var, not function declaration.
+
 // ── Helper: get member name ───────────────────────────────────────────
-function getMemberName(app, memberId) {
+var getMemberName = function(app, memberId) {
   try {
     var member = app.findRecordById("members", memberId)
     return member.getString("first_name") + " " + member.getString("last_name")
@@ -45,7 +47,7 @@ function getMemberName(app, memberId) {
 }
 
 // ── Helper: create notification ───────────────────────────────────────
-function createNotification(app, memberId, type, title, body, activityType, activityId, teamId) {
+var createNotification = function(app, memberId, type, title, body, activityType, activityId, teamId) {
   try {
     var collection = app.findCollectionByNameOrId("notifications")
     var record = new Record(collection)
@@ -64,7 +66,7 @@ function createNotification(app, memberId, type, title, body, activityType, acti
 }
 
 // ── Helper: transfer duty on game ─────────────────────────────────────
-function transferDuty(app, delegation) {
+var transferDuty = function(app, delegation) {
   var role = delegation.getString("role")
   var gameId = delegation.getString("game")
   var toMember = delegation.getString("to_member")
@@ -90,7 +92,7 @@ function transferDuty(app, delegation) {
 }
 
 // ── Helper: validate delegation ───────────────────────────────────────
-function validateDelegation(app, delegation) {
+var validateDelegation = function(app, delegation) {
   var role = delegation.getString("role")
   var gameId = delegation.getString("game")
   var fromMember = delegation.getString("from_member")

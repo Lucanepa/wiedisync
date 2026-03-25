@@ -6,7 +6,8 @@ var lib = require(__hooks + "/game_scheduling_lib.js")
 
 var TURNSTILE_SECRET = $os.getenv("TURNSTILE_SECRET")
 
-function verifyTurnstile(token) {
+// NOTE: PB goja isolates each callback scope — use var, not function declaration.
+var verifyTurnstile = function(token) {
   if (!token) return false
   try {
     var resp = $http.send({
@@ -31,27 +32,27 @@ var PB_ID_PATTERN = /^[a-z0-9]{15}$/i
 var TOKEN_PATTERN = /^[a-z0-9]{32}$/
 var EMAIL_PATTERN = /^[^\s"\\]+@[^\s"\\]+\.[^\s"\\]+$/
 
-function validatePbId(id) {
+var validatePbId = function(id) {
   if (!PB_ID_PATTERN.test(id)) throw new BadRequestError("invalid_id")
   return id
 }
 
-function validateToken(token) {
+var validateToken = function(token) {
   if (!TOKEN_PATTERN.test(token)) throw new BadRequestError("invalid_token_format")
   return token
 }
 
-function validateEmail(email) {
+var validateEmail = function(email) {
   if (!EMAIL_PATTERN.test(email) || email.length > 254) throw new BadRequestError("invalid_email")
   return email
 }
 
-function isSuperuser(e) {
+var isSuperuser = function(e) {
   var info = e.requestInfo()
   return info.auth && info.auth.collectionName === "_superusers"
 }
 
-function isAdmin(e) {
+var isAdmin = function(e) {
   if (isSuperuser(e)) return true
   var info = e.requestInfo()
   if (!info.auth) return false

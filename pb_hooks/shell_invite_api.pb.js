@@ -9,9 +9,9 @@
 // GET  /api/team-invites/info/{token} — public; validates token, returns team info
 
 // ── Helpers ──────────────────────────────────────────────────────────
+// NOTE: PB goja isolates each callback scope — use var, not function declaration.
 
-// Local copy of arrayContains — not exported from team_permissions_lib
-function arrayContains(arr, value) {
+var arrayContains = function(arr, value) {
   if (!arr || !arr.length) return false
   for (var i = 0; i < arr.length; i++) {
     if (arr[i] === value) return true
@@ -19,8 +19,7 @@ function arrayContains(arr, value) {
   return false
 }
 
-// getCurrentSeason — matches notifications_lib.js pattern
-function getCurrentSeason() {
+var getCurrentSeason = function() {
   var now = new Date()
   var year = now.getFullYear()
   var month = now.getMonth() // 0-indexed
@@ -29,8 +28,7 @@ function getCurrentSeason() {
   return year + "/" + (nextYear < 10 ? "0" + nextYear : nextYear)
 }
 
-// hasInvitePermission — returns true if auth user is coach, team_responsible, or sport/global admin for the team
-function hasInvitePermission(auth, team) {
+var hasInvitePermission = function(auth, team) {
   if (!auth) return false
 
   var roles = auth.get("role") || []
@@ -46,13 +44,11 @@ function hasInvitePermission(auth, team) {
   return arrayContains(coaches, authId) || arrayContains(trs, authId)
 }
 
-// addDays — returns a new Date offset by N days
-function addDays(date, days) {
+var addDays = function(date, days) {
   return new Date(date.getTime() + days * 24 * 60 * 60 * 1000)
 }
 
-// toIsoString — formats a Date as "YYYY-MM-DD HH:MM:SS.sssZ" compatible with PB datetime fields
-function toIsoString(date) {
+var toIsoString = function(date) {
   return date.toISOString().replace("T", " ").slice(0, 23) + "Z"
 }
 

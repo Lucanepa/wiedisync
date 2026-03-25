@@ -14,7 +14,8 @@ var SPORT_EMAILS = {
 }
 var GENERAL_EMAIL = "kontakt@kscw.ch"
 
-function verifyTurnstile(token) {
+// NOTE: PB goja isolates each callback scope — use var, not function declaration.
+var verifyTurnstile = function(token) {
   if (!token) return false
   try {
     var resp = $http.send({

@@ -3,7 +3,8 @@
 // Audit log API — read and search audit log files.
 // SuperAdmin-only. Reads from pb_data/audit.log + pb_data/audit_archive/*.
 
-function requireSuperAdmin(e) {
+// NOTE: PB goja isolates each callback scope — use var, not function declaration.
+var requireSuperAdmin = function(e) {
   var info = e.requestInfo()
   if (!info.auth) {
     throw new UnauthorizedError("Authentication required")

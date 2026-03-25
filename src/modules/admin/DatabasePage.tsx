@@ -8,7 +8,7 @@ import QueryTab from './QueryTab'
 import TableBrowser from './components/TableBrowser'
 import type { CollectionInfo, SchemaField } from './components/TableBrowser'
 
-const PB_ADMIN_URL = `${import.meta.env.VITE_PB_URL || 'https://api.kscw.ch'}/_/`
+const PB_ADMIN_URL = `${pb.baseUrl}/_/`
 
 export default function DatabasePage() {
   const { t } = useTranslation('admin')

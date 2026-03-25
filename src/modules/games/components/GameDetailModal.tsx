@@ -75,7 +75,6 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
   const [fullGame, setFullGame] = useState<Game | null>(null)
   const { update: updateGame } = useMutation<Game>('games')
   const canParticipate = !!user && !!game?.kscw_team && canParticipateIn(game.kscw_team)
-  const isStaff = !!game?.kscw_team && isCoachOf(game.kscw_team)
   const isStaffParticipant = !!game?.kscw_team && isStaffOnly(game.kscw_team)
   const { effectiveStatus, hasAbsence, note: savedNote, setStatus, saveConfirmed, dismissConfirmed } = useParticipation(
     'game',

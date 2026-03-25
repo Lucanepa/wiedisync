@@ -88,7 +88,7 @@ function OptionsAccordion({ theme, toggleTheme, onClose }: { theme: string; togg
             {/* Admin toggle row */}
             <div className="flex min-h-[48px] items-center justify-between rounded-lg px-4 py-3">
               <span className="text-base font-medium text-gray-700 dark:text-gray-300">{t('adminMode', 'Admin mode')}</span>
-              <AdminToggle size="sm" />
+              <AdminToggle size="sm" onAfterToggle={onClose} />
             </div>
             {/* Feedback row */}
             <NavLink

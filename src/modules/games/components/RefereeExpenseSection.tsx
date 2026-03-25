@@ -1,0 +1,229 @@
+import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Check, Pencil } from 'lucide-react'
+import type { RecordModel } from 'pocketbase'
+import type { RefereeExpense, Member } from '../../../types'
+import { useTeamMembers } from '../../../hooks/useTeamMembers'
+import { useMutation } from '../../../hooks/useMutation'
+import { useAuth } from '../../../hooks/useAuth'
+import SearchableSelect from '../../../components/ui/SearchableSelect'
+import pb from '../../../pb'
+
+interface RefereeExpenseSectionProps {
+  gameId: string
+  teamId: string
+  canEdit: boolean
+}
+
+type ExpandedExpense = RefereeExpense & {
+  expand?: { paid_by_member?: Member & RecordModel }
+}
+
+const OTHER_VALUE = '__other__'
+
+export default function RefereeExpenseSection({ gameId, teamId, canEdit }: RefereeExpenseSectionProps) {
+  const { t } = useTranslation('games')
+  const { user } = useAuth()
+  const { members } = useTeamMembers(teamId)
+  const { create, update } = useMutation<RefereeExpense>('referee_expenses')
+
+  const [existing, setExisting] = useState<ExpandedExpense | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [editing, setEditing] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  // Form state
+  const [paidBy, setPaidBy] = useState('')
+  const [otherName, setOtherName] = useState('')
+  const [amount, setAmount] = useState('')
+  const [notes, setNotes] = useState('')
+
+  // Fetch existing record
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    pb.collection('referee_expenses')
+      .getFirstListItem<ExpandedExpense>(`game="${gameId}"`, { expand: 'paid_by_member' })
+      .then((record) => {
+        if (cancelled) return
+        setExisting(record)
+        setPaidBy(record.paid_by_member || (record.paid_by_other ? OTHER_VALUE : ''))
+        setOtherName(record.paid_by_other || '')
+        setAmount(record.amount ? String(record.amount) : '')
+        setNotes(record.notes || '')
+      })
+      .catch(() => {
+        if (!cancelled) setExisting(null)
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => { cancelled = true }
+  }, [gameId])
+
+  // Build member options
+  const memberOptions = members
+    .filter((mt) => mt.expand?.member)
+    .map((mt) => ({
+      value: mt.expand!.member!.id,
+      label: `${mt.expand!.member!.first_name} ${mt.expand!.member!.last_name}`,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label, 'de'))
+  memberOptions.push({ value: OTHER_VALUE, label: t('refereeExpensesOtherPerson') })
+
+  const handleSave = async () => {
+    const data: Record<string, unknown> = {
+      game: gameId,
+      team: teamId,
+      paid_by_member: paidBy === OTHER_VALUE ? '' : paidBy,
+      paid_by_other: paidBy === OTHER_VALUE ? otherName : '',
+      amount: amount ? parseFloat(amount) : 0,
+      notes,
+      recorded_by: user?.id || '',
+    }
+
+    try {
+      if (existing) {
+        const updated = await update(existing.id, data)
+        // Re-fetch with expand for display
+        const full = await pb.collection('referee_expenses').getOne<ExpandedExpense>(updated.id, { expand: 'paid_by_member' })
+        setExisting(full)
+      } else {
+        const created = await create(data)
+        const full = await pb.collection('referee_expenses').getOne<ExpandedExpense>(created.id, { expand: 'paid_by_member' })
+        setExisting(full)
+      }
+      setEditing(false)
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch {
+      // Error is handled by useMutation
+    }
+  }
+
+  if (loading) return null
+
+  const isFormMode = (!existing && canEdit) || editing
+  const paidByName = existing?.expand?.paid_by_member
+    ? `${existing.expand.paid_by_member.first_name} ${existing.expand.paid_by_member.last_name}`
+    : existing?.paid_by_other || ''
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+          {t('refereeExpenses')}
+        </h4>
+        {saved && (
+          <span className="flex items-center gap-1 rounded-md bg-green-600 px-2 py-0.5 text-[11px] font-medium text-white shadow-lg animate-fade-in">
+            <Check className="h-3 w-3" />
+            {t('refereeExpensesSaved')}
+          </span>
+        )}
+      </div>
+
+      {isFormMode ? (
+        <div className="space-y-3">
+          <SearchableSelect
+            label={t('refereeExpensesPaidBy')}
+            options={memberOptions}
+            value={paidBy}
+            onChange={setPaidBy}
+            placeholder="—"
+          />
+
+          {paidBy === OTHER_VALUE && (
+            <input
+              type="text"
+              value={otherName}
+              onChange={(e) => setOtherName(e.target.value)}
+              placeholder={t('refereeExpensesOtherName')}
+              className="w-full rounded-md border border-gray-200 bg-transparent px-3 py-2 text-sm placeholder:text-gray-400 focus:border-brand-400 focus:outline-none dark:border-gray-600 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-brand-500"
+            />
+          )}
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium">{t('refereeExpensesAmount')}</label>
+            <input
+              type="number"
+              min="0"
+              step="0.05"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="0.00"
+              className="w-full rounded-md border border-gray-200 bg-transparent px-3 py-2 text-sm placeholder:text-gray-400 focus:border-brand-400 focus:outline-none dark:border-gray-600 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-brand-500"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium">{t('refereeExpensesNotes')}</label>
+            <input
+              type="text"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder={t('refereeExpensesNotes')}
+              className="w-full rounded-md border border-gray-200 bg-transparent px-3 py-2 text-sm placeholder:text-gray-400 focus:border-brand-400 focus:outline-none dark:border-gray-600 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-brand-500"
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={handleSave}
+              disabled={!paidBy || (paidBy === OTHER_VALUE && !otherName.trim())}
+              className="rounded-md bg-brand-600 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-brand-700 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {t('refereeExpensesSave')}
+            </button>
+            {editing && (
+              <button
+                onClick={() => {
+                  setEditing(false)
+                  // Reset to existing values
+                  if (existing) {
+                    setPaidBy(existing.paid_by_member || (existing.paid_by_other ? OTHER_VALUE : ''))
+                    setOtherName(existing.paid_by_other || '')
+                    setAmount(existing.amount ? String(existing.amount) : '')
+                    setNotes(existing.notes || '')
+                  }
+                }}
+                className="rounded-md px-4 py-1.5 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        </div>
+      ) : existing ? (
+        <div className="space-y-2">
+          <div className="flex items-start gap-3 text-sm">
+            <span className="w-28 shrink-0 text-gray-500 dark:text-gray-400">{t('refereeExpensesPaidBy')}</span>
+            <span className="text-gray-900 dark:text-gray-100">{paidByName}</span>
+          </div>
+          {existing.amount > 0 && (
+            <div className="flex items-start gap-3 text-sm">
+              <span className="w-28 shrink-0 text-gray-500 dark:text-gray-400">{t('refereeExpensesAmount')}</span>
+              <span className="text-gray-900 dark:text-gray-100">CHF {existing.amount.toFixed(2)}</span>
+            </div>
+          )}
+          {existing.notes && (
+            <div className="flex items-start gap-3 text-sm">
+              <span className="w-28 shrink-0 text-gray-500 dark:text-gray-400">{t('refereeExpensesNotes')}</span>
+              <span className="text-gray-900 dark:text-gray-100">{existing.notes}</span>
+            </div>
+          )}
+          {canEdit && (
+            <button
+              onClick={() => setEditing(true)}
+              className="flex items-center gap-1 text-xs text-brand-600 hover:underline dark:text-brand-400"
+            >
+              <Pencil className="h-3 w-3" />
+              {t('refereeExpensesEdit')}
+            </button>
+          )}
+        </div>
+      ) : (
+        <p className="text-sm text-gray-500 dark:text-gray-400">{t('refereeExpensesNotRecorded')}</p>
+      )}
+    </div>
+  )
+}

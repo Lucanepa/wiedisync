@@ -35,4 +35,5 @@ export default {
   version: 'Version',
   changelog: 'Änderigslischtä',
   whatsNew: 'Was isch neu',
+  refereeExpenses: 'Schiedsrichterchöschte',
 } as const

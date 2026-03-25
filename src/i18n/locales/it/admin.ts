@@ -72,4 +72,18 @@ export default {
   deleteRecordMessage: 'Questo record verrà eliminato definitivamente.',
   save: 'Salva',
   cancel: 'Annulla',
+
+  // Referee expenses
+  refereeExpensesTitle: 'Spese arbitrali',
+  refereeExpensesDescription: 'Tutte le spese arbitrali registrate per squadra e stagione.',
+  refereeExpensesNoRecords: 'Nessuna spesa arbitrale registrata.',
+  refereeExpensesGame: 'Partita',
+  refereeExpensesDate: 'Data',
+  refereeExpensesPaidBy: 'Pagato da',
+  refereeExpensesTeam: 'Squadra',
+  refereeExpensesAmount: 'Importo',
+  refereeExpensesNotes: 'Note',
+  refereeExpensesExport: 'Export CSV',
+  refereeExpensesAllTeams: 'Tutte le squadre',
+  refereeExpensesAllSeasons: 'Tutte le stagioni',
 } as const

@@ -231,6 +231,16 @@ export interface Game extends RecordModel {
 
 }
 
+export interface RefereeExpense extends RecordModel {
+  game: string
+  team: string
+  paid_by_member: string
+  paid_by_other: string
+  amount: number
+  notes: string
+  recorded_by: string
+}
+
 
 export interface Ranking extends RecordModel {
   team_id: string

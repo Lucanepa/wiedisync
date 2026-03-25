@@ -2,6 +2,12 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [2.4.1] — 2026-03-26
+
+### Features
+
+- **Referee expenses** — Coaches can record who paid the referees for volleyball home games directly in the game detail modal (searchable member dropdown + "Other" option, CHF amount, notes). New admin page under Admin → Schiedsrichterkosten with team/season filters and CSV export. New PB collection: `referee_expenses`.
+
 ## [2.4.0] — 2026-03-25
 
 ### Features

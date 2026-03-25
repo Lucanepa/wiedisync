@@ -15,6 +15,7 @@ import pb from '../../../pb'
 import { sanitizeUrl } from '../../../utils/sanitizeUrl'
 import DatePicker from '@/components/ui/DatePicker'
 import { formatDate, formatTime, parseRespondByTime } from '../../../utils/dateHelpers'
+import RefereeExpenseSection from './RefereeExpenseSection'
 import TasksSection from '../../tasks/TasksSection'
 import CarpoolSection from '../../carpool/CarpoolSection'
 import { isFeatureEnabled } from '../../../utils/featureToggles'
@@ -424,6 +425,17 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
             {game.referees_json.map((ref, i) => (
               <DetailRow key={i} label={t((['referee1st', 'referee2nd', 'referee3rd'] as const)[i] ?? 'referee')} value={ref.name} />
             ))}
+          </div>
+        )}
+
+        {/* Referee expenses — volleyball home games */}
+        {kscwSport === 'volleyball' && game.type === 'home' && (
+          <div className="border-t dark:border-gray-700 px-6 py-4">
+            <RefereeExpenseSection
+              gameId={game.id}
+              teamId={game.kscw_team}
+              canEdit={!readOnly && isCoachOf(game.kscw_team)}
+            />
           </div>
         )}
 

@@ -35,4 +35,5 @@ export default {
   version: 'Version',
   changelog: 'Registro delle modifiche',
   whatsNew: 'Novità',
+  refereeExpenses: 'Spese arbitrali',
 } as const

@@ -119,4 +119,16 @@ export default {
   comeAndSupport: 'Vieni a fare il tifo!',
   guestsCannotParticipate: 'Gli ospiti non possono partecipare alle partite',
   minParticipants: 'Min. giocatori',
+
+  // Referee expenses
+  refereeExpenses: 'Spese arbitrali',
+  refereeExpensesPaidBy: 'Pagato da',
+  refereeExpensesAmount: 'Importo (CHF)',
+  refereeExpensesNotes: 'Note',
+  refereeExpensesOtherPerson: 'Altra persona',
+  refereeExpensesOtherName: 'Inserisci nome…',
+  refereeExpensesSave: 'Salva',
+  refereeExpensesSaved: 'Salvato',
+  refereeExpensesEdit: 'Modifica',
+  refereeExpensesNotRecorded: 'Non ancora registrato',
 } as const

@@ -145,4 +145,18 @@ export default {
   auditResults: 'Ergebnis',
   auditLoading: 'Lade Audit-Log…',
   auditNoResults: 'Käni Iiträg gfunde.',
+
+  // Referee expenses
+  refereeExpensesTitle: 'Schiedsrichterchöschte',
+  refereeExpensesDescription: 'Alli erfasste Schiedsrichterchöschte nach Team und Saison.',
+  refereeExpensesNoRecords: 'Käni Schiedsrichterchöschte erfasst.',
+  refereeExpensesGame: 'Spiel',
+  refereeExpensesDate: 'Datum',
+  refereeExpensesPaidBy: 'Zahlt vo',
+  refereeExpensesTeam: 'Team',
+  refereeExpensesAmount: 'Betrag',
+  refereeExpensesNotes: 'Bemerkige',
+  refereeExpensesExport: 'CSV Export',
+  refereeExpensesAllTeams: 'Alli Teams',
+  refereeExpensesAllSeasons: 'Alli Saisons',
 } as const

@@ -49,4 +49,5 @@ export default {
   sessionParticipation: 'Partecipazione per fascia oraria',
   enableTasks: 'Attiva compiti',
   enableTasksHint: 'I partecipanti possono assegnare e prendere in carico responsabilità per questo evento.',
+  minParticipants: 'Min. partecipanti',
 } as const

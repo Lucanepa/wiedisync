@@ -9,6 +9,8 @@ import { pbNameToColorKey } from '../../../utils/teamColors'
 import VolleyballIcon from '../../../components/VolleyballIcon'
 import BasketballIcon from '../../../components/BasketballIcon'
 import ParticipationSummary from '../../../components/ParticipationSummary'
+import ParticipationWarningBadge from '../../../components/ParticipationWarningBadge'
+import type { Warning } from '../../../utils/participationWarnings'
 import { useAuth } from '../../../hooks/useAuth'
 import { useMutation } from '../../../hooks/useMutation'
 import type { Participation } from '../../../types'
@@ -29,6 +31,7 @@ interface GameCardProps {
   participations?: Participation[]
   /** Pre-fetched current user's participation (from batch query) */
   myParticipation?: Participation
+  warnings?: Warning[]
 }
 
 type ExpandedGame = Game & {
@@ -66,7 +69,7 @@ function StatusBadge({ status }: { status: Game['status'] }) {
   }
 }
 
-export default function GameCard({ game, onClick, variant = 'card', participations, myParticipation }: GameCardProps) {
+export default function GameCard({ game, onClick, variant = 'card', participations, myParticipation, warnings }: GameCardProps) {
   const { t } = useTranslation('games')
   const { user, canParticipateIn } = useAuth()
   const canParticipate = !!user && !!game.kscw_team && canParticipateIn(game.kscw_team)
@@ -249,6 +252,9 @@ export default function GameCard({ game, onClick, variant = 'card', participatio
       <div className="flex-1 p-3">
       {/* H/A badge + counters top-right */}
       <div className="flex items-center justify-end gap-2">
+        {game.status === 'scheduled' && warnings && warnings.length > 0 && (
+          <ParticipationWarningBadge warnings={warnings} namespace="participation" />
+        )}
         {game.status === 'scheduled' && (
           <ParticipationSummary activityType="game" activityId={game.id} compact participations={participations} />
         )}

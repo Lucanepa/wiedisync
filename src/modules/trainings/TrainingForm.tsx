@@ -74,6 +74,7 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
   const [minParticipants, setMinParticipants] = useState('')
   const [maxParticipants, setMaxParticipants] = useState('')
   const [requireNoteIfAbsent, setRequireNoteIfAbsent] = useState(false)
+  const [autoCancelOnMin, setAutoCancelOnMin] = useState(false)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
@@ -191,6 +192,7 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
       setMinParticipants(training.min_participants ? String(training.min_participants) : '')
       setMaxParticipants(training.max_participants ? String(training.max_participants) : '')
       setRequireNoteIfAbsent(!!training.require_note_if_absent)
+      setAutoCancelOnMin(!!training.auto_cancel_on_min)
       // Edit mode: if training has a hall_slot, start in auto mode with it pre-selected
       if (training.hall_slot) {
         setSlotMode('auto')
@@ -214,6 +216,7 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
       setMinParticipants('')
       setMaxParticipants('')
       setRequireNoteIfAbsent(false)
+      setAutoCancelOnMin(false)
       setSlotMode('auto')
       setSelectedSlotKey('')
     }
@@ -248,6 +251,7 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
       min_participants: minParticipants ? Number(minParticipants) : null,
       max_participants: maxParticipants ? Number(maxParticipants) : null,
       require_note_if_absent: requireNoteIfAbsent,
+      auto_cancel_on_min: autoCancelOnMin,
     }
 
     setIsLoading(true)
@@ -284,6 +288,7 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
       min_participants: data.min_participants,
       max_participants: data.max_participants,
       require_note_if_absent: data.require_note_if_absent,
+      auto_cancel_on_min: data.auto_cancel_on_min,
     }
 
     // Find sibling trainings with same hall_slot, excluding the one we already updated
@@ -484,6 +489,16 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
             min={0}
           />
         </div>
+
+        {minParticipants && Number(minParticipants) > 0 && (
+          <div className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+            <Switch checked={autoCancelOnMin} onCheckedChange={setAutoCancelOnMin} className="mt-0.5" />
+            <div>
+              <span>{t('autoCancelOnMin')}</span>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t('autoCancelOnMinHint')}</p>
+            </div>
+          </div>
+        )}
 
         <FormTextarea
           label={tc('notes')}

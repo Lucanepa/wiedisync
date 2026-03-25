@@ -50,4 +50,5 @@ export default {
   sessionParticipation: 'Participation per time slot',
   enableTasks: 'Enable tasks',
   enableTasksHint: 'Let participants assign and claim duties for this event.',
+  minParticipants: 'Min. participants',
 } as const

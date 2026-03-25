@@ -227,6 +227,7 @@ export interface Game extends RecordModel {
   referees_json: Array<{ name: string; id?: number }>
   source: 'swiss_volley' | 'manual' | 'basketplan'
   respond_by: string
+  min_participants: number
 
 }
 
@@ -270,6 +271,7 @@ export interface Training extends RecordModel {
   min_participants: number
   max_participants: number
   require_note_if_absent: boolean
+  auto_cancel_on_min: boolean
 
 }
 
@@ -298,6 +300,7 @@ export interface Event extends RecordModel {
   created_by: string
   respond_by: string
   max_players: number
+  min_participants: number
   participation_mode: 'whole' | 'per_day' | 'per_session' | ''
   require_note_if_absent: boolean
   features_enabled: FeatureToggles
@@ -345,6 +348,10 @@ export interface UserLog extends RecordModel {
   collection_name: string
   record_id: string
   data: Record<string, unknown> | null
+}
+
+export type ParticipationWithMember = Participation & {
+  expand?: { member?: Pick<Member, 'id' | 'position'> }
 }
 
 // ── Game Scheduling (Terminplanung) ──────────────────────────────────

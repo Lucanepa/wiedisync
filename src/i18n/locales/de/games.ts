@@ -121,4 +121,5 @@ export default {
   respondBy: 'Antwort bis',
   comeAndSupport: 'Komm und unterstütze uns!',
   guestsCannotParticipate: 'Gäste können nicht an Spielen teilnehmen',
+  minParticipants: 'Min. Spieler',
 } as const

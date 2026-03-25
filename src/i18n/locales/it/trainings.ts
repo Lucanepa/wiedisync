@@ -87,4 +87,6 @@ export default {
   noSlotForDay: 'Nessuna fascia palestra per questo giorno',
   useSlot: 'Usa fascia palestra',
   enterManually: 'Inserisci manualmente',
+  autoCancelOnMin: 'Cancellazione automatica',
+  autoCancelOnMinHint: "L'allenamento verrà cancellato automaticamente alla scadenza se ci sono meno conferme del minimo",
 } as const

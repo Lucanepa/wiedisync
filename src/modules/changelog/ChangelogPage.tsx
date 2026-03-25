@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '2.3.1'
+const APP_VERSION = '2.4.0'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,22 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.4.0',
+    date: '2026-03-25',
+    sections: [
+      {
+        title: 'Features',
+        items: [
+          'Participation warnings: red/yellow triangle icons on game, training, and event cards when participation is insufficient — click to see details',
+          'Game roster check: RED warning when fewer than 6 field players (VB) or 5 players (BB) confirmed; YELLOW when no coach present. Libero-aware counting for volleyball.',
+          'Training auto-cancel: new "Auto-cancel" toggle on trainings — automatically cancels at RSVP deadline if confirmed count is below minimum, freeing the hall slot for others',
+          'Pre-deadline alerts: email + notification sent to all team members 1 day before deadline if game roster or training minimum is not met',
+          'Min participants for events and games: new configurable field on events and games collections',
+        ],
+      },
+    ],
+  },
   {
     version: '2.3.1',
     date: '2026-03-24',

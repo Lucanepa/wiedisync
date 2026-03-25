@@ -87,4 +87,6 @@ export default {
   noSlotForDay: 'Käs Halleslot a dem Tag',
   useSlot: 'Halleslot verwände',
   enterManually: 'Manuell iigäh',
+  autoCancelOnMin: 'Automatisch absäge',
+  autoCancelOnMinHint: 'Training wird bi Frischtablauf automatisch abgseit, wenn weniger Zusage als s Minimum vorliged',
 } as const

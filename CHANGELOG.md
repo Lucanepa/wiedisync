@@ -2,6 +2,24 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [2.4.0] — 2026-03-25
+
+### Features
+
+- **Participation warnings** — Red/yellow triangle warning icons on game, training, and event cards when participation is insufficient. Click/tap to see details (mobile-friendly popover).
+- **Game roster check** — RED warning when fewer than 6 field players (volleyball, libero-aware) or 5 players (basketball) are confirmed. YELLOW warning when no coach is present. Both sports, configurable via `min_participants` field.
+- **Training auto-cancel** — New "Auto-cancel" toggle on trainings. When enabled, training is automatically cancelled at the RSVP deadline if confirmed count is below the minimum — freeing the hall slot for others and notifying all coaches.
+- **Pre-deadline alerts** — Email + in-app notification sent to all team members 1 day before the RSVP deadline if game roster is incomplete or training minimum is not met.
+- **Min participants for events & games** — New `min_participants` field on events and games collections. Events show RED triangle when below threshold.
+
+### Technical
+
+- New utility: `participationWarnings.ts` with pure warning computation functions + 22 unit tests
+- New component: `ParticipationWarningBadge` with shadcn Popover for mobile-friendly click interaction
+- Extended `participation_reminders.pb.js` cron with pre-deadline alerts and auto-cancel logic
+- PB schema: added `auto_cancel_on_min` (trainings), `min_participants` (events, games) on dev+prod
+- Updated INFRA.md: hooks are mounted from host, not built into Docker image
+
 ## [2.3.1] — 2026-03-24
 
 ### Bug Fixes

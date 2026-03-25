@@ -71,6 +71,7 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
   const [minParticipants, setMinParticipants] = useState('')
   const [maxParticipants, setMaxParticipants] = useState('')
   const [requireNoteIfAbsent, setRequireNoteIfAbsent] = useState(false)
+  const [autoCancelOnMin, setAutoCancelOnMin] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [generated, setGenerated] = useState(0)
@@ -90,6 +91,7 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
     setMinParticipants('')
     setMaxParticipants('')
     setRequireNoteIfAbsent(false)
+    setAutoCancelOnMin(false)
     setLoading(false)
     setError('')
     setGenerated(0)
@@ -204,6 +206,7 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
           min_participants: minParticipants ? Number(minParticipants) : null,
           max_participants: maxParticipants ? Number(maxParticipants) : null,
           require_note_if_absent: requireNoteIfAbsent,
+          auto_cancel_on_min: autoCancelOnMin,
         })
         logActivity('create', 'trainings', rec.id, { team: slot.team, date, hall: effectiveHallId })
         count++
@@ -377,6 +380,16 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
             />
           </div>
         </div>
+
+        {minParticipants && Number(minParticipants) > 0 && (
+          <div className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+            <Switch checked={autoCancelOnMin} onCheckedChange={setAutoCancelOnMin} className="mt-0.5" />
+            <div>
+              <span>{t('autoCancelOnMin')}</span>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t('autoCancelOnMinHint')}</p>
+            </div>
+          </div>
+        )}
 
         <div>
           <label className={labelCls}>{t('respondBy')}</label>

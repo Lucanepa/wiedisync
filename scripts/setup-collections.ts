@@ -235,6 +235,8 @@ const dependentCollections: CollectionDef[] = [
       text('scoreboard_person'),
       bool('duty_confirmed'),
       select('source', ['swiss_volley', 'manual']),
+      text('respond_by'),
+      number('min_participants'),
 
     ],
   },
@@ -294,6 +296,10 @@ const dependentCollections: CollectionDef[] = [
       text('location'),
       relation('teams', teamsId, { maxSelect: 99 }),
       relation('created_by', membersId),
+      text('respond_by'),
+      number('max_players'),
+      number('min_participants'),
+      bool('require_note_if_absent'),
 
     ],
   },
@@ -349,6 +355,12 @@ const phase3Collections: CollectionDef[] = [
       text('notes'),
       bool('cancelled'),
       text('cancel_reason'),
+      text('respond_by'),
+      number('min_participants'),
+      number('max_participants'),
+      bool('require_note_if_absent'),
+      bool('auto_cancel_on_min'),
+      text('hall_name'),
 
     ],
   },

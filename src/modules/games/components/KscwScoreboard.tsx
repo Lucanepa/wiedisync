@@ -278,44 +278,58 @@ function formatValue(value: number, mode: ScoreboardMode): string {
 }
 
 function computePerGameAverage(rows: Ranking[], getValue: (row: Ranking) => number | null): number | null {
-  const entries = rows
-    .map((row) => ({ value: getValue(row), played: row.played }))
-    .filter((e): e is { value: number; played: number } => e.value !== null && e.played > 0)
-  if (entries.length === 0) return null
-  const totalPerGame = entries.reduce((acc, e) => acc + e.value / e.played, 0)
-  return totalPerGame / entries.length
+  let totalValue = 0
+  let totalPlayed = 0
+  for (const row of rows) {
+    const value = getValue(row)
+    if (value === null) continue
+    totalValue += value
+    totalPlayed += row.played || 0
+  }
+  return totalPlayed > 0 ? totalValue / totalPlayed : null
 }
 
 function computeMetricRankingPerGame(rows: Ranking[], getValue: (row: Ranking) => number | null): Array<{ teamId: string; value: number }> {
-  const bestByTeam = new Map<string, number>()
+  const sumByTeam = new Map<string, { totalValue: number; totalPlayed: number }>()
 
   for (const row of rows) {
     const value = getValue(row)
     if (value === null || row.played <= 0) continue
-    const perGame = value / row.played
-    const current = bestByTeam.get(row.team_id)
-    if (current === undefined || perGame > current) {
-      bestByTeam.set(row.team_id, perGame)
+    const existing = sumByTeam.get(row.team_id)
+    if (existing) {
+      existing.totalValue += value
+      existing.totalPlayed += row.played
+    } else {
+      sumByTeam.set(row.team_id, { totalValue: value, totalPlayed: row.played })
     }
   }
 
-  return [...bestByTeam.entries()]
-    .map(([teamId, value]) => ({ teamId, value }))
+  return [...sumByTeam.entries()]
+    .map(([teamId, { totalValue, totalPlayed }]) => ({ teamId, value: totalValue / totalPlayed }))
     .sort((a, b) => (b.value - a.value) || a.teamId.localeCompare(b.teamId))
 }
 
 function computeLeaders(rows: Ranking[], metrics: MetricDef[]): MetricLeader[] {
   return metrics.map((metric) => {
-    const available = rows
-      .map((row) => ({ row, value: metric.getValue(row) }))
-      .filter((entry): entry is { row: Ranking; value: number } => entry.value !== null)
+    // Aggregate per team first (sum), then find the leader
+    const sumByTeam = new Map<string, { total: number; row: Ranking }>()
+    for (const row of rows) {
+      const value = metric.getValue(row)
+      if (value === null) continue
+      const existing = sumByTeam.get(row.team_id)
+      if (existing) {
+        existing.total += value
+      } else {
+        sumByTeam.set(row.team_id, { total: value, row })
+      }
+    }
 
-    if (available.length === 0) return { key: metric.key, labelKey: metric.labelKey, value: null, leaders: [] }
+    if (sumByTeam.size === 0) return { key: metric.key, labelKey: metric.labelKey, value: null, leaders: [] }
 
-    const maxValue = Math.max(...available.map((entry) => entry.value))
-    const leaders = available
-      .filter((entry) => entry.value === maxValue)
-      .map((entry) => entry.row)
+    const maxValue = Math.max(...[...sumByTeam.values()].map((e) => e.total))
+    const leaders = [...sumByTeam.values()]
+      .filter((e) => e.total === maxValue)
+      .map((e) => e.row)
       .sort((a, b) => a.rank - b.rank)
 
     return { key: metric.key, labelKey: metric.labelKey, value: maxValue, leaders }
@@ -324,26 +338,29 @@ function computeLeaders(rows: Ranking[], metrics: MetricDef[]): MetricLeader[] {
 
 function computeTotals(rows: Ranking[], metrics: MetricDef[]): MetricTotal[] {
   return metrics.map((metric) => {
-    const values = rows.map((row) => metric.getValue(row)).filter((value): value is number => value !== null)
-    if (values.length === 0) return { key: metric.key, labelKey: metric.labelKey, value: null }
-    const sum = values.reduce((acc, value) => acc + value, 0)
-    return { key: metric.key, labelKey: metric.labelKey, value: sum }
+    // Aggregate per team first (sum), then sum across teams
+    const sumByTeam = new Map<string, number>()
+    for (const row of rows) {
+      const value = metric.getValue(row)
+      if (value === null) continue
+      sumByTeam.set(row.team_id, (sumByTeam.get(row.team_id) ?? 0) + value)
+    }
+    if (sumByTeam.size === 0) return { key: metric.key, labelKey: metric.labelKey, value: null }
+    const total = [...sumByTeam.values()].reduce((acc, v) => acc + v, 0)
+    return { key: metric.key, labelKey: metric.labelKey, value: total }
   })
 }
 
 function computeMetricRanking(rows: Ranking[], getValue: (row: Ranking) => number | null): Array<{ teamId: string; value: number }> {
-  const bestByTeam = new Map<string, number>()
+  const sumByTeam = new Map<string, number>()
 
   for (const row of rows) {
     const value = getValue(row)
     if (value === null) continue
-    const current = bestByTeam.get(row.team_id)
-    if (current === undefined || value > current) {
-      bestByTeam.set(row.team_id, value)
-    }
+    sumByTeam.set(row.team_id, (sumByTeam.get(row.team_id) ?? 0) + value)
   }
 
-  return [...bestByTeam.entries()]
+  return [...sumByTeam.entries()]
     .map(([teamId, value]) => ({ teamId, value }))
     .sort((a, b) => (b.value - a.value) || a.teamId.localeCompare(b.teamId))
 }

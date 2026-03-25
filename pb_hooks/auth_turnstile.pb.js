@@ -14,6 +14,11 @@ onRecordAuthRequest((e) => {
     return e.next()
   }
 
+  // Skip Turnstile for auth-refresh (JWT renewal — no login form involved)
+  if (!body.identity && !body.password && !body.provider) {
+    return e.next()
+  }
+
   var token = info.headers["x_turnstile_token"] || ""
 
   if (!token) {

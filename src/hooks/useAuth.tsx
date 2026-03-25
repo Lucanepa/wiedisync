@@ -251,10 +251,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [memberTeamIds, coachTeamIds],
   )
 
-  /** True if user is staff (coach/team_responsible) but NOT a player on this team */
+  /** True if user is staff (coach/team_responsible) but NOT a player on this team.
+   *  Returns false while team data is still loading to prevent race-condition
+   *  where coachTeamIds loads before memberTeamIds, causing is_staff=true on participations. */
   const isStaffOnly = useCallback(
-    (teamId: string) => coachTeamIds.includes(teamId) && !memberTeamIds.includes(teamId),
-    [coachTeamIds, memberTeamIds],
+    (teamId: string) =>
+      coachTeamsLoaded && memberTeamsLoaded &&
+      coachTeamIds.includes(teamId) && !memberTeamIds.includes(teamId),
+    [coachTeamIds, memberTeamIds, coachTeamsLoaded, memberTeamsLoaded],
   )
 
   const canViewTeam = useCallback(

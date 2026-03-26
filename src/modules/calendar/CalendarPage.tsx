@@ -90,7 +90,7 @@ function entryIconColor(entry: CalendarEntry): string {
 
 export default function CalendarPage() {
   const { t } = useTranslation('calendar')
-  const { user, memberTeamIds, coachTeamIds } = useAuth()
+  const { user, memberTeamIds, coachTeamIds, teamsLoading } = useAuth()
   const { effectiveIsAdmin } = useAdminMode()
   const isMobile = useIsMobile()
   const [viewMode, setViewMode] = useState<CalendarViewMode>('month')
@@ -170,11 +170,13 @@ export default function CalendarPage() {
   }, [viewMode, month, weekStart, mobileDay, isMobile])
 
   const needsData = viewMode === 'month' || viewMode === 'week'
+  // Don't fetch until user teams are resolved (prevents flash of all-team data)
+  const teamsReady = !user || effectiveIsAdmin || !teamsLoading
   const { entries, closedDates, isLoading } = useCalendarData({
     filters: effectiveFilters,
     rangeStart,
     rangeEnd,
-    enabled: needsData,
+    enabled: needsData && teamsReady,
   })
 
   // Only show full-page spinner on initial load, not on navigation

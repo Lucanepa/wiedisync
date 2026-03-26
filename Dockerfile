@@ -16,4 +16,4 @@ VOLUME /opt/pocketbase/pb_data
 
 WORKDIR /opt/pocketbase
 
-CMD ["./pocketbase", "serve", "--http=0.0.0.0:8090"]
+CMD ["./pocketbase", "serve", "--http=0.0.0.0:8090", "--hooksDir=/opt/pocketbase/pb_hooks"]

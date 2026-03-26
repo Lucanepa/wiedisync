@@ -445,6 +445,74 @@ var runReminders = function() {
     console.log("[participation-reminders] Error processing auto-cancel: " + e)
   }
 
+  // ─── Auto-decline tentative ("maybe") participations past respond_by deadline ───
+  // For each activity type, find activities whose respond_by deadline has passed (≤ now),
+  // then flip all "tentative" participations to "declined".
+  var tentativeDeclined = 0
+
+  // Helper: decline tentative participations for a set of activities
+  var declineTentativeForActivities = function(activityType, activities, getActivityId) {
+    for (var td = 0; td < activities.length; td++) {
+      var actId = getActivityId(activities[td])
+      try {
+        var tentatives = $app.findRecordsByFilter(
+          "participations",
+          'activity_type = "' + activityType + '" && activity_id = "' + actId + '" && status = "tentative"',
+          "", 500, 0
+        )
+        for (var tt = 0; tt < tentatives.length; tt++) {
+          tentatives[tt].set("status", "declined")
+          tentatives[tt].set("note", (tentatives[tt].getString("note") ? tentatives[tt].getString("note") + " | " : "") + "Auto-declined: deadline passed")
+          $app.save(tentatives[tt])
+          tentativeDeclined++
+        }
+      } catch (e) {
+        console.log("[participation-reminders] Error declining tentatives for " + activityType + " " + actId + ": " + e)
+      }
+    }
+  }
+
+  // Trainings with passed deadline
+  try {
+    var pastTrainings = $app.findRecordsByFilter(
+      "trainings",
+      'respond_by != "" && respond_by <= "' + todayStr + ' 00:00:00" && cancelled = false && date >= "' + todayStr + '"',
+      "", 500, 0
+    )
+    console.log("[participation-reminders] Checking " + pastTrainings.length + " trainings for tentative auto-decline")
+    declineTentativeForActivities("training", pastTrainings, function(r) { return r.id })
+  } catch (e) {
+    console.log("[participation-reminders] Error finding trainings for tentative decline: " + e)
+  }
+
+  // Games with passed deadline
+  try {
+    var pastGames = $app.findRecordsByFilter(
+      "games",
+      'respond_by != "" && respond_by <= "' + todayStr + ' 00:00:00" && status = "scheduled"',
+      "", 500, 0
+    )
+    console.log("[participation-reminders] Checking " + pastGames.length + " games for tentative auto-decline")
+    declineTentativeForActivities("game", pastGames, function(r) { return r.id })
+  } catch (e) {
+    console.log("[participation-reminders] Error finding games for tentative decline: " + e)
+  }
+
+  // Events with passed deadline
+  try {
+    var pastEvents = $app.findRecordsByFilter(
+      "events",
+      'respond_by != "" && respond_by <= "' + todayStr + ' 00:00:00"',
+      "", 500, 0
+    )
+    console.log("[participation-reminders] Checking " + pastEvents.length + " events for tentative auto-decline")
+    declineTentativeForActivities("event", pastEvents, function(r) { return r.id })
+  } catch (e) {
+    console.log("[participation-reminders] Error finding events for tentative decline: " + e)
+  }
+
+  console.log("[participation-reminders] Tentative auto-declined: " + tentativeDeclined)
+
   console.log("[participation-reminders] Total emails sent: " + totalSent)
   return totalSent
 }

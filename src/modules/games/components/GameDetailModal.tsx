@@ -330,13 +330,20 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
                   >
                     {t('participation:no')}
                   </button>
-                  {/* Save confirmation popover */}
-                  {saveConfirmed && (
-                    <span className="absolute -top-7 left-1/2 -translate-x-1/2 flex items-center gap-1 whitespace-nowrap rounded-md bg-green-600 px-2 py-0.5 text-[11px] font-medium text-white shadow-lg animate-fade-in">
-                      <Check className="h-3 w-3" />
-                      {t('participation:saved')}
-                    </span>
-                  )}
+                  {/* Save confirmation popover — colored by response */}
+                  {saveConfirmed && (() => {
+                    const popoverColor = effectiveStatus === 'declined'
+                      ? 'bg-red-600 text-white'
+                      : effectiveStatus === 'tentative'
+                        ? 'bg-yellow-500 text-black'
+                        : 'bg-green-600 text-white'
+                    return (
+                      <span className={`absolute -top-7 left-1/2 -translate-x-1/2 flex items-center gap-1 whitespace-nowrap rounded-md px-2 py-0.5 text-[11px] font-medium shadow-lg animate-fade-in ${popoverColor}`}>
+                        <Check className="h-3 w-3" />
+                        {t('participation:saved')}
+                      </span>
+                    )
+                  })()}
                 </div>
               </>
             )}

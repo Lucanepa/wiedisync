@@ -397,7 +397,7 @@ for (const def of phase4Collections) {
   await createCollection(def)
 }
 
-// Phase 5: sponsors (public, no relations)
+// Phase 5: sponsors (with team relation)
 console.log('\n=== Phase 5: Create sponsors collection ===')
 
 const sponsorsCollection: CollectionDef = {
@@ -409,6 +409,8 @@ const sponsorsCollection: CollectionDef = {
     url('website_url'),
     number('sort_order'),
     bool('active'),
+    relation('teams', teamsId, { maxSelect: 50 }),
+    bool('team_page_only'),
   ],
 }
 

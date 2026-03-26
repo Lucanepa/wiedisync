@@ -13,6 +13,7 @@ import { usePB } from '../../hooks/usePB'
 import TeamChip from '../../components/TeamChip'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import InviteExternalUserModal from './InviteExternalUserModal'
+import TeamSponsorsEditor from './TeamSponsorsEditor'
 import EmptyState from '../../components/EmptyState'
 import { getFileUrl } from '../../utils/pbFile'
 import { getCurrentSeason } from '../../utils/dateHelpers'
@@ -563,6 +564,9 @@ export default function RosterEditor() {
       {team && (
         <FeatureTogglesSection team={team} onUpdate={(f) => setTeam((prev) => prev ? { ...prev, features_enabled: f } : prev)} />
       )}
+
+      {/* Team sponsors */}
+      {team && <TeamSponsorsEditor team={team} />}
     </div>
   )
 }

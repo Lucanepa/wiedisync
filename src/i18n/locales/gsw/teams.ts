@@ -117,4 +117,17 @@ export default {
   featureCarpool: 'Fahrgmeinschaft (Fahrte zu Uswärtsspiel organisiere)',
   featurePolls: 'Umfrage (Team-Abstimmige & Entscheidige)',
   featureShowRsvpTime: 'Antwortziit aazeige (wenn Mitglieder gantwortet händ)',
+  // Sponsore
+  teamSponsors: 'Team-Sponsore',
+  addSponsor: 'Sponsor dezuetue',
+  editSponsor: 'Sponsor bearbeite',
+  deleteSponsor: 'Sponsor entferne',
+  deleteSponsorConfirm: 'Sponsor "{{name}}" würkli entferne?',
+  sponsorName: 'Name',
+  sponsorWebsite: 'Website',
+  sponsorLogo: 'Logo',
+  teamPageOnly: 'Nur uf Teamsiite',
+  teamPageOnlyHint: 'Wenn deaktiviert, erschint de Sponsor au uf de Homepage und Sponsoresiite',
+  sponsorSaved: 'Sponsor gspeicheret',
+  sponsorDeleted: 'Sponsor entfernt',
 } as const

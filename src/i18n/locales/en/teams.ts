@@ -117,4 +117,17 @@ export default {
   featureCarpool: 'Carpool (organise rides for away games)',
   featurePolls: 'Polls (team voting & decisions)',
   featureShowRsvpTime: 'Show response time (when members responded)',
+  // Sponsors
+  teamSponsors: 'Team Sponsors',
+  addSponsor: 'Add Sponsor',
+  editSponsor: 'Edit Sponsor',
+  deleteSponsor: 'Remove Sponsor',
+  deleteSponsorConfirm: 'Really remove sponsor "{{name}}"?',
+  sponsorName: 'Name',
+  sponsorWebsite: 'Website',
+  sponsorLogo: 'Logo',
+  teamPageOnly: 'Team page only',
+  teamPageOnlyHint: 'If disabled, the sponsor also appears on the homepage and sponsors page',
+  sponsorSaved: 'Sponsor saved',
+  sponsorDeleted: 'Sponsor removed',
 } as const

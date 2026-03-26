@@ -2,6 +2,9 @@
 
 // Audit logging for ALL collections — creates, updates, deletes, auth events.
 // Writes JSON lines to pb_data/audit.log (see audit_log_lib.js).
+//
+// NOTE: Uses e.record.collection().name instead of IIFE closure variables
+// because PB 0.36 goja engine breaks variable capture in IIFE closures.
 
 // Every collection in the system
 var ALL_COLLECTIONS = [
@@ -33,69 +36,70 @@ var ALL_COLLECTIONS = [
 // ── Register hooks for every collection ─────────────────────────────
 
 for (var i = 0; i < ALL_COLLECTIONS.length; i++) {
-  ;(function(colName) {
 
-    // CREATE
-    onRecordAfterCreateSuccess(function(e) {
-      try {
-        var audit = require(__hooks + "/audit_log_lib.js")
-        var details = {}
-        if (colName === "members") {
-          details.email = e.record.getString("email")
-          details.first_name = e.record.getString("first_name")
-          details.last_name = e.record.getString("last_name")
-          details.shell = e.record.getBool("shell")
-          details.coach_approved_team = e.record.getBool("coach_approved_team")
-        }
-        if (colName === "member_teams") {
-          details.member = e.record.getString("member")
-          details.team = e.record.getString("team")
-          details.season = e.record.getString("season")
-        }
-        audit.log("info", "create", colName, e.record.id, audit.getActor(e), details)
-      } catch (err) {
-        console.log("[audit-log] Create hook error (" + colName + "): " + err)
+  // CREATE
+  onRecordAfterCreateSuccess(function(e) {
+    try {
+      var audit = require(__hooks + "/audit_log_lib.js")
+      var cn = e.record.collection().name
+      var details = {}
+      if (cn === "members") {
+        details.email = e.record.getString("email")
+        details.first_name = e.record.getString("first_name")
+        details.last_name = e.record.getString("last_name")
+        details.shell = e.record.getBool("shell")
+        details.coach_approved_team = e.record.getBool("coach_approved_team")
       }
-      e.next()
-    }, colName)
-
-    // UPDATE
-    onRecordAfterUpdateSuccess(function(e) {
-      try {
-        var audit = require(__hooks + "/audit_log_lib.js")
-        var changes = audit.diffRecord(e.record)
-        var keys = Object.keys(changes)
-        if (keys.length > 0) {
-          audit.log("info", "update", colName, e.record.id, audit.getActor(e), { changes: changes })
-        }
-      } catch (err) {
-        console.log("[audit-log] Update hook error (" + colName + "): " + err)
+      if (cn === "member_teams") {
+        details.member = e.record.getString("member")
+        details.team = e.record.getString("team")
+        details.season = e.record.getString("season")
       }
-      e.next()
-    }, colName)
+      audit.log("info", "create", cn, e.record.id, audit.getActor(e), details)
+    } catch (err) {
+      console.log("[audit-log] Create hook error: " + err)
+    }
+    e.next()
+  }, ALL_COLLECTIONS[i])
 
-    // DELETE
-    onRecordAfterDeleteSuccess(function(e) {
-      try {
-        var audit = require(__hooks + "/audit_log_lib.js")
-        var details = {}
-        if (colName === "members") {
-          details.email = e.record.getString("email")
-          details.first_name = e.record.getString("first_name")
-          details.last_name = e.record.getString("last_name")
-        }
-        if (colName === "member_teams") {
-          details.member = e.record.getString("member")
-          details.team = e.record.getString("team")
-        }
-        audit.log("warn", "delete", colName, e.record.id, audit.getActor(e), details)
-      } catch (err) {
-        console.log("[audit-log] Delete hook error (" + colName + "): " + err)
+  // UPDATE
+  onRecordAfterUpdateSuccess(function(e) {
+    try {
+      var audit = require(__hooks + "/audit_log_lib.js")
+      var cn = e.record.collection().name
+      var changes = audit.diffRecord(e.record)
+      var keys = Object.keys(changes)
+      if (keys.length > 0) {
+        audit.log("info", "update", cn, e.record.id, audit.getActor(e), { changes: changes })
       }
-      e.next()
-    }, colName)
+    } catch (err) {
+      console.log("[audit-log] Update hook error: " + err)
+    }
+    e.next()
+  }, ALL_COLLECTIONS[i])
 
-  })(ALL_COLLECTIONS[i])
+  // DELETE
+  onRecordAfterDeleteSuccess(function(e) {
+    try {
+      var audit = require(__hooks + "/audit_log_lib.js")
+      var cn = e.record.collection().name
+      var details = {}
+      if (cn === "members") {
+        details.email = e.record.getString("email")
+        details.first_name = e.record.getString("first_name")
+        details.last_name = e.record.getString("last_name")
+      }
+      if (cn === "member_teams") {
+        details.member = e.record.getString("member")
+        details.team = e.record.getString("team")
+      }
+      audit.log("warn", "delete", cn, e.record.id, audit.getActor(e), details)
+    } catch (err) {
+      console.log("[audit-log] Delete hook error: " + err)
+    }
+    e.next()
+  }, ALL_COLLECTIONS[i])
+
 }
 
 // ── Auth events (members only) ──────────────────────────────────────

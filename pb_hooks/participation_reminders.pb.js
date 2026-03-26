@@ -448,29 +448,8 @@ var runReminders = function() {
   // ─── Auto-decline tentative ("maybe") participations past respond_by deadline ───
   // For each activity type, find activities whose respond_by deadline has passed (≤ now),
   // then flip all "tentative" participations to "declined".
+  // Only runs for teams that have features_enabled.auto_decline_tentative === true.
   var tentativeDeclined = 0
-
-  // Helper: decline tentative participations for a set of activities
-  var declineTentativeForActivities = function(activityType, activities, getActivityId) {
-    for (var td = 0; td < activities.length; td++) {
-      var actId = getActivityId(activities[td])
-      try {
-        var tentatives = $app.findRecordsByFilter(
-          "participations",
-          'activity_type = "' + activityType + '" && activity_id = "' + actId + '" && status = "tentative"',
-          "", 500, 0
-        )
-        for (var tt = 0; tt < tentatives.length; tt++) {
-          tentatives[tt].set("status", "declined")
-          tentatives[tt].set("note", (tentatives[tt].getString("note") ? tentatives[tt].getString("note") + " | " : "") + "Auto-declined: deadline passed")
-          $app.save(tentatives[tt])
-          tentativeDeclined++
-        }
-      } catch (e) {
-        console.log("[participation-reminders] Error declining tentatives for " + activityType + " " + actId + ": " + e)
-      }
-    }
-  }
 
   // Trainings with passed deadline
   try {
@@ -480,7 +459,37 @@ var runReminders = function() {
       "", 500, 0
     )
     console.log("[participation-reminders] Checking " + pastTrainings.length + " trainings for tentative auto-decline")
-    declineTentativeForActivities("training", pastTrainings, function(r) { return r.id })
+    for (var tdt = 0; tdt < pastTrainings.length; tdt++) {
+      var tdTraining = pastTrainings[tdt]
+      var tdTeamId = tdTraining.getString("team")
+      if (!tdTeamId) continue
+      try {
+        var tdTeam = $app.findRecordById("teams", tdTeamId)
+        var tdFeatures = tdTeam.get("features_enabled")
+        if (!tdFeatures || tdFeatures.auto_decline_tentative !== true) {
+          console.log("[participation-reminders] Skipping tentative decline for training " + tdTraining.id + " (toggle off for team " + tdTeamId + ")")
+          continue
+        }
+      } catch (e) {
+        console.log("[participation-reminders] Error fetching team " + tdTeamId + " for training " + tdTraining.id + ": " + e)
+        continue
+      }
+      try {
+        var tdTentatives = $app.findRecordsByFilter(
+          "participations",
+          'activity_type = "training" && activity_id = "' + tdTraining.id + '" && status = "tentative"',
+          "", 500, 0
+        )
+        for (var tt = 0; tt < tdTentatives.length; tt++) {
+          tdTentatives[tt].set("status", "declined")
+          tdTentatives[tt].set("note", (tdTentatives[tt].getString("note") ? tdTentatives[tt].getString("note") + " | " : "") + "Auto-declined: deadline passed")
+          $app.save(tdTentatives[tt])
+          tentativeDeclined++
+        }
+      } catch (e) {
+        console.log("[participation-reminders] Error declining tentatives for training " + tdTraining.id + ": " + e)
+      }
+    }
   } catch (e) {
     console.log("[participation-reminders] Error finding trainings for tentative decline: " + e)
   }
@@ -493,12 +502,43 @@ var runReminders = function() {
       "", 500, 0
     )
     console.log("[participation-reminders] Checking " + pastGames.length + " games for tentative auto-decline")
-    declineTentativeForActivities("game", pastGames, function(r) { return r.id })
+    for (var tdg = 0; tdg < pastGames.length; tdg++) {
+      var tdGame = pastGames[tdg]
+      var tdGameTeamId = tdGame.getString("kscw_team")
+      if (!tdGameTeamId) continue
+      try {
+        var tdGameTeam = $app.findRecordById("teams", tdGameTeamId)
+        var tdGameFeatures = tdGameTeam.get("features_enabled")
+        if (!tdGameFeatures || tdGameFeatures.auto_decline_tentative !== true) {
+          console.log("[participation-reminders] Skipping tentative decline for game " + tdGame.id + " (toggle off for team " + tdGameTeamId + ")")
+          continue
+        }
+      } catch (e) {
+        console.log("[participation-reminders] Error fetching team " + tdGameTeamId + " for game " + tdGame.id + ": " + e)
+        continue
+      }
+      try {
+        var tdGameTentatives = $app.findRecordsByFilter(
+          "participations",
+          'activity_type = "game" && activity_id = "' + tdGame.id + '" && status = "tentative"',
+          "", 500, 0
+        )
+        for (var tg = 0; tg < tdGameTentatives.length; tg++) {
+          tdGameTentatives[tg].set("status", "declined")
+          tdGameTentatives[tg].set("note", (tdGameTentatives[tg].getString("note") ? tdGameTentatives[tg].getString("note") + " | " : "") + "Auto-declined: deadline passed")
+          $app.save(tdGameTentatives[tg])
+          tentativeDeclined++
+        }
+      } catch (e) {
+        console.log("[participation-reminders] Error declining tentatives for game " + tdGame.id + ": " + e)
+      }
+    }
   } catch (e) {
     console.log("[participation-reminders] Error finding games for tentative decline: " + e)
   }
 
   // Events with passed deadline
+  // Events can have multiple teams; only decline participations for members of opted-in teams.
   try {
     var pastEvents = $app.findRecordsByFilter(
       "events",
@@ -506,7 +546,61 @@ var runReminders = function() {
       "", 500, 0
     )
     console.log("[participation-reminders] Checking " + pastEvents.length + " events for tentative auto-decline")
-    declineTentativeForActivities("event", pastEvents, function(r) { return r.id })
+    for (var tde = 0; tde < pastEvents.length; tde++) {
+      var tdEvent = pastEvents[tde]
+      var tdEventTeamIds = tdEvent.get("teams")
+      if (!tdEventTeamIds || tdEventTeamIds.length === 0) continue
+
+      // Collect members of opted-in teams
+      var tdOptedInMemberIds = {}
+      for (var te = 0; te < tdEventTeamIds.length; te++) {
+        var tdEvtTeamId = tdEventTeamIds[te]
+        try {
+          var tdEvtTeam = $app.findRecordById("teams", tdEvtTeamId)
+          var tdEvtFeatures = tdEvtTeam.get("features_enabled")
+          if (!tdEvtFeatures || tdEvtFeatures.auto_decline_tentative !== true) {
+            console.log("[participation-reminders] Skipping tentative decline for event " + tdEvent.id + " team " + tdEvtTeamId + " (toggle off)")
+            continue
+          }
+        } catch (e) {
+          console.log("[participation-reminders] Error fetching team " + tdEvtTeamId + " for event " + tdEvent.id + ": " + e)
+          continue
+        }
+        try {
+          var tdEvtMembers = $app.findRecordsByFilter(
+            "member_teams",
+            'team = "' + tdEvtTeamId + '"',
+            "", 200, 0
+          )
+          for (var tem = 0; tem < tdEvtMembers.length; tem++) {
+            tdOptedInMemberIds[tdEvtMembers[tem].getString("member")] = true
+          }
+        } catch (e) {
+          console.log("[participation-reminders] Error fetching members for event team " + tdEvtTeamId + ": " + e)
+        }
+      }
+
+      var tdOptedInIds = Object.keys(tdOptedInMemberIds)
+      if (tdOptedInIds.length === 0) continue
+
+      try {
+        var tdEvtTentatives = $app.findRecordsByFilter(
+          "participations",
+          'activity_type = "event" && activity_id = "' + tdEvent.id + '" && status = "tentative"',
+          "", 500, 0
+        )
+        for (var tet = 0; tet < tdEvtTentatives.length; tet++) {
+          var tdEvtPart = tdEvtTentatives[tet]
+          if (!tdOptedInMemberIds[tdEvtPart.getString("member")]) continue
+          tdEvtPart.set("status", "declined")
+          tdEvtPart.set("note", (tdEvtPart.getString("note") ? tdEvtPart.getString("note") + " | " : "") + "Auto-declined: deadline passed")
+          $app.save(tdEvtPart)
+          tentativeDeclined++
+        }
+      } catch (e) {
+        console.log("[participation-reminders] Error declining tentatives for event " + tdEvent.id + ": " + e)
+      }
+    }
   } catch (e) {
     console.log("[participation-reminders] Error finding events for tentative decline: " + e)
   }

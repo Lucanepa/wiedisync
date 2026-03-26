@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Check, Pencil } from 'lucide-react'
+import { Check, ChevronDown, Pencil } from 'lucide-react'
 import type { RecordModel } from 'pocketbase'
 import type { RefereeExpense, Member, Team } from '../../../types'
 import { useTeamMembers } from '../../../hooks/useTeamMembers'
@@ -32,6 +32,7 @@ export default function RefereeExpenseSection({ gameId, teamId, canEdit }: Refer
   const [editing, setEditing] = useState(false)
   const [saved, setSaved] = useState(false)
   const [coaches, setCoaches] = useState<(Member & RecordModel)[]>([])
+  const [open, setOpen] = useState(false)
 
   // Form state
   const [paidBy, setPaidBy] = useState('')
@@ -139,21 +140,34 @@ export default function RefereeExpenseSection({ gameId, teamId, canEdit }: Refer
     ? `${existing.expand.paid_by_member.first_name} ${existing.expand.paid_by_member.last_name}`
     : existing?.paid_by_other || ''
 
+  // Auto-open when editing or when form needs to show for first entry
+  const effectiveOpen = open || isFormMode
+
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between"
+      >
         <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
           {t('refereeExpenses')}
+          {existing && !effectiveOpen && (
+            <span className="ml-2 normal-case font-normal text-gray-400 dark:text-gray-500">— {paidByName}</span>
+          )}
         </h4>
-        {saved && (
-          <span className="flex items-center gap-1 rounded-md bg-green-600 px-2 py-0.5 text-[11px] font-medium text-white shadow-lg animate-fade-in">
-            <Check className="h-3 w-3" />
-            {t('refereeExpensesSaved')}
-          </span>
-        )}
-      </div>
+        <div className="flex items-center gap-2">
+          {saved && (
+            <span className="flex items-center gap-1 rounded-md bg-green-600 px-2 py-0.5 text-[11px] font-medium text-white shadow-lg animate-fade-in">
+              <Check className="h-3 w-3" />
+              {t('refereeExpensesSaved')}
+            </span>
+          )}
+          <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${effectiveOpen ? 'rotate-180' : ''}`} />
+        </div>
+      </button>
 
-      {isFormMode ? (
+      {!effectiveOpen ? null : isFormMode ? (
         <div className="space-y-3">
           <SearchableSelect
             label={t('refereeExpensesPaidBy')}

@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '2.4.1'
+const APP_VERSION = '2.5.0'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,18 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.5.0',
+    date: '2026-03-26',
+    sections: [
+      {
+        title: 'Features',
+        items: [
+          'Team photo zoom: coaches can now zoom in/out when adjusting the team photo crop — KSCW brand bands appear on the sides when zoomed out',
+        ],
+      },
+    ],
+  },
   {
     version: '2.4.1',
     date: '2026-03-26',

@@ -2,6 +2,12 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [2.5.0] — 2026-03-26
+
+### Features
+
+- **Team photo zoom** — Coaches can now zoom in and out when adjusting the team photo crop. When zoomed out, KSCW brand-colored bands appear on the sides. Zoom level is stored alongside crop position in `team_picture_pos`. Slider + buttons UI during crop adjustment. Works on TeamDetail and TeamCard. i18n in all 5 locales.
+
 ## [2.4.1] — 2026-03-26
 
 ### Features

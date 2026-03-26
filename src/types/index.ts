@@ -33,7 +33,7 @@ export interface Team extends RecordModel {
   sponsors: string[]
   sponsors_logos: string[]
   bb_source_id: string
-  features_enabled: FeatureToggles
+  features_enabled: TeamSettings
 
 }
 
@@ -48,10 +48,21 @@ export interface Sponsor extends RecordModel {
 }
 
 export interface FeatureToggles {
-  polls?: boolean
-  carpool?: boolean
   tasks?: boolean
+  carpool?: boolean
+  polls?: boolean
   show_rsvp_time?: boolean
+}
+
+export interface TeamSettings extends FeatureToggles {
+  auto_decline_tentative?: boolean
+  game_min_participants?: number
+  game_respond_by_days?: number
+  game_require_note_if_absent?: boolean
+  training_min_participants?: number
+  training_respond_by_days?: number
+  training_auto_cancel_on_min?: boolean
+  training_require_note_if_absent?: boolean
 }
 
 export interface Member extends RecordModel {

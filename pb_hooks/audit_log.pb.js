@@ -33,7 +33,7 @@ function writeLogLine(obj) {
  * @param {string} actor - member ID, "system", or "anonymous"
  * @param {object} [details] - extra context (changed fields, error messages, etc.)
  */
-function log(level, action, collection, recordId, actor, details) {
+function auditLog(level, action, collection, recordId, actor, details) {
   writeLogLine({
     level: level,
     action: action,
@@ -146,7 +146,7 @@ for (var i = 0; i < ALL_COLLECTIONS.length; i++) {
         details.team = e.record.getString("team")
         details.season = e.record.getString("season")
       }
-      log("info", "create", cn, e.record.id, getActor(e), details)
+      auditLog("info", "create", cn, e.record.id, getActor(e), details)
     } catch (err) {
       console.log("[audit-log] Create hook error: " + err)
     }
@@ -160,7 +160,7 @@ for (var i = 0; i < ALL_COLLECTIONS.length; i++) {
       var changes = diffRecord(e.record)
       var keys = Object.keys(changes)
       if (keys.length > 0) {
-        log("info", "update", cn, e.record.id, getActor(e), { changes: changes })
+        auditLog("info", "update", cn, e.record.id, getActor(e), { changes: changes })
       }
     } catch (err) {
       console.log("[audit-log] Update hook error: " + err)
@@ -182,7 +182,7 @@ for (var i = 0; i < ALL_COLLECTIONS.length; i++) {
         details.member = e.record.getString("member")
         details.team = e.record.getString("team")
       }
-      log("warn", "delete", cn, e.record.id, getActor(e), details)
+      auditLog("warn", "delete", cn, e.record.id, getActor(e), details)
     } catch (err) {
       console.log("[audit-log] Delete hook error: " + err)
     }
@@ -195,7 +195,7 @@ for (var i = 0; i < ALL_COLLECTIONS.length; i++) {
 
 onRecordAuthRequest(function(e) {
   try {
-    log("info", "auth", "members", e.record.id, e.record.id, {
+    auditLog("info", "auth", "members", e.record.id, e.record.id, {
       email: e.record.getString("email"),
       method: e.method || "unknown",
     })
@@ -209,7 +209,7 @@ onRecordAuthRequest(function(e) {
 
 onMailerRecordPasswordResetSend(function(e) {
   try {
-    log("info", "system", "members", e.record.id, e.record.id, {
+    auditLog("info", "system", "members", e.record.id, e.record.id, {
       event: "password_reset_requested",
       email: e.record.getString("email"),
     })
@@ -221,7 +221,7 @@ onMailerRecordPasswordResetSend(function(e) {
 
 onMailerRecordVerificationSend(function(e) {
   try {
-    log("info", "system", "members", e.record.id, e.record.id, {
+    auditLog("info", "system", "members", e.record.id, e.record.id, {
       event: "verification_email_sent",
       email: e.record.getString("email"),
     })

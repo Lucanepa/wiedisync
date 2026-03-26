@@ -256,6 +256,8 @@ export default function CalendarPage() {
           filters={filters}
           onChange={setFilters}
           allowedSources={allowedSources}
+          userTeamIds={userTeamIds}
+          isAdmin={effectiveIsAdmin}
         />
       )}
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import Modal from '@/components/Modal'
 import LocationCombobox from '@/components/LocationCombobox'
@@ -14,7 +14,7 @@ import { FormInput, FormTextarea, FormField } from '@/components/FormField'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import DatePicker from '@/components/ui/DatePicker'
 import { Switch } from '@/components/ui/switch'
-import type { Training, Team, Hall, HallSlot, SlotClaim } from '../../types'
+import type { Training, Team, Hall, HallSlot, SlotClaim, TeamSettings } from '../../types'
 import type { RecurringEditScope } from './RecurringEditDialog'
 
 // day_of_week in DB: 0=Mon, 1=Tue, ..., 6=Sun
@@ -75,6 +75,7 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
   const [maxParticipants, setMaxParticipants] = useState('')
   const [requireNoteIfAbsent, setRequireNoteIfAbsent] = useState(false)
   const [autoCancelOnMin, setAutoCancelOnMin] = useState(false)
+  const [respondByDefaultDays, setRespondByDefaultDays] = useState<number | null>(null)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
@@ -83,6 +84,9 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
   const [teamSlots, setTeamSlots] = useState<HallSlot[]>([])
   const [teamClaims, setTeamClaims] = useState<SlotClaim[]>([])
   const [selectedSlotKey, setSelectedSlotKey] = useState('')
+
+  // Track the teamId for which defaults were last applied (new training only)
+  const defaultsAppliedForTeam = useRef<string | null>(null)
 
   // Fetch team's hall_slots and active claims when teamId changes
   useEffect(() => {
@@ -104,6 +108,35 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
       sort: 'date,start_time',
     }).then(setTeamClaims).catch(() => setTeamClaims([]))
   }, [teamId])
+
+  // Pre-fill defaults from team settings when creating a new training and teamId changes
+  useEffect(() => {
+    // Only apply defaults for new trainings (not edits)
+    if (training) return
+    if (!teamId) return
+    // Don't re-apply for the same team
+    if (defaultsAppliedForTeam.current === teamId) return
+
+    defaultsAppliedForTeam.current = teamId
+    pb.collection('teams').getOne<{ features_enabled: TeamSettings }>(teamId, { fields: 'features_enabled' })
+      .then((team) => {
+        const s = team.features_enabled ?? {}
+        if (s.training_min_participants !== undefined) {
+          setMinParticipants(String(s.training_min_participants))
+        }
+        if (s.training_auto_cancel_on_min !== undefined) {
+          setAutoCancelOnMin(s.training_auto_cancel_on_min)
+        }
+        if (s.training_require_note_if_absent !== undefined) {
+          setRequireNoteIfAbsent(s.training_require_note_if_absent)
+        }
+        // respond_by is a date in TrainingForm — store days offset for use when date is set
+        if (s.training_respond_by_days !== undefined) {
+          setRespondByDefaultDays(s.training_respond_by_days)
+        }
+      })
+      .catch(() => { /* silently ignore */ })
+  }, [teamId, training])
 
   // Build matching slot options for the selected date
   const slotOptions = useMemo<SlotOption[]>(() => {
@@ -217,11 +250,24 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
       setMaxParticipants('')
       setRequireNoteIfAbsent(false)
       setAutoCancelOnMin(false)
+      setRespondByDefaultDays(null)
+      defaultsAppliedForTeam.current = null
       setSlotMode('auto')
       setSelectedSlotKey('')
     }
     setError('')
   }, [training, open])
+
+  // When a date is selected on a new training, apply respond_by offset from team defaults
+  useEffect(() => {
+    if (training) return
+    if (!date || respondByDefaultDays === null || respondByDefaultDays <= 0) return
+    // Only set if respondBy hasn't been manually set yet
+    if (respondBy) return
+    const d = new Date(date)
+    d.setDate(d.getDate() - respondByDefaultDays)
+    setRespondBy(d.toISOString().slice(0, 10))
+  }, [date, respondByDefaultDays]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

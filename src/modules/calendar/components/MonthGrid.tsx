@@ -287,7 +287,7 @@ export default function MonthGrid({
         {weekRows.map((week, wi) => {
           const { bars, timedByCol } = weekLayouts[wi]
 
-          // Merge absence bars: collect names + entries per column, then build merged spans
+          // Collect per-column absence info for inline rendering
           const absenceBars = bars.filter((b) => b.entry.type === 'absence')
           const absenceInfoByCol: { names: string[]; entries: CalendarEntry[] }[] = Array.from({ length: 7 }, () => ({ names: [], entries: [] }))
           for (const bar of absenceBars) {
@@ -297,45 +297,9 @@ export default function MonthGrid({
               if (!absenceInfoByCol[c].entries.find((e) => e.id === bar.entry.id)) absenceInfoByCol[c].entries.push(bar.entry)
             }
           }
-          // Build merged absence spans: consecutive columns with same name set
-          const mergedAbsenceSpans: { startCol: number; span: number; label: string; entry: CalendarEntry }[] = []
-          let spanStart = -1
-          let prevLabel = ''
-          let spanEntry: CalendarEntry | null = null
-          for (let c = 0; c <= 7; c++) {
-            const info = c < 7 ? absenceInfoByCol[c] : { names: [], entries: [] }
-            const label = info.names.length > 0 ? `Absence · ${info.names.join(' · ')}` : ''
-            if (label && label === prevLabel) {
-              // continue current span
-            } else {
-              if (spanStart >= 0 && prevLabel && spanEntry) {
-                mergedAbsenceSpans.push({ startCol: spanStart, span: c - spanStart, label: prevLabel, entry: spanEntry })
-              }
-              spanStart = label ? c : -1
-              spanEntry = info.entries[0] ?? null
-            }
-            prevLabel = label
-          }
 
           return (
             <div key={wi} className="relative flex flex-1 flex-col">
-              {/* Absence overlay bars — merged across overlapping absences */}
-              {mergedAbsenceSpans.map((seg, si) => {
-                const c = barColors.absence
-                const leftPct = (seg.startCol / 7) * 100
-                const widthPct = (seg.span / 7) * 100
-                return (
-                  <button
-                    key={`abs-${si}`}
-                    type="button"
-                    onClick={() => onEntryClick?.(seg.entry)}
-                    style={{ left: `${leftPct}%`, width: `${widthPct}%`, top: '24px' }}
-                    className={`absolute z-10 cursor-pointer truncate rounded px-1.5 text-left text-[10px] font-medium leading-[16px] hover:opacity-80 lg:text-xs ${c.bg} ${c.text} ${c.darkBg} ${c.darkText}`}
-                  >
-                    {seg.label}
-                  </button>
-                )
-              })}
               {/* Day cells row */}
               <div className="grid flex-1 grid-cols-7">
                 {week.map((date, ci) => {
@@ -344,15 +308,21 @@ export default function MonthGrid({
                   const isToday = isSameDay(date, today)
                   const isClosed = closedDates.has(key)
                   const timed = timedByCol[ci]
-                  const visibleTimed = timed.slice(0, MAX_VISIBLE_TIMED)
 
                   // All-day/spanning entries covering this day
                   const cellBars = bars.filter(
                     (b) => ci >= b.startCol && ci < b.startCol + b.span,
                   )
-                  const visibleBars = cellBars.filter((b) => b.lane < MAX_VISIBLE_BARS)
-                  const hiddenBars = cellBars.filter((b) => b.lane >= MAX_VISIBLE_BARS).length
-                  const hiddenTimed = Math.max(0, timed.length - MAX_VISIBLE_TIMED)
+                  const visibleBars = cellBars.filter((b) => b.lane < MAX_VISIBLE_BARS && b.entry.type !== 'absence')
+                  const hiddenBars = cellBars.filter((b) => b.lane >= MAX_VISIBLE_BARS && b.entry.type !== 'absence').length
+
+                  // Absences rendered inline — count toward timed slot budget
+                  const cellAbsences = absenceInfoByCol[ci]
+                  const hasAbsence = cellAbsences.names.length > 0
+                  const absenceSlots = hasAbsence ? 1 : 0 // 1 compact line for all absences
+                  const timedBudget = Math.max(0, MAX_VISIBLE_TIMED - absenceSlots)
+                  const visibleTimed = timed.slice(0, timedBudget)
+                  const hiddenTimed = Math.max(0, timed.length - timedBudget)
                   const overflow = hiddenBars + hiddenTimed
 
                   // Pick the first visible all-day entry for full-cell background (skip absences)
@@ -392,9 +362,9 @@ export default function MonthGrid({
                       </div>
 
                       {/* Other all-day event labels (vertically centered) */}
-                      {visibleBars.some((b) => b.entry.type !== 'absence') && (
+                      {visibleBars.length > 0 && (
                         <div className="flex flex-1 flex-col items-center justify-center">
-                          {visibleBars.filter((b) => b.entry.type !== 'absence').map((bar) => {
+                          {visibleBars.map((bar) => {
                             // Only show label on the first column of the span
                             if (ci !== bar.startCol) return null
                             const c = barColors[colorKey(bar.entry)]
@@ -407,9 +377,23 @@ export default function MonthGrid({
                         </div>
                       )}
 
-                      {/* Timed events */}
-                      {inMonth && visibleTimed.length + overflow > 0 && (
+                      {/* Timed events (with inline absences) */}
+                      {inMonth && (hasAbsence || visibleTimed.length + overflow > 0) && (
                         <div className="mt-auto space-y-px overflow-hidden">
+                          {/* Inline absence line */}
+                          {hasAbsence && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                if (cellAbsences.entries[0]) onEntryClick?.(cellAbsences.entries[0])
+                              }}
+                              className={`flex w-full items-center gap-0.5 truncate rounded px-0.5 text-left text-[10px] leading-snug ${barColors.absence.bg} ${barColors.absence.text} ${barColors.absence.darkBg} ${barColors.absence.darkText}`}
+                            >
+                              <TypeIcon type="absence" className="text-current" />
+                              <span className="truncate font-medium">{cellAbsences.names.join(' · ')}</span>
+                            </button>
+                          )}
                           {visibleTimed.map((entry) => (
                             <button
                               key={entry.id}

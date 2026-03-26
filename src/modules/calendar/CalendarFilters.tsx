@@ -52,7 +52,7 @@ export default function CalendarFilters({ open, onClose, filters, onChange, allo
 
   return (
     <Modal open={open} onClose={onClose} title={t('filterTitle')} size="sm">
-      <div className="space-y-5">
+      <div className="min-h-[14rem] space-y-5">
         {/* Source type dropdown */}
         <div>
           <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">

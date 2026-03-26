@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import Modal from '@/components/Modal'
 import { useAuth } from '../../hooks/useAuth'
@@ -8,6 +8,7 @@ import { formatDate, formatDateCompact, toISODate } from '../../utils/dateHelper
 import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
 import type { HallSlot, HallClosure, Team, Hall } from '../../types'
+import type { TeamSettings } from '../../types'
 import TeamChip from '../../components/TeamChip'
 import DatePicker from '@/components/ui/DatePicker'
 import { Switch } from '@/components/ui/switch'
@@ -78,6 +79,40 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
   const [skipped, setSkipped] = useState(0)
   const [existingDates, setExistingDates] = useState<Set<string>>(new Set())
   const [done, setDone] = useState(false)
+
+  // Track whether defaults have been applied for the current open session
+  const defaultsApplied = useRef(false)
+
+  // Pre-fill from team defaults when the modal opens
+  useEffect(() => {
+    if (!open) {
+      defaultsApplied.current = false
+      return
+    }
+    if (defaultsApplied.current) return
+    const teamId = selectedTeamId
+    if (!teamId) return
+
+    defaultsApplied.current = true
+    pb.collection('teams').getOne<{ features_enabled: TeamSettings }>(teamId, { fields: 'features_enabled' })
+      .then((team) => {
+        const s = team.features_enabled ?? {}
+        if (s.training_respond_by_days !== undefined) {
+          setRespondByAmount(String(s.training_respond_by_days))
+          setRespondByUnit('days')
+        }
+        if (s.training_min_participants !== undefined) {
+          setMinParticipants(String(s.training_min_participants))
+        }
+        if (s.training_auto_cancel_on_min !== undefined) {
+          setAutoCancelOnMin(s.training_auto_cancel_on_min)
+        }
+        if (s.training_require_note_if_absent !== undefined) {
+          setRequireNoteIfAbsent(s.training_require_note_if_absent)
+        }
+      })
+      .catch(() => { /* silently ignore — defaults stay empty */ })
+  }, [open, selectedTeamId])
 
   function resetModalState() {
     setSelectedSlot('')

@@ -5,10 +5,10 @@
 // Only accessible from localhost (127.0.0.1)
 
 routerAdd("POST", "/api/vps-report", function(e) {
-  // Only allow from localhost
+  // Only allow from localhost or Docker bridge network
   var ip = e.realIP()
-  if (ip !== "127.0.0.1" && ip !== "::1") {
-    return e.json(403, { error: "forbidden" })
+  if (ip !== "127.0.0.1" && ip !== "::1" && ip.indexOf("10.0.") !== 0 && ip.indexOf("172.") !== 0) {
+    return e.json(403, { error: "forbidden: " + ip })
   }
 
   var data = e.requestInfo().body

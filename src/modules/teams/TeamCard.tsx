@@ -16,14 +16,24 @@ export default function TeamCard({ team, memberCount }: TeamCardProps) {
       className="relative block overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-card transition-shadow hover:shadow-card-hover"
       style={{ borderLeftWidth: '4px', borderLeftColor: getTeamColor(team.name).bg }}
     >
-      {team.team_picture && (
-        <img
-          src={getFileUrl('teams', team.id, team.team_picture)}
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover opacity-10"
-          style={team.team_picture_pos ? { objectPosition: team.team_picture_pos } : undefined}
-        />
-      )}
+      {team.team_picture && (() => {
+        const parts = team.team_picture_pos?.split(' ').map((v) => parseFloat(v)) ?? []
+        const posX = !isNaN(parts[0]) ? parts[0] : 50
+        const posY = !isNaN(parts[1]) ? parts[1] : 50
+        const z = parts.length >= 3 && !isNaN(parts[2]) ? parts[2] : 1
+        return (
+          <img
+            src={getFileUrl('teams', team.id, team.team_picture)}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover opacity-10"
+            style={{
+              objectPosition: `${posX}% ${posY}%`,
+              transform: z !== 1 ? `scale(${z})` : undefined,
+              transformOrigin: `${posX}% ${posY}%`,
+            }}
+          />
+        )
+      })()}
       <div className="relative">
         <div className="flex items-start justify-between">
           <div>

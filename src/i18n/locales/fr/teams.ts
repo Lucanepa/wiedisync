@@ -36,6 +36,8 @@ export default {
   teamLeadership: 'Direction de l\'equipe',
   editTeam: 'Modifier l\'equipe',
   adjustCrop: 'Ajuster le cadrage',
+  zoomIn: 'Agrandir',
+  zoomOut: 'Réduire',
   editRoster: 'Modifier l\'effectif',
   addPlayer: 'Ajouter un joueur',
   searchPlaceholder: 'Rechercher par nom...',

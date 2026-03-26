@@ -36,6 +36,8 @@ export default {
   teamLeadership: 'Team Leadership',
   editTeam: 'Edit team',
   adjustCrop: 'Adjust crop',
+  zoomIn: 'Zoom in',
+  zoomOut: 'Zoom out',
   editRoster: 'Edit roster',
   addPlayer: 'Add player',
   searchPlaceholder: 'Search by name...',

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams, Link } from 'react-router-dom'
-import { Move, Check, X as XIcon, XCircle, User } from 'lucide-react'
+import { Move, Check, X as XIcon, XCircle, User, ZoomIn, ZoomOut } from 'lucide-react'
 import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
 import { useTeamMembers } from '../../hooks/useTeamMembers'
@@ -53,14 +53,25 @@ export default function TeamDetail() {
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [adjustingCrop, setAdjustingCrop] = useState(false)
   const [cropPos, setCropPos] = useState({ x: 50, y: 50 })
+  const [zoom, setZoom] = useState(1.0)
   const cropContainerRef = useRef<HTMLDivElement>(null)
   const draggingCrop = useRef(false)
 
-  // Initialize crop position from team data
+  // Parse "x% y%" or "x% y% zoom" from team_picture_pos
+  function parsePicturePos(pos: string) {
+    const parts = pos.split(' ').map((v) => parseFloat(v))
+    const x = !isNaN(parts[0]) ? parts[0] : 50
+    const y = !isNaN(parts[1]) ? parts[1] : 50
+    const z = parts.length >= 3 && !isNaN(parts[2]) ? parts[2] : 1.0
+    return { x, y, z }
+  }
+
+  // Initialize crop position + zoom from team data
   useEffect(() => {
     if (team?.team_picture_pos) {
-      const [x, y] = team.team_picture_pos.split(' ').map((v) => parseFloat(v))
-      if (!isNaN(x) && !isNaN(y)) setCropPos({ x, y })
+      const { x, y, z } = parsePicturePos(team.team_picture_pos)
+      setCropPos({ x, y })
+      setZoom(z)
     }
   }, [team?.team_picture_pos])
 
@@ -91,7 +102,7 @@ export default function TeamDetail() {
 
   async function saveCropPosition() {
     if (!team) return
-    const pos = `${cropPos.x}% ${cropPos.y}%`
+    const pos = `${cropPos.x}% ${cropPos.y}% ${zoom}`
     try {
       await pb.collection('teams').update(team.id, { team_picture_pos: pos })
       logActivity('update', 'teams', team.id, { team_picture_pos: pos })
@@ -102,10 +113,12 @@ export default function TeamDetail() {
 
   function cancelCropAdjust() {
     if (team?.team_picture_pos) {
-      const [x, y] = team.team_picture_pos.split(' ').map((v) => parseFloat(v))
-      if (!isNaN(x) && !isNaN(y)) setCropPos({ x, y })
+      const { x, y, z } = parsePicturePos(team.team_picture_pos)
+      setCropPos({ x, y })
+      setZoom(z)
     } else {
       setCropPos({ x: 50, y: 50 })
+      setZoom(1.0)
     }
     setAdjustingCrop(false)
   }
@@ -253,13 +266,20 @@ export default function TeamDetail() {
             onPointerDown={handleCropPointerDown}
             onPointerMove={handleCropPointerMove}
             onPointerUp={handleCropPointerUp}
-            style={{ touchAction: adjustingCrop ? 'none' : 'auto' }}
+            style={{
+              touchAction: adjustingCrop ? 'none' : 'auto',
+              background: zoom < 1 ? 'linear-gradient(90deg, #4A55A2 0%, #3a4590 15%, #2a3580 50%, #3a4590 85%, #4A55A2 100%)' : undefined,
+            }}
           >
             <img
               src={getFileUrl('teams', team.id, team.team_picture)}
               alt={team.full_name}
-              className={`h-48 w-full object-cover sm:h-64 ${adjustingCrop ? 'cursor-crosshair' : 'cursor-pointer'}`}
-              style={{ objectPosition: `${cropPos.x}% ${cropPos.y}%` }}
+              className={`h-48 w-full sm:h-64 ${zoom < 1 ? 'object-contain' : 'object-cover'} ${adjustingCrop ? 'cursor-crosshair' : 'cursor-pointer'}`}
+              style={{
+                objectPosition: `${cropPos.x}% ${cropPos.y}%`,
+                transform: zoom !== 1 ? `scale(${zoom})` : undefined,
+                transformOrigin: `${cropPos.x}% ${cropPos.y}%`,
+              }}
               onClick={adjustingCrop ? undefined : () => setLightboxOpen(true)}
               draggable={false}
             />
@@ -284,23 +304,53 @@ export default function TeamDetail() {
             )}
             {adjustingCrop && (
               <div
-                className="absolute bottom-2 right-2 flex gap-2"
+                className="absolute bottom-2 left-2 right-2 flex items-end justify-between gap-2"
                 onPointerDown={(e) => e.stopPropagation()}
               >
-                <button
-                  onClick={saveCropPosition}
-                  className="flex items-center gap-1 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700"
-                >
-                  <Check className="h-3.5 w-3.5" />
-                  {t('common:save')}
-                </button>
-                <button
-                  onClick={cancelCropAdjust}
-                  className="flex items-center gap-1 rounded-lg bg-gray-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-700"
-                >
-                  <XIcon className="h-3.5 w-3.5" />
-                  {t('common:cancel')}
-                </button>
+                {/* Zoom controls */}
+                <div className="flex items-center gap-2 rounded-lg bg-black/60 px-3 py-1.5">
+                  <button
+                    onClick={() => setZoom((z) => Math.max(0.5, +(z - 0.1).toFixed(1)))}
+                    className="rounded p-0.5 text-white hover:bg-white/20"
+                    title={t('zoomOut')}
+                  >
+                    <ZoomOut className="h-4 w-4" />
+                  </button>
+                  <input
+                    type="range"
+                    min="0.5"
+                    max="2"
+                    step="0.1"
+                    value={zoom}
+                    onChange={(e) => setZoom(+e.target.value)}
+                    className="h-1 w-20 cursor-pointer accent-brand-500 sm:w-28"
+                  />
+                  <button
+                    onClick={() => setZoom((z) => Math.min(2, +(z + 0.1).toFixed(1)))}
+                    className="rounded p-0.5 text-white hover:bg-white/20"
+                    title={t('zoomIn')}
+                  >
+                    <ZoomIn className="h-4 w-4" />
+                  </button>
+                  <span className="min-w-[3ch] text-center text-xs text-white/80">{Math.round(zoom * 100)}%</span>
+                </div>
+                {/* Save/Cancel */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={saveCropPosition}
+                    className="flex items-center gap-1 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700"
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                    {t('common:save')}
+                  </button>
+                  <button
+                    onClick={cancelCropAdjust}
+                    className="flex items-center gap-1 rounded-lg bg-gray-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-700"
+                  >
+                    <XIcon className="h-3.5 w-3.5" />
+                    {t('common:cancel')}
+                  </button>
+                </div>
               </div>
             )}
           </div>

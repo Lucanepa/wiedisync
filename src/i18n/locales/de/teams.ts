@@ -36,6 +36,8 @@ export default {
   teamLeadership: 'Teamführung',
   editTeam: 'Team bearbeiten',
   adjustCrop: 'Bildausschnitt anpassen',
+  zoomIn: 'Vergrössern',
+  zoomOut: 'Verkleinern',
   editRoster: 'Kader bearbeiten',
   addPlayer: 'Spieler hinzufügen',
   searchPlaceholder: 'Nach Name suchen...',

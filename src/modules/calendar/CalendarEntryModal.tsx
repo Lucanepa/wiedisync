@@ -1,7 +1,12 @@
-import { useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Pencil } from 'lucide-react'
 import TeamChip from '../../components/TeamChip'
 import RichText from '../../components/RichText'
+import ParticipationButton from '../../components/ParticipationButton'
+import ParticipationSummary from '../../components/ParticipationSummary'
+import AbsenceForm from '../absences/AbsenceForm'
+import { useAuth } from '../../hooks/useAuth'
 import type { CalendarEntry } from '../../types/calendar'
 import type { Training, Event as KscwEvent, Absence } from '../../types'
 import { formatDate } from '../../utils/dateUtils'
@@ -9,10 +14,13 @@ import { formatDate } from '../../utils/dateUtils'
 interface CalendarEntryModalProps {
   entry: CalendarEntry | null
   onClose: () => void
+  onRefresh?: () => void
 }
 
-export default function CalendarEntryModal({ entry, onClose }: CalendarEntryModalProps) {
+export default function CalendarEntryModal({ entry, onClose, onRefresh }: CalendarEntryModalProps) {
   const { t } = useTranslation('calendar')
+  const { user } = useAuth()
+  const [editingAbsence, setEditingAbsence] = useState(false)
 
   useEffect(() => {
     if (!entry) return
@@ -22,6 +30,11 @@ export default function CalendarEntryModal({ entry, onClose }: CalendarEntryModa
     document.addEventListener('keydown', handleKey)
     return () => document.removeEventListener('keydown', handleKey)
   }, [entry, onClose])
+
+  // Reset absence edit state when entry changes
+  useEffect(() => {
+    setEditingAbsence(false)
+  }, [entry?.id])
 
   if (!entry) return null
 
@@ -45,83 +58,153 @@ export default function CalendarEntryModal({ entry, onClose }: CalendarEntryModa
 
   const dateStr = formatDate(entry.date, 'EEEE, MMMM d, yyyy')
 
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={onClose}
-    >
-      <div
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-white shadow-xl sm:rounded-2xl dark:bg-gray-800"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between border-b dark:border-gray-700 px-6 py-4">
-          <span className={`rounded px-2 py-0.5 text-xs font-medium ${typeBadgeStyles[entry.type]}`}>
-            {typeLabels[entry.type]}
-          </span>
-          <button
-            onClick={onClose}
-            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 sm:min-h-0 sm:min-w-0 sm:p-1 dark:hover:bg-gray-700"
-          >
-            <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path
-                fillRule="evenodd"
-                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </button>
-        </div>
+  const isOwnAbsence = entry.type === 'absence' && user && (entry.source as Absence).member === user.id
 
-        {/* Title */}
-        <div className="px-6 py-5">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            {entry.title}
-          </h3>
-          {entry.teamNames.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {entry.teamNames.map((name) => (
-                <TeamChip key={name} team={name} size="sm" />
-              ))}
+  return (
+    <>
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+        onClick={onClose}
+      >
+        <div
+          className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-white shadow-xl sm:rounded-2xl dark:bg-gray-800"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between border-b dark:border-gray-700 px-6 py-4">
+            <span className={`rounded px-2 py-0.5 text-xs font-medium ${typeBadgeStyles[entry.type]}`}>
+              {typeLabels[entry.type]}
+            </span>
+            <button
+              onClick={onClose}
+              className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 sm:min-h-0 sm:min-w-0 sm:p-1 dark:hover:bg-gray-700"
+            >
+              <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path
+                  fillRule="evenodd"
+                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+          </div>
+
+          {/* Title */}
+          <div className="px-6 py-5">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              {entry.title}
+            </h3>
+            {entry.teamNames.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {entry.teamNames.map((name) => (
+                  <TeamChip key={name} team={name} size="sm" />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Details */}
+          <div className="space-y-3 border-t dark:border-gray-700 px-6 py-4">
+            <DetailRow label={entry.endDate ? t('common:from') : t('common:date')} value={dateStr} />
+            {entry.endDate && (
+              <DetailRow label={t('common:to')} value={formatDate(entry.endDate, 'EEEE, MMMM d, yyyy')} />
+            )}
+
+            {entry.allDay && !entry.endDate ? (
+              <DetailRow label={t('common:type')} value={t('common:allDay')} />
+            ) : !entry.allDay && entry.startTime ? (
+              <DetailRow
+                label={t('common:from')}
+                value={entry.endTime ? `${entry.startTime} – ${entry.endTime}` : entry.startTime}
+              />
+            ) : null}
+
+            {entry.location && (
+              <DetailRow label={t('common:hall')} value={entry.location} />
+            )}
+
+            {entry.description && (
+              <DetailRow label={t('common:details')} value={entry.description} />
+            )}
+
+            {/* Training-specific fields */}
+            {entry.type === 'training' && renderTrainingDetails(entry.source as Training, t)}
+
+            {/* Event-specific fields */}
+            {entry.type === 'event' && renderEventDetails(entry.source as KscwEvent, t)}
+
+            {/* Absence-specific fields */}
+            {entry.type === 'absence' && renderAbsenceDetails(entry.source as Absence, t)}
+          </div>
+
+          {/* Participation section for trainings */}
+          {entry.type === 'training' && user && !(entry.source as Training).cancelled && (
+            <div className="border-t dark:border-gray-700 px-6 py-4 space-y-3">
+              <ParticipationButton
+                activityType="training"
+                activityId={entry.source.id}
+                activityDate={(entry.source as Training).date}
+                teamId={(entry.source as Training).team}
+                respondBy={(entry.source as Training).respond_by}
+                activityStartTime={(entry.source as Training).start_time}
+                requireNoteIfAbsent={(entry.source as Training).require_note_if_absent}
+              />
+              <ParticipationSummary
+                activityType="training"
+                activityId={entry.source.id}
+                compact
+              />
+            </div>
+          )}
+
+          {/* Participation section for events */}
+          {entry.type === 'event' && user && (
+            <div className="border-t dark:border-gray-700 px-6 py-4 space-y-3">
+              <ParticipationButton
+                activityType="event"
+                activityId={entry.source.id}
+                respondBy={(entry.source as KscwEvent).respond_by}
+                participationMode={(entry.source as KscwEvent).participation_mode}
+                maxPlayers={(entry.source as KscwEvent).max_players}
+                requireNoteIfAbsent={(entry.source as KscwEvent).require_note_if_absent}
+              />
+              <ParticipationSummary
+                activityType="event"
+                activityId={entry.source.id}
+                compact
+              />
+            </div>
+          )}
+
+          {/* Edit button for own absences */}
+          {isOwnAbsence && (
+            <div className="border-t dark:border-gray-700 px-6 py-4">
+              <button
+                onClick={() => setEditingAbsence(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                {t('common:edit')}
+              </button>
             </div>
           )}
         </div>
-
-        {/* Details */}
-        <div className="space-y-3 border-t dark:border-gray-700 px-6 py-4">
-          <DetailRow label={entry.endDate ? t('common:from') : t('common:date')} value={dateStr} />
-          {entry.endDate && (
-            <DetailRow label={t('common:to')} value={formatDate(entry.endDate, 'EEEE, MMMM d, yyyy')} />
-          )}
-
-          {entry.allDay && !entry.endDate ? (
-            <DetailRow label={t('common:type')} value={t('common:allDay')} />
-          ) : !entry.allDay && entry.startTime ? (
-            <DetailRow
-              label={t('common:from')}
-              value={entry.endTime ? `${entry.startTime} – ${entry.endTime}` : entry.startTime}
-            />
-          ) : null}
-
-          {entry.location && (
-            <DetailRow label={t('common:hall')} value={entry.location} />
-          )}
-
-          {entry.description && (
-            <DetailRow label={t('common:details')} value={entry.description} />
-          )}
-
-          {/* Training-specific fields */}
-          {entry.type === 'training' && renderTrainingDetails(entry.source as Training, t)}
-
-          {/* Event-specific fields */}
-          {entry.type === 'event' && renderEventDetails(entry.source as KscwEvent, t)}
-
-          {/* Absence-specific fields */}
-          {entry.type === 'absence' && renderAbsenceDetails(entry.source as Absence, t)}
-        </div>
       </div>
-    </div>
+
+      {/* Absence edit form */}
+      {editingAbsence && (
+        <AbsenceForm
+          open
+          absence={entry.source as Absence}
+          onSave={() => {
+            setEditingAbsence(false)
+            onRefresh?.()
+            onClose()
+          }}
+          onCancel={() => setEditingAbsence(false)}
+        />
+      )}
+    </>
   )
 }
 

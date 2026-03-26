@@ -12,9 +12,11 @@ interface CalendarFiltersProps {
   filters: CalendarFilterState
   onChange: (filters: CalendarFilterState) => void
   allowedSources?: SourceFilter[]
+  userTeamIds?: string[]
+  isAdmin?: boolean
 }
 
-export default function CalendarFilters({ open, onClose, filters, onChange, allowedSources }: CalendarFiltersProps) {
+export default function CalendarFilters({ open, onClose, filters, onChange, allowedSources, userTeamIds, isAdmin }: CalendarFiltersProps) {
   const { t } = useTranslation('calendar')
   const { t: tc } = useTranslation('common')
 
@@ -31,12 +33,13 @@ export default function CalendarFilters({ open, onClose, filters, onChange, allo
     ? allSourceOptions.filter((o) => allowedSources.includes(o.value as SourceFilter))
     : allSourceOptions
   const { data: teams } = useTeams()
+  const visibleTeams = isAdmin ? teams : teams.filter((t) => userTeamIds?.includes(t.id))
 
-  const hasVB = teams.some((t) => t.sport === 'volleyball')
-  const hasBB = teams.some((t) => t.sport === 'basketball')
+  const hasVB = visibleTeams.some((t) => t.sport === 'volleyball')
+  const hasBB = visibleTeams.some((t) => t.sport === 'basketball')
   const showGroups = hasVB && hasBB
 
-  const teamOptions = teams
+  const teamOptions = visibleTeams
     .filter((team) => team.sport === 'volleyball' || team.sport === 'basketball')
     .map((team) => {
       const colorKey = pbNameToColorKey(team.name, team.sport)

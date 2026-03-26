@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Check, Pencil } from 'lucide-react'
 import type { RecordModel } from 'pocketbase'
-import type { RefereeExpense, Member } from '../../../types'
+import type { RefereeExpense, Member, Team } from '../../../types'
 import { useTeamMembers } from '../../../hooks/useTeamMembers'
 import { useMutation } from '../../../hooks/useMutation'
 import { useAuth } from '../../../hooks/useAuth'
@@ -31,6 +31,7 @@ export default function RefereeExpenseSection({ gameId, teamId, canEdit }: Refer
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [coaches, setCoaches] = useState<(Member & RecordModel)[]>([])
 
   // Form state
   const [paidBy, setPaidBy] = useState('')
@@ -38,11 +39,12 @@ export default function RefereeExpenseSection({ gameId, teamId, canEdit }: Refer
   const [amount, setAmount] = useState('')
   const [notes, setNotes] = useState('')
 
-  // Fetch existing record
+  // Fetch existing record + coaches (who may not be team members)
   useEffect(() => {
     let cancelled = false
     setLoading(true)
-    pb.collection('referee_expenses')
+
+    const fetchExpense = pb.collection('referee_expenses')
       .getFirstListItem<ExpandedExpense>(`game="${gameId}"`, { expand: 'paid_by_member' })
       .then((record) => {
         if (cancelled) return
@@ -55,21 +57,50 @@ export default function RefereeExpenseSection({ gameId, teamId, canEdit }: Refer
       .catch(() => {
         if (!cancelled) setExisting(null)
       })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
-    return () => { cancelled = true }
-  }, [gameId])
 
-  // Build member options
-  const memberOptions = members
-    .filter((mt) => mt.expand?.member)
-    .map((mt) => ({
-      value: mt.expand!.member!.id,
-      label: `${mt.expand!.member!.first_name} ${mt.expand!.member!.last_name}`,
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label, 'de'))
-  memberOptions.push({ value: OTHER_VALUE, label: t('refereeExpensesOtherPerson') })
+    const fetchCoaches = pb.collection('teams')
+      .getOne<Team & RecordModel>(teamId, { fields: 'id,coach,team_responsible', expand: 'coach,team_responsible' })
+      .then((team) => {
+        if (cancelled) return
+        const expanded = team as Team & RecordModel & { expand?: { coach?: (Member & RecordModel)[]; team_responsible?: (Member & RecordModel)[] } }
+        const all = [...(expanded.expand?.coach ?? []), ...(expanded.expand?.team_responsible ?? [])]
+        // Deduplicate by id
+        const seen = new Set<string>()
+        setCoaches(all.filter((m) => { if (seen.has(m.id)) return false; seen.add(m.id); return true }))
+      })
+      .catch(() => {})
+
+    Promise.allSettled([fetchExpense, fetchCoaches]).finally(() => {
+      if (!cancelled) setLoading(false)
+    })
+
+    return () => { cancelled = true }
+  }, [gameId, teamId])
+
+  // Build member options: team roster + coaches/team responsibles (deduplicated)
+  const memberOptions = useMemo(() => {
+    const seen = new Set<string>()
+    const options: { value: string; label: string }[] = []
+
+    // Add roster members
+    for (const mt of members) {
+      const m = mt.expand?.member
+      if (!m || seen.has(m.id)) continue
+      seen.add(m.id)
+      options.push({ value: m.id, label: `${m.first_name} ${m.last_name}` })
+    }
+
+    // Add coaches/team responsibles not already in roster
+    for (const m of coaches) {
+      if (seen.has(m.id)) continue
+      seen.add(m.id)
+      options.push({ value: m.id, label: `${m.first_name} ${m.last_name}` })
+    }
+
+    options.sort((a, b) => a.label.localeCompare(b.label, 'de'))
+    options.push({ value: OTHER_VALUE, label: t('refereeExpensesOtherPerson') })
+    return options
+  }, [members, coaches, t])
 
   const handleSave = async () => {
     const data: Record<string, unknown> = {

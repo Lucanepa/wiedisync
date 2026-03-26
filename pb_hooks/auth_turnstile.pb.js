@@ -3,7 +3,7 @@
 // ─── Auth: Turnstile Validation ───
 // Validates Cloudflare Turnstile token for login (authWithPassword) requests.
 // Reads token from X-Turnstile-Token header.
-// Skips validation if TURNSTILE_SECRET_KEY is not set (dev environments).
+// Skips validation if TURNSTILE_SECRET is not set (dev environments).
 
 onRecordAuthRequest((e) => {
   var info = e.requestInfo()
@@ -25,9 +25,9 @@ onRecordAuthRequest((e) => {
     throw new BadRequestError("Turnstile token required")
   }
 
-  var secret = $os.getenv("TURNSTILE_SECRET_KEY")
+  var secret = $os.getenv("TURNSTILE_SECRET")
   if (!secret) {
-    console.log("[auth-turnstile] TURNSTILE_SECRET_KEY not set, skipping validation")
+    console.log("[auth-turnstile] TURNSTILE_SECRET not set, skipping validation")
     return e.next()
   }
 

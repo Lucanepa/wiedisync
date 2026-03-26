@@ -23,9 +23,9 @@ onRecordCreateRequest((e) => {
     throw new BadRequestError("Turnstile token required")
   }
 
-  var secret = $os.getenv("TURNSTILE_SECRET_KEY")
+  var secret = $os.getenv("TURNSTILE_SECRET")
   if (!secret) {
-    console.log("[feedback-turnstile] TURNSTILE_SECRET_KEY not set, skipping validation")
+    console.log("[feedback-turnstile] TURNSTILE_SECRET not set, skipping validation")
     return e.next()
   }
 

@@ -17,7 +17,7 @@ import TeamSponsorsEditor from './TeamSponsorsEditor'
 import EmptyState from '../../components/EmptyState'
 import { getFileUrl } from '../../utils/pbFile'
 import { getCurrentSeason } from '../../utils/dateHelpers'
-import type { Team, Member, MemberPosition, MemberTeam, LicenceType, FeatureToggles } from '../../types'
+import type { Team, Member, MemberPosition, MemberTeam, LicenceType, TeamSettings } from '../../types'
 import { Button } from '../../components/ui/button'
 
 type LeadershipRole = 'coach' | 'captain' | 'team_responsible'
@@ -560,9 +560,9 @@ export default function RosterEditor() {
         teamName={team?.full_name ?? team?.name ?? ''}
       />
 
-      {/* Feature toggles */}
+      {/* Team settings */}
       {team && (
-        <FeatureTogglesSection team={team} onUpdate={(f) => setTeam((prev) => prev ? { ...prev, features_enabled: f } : prev)} />
+        <TeamSettingsSection team={team} onUpdate={(s) => setTeam((prev) => prev ? { ...prev, features_enabled: s } : prev)} />
       )}
 
       {/* Team sponsors */}
@@ -571,40 +571,152 @@ export default function RosterEditor() {
   )
 }
 
-function FeatureTogglesSection({ team, onUpdate }: { team: Team; onUpdate: (f: FeatureToggles) => void }) {
+/* ── iOS-style switch toggle ── */
+function SwitchToggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label className="relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center" style={{ minWidth: 44, minHeight: 44 }}>
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="peer sr-only" />
+      <span className="absolute inset-0 m-auto h-6 w-11 rounded-full bg-gray-300 transition-colors peer-checked:bg-brand-600 dark:bg-gray-600 dark:peer-checked:bg-brand-600" />
+      <span className="absolute left-0.5 top-1/2 h-5 w-5 -translate-y-1/2 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5" />
+    </label>
+  )
+}
+
+/* ── Setting row with label + hint + control ── */
+function SettingRow({ label, hint, children }: { label: string; hint: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-4 px-4 py-3">
+      <div className="min-w-0 flex-1">
+        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{label}</div>
+        <div className="text-xs italic text-gray-500 dark:text-gray-400">{hint}</div>
+      </div>
+      <div className="shrink-0">{children}</div>
+    </div>
+  )
+}
+
+/* ── Collapsible accordion group ── */
+function SettingsGroup({ title, defaultOpen = false, children }: { title: string; defaultOpen?: boolean; children: React.ReactNode }) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <div className="rounded-lg border border-gray-200 dark:border-gray-700">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center justify-between px-4 py-3 text-sm font-semibold text-gray-900 dark:text-gray-100"
+        style={{ minHeight: 44 }}
+      >
+        <span>{title}</span>
+        <span className="text-gray-400 dark:text-gray-500">{open ? '\u25BC' : '\u25B6'}</span>
+      </button>
+      {open && <div className="divide-y divide-gray-100 border-t border-gray-200 dark:divide-gray-700 dark:border-gray-700">{children}</div>}
+    </div>
+  )
+}
+
+/* ── Number input with debounced save ── */
+function DebouncedNumberInput({ value, onChange, suffix }: { value: number | undefined; onChange: (v: number) => void; suffix?: string }) {
+  const [local, setLocal] = useState(String(value ?? ''))
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => { setLocal(String(value ?? '')) }, [value])
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const v = e.target.value
+    setLocal(v)
+    if (timerRef.current) clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => {
+      const num = parseInt(v, 10)
+      if (!isNaN(num)) onChange(num)
+    }, 500)
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        type="number"
+        inputMode="numeric"
+        value={local}
+        onChange={handleChange}
+        className="w-14 rounded-md border border-gray-300 bg-white px-1 py-1 text-center text-sm text-gray-900 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+        style={{ minHeight: 44 }}
+      />
+      {suffix && <span className="text-xs text-gray-500 dark:text-gray-400">{suffix}</span>}
+    </div>
+  )
+}
+
+function TeamSettingsSection({ team, onUpdate }: { team: Team; onUpdate: (s: TeamSettings) => void }) {
   const { t } = useTranslation('teams')
   const { update } = useMutation<Team>('teams')
-  const features = team.features_enabled ?? {}
+  const settings: TeamSettings = (team.features_enabled as TeamSettings) ?? {}
 
-  const toggle = async (key: keyof FeatureToggles) => {
-    const next = { ...features, [key]: !features[key] }
+  const save = async (patch: Partial<TeamSettings>) => {
+    const next = { ...settings, ...patch }
     await update(team.id, { features_enabled: next })
     onUpdate(next)
   }
 
-  const FEATURE_KEYS: { key: keyof FeatureToggles; labelKey: string }[] = [
-    { key: 'tasks', labelKey: 'featureTasks' },
-    { key: 'carpool', labelKey: 'featureCarpool' },
-    { key: 'polls', labelKey: 'featurePolls' },
-    { key: 'show_rsvp_time', labelKey: 'featureShowRsvpTime' },
-  ]
+  const toggleBool = (key: keyof TeamSettings) => {
+    save({ [key]: !settings[key] })
+  }
+
+  const setNumber = (key: keyof TeamSettings, v: number) => {
+    save({ [key]: v })
+  }
 
   return (
     <div className="mt-8">
-      <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('featureToggles')}</h2>
-      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('featureTogglesDescription')}</p>
-      <div className="mt-3 space-y-2">
-        {FEATURE_KEYS.map(({ key, labelKey }) => (
-          <label key={key} className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800">
-            <input
-              type="checkbox"
-              checked={features[key] === true}
-              onChange={() => toggle(key)}
-              className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 dark:border-gray-600"
-            />
-            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{t(labelKey)}</span>
-          </label>
-        ))}
+      <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('teamSettings')}</h2>
+      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('teamSettingsDescription')}</p>
+
+      <div className="mt-3 space-y-3">
+        {/* Features */}
+        <SettingsGroup title={t('settingsFeatures')} defaultOpen>
+          <SettingRow label={t('featureTasks')} hint={t('featureTasksHint')}>
+            <SwitchToggle checked={settings.tasks === true} onChange={() => toggleBool('tasks')} />
+          </SettingRow>
+          <SettingRow label={t('featureCarpool')} hint={t('featureCarpoolHint')}>
+            <SwitchToggle checked={settings.carpool === true} onChange={() => toggleBool('carpool')} />
+          </SettingRow>
+          <SettingRow label={t('featurePolls')} hint={t('featurePollsHint')}>
+            <SwitchToggle checked={settings.polls === true} onChange={() => toggleBool('polls')} />
+          </SettingRow>
+          <SettingRow label={t('featureShowRsvpTime')} hint={t('featureShowRsvpTimeHint')}>
+            <SwitchToggle checked={settings.show_rsvp_time === true} onChange={() => toggleBool('show_rsvp_time')} />
+          </SettingRow>
+          <SettingRow label={t('featureAutoDeclineTentative')} hint={t('featureAutoDeclineTentativeHint')}>
+            <SwitchToggle checked={settings.auto_decline_tentative === true} onChange={() => toggleBool('auto_decline_tentative')} />
+          </SettingRow>
+        </SettingsGroup>
+
+        {/* Game Defaults */}
+        <SettingsGroup title={t('settingsGameDefaults')}>
+          <SettingRow label={t('settingsRequireNoteIfAbsent')} hint={t('settingsRequireNoteHint')}>
+            <SwitchToggle checked={settings.game_require_note_if_absent === true} onChange={() => toggleBool('game_require_note_if_absent')} />
+          </SettingRow>
+          <SettingRow label={t('settingsMinParticipants')} hint={t('settingsMinParticipantsGameHint')}>
+            <DebouncedNumberInput value={settings.game_min_participants} onChange={(v) => setNumber('game_min_participants', v)} />
+          </SettingRow>
+          <SettingRow label={t('settingsRespondByDays')} hint={t('settingsRespondByGameHint')}>
+            <DebouncedNumberInput value={settings.game_respond_by_days} onChange={(v) => setNumber('game_respond_by_days', v)} suffix={t('settingsRespondByDaysSuffix')} />
+          </SettingRow>
+        </SettingsGroup>
+
+        {/* Training Defaults */}
+        <SettingsGroup title={t('settingsTrainingDefaults')}>
+          <SettingRow label={t('settingsAutoCancelOnMin')} hint={t('settingsAutoCancelOnMinHint')}>
+            <SwitchToggle checked={settings.training_auto_cancel_on_min === true} onChange={() => toggleBool('training_auto_cancel_on_min')} />
+          </SettingRow>
+          <SettingRow label={t('settingsRequireNoteIfAbsent')} hint={t('settingsRequireNoteHint')}>
+            <SwitchToggle checked={settings.training_require_note_if_absent === true} onChange={() => toggleBool('training_require_note_if_absent')} />
+          </SettingRow>
+          <SettingRow label={t('settingsMinParticipants')} hint={t('settingsMinParticipantsTrainingHint')}>
+            <DebouncedNumberInput value={settings.training_min_participants} onChange={(v) => setNumber('training_min_participants', v)} />
+          </SettingRow>
+          <SettingRow label={t('settingsRespondByDays')} hint={t('settingsRespondByTrainingHint')}>
+            <DebouncedNumberInput value={settings.training_respond_by_days} onChange={(v) => setNumber('training_respond_by_days', v)} suffix={t('settingsRespondByDaysSuffix')} />
+          </SettingRow>
+        </SettingsGroup>
       </div>
     </div>
   )

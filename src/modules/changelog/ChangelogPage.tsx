@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '2.5.0'
+const APP_VERSION = '2.6.0'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,23 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.6.0',
+    date: '2026-03-26',
+    sections: [
+      {
+        title: 'Features',
+        items: [
+          'Team Settings: new accordion section in team editor replacing flat feature toggles — grouped into Features, Game Defaults, and Training Defaults with iOS-style switch toggles',
+          'Color-coded RSVP popups: save confirmation matches response color (green=yes, red=no, yellow=maybe)',
+          'Auto-decline "Maybe": tentative participations automatically convert to "No" after the RSVP deadline (opt-in per team)',
+          'Team defaults: coaches can set default min players, RSVP deadline (days before), require-note, and auto-cancel per team — applied to new games and trainings',
+          'Sync defaults: Swiss Volley and Basketplan sync now apply team game_respond_by_days when creating new games',
+          'Pre-fill: recurring training modal and training form pre-fill from team defaults',
+        ],
+      },
+    ],
+  },
   {
     version: '2.5.0',
     date: '2026-03-26',

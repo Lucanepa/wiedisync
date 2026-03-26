@@ -2,6 +2,16 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [2.6.0] — 2026-03-26
+
+### Features
+
+- **Team Settings** — New accordion section in team editor (RosterEditor) replacing the flat "Features" toggle list. Grouped into 3 collapsible panels: Features (5 switch toggles), Game Defaults (min players, RSVP deadline, require-note), Training Defaults (auto-cancel, min players, RSVP deadline, require-note). iOS-style switch toggles with KSCW brand purple. Italic hint text on each setting. Number inputs debounced (500ms). Mobile-responsive (44px touch targets). 14 files changed across frontend, backend, and 5 i18n locales.
+- **Color-coded RSVP save popup** — The "Saved" confirmation popup in ParticipationButton and GameDetailModal now matches the response color: green for yes, red for no, yellow (with black text) for maybe.
+- **Auto-decline "Maybe" after deadline** — New per-team toggle (`auto_decline_tentative`). When enabled, the daily cron converts tentative participations to "declined" after the respond_by deadline passes. Applies to games, trainings, and events. Gated per team — off by default.
+- **Team defaults for games & trainings** — Coaches can set default `min_participants`, `respond_by_days`, `require_note_if_absent`, and `auto_cancel_on_min` at the team level. These pre-fill new game/training creation forms and the recurring training generator. Per-activity overrides always win.
+- **Sync hook defaults** — Swiss Volley and Basketplan sync now apply `game_respond_by_days` from team settings when creating new games (creation only, not updates).
+
 ## [2.5.0] — 2026-03-26
 
 ### Features

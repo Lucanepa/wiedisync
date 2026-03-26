@@ -29,7 +29,6 @@ export const ADMIN_ROUTES = [
 /** Superadmin-only routes */
 export const SUPERADMIN_ROUTES = [
   { path: '/admin/database', name: 'Database' },
-  { path: '/admin/clubdesk-sync', name: 'ClubDesk Sync' },
 ] as const
 
 /** Known team slugs in the dev DB */

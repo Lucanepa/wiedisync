@@ -24,7 +24,6 @@ export default {
   myProfile: 'Mon profil',
   privacy: 'Confidentialite',
   impressum: 'Mentions legales',
-  clubdeskSync: 'Synchronisation ClubDesk',
   infraHealth: 'Infrastructure',
   dataHealth: 'Qualite des donnees',
   auditLog: 'Audit Log',

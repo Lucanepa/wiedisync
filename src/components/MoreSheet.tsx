@@ -9,7 +9,7 @@ import LanguageDropdown from '@/components/LanguageDropdown'
 import { getFileUrl } from '../utils/pbFile'
 import AdminToggle from './AdminToggle'
 import { useAdminMode } from '../hooks/useAdminMode'
-import { Bell, UserX, PenSquare, CalendarDays, ClipboardList, Building2, CalendarClock, Database, RefreshCcw, HeartPulse, LogIn, User, Settings, ChevronDown, ScrollText, MessageSquare, Banknote } from 'lucide-react'
+import { Bell, UserX, PenSquare, CalendarDays, ClipboardList, Building2, CalendarClock, Database, HeartPulse, LogIn, User, Settings, ChevronDown, ScrollText, MessageSquare, Banknote } from 'lucide-react'
 import type { MemberTeam, Team } from '../types'
 
 type ExpandedMemberTeam = MemberTeam & { expand?: { team?: Team } }
@@ -235,20 +235,6 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
               <p className="mb-1 px-4 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
                 {t('superadmin')}
               </p>
-              <NavLink
-                to="/admin/clubdesk-sync"
-                onClick={startClose}
-                className={({ isActive }) =>
-                  `flex min-h-[48px] items-center gap-4 rounded-lg px-4 py-3 text-base font-medium transition-colors ${
-                    isActive
-                      ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/50 dark:text-gold-400'
-                      : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
-                  }`
-                }
-              >
-                <RefreshCcw className={iconClass} />
-                {t('clubdeskSync')}
-              </NavLink>
               <NavLink
                 to="/admin/data-health"
                 onClick={startClose}

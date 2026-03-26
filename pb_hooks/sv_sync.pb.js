@@ -235,6 +235,26 @@ function syncGames() {
         created++
       }
 
+      // Apply game_respond_by_days default on creation only
+      if (!isUpdate && kscwTeamPbId) {
+        try {
+          var kscwTeamRec = $app.findRecordById("teams", kscwTeamPbId)
+          var featuresEnabled = kscwTeamRec.get("features_enabled")
+          var respondByDays = featuresEnabled && featuresEnabled.game_respond_by_days
+          if (respondByDays && respondByDays > 0 && parsed.date) {
+            var gameDate = new Date(parsed.date.split(" ")[0])
+            var respondByDate = new Date(gameDate.getTime() - (respondByDays * 86400000))
+            var respondByStr = respondByDate.getFullYear() + "-" +
+              String(respondByDate.getMonth() + 1).padStart(2, "0") + "-" +
+              String(respondByDate.getDate()).padStart(2, "0") + " 00:00:00"
+            record.set("respond_by", respondByStr)
+            console.log("[SV Sync] Game vb_" + gameId + " new, set respond_by to " + respondByStr + " (" + respondByDays + " days before game)")
+          }
+        } catch (teamErr) {
+          console.log("[SV Sync] Could not fetch team for respond_by default (game vb_" + gameId + "): " + teamErr)
+        }
+      }
+
       // Auto-adjust respond_by when game date changes (preserve offset)
       if (isUpdate) {
         var oldDate = record.getString("date")

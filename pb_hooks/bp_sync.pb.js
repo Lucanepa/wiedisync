@@ -370,6 +370,23 @@ function syncGames() {
     } catch (_) {
       // Create new
       try {
+        // Apply game_respond_by_days default on creation
+        try {
+          var kscwTeamRec = $app.findRecordById("teams", pbTeamId)
+          var featuresEnabled = kscwTeamRec.get("features_enabled")
+          var respondByDays = featuresEnabled && featuresEnabled.game_respond_by_days
+          if (respondByDays && respondByDays > 0 && g.date) {
+            var gameDate = new Date(g.date.split(" ")[0])
+            var respondByDate = new Date(gameDate.getTime() - (respondByDays * 86400000))
+            var respondByStr = respondByDate.getFullYear() + "-" +
+              String(respondByDate.getMonth() + 1).padStart(2, "0") + "-" +
+              String(respondByDate.getDate()).padStart(2, "0") + " 00:00:00"
+            gameData.respond_by = respondByStr
+            console.log("[BP Sync] Game " + gameId + " new, set respond_by to " + respondByStr + " (" + respondByDays + " days before game)")
+          }
+        } catch (teamErr) {
+          console.log("[BP Sync] Could not fetch team for respond_by default (game " + gameId + "): " + teamErr)
+        }
         var collection = $app.findCollectionByNameOrId("games")
         var record = new Record(collection)
         record.load(gameData)

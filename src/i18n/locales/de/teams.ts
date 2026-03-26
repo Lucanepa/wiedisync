@@ -117,4 +117,17 @@ export default {
   featureCarpool: 'Fahrgemeinschaft (Fahrten zu Auswärtsspielen organisieren)',
   featurePolls: 'Umfragen (Team-Abstimmungen & Entscheidungen)',
   featureShowRsvpTime: 'Antwortzeit anzeigen (wann Mitglieder geantwortet haben)',
+  // Sponsoren
+  teamSponsors: 'Team-Sponsoren',
+  addSponsor: 'Sponsor hinzufügen',
+  editSponsor: 'Sponsor bearbeiten',
+  deleteSponsor: 'Sponsor entfernen',
+  deleteSponsorConfirm: 'Sponsor "{{name}}" wirklich entfernen?',
+  sponsorName: 'Name',
+  sponsorWebsite: 'Website',
+  sponsorLogo: 'Logo',
+  teamPageOnly: 'Nur auf Teamseite',
+  teamPageOnlyHint: 'Wenn deaktiviert, erscheint der Sponsor auch auf der Homepage und Sponsorenseite',
+  sponsorSaved: 'Sponsor gespeichert',
+  sponsorDeleted: 'Sponsor entfernt',
 } as const

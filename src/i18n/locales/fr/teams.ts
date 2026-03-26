@@ -103,4 +103,17 @@ export default {
   featureCarpool: 'Covoiturage (organiser les trajets pour les matchs a l\'exterieur)',
   featurePolls: 'Sondages (votes et decisions d\'equipe)',
   featureShowRsvpTime: 'Afficher l\'heure de réponse (quand les membres ont répondu)',
+  // Sponsors
+  teamSponsors: 'Sponsors d\'équipe',
+  addSponsor: 'Ajouter un sponsor',
+  editSponsor: 'Modifier le sponsor',
+  deleteSponsor: 'Supprimer le sponsor',
+  deleteSponsorConfirm: 'Vraiment supprimer le sponsor "{{name}}" ?',
+  sponsorName: 'Nom',
+  sponsorWebsite: 'Site web',
+  sponsorLogo: 'Logo',
+  teamPageOnly: 'Page d\'équipe uniquement',
+  teamPageOnlyHint: 'Si désactivé, le sponsor apparaît aussi sur la page d\'accueil et la page des sponsors',
+  sponsorSaved: 'Sponsor enregistré',
+  sponsorDeleted: 'Sponsor supprimé',
 } as const

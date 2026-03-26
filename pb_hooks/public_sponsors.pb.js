@@ -46,6 +46,8 @@ routerAdd("GET", "/api/public/sponsors", function (e) {
       name: rec.getString("name"),
       logo_url: logoUrl,
       website_url: rec.getString("website_url"),
+      teams: rec.get("teams") || [],
+      team_page_only: rec.getBool("team_page_only"),
     })
   }
 

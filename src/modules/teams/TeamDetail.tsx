@@ -20,7 +20,7 @@ import { getFileUrl } from '../../utils/pbFile'
 import { coercePositions } from '../../utils/memberPositions'
 import { getCurrentSeason } from '../../utils/dateHelpers'
 import ImageLightbox from '../../components/ImageLightbox'
-import type { Team, Member } from '../../types'
+import type { Team, Member, Sponsor } from '../../types'
 import PollsSection from '../polls/PollsSection'
 import { isFeatureEnabled } from '../../utils/featureToggles'
 
@@ -47,6 +47,15 @@ export default function TeamDetail() {
     perPage: 50,
     enabled: canManage && !!teamId,
   })
+
+  const [teamSponsors, setTeamSponsors] = useState<Sponsor[]>([])
+
+  useEffect(() => {
+    if (!team?.id) return
+    pb.collection('sponsors').getFullList<Sponsor>({ filter: `teams ~ "${team.id}" && active = true`, sort: 'sort_order' })
+      .then(setTeamSponsors)
+      .catch(() => {})
+  }, [team?.id])
 
   const [sortKey, setSortKey] = useState<SortKey>('name')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
@@ -554,20 +563,20 @@ export default function TeamDetail() {
       )}
 
       {/* Sponsors */}
-      {team.sponsors && team.sponsors.length > 0 && (
+      {teamSponsors.length > 0 && (
         <div className="mt-8">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('sponsors')}</h2>
           <div className="mt-3 flex flex-wrap items-center gap-6">
-            {team.sponsors.map((name, i) => (
-              <div key={i} className="flex flex-col items-center gap-2">
-                {team.sponsors_logos?.[i] && (
+            {teamSponsors.map((sp) => (
+              <div key={sp.id} className="flex flex-col items-center gap-2">
+                {sp.logo && (
                   <img
-                    src={getFileUrl('teams', team.id, team.sponsors_logos[i])}
-                    alt={name}
+                    src={getFileUrl('sponsors', sp.id, sp.logo)}
+                    alt={sp.name}
                     className="h-12 w-auto object-contain"
                   />
                 )}
-                <span className="text-sm text-gray-500 dark:text-gray-400">{name}</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">{sp.name}</span>
               </div>
             ))}
           </div>

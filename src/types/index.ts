@@ -37,6 +37,16 @@ export interface Team extends RecordModel {
 
 }
 
+export interface Sponsor extends RecordModel {
+  name: string
+  logo: string
+  website_url: string
+  sort_order: number
+  active: boolean
+  teams: string[]
+  team_page_only: boolean
+}
+
 export interface FeatureToggles {
   polls?: boolean
   carpool?: boolean

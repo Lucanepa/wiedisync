@@ -337,6 +337,31 @@ routerAdd("GET", "/api/public/team/{teamId}", function (e) {
     } catch (rankErr) {}
   }
 
+  // ── Sponsors for this team ──
+  var sponsors = []
+  try {
+    var sponsorCollection = $app.findCollectionByNameOrId("sponsors")
+    var sponsorCollId = sponsorCollection.id
+    var sponsorRecords = $app.findRecordsByFilter(
+      "sponsors",
+      'active = true && teams ~ {:teamId}',
+      "sort_order",
+      50,
+      0,
+      { teamId: teamId }
+    )
+    for (var si = 0; si < sponsorRecords.length; si++) {
+      var sp = sponsorRecords[si]
+      var spLogo = sp.getString("logo")
+      var spLogoUrl = spLogo ? "/api/files/" + sponsorCollId + "/" + sp.id + "/" + spLogo : ""
+      sponsors.push({
+        name: sp.getString("name"),
+        logo_url: spLogoUrl,
+        website_url: sp.getString("website_url"),
+      })
+    }
+  } catch (spErr) {}
+
   e.json(200, {
     team: {
       name: team.getString("name"),
@@ -356,6 +381,7 @@ routerAdd("GET", "/api/public/team/{teamId}", function (e) {
     upcoming: upcoming,
     results: results,
     rankings: rankings,
+    sponsors: sponsors,
   })
 })
 

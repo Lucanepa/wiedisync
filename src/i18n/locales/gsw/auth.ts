@@ -84,7 +84,6 @@ export default {
   // Onboarding
   onboardingTitle: 'Willkomme bim KSC Wiedikon!',
   onboardingSubtitle: 'Bitte vervollständig dis Profil zum wiiterfahre.',
-  clubdeskNotice: 'Dini Date sind us Clubdesk importiert worde. Bitte lueg sie dur und bestätig.',
   language: 'Spraach',
   languageGerman: 'Düütsch',
   languageEnglish: 'English',

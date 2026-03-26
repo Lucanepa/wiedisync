@@ -84,7 +84,6 @@ export default {
   // Onboarding
   onboardingTitle: 'Welcome to KSC Wiedikon',
   onboardingSubtitle: 'Please complete your profile to continue.',
-  clubdeskNotice: 'Your data was imported from Clubdesk. Please review and confirm.',
   language: 'Language',
   languageGerman: 'Deutsch',
   languageEnglish: 'English',

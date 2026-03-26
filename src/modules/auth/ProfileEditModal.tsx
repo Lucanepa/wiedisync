@@ -207,7 +207,6 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
   const currentPhoto = photoPreview
     ?? (user.photo ? getFileUrl('members', user.id, user.photo) : null)
   // In onboarding mode, data is pre-populated if the member was imported from Clubdesk
-  const hasExistingData = onboarding && !!user.first_name
 
   return (
     <Modal
@@ -223,13 +222,6 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
           <p className="text-sm text-gray-500 dark:text-gray-400">
             {t('onboardingSubtitle')}
           </p>
-        )}
-
-        {/* Clubdesk notice */}
-        {hasExistingData && (
-          <div className="rounded-lg bg-blue-50 p-3 text-sm text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
-            {t('clubdeskNotice')}
-          </div>
         )}
 
         {/* Language selector */}

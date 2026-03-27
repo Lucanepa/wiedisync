@@ -3,36 +3,9 @@
 // Audit log API — read and search audit log files.
 // SuperAdmin-only. Reads from pb_data/audit.log + pb_data/audit_archive/*.
 
-// NOTE: PB goja isolates each callback scope — use var, not function declaration.
-var requireSuperAdmin = function(e) {
-  var info = e.requestInfo()
-  if (!info.auth) {
-    throw new UnauthorizedError("Authentication required")
-  }
-  var authorized = false
-  // Check member superuser role
-  try {
-    var roles = info.auth.get("role")
-    if (roles) {
-      for (var i = 0; i < roles.length; i++) {
-        if (roles[i] === "superuser") authorized = true
-      }
-    }
-  } catch (_) {}
-  // Check PB superuser
-  if (!authorized) {
-    try {
-      $app.findRecordById("_superusers", info.auth.id)
-      authorized = true
-    } catch (_) {}
-  }
-  if (!authorized) {
-    throw new ForbiddenError("Superadmin access required")
-  }
-}
-
 routerAdd("POST", "/api/admin/audit", function(e) {
-  requireSuperAdmin(e)
+  var lib = require(__hooks + "/audit_api_lib.js")
+  lib.requireSuperAdmin(e)
 
   var body = $apis.requestInfo(e).body || {}
   var collection = body.collection || ""
@@ -155,7 +128,8 @@ routerAdd("POST", "/api/admin/audit", function(e) {
 
 // Get audit log stats (summary for header)
 routerAdd("GET", "/api/admin/audit/stats", function(e) {
-  requireSuperAdmin(e)
+  var lib = require(__hooks + "/audit_api_lib.js")
+  lib.requireSuperAdmin(e)
 
   var LOG_PATH = $os.getenv("AUDIT_LOG_PATH") || ($app.dataDir() + "/audit.log")
   var ARCHIVE_DIR = $app.dataDir() + "/audit_archive"

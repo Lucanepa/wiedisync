@@ -3,102 +3,15 @@
 // Audit logging for ALL collections — creates, updates, deletes, auth events.
 // Writes JSON lines to pb_data/audit.log.
 //
-// NOTE: Uses e.record.collection().name instead of IIFE closure variables
+// PB 0.36 JSVM isolates each callback — top-level helpers are NOT visible
+// inside callbacks. Each callback must require() the lib independently.
+//
+// NOTE: Uses e.record.collection().name instead of closure variables
 // because PB 0.36 goja engine breaks variable capture in IIFE closures.
-
-// ── helpers (inlined from audit_log_lib.js) ──
-
-var LOG_PATH = $os.getenv("AUDIT_LOG_PATH") || ($app.dataDir() + "/audit.log")
-
-function writeLogLine(obj) {
-  obj.ts = new Date().toISOString()
-  var line = JSON.stringify(obj)
-  // Use $os.writeFile with read-append instead of $os.openFile which can
-  // cause Go-level panics in PB 0.36 JSVM that bypass JS try/catch.
-  try {
-    var existing = ""
-    try { existing = String($os.readFile(LOG_PATH)) } catch (_) {}
-    $os.writeFile(LOG_PATH, existing + line + "\n", 0o644)
-  } catch (e) {
-    console.log("[AUDIT] " + line)
-  }
-}
-
-/**
- * Log a structured audit event.
- * @param {"info"|"warn"|"error"} level
- * @param {"create"|"update"|"delete"|"auth"|"error"|"system"} action
- * @param {string} collection
- * @param {string} recordId
- * @param {string} actor - member ID, "system", or "anonymous"
- * @param {object} [details] - extra context (changed fields, error messages, etc.)
- */
-function auditLog(level, action, collection, recordId, actor, details) {
-  writeLogLine({
-    level: level,
-    action: action,
-    collection: collection,
-    record_id: recordId,
-    actor: actor || "system",
-    details: details || {},
-  })
-}
-
-/**
- * Log an error event (shorthand).
- */
-function error(collection, message, details) {
-  writeLogLine({
-    level: "error",
-    action: "error",
-    collection: collection,
-    record_id: "",
-    actor: "system",
-    details: Object.assign({ message: message }, details || {}),
-  })
-}
-
-/**
- * Extract changed fields between original and updated record.
- * Returns { fieldName: { old: ..., new: ... } } for fields that changed.
- */
-function diffRecord(record) {
-  var changes = {}
-  var original = record.original()
-  if (!original) return changes
-
-  // Compare all field values
-  var fields = record.collection().fields
-  for (var i = 0; i < fields.length; i++) {
-    var name = fields[i].name
-    // Skip autodate fields and internal fields
-    if (name === "created" || name === "updated") continue
-
-    var oldVal = original.get(name)
-    var newVal = record.get(name)
-    var oldStr = JSON.stringify(oldVal)
-    var newStr = JSON.stringify(newVal)
-    if (oldStr !== newStr) {
-      changes[name] = { old: oldVal, new: newVal }
-    }
-  }
-  return changes
-}
-
-/**
- * Get actor ID from a hook event (works for both Request and non-Request hooks).
- */
-function getActor(e) {
-  try {
-    var info = e.requestInfo()
-    if (info && info.auth) return info.auth.id
-  } catch (_) {}
-  return "system"
-}
 
 // ── hooks ──
 
-// Every collection in the system
+// Every collection in the system (used at registration time, not inside callbacks)
 var ALL_COLLECTIONS = [
   "halls",
   "teams",
@@ -131,6 +44,7 @@ for (var i = 0; i < ALL_COLLECTIONS.length; i++) {
 
   // CREATE
   onRecordAfterCreateSuccess(function(e) {
+    var lib = require(__hooks + "/audit_log_lib.js")
     try {
       var cn = e.record.collection().name
       var details = {}
@@ -146,7 +60,7 @@ for (var i = 0; i < ALL_COLLECTIONS.length; i++) {
         details.team = e.record.getString("team")
         details.season = e.record.getString("season")
       }
-      auditLog("info", "create", cn, e.record.id, getActor(e), details)
+      lib.auditLog("info", "create", cn, e.record.id, lib.getActor(e), details)
     } catch (err) {
       console.log("[audit-log] Create hook error: " + err)
     }
@@ -155,12 +69,13 @@ for (var i = 0; i < ALL_COLLECTIONS.length; i++) {
 
   // UPDATE
   onRecordAfterUpdateSuccess(function(e) {
+    var lib = require(__hooks + "/audit_log_lib.js")
     try {
       var cn = e.record.collection().name
-      var changes = diffRecord(e.record)
+      var changes = lib.diffRecord(e.record)
       var keys = Object.keys(changes)
       if (keys.length > 0) {
-        auditLog("info", "update", cn, e.record.id, getActor(e), { changes: changes })
+        lib.auditLog("info", "update", cn, e.record.id, lib.getActor(e), { changes: changes })
       }
     } catch (err) {
       console.log("[audit-log] Update hook error: " + err)
@@ -170,6 +85,7 @@ for (var i = 0; i < ALL_COLLECTIONS.length; i++) {
 
   // DELETE
   onRecordAfterDeleteSuccess(function(e) {
+    var lib = require(__hooks + "/audit_log_lib.js")
     try {
       var cn = e.record.collection().name
       var details = {}
@@ -182,7 +98,7 @@ for (var i = 0; i < ALL_COLLECTIONS.length; i++) {
         details.member = e.record.getString("member")
         details.team = e.record.getString("team")
       }
-      auditLog("warn", "delete", cn, e.record.id, getActor(e), details)
+      lib.auditLog("warn", "delete", cn, e.record.id, lib.getActor(e), details)
     } catch (err) {
       console.log("[audit-log] Delete hook error: " + err)
     }
@@ -194,8 +110,9 @@ for (var i = 0; i < ALL_COLLECTIONS.length; i++) {
 // ── Auth events (members only) ──────────────────────────────────────
 
 onRecordAuthRequest(function(e) {
+  var lib = require(__hooks + "/audit_log_lib.js")
   try {
-    auditLog("info", "auth", "members", e.record.id, e.record.id, {
+    lib.auditLog("info", "auth", "members", e.record.id, e.record.id, {
       email: e.record.getString("email"),
       method: e.method || "unknown",
     })
@@ -208,8 +125,9 @@ onRecordAuthRequest(function(e) {
 // ── Auth email events ───────────────────────────────────────────────
 
 onMailerRecordPasswordResetSend(function(e) {
+  var lib = require(__hooks + "/audit_log_lib.js")
   try {
-    auditLog("info", "system", "members", e.record.id, e.record.id, {
+    lib.auditLog("info", "system", "members", e.record.id, e.record.id, {
       event: "password_reset_requested",
       email: e.record.getString("email"),
     })
@@ -220,8 +138,9 @@ onMailerRecordPasswordResetSend(function(e) {
 }, "members")
 
 onMailerRecordVerificationSend(function(e) {
+  var lib = require(__hooks + "/audit_log_lib.js")
   try {
-    auditLog("info", "system", "members", e.record.id, e.record.id, {
+    lib.auditLog("info", "system", "members", e.record.id, e.record.id, {
       event: "verification_email_sent",
       email: e.record.getString("email"),
     })
@@ -237,7 +156,8 @@ onMailerRecordVerificationSend(function(e) {
 cronAdd("audit-log-rotation", "30 3 * * *", function() {
   if ($os.getenv("DISABLE_CRONS") === "true") return
 
-  var LOG_PATH = $os.getenv("AUDIT_LOG_PATH") || ($app.dataDir() + "/audit.log")
+  var lib = require(__hooks + "/audit_log_lib.js")
+  var logPath = lib.LOG_PATH
   var ARCHIVE_DIR = $app.dataDir() + "/audit_archive"
   var KEEP_DAYS = 30
 
@@ -254,11 +174,11 @@ cronAdd("audit-log-rotation", "30 3 * * *", function() {
 
     try {
       // Read current log, write to archive, truncate original
-      var content = $os.readFile(LOG_PATH)
+      var content = $os.readFile(logPath)
       if (content && content.length > 0) {
         $os.writeFile(archiveName, content, 0o644)
         // Truncate by writing empty
-        $os.writeFile(LOG_PATH, "", 0o644)
+        $os.writeFile(logPath, "", 0o644)
         console.log("[Audit] Rotated " + content.length + " bytes → " + archiveName)
       }
     } catch (_) {

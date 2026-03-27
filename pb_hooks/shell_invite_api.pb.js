@@ -8,56 +8,13 @@
 // POST /api/team-invites/extend  — coach/TR extends a shell member's expiry
 // GET  /api/team-invites/info/{token} — public; validates token, returns team info
 
-// ── Helpers ──────────────────────────────────────────────────────────
-// NOTE: PB goja isolates each callback scope — use var, not function declaration.
-
-var arrayContains = function(arr, value) {
-  if (!arr || !arr.length) return false
-  for (var i = 0; i < arr.length; i++) {
-    if (arr[i] === value) return true
-  }
-  return false
-}
-
-var getCurrentSeason = function() {
-  var now = new Date()
-  var year = now.getFullYear()
-  var month = now.getMonth() // 0-indexed
-  if (month < 7) year-- // before August → previous year's season
-  var nextYear = (year + 1) % 100
-  return year + "/" + (nextYear < 10 ? "0" + nextYear : nextYear)
-}
-
-var hasInvitePermission = function(auth, team) {
-  if (!auth) return false
-
-  var roles = auth.get("role") || []
-  if (arrayContains(roles, "superuser") || arrayContains(roles, "admin")) return true
-
-  var sport = team.getString("sport")
-  if (sport === "volleyball" && arrayContains(roles, "vb_admin")) return true
-  if (sport === "basketball" && arrayContains(roles, "bb_admin")) return true
-
-  var authId = auth.id
-  var coaches = team.get("coach") || []
-  var trs = team.get("team_responsible") || []
-  return arrayContains(coaches, authId) || arrayContains(trs, authId)
-}
-
-var addDays = function(date, days) {
-  return new Date(date.getTime() + days * 24 * 60 * 60 * 1000)
-}
-
-var toIsoString = function(date) {
-  return date.toISOString().replace("T", " ").slice(0, 23) + "Z"
-}
-
 // ── POST /api/team-invites/create ────────────────────────────────────
 // Auth: coach, team_responsible, or sport/global admin
 // Body: { team, guest_level }
 // Returns: { token, qr_url, expires_at }
 
 routerAdd("POST", "/api/team-invites/create", function (e) {
+  var lib = require(__hooks + "/shell_invite_lib.js")
   var info = e.requestInfo()
   var auth = info.auth
   if (!auth) throw new ForbiddenError("Authentication required.")
@@ -80,7 +37,7 @@ routerAdd("POST", "/api/team-invites/create", function (e) {
   }
 
   // Permission check
-  if (!hasInvitePermission(auth, team)) {
+  if (!lib.hasInvitePermission(auth, team)) {
     throw new ForbiddenError("You don't have permission to create invites for this team.")
   }
 
@@ -106,8 +63,8 @@ routerAdd("POST", "/api/team-invites/create", function (e) {
 
   // Expires in 7 days
   var now = new Date()
-  var expiresAt = addDays(now, 7)
-  var expiresAtStr = toIsoString(expiresAt)
+  var expiresAt = lib.addDays(now, 7)
+  var expiresAtStr = lib.toIsoString(expiresAt)
 
   // Create team_invites record
   var collection = $app.findCollectionByNameOrId("team_invites")
@@ -138,6 +95,7 @@ routerAdd("POST", "/api/team-invites/create", function (e) {
 // Returns: { success, member_id, team_name, email }
 
 routerAdd("POST", "/api/team-invites/claim", function (e) {
+  var lib = require(__hooks + "/shell_invite_lib.js")
   var body = e.requestInfo().body
 
   var token = (body.token || "").trim()
@@ -215,7 +173,7 @@ routerAdd("POST", "/api/team-invites/claim", function (e) {
   try {
     shellCount = $app.findRecordsByFilter(
       "member_teams",
-      'team = "' + teamId + '" && season = "' + getCurrentSeason() + '"',
+      'team = "' + teamId + '" && season = "' + lib.getCurrentSeason() + '"',
       "",
       200,
       0
@@ -249,8 +207,8 @@ routerAdd("POST", "/api/team-invites/claim", function (e) {
 
   // shell_expires = now + 30 days
   var now = new Date()
-  var shellExpires = addDays(now, 30)
-  var shellExpiresStr = toIsoString(shellExpires)
+  var shellExpires = lib.addDays(now, 30)
+  var shellExpiresStr = lib.toIsoString(shellExpires)
 
   // Create member + member_teams + claim invite atomically
   // (if any step fails, all are rolled back)
@@ -278,7 +236,7 @@ routerAdd("POST", "/api/team-invites/claim", function (e) {
     var mt = new Record(mtCol)
     mt.set("member", member.id)
     mt.set("team", teamId)
-    mt.set("season", getCurrentSeason())
+    mt.set("season", lib.getCurrentSeason())
     mt.set("guest_level", guestLevel)
     txApp.save(mt)
 
@@ -289,7 +247,7 @@ routerAdd("POST", "/api/team-invites/claim", function (e) {
     // Mark invite as claimed
     invite.set("status", "claimed")
     invite.set("claimed_by", member.id)
-    invite.set("claimed_at", toIsoString(now))
+    invite.set("claimed_at", lib.toIsoString(now))
     txApp.save(invite)
 
     // Store member ref for response
@@ -314,6 +272,7 @@ routerAdd("POST", "/api/team-invites/claim", function (e) {
 // Resets shell_expires to now + 30 days, reactivates if expired
 
 routerAdd("POST", "/api/team-invites/extend", function (e) {
+  var lib = require(__hooks + "/shell_invite_lib.js")
   var info = e.requestInfo()
   var auth = info.auth
   if (!auth) throw new ForbiddenError("Authentication required.")
@@ -336,7 +295,7 @@ routerAdd("POST", "/api/team-invites/extend", function (e) {
   }
 
   // Find which team(s) this shell member is on — auth user must have permission for at least one
-  var season = getCurrentSeason()
+  var season = lib.getCurrentSeason()
   var memberTeams
   try {
     memberTeams = $app.findRecordsByFilter(
@@ -361,7 +320,7 @@ routerAdd("POST", "/api/team-invites/extend", function (e) {
     var tId = memberTeams[i].getString("team")
     try {
       var team = $app.findRecordById("teams", tId)
-      if (hasInvitePermission(auth, team)) {
+      if (lib.hasInvitePermission(auth, team)) {
         permitted = true
         permittedTeamId = tId
         break
@@ -375,8 +334,8 @@ routerAdd("POST", "/api/team-invites/extend", function (e) {
 
   // Reset expiry to now + 30 days
   var now = new Date()
-  var newExpiry = addDays(now, 30)
-  var newExpiryStr = toIsoString(newExpiry)
+  var newExpiry = lib.addDays(now, 30)
+  var newExpiryStr = lib.toIsoString(newExpiry)
 
   member.set("shell_expires", newExpiryStr)
   member.set("wiedisync_active", true)

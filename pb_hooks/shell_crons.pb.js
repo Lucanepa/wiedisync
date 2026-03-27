@@ -4,34 +4,16 @@
 // 1. shell_expiry    — daily 02:00 UTC — deactivate expired shell accounts
 // 2. shell_reminder  — daily 09:00 UTC — email reminder 10 days before expiry
 // 3. invite_expiry   — daily 03:00 UTC — mark stale pending invites as expired
-
-// ── Helpers ──────────────────────────────────────────────────────────
-// NOTE: PB goja isolates each callback scope, so helpers must be
-// defined as vars before cronAdd to be accessible inside callbacks.
-
-// toIsoString — formats a Date as PocketBase datetime string
-var shellCrons_toIsoString = function(date) {
-  return date.toISOString().replace("T", " ").slice(0, 23) + "Z"
-}
-
-// nowIsoString — current UTC time as PB datetime string
-var shellCrons_nowIso = function() {
-  return shellCrons_toIsoString(new Date())
-}
-
-// plusDaysIso — UTC time N days from now as PB datetime string
-var shellCrons_plusDaysIso = function(days) {
-  return shellCrons_toIsoString(new Date(new Date().getTime() + days * 24 * 60 * 60 * 1000))
-}
+// NOTE: PB 0.36 JSVM isolates each callback scope — require() must be called inside each callback.
 
 // ── 1. shell_expiry — daily at 02:00 UTC ─────────────────────────────
-// Deactivate shell members whose shell_expires has passed.
 
 cronAdd("shell_expiry", "0 2 * * *", function() {
   if ($os.getenv("DISABLE_CRONS") === "true") return
   console.log("[shell_expiry] Cron started")
   try {
-    var nowIso = shellCrons_nowIso()
+    var lib = require(__hooks + "/shell_crons_lib.js")
+    var nowIso = lib.nowIso()
     var expired = $app.findRecordsByFilter(
       "members",
       'shell = true && wiedisync_active = true && shell_expires != "" && shell_expires <= "' + nowIso + '"',
@@ -56,15 +38,14 @@ cronAdd("shell_expiry", "0 2 * * *", function() {
 })
 
 // ── 2. shell_reminder — daily at 09:00 UTC ───────────────────────────
-// Send an expiry warning email to shell members expiring within 10 days
-// who have not yet received a reminder.
 
 cronAdd("shell_reminder", "0 9 * * *", function() {
   if ($os.getenv("DISABLE_CRONS") === "true") return
   console.log("[shell_reminder] Cron started")
   try {
-    var nowIso = shellCrons_nowIso()
-    var in10Iso = shellCrons_plusDaysIso(10)
+    var lib = require(__hooks + "/shell_crons_lib.js")
+    var nowIso = lib.nowIso()
+    var in10Iso = lib.plusDaysIso(10)
 
     var upcoming = $app.findRecordsByFilter(
       "members",
@@ -119,7 +100,6 @@ cronAdd("shell_reminder", "0 9 * * *", function() {
         console.log("[shell_reminder] Sent reminder to " + email)
       } catch (e) {
         console.log("[shell_reminder] Failed to send/save for member " + member.id + " (" + email + "): " + e)
-        // Leave shell_reminder_sent = false so it retries next run
       }
     }
 
@@ -130,13 +110,13 @@ cronAdd("shell_reminder", "0 9 * * *", function() {
 })
 
 // ── 3. invite_expiry — daily at 03:00 UTC ────────────────────────────
-// Mark pending team_invites as expired when their expires_at has passed.
 
 cronAdd("invite_expiry", "0 3 * * *", function() {
   if ($os.getenv("DISABLE_CRONS") === "true") return
   console.log("[invite_expiry] Cron started")
   try {
-    var nowIso = shellCrons_nowIso()
+    var lib = require(__hooks + "/shell_crons_lib.js")
+    var nowIso = lib.nowIso()
     var stale = $app.findRecordsByFilter(
       "team_invites",
       'status = "pending" && expires_at <= "' + nowIso + '"',

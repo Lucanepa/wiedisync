@@ -62,6 +62,19 @@ export function toISODate(date: Date): string {
   return `${y}-${m}-${d}`
 }
 
+/** Normalize a date/datetime string to PocketBase format "YYYY-MM-DD HH:MM:SS".
+ *  Handles datetime-local values ("2026-08-26T18:00"), existing PB datetimes, and date-only strings. */
+export function toPBDatetime(d: string): string {
+  if (!d) return d
+  const normalized = d.replace('T', ' ')
+  if (normalized.includes(' ')) {
+    const [date, time] = normalized.split(' ')
+    const parts = time.split(':')
+    return `${date} ${parts[0]}:${parts[1]}:${parts[2] ?? '00'}`
+  }
+  return `${d} 00:00:00`
+}
+
 // --- Hallenplan utilities ---
 
 /** Returns the Monday 00:00:00 of the week containing `date` */

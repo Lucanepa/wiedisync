@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { BookingData } from '../hooks/useAvailableSlots'
 import LocationCombobox from '@/components/LocationCombobox'
+import { toPBDatetime } from '@/utils/dateHelpers'
 
 interface Props {
   existingProposal?: BookingData
@@ -44,11 +45,11 @@ export default function AwayProposalForm({ existingProposal, onSubmit }: Props) 
     setSubmitting(true)
     try {
       await onSubmit({
-        proposed_datetime_1: proposals[0].datetime,
+        proposed_datetime_1: toPBDatetime(proposals[0].datetime),
         proposed_place_1: proposals[0].place,
-        proposed_datetime_2: proposals[1].datetime,
+        proposed_datetime_2: toPBDatetime(proposals[1].datetime),
         proposed_place_2: proposals[1].place,
-        proposed_datetime_3: proposals[2].datetime,
+        proposed_datetime_3: toPBDatetime(proposals[2].datetime),
         proposed_place_3: proposals[2].place,
       })
     } finally {

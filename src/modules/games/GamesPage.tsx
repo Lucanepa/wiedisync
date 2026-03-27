@@ -241,7 +241,7 @@ export default function GamesPage() {
               <>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {games.map((g) => (
-                    <GameCard key={g.id} game={g} onClick={setSelectedGame} participations={participationsByGame.get(g.id)} myParticipation={myParticipationByGame.get(g.id)} warnings={warningsByGame.get(g.id)} />
+                    <GameCard key={g.id} game={g} onClick={setSelectedGame} participations={participationsByGame.get(g.id)} myParticipation={myParticipationByGame.get(g.id)} warnings={warningsByGame.get(g.id)} onParticipationSaved={refetchParticipations} />
                   ))}
                 </div>
                 {!showAll && games.length >= INITIAL_LIMIT && (

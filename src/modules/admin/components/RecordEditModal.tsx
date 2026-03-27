@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { RecordModel } from 'pocketbase'
 import pb from '../../../pb'
 import { logActivity } from '../../../utils/logActivity'
+import { toPBDatetime } from '../../../utils/dateHelpers'
 import Modal from '@/components/Modal'
 import { Button } from '@/components/ui/button'
 import ConfirmDialog from '@/components/ConfirmDialog'
@@ -53,7 +54,21 @@ export default function RecordEditModal({
     const data: Record<string, unknown> = {}
     for (const field of schema) {
       if (field.type === 'file') continue // files handled separately
-      data[field.name] = record ? record[field.name] ?? '' : ''
+      if (record) {
+        data[field.name] = record[field.name] ?? ''
+      } else {
+        // New record: use proper defaults per field type
+        const maxSelect = (field.options?.maxSelect as number) || 1
+        if (field.type === 'relation' && maxSelect > 1) {
+          data[field.name] = []
+        } else if (field.type === 'select' && maxSelect > 1) {
+          data[field.name] = []
+        } else if (field.type === 'bool') {
+          data[field.name] = false
+        } else {
+          data[field.name] = ''
+        }
+      }
     }
     setFormData(data)
     setFileFields({})
@@ -116,6 +131,15 @@ export default function RecordEditModal({
               cleanData[key] = JSON.parse(value)
             } catch {
               cleanData[key] = value
+            }
+          } else if (field?.type === 'relation') {
+            const maxSelect = (field.options?.maxSelect as number) || 1
+            if (maxSelect > 1) {
+              // Multi-relation: ensure array
+              cleanData[key] = Array.isArray(value) ? value : (value === '' || value == null) ? [] : [value]
+            } else {
+              // Single relation: empty string is fine (PB treats as null)
+              cleanData[key] = value === '' ? '' : value
             }
           } else {
             cleanData[key] = value
@@ -211,7 +235,7 @@ export default function RecordEditModal({
           <input
             type="datetime-local"
             value={String(value ?? '').slice(0, 16)}
-            onChange={(e) => setField(field.name, e.target.value)}
+            onChange={(e) => setField(field.name, toPBDatetime(e.target.value))}
             className={inputClass}
           />
         )

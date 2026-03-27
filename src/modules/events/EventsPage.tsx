@@ -169,6 +169,7 @@ export default function EventsPage() {
                   onOpenRoster={setRosterEvent}
                   participations={participationsByEvent.get(event.id)}
                   myParticipation={myParticipationByEvent.get(event.id)}
+                  onParticipationSaved={refetchParticipations}
                 />
               )
             })}

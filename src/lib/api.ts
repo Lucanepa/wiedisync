@@ -36,16 +36,25 @@ export const client = createDirectus(API_URL)
     storage: {
       get: () => {
         const raw = getStorage().getItem(AUTH_KEY)
-        return raw ? JSON.parse(raw) : null
+        if (!raw) return null
+        try { return JSON.parse(raw) } catch { return null }
       },
       set: (data) => {
-        if (data) getStorage().setItem(AUTH_KEY, JSON.stringify(data))
+        if (data) {
+          getStorage().setItem(AUTH_KEY, JSON.stringify(data))
+        } else {
+          // SDK calls set(null) on logout
+          localStorage.removeItem(AUTH_KEY)
+          sessionStorage.removeItem(AUTH_KEY)
+        }
       },
     },
     autoRefresh: true,
   }))
   .with(rest())
-  .with(realtime())
+  .with(realtime({
+    authMode: 'handshake',
+  }))
 
 // ── Auth helpers ────────────────────────────────────────────────────
 

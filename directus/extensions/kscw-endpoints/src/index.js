@@ -7,6 +7,7 @@
 
 import { syncSvGames, syncSvRankings } from './sv-sync.js'
 import { syncBpGames, syncBpRankings } from './bp-sync.js'
+import { registerPasswordReset } from './password-reset.js'
 
 export default {
   id: 'kscw',
@@ -244,6 +245,9 @@ export default {
     }
   })
 
-  log.info('KSCW endpoints loaded: 10 routes')
+  // ── Localized password reset ──────────────────────────────────────
+  registerPasswordReset(router, { database, logger, services, getSchema })
+
+  log.info('KSCW endpoints loaded: 11 routes')
   },
 }

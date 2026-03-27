@@ -37,21 +37,30 @@ function useFetchRange(rangeStart: Date) {
   }, [rangeStart])
 }
 
-function buildDateFilter(field: string, rangeStart: string, rangeEnd: string): string {
-  return `${field} >= "${rangeStart}" && ${field} <= "${rangeEnd}"`
+function buildDateFilter(field: string, rangeStart: string, rangeEnd: string): Record<string, unknown>[] {
+  return [{ [field]: { _gte: rangeStart } }, { [field]: { _lte: rangeEnd } }]
 }
 
-function addTeamFilter(base: string, teamIds: string[], field: string): string {
-  if (teamIds.length === 0) return base
-  const clauses = teamIds.map((id) => `${field} = "${id}"`).join(' || ')
-  return `${base} && (${clauses})`
+function addTeamFilter(baseParts: Record<string, unknown>[], teamIds: string[], field: string): Record<string, unknown> {
+  const conditions = [...baseParts]
+  if (teamIds.length > 0) {
+    conditions.push({ [field]: { _in: teamIds } })
+  }
+  return { _and: conditions }
 }
 
 /** Filter events by team membership: show club-wide (no teams) + user's teams */
-function addEventTeamFilter(base: string, teamIds: string[]): string {
-  if (teamIds.length === 0) return base
-  const clauses = teamIds.map((id) => `teams~"${id}"`).join(' || ')
-  return `${base} && (teams:length = 0 || ${clauses})`
+function addEventTeamFilter(baseParts: Record<string, unknown>[], teamIds: string[]): Record<string, unknown> {
+  const conditions = [...baseParts]
+  if (teamIds.length > 0) {
+    conditions.push({
+      _or: [
+        { teams: { _empty: true } },
+        ...teamIds.map(id => ({ teams: { _contains: id } })),
+      ],
+    })
+  }
+  return { _and: conditions }
 }
 
 function gameToEntry(game: Game): CalendarEntry {
@@ -207,7 +216,6 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
       filters.selectedTeamIds,
       'kscw_team',
     ),
-    expand: 'kscw_team,hall',
     sort: 'date,time',
     all: true,
   })
@@ -219,7 +227,6 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
       filters.selectedTeamIds,
       'team',
     ),
-    expand: 'team,hall',
     sort: 'date,start_time',
     all: true,
   })
@@ -227,8 +234,7 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
   // Always fetch closures when hall events are fetched (needed to suppress duplicate GCal closures)
   const { data: closuresRaw, isLoading: closuresLoading } = usePB<HallClosure>('hall_closures', {
     enabled: fetchClosures || fetchHallEvents,
-    filter: `start_date <= "${fetchRange.end}" && end_date >= "${fetchRange.start}"`,
-    expand: 'hall',
+    filter: { _and: [{ start_date: { _lte: fetchRange.end } }, { end_date: { _gte: fetchRange.start } }] },
     all: true,
   })
 
@@ -244,7 +250,7 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
 
   const { data: hallEvents, isLoading: hallEventsLoading } = usePB<HallEvent>('hall_events', {
     enabled: fetchHallEvents,
-    filter: buildDateFilter('date', fetchRange.start, fetchRange.end),
+    filter: { _and: buildDateFilter('date', fetchRange.start, fetchRange.end) },
     sort: 'date,start_time',
     all: true,
   })
@@ -254,8 +260,8 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
   const { data: teamMemberLinks } = usePB<MemberTeam>('member_teams', {
     enabled: fetchAbsences && hasTeamFilter,
     filter: hasTeamFilter
-      ? filters.selectedTeamIds.map((id) => `team="${id}"`).join(' || ')
-      : '',
+      ? { team: { _in: filters.selectedTeamIds } }
+      : { id: { _eq: -1 } },
     fields: 'member',
     all: true,
   })
@@ -263,9 +269,8 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
   const { data: absences, isLoading: absencesLoading } = usePB<Absence & { expand?: { member?: { first_name: string; last_name: string; name: string } } }>('absences', {
     enabled: fetchAbsences,
     filter: fetchAbsences
-      ? `end_date >= "${fetchRange.start}" && start_date <= "${fetchRange.end}"`
-      : '',
-    expand: 'member',
+      ? { _and: [{ end_date: { _gte: fetchRange.start } }, { start_date: { _lte: fetchRange.end } }] }
+      : { id: { _eq: -1 } },
     fields: 'id,member,start_date,end_date,reason,reason_detail,affects,expand.member.first_name,expand.member.name',
     sort: 'start_date',
     all: true,

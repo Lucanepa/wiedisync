@@ -15,19 +15,23 @@ export function useParticipation(
 ) {
   const { user } = useAuth()
 
-  const sessionFilter = sessionId ? ` && session_id="${sessionId}"` : ''
   const { data: participations, refetch } = usePB<Participation>('participations', {
     filter: user && activityId
-      ? `member="${user.id}" && activity_type="${activityType}" && activity_id="${activityId}"${sessionFilter}`
-      : '',
+      ? { _and: [
+          { member: { _eq: user.id } },
+          { activity_type: { _eq: activityType } },
+          { activity_id: { _eq: activityId } },
+          ...(sessionId ? [{ session_id: { _eq: sessionId } }] : []),
+        ] }
+      : { id: { _eq: -1 } },
     perPage: 1,
     enabled: !!user && !!activityId,
   })
 
   const { data: absencesRaw } = usePB<Absence>('absences', {
     filter: user && activityDate
-      ? `member="${user.id}" && start_date<="${activityDate}" && end_date>="${activityDate}"`
-      : '',
+      ? { _and: [{ member: { _eq: user.id } }, { start_date: { _lte: activityDate } }, { end_date: { _gte: activityDate } }] }
+      : { id: { _eq: -1 } },
     perPage: 5,
     enabled: !!user && !!activityDate,
   })
@@ -152,15 +156,15 @@ export function useTeamParticipations(
   memberIds: string[],
   sessionId?: string,
 ) {
-  const memberFilter = memberIds.length > 0
-    ? memberIds.map((id) => `member="${id}"`).join(' || ')
-    : 'member=""'
-
-  const sessionFilter = sessionId ? ` && session_id="${sessionId}"` : ''
   const { data, refetch, isLoading } = usePB<Participation>('participations', {
-    filter: activityId
-      ? `(${memberFilter}) && activity_type="${activityType}" && activity_id="${activityId}"${sessionFilter}`
-      : '',
+    filter: activityId && memberIds.length > 0
+      ? { _and: [
+          { member: { _in: memberIds } },
+          { activity_type: { _eq: activityType } },
+          { activity_id: { _eq: activityId } },
+          ...(sessionId ? [{ session_id: { _eq: sessionId } }] : []),
+        ] }
+      : { id: { _eq: -1 } },
     all: true,
     enabled: !!activityId && memberIds.length > 0,
   })
@@ -173,14 +177,14 @@ export function useAllEventParticipations(
   activityId: string,
   memberIds: string[],
 ) {
-  const memberFilter = memberIds.length > 0
-    ? memberIds.map((id) => `member="${id}"`).join(' || ')
-    : 'member=""'
-
   const { data, refetch, isLoading } = usePB<Participation>('participations', {
-    filter: activityId
-      ? `(${memberFilter}) && activity_type="event" && activity_id="${activityId}"`
-      : '',
+    filter: activityId && memberIds.length > 0
+      ? { _and: [
+          { member: { _in: memberIds } },
+          { activity_type: { _eq: 'event' } },
+          { activity_id: { _eq: activityId } },
+        ] }
+      : { id: { _eq: -1 } },
     all: true,
     enabled: !!activityId && memberIds.length > 0,
   })

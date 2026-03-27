@@ -22,23 +22,23 @@ export default function RefereeExpensesPage() {
 
   // Fetch all volleyball teams for filter dropdown
   const { data: vbTeams } = usePB<Team & BaseRecord>('teams', {
-    filter: 'sport="volleyball" && active=true',
+    filter: { _and: [{ sport: { _eq: 'volleyball' } }, { active: { _eq: true } }] },
     sort: 'name',
     all: true,
   })
 
   // Build filter
-  const filter = useMemo(() => {
-    const parts: string[] = []
-    if (teamFilter) parts.push(`team="${teamFilter}"`)
-    if (seasonFilter) parts.push(`game.season="${seasonFilter}"`)
-    return parts.join(' && ')
+  const filter = useMemo((): Record<string, unknown> => {
+    const conditions: Record<string, unknown>[] = []
+    if (teamFilter) conditions.push({ team: { _eq: teamFilter } })
+    if (seasonFilter) conditions.push({ 'game.season': { _eq: seasonFilter } })
+    if (conditions.length === 0) return {}
+    return conditions.length === 1 ? conditions[0] : { _and: conditions }
   }, [teamFilter, seasonFilter])
 
   // Fetch expenses
   const { data: expenses, isLoading } = usePB<ExpandedExpense>('referee_expenses', {
     filter,
-    expand: 'game,team,paid_by_member',
     sort: '-created',
     all: true,
   })

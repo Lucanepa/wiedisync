@@ -5,7 +5,6 @@ import { usePB } from '../../hooks/usePB'
 import { useRealtime } from '../../hooks/useRealtime'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
-import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
 import { Button } from '@/components/ui/button'
 import { FormInput } from '@/components/FormField'
@@ -20,6 +19,7 @@ import DelegationRequestBanner from './components/DelegationRequestBanner'
 import { useScorerDelegations } from './hooks/useScorerDelegations'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import { Bell, BellOff, ChevronDown, ChevronUp, Filter, Info, Clock, AlertTriangle, ClipboardList, Lightbulb } from 'lucide-react'
+import { updateRecord } from '../../lib/api'
 
 type Tab = 'games' | 'overview'
 type SportTab = 'volleyball' | 'basketball'
@@ -65,14 +65,14 @@ export default function ScorerPage() {
     isLoading: gamesLoading,
     refetch,
   } = usePB<Game>('games', {
-    filter: `type = "home" && date >= "${today}" && status != "completed" && status != "postponed"`,
+    filter: { _and: [{ type: { _eq: 'home' } }, { date: { _gte: today } }, { status: { _nin: ['completed', 'postponed'] } }] },
     sort: '+date,+time',
     expand: EXPAND_FIELDS,
     perPage: 200,
   })
 
   const { data: allPastGames, isLoading: pastLoading } = usePB<Game>('games', {
-    filter: `type = "home" && date < "${today}"`,
+    filter: { _and: [{ type: { _eq: 'home' } }, { date: { _lt: today } }] },
     sort: '-date,-time',
     expand: EXPAND_FIELDS,
     perPage: 200,
@@ -82,7 +82,7 @@ export default function ScorerPage() {
   // Reminder email toggle (superuser only)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: appSettings, refetch: refetchSettings } = usePB<any>('app_settings', {
-    filter: 'key = "scorer_reminders_enabled"',
+    filter: { key: { _eq: 'scorer_reminders_enabled' } },
     perPage: 1,
     enabled: isSuperAdmin,
   })
@@ -93,7 +93,7 @@ export default function ScorerPage() {
     if (!reminderSetting) return
     setReminderToggling(true)
     try {
-      await pb.collection('app_settings').update(reminderSetting.id, { enabled: !remindersEnabled }, { requestKey: null })
+      await updateRecord('app_settings', reminderSetting.id, { requestKey: null })
       refetchSettings()
     } catch (err) {
       console.error('Failed to toggle reminders:', err)
@@ -103,14 +103,14 @@ export default function ScorerPage() {
   }
 
   const { data: members } = usePB<Member>('members', {
-    filter: 'kscw_membership_active = true',
+    filter: { kscw_membership_active: { _eq: true } },
     sort: '+last_name,+first_name',
     all: true,
     fields: 'id,name,first_name,last_name,licences,kscw_membership_active,phone,email',
   })
 
   const { data: teams } = usePB<Team>('teams', {
-    filter: 'active = true',
+    filter: { active: { _eq: true } },
     sort: '+name',
     all: true,
   })
@@ -310,8 +310,8 @@ export default function ScorerPage() {
   async function handleUpdate(gameId: string, fields: Partial<Game>) {
     const oldGame = upcomingGames.find((g) => g.id === gameId) || allPastGames.find((g) => g.id === gameId)
     try {
-      await pb.collection('games').update(gameId, fields)
-      if (user && oldGame) {
+      await updateRecord('games', gameId, fields as Record<string, unknown>)
+      if (oldGame) {
         const changes: Record<string, { old: string; new: string }> = {}
         for (const [key, newVal] of Object.entries(fields)) {
           const oldVal = (oldGame as Record<string, unknown>)[key]

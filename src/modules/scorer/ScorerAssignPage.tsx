@@ -6,12 +6,12 @@ import { usePB } from '../../hooks/usePB'
 import { useAuth } from '../../hooks/useAuth'
 import { getCurrentSeason, getSeasonDateRange, formatDateCompact, formatTime } from '../../utils/dateHelpers'
 import { logActivity } from '../../utils/logActivity'
-import pb from '../../pb'
 import { Button } from '@/components/ui/button'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import TeamSelect from '../../components/TeamSelect'
 import TeamChip from '../../components/TeamChip'
 import { runAssignment, getTeamCounts, type GameAssignment } from './components/AssignmentAlgorithm'
+import { updateRecord } from '../../lib/api'
 
 type ExpandedGame = Game & {
   expand?: {
@@ -33,26 +33,25 @@ export default function ScorerAssignPage() {
 
   // Data loading
   const { data: allGames, isLoading: gamesLoading } = usePB<ExpandedGame>('games', {
-    filter: `date>="${seasonStart}" && date<="${seasonEnd}" && status!="cancelled"`,
+    filter: { _and: [{ date: { _gte: seasonStart } }, { date: { _lte: seasonEnd } }, { status: { _neq: 'cancelled' } }] },
     sort: '+date,+time',
-    expand: 'kscw_team,hall',
     all: true,
   })
 
   const { data: teams } = usePB<Team>('teams', {
-    filter: 'sport="volleyball" && active=true',
+    filter: { _and: [{ sport: { _eq: 'volleyball' } }, { active: { _eq: true } }] },
     sort: '+name',
     all: true,
   })
 
   const { data: trainings } = usePB<Training>('trainings', {
-    filter: `date>="${seasonStart}" && date<="${seasonEnd}" && cancelled=false`,
+    filter: { _and: [{ date: { _gte: seasonStart } }, { date: { _lte: seasonEnd } }, { cancelled: { _eq: false } }] },
     fields: 'id,team,date,start_time,end_time',
     all: true,
   })
 
   const { data: members } = usePB<Member>('members', {
-    filter: 'kscw_membership_active=true',
+    filter: { kscw_membership_active: { _eq: true } },
     fields: 'id,name,first_name,last_name,licences',
     all: true,
   })
@@ -125,7 +124,7 @@ export default function ScorerAssignPage() {
         if (a.scoreboardTeamId) fields.scoreboard_duty_team = a.scoreboardTeamId
         if (a.combinedTeamId) fields.scorer_scoreboard_duty_team = a.combinedTeamId
 
-        await pb.collection('games').update(a.gameId, fields)
+        await updateRecord('games', a.gameId, fields)
         logActivity('update', 'games', a.gameId, fields)
         updated++
       }

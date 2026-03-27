@@ -19,9 +19,9 @@ import chFlag from '../../assets/flags/ch.svg'
 
 const flagMap: Record<string, string> = { de: deFlag, gb: gbFlag, fr: frFlag, it: itFlag, ch: chFlag }
 import { Checkbox } from '@/components/ui/checkbox'
-import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
 import type { LicenceType, MemberPosition } from '../../types'
+import { client, fetchAllItems, kscwApi, updateRecord } from '../../lib/api'
 
 const VB_LICENCES: { key: LicenceType; i18n: string }[] = [
   { key: 'scorer_vb', i18n: 'licenceScorer' },
@@ -117,7 +117,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
     if (!user?.email) return
     setResetLoading(true)
     try {
-      await pb.collection('members').requestPasswordReset(user.email)
+      await kscwApi('/auth/request-password-reset', { method: 'POST', body: { email: user.email } })
       setResetSent(true)
     } catch {
       setError(t('errorSaving'))
@@ -135,15 +135,14 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
     try {
       // Check for duplicate number in the same team(s)
       if (number > 0 && number !== user.number) {
-        const myTeams = await pb.collection('member_teams').getFullList({
-          filter: `member="${user.id}"`,
+        const myTeams = await fetchAllItems('member_teams', {
+          filter: { member: { _eq: user.id } },
         })
         const teamIds = myTeams.map((mt) => mt.team)
         if (teamIds.length > 0) {
           const teamFilter = teamIds.map((id) => `team="${id}"`).join(' || ')
-          const teammates = await pb.collection('member_teams').getFullList({
-            filter: `(${teamFilter}) && member!="${user.id}"`,
-            expand: 'member',
+          const teammates = await fetchAllItems('member_teams', {
+            filter: `(${teamFilter}) && member!="${user.id}"` as any,
           })
           const conflict = teammates.find(
             (mt) => (mt.expand as { member?: { number?: number } })?.member?.number === number
@@ -185,14 +184,14 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
           }
         }
         formData.append('photo', photoFile)
-        await pb.collection('members').update(user.id, formData)
+        await updateRecord('members', user.id, formData as unknown as Record<string, unknown>)
       } else {
-        await pb.collection('members').update(user.id, payload)
+        await updateRecord('members', user.id, payload)
       }
       logActivity('update', 'members', user.id, { first_name: firstName, last_name: lastName, email, phone, language, position: selectedPositions, licences: selectedLicences })
       // Persist language to localStorage
       localStorage.setItem('wiedisync-lang', pbLangToI18n(language))
-      await pb.collection('members').authRefresh()
+      await client.refresh()
       onClose()
     } catch {
       setError(t('errorSaving'))

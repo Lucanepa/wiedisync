@@ -5,13 +5,13 @@ import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import { usePB } from '../../hooks/usePB'
 import { formatDate, formatDateCompact, toISODate } from '../../utils/dateHelpers'
-import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
 import type { HallSlot, HallClosure, Team, Hall } from '../../types'
 import type { TeamSettings } from '../../types'
 import TeamChip from '../../components/TeamChip'
 import DatePicker from '@/components/ui/DatePicker'
 import { Switch } from '@/components/ui/switch'
+import { createRecord, fetchAllItems, fetchItem } from '../../lib/api'
 
 type SlotExpanded = HallSlot & { expand?: { team?: Team; hall?: Hall } }
 
@@ -35,9 +35,8 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
   const { hasAdminAccessToTeam, coachTeamIds } = useAuth()
   const { effectiveIsAdmin } = useAdminMode()
   const { data: allSlots } = usePB<SlotExpanded>('hall_slots', {
-    filter: 'slot_type="training"',
+    filter: { slot_type: { _eq: 'training' } },
     sort: 'day_of_week,start_time',
-    expand: 'team,hall',
     perPage: 100,
   })
 
@@ -94,7 +93,7 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
     if (!teamId) return
 
     defaultsApplied.current = true
-    pb.collection('teams').getOne<{ features_enabled: TeamSettings }>(teamId, { fields: 'features_enabled' })
+    fetchItem<{ features_enabled: TeamSettings }>('teams', teamId, { fields: ['features_enabled'] })
       .then((team) => {
         const s = team.features_enabled ?? {}
         if (s.training_respond_by_days !== undefined) {
@@ -145,9 +144,9 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
   // Fetch existing training dates for selected slot's team to prevent duplicates
   useEffect(() => {
     if (!slot) { setExistingDates(new Set()); return }
-    pb.collection('trainings').getFullList<{ date: string }>({
-      filter: `team="${slot.team}" && hall_slot="${slot.id}"`,
-      fields: 'date',
+    fetchAllItems<{ date: string }>('trainings', {
+      filter: `team="${slot.team}" && hall_slot="${slot.id}"` as any,
+      fields: ['date'],
     }).then((trainings) => {
       setExistingDates(new Set(trainings.map((t) => t.date.slice(0, 10))))
     }).catch(() => setExistingDates(new Set()))
@@ -218,9 +217,9 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
 
     try {
       // Re-fetch existing dates right before creating to prevent race conditions
-      const existing = await pb.collection('trainings').getFullList<{ date: string }>({
-        filter: `team="${slot.team}" && hall_slot="${slot.id}"`,
-        fields: 'date',
+      const existing = await fetchAllItems<{ date: string }>('trainings', {
+        filter: `team="${slot.team}" && hall_slot="${slot.id}"` as any,
+        fields: ['date'],
       })
       const existingSet = new Set(existing.map((t) => t.date.slice(0, 10)))
 
@@ -228,7 +227,7 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
       let skipCount = 0
       for (const date of previewDates) {
         if (existingSet.has(date)) { skipCount++; continue }
-        const rec = await pb.collection('trainings').create({
+        const rec = await createRecord<{id: string}>('trainings', {
           team: slot.team,
           hall_slot: slot.id,
           date,

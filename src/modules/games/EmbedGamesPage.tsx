@@ -9,11 +9,11 @@ import GameCard from './components/GameCard'
 import RankingsTable from './components/RankingsTable'
 import LoadingSpinner from '../../components/LoadingSpinner'
 
-function buildTeamFilter(team: string): string {
-  if (!team) return ''
+function buildTeamFilter(team: string): Record<string, unknown> | null {
+  if (!team) return null
   const sanitized = team.replace(/[^a-zA-Z0-9\s\-]/g, '')
-  if (!sanitized) return ''
-  return `kscw_team.name ~ "${sanitized}"`
+  if (!sanitized) return null
+  return { 'kscw_team.name': { _contains: sanitized } }
 }
 
 export default function EmbedGamesPage() {
@@ -27,19 +27,19 @@ export default function EmbedGamesPage() {
   const gameQuery = useMemo(() => {
     if (activeTab === 'rankings') return null
 
-    const parts: string[] = []
+    const conditions: Record<string, unknown>[] = []
     switch (activeTab) {
       case 'upcoming':
-        parts.push(`status = "scheduled"`, `date >= "${today}"`)
+        conditions.push({ status: { _eq: 'scheduled' } }, { date: { _gte: today } })
         break
       case 'results':
-        parts.push(`(status = "completed" || status = "live")`)
+        conditions.push({ status: { _in: ['completed', 'live'] } })
         break
     }
-    if (teamFilter) parts.push(teamFilter)
+    if (teamFilter) conditions.push(teamFilter)
 
     return {
-      filter: parts.join(' && '),
+      filter: conditions.length === 1 ? conditions[0] : { _and: conditions },
       sort: activeTab === 'upcoming' ? '+date,+time' : '-date,-time',
     }
   }, [activeTab, teamFilter, today])
@@ -47,8 +47,8 @@ export default function EmbedGamesPage() {
   const { data: games, isLoading: gamesLoading } = usePB<Game>(
     'games',
     gameQuery
-      ? { filter: gameQuery.filter, sort: gameQuery.sort, expand: 'kscw_team,hall', perPage: 50 }
-      : { filter: 'id = ""', perPage: 1 },
+      ? { filter: gameQuery.filter, sort: gameQuery.sort, perPage: 50 }
+      : { filter: { id: { _eq: -1 } }, perPage: 1 },
   )
 
   const { data: allRankings, isLoading: rankingsLoading } = usePB<Ranking>('rankings', {

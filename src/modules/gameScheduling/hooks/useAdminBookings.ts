@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import pb from '../../../pb'
 import type { GameSchedulingBooking, GameSchedulingOpponent, GameSchedulingSlot } from '../../../types'
+import { fetchAllItems, kscwApi } from '../../../lib/api'
 
 export interface ExpandedBooking extends GameSchedulingBooking {
   expand?: {
@@ -20,18 +20,18 @@ export function useAdminBookings(seasonId: string | undefined) {
     setIsLoading(true)
     try {
       const [bks, opps, sls] = await Promise.all([
-        pb.collection('game_scheduling_bookings').getFullList<ExpandedBooking>({
-          filter: `season = "${seasonId}"`,
-          expand: 'opponent,slot',
-          sort: '-created',
+        fetchAllItems<ExpandedBooking>('game_scheduling_bookings', {
+          filter: { season: { _eq: seasonId } },
+          fields: ['*', 'opponent.*', 'slot.*'],
+          sort: ['-created'],
         }),
-        pb.collection('game_scheduling_opponents').getFullList<GameSchedulingOpponent>({
-          filter: `season = "${seasonId}"`,
-          sort: '-created',
+        fetchAllItems<GameSchedulingOpponent>('game_scheduling_opponents', {
+          filter: { season: { _eq: seasonId } },
+          sort: ['-created'],
         }),
-        pb.collection('game_scheduling_slots').getFullList<GameSchedulingSlot>({
-          filter: `season = "${seasonId}"`,
-          sort: '+date',
+        fetchAllItems<GameSchedulingSlot>('game_scheduling_slots', {
+          filter: { season: { _eq: seasonId } },
+          sort: ['+date'],
         }),
       ])
       setBookings(bks)
@@ -47,7 +47,7 @@ export function useAdminBookings(seasonId: string | undefined) {
   useEffect(() => { fetchAll() }, [fetchAll])
 
   const confirmAwayProposal = useCallback(async (bookingId: string, proposalNumber: number, adminNotes?: string) => {
-    await pb.send('/api/terminplanung/admin/confirm-away', {
+    await kscwApi('/terminplanung/admin/confirm-away', {
       method: 'POST',
       body: { booking_id: bookingId, proposal_number: proposalNumber, admin_notes: adminNotes || '' },
     })
@@ -55,7 +55,7 @@ export function useAdminBookings(seasonId: string | undefined) {
   }, [fetchAll])
 
   const blockSlot = useCallback(async (slotId: string, action: 'block' | 'unblock') => {
-    await pb.send('/api/terminplanung/admin/block-slot', {
+    await kscwApi('/terminplanung/admin/block-slot', {
       method: 'POST',
       body: { slot_id: slotId, action },
     })
@@ -63,7 +63,7 @@ export function useAdminBookings(seasonId: string | undefined) {
   }, [fetchAll])
 
   const generateSlots = useCallback(async (seasonIdParam: string) => {
-    const resp = await pb.send('/api/terminplanung/admin/generate-slots', {
+    const resp = await kscwApi('/terminplanung/admin/generate-slots', {
       method: 'POST',
       body: { season_id: seasonIdParam },
     })

@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import { useParams, useSearchParams, Link } from 'react-router-dom'
 import { XCircle, ChevronRight, Mail, Phone, Award, Calendar, TrendingUp, AlertCircle } from 'lucide-react'
 import { differenceInYears } from 'date-fns'
-import pb from '../../pb'
 import { usePB } from '../../hooks/usePB'
 import { useAuth } from '../../hooks/useAuth'
 import TeamChip from '../../components/TeamChip'
@@ -14,6 +13,7 @@ import { coercePositions, getPositionI18nKey } from '../../utils/memberPositions
 import { formatDate, getCurrentSeason, getSeasonDateRange } from '../../utils/dateHelpers'
 import ImageLightbox from '../../components/ImageLightbox'
 import type { Member, MemberTeam, Team, Absence, Participation } from '../../types'
+import { fetchAllItems, fetchItem } from '../../lib/api'
 
 type ExpandedMemberTeam = MemberTeam & { expand?: { team?: Team } }
 
@@ -28,8 +28,7 @@ export default function PlayerProfile() {
   const [lightboxOpen, setLightboxOpen] = useState(false)
 
   const { data: memberTeams } = usePB<ExpandedMemberTeam>('member_teams', {
-    filter: memberId ? `member="${memberId}"` : '',
-    expand: 'team',
+    filter: memberId ? { member: { _eq: memberId } } : { id: { _eq: -1 } },
     perPage: 20,
   })
 
@@ -37,7 +36,7 @@ export default function PlayerProfile() {
   const { start, end } = getSeasonDateRange(season)
 
   const { data: absences } = usePB<Absence>('absences', {
-    filter: memberId ? `member="${memberId}" && end_date>="${new Date().toISOString().split('T')[0]}"` : '',
+    filter: memberId ? { _and: [{ member: { _eq: memberId } }, { end_date: { _gte: new Date().toISOString().split('T')[0] } }] } : { id: { _eq: -1 } },
     sort: 'start_date',
     perPage: 20,
   })
@@ -48,8 +47,7 @@ export default function PlayerProfile() {
   useEffect(() => {
     if (!memberId) return
     setLoading(true)
-    pb.collection('members')
-      .getOne<Member>(memberId)
+    fetchItem<Member>('members', memberId)
       .then(setMember)
       .catch(() => setMember(null))
       .finally(() => setLoading(false))
@@ -61,15 +59,15 @@ export default function PlayerProfile() {
     const teamIds = memberTeams.map((mt) => mt.team)
     const teamFilter = teamIds.map((id) => `team="${id}"`).join(' || ')
     Promise.all([
-      pb.collection('trainings').getFullList<{ id: string; date: string }>({
-        filter: `(${teamFilter}) && date>="${start}" && date<="${end}" && cancelled=false`,
-        fields: 'id,date',
+      fetchAllItems<{ id: string; date: string }>('trainings', {
+        filter: `(${teamFilter}) && date>="${start}" && date<="${end}" && cancelled=false` as any,
+        fields: ['id', 'date'],
       }),
-      pb.collection('participations').getFullList<Participation>({
-        filter: `member="${memberId}" && activity_type="training"`,
+      fetchAllItems<Participation>('participations', {
+        filter: `member="${memberId}" && activity_type="training"` as any,
       }),
-      pb.collection('absences').getFullList<Absence>({
-        filter: `member="${memberId}" && end_date>="${start}" && start_date<="${end}"`,
+      fetchAllItems<Absence>('absences', {
+        filter: `member="${memberId}" && end_date>="${start}" && start_date<="${end}"` as any,
       }),
     ])
       .then(([trainings, participations, seasonAbsences]) => {
@@ -99,15 +97,15 @@ export default function PlayerProfile() {
     const teamIds = memberTeams.map((mt) => mt.team)
     const kscwTeamFilter = teamIds.map((id) => `kscw_team="${id}"`).join(' || ')
     Promise.all([
-      pb.collection('games').getFullList<{ id: string; date: string }>({
-        filter: `(${kscwTeamFilter}) && date>="${start}" && date<="${end}" && status!="postponed"`,
-        fields: 'id,date',
+      fetchAllItems<{ id: string; date: string }>('games', {
+        filter: `(${kscwTeamFilter}) && date>="${start}" && date<="${end}" && status!="postponed"` as any,
+        fields: ['id', 'date'],
       }),
-      pb.collection('participations').getFullList<Participation>({
-        filter: `member="${memberId}" && activity_type="game"`,
+      fetchAllItems<Participation>('participations', {
+        filter: `member="${memberId}" && activity_type="game"` as any,
       }),
-      pb.collection('absences').getFullList<Absence>({
-        filter: `member="${memberId}" && end_date>="${start}" && start_date<="${end}"`,
+      fetchAllItems<Absence>('absences', {
+        filter: `member="${memberId}" && end_date>="${start}" && start_date<="${end}"` as any,
       }),
     ])
       .then(([games, participations, seasonAbsences]) => {

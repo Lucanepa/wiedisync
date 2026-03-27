@@ -7,11 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import DatePicker from '@/components/ui/DatePicker'
 import { Switch } from '@/components/ui/switch'
-import pb from '../../../pb'
 import { logActivity } from '../../../utils/logActivity'
 import { useConflictChecker } from '../hooks/useConflictChecker'
 import { minutesToTime, timeToMinutes, toISODate } from '../../../utils/dateHelpers'
 import type { Hall, HallClosure, HallSlot, Team } from '../../../types'
+import { createRecord, deleteRecord, fetchAllItems, updateRecord } from '../../../lib/api'
 
 interface SlotEditorProps {
   slot: HallSlot | null
@@ -120,10 +120,10 @@ export default function SlotEditor({
     // Fetch closures and existing trainings
     const hallId = isCombo ? kwiA!.id : slotData.hall
     const [closures, existing] = await Promise.all([
-      pb.collection('hall_closures').getFullList<HallClosure>(),
-      pb.collection('trainings').getFullList<{ date: string }>({
-        filter: `hall_slot="${slotId}"`,
-        fields: 'date',
+      fetchAllItems<HallClosure>('hall_closures'),
+      fetchAllItems<{ date: string }>('trainings', {
+        filter: { hall_slot: { _eq: slotId } },
+        fields: ['date'],
       }),
     ])
     const existingDates = new Set(existing.map((t) => t.date.slice(0, 10)))
@@ -144,7 +144,7 @@ export default function SlotEditor({
         (c) => c.hall === hallId && c.start_date <= dateStr && c.end_date >= dateStr,
       )
       if (!isClosed && !existingDates.has(dateStr)) {
-        const rec = await pb.collection('trainings').create({
+        const rec = await createRecord<{ id: string }>('trainings', {
           team: slotData.team[0] || '',
           hall_slot: slotId,
           date: dateStr,
@@ -162,8 +162,8 @@ export default function SlotEditor({
   /** Cascade slot changes to future trainings */
   async function cascadeChanges(slotId: string, oldSlot: HallSlot, newData: typeof form) {
     const today = new Date().toISOString().slice(0, 10)
-    const futureTrainings = await pb.collection('trainings').getFullList({
-      filter: `hall_slot="${slotId}" && date>="${today}"`,
+    const futureTrainings = await fetchAllItems<{id: string}>('trainings', {
+      filter: `hall_slot="${slotId}" && date>="${today}"` as any,
     })
     if (futureTrainings.length === 0) return
 
@@ -174,7 +174,7 @@ export default function SlotEditor({
     if (ownerChanged || timeChanged || hallChanged) {
       const hallId = isCombo ? kwiA!.id : newData.hall
       for (const tr of futureTrainings) {
-        await pb.collection('trainings').update(tr.id, {
+        await updateRecord('trainings', tr.id, {
           ...(ownerChanged ? { team: newData.team[0] || '' } : {}),
           ...(timeChanged ? { start_time: newData.start_time, end_time: newData.end_time } : {}),
           ...(hallChanged ? { hall: hallId } : {}),
@@ -206,20 +206,20 @@ export default function SlotEditor({
       if (isCombo && kwiA && kwiB) {
         const hallIds = [kwiA.id, kwiB.id]
         if (slot) {
-          await pb.collection('hall_slots').update(slot.id, { ...payload, hall: hallIds[0] })
+          await updateRecord('hall_slots', slot.id, { ...payload, hall: hallIds[0] })
           logActivity('update', 'hall_slots', slot.id, payload)
         } else {
           for (const hid of hallIds) {
-            const rec = await pb.collection('hall_slots').create({ ...payload, hall: hid })
+            const rec = await createRecord<{ id: string }>('hall_slots', { ...payload, hall: hid })
             logActivity('create', 'hall_slots', rec.id, { ...payload, hall: hid })
             if (!savedSlotId) savedSlotId = rec.id
           }
         }
       } else if (slot) {
-        await pb.collection('hall_slots').update(slot.id, payload)
+        await updateRecord('hall_slots', slot.id, payload)
         logActivity('update', 'hall_slots', slot.id, payload)
       } else {
-        const rec = await pb.collection('hall_slots').create(payload)
+        const rec = await createRecord<{ id: string }>('hall_slots', payload)
         logActivity('create', 'hall_slots', rec.id, payload)
         savedSlotId = rec.id
       }
@@ -248,7 +248,7 @@ export default function SlotEditor({
     if (!slot || !window.confirm(t('deleteSlotConfirm'))) return
     setIsSaving(true)
     try {
-      await pb.collection('hall_slots').delete(slot.id)
+      await deleteRecord('hall_slots', slot.id)
       logActivity('delete', 'hall_slots', slot.id)
       onSaved()
       onClose()

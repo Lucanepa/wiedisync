@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import pb from '../../../pb'
 import type { InfraHealth } from '../../../hooks/useInfraHealth'
+import { kscwApi } from '../../../lib/api'
 
 function timeAgo(dateStr: string, t: (k: string) => string): string {
   if (!dateStr) return t('infraNever')
@@ -30,10 +30,9 @@ export default function InfraSection({ infraHealth }: { infraHealth: InfraHealth
   useEffect(() => {
     async function fetchAuditErrors() {
       try {
-        const result = await pb.send('/api/admin/audit', {
+        const result = await kscwApi('/admin/audit', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ filter: { level: 'error' } }),
+          body: { filter: { level: 'error' } },
         }) as { items: unknown[]; totalItems: number }
         setAuditErrors(result?.totalItems ?? 0)
       } catch {

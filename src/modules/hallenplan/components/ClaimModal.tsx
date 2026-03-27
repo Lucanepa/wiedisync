@@ -5,9 +5,9 @@ import TeamChip from '../../../components/TeamChip'
 import { useAuth } from '../../../hooks/useAuth'
 import { useAdminMode } from '../../../hooks/useAdminMode'
 import { formatDate, toISODate } from '../../../utils/dateHelpers'
-import pb from '../../../pb'
 import { logActivity } from '../../../utils/logActivity'
 import type { HallSlot, Hall, Team, Training, Game } from '../../../types'
+import { createRecord } from '../../../lib/api'
 
 interface Props {
   slot: HallSlot
@@ -101,7 +101,7 @@ export default function ClaimModal({ slot, halls, teams, rawSlots, weekDays, onC
     setError('')
 
     try {
-      const rec = await pb.collection('slot_claims').create({
+      const rec = await createRecord<{ id: string }>('slot_claims', {
         hall_slot: hallSlotId,
         hall: slot.hall,
         date: dateStr,

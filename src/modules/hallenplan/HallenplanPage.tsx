@@ -17,8 +17,8 @@ import VirtualSlotDetailModal from './components/VirtualSlotDetailModal'
 import ClaimModal from './components/ClaimModal'
 import ClaimDetailModal from './components/ClaimDetailModal'
 import LoadingSpinner from '../../components/LoadingSpinner'
-import pb from '../../pb'
 import type { HallSlot, HallClosure, SlotClaim, Team, Hall, Training } from '../../types'
+import { fetchItem, fetchItems } from '../../lib/api'
 
 export type SportFilter = 'all' | 'vb' | 'bb'
 
@@ -348,7 +348,7 @@ export default function HallenplanPage() {
             try {
               let parentSlot: HallSlot | null = null
               if (training.hall_slot) {
-                parentSlot = await pb.collection('hall_slots').getOne<HallSlot>(training.hall_slot)
+                parentSlot = await fetchItem<HallSlot>('hall_slots', training.hall_slot)
               } else {
                 // No hall_slot reference — find matching slot by team + day + time
                 // Use the virtual slot's own data as fallback (sourceRecord may be empty for freed slots)
@@ -363,10 +363,10 @@ export default function HallenplanPage() {
                   dbDay = virtualDetailSlot.day_of_week
                 }
                 if (slotTeam && slotStartTime && slotEndTime && dbDay != null) {
-                  const results = await pb.collection('hall_slots').getList<HallSlot>(1, 1, {
-                    filter: `team="${slotTeam}" && day_of_week=${dbDay} && start_time="${slotStartTime}" && end_time="${slotEndTime}"`,
+                  const results = await fetchItems<HallSlot>('hall_slots', { limit: 1,
+                    filter: `team="${slotTeam}" && day_of_week=${dbDay} && start_time="${slotStartTime}" && end_time="${slotEndTime}"` as any,
                   })
-                  if (results.items.length > 0) parentSlot = results.items[0]
+                  if (results.length > 0) parentSlot = results[0]
                 }
               }
               if (parentSlot) {

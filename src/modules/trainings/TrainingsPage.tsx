@@ -52,14 +52,15 @@ export default function TrainingsPage() {
   }, [allUserTeamIds, autoSelected])
 
   // Non-admins: always scope to own teams + coached teams
-  const effectiveFilter = useMemo(() => {
-    const parts: string[] = []
-    if (selectedTeam) parts.push(`team="${selectedTeam}"`)
+  const effectiveFilter = useMemo((): Record<string, unknown> | string => {
+    const conditions: Record<string, unknown>[] = []
+    if (selectedTeam) conditions.push({ team: { _eq: selectedTeam } })
     else if (!effectiveIsAdmin && allUserTeamIds.length > 0) {
-      parts.push(`(${allUserTeamIds.map(id => `team="${id}"`).join(' || ')})`)
+      conditions.push({ team: { _in: allUserTeamIds } })
     }
-    if (!showPast) parts.push(`date >= "${today}"`)
-    return parts.join(' && ')
+    if (!showPast) conditions.push({ date: { _gte: today } })
+    if (conditions.length === 0) return ''
+    return conditions.length === 1 ? conditions[0] : { _and: conditions }
   }, [selectedTeam, effectiveIsAdmin, allUserTeamIds, showPast, today])
 
   const [activeTab, setActiveTab] = useState<'trainings' | 'dashboard'>('trainings')
@@ -75,17 +76,15 @@ export default function TrainingsPage() {
   const { data: trainings, isLoading, refetch } = usePB<TrainingExpanded>('trainings', {
     filter: effectiveFilter,
     sort: 'date',
-    expand: 'team,hall,coach',
     perPage: 50,
     enabled: !teamsLoading,
   })
 
   // Batch-fetch ALL participations for visible trainings in ONE request (fixes N+1 / 429 storm)
   const trainingIds = useMemo(() => trainings.map((t) => t.id), [trainings])
-  const participationFilter = useMemo(() => {
+  const participationFilter = useMemo((): Record<string, unknown> | string => {
     if (trainingIds.length === 0) return ''
-    const idClauses = trainingIds.map((id) => `activity_id="${id}"`).join(' || ')
-    return `activity_type="training" && (${idClauses})`
+    return { _and: [{ activity_type: { _eq: 'training' } }, { activity_id: { _in: trainingIds } }] }
   }, [trainingIds])
 
   const { data: allParticipations, refetch: refetchParticipations } = usePB<Participation>('participations', {

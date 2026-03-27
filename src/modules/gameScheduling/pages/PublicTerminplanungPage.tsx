@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next'
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
 import { Button } from '@/components/ui/button'
 import { FormInput } from '@/components/FormField'
-import pb from '../../../pb'
 import type { Team } from '../../../types'
+import { fetchAllItems, kscwApi } from '../../../lib/api'
 
 const TURNSTILE_SITE_KEY = '0x4AAAAAACoYmx3xiDfRbmv9'
 
@@ -30,8 +30,8 @@ export default function PublicTerminplanungPage() {
     async function load() {
       try {
         const [teamRecords, seasons] = await Promise.all([
-          pb.collection('teams').getFullList<Team>({ filter: 'active = true && sport = "volleyball"', sort: 'name' }),
-          pb.collection('game_scheduling_seasons').getFullList({ filter: 'status = "open"', sort: '-created' }),
+          fetchAllItems<Team>('teams', { filter: { _and: [{ active: { _eq: true } }, { sport: { _eq: 'volleyball' } }] }, sort: ['name'] }),
+          fetchAllItems('game_scheduling_seasons', { filter: { status: { _eq: 'open' } }, sort: ['-created'] }),
         ])
         setTeams(teamRecords)
         setSeasonOpen(seasons.length > 0)
@@ -64,7 +64,7 @@ export default function PublicTerminplanungPage() {
 
     setLoading(true)
     try {
-      const resp = await pb.send('/api/terminplanung/register', {
+      const resp = await kscwApi<{ token: string }>('/terminplanung/register', {
         method: 'POST',
         body: {
           kscw_team_id: selectedTeamId,

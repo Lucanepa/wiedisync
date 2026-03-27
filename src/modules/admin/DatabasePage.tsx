@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import pb from '../../pb'
 import { useAuth } from '../../hooks/useAuth'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../components/ui/tabs'
 import DashboardTab from './DashboardTab'
 import QueryTab from './QueryTab'
 import TableBrowser from './components/TableBrowser'
 import type { CollectionInfo, SchemaField } from './components/TableBrowser'
+import { API_URL, kscwApi } from '../../lib/api'
 
-const PB_ADMIN_URL = `${pb.baseUrl}/_/`
+const PB_ADMIN_URL = `${API_URL}/admin/`
 
 export default function DatabasePage() {
   const { t } = useTranslation('admin')
@@ -20,13 +20,13 @@ export default function DatabasePage() {
   useEffect(() => {
     if (!isSuperAdmin) return
     setLoadingCollections(true)
-    pb.send('/api/admin/sql', {
+    kscwApi<{ success: boolean; columns: string[]; rows: unknown[][] }>('/admin/sql', {
       method: 'POST',
-      body: JSON.stringify({
+      body: {
         query: 'SELECT id, name, type, fields FROM _collections ORDER BY name',
-      }),
+      },
     })
-      .then((res: { success: boolean; columns: string[]; rows: unknown[][] }) => {
+      .then((res) => {
         if (!res.success) return
         const idIdx = res.columns.indexOf('id')
         const nameIdx = res.columns.indexOf('name')

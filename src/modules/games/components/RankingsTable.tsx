@@ -25,7 +25,7 @@ export default function RankingsTable({ league, rankings }: RankingsTableProps) 
 
   // Fetch all games for this league (lightweight — small dataset per league)
   const { data: leagueGames } = usePB<Game>('games', {
-    filter: `league = "${league.replace(/"/g, '\\"')}"`,
+    filter: { league: { _eq: league } },
     sort: '-date,-time',
     perPage: 500,
   })

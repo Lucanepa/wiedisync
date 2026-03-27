@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import pb from '../../../pb'
+import { fetchAllItems, kscwApi } from '../../../lib/api'
 
 interface TeamRecord {
   id: string
@@ -44,21 +44,19 @@ export default function MembersTeamsSection() {
       setError(null)
       try {
         const [teamRecords, sqlResult, unapprovedResult] = await Promise.all([
-          pb.collection('teams').getFullList<TeamRecord>({
-            sort: 'name',
-            expand: 'coach,captain',
-            fields: 'id,name,sport,slug,coach,captain,expand',
+          fetchAllItems<TeamRecord>('teams', {
+            sort: ['name'],
+            fields: ['id', 'name', 'sport', 'slug', 'coach', 'captain', 'expand'],
           }),
-          pb.send('/api/admin/sql', {
+          kscwApi('/admin/sql', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+body: {
               query: 'SELECT mt.team, COUNT(mt.id) as cnt FROM member_teams mt GROUP BY mt.team',
-            }),
+            },
           }) as Promise<{ rows: [string, number][] }>,
-          pb.collection('members').getFullList<UnapprovedMember>({
-            filter: 'coach_approved_team = false && requested_team != ""',
-            fields: 'id,name,email,requested_team,created',
+          fetchAllItems<UnapprovedMember>('members', {
+            filter: { _and: [{ coach_approved_team: { _eq: false } }, { requested_team: { _nempty: true } }] },
+            fields: ['id', 'name', 'email', 'requested_team', 'created'],
           }),
         ])
 
@@ -70,8 +68,8 @@ export default function MembersTeamsSection() {
         }
 
         const teamsWithCount: TeamWithCount[] = teamRecords
-          .map(t => ({ ...t, memberCount: countMap[t.id] ?? 0 }))
-          .sort((a, b) => b.memberCount - a.memberCount)
+          .map((t: TeamRecord) => ({ ...t, memberCount: countMap[t.id] ?? 0 }))
+          .sort((a: TeamWithCount, b: TeamWithCount) => b.memberCount - a.memberCount)
 
         setTeams(teamsWithCount)
         setUnapproved(unapprovedResult)

@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
+import { kscwApi } from '../../lib/api'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -7,7 +8,6 @@ import {
   Search, X, ChevronLeft, ChevronsLeft, ChevronsRight,
   AlertCircle, Info, AlertTriangle,
 } from 'lucide-react'
-import pb from '../../pb'
 
 interface AuditEntry {
   ts: string
@@ -187,13 +187,13 @@ export default function AuditLogPage() {
   const fetchLogs = useCallback(async (p = 1) => {
     setLoading(true)
     try {
-      const res = await pb.send('/api/admin/audit', {
+      const res = await kscwApi('/admin/audit', {
         method: 'POST',
-        body: JSON.stringify({
+        body: {
           collection, action, level, actor,
           record_id: recordId, search, from, to,
           page: p, per_page: 100,
-        }),
+        },
       }) as AuditResponse
       setResult(res)
       setPage(p)
@@ -209,7 +209,7 @@ export default function AuditLogPage() {
 
   const fetchStats = useCallback(async () => {
     try {
-      const res = await pb.send('/api/admin/audit/stats', { method: 'GET' }) as AuditStats
+      const res = await kscwApi('/admin/audit/stats', { method: 'GET' }) as AuditStats
       setStats(res)
     } catch {
       // stats are non-critical

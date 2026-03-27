@@ -4,12 +4,12 @@ import { toast } from 'sonner'
 import { Bug, Lightbulb, MessageCircle, Paperclip, X, ExternalLink, ChevronDown, ChevronRight, CheckCircle2, AlertCircle } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { usePB } from '../../hooks/usePB'
-import pb from '../../pb'
 import { formatRelativeTime } from '../../utils/dateHelpers'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
 import { Textarea } from '../../components/ui/textarea'
 import { Badge } from '../../components/ui/badge'
+import { createRecord } from '../../lib/api'
 
 type FeedbackType = 'bug' | 'feature' | 'feedback'
 
@@ -82,7 +82,7 @@ export default function FeedbackPage() {
   const [submitting, setSubmitting] = useState(false)
 
   const { data: submissions, refetch } = usePB<FeedbackRecord>('feedback', {
-    filter: user ? `user="${user.id}"` : '',
+    filter: user ? { user: { _eq: user.id } } : { id: { _eq: -1 } },
     sort: '-created',
     all: true,
   })
@@ -162,7 +162,7 @@ export default function FeedbackPage() {
       if (user) formData.append('user', user.id)
       for (const f of files) formData.append('screenshot', f)
 
-      await pb.collection('feedback').create(formData)
+      await createRecord('feedback', formData as unknown as Record<string, unknown>)
 
       const msg = selectedType === 'bug' ? t('successBug')
         : selectedType === 'feature' ? t('successFeature')

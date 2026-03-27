@@ -4,12 +4,12 @@ import { useTranslation } from 'react-i18next'
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
 import { useAuth } from '../../hooks/useAuth'
 import { useTheme } from '../../hooks/useTheme'
-import pb from '../../pb'
 import { Button } from '@/components/ui/button'
 import { FormInput } from '@/components/FormField'
 import { Switch } from '@/components/ui/switch'
 import { OtpInput } from '../../components/OtpInput'
 import { SetPasswordForm } from '../../components/SetPasswordForm'
+import { kscwApi, logout as apiLogout } from '../../lib/api'
 
 const TURNSTILE_SITE_KEY = '0x4AAAAAACoYmx3xiDfRbmv9'
 
@@ -106,7 +106,7 @@ export default function LoginPage() {
     setError('')
     setOtpError('')
     try {
-      const result = await pb.collection('members').requestOTP(targetEmail.trim().toLowerCase())
+      const result = await kscwApi<{ otpId: string }>('/auth/request-otp', { method: 'POST', body: { email: targetEmail.trim().toLowerCase() } })
       setOtpId(result.otpId)
       setEmail(targetEmail.trim().toLowerCase())
       setMode('forgot-otp')
@@ -132,7 +132,7 @@ export default function LoginPage() {
     setOtpError('')
     setOtpLoading(true)
     try {
-      await pb.collection('members').authWithOTP(otpId, code)
+      await kscwApi('/auth/verify-otp', { method: 'POST', body: { otpId: otpId, code: code } })
       setMode('forgot-set-password')
     } catch {
       setOtpError(t('otpInvalid'))
@@ -144,7 +144,7 @@ export default function LoginPage() {
   async function handleOtpResend() {
     setOtpError('')
     try {
-      const result = await pb.collection('members').requestOTP(email.trim().toLowerCase())
+      const result = await kscwApi<{ otpId: string }>('/auth/request-otp', { method: 'POST', body: { email: email.trim().toLowerCase() } })
       setOtpId(result.otpId)
     } catch {
       setOtpError(t('otpRequestFailed'))
@@ -152,7 +152,7 @@ export default function LoginPage() {
   }
 
   function handlePasswordSetSuccess() {
-    pb.authStore.clear()
+    apiLogout()
     setPasswordResetSuccess(true)
     resetToLogin()
   }

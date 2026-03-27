@@ -27,7 +27,7 @@ export default function AbsenceForm({ open, absence, onSave, onCancel }: Absence
   const { create, update, isLoading } = useMutation<Absence>('absences')
   // Admins: fetch all active members directly
   const { data: allMembers } = usePB<Member>('members', {
-    filter: 'kscw_membership_active=true',
+    filter: { kscw_membership_active: { _eq: true } },
     sort: 'last_name',
     all: true,
     fields: 'id,first_name,last_name,name',
@@ -36,8 +36,7 @@ export default function AbsenceForm({ open, absence, onSave, onCancel }: Absence
 
   // Coaches: fetch team members via member_teams with expanded member data
   const { data: memberTeams, error: memberTeamsError } = usePB<MemberTeam & { expand?: { member?: Member } }>('member_teams', {
-    filter: coachTeamIds.map((id) => `team="${id}"`).join(' || '),
-    expand: 'member',
+    filter: coachTeamIds.length > 0 ? { team: { _in: coachTeamIds } } : { id: { _eq: -1 } },
     all: true,
     enabled: effectiveIsCoach && !effectiveIsAdmin && coachTeamIds.length > 0,
   })

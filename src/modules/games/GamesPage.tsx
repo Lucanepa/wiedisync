@@ -20,10 +20,10 @@ import SharedEmptyState from '../../components/EmptyState'
 import { getGameWarnings, type Warning } from '../../utils/participationWarnings'
 import { Calendar, Trophy, BarChart3, LayoutGrid } from 'lucide-react'
 
-function buildTeamFilter(teamPbIds: string[]): string {
-  if (teamPbIds.length === 0) return ''
-  const clauses = teamPbIds.map((id) => `kscw_team = "${id}"`)
-  return `(${clauses.join(' || ')})`
+function buildTeamFilter(teamPbIds: string[]): Record<string, unknown> | null {
+  if (teamPbIds.length === 0) return null
+  if (teamPbIds.length === 1) return { kscw_team: { _eq: teamPbIds[0] } }
+  return { kscw_team: { _in: teamPbIds } }
 }
 
 export default function GamesPage() {
@@ -80,31 +80,31 @@ export default function GamesPage() {
     : (!effectiveIsAdmin && allUserTeamIds.length > 0 ? allUserTeamIds : [])
   const teamFilter = buildTeamFilter(filterTeamIds)
 
-  // Sport filter clause for PB queries
-  const sportFilter = useMemo(() => {
-    if (sport === 'vb') return 'kscw_team.sport = "volleyball"'
-    if (sport === 'bb') return 'kscw_team.sport = "basketball"'
-    return ''
+  // Sport filter clause for Directus queries
+  const sportFilter = useMemo((): Record<string, unknown> | null => {
+    if (sport === 'vb') return { 'kscw_team.sport': { _eq: 'volleyball' } }
+    if (sport === 'bb') return { 'kscw_team.sport': { _eq: 'basketball' } }
+    return null
   }, [sport])
 
   // Build game filter/sort based on active tab
   const gameQuery = useMemo(() => {
     if (activeTab === 'rankings' || activeTab === 'scoreboard') return null
 
-    const parts: string[] = []
+    const conditions: Record<string, unknown>[] = []
     switch (activeTab) {
       case 'upcoming':
-        parts.push(`status = "scheduled"`, `date >= "${today}"`)
+        conditions.push({ status: { _eq: 'scheduled' } }, { date: { _gte: today } })
         break
       case 'results':
-        parts.push(`(status = "completed" || status = "live")`)
+        conditions.push({ status: { _in: ['completed', 'live'] } })
         break
     }
-    if (teamFilter) parts.push(teamFilter)
-    if (sportFilter) parts.push(sportFilter)
+    if (teamFilter) conditions.push(teamFilter)
+    if (sportFilter) conditions.push(sportFilter)
 
     return {
-      filter: parts.join(' && '),
+      filter: conditions.length === 1 ? conditions[0] : { _and: conditions },
       sort: activeTab === 'upcoming' ? '+date,+time' : '-date,-time',
     }
   }, [activeTab, teamFilter, sportFilter, today])
@@ -114,22 +114,20 @@ export default function GamesPage() {
   const { data: games, isLoading: gamesLoading } = usePB<Game>(
     'games',
     gameQuery && !teamsLoading
-      ? { filter: gameQuery.filter, sort: gameQuery.sort, expand: 'kscw_team,hall,scorer_member,scoreboard_member,scorer_scoreboard_member,scorer_duty_team,scoreboard_duty_team,scorer_scoreboard_duty_team,bb_scorer_member,bb_timekeeper_member,bb_24s_official,bb_duty_team,bb_scorer_duty_team,bb_timekeeper_duty_team,bb_24s_duty_team', perPage }
-      : { filter: 'id = ""', perPage: 1 },
+      ? { filter: gameQuery.filter, sort: gameQuery.sort, perPage }
+      : { filter: { id: { _eq: -1 } }, perPage: 1 },
   )
 
   // Batch-fetch ALL participations for visible games in ONE request
   const gameIds = useMemo(() => games.map((g) => g.id), [games])
-  const participationFilter = useMemo(() => {
+  const participationFilter = useMemo((): Record<string, unknown> | string => {
     if (gameIds.length === 0) return ''
-    const idClauses = gameIds.map((id) => `activity_id="${id}"`).join(' || ')
-    return `activity_type="game" && (${idClauses})`
+    return { _and: [{ activity_type: { _eq: 'game' } }, { activity_id: { _in: gameIds } }] }
   }, [gameIds])
 
   const { data: allParticipations, refetch: refetchParticipations } = usePB<Participation>('participations', {
     filter: participationFilter,
     all: true,
-    expand: 'member',
     enabled: gameIds.length > 0,
   })
 

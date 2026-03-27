@@ -332,7 +332,7 @@ export default function TableBrowser({ collections, loadingCollections }: TableB
                   if (!row || row.closest('thead')) return
                   const idx = Array.from(row.parentElement?.children ?? []).indexOf(row)
                   if (idx >= 0 && records[idx]) {
-                    setEditRecord(records[idx])
+                    setEditRecord(records[idx] as never)
                   }
                 }}
               >

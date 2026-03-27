@@ -1,0 +1,11 @@
+{
+  "name": "kscw-hooks",
+  "version": "1.0.0",
+  "type": "module",
+  "directus:extension": {
+    "type": "hook",
+    "path": "src/index.js",
+    "source": "src/index.js",
+    "host": "^11.0.0"
+  }
+}

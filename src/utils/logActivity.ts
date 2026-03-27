@@ -1,4 +1,5 @@
-import pb from '../pb'
+import { createItem } from '@directus/sdk'
+import directus, { getAccessToken } from '../directus'
 
 type LogAction = 'create' | 'update' | 'delete'
 
@@ -12,16 +13,12 @@ export function logActivity(
   recordId?: string,
   data?: Record<string, unknown> | null,
 ): void {
-  const userId = pb.authStore.record?.id
-  if (!userId) return
+  if (!getAccessToken()) return
 
-  pb.collection('user_logs')
-    .create({
-      user: userId,
-      action,
-      collection_name: collectionName,
-      record_id: recordId ?? '',
-      data: data ?? null,
-    })
-    .catch(() => {})
+  directus.request(createItem('user_logs', {
+    action,
+    collection_name: collectionName,
+    record_id: recordId ?? '',
+    data: data ?? null,
+  })).catch(() => {})
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import pb from '../pb'
+import { fetchItem, fetchAllItems, updateRecord } from '../lib/api'
 import { coercePositions, normalizePositionsForSport } from '../utils/memberPositions'
 import type { Member, MemberTeam, Team } from '../types'
 
@@ -20,14 +20,13 @@ export function useTeamMembers(teamId: string | undefined, season?: string) {
     setIsLoading(true)
     setError(null)
     try {
-      const team = await pb.collection('teams').getOne<Team>(teamId, { fields: 'id,sport' })
-      const filter = season
-        ? `team="${teamId}" && season="${season}"`
-        : `team="${teamId}"`
-      const result = await pb.collection('member_teams').getFullList<ExpandedMemberTeam>({
+      const team = await fetchItem<Team>('teams', teamId, { fields: ['id', 'sport'] })
+      const filter: Record<string, unknown> = { team: { _eq: teamId } }
+      if (season) filter.season = { _eq: season }
+      const result = await fetchAllItems<ExpandedMemberTeam>('member_teams', {
         filter,
-        expand: 'member',
-        sort: 'member',
+        fields: ['*', 'member.*'],
+        sort: ['member'],
       })
       const updates: Promise<unknown>[] = []
       const normalized = result.map((mt) => {
@@ -36,7 +35,7 @@ export function useTeamMembers(teamId: string | undefined, season?: string) {
         const originalPositions = coercePositions(member.position)
         const safePositions = normalizePositionsForSport(member.position, team.sport)
         if (originalPositions.join('|') !== safePositions.join('|')) {
-          updates.push(pb.collection('members').update(member.id, { position: safePositions }))
+          updates.push(updateRecord('members', member.id, { position: safePositions }))
           return {
             ...mt,
             expand: {
@@ -84,11 +83,10 @@ export function useMultiTeamMembers(teamIds: string[]) {
       setIsLoading(true)
       setError(null)
       try {
-        const filter = `team="${teamIds[0]}"`
-        const result = await pb.collection('member_teams').getFullList<ExpandedMemberTeam>({
-          filter,
-          expand: 'member',
-          sort: 'member',
+        const result = await fetchAllItems<ExpandedMemberTeam>('member_teams', {
+          filter: { team: { _eq: teamIds[0] } },
+          fields: ['*', 'member.*'],
+          sort: ['member'],
         })
         setMembers(result)
       } catch (err) {
@@ -102,11 +100,10 @@ export function useMultiTeamMembers(teamIds: string[]) {
     setIsLoading(true)
     setError(null)
     try {
-      const filter = teamIds.map(id => `team="${id}"`).join(' || ')
-      const result = await pb.collection('member_teams').getFullList<ExpandedMemberTeam>({
-        filter,
-        expand: 'member',
-        sort: 'member',
+      const result = await fetchAllItems<ExpandedMemberTeam>('member_teams', {
+        filter: { team: { _in: teamIds } },
+        fields: ['*', 'member.*'],
+        sort: ['member'],
       })
       // Deduplicate by member ID — keep the first occurrence
       const seen = new Set<string>()

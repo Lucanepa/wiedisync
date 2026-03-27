@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { RecordModel } from 'pocketbase'
-import pb from '../../../pb'
+import { createRecord, updateRecord, deleteRecord } from '../../../lib/api'
 import { logActivity } from '../../../utils/logActivity'
 import { toPBDatetime } from '../../../utils/dateHelpers'
 import Modal from '@/components/Modal'
@@ -25,7 +24,7 @@ interface RecordEditModalProps {
   onClose: () => void
   collection: string
   schema: SchemaField[]
-  record?: RecordModel | null
+  record?: Record<string, unknown> | null
   onSaved: () => void
 }
 
@@ -111,11 +110,11 @@ export default function RecordEditModal({
           if (file) fd.append(key, file)
         }
         if (isEdit) {
-          await pb.collection(collection).update(record!.id, fd)
-          logActivity('update', collection, record!.id, formData)
+          await updateRecord(collection, record!.id as string | number, Object.fromEntries(fd.entries()))
+          logActivity('update', collection, record!.id as string, formData)
         } else {
-          const rec = await pb.collection(collection).create(fd)
-          logActivity('create', collection, rec.id, formData)
+          const rec = await createRecord<Record<string, unknown>>(collection, Object.fromEntries(fd.entries()))
+          logActivity('create', collection, String(rec.id), formData)
         }
       } else {
         // Clean up data — convert empty strings to null for optional fields
@@ -146,11 +145,11 @@ export default function RecordEditModal({
           }
         }
         if (isEdit) {
-          await pb.collection(collection).update(record!.id, cleanData)
-          logActivity('update', collection, record!.id, cleanData)
+          await updateRecord(collection, record!.id as string | number, cleanData)
+          logActivity('update', collection, String(record!.id), cleanData)
         } else {
-          const rec = await pb.collection(collection).create(cleanData)
-          logActivity('create', collection, rec.id, cleanData)
+          const rec = await createRecord<Record<string, unknown>>(collection, cleanData)
+          logActivity('create', collection, String(rec.id), cleanData)
         }
       }
       onSaved()
@@ -166,8 +165,8 @@ export default function RecordEditModal({
     if (!record) return
     setLoading(true)
     try {
-      await pb.collection(collection).delete(record.id)
-      logActivity('delete', collection, record.id)
+      await deleteRecord(collection, record.id as string | number)
+      logActivity('delete', collection, String(record.id))
       onSaved()
       onClose()
     } catch (err) {
@@ -317,7 +316,7 @@ export default function RecordEditModal({
       case 'file':
         return (
           <div className="mt-1">
-            {isEdit && record?.[field.name] && (
+            {isEdit && !!record?.[field.name] && (
               <p className="mb-1 text-xs text-gray-500 dark:text-gray-400">
                 {Array.isArray(record[field.name])
                   ? (record[field.name] as string[]).join(', ')
@@ -356,9 +355,9 @@ export default function RecordEditModal({
         <div className="space-y-4">
           {isEdit && record && (
             <div className="flex flex-wrap gap-x-6 gap-y-1 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-500 dark:bg-gray-800 dark:text-gray-400">
-              <span>ID: <code className="font-mono">{record.id}</code></span>
-              <span>Created: {new Date(record.created).toLocaleString('de-CH')}</span>
-              <span>Updated: {new Date(record.updated).toLocaleString('de-CH')}</span>
+              <span>ID: <code className="font-mono">{String(record.id)}</code></span>
+              <span>Created: {new Date(String(record.date_created ?? record.created ?? '')).toLocaleString('de-CH')}</span>
+              <span>Updated: {new Date(String(record.date_updated ?? record.updated ?? '')).toLocaleString('de-CH')}</span>
             </div>
           )}
 

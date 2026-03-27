@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import pb from '../pb'
+import { fetchItems, updateRecord } from '../lib/api'
 import { useAuth } from './useAuth'
 import { useRealtime } from './useRealtime'
 import type { Notification } from '../types'
-import type { RecordModel } from 'pocketbase'
 
 export function useNotifications() {
   const { user } = useAuth()
@@ -21,12 +20,13 @@ export function useNotifications() {
       return
     }
     try {
-      const result = await pb.collection('notifications').getList<Notification & RecordModel>(1, 30, {
-        filter: `member="${user.id}"`,
-        sort: '-created',
+      const result = await fetchItems<Notification>('notifications', {
+        filter: { member: { _eq: user.id } },
+        sort: ['-date_created'],
+        limit: 30,
       })
-      setNotifications(result.items)
-      setUnreadCount(result.items.filter((n) => !n.read).length)
+      setNotifications(result)
+      setUnreadCount(result.filter((n: Notification) => !n.read).length)
     } catch {
       // silently fail
     } finally {
@@ -39,7 +39,7 @@ export function useNotifications() {
   }, [fetchNotifications])
 
   // Listen for new notifications in realtime
-  useRealtime<Notification & RecordModel>('notifications', (e) => {
+  useRealtime<Notification>('notifications', (e) => {
     if (e.record.member !== userIdRef.current) return
     if (e.action === 'create') {
       setNotifications((prev) => [e.record, ...prev].slice(0, 30))
@@ -59,7 +59,7 @@ export function useNotifications() {
 
   const markAsRead = useCallback(async (id: string) => {
     try {
-      await pb.collection('notifications').update(id, { read: true })
+      await updateRecord('notifications', id, { read: true })
       setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))
       setUnreadCount((c) => Math.max(0, c - 1))
     } catch {
@@ -70,7 +70,7 @@ export function useNotifications() {
   const markAllAsRead = useCallback(async () => {
     const unread = notifications.filter((n) => !n.read)
     try {
-      await Promise.all(unread.map((n) => pb.collection('notifications').update(n.id, { read: true })))
+      await Promise.all(unread.map((n) => updateRecord('notifications', n.id, { read: true })))
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
       setUnreadCount(0)
     } catch {

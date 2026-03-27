@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { RecordModel } from 'pocketbase'
-import pb from '../../../pb'
+import { fetchItems } from '../../../lib/api'
 import { usePB } from '../../../hooks/usePB'
 import ResultsTable from './ResultsTable'
 import SchemaViewer from './SchemaViewer'
@@ -38,7 +37,7 @@ export default function TableBrowser({ collections, loadingCollections }: TableB
   const [filterText, setFilterText] = useState('')
   const [appliedFilter, setAppliedFilter] = useState('')
   const [showSchema, setShowSchema] = useState(false)
-  const [editRecord, setEditRecord] = useState<RecordModel | null>(null)
+  const [editRecord, setEditRecord] = useState<Record<string, unknown> | null>(null)
   const [showCreate, setShowCreate] = useState(false)
 
   const selectedCol = collections.find((c) => c.name === selected)
@@ -129,10 +128,13 @@ export default function TableBrowser({ collections, loadingCollections }: TableB
         for (let i = 0; i < idArr.length; i += 50) {
           if (cancelled) return
           const batch = idArr.slice(i, i + 50)
-          const filter = batch.map((id) => `id="${id}"`).join('||')
           try {
-            const res = await pb.collection(colName).getList(1, 50, { filter, fields: 'id,name,first_name,last_name,full_name,title,email' })
-            for (const rec of res.items) {
+            const res = await fetchItems<Record<string, unknown>>(colName, {
+              filter: { id: { _in: batch } },
+              fields: ['id', 'name', 'first_name', 'last_name', 'full_name', 'title', 'email'],
+              limit: 50,
+            })
+            for (const rec of res) {
               // Try multiple display name strategies
               const label =
                 [rec.last_name, rec.first_name].filter(Boolean).join(' ') ||
@@ -141,7 +143,7 @@ export default function TableBrowser({ collections, loadingCollections }: TableB
                 rec.title ||
                 rec.email ||
                 rec.id
-              idMap[rec.id] = label
+              idMap[String(rec.id)] = String(label)
             }
           } catch {
             // Collection might not have those fields, fall back to id

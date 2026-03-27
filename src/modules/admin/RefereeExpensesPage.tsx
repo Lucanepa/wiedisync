@@ -1,8 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Download } from 'lucide-react'
-import type { RecordModel } from 'pocketbase'
-import type { RefereeExpense, Game, Team, Member } from '../../types'
+import type { RefereeExpense, Game, Team, Member, BaseRecord } from '../../types'
 import { usePB } from '../../hooks/usePB'
 import TeamChip from '../../components/TeamChip'
 import { pbNameToColorKey } from '../../utils/teamColors'
@@ -10,9 +9,9 @@ import { formatDate } from '../../utils/dateHelpers'
 
 type ExpandedExpense = RefereeExpense & {
   expand?: {
-    game?: Game & RecordModel
-    team?: Team & RecordModel
-    paid_by_member?: Member & RecordModel
+    game?: Game & BaseRecord
+    team?: Team & BaseRecord
+    paid_by_member?: Member & BaseRecord
   }
 }
 
@@ -22,7 +21,7 @@ export default function RefereeExpensesPage() {
   const [seasonFilter, setSeasonFilter] = useState('')
 
   // Fetch all volleyball teams for filter dropdown
-  const { data: vbTeams } = usePB<Team & RecordModel>('teams', {
+  const { data: vbTeams } = usePB<Team & BaseRecord>('teams', {
     filter: 'sport="volleyball" && active=true',
     sort: 'name',
     all: true,

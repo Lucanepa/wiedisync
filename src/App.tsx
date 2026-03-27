@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Toaster } from 'sonner'
+import { QueryProvider } from './lib/query'
 import { AuthProvider } from './hooks/useAuth'
 import { ThemeProvider } from './hooks/useTheme'
 import { AdminModeProvider } from './hooks/useAdminMode'
@@ -44,6 +45,7 @@ import ChangelogPage from './modules/changelog/ChangelogPage'
 
 export default function App() {
   return (
+    <QueryProvider>
     <ThemeProvider>
     <AuthProvider>
       <AdminModeProvider>
@@ -93,5 +95,6 @@ export default function App() {
       </AdminModeProvider>
     </AuthProvider>
     </ThemeProvider>
+    </QueryProvider>
   )
 }

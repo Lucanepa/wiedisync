@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { RecordModel } from 'pocketbase'
-import type { Game, Member, Team, Hall, LicenceType, MemberTeam, ScorerDelegation } from '../../../types'
+import type { Game, Member, Team, Hall, LicenceType, MemberTeam, ScorerDelegation, BaseRecord } from '../../../types'
 import TeamChip from '../../../components/TeamChip'
 import AssignmentEditor from './AssignmentEditor'
 import DelegationModal from './DelegationModal'
@@ -31,23 +30,23 @@ interface ScorerRowProps {
 
 export type ExpandedGame = Game & {
   expand?: {
-    kscw_team?: Team & RecordModel
-    hall?: Hall & RecordModel
+    kscw_team?: Team & BaseRecord
+    hall?: Hall & BaseRecord
     // VB duty relations
-    scorer_member?: Member & RecordModel
-    scoreboard_member?: Member & RecordModel
-    scorer_scoreboard_member?: Member & RecordModel
-    scorer_duty_team?: Team & RecordModel
-    scoreboard_duty_team?: Team & RecordModel
-    scorer_scoreboard_duty_team?: Team & RecordModel
+    scorer_member?: Member & BaseRecord
+    scoreboard_member?: Member & BaseRecord
+    scorer_scoreboard_member?: Member & BaseRecord
+    scorer_duty_team?: Team & BaseRecord
+    scoreboard_duty_team?: Team & BaseRecord
+    scorer_scoreboard_duty_team?: Team & BaseRecord
     // BB duty relations
-    bb_scorer_member?: Member & RecordModel
-    bb_timekeeper_member?: Member & RecordModel
-    bb_24s_official?: Member & RecordModel
-    bb_duty_team?: Team & RecordModel
-    bb_scorer_duty_team?: Team & RecordModel
-    bb_timekeeper_duty_team?: Team & RecordModel
-    bb_24s_duty_team?: Team & RecordModel
+    bb_scorer_member?: Member & BaseRecord
+    bb_timekeeper_member?: Member & BaseRecord
+    bb_24s_official?: Member & BaseRecord
+    bb_duty_team?: Team & BaseRecord
+    bb_scorer_duty_team?: Team & BaseRecord
+    bb_timekeeper_duty_team?: Team & BaseRecord
+    bb_24s_duty_team?: Team & BaseRecord
   }
 }
 

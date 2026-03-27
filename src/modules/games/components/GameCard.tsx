@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { RecordModel } from 'pocketbase'
-import type { Game, Team, Hall } from '../../../types'
+import type { Game, Team, Hall, BaseRecord } from '../../../types'
 import { formatDateCompact, formatTime } from '../../../utils/dateHelpers'
 import { leagueShort } from '../../../utils/leagueShort'
 import TeamChip from '../../../components/TeamChip'
@@ -38,8 +37,8 @@ interface GameCardProps {
 
 type ExpandedGame = Game & {
   expand?: {
-    kscw_team?: Team & RecordModel
-    hall?: Hall & RecordModel
+    kscw_team?: Team & BaseRecord
+    hall?: Hall & BaseRecord
   }
 }
 

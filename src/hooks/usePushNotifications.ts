@@ -1,7 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import pb from '../pb'
-
-const PB_URL = pb.baseUrl
+import { API_URL, getAccessToken } from '../lib/api'
 
 interface PushState {
   /** Browser supports push notifications */
@@ -61,7 +59,7 @@ export function usePushNotifications() {
       }
 
       // Get VAPID public key from PB
-      const vapidResp = await fetch(`${PB_URL}/api/web-push/vapid-public-key`)
+      const vapidResp = await fetch(`${API_URL}/api/web-push/vapid-public-key`)
       const { publicKey } = await vapidResp.json()
 
       // Subscribe via PushManager
@@ -74,11 +72,11 @@ export function usePushNotifications() {
       const subJson = subscription.toJSON()
 
       // Register with PB
-      await fetch(`${PB_URL}/api/web-push/subscribe`, {
+      await fetch(`${API_URL}/api/web-push/subscribe`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': pb.authStore.token,
+          'Authorization': `Bearer ${getAccessToken()}`,
         },
         body: JSON.stringify({
           endpoint: subJson.endpoint,
@@ -113,11 +111,11 @@ export function usePushNotifications() {
         await subscription.unsubscribe()
 
         // Remove from PB
-        await fetch(`${PB_URL}/api/web-push/unsubscribe`, {
+        await fetch(`${API_URL}/api/web-push/unsubscribe`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': pb.authStore.token,
+            'Authorization': `Bearer ${getAccessToken()}`,
           },
           body: JSON.stringify({ endpoint }),
         })

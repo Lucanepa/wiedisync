@@ -1,11 +1,9 @@
-import { createItem } from '@directus/sdk'
-import directus, { getAccessToken } from '../directus'
+import { createRecord, isAuthenticated } from '../lib/api'
 
 type LogAction = 'create' | 'update' | 'delete'
 
 /**
- * Fire-and-forget activity log. Never throws — errors are silently swallowed
- * so logging never breaks the actual user action.
+ * Fire-and-forget activity log. Never throws.
  */
 export function logActivity(
   action: LogAction,
@@ -13,12 +11,11 @@ export function logActivity(
   recordId?: string,
   data?: Record<string, unknown> | null,
 ): void {
-  if (!getAccessToken()) return
-
-  directus.request(createItem('user_logs', {
+  if (!isAuthenticated()) return
+  createRecord('user_logs', {
     action,
     collection_name: collectionName,
     record_id: recordId ?? '',
     data: data ?? null,
-  })).catch(() => {})
+  }).catch(() => {})
 }

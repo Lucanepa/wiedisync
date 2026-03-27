@@ -162,13 +162,13 @@ export default function HomePage() {
     if (hasTeams) {
       conditions.push({
         _or: [
-          { teams: { _empty: true } },
-          ...userTeamIds.map(id => ({ teams: { _contains: id } })),
+          { teams: { _null: true } },
+          ...userTeamIds.map(id => ({ teams: { teams_id: { _eq: id } } })),
         ],
       })
     } else {
       // Non-logged-in: only club-wide events (no teams) with public event types
-      conditions.push({ teams: { _empty: true } })
+      conditions.push({ teams: { _null: true } })
       conditions.push({ event_type: { _in: ['verein', 'social'] } })
     }
     return { _and: conditions }

@@ -32,7 +32,7 @@ export default function TeamSponsorsEditor({ team }: { team: Team }) {
   const fetchSponsors = useCallback(async () => {
     try {
       const records = await fetchAllItems<Sponsor>('sponsors', {
-        filter: { teams: { _contains: team.id } },
+        filter: { teams: { teams_id: { _eq: team.id } } },
         sort: ['sort_order'],
       })
       setSponsors(records)

@@ -55,8 +55,8 @@ function addEventTeamFilter(baseParts: Record<string, unknown>[], teamIds: strin
   if (teamIds.length > 0) {
     conditions.push({
       _or: [
-        { teams: { _empty: true } },
-        ...teamIds.map(id => ({ teams: { _contains: id } })),
+        { teams: { _null: true } },
+        ...teamIds.map(id => ({ teams: { teams_id: { _eq: id } } })),
       ],
     })
   }

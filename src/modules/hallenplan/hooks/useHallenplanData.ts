@@ -32,8 +32,8 @@ export function useHallenplanData(
     ? { hall: { _in: selectedHallIds } }
     : null
   const dateConditions: Record<string, unknown>[] = [
-    { _or: [{ valid_from: { _lte: sundayStr } }, { valid_from: { _empty: true } }] },
-    { _or: [{ valid_until: { _gte: mondayStr } }, { valid_until: { _empty: true } }] },
+    { _or: [{ valid_from: { _lte: sundayStr } }, { valid_from: { _null: true } }] },
+    { _or: [{ valid_until: { _gte: mondayStr } }, { valid_until: { _null: true } }] },
   ]
   const slotFilterConditions = [...dateConditions, ...(hallCondition ? [hallCondition] : [])]
 

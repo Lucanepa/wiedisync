@@ -115,14 +115,19 @@ export default function RosterEditor() {
         m.last_name?.toLowerCase().includes(searchLower)),
   )
 
+  const [addingId, setAddingId] = useState<string | null>(null)
+
   async function handleAdd(memberId: string) {
-    if (!teamId) return
+    if (!teamId || addingId) return
+    setAddingId(memberId)
     try {
       await create({ member: memberId, team: teamId, season })
       setSearch('')
       refetch()
     } catch {
       toast.error(t('common:errorSaving'))
+    } finally {
+      setAddingId(null)
     }
   }
 
@@ -517,7 +522,8 @@ export default function RosterEditor() {
                 <button
                   key={m.id}
                   onClick={() => handleAdd(m.id)}
-                  className="flex w-full items-center gap-3 px-4 py-2 text-left text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  disabled={addingId === m.id}
+                  className="flex w-full items-center gap-3 px-4 py-2 text-left text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:pointer-events-none"
                 >
                   {m.photo ? (
                     <img

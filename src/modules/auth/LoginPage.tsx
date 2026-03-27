@@ -81,8 +81,19 @@ export default function LoginPage() {
       sessionStorage.removeItem('login-redirect-email')
       sessionStorage.removeItem('login-redirect-exists')
       navigate('/', { replace: true })
-    } catch {
-      setError(t('invalidCredentials'))
+    } catch (err: any) {
+      const status = err?.status || err?.response?.status || 0
+      const msg = (err?.message || err?.data?.message || '').toLowerCase()
+
+      if (!navigator.onLine || msg.includes('fetch') || msg.includes('network') || status === 0) {
+        setError(t('networkError'))
+      } else if (status === 429 || msg.includes('too many')) {
+        setError(t('tooManyRequests'))
+      } else if (msg.includes('turnstile')) {
+        setError(t('turnstileError'))
+      } else {
+        setError(t('invalidCredentials'))
+      }
       turnstileRef.current?.reset()
       setTurnstileToken('')
     } finally {

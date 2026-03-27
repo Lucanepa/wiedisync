@@ -42,6 +42,7 @@ export default {
   addPlayer: 'Spieler hinzufügen',
   searchPlaceholder: 'Nach Name suchen...',
   noSearchResults: 'Keine Ergebnisse',
+  memberAdded: '{{name}} hinzugefügt',
   currentRoster: 'Aktuelles Kader ({{count}})',
   removeConfirmTitle: 'Spieler entfernen',
   removeConfirmMessage: '{{name}} aus dem Kader entfernen?',

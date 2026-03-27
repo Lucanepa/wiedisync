@@ -41,6 +41,7 @@ export default {
   addPlayer: 'Spieler dezuetuä',
   searchPlaceholder: 'Nach Name sueche...',
   noSearchResults: 'Käni Ergebnis',
+  memberAdded: '{{name}} hinzuegfüegt',
   currentRoster: 'Aktuells Kader ({{count}})',
   removeConfirmTitle: 'Spieler entferne',
   removeConfirmMessage: '{{name}} us em Kader entferne?',

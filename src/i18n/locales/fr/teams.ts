@@ -42,6 +42,7 @@ export default {
   addPlayer: 'Ajouter un joueur',
   searchPlaceholder: 'Rechercher par nom...',
   noSearchResults: 'Aucun resultat',
+  memberAdded: '{{name}} ajouté(e)',
   currentRoster: 'Effectif actuel ({{count}})',
   removeConfirmTitle: 'Retirer le joueur',
   removeConfirmMessage: 'Retirer {{name}} de l\'effectif ?',

@@ -1,12 +1,11 @@
 import { useState, useCallback } from 'react'
-import type { RecordModel } from 'pocketbase'
-import pb from '../pb'
+import { createItem, updateItem, deleteItem } from '@directus/sdk'
+import directus from '../directus'
 import { logActivity } from '../utils/logActivity'
 
-/** Collections where we skip logging (to avoid infinite loops or noise) */
 const SKIP_LOG = new Set(['user_logs'])
 
-export function useMutation<T extends RecordModel>(collection: string) {
+export function useMutation<T = Record<string, unknown>>(collection: string) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
 
@@ -15,9 +14,10 @@ export function useMutation<T extends RecordModel>(collection: string) {
       setIsLoading(true)
       setError(null)
       try {
-        const record = await pb.collection(collection).create<T>(data)
+        const record = await directus.request<T>(createItem(collection, data as never))
+        const id = (record as Record<string, unknown>).id
         if (!SKIP_LOG.has(collection)) {
-          logActivity('create', collection, record.id, data)
+          logActivity('create', collection, String(id), data)
         }
         return record
       } catch (err) {
@@ -32,13 +32,13 @@ export function useMutation<T extends RecordModel>(collection: string) {
   )
 
   const update = useCallback(
-    async (id: string, data: Record<string, unknown>) => {
+    async (id: string | number, data: Record<string, unknown>) => {
       setIsLoading(true)
       setError(null)
       try {
-        const record = await pb.collection(collection).update<T>(id, data)
+        const record = await directus.request<T>(updateItem(collection, id, data as never))
         if (!SKIP_LOG.has(collection)) {
-          logActivity('update', collection, id, data)
+          logActivity('update', collection, String(id), data)
         }
         return record
       } catch (err) {
@@ -53,13 +53,13 @@ export function useMutation<T extends RecordModel>(collection: string) {
   )
 
   const remove = useCallback(
-    async (id: string) => {
+    async (id: string | number) => {
       setIsLoading(true)
       setError(null)
       try {
-        await pb.collection(collection).delete(id)
+        await directus.request(deleteItem(collection, id))
         if (!SKIP_LOG.has(collection)) {
-          logActivity('delete', collection, id)
+          logActivity('delete', collection, String(id))
         }
         return true
       } catch (err) {

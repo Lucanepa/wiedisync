@@ -1,12 +1,16 @@
 import { useEffect, useRef } from 'react'
-import type { RecordModel, RecordSubscription } from 'pocketbase'
-import pb from '../pb'
+import directus from '../directus'
 
 type RealtimeAction = 'create' | 'update' | 'delete'
 
-export function useRealtime<T extends RecordModel>(
+interface RealtimeEvent<T = Record<string, unknown>> {
+  action: RealtimeAction
+  record: T
+}
+
+export function useRealtime<T = Record<string, unknown>>(
   collection: string,
-  callback: (data: RecordSubscription<T>) => void,
+  callback: (data: RealtimeEvent<T>) => void,
   actions?: RealtimeAction[],
 ) {
   const callbackRef = useRef(callback)
@@ -16,31 +20,45 @@ export function useRealtime<T extends RecordModel>(
   actionsRef.current = actions
 
   useEffect(() => {
-    let cancelled = false
-    let unsubscribe: (() => void) | undefined
+    let cleanup: (() => void) | undefined
 
-    pb.collection(collection)
-      .subscribe('*', (e: RecordSubscription<T>) => {
-        if (!actionsRef.current || actionsRef.current.includes(e.action as RealtimeAction)) {
-          callbackRef.current(e)
-        }
-      })
-      .then((unsub) => {
-        if (cancelled) {
-          // Component already unmounted (e.g. React Strict Mode double-mount).
-          // Swallow 404s from stale/missing client IDs.
-          try { unsub() } catch { /* ignore */ }
-        } else {
-          unsubscribe = unsub
-        }
-      })
-      .catch(() => {
-        // Subscribe itself failed (e.g. SSE connection refused) — ignore
-      })
+    const setup = async () => {
+      try {
+        // Directus WebSocket subscription
+        const { subscription, unsubscribe } = await directus.subscribe(collection, {
+          event: 'changes' as never,
+        })
+
+        cleanup = unsubscribe
+
+        // Listen for messages
+        ;(async () => {
+          for await (const message of subscription) {
+            const event = message as unknown as { event: string; data: T[] }
+            if (!event.data) continue
+
+            // Map Directus events to our action types
+            let action: RealtimeAction = 'update'
+            if (event.event === 'create') action = 'create'
+            else if (event.event === 'delete') action = 'delete'
+            else if (event.event === 'update') action = 'update'
+
+            if (!actionsRef.current || actionsRef.current.includes(action)) {
+              for (const record of event.data) {
+                callbackRef.current({ action, record })
+              }
+            }
+          }
+        })()
+      } catch {
+        // WebSocket connection failed — ignore (works without realtime)
+      }
+    }
+
+    setup()
 
     return () => {
-      cancelled = true
-      try { unsubscribe?.() } catch { /* ignore stale client ID errors */ }
+      cleanup?.()
     }
   }, [collection])
 }

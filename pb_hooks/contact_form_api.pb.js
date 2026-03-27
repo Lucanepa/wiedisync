@@ -5,37 +5,8 @@
 // Resolves email recipients from team leadership relations in PB
 // Auto-deployed via GitHub webhook (verified working)
 
-var TURNSTILE_SECRET = $os.getenv("TURNSTILE_SECRET")
-
-// General sport email routing (no specific team selected)
-var SPORT_EMAILS = {
-  volleyball: ["volleyball@kscw.ch"],
-  basketball: ["anja.jimenez@kscw.ch", "rachel.moser@kscw.ch"],
-}
-var GENERAL_EMAIL = "kontakt@kscw.ch"
-
-// NOTE: PB goja isolates each callback scope — use var, not function declaration.
-var verifyTurnstile = function(token) {
-  if (!token) return false
-  try {
-    var resp = $http.send({
-      method: "POST",
-      url: "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        secret: TURNSTILE_SECRET,
-        response: token,
-      }),
-    })
-    var data = JSON.parse(resp.raw)
-    return data.success === true
-  } catch (err) {
-    console.log("[ContactForm] Turnstile verification error: " + err)
-    return false
-  }
-}
-
 routerAdd("POST", "/api/contact", function (e) {
+  var lib = require(__hooks + "/contact_form_lib.js")
   var tpl = require(__hooks + "/email_template_lib.js")
 
   // ── Parse body ──────────────────────────────────────────────────
@@ -56,7 +27,7 @@ routerAdd("POST", "/api/contact", function (e) {
   if (!turnstileToken) throw new BadRequestError("Captcha erforderlich.")
 
   // ── Turnstile ───────────────────────────────────────────────────
-  if (!verifyTurnstile(turnstileToken)) {
+  if (!lib.verifyTurnstile(turnstileToken)) {
     throw new BadRequestError("Captcha-Verifizierung fehlgeschlagen.")
   }
 
@@ -98,7 +69,7 @@ routerAdd("POST", "/api/contact", function (e) {
       }
 
       // Always CC the sport TK when a specific team is selected
-      var sportCc = SPORT_EMAILS[subject] || []
+      var sportCc = lib.SPORT_EMAILS[subject] || []
       for (var k = 0; k < sportCc.length; k++) {
         if (ccEmails.indexOf(sportCc[k]) === -1 && toEmails.indexOf(sportCc[k]) === -1) {
           ccEmails.push(sportCc[k])
@@ -107,15 +78,15 @@ routerAdd("POST", "/api/contact", function (e) {
 
       // Fallback: if no coach emails, use sport general
       if (toEmails.length === 0) {
-        toEmails = SPORT_EMAILS[subject] || [GENERAL_EMAIL]
+        toEmails = lib.SPORT_EMAILS[subject] || [lib.GENERAL_EMAIL]
       }
     } else {
       // General sport inquiry
-      toEmails = SPORT_EMAILS[subject] || [GENERAL_EMAIL]
+      toEmails = lib.SPORT_EMAILS[subject] || [lib.GENERAL_EMAIL]
     }
   } else {
     // allgemein, sponsoring, sonstiges
-    toEmails = [GENERAL_EMAIL]
+    toEmails = [lib.GENERAL_EMAIL]
   }
 
   // ── Build email ─────────────────────────────────────────────────

@@ -1,327 +1,17 @@
 /// <reference path="../node_modules/pocketbase/dist/pocketbase.d.ts" />
 
 // Game Scheduling (Terminplanung) — API endpoints
-
-// ── helpers (inlined from game_scheduling_lib.js) ──
-
-/**
- * Check team conflicts: same-day + 1-day gap rule
- * @param {string} teamId - KSCW team ID
- * @param {string} dateStr - Date to check (YYYY-MM-DD)
- * @returns {{ ok: boolean, reason?: string }}
- */
-function checkTeamConflicts(teamId, dateStr) {
-  var d = new Date(dateStr + "T00:00:00Z")
-
-  // Day before and after
-  var prev = new Date(d.getTime() - 86400000)
-  var next = new Date(d.getTime() + 86400000)
-
-  function fmt(dt) {
-    return dt.getFullYear() + "-" +
-      String(dt.getMonth() + 1).padStart(2, "0") + "-" +
-      String(dt.getDate()).padStart(2, "0")
-  }
-
-  var prevStr = fmt(prev)
-  var nextStr = fmt(next)
-
-  // Check games collection for this team within ±1 day
-  try {
-    var games = $app.findRecordsByFilter(
-      "games",
-      'kscw_team = "' + teamId + '" && status != "postponed" && date >= "' + prevStr + '" && date <= "' + nextStr + '"',
-      "",
-      100,
-      0
-    )
-
-    for (var i = 0; i < games.length; i++) {
-      var gameDate = games[i].getString("date").slice(0, 10)
-      if (gameDate === dateStr) {
-        return { ok: false, reason: "same_day" }
-      }
-      if (gameDate === prevStr || gameDate === nextStr) {
-        return { ok: false, reason: "gap_rule" }
-      }
-    }
-  } catch (_) {
-    // No games found — that's fine
-  }
-
-  // Also check already-booked scheduling slots
-  try {
-    var bookedSlots = $app.findRecordsByFilter(
-      "game_scheduling_slots",
-      'kscw_team = "' + teamId + '" && status = "booked" && date >= "' + prevStr + '" && date <= "' + nextStr + '"',
-      "",
-      100,
-      0
-    )
-
-    for (var j = 0; j < bookedSlots.length; j++) {
-      var slotDate = bookedSlots[j].getString("date").slice(0, 10)
-      if (slotDate === dateStr) {
-        return { ok: false, reason: "same_day" }
-      }
-      if (slotDate === prevStr || slotDate === nextStr) {
-        return { ok: false, reason: "gap_rule" }
-      }
-    }
-  } catch (_) {}
-
-  return { ok: true }
-}
-
-/**
- * Check cross-team conflicts via shared members
- * @param {string} teamId - KSCW team ID
- * @param {string} dateStr - Date to check
- * @returns {{ ok: boolean, reason?: string, teams?: string }}
- */
-function checkCrossTeamConflicts(teamId, dateStr) {
-  try {
-    // Find members on this team
-    var memberTeams = $app.findRecordsByFilter(
-      "member_teams",
-      'team = "' + teamId + '"',
-      "",
-      200,
-      0
-    )
-
-    // Collect unique member IDs
-    var memberIds = {}
-    for (var i = 0; i < memberTeams.length; i++) {
-      memberIds[memberTeams[i].getString("member")] = true
-    }
-
-    // Find other teams these members are on
-    var otherTeamIds = {}
-    var memberIdList = Object.keys(memberIds)
-    for (var m = 0; m < memberIdList.length; m++) {
-      try {
-        var otherMts = $app.findRecordsByFilter(
-            "member_teams",
-            'member = "' + memberIdList[m] + '" && team != "' + teamId + '"',
-            "",
-            20,
-            0
-          )
-        for (var j = 0; j < otherMts.length; j++) {
-          otherTeamIds[otherMts[j].getString("team")] = true
-        }
-      } catch (_) {}
-    }
-
-    // Check conflicts for each related team
-    var conflictTeamNames = []
-    var otherIds = Object.keys(otherTeamIds)
-    for (var t = 0; t < otherIds.length; t++) {
-      var result = checkTeamConflicts(otherIds[t], dateStr)
-      if (!result.ok) {
-        try {
-          var team = $app.findRecordById("teams", otherIds[t])
-          conflictTeamNames.push(team.getString("name"))
-        } catch (_) {
-          conflictTeamNames.push(otherIds[t])
-        }
-      }
-    }
-
-    if (conflictTeamNames.length > 0) {
-      return {
-        ok: false,
-        reason: "cross_team",
-        teams: conflictTeamNames.join(", ")
-      }
-    }
-  } catch (_) {}
-
-  return { ok: true }
-}
-
-/**
- * Check hall availability (no double-booking at same time)
- * @param {string} hallId
- * @param {string} dateStr
- * @param {string} startTime
- * @param {string} endTime
- * @returns {{ ok: boolean, reason?: string }}
- */
-function checkHallAvailability(hallId, dateStr, startTime, endTime) {
-  try {
-    // Check existing games at this hall on this date
-    var games = $app.findRecordsByFilter(
-      "games",
-      'hall = "' + hallId + '" && date ~ "' + dateStr + '" && status != "postponed"',
-      "",
-      50,
-      0
-    )
-
-    for (var i = 0; i < games.length; i++) {
-      var gTime = games[i].getString("time")
-      if (!gTime) continue
-      // Simple overlap: if game time falls within our slot
-      if (gTime >= startTime && gTime < endTime) {
-        return { ok: false, reason: "double_booking" }
-      }
-    }
-
-    // Check booked scheduling slots
-    var slots = $app.findRecordsByFilter(
-      "game_scheduling_slots",
-      'hall = "' + hallId + '" && date ~ "' + dateStr + '" && status = "booked"',
-      "",
-      50,
-      0
-    )
-
-    for (var j = 0; j < slots.length; j++) {
-      var sStart = slots[j].getString("start_time")
-      var sEnd = slots[j].getString("end_time")
-      // Time overlap check
-      if (startTime < sEnd && endTime > sStart) {
-        return { ok: false, reason: "double_booking" }
-      }
-    }
-  } catch (_) {}
-
-  return { ok: true }
-}
-
-/**
- * Check hall closures
- * @param {string} hallId
- * @param {string} dateStr
- * @returns {{ ok: boolean, reason?: string }}
- */
-function checkClosures(hallId, dateStr) {
-  try {
-    var closures = $app.findRecordsByFilter(
-      "hall_closures",
-      'hall = "' + hallId + '" && start_date <= "' + dateStr + '" && end_date >= "' + dateStr + '"',
-      "",
-      10,
-      0
-    )
-
-    if (closures && closures.length > 0) {
-      return { ok: false, reason: "closure" }
-    }
-  } catch (_) {}
-
-  return { ok: true }
-}
-
-/**
- * Run all conflict checks for a date/team/hall combination
- */
-function checkAllConflicts(teamId, dateStr, hallId, startTime, endTime) {
-  var teamCheck = checkTeamConflicts(teamId, dateStr)
-  if (!teamCheck.ok) return teamCheck
-
-  var crossCheck = checkCrossTeamConflicts(teamId, dateStr)
-  if (!crossCheck.ok) return crossCheck
-
-  if (hallId) {
-    var closureCheck = checkClosures(hallId, dateStr)
-    if (!closureCheck.ok) return closureCheck
-
-    if (startTime && endTime) {
-      var hallCheck = checkHallAvailability(hallId, dateStr, startTime, endTime)
-      if (!hallCheck.ok) return hallCheck
-    }
-  }
-
-  return { ok: true }
-}
-
-/**
- * Generate a UUID v4 token
- */
-function generateToken() {
-  var chars = "abcdefghijklmnopqrstuvwxyz0123456789"
-  var token = ""
-  for (var i = 0; i < 32; i++) {
-    token += chars.charAt(Math.floor(Math.random() * chars.length))
-  }
-  return token
-}
-
-// ── hooks ──
-
-var TURNSTILE_SECRET = $os.getenv("TURNSTILE_SECRET")
-
-// NOTE: PB goja isolates each callback scope — use var, not function declaration.
-var verifyTurnstile = function(token) {
-  if (!token) return false
-  try {
-    var resp = $http.send({
-      method: "POST",
-      url: "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        secret: TURNSTILE_SECRET,
-        response: token,
-      }),
-    })
-    var data = JSON.parse(resp.raw)
-    return data.success === true
-  } catch (err) {
-    console.log("[GameScheduling] Turnstile verification error: " + err)
-    return false
-  }
-}
-
-// Input validation helpers
-var PB_ID_PATTERN = /^[a-z0-9]{15}$/i
-var TOKEN_PATTERN = /^[a-z0-9]{32}$/
-var EMAIL_PATTERN = /^[^\s"\\]+@[^\s"\\]+\.[^\s"\\]+$/
-
-var validatePbId = function(id) {
-  if (!PB_ID_PATTERN.test(id)) throw new BadRequestError("invalid_id")
-  return id
-}
-
-var validateToken = function(token) {
-  if (!TOKEN_PATTERN.test(token)) throw new BadRequestError("invalid_token_format")
-  return token
-}
-
-var validateEmail = function(email) {
-  if (!EMAIL_PATTERN.test(email) || email.length > 254) throw new BadRequestError("invalid_email")
-  return email
-}
-
-var isSuperuser = function(e) {
-  var info = e.requestInfo()
-  return info.auth && info.auth.collectionName === "_superusers"
-}
-
-var isAdmin = function(e) {
-  if (isSuperuser(e)) return true
-  var info = e.requestInfo()
-  if (!info.auth) return false
-  try {
-    var member = $app.findRecordById("members", info.auth.id)
-    var roles = member.get("role")
-    if (roles && (roles.indexOf("admin") >= 0 || roles.indexOf("superuser") >= 0)) {
-      return true
-    }
-  } catch (_) {}
-  return false
-}
+// NOTE: PB 0.36 JSVM isolates each callback scope — require() must be called inside each callback.
+// All helpers are in game_scheduling_lib.js.
 
 // ── POST /api/terminplanung/register ──────────────────────────────────
-// Public endpoint. Opponent registers with club info + Turnstile token.
 
 routerAdd("POST", "/api/terminplanung/register", function (e) {
+  var lib = require(__hooks + "/game_scheduling_lib.js")
   var body = e.requestInfo().body
 
   var turnstileToken = body.turnstile_token || ""
-  if (!verifyTurnstile(turnstileToken)) {
+  if (!lib.verifyTurnstile(turnstileToken)) {
     throw new BadRequestError("turnstile_failed")
   }
 
@@ -334,10 +24,9 @@ routerAdd("POST", "/api/terminplanung/register", function (e) {
     throw new BadRequestError("missing_fields")
   }
 
-  validateEmail(contactEmail)
-  validatePbId(kscwTeamId)
+  lib.validateEmail(contactEmail)
+  lib.validatePbId(kscwTeamId)
 
-  // Validate team exists
   var team
   try {
     team = $app.findRecordById("teams", kscwTeamId)
@@ -345,7 +34,6 @@ routerAdd("POST", "/api/terminplanung/register", function (e) {
     throw new BadRequestError("invalid_team")
   }
 
-  // Find the active/open season
   var seasons
   try {
     seasons = $app.findRecordsByFilter(
@@ -362,7 +50,6 @@ routerAdd("POST", "/api/terminplanung/register", function (e) {
   }
   var season = seasons[0]
 
-  // Check if opponent already registered for this team+season
   try {
     var existing = $app.findRecordsByFilter(
       "game_scheduling_opponents",
@@ -372,7 +59,6 @@ routerAdd("POST", "/api/terminplanung/register", function (e) {
       0
     )
     if (existing && existing.length > 0) {
-      // Return existing token
       return e.json(200, {
         token: existing[0].getString("token"),
         team_name: team.getString("name"),
@@ -381,10 +67,8 @@ routerAdd("POST", "/api/terminplanung/register", function (e) {
     }
   } catch (_) {}
 
-  // Generate unique token
-  var token = generateToken()
+  var token = lib.generateToken()
 
-  // Create opponent record
   var collection = $app.findCollectionByNameOrId("game_scheduling_opponents")
   var record = new Record(collection)
   record.set("season", season.id)
@@ -407,14 +91,13 @@ routerAdd("POST", "/api/terminplanung/register", function (e) {
 
 
 // ── GET /api/terminplanung/slots/:token ───────────────────────────────
-// Returns available slots for the opponent's KSCW team.
 
 routerAdd("GET", "/api/terminplanung/slots/{token}", function (e) {
+  var lib = require(__hooks + "/game_scheduling_lib.js")
   var token = e.request.pathValue("token")
   if (!token) throw new BadRequestError("missing_token")
-  validateToken(token)
+  lib.validateToken(token)
 
-  // Find opponent by token
   var opponents
   try {
     opponents = $app.findRecordsByFilter(
@@ -434,7 +117,6 @@ routerAdd("GET", "/api/terminplanung/slots/{token}", function (e) {
   var teamId = opponent.getString("kscw_team")
   var seasonId = opponent.getString("season")
 
-  // Fetch available slots for this team
   var slots
   try {
     slots = $app.findRecordsByFilter(
@@ -448,7 +130,6 @@ routerAdd("GET", "/api/terminplanung/slots/{token}", function (e) {
     slots = []
   }
 
-  // Expand hall names
   var result = []
   for (var i = 0; i < slots.length; i++) {
     var s = slots[i]
@@ -469,7 +150,6 @@ routerAdd("GET", "/api/terminplanung/slots/{token}", function (e) {
     })
   }
 
-  // Also return opponent info and existing bookings
   var bookings
   try {
     bookings = $app.findRecordsByFilter(
@@ -501,7 +181,6 @@ routerAdd("GET", "/api/terminplanung/slots/{token}", function (e) {
     })
   }
 
-  // Get team name
   var teamName = ""
   try {
     var t = $app.findRecordById("teams", teamId)
@@ -525,9 +204,9 @@ routerAdd("GET", "/api/terminplanung/slots/{token}", function (e) {
 
 
 // ── POST /api/terminplanung/book-home/:token ──────────────────────────
-// Opponent picks a home game slot. Atomic check + book.
 
 routerAdd("POST", "/api/terminplanung/book-home/{token}", function (e) {
+  var lib = require(__hooks + "/game_scheduling_lib.js")
   var token = e.request.pathValue("token")
   var body = e.requestInfo().body
   var slotId = body.slot_id || ""
@@ -535,10 +214,9 @@ routerAdd("POST", "/api/terminplanung/book-home/{token}", function (e) {
   if (!token || !slotId) {
     throw new BadRequestError("missing_fields")
   }
-  validateToken(token)
-  validatePbId(slotId)
+  lib.validateToken(token)
+  lib.validatePbId(slotId)
 
-  // Find opponent
   var opponents
   try {
     opponents = $app.findRecordsByFilter(
@@ -554,7 +232,6 @@ routerAdd("POST", "/api/terminplanung/book-home/{token}", function (e) {
   }
   var opponent = opponents[0]
 
-  // Check slot is still available
   var slot
   try {
     slot = $app.findRecordById("game_scheduling_slots", slotId)
@@ -566,7 +243,6 @@ routerAdd("POST", "/api/terminplanung/book-home/{token}", function (e) {
     throw new BadRequestError("slot_unavailable")
   }
 
-  // Verify slot belongs to the opponent's team
   if (slot.getString("kscw_team") !== opponent.getString("kscw_team")) {
     throw new BadRequestError("wrong_team")
   }
@@ -577,13 +253,11 @@ routerAdd("POST", "/api/terminplanung/book-home/{token}", function (e) {
   var startTime = slot.getString("start_time")
   var endTime = slot.getString("end_time")
 
-  // Run conflict checks
-  var conflicts = checkAllConflicts(teamId, dateStr, hallId, startTime, endTime)
+  var conflicts = lib.checkAllConflicts(teamId, dateStr, hallId, startTime, endTime)
   if (!conflicts.ok) {
     throw new BadRequestError("conflict_" + conflicts.reason)
   }
 
-  // Create booking
   var bookingCol = $app.findCollectionByNameOrId("game_scheduling_bookings")
   var booking = new Record(bookingCol)
   booking.set("season", opponent.getString("season"))
@@ -591,10 +265,9 @@ routerAdd("POST", "/api/terminplanung/book-home/{token}", function (e) {
   booking.set("type", "home_slot_pick")
   booking.set("game", slot.getString("game") || "")
   booking.set("slot", slotId)
-  booking.set("status", "confirmed") // Home picks are auto-confirmed
+  booking.set("status", "confirmed")
   $app.save(booking)
 
-  // Update slot status
   slot.set("status", "booked")
   slot.set("booking", booking.id)
   $app.save(slot)
@@ -615,7 +288,6 @@ routerAdd("POST", "/api/terminplanung/book-home/{token}", function (e) {
       hallName = hall.getString("name")
     } catch (_) {}
 
-    // Email to opponent
     var tpl = require(__hooks + "/email_template_lib.js")
     var opponentBody = tpl.buildInfoCard([
       { label: "Datum", value: dateStr, halfWidth: true },
@@ -652,7 +324,6 @@ routerAdd("POST", "/api/terminplanung/book-home/{token}", function (e) {
     })
     $app.newMailClient().send(message)
 
-    // Email to admin
     var adminBody = tpl.buildInfoCard([
       { label: "Gegner", value: opponent.getString("club_name") },
       { label: "Kontakt", value: opponent.getString("contact_name") + " (" + opponent.getString("contact_email") + ")" },
@@ -696,16 +367,15 @@ routerAdd("POST", "/api/terminplanung/book-home/{token}", function (e) {
 
 
 // ── POST /api/terminplanung/propose-away/:token ───────────────────────
-// Opponent submits 3 away game proposals.
 
 routerAdd("POST", "/api/terminplanung/propose-away/{token}", function (e) {
+  var lib = require(__hooks + "/game_scheduling_lib.js")
   var token = e.request.pathValue("token")
   var body = e.requestInfo().body
 
   if (!token) throw new BadRequestError("missing_token")
-  validateToken(token)
+  lib.validateToken(token)
 
-  // Find opponent
   var opponents
   try {
     opponents = $app.findRecordsByFilter(
@@ -722,7 +392,6 @@ routerAdd("POST", "/api/terminplanung/propose-away/{token}", function (e) {
   var opponent = opponents[0]
   var teamId = opponent.getString("kscw_team")
 
-  // Validate proposals
   var proposals = []
   var errors = []
 
@@ -735,16 +404,14 @@ routerAdd("POST", "/api/terminplanung/propose-away/{token}", function (e) {
       continue
     }
 
-    // Extract date from datetime for conflict checking
     var dateStr = dt.slice(0, 10)
 
-    // Check team conflicts (away game still affects the KSCW team's schedule)
-    var teamCheck = checkTeamConflicts(teamId, dateStr)
+    var teamCheck = lib.checkTeamConflicts(teamId, dateStr)
     if (!teamCheck.ok) {
       errors.push({ proposal: i, error: "conflict_" + teamCheck.reason })
     }
 
-    var crossCheck = checkCrossTeamConflicts(teamId, dateStr)
+    var crossCheck = lib.checkCrossTeamConflicts(teamId, dateStr)
     if (!crossCheck.ok) {
       errors.push({ proposal: i, error: "conflict_cross_team", teams: crossCheck.teams })
     }
@@ -756,7 +423,6 @@ routerAdd("POST", "/api/terminplanung/propose-away/{token}", function (e) {
     throw new BadRequestError("need_3_proposals")
   }
 
-  // Check for existing away proposal
   try {
     var existingBookings = $app.findRecordsByFilter(
       "game_scheduling_bookings",
@@ -766,7 +432,6 @@ routerAdd("POST", "/api/terminplanung/propose-away/{token}", function (e) {
       0
     )
     if (existingBookings && existingBookings.length > 0) {
-      // Update existing instead of creating new
       var existing = existingBookings[0]
       existing.set("proposed_datetime_1", body.proposed_datetime_1 || "")
       existing.set("proposed_place_1", body.proposed_place_1 || "")
@@ -783,7 +448,6 @@ routerAdd("POST", "/api/terminplanung/propose-away/{token}", function (e) {
     }
   } catch (_) {}
 
-  // Create booking with proposals
   var bookingCol = $app.findCollectionByNameOrId("game_scheduling_bookings")
   var booking = new Record(bookingCol)
   booking.set("season", opponent.getString("season"))
@@ -854,17 +518,17 @@ routerAdd("POST", "/api/terminplanung/propose-away/{token}", function (e) {
 
 
 // ── POST /api/terminplanung/admin/generate-slots ──────────────────────
-// Admin-only. Generates game_scheduling_slots from hall_slots + Spielsamstage.
 
 routerAdd("POST", "/api/terminplanung/admin/generate-slots", function (e) {
-  if (!isAdmin(e)) {
+  var lib = require(__hooks + "/game_scheduling_lib.js")
+  if (!lib.isAdmin(e)) {
     throw new ForbiddenError("admin_required")
   }
 
   var body = e.requestInfo().body
   var seasonId = body.season_id || ""
   if (!seasonId) throw new BadRequestError("missing_season_id")
-  validatePbId(seasonId)
+  lib.validatePbId(seasonId)
 
   var season
   try {
@@ -873,10 +537,9 @@ routerAdd("POST", "/api/terminplanung/admin/generate-slots", function (e) {
     throw new NotFoundError("season_not_found")
   }
 
-  var seasonStr = season.getString("season") // e.g. "2025/26"
+  var seasonStr = season.getString("season")
   var teamSlotConfig = season.get("team_slot_config") || {}
 
-  // Parse season date range (Sep 1 – May 31)
   var parts = seasonStr.split("/")
   var startYear = parseInt(parts[0])
   var endYearShort = parseInt(parts[1])
@@ -885,7 +548,6 @@ routerAdd("POST", "/api/terminplanung/admin/generate-slots", function (e) {
   var seasonStart = startYear + "-09-01"
   var seasonEnd = endYear + "-05-31"
 
-  // Fetch all active volleyball teams
   var teams
   try {
     teams = $app.findRecordsByFilter("teams", 'active = true && sport = "volleyball"', "", 50, 0)
@@ -893,7 +555,6 @@ routerAdd("POST", "/api/terminplanung/admin/generate-slots", function (e) {
     throw new BadRequestError("failed_to_fetch_teams")
   }
 
-  // Fetch hall closures for the season
   var closures
   try {
     closures = $app.findRecordsByFilter(
@@ -907,7 +568,6 @@ routerAdd("POST", "/api/terminplanung/admin/generate-slots", function (e) {
     closures = []
   }
 
-  // Helper: check if date falls within any closure for a hall
   function isClosedOn(hallId, dateStr) {
     for (var c = 0; c < closures.length; c++) {
       if (closures[c].getString("hall") === hallId) {
@@ -919,7 +579,6 @@ routerAdd("POST", "/api/terminplanung/admin/generate-slots", function (e) {
     return false
   }
 
-  // Fetch existing games for conflict avoidance
   var existingGames
   try {
     existingGames = $app.findRecordsByFilter(
@@ -943,7 +602,6 @@ routerAdd("POST", "/api/terminplanung/admin/generate-slots", function (e) {
     return false
   }
 
-  // Delete existing generated slots for this season (regenerate)
   try {
     var oldSlots = $app.findRecordsByFilter(
       "game_scheduling_slots",
@@ -974,16 +632,14 @@ routerAdd("POST", "/api/terminplanung/admin/generate-slots", function (e) {
     var source = config.source || "hall_slot"
 
     if (source === "spielsamstag") {
-      // This team uses Spielsamstag slots — generated separately below
       continue
     }
 
-    // Find hall_slots for this team
     var hallSlots
     try {
       hallSlots = $app.findRecordsByFilter(
         "hall_slots",
-        'team = "' + teamId + '" && recurring = true',
+        'team~"' + teamId + '" && recurring = true',
         "-start_time",
         50,
         0
@@ -997,10 +653,8 @@ routerAdd("POST", "/api/terminplanung/admin/generate-slots", function (e) {
       continue
     }
 
-    // Find the "latest" slot (highest start_time)
-    var latestSlot = hallSlots[0] // Already sorted by -start_time
+    var latestSlot = hallSlots[0]
     if (config.hall_slot_id) {
-      // Admin specified a specific slot
       for (var hs = 0; hs < hallSlots.length; hs++) {
         if (hallSlots[hs].id === config.hall_slot_id) {
           latestSlot = hallSlots[hs]
@@ -1009,18 +663,15 @@ routerAdd("POST", "/api/terminplanung/admin/generate-slots", function (e) {
       }
     }
 
-    var dow = latestSlot.getInt("day_of_week") // 0=Mon, 6=Sun (ISO)
+    var dow = latestSlot.getInt("day_of_week")
     var startTime = latestSlot.getString("start_time").slice(0, 5)
     var endTime = latestSlot.getString("end_time").slice(0, 5)
     var hallId = latestSlot.getString("hall")
 
-    // Generate weekly dates for the season
     var current = new Date(seasonStart + "T00:00:00Z")
     var end = new Date(seasonEnd + "T00:00:00Z")
 
-    // Align to the correct day of week
-    // JS: 0=Sun..6=Sat → ISO: 0=Mon..6=Sun
-    var jsDow = (dow + 1) % 7 // Convert ISO→JS
+    var jsDow = (dow + 1) % 7
     var currentJsDow = current.getUTCDay()
     var daysToAdd = (jsDow - currentJsDow + 7) % 7
     current = new Date(current.getTime() + daysToAdd * 86400000)
@@ -1028,7 +679,6 @@ routerAdd("POST", "/api/terminplanung/admin/generate-slots", function (e) {
     while (current <= end) {
       var dateStr = fmt(current)
 
-      // Skip closures
       if (!isClosedOn(hallId, dateStr) && !hasGameOnDate(teamId, dateStr)) {
         var record = new Record(slotCol)
         record.set("season", seasonId)
@@ -1043,7 +693,7 @@ routerAdd("POST", "/api/terminplanung/admin/generate-slots", function (e) {
         totalCreated++
       }
 
-      current = new Date(current.getTime() + 7 * 86400000) // Next week
+      current = new Date(current.getTime() + 7 * 86400000)
     }
 
     console.log("[GameScheduling] Generated slots for " + teamName)
@@ -1062,11 +712,9 @@ routerAdd("POST", "/api/terminplanung/admin/generate-slots", function (e) {
 
     for (var sl = 0; sl < ssSlots.length; sl++) {
       var ssSlot = ssSlots[sl]
-      // Determine end time (2h game windows)
       var endTimeMap = { "11:00": "13:00", "13:30": "15:30", "16:00": "18:00" }
       var ssEndTime = endTimeMap[ssSlot.time] || "18:00"
 
-      // Find teams configured for Spielsamstag
       var ssTeamIds = []
       for (var tk in teamSlotConfig) {
         if (teamSlotConfig[tk].source === "spielsamstag") {
@@ -1074,9 +722,7 @@ routerAdd("POST", "/api/terminplanung/admin/generate-slots", function (e) {
         }
       }
 
-      // Create one slot per Spielsamstag team (or unassigned if no teams configured)
       if (ssTeamIds.length === 0) {
-        // Create generic slot (no team assigned)
         var record = new Record(slotCol)
         record.set("season", seasonId)
         record.set("kscw_team", "")
@@ -1118,10 +764,10 @@ routerAdd("POST", "/api/terminplanung/admin/generate-slots", function (e) {
 
 
 // ── POST /api/terminplanung/admin/confirm-away ────────────────────────
-// Admin confirms one of 3 away proposals.
 
 routerAdd("POST", "/api/terminplanung/admin/confirm-away", function (e) {
-  if (!isAdmin(e)) {
+  var lib = require(__hooks + "/game_scheduling_lib.js")
+  if (!lib.isAdmin(e)) {
     throw new ForbiddenError("admin_required")
   }
 
@@ -1132,7 +778,7 @@ routerAdd("POST", "/api/terminplanung/admin/confirm-away", function (e) {
   if (!bookingId || proposalNumber < 1 || proposalNumber > 3) {
     throw new BadRequestError("invalid_params")
   }
-  validatePbId(bookingId)
+  lib.validatePbId(bookingId)
 
   var booking
   try {
@@ -1152,13 +798,11 @@ routerAdd("POST", "/api/terminplanung/admin/confirm-away", function (e) {
     throw new BadRequestError("proposal_empty")
   }
 
-  // Update booking
   booking.set("confirmed_proposal", proposalNumber)
   booking.set("status", "confirmed")
   booking.set("admin_notes", body.admin_notes || "")
   $app.save(booking)
 
-  // Update the game record if it exists
   var gameId = booking.getString("game")
   if (gameId) {
     try {
@@ -1171,7 +815,6 @@ routerAdd("POST", "/api/terminplanung/admin/confirm-away", function (e) {
     } catch (_) {}
   }
 
-  // Email confirmation to opponent
   try {
     var opponent = $app.findRecordById("game_scheduling_opponents", booking.getString("opponent"))
     var teamName = ""
@@ -1228,21 +871,21 @@ routerAdd("POST", "/api/terminplanung/admin/confirm-away", function (e) {
 
 
 // ── POST /api/terminplanung/admin/block-slot ──────────────────────────
-// Admin manually blocks/unblocks a slot.
 
 routerAdd("POST", "/api/terminplanung/admin/block-slot", function (e) {
-  if (!isAdmin(e)) {
+  var lib = require(__hooks + "/game_scheduling_lib.js")
+  if (!lib.isAdmin(e)) {
     throw new ForbiddenError("admin_required")
   }
 
   var body = e.requestInfo().body
   var slotId = body.slot_id || ""
-  var action = body.action || "" // "block" or "unblock"
+  var action = body.action || ""
 
   if (!slotId || (action !== "block" && action !== "unblock")) {
     throw new BadRequestError("invalid_params")
   }
-  validatePbId(slotId)
+  lib.validatePbId(slotId)
 
   var slot
   try {

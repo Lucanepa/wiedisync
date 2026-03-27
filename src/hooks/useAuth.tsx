@@ -141,9 +141,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (member) {
           setUser(member)
           await loadTeamContext(member.id)
+        } else {
+          // Token refreshed but no linked member — clear auth
+          await apiLogout()
         }
       } catch {
+        // Refresh failed — token is stale/invalid, clear everything
         await apiLogout()
+        // Force reload to clear SDK internal state
+        window.location.reload()
+        return
       } finally {
         setIsLoading(false)
       }

@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '2.6.0'
+const APP_VERSION = '2.6.1'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,18 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.6.1',
+    date: '2026-03-27',
+    sections: [
+      {
+        title: 'Bug Fixes',
+        items: [
+          'Fixed 400 error when adding members to teams — PB 0.36 hook scope isolation required restoring require() pattern for all hooks',
+        ],
+      },
+    ],
+  },
   {
     version: '2.6.0',
     date: '2026-03-26',

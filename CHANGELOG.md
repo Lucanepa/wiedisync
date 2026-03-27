@@ -2,6 +2,12 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [2.6.1] — 2026-03-27
+
+### Bug Fixes
+
+- **PB hooks scope fix** — Restored `require()` pattern for all 17 PocketBase hooks. PB 0.36 JSVM isolates each callback scope — the recent "inline _lib.js" refactors broke helper access, causing 400 errors on member_teams create, broken audit logging, and failed crons. 34 files changed (17 `.pb.js` + 17 new `_lib.js`).
+
 ## [2.6.0] — 2026-03-26
 
 ### Features

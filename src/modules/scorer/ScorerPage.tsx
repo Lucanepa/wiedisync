@@ -66,7 +66,7 @@ export default function ScorerPage() {
     refetch,
   } = usePB<Game>('games', {
     filter: { _and: [{ type: { _eq: 'home' } }, { date: { _gte: today } }, { status: { _nin: ['completed', 'postponed'] } }] },
-    sort: '+date,+time',
+    sort: 'date,time',
     expand: EXPAND_FIELDS,
     perPage: 200,
   })
@@ -104,14 +104,14 @@ export default function ScorerPage() {
 
   const { data: members } = usePB<Member>('members', {
     filter: { kscw_membership_active: { _eq: true } },
-    sort: '+last_name,+first_name',
+    sort: 'last_name,first_name',
     all: true,
     fields: 'id,name,first_name,last_name,licences,kscw_membership_active,phone,email',
   })
 
   const { data: teams } = usePB<Team>('teams', {
     filter: { active: { _eq: true } },
-    sort: '+name',
+    sort: 'name',
     all: true,
   })
 

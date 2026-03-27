@@ -85,7 +85,7 @@ export default function HomePage() {
   }, [today, sportFilter])
   const { data: allNextGames, isLoading: gamesLoading } = usePB<ExpandedGame>('games', {
     filter: allGamesFilter,
-    sort: '+date,+time',
+    sort: 'date,time',
     perPage: 5,
     enabled: showAllGames || !hasTeams,
   })
@@ -99,7 +99,7 @@ export default function HomePage() {
   }, [today, teamGameFilter, sportFilter])
   const { data: myNextGames } = usePB<ExpandedGame>('games', {
     filter: myGamesFilter,
-    sort: '+date,+time',
+    sort: 'date,time',
     perPage: 5,
     enabled: hasTeams && !showAllGames,
   })
@@ -146,7 +146,7 @@ export default function HomePage() {
 
   const { data: nextTrainings, isLoading: trainingsLoading } = usePB<TrainingExpanded>('trainings', {
     filter: trainingFilter,
-    sort: '+date,+start_time',
+    sort: 'date,start_time',
     perPage: 10,
     enabled: hasTeams,
   })
@@ -176,7 +176,7 @@ export default function HomePage() {
 
   const { data: events, isLoading: eventsLoading } = usePB<EventExpanded>('events', {
     filter: eventFilter,
-    sort: '+start_date',
+    sort: 'start_date',
     perPage: 10,
   })
 

@@ -31,7 +31,7 @@ export function useAdminBookings(seasonId: string | undefined) {
         }),
         fetchAllItems<GameSchedulingSlot>('game_scheduling_slots', {
           filter: { season: { _eq: seasonId } },
-          sort: ['+date'],
+          sort: ['date'],
         }),
       ])
       setBookings(bks)

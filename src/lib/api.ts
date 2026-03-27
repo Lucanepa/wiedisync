@@ -121,8 +121,7 @@ export async function fetchItems<T = Record<string, unknown>>(
 ): Promise<T[]> {
   const q: Record<string, unknown> = {}
   if (query?.filter) q.filter = query.filter
-  // Strip PB-style '+' prefix from sort fields (Directus uses no prefix for ascending)
-  if (query?.sort) q.sort = query.sort.map(s => s.startsWith('+') ? s.slice(1) : s)
+  if (query?.sort) q.sort = query.sort
   if (query?.fields) q.fields = query.fields
   if (query?.limit !== undefined) q.limit = query.limit
   if (query?.offset !== undefined) q.offset = query.offset

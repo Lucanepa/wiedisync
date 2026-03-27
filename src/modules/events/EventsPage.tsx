@@ -63,7 +63,7 @@ export default function EventsPage() {
 
   const { data: events, isLoading, refetch } = usePB<EventExpanded>('events', {
     filter: eventFilter,
-    sort: '+start_date',
+    sort: 'start_date',
     perPage: 50,
     enabled: !teamsLoading,
   })

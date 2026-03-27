@@ -36,7 +36,7 @@ export default function ClaimDetailModal({ slot, claim, halls, teams, onClose, o
   const [confirmRelease, setConfirmRelease] = useState(false)
 
   const hallName = halls.find((h) => h.id === slot.hall)?.name ?? ''
-  const originalTeam = teams.find((tm) => tm.id === slot.team)
+  const originalTeams = teams.filter((tm) => slot.team.includes(tm.id))
   const claimingTeam = teams.find((tm) => tm.id === claim.claimed_by_team)
 
   // Resolve claiming member name from expand
@@ -69,12 +69,16 @@ export default function ClaimDetailModal({ slot, claim, halls, teams, onClose, o
         <DetailRow label={t('startTime')} value={slot.start_time} />
         <DetailRow label={t('endTime')} value={slot.end_time} />
 
-        {originalTeam && (
+        {originalTeams.length > 0 && (
           <div className="flex gap-3 py-1.5">
             <span className="w-28 shrink-0 text-sm font-medium text-gray-500 dark:text-gray-400">
               {t('claimOriginalTeam')}
             </span>
-            <TeamChip team={originalTeam.name} size="sm" />
+            <span className="flex flex-wrap items-center gap-1">
+              {originalTeams.map((tm) => (
+                <TeamChip key={tm.id} team={tm.name} size="sm" />
+              ))}
+            </span>
           </div>
         )}
 

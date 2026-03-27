@@ -4,6 +4,7 @@ import Modal from '@/components/Modal'
 import { Button } from '@/components/ui/button'
 import { FormInput, FormTextarea, FormField } from '@/components/FormField'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
 import DatePicker from '@/components/ui/DatePicker'
 import { Switch } from '@/components/ui/switch'
 import pb from '../../../pb'
@@ -66,10 +67,10 @@ export default function SlotEditor({
   const visibleTeams = isAdmin
     ? teams.filter((tm) => adminTeamIds.length === 0 || adminTeamIds.includes(tm.id))
     : teams.filter((tm) => coachTeamIds.includes(tm.id))
-  const defaultTeam = slot?.team ?? (!isAdmin && coachTeamIds.length === 1 ? coachTeamIds[0] : '')
+  const defaultTeam = slot?.team ?? (!isAdmin && coachTeamIds.length === 1 ? [coachTeamIds[0]] : [])
   const canDelete = isAdmin
-    ? (slot?.team ? adminTeamIds.length === 0 || adminTeamIds.includes(slot.team) : true)
-    : (slot?.team ? coachTeamIds.includes(slot.team) : false)
+    ? (slot?.team?.length ? adminTeamIds.length === 0 || slot.team.some(t => adminTeamIds.includes(t)) : true)
+    : (slot?.team?.length ? slot.team.some(t => coachTeamIds.includes(t)) : false)
 
   // Build a synthetic "KWI A+B" option
   const kwiA = halls.find((h) => h.name === 'KWI A')
@@ -144,7 +145,7 @@ export default function SlotEditor({
       )
       if (!isClosed && !existingDates.has(dateStr)) {
         const rec = await pb.collection('trainings').create({
-          team: slotData.team,
+          team: slotData.team[0] || '',
           hall_slot: slotId,
           date: dateStr,
           start_time: slotData.start_time,
@@ -152,7 +153,7 @@ export default function SlotEditor({
           hall: hallId,
           cancelled: false,
         })
-        logActivity('create', 'trainings', rec.id, { team: slotData.team, date: dateStr })
+        logActivity('create', 'trainings', rec.id, { team: slotData.team[0] || '', date: dateStr })
       }
       current.setDate(current.getDate() + 7)
     }
@@ -166,7 +167,7 @@ export default function SlotEditor({
     })
     if (futureTrainings.length === 0) return
 
-    const ownerChanged = oldSlot.team !== newData.team
+    const ownerChanged = JSON.stringify(oldSlot.team) !== JSON.stringify(newData.team)
     const timeChanged = oldSlot.start_time !== newData.start_time || oldSlot.end_time !== newData.end_time
     const hallChanged = oldSlot.hall !== newData.hall
 
@@ -174,7 +175,7 @@ export default function SlotEditor({
       const hallId = isCombo ? kwiA!.id : newData.hall
       for (const tr of futureTrainings) {
         await pb.collection('trainings').update(tr.id, {
-          ...(ownerChanged ? { team: newData.team } : {}),
+          ...(ownerChanged ? { team: newData.team[0] || '' } : {}),
           ...(timeChanged ? { start_time: newData.start_time, end_time: newData.end_time } : {}),
           ...(hallChanged ? { hall: hallId } : {}),
         })
@@ -285,16 +286,21 @@ export default function SlotEditor({
             </Select>
           </FormField>
           <FormField label={t('team')}>
-            <Select value={form.team} onValueChange={(v) => update('team', v)}>
-              <SelectTrigger className="min-h-[44px]">
-                <SelectValue placeholder={t('selectPlaceholder')} />
-              </SelectTrigger>
-              <SelectContent>
-                {visibleTeams.map((tm) => (
-                  <SelectItem key={tm.id} value={tm.id}>{tm.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="mt-1 flex flex-wrap gap-2">
+              {visibleTeams.map((tm) => (
+                <label key={tm.id} className="flex items-center gap-1.5 text-sm cursor-pointer">
+                  <Checkbox
+                    checked={form.team.includes(tm.id)}
+                    onCheckedChange={(checked) => {
+                      update('team', checked
+                        ? [...form.team, tm.id]
+                        : form.team.filter((t: string) => t !== tm.id))
+                    }}
+                  />
+                  <span>{tm.name}</span>
+                </label>
+              ))}
+            </div>
           </FormField>
         </div>
 

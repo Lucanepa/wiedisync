@@ -96,7 +96,7 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
       return
     }
     pb.collection('hall_slots').getFullList<HallSlot>({
-      filter: `team="${teamId}" && slot_type="training" && recurring=true`,
+      filter: `team~"${teamId}" && slot_type="training" && recurring=true`,
       expand: 'hall',
       sort: 'day_of_week,start_time',
     }).then(setTeamSlots).catch(() => setTeamSlots([]))

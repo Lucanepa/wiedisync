@@ -105,7 +105,7 @@ export default function GamesPage() {
 
     return {
       filter: conditions.length === 1 ? conditions[0] : { _and: conditions },
-      sort: activeTab === 'upcoming' ? '+date,+time' : '-date,-time',
+      sort: activeTab === 'upcoming' ? 'date,time' : '-date,-time',
     }
   }, [activeTab, teamFilter, sportFilter, today])
 
@@ -159,7 +159,7 @@ export default function GamesPage() {
 
   // Rankings — always fetch (small dataset), group client-side
   const { data: allRankings, isLoading: rankingsLoading } = usePB<Ranking>('rankings', {
-    sort: '+league,+rank',
+    sort: 'league,rank',
     perPage: 2000,
   })
 

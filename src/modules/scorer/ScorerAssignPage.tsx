@@ -34,13 +34,13 @@ export default function ScorerAssignPage() {
   // Data loading
   const { data: allGames, isLoading: gamesLoading } = usePB<ExpandedGame>('games', {
     filter: { _and: [{ date: { _gte: seasonStart } }, { date: { _lte: seasonEnd } }, { status: { _neq: 'cancelled' } }] },
-    sort: '+date,+time',
+    sort: 'date,time',
     all: true,
   })
 
   const { data: teams } = usePB<Team>('teams', {
     filter: { _and: [{ sport: { _eq: 'volleyball' } }, { active: { _eq: true } }] },
-    sort: '+name',
+    sort: 'name',
     all: true,
   })
 

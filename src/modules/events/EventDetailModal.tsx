@@ -55,7 +55,7 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
   const hasSessionMode = event?.participation_mode && event.participation_mode !== 'whole'
   const { data: sessions } = usePB<EventSession>('event_sessions', {
     filter: event ? `event="${event.id}"` : '',
-    sort: '+sort_order,+date,+start_time',
+    sort: 'sort_order,date,start_time',
     perPage: 100,
     enabled: !!event && !!hasSessionMode,
   })

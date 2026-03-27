@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import pb from '../pb'
+import { kscwApi } from '../lib/api'
 import { FormInput } from '@/components/FormField'
 import { Button } from '@/components/ui/button'
 
@@ -33,7 +33,7 @@ export function SetPasswordForm({ title, description, onSuccess }: SetPasswordFo
 
     setLoading(true)
     try {
-      await pb.send('/api/set-password', {
+      await kscwApi('/set-password', {
         method: 'POST',
         body: { password, passwordConfirm },
       })

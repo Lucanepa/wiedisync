@@ -1,10 +1,9 @@
-import { getFileUrl as directusFileUrl } from '../directus'
+import { assetUrl } from '../lib/api'
 
 /**
- * In Directus, files are accessed via /assets/{fileId}.
- * The collection and recordId params are kept for backward compatibility
- * but only fileId (which is the field value) is needed.
+ * Get a Directus asset URL. The collection/recordId params are kept
+ * for backward compat but only fileId is needed.
  */
 export function getFileUrl(_collection: string, _recordId: string, fileId: string): string {
-  return directusFileUrl(fileId)
+  return assetUrl(fileId)
 }

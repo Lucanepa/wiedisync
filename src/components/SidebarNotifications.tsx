@@ -157,7 +157,7 @@ export default function SidebarNotifications({
                 }`}>
                   <span>{t(typeLabels[n.type] ?? 'activityChange')}</span>
                   <span>·</span>
-                  <span>{timeAgo(n.created, t)}</span>
+                  <span>{timeAgo(n.created ?? n.date_created ?? '', t)}</span>
                 </div>
               </div>
             </button>

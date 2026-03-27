@@ -4,7 +4,7 @@ import Modal from '@/components/Modal'
 import { useMultiTeamMembers } from '../hooks/useTeamMembers'
 import { useTeamParticipations, useAllEventParticipations } from '../hooks/useParticipation'
 import { usePB } from '../hooks/usePB'
-import pb from '../pb'
+import { fetchAllItems } from '../lib/api'
 import { getFileUrl } from '../utils/pbFile'
 import type { Participation, Absence, Member, Team, EventSession } from '../types'
 import { formatDate, getDeadlineDate, formatRelativeTime, formatDateTimeCompact } from '../utils/dateHelpers'
@@ -110,10 +110,9 @@ export default function ParticipationRosterModal({
     }
     setClubWideLoading(true)
     const uniqueMemberIds = [...new Set(clubWideParticipations.map(p => p.member))]
-    const filter = uniqueMemberIds.map(id => `id="${id}"`).join(' || ')
-    pb.collection('members').getFullList<Member>({
-      filter,
-      fields: 'id,first_name,last_name,photo',
+    fetchAllItems<Member>('members', {
+      filter: { id: { _in: uniqueMemberIds } },
+      fields: ['id', 'first_name', 'last_name', 'photo'],
     })
       .then(m => setClubWideMembers(m.sort((a, b) => (a.last_name ?? '').localeCompare(b.last_name ?? ''))))
       .catch(() => setClubWideMembers([]))
@@ -159,10 +158,14 @@ export default function ParticipationRosterModal({
   // Fetch staff participations (coaches/team_responsible who aren't in member_teams)
   useEffect(() => {
     if (!open || !activityId || isClubWide) return
-    pb.collection('participations')
-      .getFullList<Participation>({
-        filter: `activity_type="${activityType}" && activity_id="${activityId}" && is_staff=true`,
-        perPage: 50,
+    fetchAllItems<Participation>('participations', {
+        filter: {
+          _and: [
+            { activity_type: { _eq: activityType } },
+            { activity_id: { _eq: activityId } },
+            { is_staff: { _eq: true } },
+          ],
+        },
       })
       .then(async (staffParts) => {
         // Filter out any that are already in the member list
@@ -172,10 +175,9 @@ export default function ParticipationRosterModal({
           return
         }
         const staffMemberIds = [...new Set(staffOnlyParts.map((p) => p.member))]
-        const filter = staffMemberIds.map((id) => `id="${id}"`).join(' || ')
-        const members = await pb.collection('members').getFullList<Member>({
-          filter,
-          fields: 'id,first_name,last_name,photo',
+        const members = await fetchAllItems<Member>('members', {
+          filter: { id: { _in: staffMemberIds } },
+          fields: ['id', 'first_name', 'last_name', 'photo'],
         })
         setStaffMembers(members.sort((a, b) => (a.last_name ?? '').localeCompare(b.last_name ?? '')))
       })
@@ -201,9 +203,14 @@ export default function ParticipationRosterModal({
     if (!activityDate || memberIds.length === 0) return
     try {
       const dateStr = activityDate.split(' ')[0]
-      const memberFilter = memberIds.map((id) => `member="${id}"`).join(' || ')
-      const result = await pb.collection('absences').getFullList<Absence>({
-        filter: `(${memberFilter}) && start_date<="${dateStr}" && end_date>="${dateStr}"`,
+      const result = await fetchAllItems<Absence>('absences', {
+        filter: {
+          _and: [
+            { member: { _in: memberIds } },
+            { start_date: { _lte: dateStr } },
+            { end_date: { _gte: dateStr } },
+          ],
+        },
       })
       setAbsences(result)
     } catch {

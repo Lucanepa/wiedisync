@@ -1,13 +1,18 @@
-import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react'
-import type { RecordModel } from 'pocketbase'
-import pb from '../pb'
+import { createContext, useContext, useEffect, useState, useCallback, useMemo, type ReactNode } from 'react'
+import { readMe, readItems } from '@directus/sdk'
+import { client, login as apiLogin, logout as apiLogout, refreshAuth, isAuthenticated, API_URL } from '../lib/api'
+import { queryClient } from '../lib/query'
 import i18n from '../i18n'
 import { pbLangToI18n } from '../utils/languageMap'
 import { getCurrentSeason } from '../utils/dateHelpers'
-import type { Member, MemberTeam, Team } from '../types'
+import type { Member, Team } from '../types'
+
+// ── Types ───────────────────────────────────────────────────────────
+
+type MemberUser = Member & { id: string }
 
 interface AuthContextValue {
-  user: (RecordModel & Member) | null
+  user: MemberUser | null
   isSuperAdmin: boolean
   isAdmin: boolean
   isGlobalAdmin: boolean
@@ -40,11 +45,12 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
+// ── Provider ────────────────────────────────────────────────────────
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<(RecordModel & Member) | null>(
-    pb.authStore.record as (RecordModel & Member) | null,
-  )
+  const [user, setUser] = useState<MemberUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+
   const [coachTeamIds, setCoachTeamIds] = useState<string[]>([])
   const [coachTeamNames, setCoachTeamNames] = useState<string[]>([])
   const [memberTeamIds, setMemberTeamIds] = useState<string[]>([])
@@ -52,229 +58,188 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [memberSports, setMemberSports] = useState<Set<'volleyball' | 'basketball'>>(new Set())
   const [teamSportById, setTeamSportById] = useState<Record<string, 'volleyball' | 'basketball'>>({})
   const [guestLevelByTeam, setGuestLevelByTeam] = useState<Record<string, number>>({})
-  const [coachTeamsLoaded, setCoachTeamsLoaded] = useState(false)
-  const [memberTeamsLoaded, setMemberTeamsLoaded] = useState(false)
-  const teamsLoading = !!user && (!coachTeamsLoaded || !memberTeamsLoaded)
+  const [teamsReady, setTeamsReady] = useState(false)
+  const teamsLoading = !!user && !teamsReady
 
-  // Auth refresh — skip if token was just issued (within last 5s, e.g. right after login)
-  useEffect(() => {
-    if (pb.authStore.isValid) {
-      const token = pb.authStore.token
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]))
-        const issuedAt = (payload.iat ?? 0) * 1000
-        const isFresh = Date.now() - issuedAt < 5000
-        if (isFresh) {
-          setIsLoading(false)
-        } else {
-          pb.collection('members').authRefresh()
-            .catch(() => pb.authStore.clear())
-            .finally(() => setIsLoading(false))
-        }
-      } catch {
-        pb.collection('members').authRefresh()
-          .catch(() => pb.authStore.clear())
-          .finally(() => setIsLoading(false))
-      }
-    } else {
-      setIsLoading(false)
+  // ── Fetch current member from Directus user ─────────────────────
+
+  const fetchMember = useCallback(async (): Promise<MemberUser | null> => {
+    try {
+      const me = await client.request(readMe({ fields: ['id'] }))
+      if (!me?.id) return null
+      const members = await client.request(readItems('members', {
+        filter: { user: { _eq: me.id } },
+        limit: 1,
+      } as never)) as MemberUser[]
+      return members[0] ?? null
+    } catch {
+      return null
     }
-
-    const unsubscribe = pb.authStore.onChange((_token, record) => {
-      setUser(record as (RecordModel & Member) | null)
-    })
-
-    return unsubscribe
   }, [])
 
-  // Sync i18n language from user's stored preference
+  // ── Load team context (single parallel fetch) ───────────────────
+
+  const loadTeamContext = useCallback(async (memberId: string | number) => {
+    try {
+      const [coachRows, trRows, memberTeams, allTeams] = await Promise.all([
+        client.request(readItems('teams_coach', {
+          filter: { members_id: { _eq: memberId } },
+          fields: ['teams_id'], limit: -1,
+        } as never)) as Promise<{ teams_id: number }[]>,
+        client.request(readItems('teams_team_responsible', {
+          filter: { members_id: { _eq: memberId } },
+          fields: ['teams_id'], limit: -1,
+        } as never)) as Promise<{ teams_id: number }[]>,
+        client.request(readItems('member_teams', {
+          filter: { member: { _eq: memberId }, season: { _eq: getCurrentSeason() } },
+          fields: ['team', 'guest_level'], limit: -1,
+        } as never)) as Promise<{ team: number; guest_level: number }[]>,
+        client.request(readItems('teams', {
+          filter: { active: { _eq: true } },
+          fields: ['id', 'name', 'sport'], limit: -1,
+        } as never)) as Promise<Pick<Team, 'id' | 'name' | 'sport'>[]>,
+      ])
+
+      const teamMap = new Map(allTeams.map(t => [String(t.id), t]))
+      const coachIdSet = new Set([...coachRows.map(r => String(r.teams_id)), ...trRows.map(r => String(r.teams_id))])
+
+      setCoachTeamIds([...coachIdSet])
+      setCoachTeamNames([...coachIdSet].map(id => teamMap.get(id)?.name).filter((n): n is string => !!n))
+      setMemberTeamIds(memberTeams.map(mt => String(mt.team)))
+      setMemberTeamNames(memberTeams.map(mt => teamMap.get(String(mt.team))?.name).filter((n): n is string => !!n))
+
+      const sports = new Set<'volleyball' | 'basketball'>()
+      for (const mt of memberTeams) {
+        const s = teamMap.get(String(mt.team))?.sport
+        if (s === 'volleyball' || s === 'basketball') sports.add(s)
+      }
+      setMemberSports(sports)
+
+      const glMap: Record<string, number> = {}
+      for (const mt of memberTeams) glMap[String(mt.team)] = mt.guest_level ?? 0
+      setGuestLevelByTeam(glMap)
+
+      const sportById: Record<string, 'volleyball' | 'basketball'> = {}
+      for (const t of allTeams) {
+        if (t.sport === 'volleyball' || t.sport === 'basketball') sportById[String(t.id)] = t.sport
+      }
+      setTeamSportById(sportById)
+      setTeamsReady(true)
+    } catch {
+      setTeamsReady(true)
+    }
+  }, [])
+
+  // ── Init ────────────────────────────────────────────────────────
+
+  useEffect(() => {
+    if (!isAuthenticated()) { setIsLoading(false); return }
+    ;(async () => {
+      try {
+        await refreshAuth()
+        const member = await fetchMember()
+        if (member) {
+          setUser(member)
+          await loadTeamContext(member.id)
+        }
+      } catch {
+        await apiLogout()
+      } finally {
+        setIsLoading(false)
+      }
+    })()
+  }, [fetchMember, loadTeamContext])
+
+  // Sync i18n
   useEffect(() => {
     if (user?.language) {
       const lang = pbLangToI18n(user.language)
-      if (i18n.language !== lang) {
-        i18n.changeLanguage(lang)
-        localStorage.setItem('wiedisync-lang', lang)
-      }
+      if (i18n.language !== lang) { i18n.changeLanguage(lang); localStorage.setItem('wiedisync-lang', lang) }
     }
   }, [user?.language])
 
-  // Fetch teams where user has a leadership role (coach, team_responsible)
-  useEffect(() => {
-    if (!user?.id) {
-      setCoachTeamIds([])
-      setCoachTeamNames([])
-      setCoachTeamsLoaded(false)
-      return
-    }
+  // ── Actions ─────────────────────────────────────────────────────
 
-    const uid = user.id
-    pb.collection('teams')
-      .getFullList<Team>({
-        filter: `active=true && (coach~"${uid}" || team_responsible~"${uid}")`,
-      })
-      .then((teams) => {
-        setCoachTeamIds(teams.map((t) => t.id))
-        setCoachTeamNames(teams.map((t) => t.name).filter((n): n is string => !!n))
-        setCoachTeamsLoaded(true)
-      })
-      .catch(() => {
-        setCoachTeamIds([])
-        setCoachTeamNames([])
-        setCoachTeamsLoaded(true)
-      })
-  }, [user?.id])
-
-  // Team sport lookup map (used for scoped admin checks by teamId)
-  useEffect(() => {
-    if (!user?.id) {
-      setTeamSportById({})
-      return
-    }
-
-    pb.collection('teams')
-      .getFullList<Team>({
-        filter: `active=true`,
-        fields: 'id,sport',
-      })
-      .then((allTeams) => {
-        const next: Record<string, 'volleyball' | 'basketball'> = {}
-        for (const t of allTeams) {
-          if (t.sport === 'volleyball' || t.sport === 'basketball') {
-            next[t.id] = t.sport
-          }
-        }
-        setTeamSportById(next)
-      })
-      .catch(() => setTeamSportById({}))
-  }, [user?.id])
-
-  // Fetch teams the user is a member of (current season)
-  useEffect(() => {
-    if (!user?.id) {
-      setMemberTeamIds([])
-      setMemberTeamNames([])
-      setMemberSports(new Set())
-      setGuestLevelByTeam({})
-      setMemberTeamsLoaded(false)
-      return
-    }
-    const season = getCurrentSeason()
-    pb.collection('member_teams')
-      .getFullList<MemberTeam & { expand?: { team?: Team } }>({
-        filter: `member="${user.id}" && season="${season}"`,
-        expand: 'team',
-      })
-      .then((mts) => {
-        setMemberTeamIds(mts.map((mt) => mt.team))
-        setMemberTeamNames(mts.map((mt) => mt.expand?.team?.name).filter((n): n is string => !!n))
-        const sports = new Set<'volleyball' | 'basketball'>()
-        for (const mt of mts) {
-          const s = mt.expand?.team?.sport
-          if (s === 'volleyball' || s === 'basketball') sports.add(s)
-        }
-        setMemberSports(sports)
-        const glMap: Record<string, number> = {}
-        for (const mt of mts) {
-          glMap[mt.team] = mt.guest_level ?? 0
-        }
-        setGuestLevelByTeam(glMap)
-        setMemberTeamsLoaded(true)
-      })
-      .catch(() => {
-        setMemberTeamIds([])
-        setMemberTeamNames([])
-        setMemberSports(new Set())
-        setGuestLevelByTeam({})
-        setMemberTeamsLoaded(true)
-      })
-  }, [user?.id])
-
-  const login = useCallback(async (email: string, password: string, turnstileToken?: string) => {
-    await pb.collection('members').authWithPassword(email, password, {
-      headers: turnstileToken ? { 'X-Turnstile-Token': turnstileToken } : {},
-    })
-  }, [])
+  const login = useCallback(async (email: string, password: string) => {
+    await apiLogin(email, password)
+    const member = await fetchMember()
+    if (member) { setUser(member); await loadTeamContext(member.id) }
+  }, [fetchMember, loadTeamContext])
 
   const loginWithOAuth = useCallback(async (provider: string) => {
-    await pb.collection('members').authWithOAuth2({ provider })
+    window.location.href = `${API_URL}/auth/login/${provider}?redirect=${encodeURIComponent(window.location.origin + '/auth/callback')}`
   }, [])
 
   const logout = useCallback(() => {
-    pb.authStore.clear()
+    apiLogout()
+    setUser(null)
+    setCoachTeamIds([]); setCoachTeamNames([])
+    setMemberTeamIds([]); setMemberTeamNames([])
+    setMemberSports(new Set()); setGuestLevelByTeam({}); setTeamSportById({})
+    setTeamsReady(false)
+    queryClient.clear()
   }, [])
+
+  // ── Derived ─────────────────────────────────────────────────────
 
   const roles = user?.role ?? []
   const isSuperAdmin = roles.includes('superuser')
   const isGlobalAdmin = roles.includes('admin') || isSuperAdmin
   const isVbAdmin = roles.includes('vb_admin')
   const isBbAdmin = roles.includes('bb_admin')
-  const hasAdminAccessToSport = useCallback(
-    (sport: 'volleyball' | 'basketball') =>
-      isGlobalAdmin || (sport === 'volleyball' ? isVbAdmin : isBbAdmin),
-    [isGlobalAdmin, isVbAdmin, isBbAdmin],
-  )
-  const hasAdminAccessToTeam = useCallback(
-    (teamId: string) => {
-      if (!teamId) return false
-      const sport = teamSportById[teamId]
-      if (!sport) return isGlobalAdmin
-      return hasAdminAccessToSport(sport)
-    },
-    [teamSportById, isGlobalAdmin, hasAdminAccessToSport],
-  )
   const isAdmin = isGlobalAdmin || isVbAdmin || isBbAdmin
   const isApproved = user?.coach_approved_team === true || isAdmin
   const isProfileComplete = !!user?.language && !!user?.first_name
   const isVorstand = roles.includes('vorstand') || isGlobalAdmin
-  const getGuestLevel = useCallback(
-    (teamId: string) => guestLevelByTeam[teamId] ?? 0,
-    [guestLevelByTeam],
-  )
-
-  const isGuestIn = useCallback(
-    (teamId: string) => getGuestLevel(teamId) > 0,
-    [getGuestLevel],
-  )
+  const isCoach = coachTeamIds.length > 0 || isGlobalAdmin
   const primarySport: 'volleyball' | 'basketball' | 'both' =
     memberSports.size === 1 ? [...memberSports][0] : 'both'
 
-  const isCoach = coachTeamIds.length > 0 || isGlobalAdmin
-
+  const hasAdminAccessToSport = useCallback(
+    (sport: 'volleyball' | 'basketball') => isGlobalAdmin || (sport === 'volleyball' ? isVbAdmin : isBbAdmin),
+    [isGlobalAdmin, isVbAdmin, isBbAdmin],
+  )
+  const hasAdminAccessToTeam = useCallback(
+    (teamId: string) => {
+      const sport = teamSportById[teamId]
+      return !sport ? isGlobalAdmin : hasAdminAccessToSport(sport)
+    },
+    [teamSportById, isGlobalAdmin, hasAdminAccessToSport],
+  )
   const isCoachOf = useCallback(
     (teamId: string) => hasAdminAccessToTeam(teamId) || coachTeamIds.includes(teamId),
     [hasAdminAccessToTeam, coachTeamIds],
   )
-
-  /** Coach/team_responsible can participate (for attendance tracking) even if not a player */
   const canParticipateIn = useCallback(
     (teamId: string) => memberTeamIds.includes(teamId) || coachTeamIds.includes(teamId),
     [memberTeamIds, coachTeamIds],
   )
-
-  /** True if user is staff (coach/team_responsible) but NOT a player on this team.
-   *  Returns false while team data is still loading to prevent race-condition
-   *  where coachTeamIds loads before memberTeamIds, causing is_staff=true on participations. */
   const isStaffOnly = useCallback(
-    (teamId: string) =>
-      coachTeamsLoaded && memberTeamsLoaded &&
-      coachTeamIds.includes(teamId) && !memberTeamIds.includes(teamId),
-    [coachTeamIds, memberTeamIds, coachTeamsLoaded, memberTeamsLoaded],
+    (teamId: string) => teamsReady && coachTeamIds.includes(teamId) && !memberTeamIds.includes(teamId),
+    [coachTeamIds, memberTeamIds, teamsReady],
   )
-
   const canViewTeam = useCallback(
-    (teamId: string) =>
-      hasAdminAccessToTeam(teamId) ||
-      isVorstand ||
-      coachTeamIds.includes(teamId) ||
-      memberTeamIds.includes(teamId),
+    (teamId: string) => hasAdminAccessToTeam(teamId) || isVorstand || coachTeamIds.includes(teamId) || memberTeamIds.includes(teamId),
     [hasAdminAccessToTeam, isVorstand, coachTeamIds, memberTeamIds],
   )
+  const getGuestLevel = useCallback((teamId: string) => guestLevelByTeam[teamId] ?? 0, [guestLevelByTeam])
+  const isGuestIn = useCallback((teamId: string) => getGuestLevel(teamId) > 0, [getGuestLevel])
 
-  return (
-    <AuthContext.Provider value={{ user, isSuperAdmin, isAdmin, isGlobalAdmin, isVbAdmin, isBbAdmin, hasAdminAccessToSport, hasAdminAccessToTeam, isApproved, isProfileComplete, isCoach, isCoachOf, canParticipateIn, isStaffOnly, coachTeamIds, coachTeamNames, memberTeamIds, memberTeamNames, teamsLoading, memberSports, primarySport, canViewTeam, isVorstand, getGuestLevel, isGuestIn, isLoading, login, loginWithOAuth, logout }}>
-      {children}
-    </AuthContext.Provider>
-  )
+  const value = useMemo<AuthContextValue>(() => ({
+    user, isSuperAdmin, isAdmin, isGlobalAdmin, isVbAdmin, isBbAdmin,
+    hasAdminAccessToSport, hasAdminAccessToTeam, isApproved, isProfileComplete,
+    isCoach, isCoachOf, canParticipateIn, isStaffOnly, coachTeamIds, coachTeamNames,
+    memberTeamIds, memberTeamNames, teamsLoading, memberSports, primarySport,
+    canViewTeam, isVorstand, getGuestLevel, isGuestIn, isLoading, login, loginWithOAuth, logout,
+  }), [
+    user, isSuperAdmin, isAdmin, isGlobalAdmin, isVbAdmin, isBbAdmin,
+    hasAdminAccessToSport, hasAdminAccessToTeam, isApproved, isProfileComplete,
+    isCoach, isCoachOf, canParticipateIn, isStaffOnly, coachTeamIds, coachTeamNames,
+    memberTeamIds, memberTeamNames, teamsLoading, memberSports, primarySport,
+    canViewTeam, isVorstand, getGuestLevel, isGuestIn, isLoading, login, loginWithOAuth, logout,
+  ])
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {

@@ -128,9 +128,9 @@ export function useAttendanceStats(teamId: string | null, season: string) {
         const memberParticipations = participations.filter((p) => p.member === member.id)
         if (memberParticipations.length > 0) {
           const latest = memberParticipations.reduce((a, b) =>
-            a.updated > b.updated ? a : b
+            (a.updated ?? a.date_updated ?? '') > (b.updated ?? b.date_updated ?? '') ? a : b
           )
-          memberStats[member.id].lastResponseAt = latest.updated
+          memberStats[member.id].lastResponseAt = latest.updated ?? latest.date_updated ?? null
         }
       }
 

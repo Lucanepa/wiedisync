@@ -1,6 +1,12 @@
+/**
+ * useMutation — backward-compatible wrapper around TanStack mutations.
+ *
+ * New code should import { useCreate, useUpdate, useDelete } from '../lib/query' directly.
+ */
+
 import { useState, useCallback } from 'react'
-import { createItem, updateItem, deleteItem } from '@directus/sdk'
-import directus from '../directus'
+import { createRecord, updateRecord, deleteRecord } from '../lib/api'
+import { queryClient, keys } from '../lib/query'
 import { logActivity } from '../utils/logActivity'
 
 const SKIP_LOG = new Set(['user_logs'])
@@ -14,11 +20,10 @@ export function useMutation<T = Record<string, unknown>>(collection: string) {
       setIsLoading(true)
       setError(null)
       try {
-        const record = await directus.request<T>(createItem(collection, data as never))
+        const record = await createRecord<T>(collection, data)
         const id = (record as Record<string, unknown>).id
-        if (!SKIP_LOG.has(collection)) {
-          logActivity('create', collection, String(id), data)
-        }
+        if (!SKIP_LOG.has(collection)) logActivity('create', collection, String(id), data)
+        queryClient.invalidateQueries({ queryKey: keys.collection(collection) })
         return record
       } catch (err) {
         const e = err instanceof Error ? err : new Error(String(err))
@@ -36,10 +41,9 @@ export function useMutation<T = Record<string, unknown>>(collection: string) {
       setIsLoading(true)
       setError(null)
       try {
-        const record = await directus.request<T>(updateItem(collection, id, data as never))
-        if (!SKIP_LOG.has(collection)) {
-          logActivity('update', collection, String(id), data)
-        }
+        const record = await updateRecord<T>(collection, id, data)
+        if (!SKIP_LOG.has(collection)) logActivity('update', collection, String(id), data)
+        queryClient.invalidateQueries({ queryKey: keys.collection(collection) })
         return record
       } catch (err) {
         const e = err instanceof Error ? err : new Error(String(err))
@@ -57,10 +61,9 @@ export function useMutation<T = Record<string, unknown>>(collection: string) {
       setIsLoading(true)
       setError(null)
       try {
-        await directus.request(deleteItem(collection, id))
-        if (!SKIP_LOG.has(collection)) {
-          logActivity('delete', collection, String(id))
-        }
+        await deleteRecord(collection, id)
+        if (!SKIP_LOG.has(collection)) logActivity('delete', collection, String(id))
+        queryClient.invalidateQueries({ queryKey: keys.collection(collection) })
         return true
       } catch (err) {
         const e = err instanceof Error ? err : new Error(String(err))

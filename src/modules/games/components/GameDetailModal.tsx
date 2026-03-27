@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { MessageSquare, X, Check } from 'lucide-react'
-import type { RecordModel } from 'pocketbase'
-import type { Game, Team, Hall, Member } from '../../../types'
+import type { Game, Team, Hall, Member, BaseRecord } from '../../../types'
 import { Button } from '@/components/ui/button'
 import TeamChip from '../../../components/TeamChip'
 import { pbNameToColorKey } from '../../../utils/teamColors'
@@ -11,7 +10,7 @@ import ParticipationRosterModal from '../../../components/ParticipationRosterMod
 import { useAuth } from '../../../hooks/useAuth'
 import { useParticipation } from '../../../hooks/useParticipation'
 import { useMutation } from '../../../hooks/useMutation'
-import pb from '../../../pb'
+import { fetchItem } from '../../../lib/api'
 import { sanitizeUrl } from '../../../utils/sanitizeUrl'
 import DatePicker from '@/components/ui/DatePicker'
 import { formatDate, formatTime, parseRespondByTime } from '../../../utils/dateHelpers'
@@ -30,21 +29,21 @@ interface GameDetailModalProps {
 
 type ExpandedGame = Game & {
   expand?: {
-    kscw_team?: Team & RecordModel
-    hall?: Hall & RecordModel
-    scorer_member?: Member & RecordModel
-    scoreboard_member?: Member & RecordModel
-    scorer_scoreboard_member?: Member & RecordModel
-    scorer_duty_team?: Team & RecordModel
-    scoreboard_duty_team?: Team & RecordModel
-    scorer_scoreboard_duty_team?: Team & RecordModel
-    bb_scorer_member?: Member & RecordModel
-    bb_timekeeper_member?: Member & RecordModel
-    bb_24s_official?: Member & RecordModel
-    bb_duty_team?: Team & RecordModel
-    bb_scorer_duty_team?: Team & RecordModel
-    bb_timekeeper_duty_team?: Team & RecordModel
-    bb_24s_duty_team?: Team & RecordModel
+    kscw_team?: Team & BaseRecord
+    hall?: Hall & BaseRecord
+    scorer_member?: Member & BaseRecord
+    scoreboard_member?: Member & BaseRecord
+    scorer_scoreboard_member?: Member & BaseRecord
+    scorer_duty_team?: Team & BaseRecord
+    scoreboard_duty_team?: Team & BaseRecord
+    scorer_scoreboard_duty_team?: Team & BaseRecord
+    bb_scorer_member?: Member & BaseRecord
+    bb_timekeeper_member?: Member & BaseRecord
+    bb_24s_official?: Member & BaseRecord
+    bb_duty_team?: Team & BaseRecord
+    bb_scorer_duty_team?: Team & BaseRecord
+    bb_timekeeper_duty_team?: Team & BaseRecord
+    bb_24s_duty_team?: Team & BaseRecord
   }
 }
 
@@ -70,7 +69,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
   const [editingDeadline, setEditingDeadline] = useState(false)
   const [deadlineValue, setDeadlineValue] = useState(game?.respond_by?.split(' ')[0] ?? '')
   const [deadlineTime, setDeadlineTime] = useState(() => {
-    const parsed = parseRespondByTime(game?.respond_by, game?.start_time)
+    const parsed = parseRespondByTime(game?.respond_by, game?.time)
     return parsed.time
   })
   const [fullGame, setFullGame] = useState<Game | null>(null)
@@ -134,7 +133,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
       (game.bb_timekeeper_duty_team && !exp?.bb_timekeeper_duty_team) ||
       (game.bb_24s_duty_team && !exp?.bb_24s_duty_team)
     if (needsExpand) {
-      pb.collection('games').getOne(game.id, { expand: GAME_EXPAND }).then(r => setFullGame(r as unknown as Game)).catch(() => {})
+      fetchItem<Game>('games', game.id, { fields: ['*', ...GAME_EXPAND.split(',').map(r => `${r}.*`)] }).then(r => setFullGame(r)).catch(() => {})
     }
   }, [game])
 
@@ -543,7 +542,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
         {game.status === 'scheduled' && (
           <div className="space-y-3 border-t dark:border-gray-700 px-6 py-4">
             {game.respond_by && !editingDeadline && (
-              <DetailRow label={t('respondBy')} value={`${formatDate(game.respond_by.split(' ')[0])}${(() => { const { time } = parseRespondByTime(game.respond_by, game.start_time); return time ? `, ${time}` : '' })()}`} />
+              <DetailRow label={t('respondBy')} value={`${formatDate(game.respond_by.split(' ')[0])}${(() => { const { time } = parseRespondByTime(game.respond_by, game.time); return time ? `, ${time}` : '' })()}`} />
             )}
             {!readOnly && isCoachOf(game.kscw_team) && (
               editingDeadline ? (
@@ -555,14 +554,14 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
                   />
                   <input
                     type="time"
-                    value={deadlineTime || game?.start_time?.slice(0, 5) || ''}
+                    value={deadlineTime || game?.time?.slice(0, 5) || ''}
                     onChange={(e) => setDeadlineTime(e.target.value)}
                     className="w-24 rounded-lg border px-2 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                   />
                   <Button
                     size="sm"
                     onClick={async () => {
-                      await updateGame(game.id, { respond_by: deadlineValue ? `${deadlineValue} ${deadlineTime || game?.start_time?.slice(0, 5) || '23:59'}:00` : null })
+                      await updateGame(game.id, { respond_by: deadlineValue ? `${deadlineValue} ${deadlineTime || game?.time?.slice(0, 5) || '23:59'}:00` : null })
                       setEditingDeadline(false)
                     }}
                   >
@@ -578,7 +577,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
               ) : (
                 <button
                   onClick={() => {
-                    const parsed = parseRespondByTime(game.respond_by, game.start_time)
+                    const parsed = parseRespondByTime(game.respond_by, game.time)
                     setDeadlineValue(parsed.date)
                     setDeadlineTime(parsed.time)
                     setEditingDeadline(true)
@@ -627,9 +626,9 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 
 function DutyPersonRow({ label, member, fallbackName, dutyTeam, showContact }: {
   label: string
-  member?: (Member & RecordModel) | null
+  member?: (Member & BaseRecord) | null
   fallbackName?: string
-  dutyTeam?: (Team & RecordModel) | null
+  dutyTeam?: (Team & BaseRecord) | null
   showContact: boolean
 }) {
   const name = member

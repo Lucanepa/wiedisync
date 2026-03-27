@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Check, ChevronDown, Pencil } from 'lucide-react'
-import type { RecordModel } from 'pocketbase'
-import type { RefereeExpense, Member, Team } from '../../../types'
+import type { RefereeExpense, Member, Team, BaseRecord } from '../../../types'
 import { useTeamMembers } from '../../../hooks/useTeamMembers'
 import { useMutation } from '../../../hooks/useMutation'
 import { useAuth } from '../../../hooks/useAuth'
 import SearchableSelect from '../../../components/ui/SearchableSelect'
-import pb from '../../../pb'
+import { fetchItems, fetchItem } from '../../../lib/api'
 
 interface RefereeExpenseSectionProps {
   gameId: string
@@ -16,7 +15,7 @@ interface RefereeExpenseSectionProps {
 }
 
 type ExpandedExpense = RefereeExpense & {
-  expand?: { paid_by_member?: Member & RecordModel }
+  expand?: { paid_by_member?: Member & BaseRecord }
 }
 
 const OTHER_VALUE = '__other__'
@@ -31,7 +30,7 @@ export default function RefereeExpenseSection({ gameId, teamId, canEdit }: Refer
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [coaches, setCoaches] = useState<(Member & RecordModel)[]>([])
+  const [coaches, setCoaches] = useState<(Member & BaseRecord)[]>([])
   const [open, setOpen] = useState(false)
 
   // Form state
@@ -45,9 +44,14 @@ export default function RefereeExpenseSection({ gameId, teamId, canEdit }: Refer
     let cancelled = false
     setLoading(true)
 
-    const fetchExpense = pb.collection('referee_expenses')
-      .getFirstListItem<ExpandedExpense>(`game="${gameId}"`, { expand: 'paid_by_member' })
+    const fetchExpense = fetchItems<ExpandedExpense>('referee_expenses', {
+        filter: { game: { _eq: gameId } },
+        fields: ['*', 'paid_by_member.*'],
+        limit: 1,
+      })
+      .then((records) => records[0])
       .then((record) => {
+        if (!record) throw new Error('not found')
         if (cancelled) return
         setExisting(record)
         setPaidBy(record.paid_by_member || (record.paid_by_other ? OTHER_VALUE : ''))
@@ -59,11 +63,12 @@ export default function RefereeExpenseSection({ gameId, teamId, canEdit }: Refer
         if (!cancelled) setExisting(null)
       })
 
-    const fetchCoaches = pb.collection('teams')
-      .getOne<Team & RecordModel>(teamId, { fields: 'id,coach,team_responsible', expand: 'coach,team_responsible' })
+    const fetchCoaches = fetchItem<Team & BaseRecord>(
+        'teams', teamId, { fields: ['id', 'coach.*', 'team_responsible.*'] }
+      )
       .then((team) => {
         if (cancelled) return
-        const expanded = team as Team & RecordModel & { expand?: { coach?: (Member & RecordModel)[]; team_responsible?: (Member & RecordModel)[] } }
+        const expanded = team as Team & BaseRecord & { expand?: { coach?: (Member & BaseRecord)[]; team_responsible?: (Member & BaseRecord)[] } }
         const all = [...(expanded.expand?.coach ?? []), ...(expanded.expand?.team_responsible ?? [])]
         // Deduplicate by id
         const seen = new Set<string>()
@@ -118,11 +123,11 @@ export default function RefereeExpenseSection({ gameId, teamId, canEdit }: Refer
       if (existing) {
         const updated = await update(existing.id, data)
         // Re-fetch with expand for display
-        const full = await pb.collection('referee_expenses').getOne<ExpandedExpense>(updated.id, { expand: 'paid_by_member' })
+        const full = await fetchItem<ExpandedExpense>('referee_expenses', updated.id, { fields: ['*', 'paid_by_member.*'] })
         setExisting(full)
       } else {
         const created = await create(data)
-        const full = await pb.collection('referee_expenses').getOne<ExpandedExpense>(created.id, { expand: 'paid_by_member' })
+        const full = await fetchItem<ExpandedExpense>('referee_expenses', created.id, { fields: ['*', 'paid_by_member.*'] })
         setExisting(full)
       }
       setEditing(false)

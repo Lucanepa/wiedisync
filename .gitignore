@@ -28,6 +28,11 @@ test-results/
 e2e/.auth/
 .env.test
 
+# Directus backend (local dev data + deps)
+directus/node_modules/
+directus/uploads/
+directus/.env
+
 # Planning
 .planning/
 

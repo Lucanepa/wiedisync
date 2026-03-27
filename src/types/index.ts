@@ -182,7 +182,7 @@ export interface VirtualSlotMeta {
 
 export interface HallSlot extends RecordModel {
   hall: string
-  team: string
+  team: string[]
   day_of_week: number
   start_time: string
   end_time: string

@@ -39,9 +39,9 @@ export default function ClaimModal({ slot, halls, teams, rawSlots, weekDays, onC
   const [error, setError] = useState('')
 
   const meta = slot._virtual
-  const isManuallyFree = !meta && !slot.team
+  const isManuallyFree = !meta && !slot.team?.length
   const hallName = halls.find((h) => h.id === slot.hall)?.name ?? ''
-  const originalTeam = teams.find((tm) => tm.id === slot.team)
+  const originalTeams = teams.filter((tm) => slot.team.includes(tm.id))
   const coachTeams = teams.filter((tm) => coachTeamIds.includes(tm.id) || hasAdminAccessToTeam(tm.id))
   const [selectedTeamId, setSelectedTeamId] = useState(coachTeams[0]?.id || '')
 
@@ -85,7 +85,7 @@ export default function ClaimModal({ slot, halls, teams, rawSlots, weekDays, onC
       (s) =>
         s.recurring &&
         s.slot_type === 'training' &&
-        s.team === slot.team &&
+        s.team.length === slot.team.length && s.team.every(t => slot.team.includes(t)) &&
         s.day_of_week === slot.day_of_week,
     )
     hallSlotId = matchingSlot?.id || ''
@@ -141,12 +141,16 @@ export default function ClaimModal({ slot, halls, teams, rawSlots, weekDays, onC
             value={isTemplateFreed ? t('slotFreed') : isSpielhalleFreed ? t('claimReasonSpielhalle') : isCancelledTraining ? t('claimReasonCancelled') : t('claimReasonAway')}
           />
         )}
-        {originalTeam && (
+        {originalTeams.length > 0 && (
           <div className="flex gap-3 py-1.5">
             <span className="w-28 shrink-0 text-sm font-medium text-gray-500 dark:text-gray-400">
               {t('claimOriginalTeam')}
             </span>
-            <TeamChip team={originalTeam.name} size="sm" />
+            <span className="flex flex-wrap items-center gap-1">
+              {originalTeams.map((tm) => (
+                <TeamChip key={tm.id} team={tm.name} size="sm" />
+              ))}
+            </span>
           </div>
         )}
         {slot.notes && (

@@ -98,8 +98,8 @@ export default function HallenplanView() {
     if (sportFilter === 'all') return slots
     const allowedTeams = sportFilter === 'vb' ? teamsBySport.vb : teamsBySport.bb
     return slots.filter((s) => {
-      if (!s.team) return true
-      if (!allowedTeams.has(s.team)) return false
+      if (!s.team?.length) return true
+      if (!s.team.some(t => allowedTeams.has(t))) return false
       if (sportFilter === 'vb' && s._virtual?.source === 'hall_event' && s.slot_type === 'game') return false
       return true
     })
@@ -110,7 +110,7 @@ export default function HallenplanView() {
     const now = new Date()
     const hallMap = new Map<string, Hall>(halls.map((h) => [h.id, h]))
     return filteredSlots
-      .filter((s) => s._virtual?.isFreed || (!s._virtual && !s.team))
+      .filter((s) => s._virtual?.isFreed || (!s._virtual && !s.team?.length))
       .filter((s) => {
         const slotDate = weekDays[s.day_of_week]
         if (!slotDate) return true

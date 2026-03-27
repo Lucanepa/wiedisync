@@ -30,8 +30,8 @@ export default function VirtualSlotDetailModal({ slot, halls, teams, isAdmin, on
   const meta = slot._virtual!
 
   const hallName = halls.find((h) => h.id === slot.hall)?.name ?? ''
-  const teamObj = teams.find((tm) => tm.id === slot.team)
-  const teamName = teamObj?.name ?? ''
+  const teamObjs = teams.filter((tm) => slot.team.includes(tm.id))
+  const teamName = teamObjs.map((tm) => tm.name).join(', ')
 
   function renderGame() {
     const game = meta.sourceRecord as Game
@@ -45,10 +45,14 @@ export default function VirtualSlotDetailModal({ slot, halls, teams, isAdmin, on
     return (
       <div className="space-y-1">
         <DetailRow label={t('hall')} value={hallName} />
-        {teamName && (
+        {teamObjs.length > 0 && (
           <div className="flex gap-3 py-1.5">
             <span className="w-24 shrink-0 text-sm font-medium text-gray-500 dark:text-gray-400">{t('team')}</span>
-            <TeamChip team={teamName} size="sm" />
+            <span className="flex flex-wrap items-center gap-1">
+              {teamObjs.map((tm) => (
+                <TeamChip key={tm.id} team={tm.name} size="sm" />
+              ))}
+            </span>
           </div>
         )}
         <DetailRow label={t('league')} value={game.league || ''} />
@@ -75,10 +79,14 @@ export default function VirtualSlotDetailModal({ slot, halls, teams, isAdmin, on
     return (
       <div className="space-y-1">
         <DetailRow label={t('hall')} value={hallName} />
-        {teamName && (
+        {teamObjs.length > 0 && (
           <div className="flex gap-3 py-1.5">
             <span className="w-24 shrink-0 text-sm font-medium text-gray-500 dark:text-gray-400">{t('team')}</span>
-            <TeamChip team={teamName} size="sm" />
+            <span className="flex flex-wrap items-center gap-1">
+              {teamObjs.map((tm) => (
+                <TeamChip key={tm.id} team={tm.name} size="sm" />
+              ))}
+            </span>
           </div>
         )}
         <DetailRow label={t('startTime')} value={slot.start_time} />

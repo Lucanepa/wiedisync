@@ -57,7 +57,7 @@ export function gameToVirtualSlots(
     created: '',
     updated: '',
     hall: hallIds[0],
-    team: game.kscw_team,
+    team: [game.kscw_team],
     day_of_week: dayIndex,
     start_time: minutesToTime(startMinutes),
     end_time: minutesToTime(endMinutes),
@@ -99,7 +99,7 @@ export function trainingToVirtualSlot(
     created: '',
     updated: '',
     hall: training.hall,
-    team: training.team,
+    team: training.team ? [training.team] : [],
     day_of_week: dayIndex,
     start_time: training.start_time.slice(0, 5),
     end_time: training.end_time.slice(0, 5),
@@ -188,7 +188,7 @@ export function hallEventToVirtualSlots(
     created: '',
     updated: '',
     hall: hallIds[0],
-    team: '',
+    team: [],
     day_of_week: dayIndex,
     start_time: startTime,
     end_time: endTime,
@@ -342,7 +342,7 @@ export function mergeVirtualSlots(
         if (
           slot.recurring &&
           slot.slot_type === 'training' &&
-          slot.team === game.kscw_team &&
+          slot.team.includes(game.kscw_team) &&
           slot.day_of_week === dayIndex
         ) {
           suppressedSlotDays.add(`${slot.id}-${dayIndex}`)
@@ -493,7 +493,7 @@ export function mergeVirtualSlots(
       if (
         slot.recurring &&
         slot.slot_type === 'training' &&
-        slot.team === game.kscw_team &&
+        slot.team.includes(game.kscw_team) &&
         slot.day_of_week === dayIndex
       ) {
         if (isClosedOnDate(slot.hall, gameDate, closures)) continue
@@ -607,7 +607,7 @@ export function mergeVirtualSlots(
   for (const slot of filteredReal) {
     if (!slot.recurring || slot.slot_type !== 'training') continue
     // Slots with a label but no team are external bookings — show as occupied, not available
-    if (slot.label && !slot.team) continue
+    if (slot.label && !slot.team?.length) continue
     const dayIdx = slot.day_of_week
     const dateStr = weekDays[dayIdx] ? toISODate(weekDays[dayIdx]) : ''
     if (!dateStr) continue

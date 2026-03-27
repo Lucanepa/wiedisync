@@ -45,8 +45,8 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
   // Sort: current/past slots first (by valid_from asc), then future slots (by valid_from asc)
   const slots = useMemo(() => {
     const filtered = selectedTeamId
-      ? allSlots.filter((s) => s.team === selectedTeamId)
-      : allSlots.filter((s) => (effectiveIsAdmin && hasAdminAccessToTeam(s.team)) || coachTeamIds.includes(s.team))
+      ? allSlots.filter((s) => s.team.includes(selectedTeamId))
+      : allSlots.filter((s) => s.team.some(t => (effectiveIsAdmin && hasAdminAccessToTeam(t)) || coachTeamIds.includes(t)))
     const today = new Date().toISOString().slice(0, 10)
     return [...filtered].sort((a, b) => {
       if (a.day_of_week !== b.day_of_week) return a.day_of_week - b.day_of_week

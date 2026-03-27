@@ -82,7 +82,7 @@ export default function HallenplanPage() {
       const allowedTeams = sportFilter === 'vb' ? teamsBySport.vb : teamsBySport.bb
       return slots.filter((s) => {
         // Slots with no team: need sport context to filter
-        if (!s.team) {
+        if (!s.team?.length) {
           // Virtual slots from a known team: check source team's sport
           if (s._virtual?.sourceRecord) {
             const sourceTeam = (s._virtual.sourceRecord as { team?: string }).team
@@ -92,7 +92,7 @@ export default function HallenplanPage() {
           return false
         }
         // Filter by sport
-        if (!allowedTeams.has(s.team)) return false
+        if (!s.team.some(t => allowedTeams.has(t))) return false
         // VB mode: filter out BB game hall events (GCal basketball games)
         if (sportFilter === 'vb' && s._virtual?.source === 'hall_event' && s.slot_type === 'game') return false
         return true
@@ -106,7 +106,7 @@ export default function HallenplanPage() {
     const now = new Date()
     const hallMap = new Map<string, Hall>(halls.map((h) => [h.id, h]))
     return filteredSlots
-      .filter((s) => s._virtual?.isFreed || (!s._virtual && !s.team))
+      .filter((s) => s._virtual?.isFreed || (!s._virtual && !s.team?.length))
       .filter((s) => {
         // Hide past slots that can no longer be claimed
         const slotDate = weekDays[s.day_of_week]
@@ -143,13 +143,13 @@ export default function HallenplanPage() {
 
   function handleSlotClick(slot: HallSlot) {
     const meta = slot._virtual
-    const canAdminTeam = !!slot.team && hasAdminAccessToTeam(slot.team)
+    const canAdminTeam = !!slot.team?.length && slot.team.some(t => hasAdminAccessToTeam(t))
     const canAdminCurrentSport = sportFilter === 'all'
       ? hasAdminAccessToSport('volleyball') || hasAdminAccessToSport('basketball')
       : hasAdminAccessToSport(sportFilter === 'vb' ? 'volleyball' : 'basketball')
     const canAdmin = canAdminTeam || canAdminCurrentSport
     // A real slot with no team = manually created "free" slot
-    const isManuallyFree = !meta && !slot.team
+    const isManuallyFree = !meta && !slot.team?.length
 
     // Admin mode: freed/manually-free slots → open slot editor (admins manage, not claim)
     if ((meta?.isFreed || isManuallyFree) && effectiveIsAdmin && canAdmin) {
@@ -185,7 +185,7 @@ export default function HallenplanPage() {
     }
 
     // Admin or coach (own team): real slots → open slot editor
-    if ((effectiveIsAdmin && canAdmin) || (isCoach && coachTeamIds.includes(slot.team))) {
+    if ((effectiveIsAdmin && canAdmin) || (isCoach && slot.team?.some(t => coachTeamIds.includes(t)))) {
       setEditingSlot(slot)
       setPrefill(null)
       setEditorOpen(true)
@@ -352,7 +352,7 @@ export default function HallenplanPage() {
               } else {
                 // No hall_slot reference — find matching slot by team + day + time
                 // Use the virtual slot's own data as fallback (sourceRecord may be empty for freed slots)
-                const slotTeam = training.team || virtualDetailSlot?.team
+                const slotTeam = training.team || virtualDetailSlot?.team?.[0]
                 const slotStartTime = training.start_time || virtualDetailSlot?.start_time
                 const slotEndTime = training.end_time || virtualDetailSlot?.end_time
                 let dbDay: number | undefined

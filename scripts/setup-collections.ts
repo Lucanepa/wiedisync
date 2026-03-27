@@ -180,7 +180,7 @@ const dependentCollections: CollectionDef[] = [
     type: 'base',
     fields: [
       relation('hall', hallsId, { required: true }),
-      relation('team', teamsId),
+      relation('team', teamsId, { maxSelect: 10 }),
       number('day_of_week'),
       text('start_time'),
       text('end_time'),

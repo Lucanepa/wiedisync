@@ -42,6 +42,7 @@ export default {
   addPlayer: 'Add player',
   searchPlaceholder: 'Search by name...',
   noSearchResults: 'No results',
+  memberAdded: '{{name}} added',
   currentRoster: 'Current roster ({{count}})',
   removeConfirmTitle: 'Remove player',
   removeConfirmMessage: 'Remove {{name}} from the roster?',

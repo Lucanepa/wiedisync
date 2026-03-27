@@ -122,6 +122,8 @@ export default function RosterEditor() {
     setAddingId(memberId)
     try {
       await create({ member: memberId, team: teamId, season })
+      const member = allMembers.find(m => m.id === memberId)
+      toast.success(t('memberAdded', { name: displayName(member ?? {} as Member) }))
       setSearch('')
       refetch()
     } catch {

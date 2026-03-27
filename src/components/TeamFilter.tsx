@@ -13,7 +13,7 @@ interface TeamFilterProps {
 }
 
 export default function TeamFilter({ selected, onChange, limitToTeamIds, groupBySport }: TeamFilterProps) {
-  const { data: allTeams } = usePB<Team>('teams', { filter: 'active=true', sort: 'name', perPage: 50 })
+  const { data: allTeams } = usePB<Team>('teams', { filter: { active: { _eq: true } }, sort: 'name', perPage: 50 })
 
   const teams = useMemo(() => {
     if (!limitToTeamIds || limitToTeamIds.length === 0) return allTeams

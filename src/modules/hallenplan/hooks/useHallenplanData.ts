@@ -23,58 +23,62 @@ export function useHallenplanData(
   })
 
   const { data: teams, isLoading: teamsLoading } = usePB<Team>('teams', {
-    filter: 'active = true',
+    filter: { active: { _eq: true } },
     sort: 'name',
     perPage: 50,
   })
 
-  const hallFilter = selectedHallIds.length > 0
-    ? `(${selectedHallIds.map((id) => `hall = "${id}"`).join(' || ')}) && `
-    : ''
-  const dateFilter = `(valid_from <= "${sundayStr}" || valid_from = "") && (valid_until >= "${mondayStr}" || valid_until = "")`
+  const hallCondition = selectedHallIds.length > 0
+    ? { hall: { _in: selectedHallIds } }
+    : null
+  const dateConditions: Record<string, unknown>[] = [
+    { _or: [{ valid_from: { _lte: sundayStr } }, { valid_from: { _empty: true } }] },
+    { _or: [{ valid_until: { _gte: mondayStr } }, { valid_until: { _empty: true } }] },
+  ]
+  const slotFilterConditions = [...dateConditions, ...(hallCondition ? [hallCondition] : [])]
 
   const {
     data: rawSlots,
     isLoading: slotsLoading,
     refetch: refetchSlots,
   } = usePB<HallSlot>('hall_slots', {
-    filter: `${hallFilter}${dateFilter}`,
-    expand: 'team,hall',
+    filter: { _and: slotFilterConditions },
     all: true,
     sort: 'day_of_week,start_time',
   })
 
-  const closureDateFilter = `start_date <= "${sundayStr}" && end_date >= "${mondayStr}"`
+  const closureDateConditions: Record<string, unknown>[] = [
+    { start_date: { _lte: sundayStr } },
+    { end_date: { _gte: mondayStr } },
+  ]
+  const closureFilterConditions = [...closureDateConditions, ...(hallCondition ? [hallCondition] : [])]
 
   const {
     data: closures,
     isLoading: closuresLoading,
     refetch: refetchClosures,
   } = usePB<HallClosure>('hall_closures', {
-    filter: `${hallFilter}${closureDateFilter}`,
-    expand: 'hall',
+    filter: { _and: closureFilterConditions },
     perPage: 100,
   })
 
   // Games for this week (exclude postponed)
   const { data: games, isLoading: gamesLoading } = usePB<Game>('games', {
-    filter: `date >= "${mondayStr}" && date <= "${sundayStr}" && status != "postponed"`,
-    expand: 'kscw_team',
+    filter: { _and: [{ date: { _gte: mondayStr } }, { date: { _lte: sundayStr } }, { status: { _neq: 'postponed' } }] },
     perPage: 100,
     sort: 'date,time',
   })
 
   // Trainings for this week
   const { data: trainings, isLoading: trainingsLoading } = usePB<Training>('trainings', {
-    filter: `date >= "${mondayStr}" && date <= "${sundayStr}"`,
-    expand: 'team',
+    filter: { _and: [{ date: { _gte: mondayStr } }, { date: { _lte: sundayStr } }] },
     all: true,
     sort: 'date,start_time',
   })
 
   // Hall events (GCal) for this week
   const { data: hallEvents, isLoading: hallEventsLoading } = usePB<HallEvent>('hall_events', {
-    filter: `date >= "${mondayStr}" && date <= "${sundayStr}"`,
+    filter: { _and: [{ date: { _gte: mondayStr } }, { date: { _lte: sundayStr } }] },
     perPage: 100,
     sort: 'date,start_time',
   })
@@ -85,8 +89,7 @@ export function useHallenplanData(
     isLoading: claimsLoading,
     refetch: refetchClaims,
   } = usePB<SlotClaim>('slot_claims', {
-    filter: `date >= "${mondayStr}" && date <= "${sundayStr}" && status = "active"`,
-    expand: 'claimed_by_team,claimed_by_member,hall_slot',
+    filter: { _and: [{ date: { _gte: mondayStr } }, { date: { _lte: sundayStr } }, { status: { _eq: 'active' } }] },
     perPage: 100,
   })
 

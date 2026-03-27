@@ -6,7 +6,6 @@ import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import { useMutation } from '../../hooks/useMutation'
 import { usePB } from '../../hooks/usePB'
-import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
 import { parseRespondByTime } from '../../utils/dateHelpers'
 import { Button } from '@/components/ui/button'
@@ -16,6 +15,7 @@ import DatePicker from '@/components/ui/DatePicker'
 import { Switch } from '@/components/ui/switch'
 import type { Training, Team, Hall, HallSlot, SlotClaim, TeamSettings } from '../../types'
 import type { RecurringEditScope } from './RecurringEditDialog'
+import { fetchAllItems, fetchItem, updateRecord } from '../../lib/api'
 
 // day_of_week in DB: 0=Mon, 1=Tue, ..., 6=Sun
 const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
@@ -51,7 +51,7 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
   const { hasAdminAccessToTeam, coachTeamIds } = useAuth()
   const { effectiveIsAdmin } = useAdminMode()
 
-  const { data: allTeams } = usePB<Team>('teams', { filter: 'active=true', sort: 'name', perPage: 50 })
+  const { data: allTeams } = usePB<Team>('teams', { filter: { active: { _eq: true } }, sort: 'name', perPage: 50 })
   const { data: halls } = usePB<Hall>('halls', { sort: 'name', perPage: 50 })
 
   // Non-admin coaches only see their own teams; admins in admin mode see all teams they have access to
@@ -95,17 +95,15 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
       setTeamClaims([])
       return
     }
-    pb.collection('hall_slots').getFullList<HallSlot>({
-      filter: `team~"${teamId}" && slot_type="training" && recurring=true`,
-      expand: 'hall',
-      sort: 'day_of_week,start_time',
+    fetchAllItems<HallSlot>('hall_slots', {
+      filter: `team~"${teamId}" && slot_type="training" && recurring=true` as any,
+      sort: ['day_of_week,start_time'],
     }).then(setTeamSlots).catch(() => setTeamSlots([]))
 
     const today = new Date().toISOString().split('T')[0]
-    pb.collection('slot_claims').getFullList<SlotClaim>({
-      filter: `claimed_by_team="${teamId}" && status="active" && date>="${today}"`,
-      expand: 'hall',
-      sort: 'date,start_time',
+    fetchAllItems<SlotClaim>('slot_claims', {
+      filter: `claimed_by_team="${teamId}" && status="active" && date>="${today}"` as any,
+      sort: ['date,start_time'],
     }).then(setTeamClaims).catch(() => setTeamClaims([]))
   }, [teamId])
 
@@ -118,7 +116,7 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
     if (defaultsAppliedForTeam.current === teamId) return
 
     defaultsAppliedForTeam.current = teamId
-    pb.collection('teams').getOne<{ features_enabled: TeamSettings }>(teamId, { fields: 'features_enabled' })
+    fetchItem<{ features_enabled: TeamSettings }>('teams', teamId, { fields: ['features_enabled'] })
       .then((team) => {
         const s = team.features_enabled ?? {}
         if (s.training_min_participants !== undefined) {
@@ -338,31 +336,31 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
     }
 
     // Find sibling trainings with same hall_slot, excluding the one we already updated
-    let filter = `hall_slot="${source.hall_slot}" && id!="${source.id}" && date>="${new Date().toISOString().split('T')[0]}"`
+    const filter = { _and: [{ hall_slot: { _eq: source.hall_slot } }, { id: { _neq: source.id } }, { date: { _gte: new Date().toISOString().split('T')[0] } }] }
 
     if (editScope === 'same_day') {
       // Same day of week: compute from source training date
       const dayOfWeek = new Date(source.date).getDay()
       // PB doesn't have day-of-week filter, so we fetch all and filter client-side
-      const allSiblings = await pb.collection('trainings').getFullList<Training>({
+      const allSiblings = await fetchAllItems<Training>('trainings', {
         filter,
-        sort: 'date',
+        sort: ['date'],
       })
       const sameDaySiblings = allSiblings.filter(
         (t) => new Date(t.date).getDay() === dayOfWeek,
       )
       for (const sibling of sameDaySiblings) {
-        await pb.collection('trainings').update(sibling.id, bulkData)
+        await updateRecord('trainings', sibling.id, bulkData)
         logActivity('update', 'trainings', sibling.id, bulkData)
       }
     } else {
       // All recurring
-      const allSiblings = await pb.collection('trainings').getFullList<Training>({
+      const allSiblings = await fetchAllItems<Training>('trainings', {
         filter,
-        sort: 'date',
+        sort: ['date'],
       })
       for (const sibling of allSiblings) {
-        await pb.collection('trainings').update(sibling.id, bulkData)
+        await updateRecord('trainings', sibling.id, bulkData)
         logActivity('update', 'trainings', sibling.id, bulkData)
       }
     }

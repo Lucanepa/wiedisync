@@ -9,7 +9,7 @@ export function usePolls(teamId: string) {
   const { user } = useAuth()
 
   const { data: polls, refetch: refetchPolls, isLoading } = usePB<Poll>('polls', {
-    filter: teamId ? `team="${teamId}"` : '',
+    filter: teamId ? { team: { _eq: teamId } } : { id: { _eq: -1 } },
     sort: '-created',
     all: true,
     enabled: !!teamId,
@@ -59,9 +59,8 @@ export function usePollVotes(pollId: string) {
   const { user } = useAuth()
 
   const { data: votes, refetch, isLoading } = usePB<PollVote>('poll_votes', {
-    filter: pollId ? `poll="${pollId}"` : '',
+    filter: pollId ? { poll: { _eq: pollId } } : { id: { _eq: -1 } },
     all: true,
-    expand: 'member',
     enabled: !!pollId,
   })
 

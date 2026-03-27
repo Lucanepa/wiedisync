@@ -52,7 +52,6 @@
     "exceljs": "^4.4.0",
     "i18next": "^25.8.13",
     "lucide-react": "^1.0.1",
-    "pocketbase": "^0.26.8",
     "qrcode.react": "^4.2.0",
     "radix-ui": "^1.4.3",
     "react": "^19.2.0",

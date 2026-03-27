@@ -9,16 +9,16 @@ export function useCarpool(gameId: string) {
   const { user } = useAuth()
 
   const { data: carpools, refetch: refetchCarpools, isLoading } = usePB<Carpool>('carpools', {
-    filter: gameId ? `game="${gameId}"` : '',
+    filter: gameId ? { game: { _eq: gameId } } : { id: { _eq: -1 } },
     all: true,
-    expand: 'driver',
     enabled: !!gameId,
   })
 
   const { data: passengers, refetch: refetchPassengers } = usePB<CarpoolPassenger>('carpool_passengers', {
-    filter: gameId ? carpools.map(c => `carpool="${c.id}"`).join(' || ') || 'carpool=""' : '',
+    filter: gameId && carpools.length > 0
+      ? { carpool: { _in: carpools.map(c => c.id) } }
+      : { id: { _eq: -1 } },
     all: true,
-    expand: 'passenger',
     enabled: !!gameId && carpools.length > 0,
   })
 

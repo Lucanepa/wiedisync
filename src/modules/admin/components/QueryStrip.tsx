@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import pb from '../../../pb'
 import { useAuth } from '../../../hooks/useAuth'
 import type { TemplateParam } from './TemplateParamForm'
+import { fetchAllItems } from '../../../lib/api'
 
 export interface QueryTemplate {
   id: string
@@ -50,8 +50,7 @@ export default function QueryStrip({ onSelect, onSelectTemplate }: QueryStripPro
 
   // Fetch saved queries and templates from PB
   useEffect(() => {
-    pb.collection('query_templates')
-      .getFullList<QueryTemplate>({ sort: 'name' })
+    fetchAllItems<QueryTemplate>('query_templates', { sort: ['name'] })
       .then((records) => {
         const saved = records.filter(
           (r) => r.type === 'saved' && r.owner === userId,

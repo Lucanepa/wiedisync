@@ -18,10 +18,9 @@ export function useBulkParticipationStatuses(
   const { user } = useAuth()
 
   // Build a single filter for all participations: member=X && (activity_id=A || activity_id=B || ...)
-  const participationFilter = useMemo(() => {
+  const participationFilter = useMemo((): Record<string, unknown> | string => {
     if (!user || activities.length === 0) return ''
-    const idClauses = activities.map((a) => `activity_id="${a.id}"`).join(' || ')
-    return `member="${user.id}" && (${idClauses})`
+    return { _and: [{ member: { _eq: user.id } }, { activity_id: { _in: activities.map(a => a.id) } }] }
   }, [user, activities])
 
   // Determine date range for absences
@@ -31,9 +30,9 @@ export function useBulkParticipationStatuses(
     return { minDate: dates[0] ?? '', maxDate: dates[dates.length - 1] ?? '' }
   }, [activities])
 
-  const absenceFilter = useMemo(() => {
+  const absenceFilter = useMemo((): Record<string, unknown> | string => {
     if (!user || !minDate || !maxDate) return ''
-    return `member="${user.id}" && start_date<="${maxDate}" && end_date>="${minDate}"`
+    return { _and: [{ member: { _eq: user.id } }, { start_date: { _lte: maxDate } }, { end_date: { _gte: minDate } }] }
   }, [user, minDate, maxDate])
 
   const { data: participations, isLoading: partLoading, refetch: refetchParticipations } = usePB<Participation>('participations', {

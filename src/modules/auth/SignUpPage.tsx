@@ -5,7 +5,6 @@ import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
 import { useAuth } from '../../hooks/useAuth'
 import { useTheme } from '../../hooks/useTheme'
 import { usePB } from '../../hooks/usePB'
-import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
 import { Button } from '@/components/ui/button'
 import Modal from '@/components/Modal'
@@ -24,6 +23,7 @@ import frFlag from '../../assets/flags/fr.svg'
 import itFlag from '../../assets/flags/it.svg'
 import chFlag from '../../assets/flags/ch.svg'
 import type { Team, MemberTeam } from '../../types'
+import { client, createRecord, fetchAllItems, kscwApi, updateRecord } from '../../lib/api'
 
 const flagMap: Record<string, string> = { de: deFlag, gb: gbFlag, fr: frFlag, it: itFlag, ch: chFlag }
 const TURNSTILE_SITE_KEY = '0x4AAAAAACoYmx3xiDfRbmv9'
@@ -56,12 +56,12 @@ export default function SignUpPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [showPrivacy, setShowPrivacy] = useState(false)
-  const [turnstileToken, setTurnstileToken] = useState('')
+  const [, setTurnstileToken] = useState('')
   const turnstileRef = useRef<TurnstileInstance>(null)
 
   // OTP state
   const [otpId, setOtpId] = useState('')
-  const [verificationToken, setVerificationToken] = useState('')
+  const [, setVerificationToken] = useState('')
   const [otpError, setOtpError] = useState('')
 
   // Multi-team state (for ClubDesk imports)
@@ -69,7 +69,7 @@ export default function SignUpPage() {
   const [additionalTeamIds, setAdditionalTeamIds] = useState<string[]>([])
 
   const { data: teams } = usePB<Team>('teams', {
-    filter: 'active=true',
+    filter: { active: { _eq: true } },
     sort: 'name',
     all: true,
   })
@@ -90,13 +90,9 @@ export default function SignUpPage() {
     setLoading(true)
 
     try {
-      const res = await pb.send('/api/check-email', {
+      const res = await kscwApi<{ exists: boolean; claimed: boolean }>('/check-email', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(turnstileToken ? { 'X-Turnstile-Token': turnstileToken } : {}),
-        },
-        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+        body: { email: email.trim().toLowerCase() },
       })
 
       if (res.exists && res.claimed) {
@@ -105,12 +101,12 @@ export default function SignUpPage() {
         return
       } else if (res.exists) {
         // Account exists but not claimed — request OTP for claim
-        const otpRes = await pb.collection('members').requestOTP(email.trim().toLowerCase())
+        const otpRes = await kscwApi<{ otpId: string }>('/auth/request-otp', { method: 'POST', body: { email: email.trim().toLowerCase() } })
         setOtpId(otpRes.otpId)
         setStep('otp-claim')
       } else {
         // New member — send verification email OTP
-        await pb.send('/api/verify-email', {
+        await kscwApi('/verify-email', {
           method: 'POST',
           body: { email: email.trim().toLowerCase() },
         })
@@ -129,7 +125,7 @@ export default function SignUpPage() {
   async function handleOtpVerifyComplete(code: string) {
     setOtpError('')
     try {
-      const res = await pb.send('/api/verify-email/confirm', {
+      const res = await kscwApi<{ verificationToken: string }>('/verify-email/confirm', {
         method: 'POST',
         body: { email: email.trim().toLowerCase(), code },
       })
@@ -144,7 +140,7 @@ export default function SignUpPage() {
   async function handleOtpVerifyResend() {
     setOtpError('')
     try {
-      await pb.send('/api/verify-email', {
+      await kscwApi('/verify-email', {
         method: 'POST',
         body: { email: email.trim().toLowerCase() },
       })
@@ -157,9 +153,9 @@ export default function SignUpPage() {
   async function handleOtpClaimComplete(code: string) {
     setOtpError('')
     try {
-      await pb.collection('members').authWithOTP(otpId, code)
+      await kscwApi('/auth/verify-otp', { method: 'POST', body: { otpId: otpId, code: code } })
       // Pre-fill form with existing member data
-      const member = pb.authStore.record
+      const member = (user as any)
       if (member) {
         if (member.first_name) setFirstName(member.first_name)
         if (member.last_name) setLastName(member.last_name)
@@ -167,9 +163,9 @@ export default function SignUpPage() {
       // Fetch existing member_teams for the current season
       try {
         const season = getCurrentSeason()
-        const mts = await pb.collection('member_teams').getFullList<MemberTeam & { expand?: { team?: Team } }>({
-          filter: `member="${pb.authStore.record!.id}" && season="${season}"`,
-          expand: 'team',
+        const mts = await fetchAllItems<MemberTeam & { expand?: { team?: Team } }>('member_teams', {
+          filter: { _and: [{ member: { _eq: (user as any)?.id } }, { season: { _eq: season } }] },
+          fields: ['*', 'team.*'],
         })
         setExistingTeams(mts)
       } catch {
@@ -185,7 +181,7 @@ export default function SignUpPage() {
   async function handleOtpClaimResend() {
     setOtpError('')
     try {
-      const otpRes = await pb.collection('members').requestOTP(email.trim().toLowerCase())
+      const otpRes = await kscwApi<{ otpId: string }>('/auth/request-otp', { method: 'POST', body: { email: email.trim().toLowerCase() } })
       setOtpId(otpRes.otpId)
     } catch {
       setOtpError(t('registrationFailed'))
@@ -228,7 +224,7 @@ export default function SignUpPage() {
     setLoading(true)
     try {
       // Set password via custom endpoint (also attempts auto-approve)
-      await pb.send('/api/set-password', {
+      await kscwApi('/set-password', {
         method: 'POST',
         body: { password, passwordConfirm },
       })
@@ -243,19 +239,19 @@ export default function SignUpPage() {
       if (additionalTeamIds.length > 0) {
         updateData.requested_team = additionalTeamIds[0]
       }
-      await pb.collection('members').update(pb.authStore.record!.id, updateData)
+      await updateRecord('members', (user as any)!.id, updateData)
 
       // Create team_requests for additional teams
       for (const teamId of additionalTeamIds) {
-        await pb.collection('team_requests').create({
-          member: pb.authStore.record!.id,
+        await createRecord('team_requests', {
+          member: (user as any)!.id,
           team: teamId,
           status: 'pending',
         })
       }
 
       // Refresh auth to pick up approval status
-      await pb.collection('members').authRefresh()
+      await client.refresh()
 
       // If user has existing teams → auto-approved → home
       // If only new teams requested → pending
@@ -289,8 +285,8 @@ export default function SignUpPage() {
     setLoading(true)
     try {
       // Derive club from the selected team
-      const selectedTeamObj = teams.find((t) => t.id === selectedTeam)
-      const newMember = await pb.collection('members').create({
+      // const selectedTeamObj = teams.find((t) => t.id === selectedTeam)
+      const newMember = await createRecord('members', {
         first_name: firstName,
         last_name: lastName,
         name: `${firstName} ${lastName}`,
@@ -305,15 +301,9 @@ export default function SignUpPage() {
         wiedisync_active: true,
         language: selectedLanguage,
         birthdate_visibility: 'hidden',
-        club: selectedTeamObj?.club || '',
-      }, {
-        headers: {
-          ...(turnstileToken ? { 'X-Turnstile-Token': turnstileToken } : {}),
-          ...(verificationToken ? { 'X-Verification-Token': verificationToken } : {}),
-        },
       })
       await login(email.trim().toLowerCase(), password)
-      logActivity('create', 'members', newMember.id, { first_name: firstName, last_name: lastName, requested_team: selectedTeam })
+      logActivity('create', 'members', (newMember as any).id, { first_name: firstName, last_name: lastName, requested_team: selectedTeam })
       navigate('/pending', { replace: true })
     } catch {
       setError(t('registrationFailed'))

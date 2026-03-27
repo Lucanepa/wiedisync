@@ -5,7 +5,6 @@ import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import { useMutation } from '../../hooks/useMutation'
 import { usePB } from '../../hooks/usePB'
-import pb from '../../pb'
 import { Button } from '@/components/ui/button'
 import { FormInput, FormTextarea, FormField } from '@/components/FormField'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -17,6 +16,7 @@ import { pbNameToColorKey } from '../../utils/teamColors'
 import { formatDateLocale } from '../../utils/dateUtils'
 import { parseRespondByTime, toPBDatetime } from '../../utils/dateHelpers'
 import type { Event, EventSession, Team } from '../../types'
+import { createRecord, deleteRecord, updateRecord } from '../../lib/api'
 
 interface SessionDraft {
   id?: string // existing PB record id (for edit mode)
@@ -60,7 +60,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
   const { user, coachTeamIds } = useAuth()
   const { effectiveIsAdmin } = useAdminMode()
   const { create, update, isLoading } = useMutation<Event>('events')
-  const { data: allTeams } = usePB<Team>('teams', { filter: 'active=true', sort: 'name', perPage: 50 })
+  const { data: allTeams } = usePB<Team>('teams', { filter: { active: { _eq: true } }, sort: 'name', perPage: 50 })
 
   // Filter teams by permissions: admins see all, coaches see only their teams
   const availableTeams = useMemo(() => {
@@ -100,7 +100,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
 
   // Fetch existing sessions when editing
   const { data: existingSessions } = usePB<EventSession>('event_sessions', {
-    filter: event ? `event="${event.id}"` : '',
+    filter: event ? { event: { _eq: event.id } } : { id: { _eq: -1 } },
     sort: 'sort_order,date,start_time',
     perPage: 100,
     enabled: !!event,
@@ -269,7 +269,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
       } else if (event) {
         // Switching from per_day/per_session back to whole — delete all sessions
         for (const s of existingSessions) {
-          await pb.collection('event_sessions').delete(s.id)
+          await deleteRecord('event_sessions', s.id)
         }
       }
 
@@ -601,7 +601,7 @@ async function syncSessions(
   // Delete removed
   for (const s of existing) {
     if (!draftIds.has(s.id)) {
-      await pb.collection('event_sessions').delete(s.id)
+      await deleteRecord('event_sessions', s.id)
     }
   }
 
@@ -616,9 +616,9 @@ async function syncSessions(
       sort_order: d.sort_order,
     }
     if (d.id && existingIds.has(d.id)) {
-      await pb.collection('event_sessions').update(d.id, payload)
+      await updateRecord('event_sessions', d.id, payload)
     } else {
-      await pb.collection('event_sessions').create(payload)
+      await createRecord('event_sessions', payload)
     }
   }
 }

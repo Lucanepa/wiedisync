@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
-import pb from '../../pb'
 import Modal from '@/components/Modal'
 import { Button } from '@/components/ui/button'
+import { deleteRecord } from '../../lib/api'
 
 interface DeleteAccountModalProps {
   open: boolean
@@ -35,7 +35,7 @@ export default function DeleteAccountModal({ open, onClose, userEmail }: DeleteA
     setIsDeleting(true)
     setError(null)
     try {
-      await pb.collection('members').delete(user.id)
+      await deleteRecord('members', user.id)
       logout()
       navigate('/', { replace: true })
     } catch {

@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button'
 import SearchableSelect from '@/components/ui/SearchableSelect'
 import { useAuth } from '../../hooks/useAuth'
 import { usePB } from '../../hooks/usePB'
-import pb from '../../pb'
 import type { Team } from '../../types'
+import { createRecord } from '../../lib/api'
 
 interface TeamRequestModalProps {
   open: boolean
@@ -34,15 +34,14 @@ export default function TeamRequestModal({ open, onClose, onComplete, currentTea
 
   // Fetch all active teams
   const { data: allTeams } = usePB<Team>('teams', {
-    filter: 'active=true',
+    filter: { active: { _eq: true } },
     sort: 'name',
     perPage: 50,
   })
 
   // Fetch existing pending requests for this user
   const { data: pendingRequests } = usePB<TeamRequest>('team_requests', {
-    filter: user ? `member="${user.id}" && status="pending"` : '',
-    expand: 'team',
+    filter: user ? { _and: [{ member: { _eq: user.id } }, { status: { _eq: 'pending' } }] } : { id: { _eq: -1 } },
     perPage: 50,
   })
 
@@ -63,7 +62,7 @@ export default function TeamRequestModal({ open, onClose, onComplete, currentTea
     setError('')
 
     try {
-      await pb.collection('team_requests').create({
+      await createRecord('team_requests', {
         member: user.id,
         team: selectedTeam,
         status: 'pending',

@@ -3,7 +3,6 @@ import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
 import { useParams, Link, Navigate } from 'react-router-dom'
 import { User } from 'lucide-react'
-import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
 import { coercePositions, getPositionI18nKey, getSelectablePositions, isNonPlayingStaff } from '../../utils/memberPositions'
 import { useAuth } from '../../hooks/useAuth'
@@ -19,6 +18,7 @@ import { getFileUrl } from '../../utils/pbFile'
 import { getCurrentSeason } from '../../utils/dateHelpers'
 import type { Team, Member, MemberPosition, MemberTeam, LicenceType, TeamSettings } from '../../types'
 import { Button } from '../../components/ui/button'
+import { fetchItems, updateRecord } from '../../lib/api'
 
 type LeadershipRole = 'coach' | 'captain' | 'team_responsible'
 const ROLES: LeadershipRole[] = ['coach', 'captain', 'team_responsible']
@@ -69,7 +69,7 @@ export default function RosterEditor() {
   const { teamSlug } = useParams<{ teamSlug: string }>()
   const { isCoachOf } = useAuth()
   const season = getCurrentSeason()
-  const { data: allMembers } = usePB<Member>('members', { filter: 'kscw_membership_active=true', all: true, sort: 'last_name', fields: 'id,name,first_name,last_name,photo,number,position,licences' })
+  const { data: allMembers } = usePB<Member>('members', { filter: { kscw_membership_active: { _eq: true } }, all: true, sort: 'last_name', fields: 'id,name,first_name,last_name,photo,number,position,licences' })
   const { create, remove } = useMutation<MemberTeam>('member_teams')
 
   const [team, setTeam] = useState<Team | null>(null)
@@ -86,9 +86,8 @@ export default function RosterEditor() {
 
   useEffect(() => {
     if (!teamSlug) return
-    pb.collection('teams')
-      .getFirstListItem<Team>(`name="${teamSlug}"`)
-      .then(setTeam)
+    fetchItems<Team>('teams', { filter: { name: { _eq: teamSlug } }, limit: 1 })
+      .then((items) => setTeam(items[0] ?? null))
       .catch(() => setTeam(null))
   }, [teamSlug])
 
@@ -152,7 +151,7 @@ export default function RosterEditor() {
       ? current.filter((id) => id !== memberId)
       : [...current, memberId]
     try {
-      await pb.collection('teams').update(team.id, { [role]: next })
+      await updateRecord('teams', team.id, { [role]: next })
       logActivity('update', 'teams', team.id, { [role]: next })
       setTeam((prev) => prev ? { ...prev, [role]: next } : prev)
     } catch {
@@ -166,7 +165,7 @@ export default function RosterEditor() {
     const has = currentLicences.includes(licence)
     const next = has ? currentLicences.filter((l) => l !== licence) : [...currentLicences, licence]
     try {
-      await pb.collection('members').update(memberId, { licences: next })
+      await updateRecord('members', memberId, { licences: next })
       logActivity('update', 'members', memberId, { licences: next })
       // Update local state
       const mt = members.find((m) => m.expand?.member?.id === memberId)
@@ -181,7 +180,7 @@ export default function RosterEditor() {
   async function saveNumber(memberId: string) {
     const num = numberValue ? parseInt(numberValue, 10) : 0
     try {
-      await pb.collection('members').update(memberId, { number: num })
+      await updateRecord('members', memberId, { number: num })
       logActivity('update', 'members', memberId, { number: num })
       const mt = members.find((m) => m.expand?.member?.id === memberId)
       if (mt?.expand?.member) {
@@ -195,7 +194,7 @@ export default function RosterEditor() {
 
   async function savePosition(memberId: string, positions: MemberPosition[]) {
     try {
-      await pb.collection('members').update(memberId, { position: positions })
+      await updateRecord('members', memberId, { position: positions })
       logActivity('update', 'members', memberId, { position: positions })
       const mt = members.find((m) => m.expand?.member?.id === memberId)
       if (mt?.expand?.member) {
@@ -218,7 +217,7 @@ export default function RosterEditor() {
     try {
       const formData = new FormData()
       formData.append('team_picture', file)
-      const updated = await pb.collection('teams').update<Team>(team.id, formData)
+      const updated = await updateRecord<Team>('teams', team.id, formData as unknown as Record<string, unknown>)
       logActivity('update', 'teams', team.id, { team_picture: updated.team_picture })
       setTeam((prev) => prev ? { ...prev, team_picture: updated.team_picture } : prev)
       toast.success(t('common:saved'))
@@ -233,7 +232,7 @@ export default function RosterEditor() {
     if (!team) return
     setUploadingPicture(true)
     try {
-      await pb.collection('teams').update(team.id, { team_picture: null })
+      await updateRecord('teams', team.id, { team_picture: null })
       logActivity('update', 'teams', team.id, { team_picture: null })
       setTeam((prev) => prev ? { ...prev, team_picture: '' } : prev)
       toast.success(t('common:saved'))
@@ -438,7 +437,7 @@ export default function RosterEditor() {
                       const currentLevel = mt.guest_level ?? 0
                       const nextLevel = (currentLevel + 1) % 4
                       try {
-                        await pb.collection('member_teams').update(mt.id, { guest_level: nextLevel })
+                        await updateRecord('member_teams', mt.id, { guest_level: nextLevel })
                         logActivity('update', 'member_teams', mt.id, { guest_level: nextLevel })
                         ;(mt as Record<string, unknown>).guest_level = nextLevel
                       } catch { toast.error(t('common:errorSaving')) }

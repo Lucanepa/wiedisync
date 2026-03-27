@@ -6,10 +6,10 @@ import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import { downloadICal } from '../../utils/icalGenerator'
 import type { CalendarEntry } from '../../types/calendar'
+import { API_URL } from '../../lib/api'
 
-import pb from '../../pb'
 
-const PB_URL = pb.baseUrl
+const PB_URL = API_URL
 
 type ICalMode = 'subscribe' | 'download'
 

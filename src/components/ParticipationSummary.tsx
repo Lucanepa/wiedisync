@@ -31,8 +31,8 @@ export default function ParticipationSummary({
   const skipFetch = !!prefetched
   const { data: fetched, isLoading, refetch } = usePB<Participation>('participations', {
     filter: activityId
-      ? `activity_type="${activityType}" && activity_id="${activityId}"`
-      : '',
+      ? { _and: [{ activity_type: { _eq: activityType } }, { activity_id: { _eq: activityId } }] }
+      : { id: { _eq: -1 } },
     all: true,
     enabled: !!activityId && !skipFetch,
   })

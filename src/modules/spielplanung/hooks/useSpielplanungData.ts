@@ -15,26 +15,25 @@ function buildGameFilter(
   filters: SpielplanungFilterState,
   seasonStart: string,
   seasonEnd: string,
-): string {
-  const parts: string[] = []
-  parts.push(`date >= "${seasonStart}" && date <= "${seasonEnd}"`)
+): Record<string, unknown> {
+  const conditions: Record<string, unknown>[] = [
+    { date: { _gte: seasonStart } },
+    { date: { _lte: seasonEnd } },
+  ]
 
   if (filters.sport !== 'all') {
-    parts.push(`kscw_team.sport = "${filters.sport}"`)
+    conditions.push({ 'kscw_team.sport': { _eq: filters.sport } })
   }
 
   if (filters.selectedTeamIds.length > 0) {
-    const teamClauses = filters.selectedTeamIds
-      .map((id) => `kscw_team = "${id}"`)
-      .join(' || ')
-    parts.push(`(${teamClauses})`)
+    conditions.push({ kscw_team: { _in: filters.selectedTeamIds } })
   }
 
   if (filters.gameType !== 'all') {
-    parts.push(`type = "${filters.gameType}"`)
+    conditions.push({ type: { _eq: filters.gameType } })
   }
 
-  return parts.join(' && ')
+  return { _and: conditions }
 }
 
 function gameToCalendarEntry(game: Game): CalendarEntry {
@@ -69,7 +68,6 @@ export function useSpielplanungData({
     error: gamesError,
   } = usePB<Game>('games', {
     filter: gameFilter,
-    expand: 'kscw_team,hall',
     sort: 'date,time',
     all: true,
   })
@@ -79,8 +77,7 @@ export function useSpielplanungData({
     isLoading: closuresLoading,
     error: closuresError,
   } = usePB<HallClosure>('hall_closures', {
-    filter: `start_date <= "${seasonEnd}" && end_date >= "${seasonStart}"`,
-    expand: 'hall',
+    filter: { _and: [{ start_date: { _lte: seasonEnd } }, { end_date: { _gte: seasonStart } }] },
     all: true,
   })
 

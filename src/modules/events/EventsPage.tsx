@@ -35,22 +35,35 @@ export default function EventsPage() {
   const today = useMemo(() => new Date().toISOString().split('T')[0], [])
 
   // Show events for selected team, or all user teams + club-wide events
-  const eventFilter = useMemo(() => {
-    const parts: string[] = []
-    if (!showPast) parts.push(`end_date >= "${today}" || (end_date = "" && start_date >= "${today}")`)
-    if (selectedTeam) {
-      parts.push(`(teams:length = 0 || teams~"${selectedTeam}")`)
-    } else if (allUserTeamIds.length > 0) {
-      const teamClauses = allUserTeamIds.map(id => `teams~"${id}"`).join(' || ')
-      parts.push(`(teams:length = 0 || ${teamClauses})`)
+  const eventFilter = useMemo((): Record<string, unknown> => {
+    const conditions: Record<string, unknown>[] = []
+    if (!showPast) {
+      conditions.push({
+        _or: [
+          { end_date: { _gte: today } },
+          { _and: [{ end_date: { _empty: true } }, { start_date: { _gte: today } }] },
+        ],
+      })
     }
-    return parts.join(' && ')
+    if (selectedTeam) {
+      conditions.push({
+        _or: [{ teams: { _empty: true } }, { teams: { _contains: selectedTeam } }],
+      })
+    } else if (allUserTeamIds.length > 0) {
+      conditions.push({
+        _or: [
+          { teams: { _empty: true } },
+          ...allUserTeamIds.map(id => ({ teams: { _contains: id } })),
+        ],
+      })
+    }
+    if (conditions.length === 0) return {}
+    return conditions.length === 1 ? conditions[0] : { _and: conditions }
   }, [allUserTeamIds, selectedTeam, showPast, today])
 
   const { data: events, isLoading, refetch } = usePB<EventExpanded>('events', {
     filter: eventFilter,
     sort: '+start_date',
-    expand: 'teams',
     perPage: 50,
     enabled: !teamsLoading,
   })
@@ -61,10 +74,9 @@ export default function EventsPage() {
 
   // Batch-fetch ALL participations for visible events in ONE request
   const eventIds = useMemo(() => events.map((e) => e.id), [events])
-  const participationFilter = useMemo(() => {
+  const participationFilter = useMemo((): Record<string, unknown> | string => {
     if (eventIds.length === 0) return ''
-    const idClauses = eventIds.map((id) => `activity_id="${id}"`).join(' || ')
-    return `activity_type="event" && (${idClauses})`
+    return { _and: [{ activity_type: { _eq: 'event' } }, { activity_id: { _in: eventIds } }] }
   }, [eventIds])
 
   const { data: allParticipations, refetch: refetchParticipations } = usePB<Participation>('participations', {

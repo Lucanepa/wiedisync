@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import pb from '../../../pb'
+import { kscwApi } from '../../../lib/api'
 
 export interface SlotData {
   id: string
@@ -51,7 +51,7 @@ export function useAvailableSlots(token: string | undefined) {
     setIsLoading(true)
     setError(null)
     try {
-      const resp = await pb.send(`/api/terminplanung/slots/${token}`, { method: 'GET' })
+      const resp = await kscwApi(`/terminplanung/slots/${token}`, { method: 'GET' })
       setData(resp as SlotsResponse)
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
@@ -64,7 +64,7 @@ export function useAvailableSlots(token: string | undefined) {
 
   const bookHomeSlot = useCallback(async (slotId: string) => {
     if (!token) throw new Error('No token')
-    const resp = await pb.send(`/api/terminplanung/book-home/${token}`, {
+    const resp = await kscwApi(`/terminplanung/book-home/${token}`, {
       method: 'POST',
       body: { slot_id: slotId },
     })
@@ -81,7 +81,7 @@ export function useAvailableSlots(token: string | undefined) {
     proposed_place_3: string
   }) => {
     if (!token) throw new Error('No token')
-    const resp = await pb.send(`/api/terminplanung/propose-away/${token}`, {
+    const resp = await kscwApi(`/terminplanung/propose-away/${token}`, {
       method: 'POST',
       body: proposals,
     })

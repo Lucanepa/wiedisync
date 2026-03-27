@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
 import { coercePositions, getPositionI18nKey, getSelectablePositions, isNonPlayingStaff } from '../../utils/memberPositions'
 import StatusBadge from '../../components/StatusBadge'
@@ -11,6 +10,7 @@ import type { ExpandedMemberTeam } from '../../hooks/useTeamMembers'
 import type { Team } from '../../types'
 import { cn } from '@/lib/utils'
 import { Button } from '../../components/ui/button'
+import { updateRecord } from '../../lib/api'
 
 interface MemberRowProps {
   memberTeam: ExpandedMemberTeam
@@ -71,7 +71,7 @@ export default function MemberRow({ memberTeam, teamId: _teamId, teamSlug, team,
 
   async function saveField(field: string, value: string | number | string[]) {
     try {
-      await pb.collection('members').update(member!.id, { [field]: value })
+      await updateRecord('members', member!.id, { [field]: value })
       logActivity('update', 'members', member!.id, { [field]: value })
       // Update the local expand to reflect change immediately
       if (memberTeam.expand?.member) {
@@ -90,7 +90,7 @@ export default function MemberRow({ memberTeam, teamId: _teamId, teamSlug, team,
       ? current.filter((id) => id !== member!.id)
       : [...current, member!.id]
     try {
-      await pb.collection('teams').update(team.id, { [roleKey]: next })
+      await updateRecord('teams', team.id, { [roleKey]: next })
       logActivity('update', 'teams', team.id, { [roleKey]: next })
       onTeamUpdate({ [roleKey]: next })
     } catch {

@@ -13,8 +13,8 @@ import { formatDate, toISODate } from '../../utils/dateHelpers'
 import ProfileEditModal from './ProfileEditModal'
 import DeleteAccountModal from './DeleteAccountModal'
 import TeamRequestModal from './TeamRequestModal'
-import pb from '../../pb'
 import type { MemberTeam, Team, Absence, LicenceType } from '../../types'
+import { updateRecord } from '../../lib/api'
 
 const LICENCE_LABELS: Record<LicenceType, string> = {
   scorer_vb: 'licenceScorer',
@@ -36,16 +36,14 @@ export default function ProfilePage() {
   const [teamRequestOpen, setTeamRequestOpen] = useState(false)
 
   const { data: memberTeams } = usePB<ExpandedMemberTeam>('member_teams', {
-    filter: user ? `member="${user.id}"` : '',
-    expand: 'team',
+    filter: user ? { member: { _eq: user.id } } : { id: { _eq: -1 } },
     perPage: 20,
   })
 
   // Pending team requests
   interface TeamRequest { id: string; collectionId: string; collectionName: string; member: string; team: string; status: string; expand?: { team?: Team } }
   const { data: pendingRequests, refetch: refetchRequests } = usePB<TeamRequest>('team_requests', {
-    filter: user ? `member="${user.id}" && status="pending"` : '',
-    expand: 'team',
+    filter: user ? { _and: [{ member: { _eq: user.id } }, { status: { _eq: 'pending' } }] } : { id: { _eq: -1 } },
     perPage: 20,
   })
 
@@ -56,7 +54,7 @@ export default function ProfilePage() {
 
   async function handleCancelRequest(requestId: string) {
     try {
-      await pb.collection('team_requests').update(requestId, { status: 'cancelled' })
+      await updateRecord('team_requests', requestId, { status: 'cancelled' })
       refetchRequests()
     } catch {
       // ignore
@@ -66,7 +64,7 @@ export default function ProfilePage() {
   const today = toISODate(new Date())
 
   const { data: activeAbsences } = usePB<Absence>('absences', {
-    filter: user ? `member="${user.id}" && end_date>="${today}"` : '',
+    filter: user ? { _and: [{ member: { _eq: user.id } }, { end_date: { _gte: today } }] } : { id: { _eq: -1 } },
     sort: 'start_date',
     perPage: 20,
   })

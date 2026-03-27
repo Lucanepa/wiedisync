@@ -1,6 +1,5 @@
 import { useState, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import pb from '../../pb'
 import { useAuth } from '../../hooks/useAuth'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
@@ -15,6 +14,7 @@ import ResultsTable from './components/ResultsTable'
 import ExportToolbar from './components/ExportToolbar'
 import CodeMirrorEditor from './components/CodeMirrorEditor'
 import type { CollectionInfo } from './components/TableBrowser'
+import { createRecord, kscwApi } from '../../lib/api'
 
 interface QueryTabProps {
   collections: CollectionInfo[]
@@ -94,10 +94,9 @@ export default function QueryTab({ collections }: QueryTabProps) {
       setError(null)
       const start = performance.now()
       try {
-        const res = (await pb.send('/api/admin/sql', {
+        const res = (await kscwApi('/admin/sql', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: q }),
+body: { query: q },
         })) as { success: boolean; columns: string[]; rows: unknown[][]; message?: string }
 
         if (!res.success) {
@@ -164,7 +163,7 @@ export default function QueryTab({ collections }: QueryTabProps) {
     async (name: string) => {
       if (!name.trim() || !user?.id) return
       try {
-        await pb.collection('query_templates').create({
+        await createRecord('query_templates', {
           name: name.trim(),
           query,
           type: 'saved',

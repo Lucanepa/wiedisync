@@ -1,12 +1,12 @@
 import { useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import pb from '../../../pb'
 import { Button } from '@/components/ui/button'
 import ResultsTable from './ResultsTable'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import CodeMirrorEditor from './CodeMirrorEditor'
 import ExportToolbar from './ExportToolbar'
 import type { CollectionInfo } from './TableBrowser'
+import { kscwApi } from '../../../lib/api'
 
 interface SqlResult {
   success: boolean
@@ -52,10 +52,9 @@ export default function SqlEditor({ collections }: SqlEditorProps) {
     setExecTimeMs(null)
     const start = performance.now()
     try {
-      const res = (await pb.send('/api/admin/sql', {
+      const res = (await kscwApi('/admin/sql', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: q }),
+body: { query: q },
       })) as SqlResult
       setExecTimeMs(Math.round(performance.now() - start))
       setResult(res)

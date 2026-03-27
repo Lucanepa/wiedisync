@@ -1,0 +1,438 @@
+/**
+ * Volleymanager Sync Check
+ *
+ * Fetches teams, players, writers, and team assignments from
+ * volleymanager.volleyball.ch and upserts into Directus `sv_vm_check`.
+ *
+ * Run: node vm-sync-check.mjs
+ * Env: VM_USERNAME, VM_PASSWORD, DIRECTUS_URL, DIRECTUS_TOKEN (or ADMIN_EMAIL+ADMIN_PASSWORD)
+ */
+
+// ─── Config ──────────────────────────────────────────────────────────
+const VM_BASE = 'https://volleymanager.volleyball.ch';
+const VM_USERNAME = process.env.VM_USERNAME || 'luca_canepa';
+const VM_PASSWORD = process.env.VM_PASSWORD || 'REDACTED_VM_PASSWORD';
+const DIRECTUS_URL = process.env.DIRECTUS_URL || 'https://directus-dev.kscw.ch';
+const DIRECTUS_EMAIL = process.env.ADMIN_EMAIL || 'admin@kscw.ch';
+const DIRECTUS_PASSWORD = process.env.ADMIN_PASSWORD || 'REDACTED_ADMIN_PASSWORD';
+const UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36';
+
+// ─── Cookie jar ──────────────────────────────────────────────────────
+class CookieJar {
+  constructor() { this.cookies = {}; }
+  update(r) {
+    for (const h of r.headers.getSetCookie?.() ?? []) {
+      const m = h.match(/^([^=]+)=([^;]*)/);
+      if (m) this.cookies[m[1]] = m[2];
+    }
+  }
+  set(n, v) { this.cookies[n] = v; }
+  header() { return Object.entries(this.cookies).map(([k, v]) => `${k}=${v}`).join('; '); }
+}
+
+// ─── HTTP helpers ────────────────────────────────────────────────────
+async function follow(url, jar, init = {}, max = 10) {
+  let u = url, opts = init;
+  for (let i = 0; i < max; i++) {
+    const r = await fetch(u, {
+      ...opts,
+      headers: { 'User-Agent': UA, Cookie: jar.header(), ...(opts.headers ?? {}) },
+      redirect: 'manual',
+    });
+    jar.update(r);
+    const body = await r.text();
+    const loc = r.headers.get('location') || '';
+    if (r.status >= 300 && r.status < 400 && loc) {
+      u = loc.startsWith('http') ? loc : `${VM_BASE}${loc}`;
+      opts = {};
+      continue;
+    }
+    return { response: r, body };
+  }
+  throw new Error(`Too many redirects: ${url}`);
+}
+
+// ─── Auth ────────────────────────────────────────────────────────────
+async function vmLogin() {
+  const jar = new CookieJar();
+  jar.set('language', 'de');
+
+  // 1. Login page → hidden fields
+  const { body: html } = await follow(`${VM_BASE}/login`, jar);
+  const fields = {};
+  for (const m of html.matchAll(/name="([^"]+)"[^>]*value="([^"]*?)"/g))
+    fields[m[1]] = m[2];
+  fields['__authentication[Neos][Flow][Security][Authentication][Token][UsernamePassword][username]'] = VM_USERNAME;
+  fields['__authentication[Neos][Flow][Security][Authentication][Token][UsernamePassword][password]'] = VM_PASSWORD;
+
+  // 2. POST credentials
+  await follow(`${VM_BASE}/sportmanager.security/authentication/authenticate`, jar, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams(fields).toString(),
+  });
+
+  // 3. Dashboard (sets session permissions)
+  await follow(`${VM_BASE}/`, jar);
+
+  // 4. Extract CSRF from an index page
+  const { body: idx } = await follow(
+    `${VM_BASE}/sportmanager.indoorvolleyball/indoorplayer/index`,
+    jar,
+    { headers: { Accept: 'text/html', Referer: `${VM_BASE}/` } },
+  );
+  const csrf = idx.match(/data-csrf-token="([^"]+)"/)?.[1] || '';
+  const wuid = idx.match(/data-window-unique-id="([^"]+)"/)?.[1] || '';
+  if (!csrf) throw new Error('CSRF token extraction failed');
+
+  return { jar, csrf, wuid };
+}
+
+// ─── Generic paginated search ────────────────────────────────────────
+async function vmSearch(jar, csrf, wuid, resourcePath, properties, {
+  batchSize = 200,
+  referer = '/sportmanager.indoorvolleyball/indoorplayer/index',
+} = {}) {
+  const base = `${VM_BASE}${resourcePath}/search`;
+  const headers = {
+    'User-Agent': UA,
+    'Content-Type': 'text/plain;charset=UTF-8',
+    Accept: '*/*',
+    Origin: VM_BASE,
+    Referer: `${VM_BASE}${referer}`,
+    Cookie: jar.header(),
+  };
+  if (wuid) headers['Window-Unique-Id'] = wuid;
+
+  const allItems = [];
+  let total = Infinity;
+  let offset = 0;
+
+  while (offset < total) {
+    const params = new URLSearchParams();
+    params.set('searchConfiguration[offset]', String(offset));
+    params.set('searchConfiguration[limit]', String(batchSize));
+    params.set('searchConfiguration[textSearchOperator]', 'AND');
+    properties.forEach((p, i) => params.set(`propertyRenderConfiguration[${i}]`, p));
+    params.set('__csrfToken', csrf);
+
+    const r = await fetch(base, { method: 'POST', headers, body: params.toString() });
+    if (!r.ok) {
+      const text = await r.text();
+      const msg = text.match(/In path ([^:]+):/)?.[0] || `HTTP ${r.status}`;
+      throw new Error(`${resourcePath}: ${msg}`);
+    }
+    const json = await r.json();
+    total = json.totalItemsCount ?? 0;
+    const items = json.items ?? [];
+    allItems.push(...items);
+    if (items.length === 0) break;
+    offset += items.length;
+  }
+  return allItems;
+}
+
+// ─── Fetch functions ─────────────────────────────────────────────────
+
+async function fetchTeams(jar, csrf, wuid) {
+  console.log('[1/4] Fetching teams...');
+  const items = await vmSearch(jar, csrf, wuid,
+    '/api/sportmanager.indoorvolleyball/api%5cteam',
+    [
+      'club.identifier',
+      'club.name',
+      'season.name',
+      'season.displayName',
+      'leagueCategory.name',
+      'leagueCategory.managingAssociation.shortName',
+    ],
+    { referer: '/sportmanager.indoorvolleyball/team/index' },
+  );
+  console.log(`  → ${items.length} teams`);
+  return items.map(t => ({
+    team_id: t.staticTeamIdentifier,
+    team_uuid: t.__identity,
+    team_name: t.translations?.de?.name || t.name,
+    gender: t.gender,
+    active: t.active,
+    season: t.season?.displayName || t.season?.name || null,
+    league_category: t.leagueCategory?.name || null,
+    managing_assoc: t.leagueCategory?.managingAssociation?.shortName || null,
+  }));
+}
+
+async function fetchPlayers(jar, csrf, wuid) {
+  console.log('[2/4] Fetching indoor players...');
+  const items = await vmSearch(jar, csrf, wuid,
+    '/api/sportmanager.indoorvolleyball/api%5cindoorplayer',
+    [
+      'person.associationId',
+      'person.lastName',
+      'person.firstName',
+      'person.gender',
+      'person.nationality.countryName',
+      'person.correspondenceLanguage',
+      'person.primaryEmailAddress.emailAddress',
+      'person.primaryPhoneNumber.normalizedLocalNumber',
+      'currentLicense.licenseCategory.shortName',
+      'currentLicense.licenseCategory.name',
+      'currentLicense.club.identifier',
+      'currentLicense.club.name',
+      'currentLicense.activatedInCurrentSeason',
+      'currentLicense.validatedInCurrentSeason',
+    ],
+  );
+  console.log(`  → ${items.length} players`);
+  return items;
+}
+
+async function fetchWriters(jar, csrf, wuid) {
+  console.log('[3/4] Fetching indoor writers...');
+  const items = await vmSearch(jar, csrf, wuid,
+    '/api/sportmanager.indoorvolleyball/api%5cindoorwriter',
+    [
+      'person.associationId',
+      'person.lastName',
+      'person.firstName',
+      'person.gender',
+      'person.primaryEmailAddress.emailAddress',
+      'currentLicense.regionalAssociation.shortName',
+    ],
+    { referer: '/sportmanager.indoorvolleyball/indoorwriter/index' },
+  );
+  console.log(`  → ${items.length} writers`);
+  return items;
+}
+
+async function fetchTeamMembers(jar, csrf, wuid) {
+  console.log('[4/4] Fetching team-player assignments...');
+  const items = await vmSearch(jar, csrf, wuid,
+    '/api/sportmanager.indoorvolleyball/api%5cteamaddressorganisationmember',
+    [
+      'person.associationId',
+      'person.lastName',
+      'person.firstName',
+      'team.staticTeamIdentifier',
+      'team.name',
+      'team.active',
+      'team.gender',
+      'addressOrganisationMemberFunction.title',
+    ],
+    { referer: '/sportmanager.indoorvolleyball/team/index' },
+  );
+  console.log(`  → ${items.length} team-member assignments`);
+  return items;
+}
+
+// ─── Merge into flat check table ─────────────────────────────────────
+
+function buildCheckTable(players, writers, teamMembers, teams) {
+  // Index writers by associationId → Set
+  const writerIds = new Set();
+  for (const w of writers) {
+    const id = w.person?.associationId;
+    if (id) writerIds.add(id);
+  }
+
+  // Index team members: associationId → array of { team_id, team_name, function }
+  const memberTeams = new Map();
+  for (const tm of teamMembers) {
+    const id = tm.person?.associationId;
+    const teamId = tm.team?.staticTeamIdentifier;
+    if (!id) continue;
+    if (!memberTeams.has(id)) memberTeams.set(id, []);
+    memberTeams.get(id).push({
+      team_id: teamId,
+      team_name: tm.team?.name || null,
+      team_active: tm.team?.active ?? null,
+      function: tm.addressOrganisationMemberFunction?.title || null,
+    });
+  }
+
+  // Index teams by staticTeamIdentifier (current season only)
+  const teamMap = new Map();
+  for (const t of teams) {
+    if (!teamMap.has(t.team_id)) teamMap.set(t.team_id, t);
+  }
+
+  // Build flat rows from players
+  const rows = [];
+  for (const p of players) {
+    const person = p.person || {};
+    const license = p.currentLicense || {};
+    const assocId = person.associationId;
+
+    // Get team assignments for this person
+    const assignments = memberTeams.get(assocId) || [];
+    // Pick active team assignments, prefer ones with team_active=true
+    const activeAssignments = assignments.filter(a => a.team_active !== false);
+    const teamNames = activeAssignments.map(a => a.team_name).filter(Boolean);
+    const teamIds = activeAssignments.map(a => a.team_id).filter(Boolean);
+
+    // Get primary email
+    const email = person.primaryEmailAddress?.emailAddress
+      || person.emailAddresses?.find(e => e.isPrimary)?.emailAddress
+      || person.emailAddresses?.[0]?.emailAddress
+      || null;
+
+    rows.push({
+      association_id: assocId,
+      first_name: person.firstName || null,
+      last_name: person.lastName || null,
+      gender: person.gender || null,
+      email,
+      licence_category: license.licenseCategory?.shortName || license.licenseCategory?.name || null,
+      licence_activated: license.activatedInCurrentSeason ?? null,
+      licence_validated: license.validatedInCurrentSeason ?? null,
+      is_writer: writerIds.has(assocId),
+      team_names: teamNames.length > 0 ? teamNames.join(', ') : null,
+      team_ids: teamIds.length > 0 ? teamIds.join(', ') : null,
+      synced_at: new Date().toISOString(),
+    });
+  }
+
+  return rows;
+}
+
+// ─── Directus upsert ─────────────────────────────────────────────────
+
+async function getDirectusToken() {
+  const res = await fetch(`${DIRECTUS_URL}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: DIRECTUS_EMAIL, password: DIRECTUS_PASSWORD }),
+  });
+  if (!res.ok) throw new Error(`Directus auth failed: ${res.status}`);
+  const { data } = await res.json();
+  return data.access_token;
+}
+
+async function upsertToDirectus(rows) {
+  console.log(`\nUpserting ${rows.length} rows to Directus sv_vm_check...`);
+  const token = await getDirectusToken();
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  };
+
+  // Fetch existing records keyed by association_id
+  const existing = new Map();
+  let page = 1;
+  while (true) {
+    const res = await fetch(
+      `${DIRECTUS_URL}/items/sv_vm_check?fields=id,association_id&limit=250&page=${page}`,
+      { headers },
+    );
+    if (!res.ok) throw new Error(`Directus list failed: ${res.status}`);
+    const { data } = await res.json();
+    if (!data || data.length === 0) break;
+    for (const r of data) existing.set(r.association_id, r.id);
+    page++;
+  }
+  console.log(`  Existing records: ${existing.size}`);
+
+  let created = 0, updated = 0, errors = 0;
+
+  // Process in batches of 50
+  const BATCH = 50;
+  for (let i = 0; i < rows.length; i += BATCH) {
+    const batch = rows.slice(i, i + BATCH);
+
+    const toCreate = [];
+    const toUpdate = [];
+    for (const row of batch) {
+      const directusId = existing.get(row.association_id);
+      if (directusId) {
+        toUpdate.push({ ...row, id: directusId });
+      } else {
+        toCreate.push(row);
+      }
+    }
+
+    // Batch create
+    if (toCreate.length > 0) {
+      const res = await fetch(`${DIRECTUS_URL}/items/sv_vm_check`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(toCreate),
+      });
+      if (res.ok) {
+        created += toCreate.length;
+      } else {
+        const text = await res.text();
+        console.error(`  Create batch error: ${res.status} ${text.slice(0, 200)}`);
+        errors += toCreate.length;
+      }
+    }
+
+    // Batch update
+    if (toUpdate.length > 0) {
+      const res = await fetch(`${DIRECTUS_URL}/items/sv_vm_check`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify(toUpdate),
+      });
+      if (res.ok) {
+        updated += toUpdate.length;
+      } else {
+        const text = await res.text();
+        console.error(`  Update batch error: ${res.status} ${text.slice(0, 200)}`);
+        errors += toUpdate.length;
+      }
+    }
+  }
+
+  // Delete records that no longer exist in VM
+  const currentIds = new Set(rows.map(r => r.association_id));
+  const toDelete = [...existing.entries()]
+    .filter(([assocId]) => !currentIds.has(assocId))
+    .map(([, directusId]) => directusId);
+
+  if (toDelete.length > 0) {
+    const res = await fetch(`${DIRECTUS_URL}/items/sv_vm_check`, {
+      method: 'DELETE',
+      headers,
+      body: JSON.stringify(toDelete),
+    });
+    if (res.ok) {
+      console.log(`  Deleted ${toDelete.length} stale records`);
+    } else {
+      console.error(`  Delete error: ${res.status}`);
+    }
+  }
+
+  console.log(`  Created: ${created}, Updated: ${updated}, Errors: ${errors}`);
+}
+
+// ─── Main ────────────────────────────────────────────────────────────
+
+async function main() {
+  const t0 = Date.now();
+
+  const { jar, csrf, wuid } = await vmLogin();
+  console.log('✓ Logged in to Volleymanager\n');
+
+  // Fetch all 4 datasets
+  const teams = await fetchTeams(jar, csrf, wuid);
+  const players = await fetchPlayers(jar, csrf, wuid);
+  const writers = await fetchWriters(jar, csrf, wuid);
+  const teamMembers = await fetchTeamMembers(jar, csrf, wuid);
+
+  // Build merged table
+  console.log('\nMerging...');
+  const rows = buildCheckTable(players, writers, teamMembers, teams);
+
+  // Upsert to Directus
+  await upsertToDirectus(rows);
+
+  // Summary
+  const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+  console.log(`\n========== SUMMARY (${elapsed}s) ==========`);
+  console.log(`Teams:          ${teams.length}`);
+  console.log(`Players:        ${rows.length}`);
+  console.log(`  ├ Writers:    ${rows.filter(r => r.is_writer).length}`);
+  console.log(`  └ With team:  ${rows.filter(r => r.team_names).length}`);
+  console.log(`Team members:   ${teamMembers.length} assignments`);
+}
+
+main().catch(e => { console.error('✗ Fatal:', e.message); process.exit(1); });

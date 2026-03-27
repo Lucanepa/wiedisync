@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import directus from '../directus'
+import { client as directus } from '../lib/api'
 
 type RealtimeAction = 'create' | 'update' | 'delete'
 

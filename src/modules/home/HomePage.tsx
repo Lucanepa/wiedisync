@@ -54,17 +54,16 @@ export default function HomePage() {
 
   const today = useMemo(() => new Date().toISOString().split('T')[0], [])
 
-  // Sport filter clause for PB queries (filter via kscw_team relation)
-  const sportFilter = useMemo(() => {
-    if (sport === 'vb') return 'kscw_team.sport = "volleyball"'
-    if (sport === 'bb') return 'kscw_team.sport = "basketball"'
-    return '' // 'all' — no filter
+  // Sport filter for Directus queries (filter via kscw_team relation)
+  const sportFilter = useMemo((): Record<string, unknown> | null => {
+    if (sport === 'vb') return { 'kscw_team.sport': { _eq: 'volleyball' } }
+    if (sport === 'bb') return { 'kscw_team.sport': { _eq: 'basketball' } }
+    return null
   }, [sport])
 
   // Fetch user's team memberships (only when logged in)
   const { data: memberTeams, isLoading: memberTeamsLoading } = usePB<MemberTeamExpanded>('member_teams', {
-    filter: user ? `member="${user.id}"` : '',
-    expand: 'team',
+    filter: user ? { member: { _eq: user.id } } : { id: { _eq: -1 } },
     perPage: 20,
     enabled: !!user,
   })
@@ -73,65 +72,81 @@ export default function HomePage() {
   const hasTeams = userTeamIds.length > 0
 
   // Build team filter for games
-  const teamGameFilter = useMemo(() => {
-    if (!hasTeams) return ''
-    return userTeamIds.map((id) => `kscw_team="${id}"`).join(' || ')
+  const teamGameFilter = useMemo((): Record<string, unknown> | null => {
+    if (!hasTeams) return null
+    return { kscw_team: { _in: userTeamIds } }
   }, [userTeamIds, hasTeams])
 
   // Next 5 upcoming games (all) — only fetch when user toggled "show all" or has no teams
-  const allGamesFilter = [`status = "scheduled"`, `date >= "${today}"`, sportFilter].filter(Boolean).join(' && ')
+  const allGamesFilter = useMemo((): Record<string, unknown> => {
+    const conditions: Record<string, unknown>[] = [{ status: { _eq: 'scheduled' } }, { date: { _gte: today } }]
+    if (sportFilter) conditions.push(sportFilter)
+    return { _and: conditions }
+  }, [today, sportFilter])
   const { data: allNextGames, isLoading: gamesLoading } = usePB<ExpandedGame>('games', {
     filter: allGamesFilter,
     sort: '+date,+time',
-    expand: 'kscw_team,hall',
     perPage: 5,
     enabled: showAllGames || !hasTeams,
   })
 
   // Next 5 upcoming games (my teams only)
-  const myGamesFilter = [`status = "scheduled"`, `date >= "${today}"`, `(${teamGameFilter})`, sportFilter].filter(Boolean).join(' && ')
+  const myGamesFilter = useMemo((): Record<string, unknown> => {
+    const conditions: Record<string, unknown>[] = [{ status: { _eq: 'scheduled' } }, { date: { _gte: today } }]
+    if (teamGameFilter) conditions.push(teamGameFilter)
+    if (sportFilter) conditions.push(sportFilter)
+    return { _and: conditions }
+  }, [today, teamGameFilter, sportFilter])
   const { data: myNextGames } = usePB<ExpandedGame>('games', {
     filter: myGamesFilter,
     sort: '+date,+time',
-    expand: 'kscw_team,hall',
     perPage: 5,
     enabled: hasTeams && !showAllGames,
   })
 
   // Latest 5 results (all) — only fetch when user toggled "show all" or has no teams
-  const allResultsFilter = [`status = "completed"`, sportFilter].filter(Boolean).join(' && ')
+  const allResultsFilter = useMemo((): Record<string, unknown> => {
+    const conditions: Record<string, unknown>[] = [{ status: { _eq: 'completed' } }]
+    if (sportFilter) conditions.push(sportFilter)
+    return conditions.length === 1 ? conditions[0] : { _and: conditions }
+  }, [sportFilter])
   const { data: allLatestResults, isLoading: resultsLoading } = usePB<ExpandedGame>('games', {
     filter: allResultsFilter,
     sort: '-date,-time',
-    expand: 'kscw_team,hall',
     perPage: 5,
     enabled: showAllResults || !hasTeams,
   })
 
   // Latest 5 results (my teams only)
-  const myResultsFilter = [`status = "completed"`, `(${teamGameFilter})`, sportFilter].filter(Boolean).join(' && ')
+  const myResultsFilter = useMemo((): Record<string, unknown> => {
+    const conditions: Record<string, unknown>[] = [{ status: { _eq: 'completed' } }]
+    if (teamGameFilter) conditions.push(teamGameFilter)
+    if (sportFilter) conditions.push(sportFilter)
+    return conditions.length === 1 ? conditions[0] : { _and: conditions }
+  }, [teamGameFilter, sportFilter])
   const { data: myLatestResults } = usePB<ExpandedGame>('games', {
     filter: myResultsFilter,
     sort: '-date,-time',
-    expand: 'kscw_team,hall',
     perPage: 5,
     enabled: hasTeams && !showAllResults,
   })
 
   // Next trainings for user's teams
-  const trainingFilter = useMemo(() => {
+  const trainingFilter = useMemo((): Record<string, unknown> | string => {
     if (!hasTeams) return ''
-    const teamPart = userTeamIds.map((id) => `team="${id}"`).join(' || ')
-    const parts = [`(${teamPart})`, `date >= "${today}"`, `cancelled = false`]
-    if (sport === 'vb') parts.push('team.sport = "volleyball"')
-    else if (sport === 'bb') parts.push('team.sport = "basketball"')
-    return parts.join(' && ')
+    const conditions: Record<string, unknown>[] = [
+      { team: { _in: userTeamIds } },
+      { date: { _gte: today } },
+      { cancelled: { _eq: false } },
+    ]
+    if (sport === 'vb') conditions.push({ 'team.sport': { _eq: 'volleyball' } })
+    else if (sport === 'bb') conditions.push({ 'team.sport': { _eq: 'basketball' } })
+    return { _and: conditions }
   }, [userTeamIds, hasTeams, today, sport])
 
   const { data: nextTrainings, isLoading: trainingsLoading } = usePB<TrainingExpanded>('trainings', {
     filter: trainingFilter,
     sort: '+date,+start_time',
-    expand: 'team,hall,coach',
     perPage: 10,
     enabled: hasTeams,
   })
@@ -142,23 +157,26 @@ export default function HomePage() {
 
   // Upcoming events — scope to user's teams + club-wide events
   // Non-logged-in users only see club-wide events (no team-specific ones)
-  const eventFilter = useMemo(() => {
-    const parts = [`end_date >= "${today}"`]
+  const eventFilter = useMemo((): Record<string, unknown> => {
+    const conditions: Record<string, unknown>[] = [{ end_date: { _gte: today } }]
     if (hasTeams) {
-      const teamClauses = userTeamIds.map(id => `teams~"${id}"`).join(' || ')
-      parts.push(`(teams:length = 0 || ${teamClauses})`)
+      conditions.push({
+        _or: [
+          { teams: { _empty: true } },
+          ...userTeamIds.map(id => ({ teams: { _contains: id } })),
+        ],
+      })
     } else {
       // Non-logged-in: only club-wide events (no teams) with public event types
-      parts.push('teams:length = 0')
-      parts.push('(event_type = "verein" || event_type = "social")')
+      conditions.push({ teams: { _empty: true } })
+      conditions.push({ event_type: { _in: ['verein', 'social'] } })
     }
-    return parts.join(' && ')
+    return { _and: conditions }
   }, [today, hasTeams, userTeamIds])
 
   const { data: events, isLoading: eventsLoading } = usePB<EventExpanded>('events', {
     filter: eventFilter,
     sort: '+start_date',
-    expand: 'teams',
     perPage: 10,
   })
 

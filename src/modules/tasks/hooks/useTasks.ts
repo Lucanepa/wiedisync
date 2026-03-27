@@ -10,8 +10,8 @@ export function useTasks(activityType: 'game' | 'training' | 'event', activityId
 
   const { data: tasks, isLoading, refetch } = usePB<Task>('tasks', {
     filter: activityId
-      ? `activity_type="${activityType}" && activity_id="${activityId}"`
-      : '',
+      ? { _and: [{ activity_type: { _eq: activityType } }, { activity_id: { _eq: activityId } }] }
+      : { id: { _eq: -1 } },
     all: true,
     sort: 'sort_order',
     enabled: !!activityId,
@@ -102,7 +102,7 @@ export function useTaskTemplates(teamId?: string) {
   const { user } = useAuth()
 
   const { data: templates, isLoading, refetch } = usePB<TaskTemplate>('task_templates', {
-    filter: teamId ? `team="${teamId}"` : '',
+    filter: teamId ? { team: { _eq: teamId } } : { id: { _eq: -1 } },
     all: true,
     enabled: !!teamId,
   })

@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import pb from '../../pb'
 import { useInfraHealth } from '../../hooks/useInfraHealth'
+import { API_URL, fetchItems } from '../../lib/api'
 
-const PB_URL = pb.baseUrl
+const PB_URL = API_URL
 const PB_DEV_URL = 'https://api-dev.kscw.ch'
 const PUSH_WORKER_URL = 'https://kscw-push.lucanepa.workers.dev'
 
@@ -184,15 +184,17 @@ export default function InfraHealthPage() {
 
     // Notifications
     try {
-      const notif = await pb.collection('notifications').getList(1, 1, {
-        sort: '-created', fields: 'created',
+      const notif = await fetchItems<{ created: string }>('notifications', {
+        limit: 1,
+        sort: ['-date_created'],
+        fields: ['date_created'],
       })
-      if (notif.items.length) {
-        const diff = Date.now() - new Date(notif.items[0].created).getTime()
+      if (notif.length) {
+        const diff = Date.now() - new Date(notif[0].created).getTime()
         cronResults.push({
           name: t('infraNotifCron'),
           status: diff > CRON_STALE ? 'stale' : 'healthy',
-          detail: timeAgo(notif.items[0].created, t),
+          detail: timeAgo(notif[0].created, t),
         })
       }
     } catch {

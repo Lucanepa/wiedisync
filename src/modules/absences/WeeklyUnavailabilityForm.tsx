@@ -30,7 +30,7 @@ export default function WeeklyUnavailabilityForm({ open, absence, onSave, onCanc
 
   // Admins: fetch all active members
   const { data: allMembers } = usePB<Member>('members', {
-    filter: 'kscw_membership_active=true',
+    filter: { kscw_membership_active: { _eq: true } },
     sort: 'last_name',
     all: true,
     fields: 'id,first_name,last_name,name',
@@ -39,8 +39,7 @@ export default function WeeklyUnavailabilityForm({ open, absence, onSave, onCanc
 
   // Coaches: fetch team members
   const { data: memberTeams, error: memberTeamsError } = usePB<MemberTeam & { expand?: { member?: Member } }>('member_teams', {
-    filter: coachTeamIds.map((id) => `team="${id}"`).join(' || '),
-    expand: 'member',
+    filter: coachTeamIds.length > 0 ? { team: { _in: coachTeamIds } } : { id: { _eq: -1 } },
     all: true,
     enabled: effectiveIsCoach && !effectiveIsAdmin && coachTeamIds.length > 0,
   })

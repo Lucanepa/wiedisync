@@ -15,13 +15,13 @@ export default function TeamsPage() {
   const { canViewTeam, memberTeamIds, coachTeamIds } = useAuth()
   const { effectiveIsAdmin } = useAdminMode()
   const { data: teams, isLoading } = usePB<Team>('teams', {
-    filter: 'active=true',
+    filter: { active: { _eq: true } },
     sort: 'name',
     perPage: 50,
   })
   const season = getCurrentSeason()
   const { data: memberTeams } = usePB<MemberTeam>('member_teams', {
-    filter: `season="${season}"`,
+    filter: { season: { _eq: season } },
     all: true,
   })
 

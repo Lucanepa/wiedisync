@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/button'
 import { FormInput, FormField } from '@/components/FormField'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import DatePicker from '@/components/ui/DatePicker'
-import pb from '../../../pb'
 import { logActivity } from '../../../utils/logActivity'
 import type { Hall, HallClosure } from '../../../types'
+import { createRecord, deleteRecord, updateRecord } from '../../../lib/api'
 
 interface ClosureManagerProps {
   halls: Hall[]
@@ -140,14 +140,14 @@ export default function ClosureManager({ halls, closures, onClose, onChanged }: 
       if (editingGroup) {
         // Update all records in the group
         for (const rec of editingGroup.records) {
-          await pb.collection('hall_closures').update(rec.id, {
+          await updateRecord('hall_closures', rec.id, {
             ...form,
             hall: rec.hall, // Keep each record's original hall
           })
           logActivity('update', 'hall_closures', rec.id, form)
         }
       } else {
-        const rec = await pb.collection('hall_closures').create(form)
+        const rec = await createRecord<{ id: string }>('hall_closures', form)
         logActivity('create', 'hall_closures', rec.id, form)
       }
       setForm(emptyForm)
@@ -167,7 +167,7 @@ export default function ClosureManager({ halls, closures, onClose, onChanged }: 
     if (!window.confirm(msg)) return
     try {
       for (const rec of group.records) {
-        await pb.collection('hall_closures').delete(rec.id)
+        await deleteRecord('hall_closures', rec.id)
         logActivity('delete', 'hall_closures', rec.id)
       }
       if (editingGroup?.key === group.key) cancelEdit()

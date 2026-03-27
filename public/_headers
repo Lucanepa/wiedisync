@@ -12,4 +12,4 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
   X-Frame-Options: DENY
-  Content-Security-Policy: default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' https://api.kscw.ch data: blob:; connect-src 'self' https://api.kscw.ch wss://api.kscw.ch https://challenges.cloudflare.com https://photon.komoot.io; font-src 'self' https://fonts.gstatic.com; frame-src https://challenges.cloudflare.com
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' https://api.kscw.ch https://directus-dev.kscw.ch https://directus.kscw.ch data: blob:; connect-src 'self' https://api.kscw.ch https://api-dev.kscw.ch https://directus-dev.kscw.ch https://directus.kscw.ch wss://api.kscw.ch wss://directus-dev.kscw.ch wss://directus.kscw.ch https://challenges.cloudflare.com https://photon.komoot.io; font-src 'self' https://fonts.gstatic.com; frame-src https://challenges.cloudflare.com

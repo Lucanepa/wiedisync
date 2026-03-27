@@ -15,7 +15,7 @@ import LocationCombobox from '@/components/LocationCombobox'
 import { Switch } from '@/components/ui/switch'
 import { pbNameToColorKey } from '../../utils/teamColors'
 import { formatDateLocale } from '../../utils/dateUtils'
-import { parseRespondByTime } from '../../utils/dateHelpers'
+import { parseRespondByTime, toPBDatetime } from '../../utils/dateHelpers'
 import type { Event, EventSession, Team } from '../../types'
 
 interface SessionDraft {
@@ -81,7 +81,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
   const singleTeam = availableTeams.length === 1
 
   const [title, setTitle] = useState('')
-  const [eventType, setEventType] = useState<Event['event_type']>('verein')
+  const [eventType, setEventType] = useState<Event['event_type']>(effectiveIsAdmin ? 'verein' : 'social')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [allDay, setAllDay] = useState(true)
@@ -126,7 +126,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
       setEnableTasks(event.features_enabled?.tasks === true)
     } else {
       setTitle('')
-      setEventType('verein')
+      setEventType(effectiveIsAdmin ? 'verein' : 'social')
       setStartDate('')
       setEndDate('')
       setAllDay(true)
@@ -235,20 +235,11 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
 
     const effectiveMode = isMultiDay ? participationMode : 'whole'
 
-    // Normalize dates: PocketBase datetime fields need full datetime string
-    const normalizeDate = (d: string) => {
-      if (!d) return d
-      // If already has time component (datetime-local value), keep as-is
-      if (d.includes('T') || d.includes(' ')) return d
-      // Date-only: append midnight
-      return `${d} 00:00:00`
-    }
-
     const data = {
       title,
       event_type: eventType,
-      start_date: normalizeDate(startDate),
-      end_date: normalizeDate(endDate || startDate),
+      start_date: toPBDatetime(startDate),
+      end_date: toPBDatetime(endDate || startDate),
       all_day: allDay,
       location,
       description,
@@ -326,7 +317,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="verein">{t('club')}</SelectItem>
+              {effectiveIsAdmin && <SelectItem value="verein">{t('club')}</SelectItem>}
               <SelectItem value="social">{t('social')}</SelectItem>
               <SelectItem value="meeting">{t('meeting')}</SelectItem>
               <SelectItem value="tournament">{t('tournament')}</SelectItem>

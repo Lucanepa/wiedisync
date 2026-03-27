@@ -32,6 +32,8 @@ interface GameCardProps {
   /** Pre-fetched current user's participation (from batch query) */
   myParticipation?: Participation
   warnings?: Warning[]
+  /** Called after a participation save — parent can refetch */
+  onParticipationSaved?: () => void
 }
 
 type ExpandedGame = Game & {
@@ -69,7 +71,7 @@ function StatusBadge({ status }: { status: Game['status'] }) {
   }
 }
 
-export default function GameCard({ game, onClick, variant = 'card', participations, myParticipation, warnings }: GameCardProps) {
+export default function GameCard({ game, onClick, variant = 'card', participations, myParticipation, warnings, onParticipationSaved }: GameCardProps) {
   const { t } = useTranslation('games')
   const { user, canParticipateIn } = useAuth()
   const canParticipate = !!user && !!game.kscw_team && canParticipateIn(game.kscw_team)
@@ -297,7 +299,7 @@ export default function GameCard({ game, onClick, variant = 'card', participatio
           </div>
           {game.status === 'scheduled' && canParticipate && (
             <div className="mt-1.5">
-              <GameCardParticipation game={game} existingParticipation={myParticipation} />
+              <GameCardParticipation game={game} existingParticipation={myParticipation} onSaved={onParticipationSaved} />
             </div>
           )}
         </div>
@@ -307,7 +309,7 @@ export default function GameCard({ game, onClick, variant = 'card', participatio
   )
 }
 
-function GameCardParticipation({ game, existingParticipation }: { game: Game; existingParticipation?: Participation }) {
+function GameCardParticipation({ game, existingParticipation, onSaved }: { game: Game; existingParticipation?: Participation; onSaved?: () => void }) {
   const { t } = useTranslation('participation')
   const { user, isStaffOnly } = useAuth()
   const isStaff = !!game.kscw_team && isStaffOnly(game.kscw_team)
@@ -334,10 +336,11 @@ function GameCardParticipation({ game, existingParticipation }: { game: Game; ex
           is_staff: isStaff,
         })
       }
+      onSaved?.()
     } catch {
       setOptimisticStatus(null)
     }
-  }, [user, existingParticipation, game.id, isStaff, create, update])
+  }, [user, existingParticipation, game.id, isStaff, create, update, onSaved])
 
   return (
     <div className="flex items-center gap-1.5">

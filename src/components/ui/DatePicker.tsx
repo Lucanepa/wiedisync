@@ -107,6 +107,7 @@ export default function DatePicker({
           <Calendar
             mode="single"
             captionLayout="dropdown"
+            showOutsideDays={false}
             selected={selectedDate}
             onSelect={handleSelect}
             month={month}

@@ -26,6 +26,8 @@ interface ParticipationButtonProps {
   requireNoteIfAbsent?: boolean
   /** Pre-fetched participation — skips internal API call when provided */
   existingParticipation?: Participation
+  /** Called after a successful save — parent can refetch data */
+  onSaved?: () => void
 }
 
 const statusStyles = {
@@ -106,10 +108,11 @@ function PrefetchedParticipationButton(props: ParticipationButtonProps) {
         })
       }
       setSaveConfirmed(true)
+      props.onSaved?.()
     } catch {
       setOptimisticStatus(null)
     }
-  }, [user, participation, props.activityType, props.activityId, props.sessionId, isStaff, create, update])
+  }, [user, participation, props.activityType, props.activityId, props.sessionId, isStaff, create, update, props.onSaved])
 
   const dismissConfirmed = useCallback(() => setSaveConfirmed(false), [])
 

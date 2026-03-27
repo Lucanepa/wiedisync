@@ -239,6 +239,7 @@ export default function TrainingsPage() {
                 training={training}
                 participations={participationsByActivity.get(training.id)}
                 myParticipation={myParticipationByActivity.get(training.id)}
+                onParticipationSaved={refetchParticipations}
                 onOpenRoster={(id, teamId, date) => setRosterTraining({ id, teamId, date, showRsvpTime: isFeatureEnabled(training.expand?.team?.features_enabled, 'show_rsvp_time') })}
                 onEdit={(effectiveIsAdmin || isCoachOf(training.team)) ? handleEdit : undefined}
                 onDelete={(effectiveIsAdmin || isCoachOf(training.team)) ? setDeletingId : undefined}

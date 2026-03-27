@@ -23,6 +23,8 @@ interface TrainingCardProps {
   onOpenRoster?: (trainingId: string, teamId: string, date: string) => void
   onEdit?: (training: Training) => void
   onDelete?: (trainingId: string) => void
+  /** Called after a participation save — parent can refetch */
+  onParticipationSaved?: () => void
 }
 
 const statusBorderColor: Record<string, string> = {
@@ -33,7 +35,7 @@ const statusBorderColor: Record<string, string> = {
   absent: 'bg-gray-400 dark:bg-gray-500',
 }
 
-export default function TrainingCard({ training, participations, myParticipation, onOpenRoster, onEdit, onDelete }: TrainingCardProps) {
+export default function TrainingCard({ training, participations, myParticipation, onOpenRoster, onEdit, onDelete, onParticipationSaved }: TrainingCardProps) {
   const { t } = useTranslation('trainings')
   const { user, canParticipateIn } = useAuth()
   const team = training.expand?.team
@@ -91,7 +93,7 @@ export default function TrainingCard({ training, participations, myParticipation
         <div className="mt-2.5 flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             {user && canParticipateIn(training.team) && (
-              <TrainingParticipation training={training} existingParticipation={myParticipation} />
+              <TrainingParticipation training={training} existingParticipation={myParticipation} onSaved={onParticipationSaved} />
             )}
           </div>
           <div className="flex shrink-0 items-center gap-1">
@@ -189,7 +191,7 @@ function InlineParticipationSummary({ participations }: { participations: Partic
 }
 
 /** Participation buttons using pre-fetched data — only writes trigger API calls */
-function TrainingParticipation({ training, existingParticipation }: { training: TrainingExpanded; existingParticipation?: Participation }) {
+function TrainingParticipation({ training, existingParticipation, onSaved }: { training: TrainingExpanded; existingParticipation?: Participation; onSaved?: () => void }) {
   const { t } = useTranslation('participation')
   const { t: tTrainings } = useTranslation('trainings')
   const { user, isStaffOnly } = useAuth()
@@ -257,10 +259,11 @@ function TrainingParticipation({ training, existingParticipation }: { training: 
         })
       }
       setSaveConfirmed(true)
+      onSaved?.()
     } catch {
       setOptimisticStatus(null)
     }
-  }, [user, existingParticipation, training.id, isStaff, guestCount, noteText, create, update])
+  }, [user, existingParticipation, training.id, isStaff, guestCount, noteText, create, update, onSaved])
 
   const saveNote = () => {
     if (noteText !== serverNote && displayStatus) {

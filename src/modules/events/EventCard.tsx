@@ -7,7 +7,7 @@ import ParticipationSummary from '../../components/ParticipationSummary'
 import ParticipationWarningBadge from '../../components/ParticipationWarningBadge'
 import { getEventWarnings } from '../../utils/participationWarnings'
 import { useAuth } from '../../hooks/useAuth'
-import { formatDate } from '../../utils/dateHelpers'
+import { formatDate, formatTime } from '../../utils/dateHelpers'
 import type { Event, Team, Participation } from '../../types'
 
 type EventExpanded = Event & { expand?: { teams?: Team[] } }
@@ -37,6 +37,8 @@ interface EventCardProps {
   participations?: Participation[]
   /** Pre-fetched current user's participation (from batch query) */
   myParticipation?: Participation
+  /** Called after a participation save — parent can refetch */
+  onParticipationSaved?: () => void
 }
 
 const statusBorderColor: Record<string, string> = {
@@ -47,7 +49,7 @@ const statusBorderColor: Record<string, string> = {
   absent: 'bg-gray-400 dark:bg-gray-500',
 }
 
-export default function EventCard({ event, onClick, onEdit, onDelete, onOpenRoster, participations, myParticipation }: EventCardProps) {
+export default function EventCard({ event, onClick, onEdit, onDelete, onOpenRoster, participations, myParticipation, onParticipationSaved }: EventCardProps) {
   const { t } = useTranslation('events')
   const { user, canParticipateIn } = useAuth()
   const teams = event.expand?.teams ?? []
@@ -118,7 +120,12 @@ export default function EventCard({ event, onClick, onEdit, onDelete, onOpenRost
       {/* Details */}
       <p className="mt-1.5 text-sm text-gray-600 dark:text-gray-400">
         {formatDate(event.start_date)}
-        {event.start_date !== event.end_date && ` — ${formatDate(event.end_date)}`}
+        {!event.all_day && event.start_date?.includes(' ') && `, ${formatTime(event.start_date)}`}
+        {!event.all_day && event.end_date?.includes(' ') && event.start_date?.split(' ')[0] === event.end_date?.split(' ')[0]
+          ? `–${formatTime(event.end_date)}`
+          : event.start_date !== event.end_date && (
+            ` — ${formatDate(event.end_date)}${!event.all_day && event.end_date?.includes(' ') ? `, ${formatTime(event.end_date)}` : ''}`
+          )}
         {event.all_day && ` · ${t('allDay')}`}
       </p>
       {event.location && (
@@ -159,6 +166,7 @@ export default function EventCard({ event, onClick, onEdit, onDelete, onOpenRost
             maxPlayers={event.max_players}
             requireNoteIfAbsent={event.require_note_if_absent}
             existingParticipation={myParticipation}
+            onSaved={onParticipationSaved}
           />
           <div className="flex items-center gap-2">
             {warnings.length > 0 && (

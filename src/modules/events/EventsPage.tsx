@@ -41,19 +41,19 @@ export default function EventsPage() {
       conditions.push({
         _or: [
           { end_date: { _gte: today } },
-          { _and: [{ end_date: { _empty: true } }, { start_date: { _gte: today } }] },
+          { _and: [{ end_date: { _null: true } }, { start_date: { _gte: today } }] },
         ],
       })
     }
     if (selectedTeam) {
       conditions.push({
-        _or: [{ teams: { _empty: true } }, { teams: { _contains: selectedTeam } }],
+        _or: [{ teams: { _null: true } }, { teams: { teams_id: { _eq: selectedTeam } } }],
       })
     } else if (allUserTeamIds.length > 0) {
       conditions.push({
         _or: [
-          { teams: { _empty: true } },
-          ...allUserTeamIds.map(id => ({ teams: { _contains: id } })),
+          { teams: { _null: true } },
+          ...allUserTeamIds.map(id => ({ teams: { teams_id: { _eq: id } } })),
         ],
       })
     }

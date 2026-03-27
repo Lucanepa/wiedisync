@@ -51,7 +51,7 @@ export default function TeamDetail() {
 
   useEffect(() => {
     if (!team?.id) return
-    fetchAllItems<Sponsor>('sponsors', { filter: { _and: [{ teams: { _contains: team.id } }, { active: { _eq: true } }] }, sort: ['sort_order'] })
+    fetchAllItems<Sponsor>('sponsors', { filter: { _and: [{ teams: { teams_id: { _eq: team.id } } }, { active: { _eq: true } }] }, sort: ['sort_order'] })
       .then(setTeamSponsors)
       .catch(() => {})
   }, [team?.id])

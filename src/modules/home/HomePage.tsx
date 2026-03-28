@@ -382,17 +382,18 @@ export default function HomePage() {
                   </div>
                 </div>
               )}
-              {nextGames.length > 0 && (
+              {/* When trainings column is present, keep next games stacked here */}
+              {hasTeams && nextGames.length > 0 && (
                 <div>
                   <SectionHeader
                     title={t('nextGames')}
                     linkTo="/games"
                     linkLabel={t('allGames')}
-                    filterToggle={hasTeams ? {
+                    filterToggle={{
                       active: !showAllGames,
                       label: t('myTeams'),
                       onToggle: () => setShowAllGames((v) => !v),
-                    } : undefined}
+                    }}
                   />
                   <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
                     {nextGames.map((g) => (
@@ -403,7 +404,18 @@ export default function HomePage() {
               )}
             </div>
           }
-          gamesDate={nextGames[0]?.date}
+          gamesDate={latestResults[0]?.date ?? nextGames[0]?.date}
+          nextGamesSection={!hasTeams && nextGames.length > 0 ? (
+            <div className="min-w-0">
+              <SectionHeader title={t('nextGames')} linkTo="/games" linkLabel={t('allGames')} />
+              <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+                {nextGames.map((g) => (
+                  <CompactGameRow key={g.id} game={g} showScore={false} onClick={() => setSelectedGame(g)} participationStatus={participationStatuses.get(g.id)} />
+                ))}
+              </div>
+            </div>
+          ) : undefined}
+          nextGamesDate={!hasTeams ? nextGames[0]?.date : undefined}
         />
       )}
 
@@ -819,6 +831,8 @@ function HomeSections({
   eventsDate,
   gamesSection,
   gamesDate,
+  nextGamesSection,
+  nextGamesDate,
 }: {
   trainingsSection: React.ReactNode
   trainingsDate?: string
@@ -826,6 +840,8 @@ function HomeSections({
   eventsDate?: string
   gamesSection: React.ReactNode
   gamesDate?: string
+  nextGamesSection?: React.ReactNode
+  nextGamesDate?: string
 }) {
   // Build sections with their earliest date for mobile ordering
   const sections = useMemo(() => {
@@ -833,10 +849,11 @@ function HomeSections({
     if (trainingsSection) items.push({ key: 'trainings', date: trainingsDate ?? '9999', node: trainingsSection })
     if (eventsSection) items.push({ key: 'events', date: eventsDate ?? '9999', node: eventsSection })
     if (gamesSection) items.push({ key: 'games', date: gamesDate ?? '9999', node: gamesSection })
+    if (nextGamesSection) items.push({ key: 'nextGames', date: nextGamesDate ?? '9999', node: nextGamesSection })
     // Sort by closest date for mobile
     items.sort((a, b) => a.date.localeCompare(b.date))
     return items
-  }, [trainingsSection, trainingsDate, eventsSection, eventsDate, gamesSection, gamesDate])
+  }, [trainingsSection, trainingsDate, eventsSection, eventsDate, gamesSection, gamesDate, nextGamesSection, nextGamesDate])
 
   if (sections.length === 0) return null
 
@@ -847,6 +864,8 @@ function HomeSections({
         {trainingsSection && <div className="min-w-0">{trainingsSection}</div>}
         {eventsSection && <div className="min-w-0">{eventsSection}</div>}
         {gamesSection && <div className="min-w-0">{gamesSection}</div>}
+        {/* When no trainings column, promote next games to fill the empty column */}
+        {!trainingsSection && nextGamesSection && <div className="min-w-0">{nextGamesSection}</div>}
       </div>
       {/* Mobile: stacked, ordered by closest upcoming date */}
       <div className="space-y-6 lg:hidden">

@@ -144,8 +144,9 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
   // Fetch existing training dates for selected slot's team to prevent duplicates
   useEffect(() => {
     if (!slot) { setExistingDates(new Set()); return }
+    const teamIds = Array.isArray(slot.team) ? slot.team : [slot.team]
     fetchAllItems<{ date: string }>('trainings', {
-      filter: `team="${slot.team}" && hall_slot="${slot.id}"` as any,
+      filter: { _and: [{ team: { _in: teamIds } }, { hall_slot: { _eq: slot.id } }] },
       fields: ['date'],
     }).then((trainings) => {
       setExistingDates(new Set(trainings.map((t) => t.date.slice(0, 10))))
@@ -217,8 +218,9 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
 
     try {
       // Re-fetch existing dates right before creating to prevent race conditions
+      const teamIds = Array.isArray(slot.team) ? slot.team : [slot.team]
       const existing = await fetchAllItems<{ date: string }>('trainings', {
-        filter: `team="${slot.team}" && hall_slot="${slot.id}"` as any,
+        filter: { _and: [{ team: { _in: teamIds } }, { hall_slot: { _eq: slot.id } }] },
         fields: ['date'],
       })
       const existingSet = new Set(existing.map((t) => t.date.slice(0, 10)))

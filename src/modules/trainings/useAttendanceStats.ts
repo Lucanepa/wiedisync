@@ -50,7 +50,7 @@ export function useAttendanceStats(teamId: string | null, season: string) {
 
       // Get non-cancelled trainings in season
       const trainings = await fetchAllItems<Training>('trainings', {
-        filter: `team="${teamId}" && date>="${start}" && date<="${end}" && cancelled=false` as any,
+        filter: { _and: [{ team: { _eq: teamId } }, { date: { _gte: start } }, { date: { _lte: end } }, { cancelled: { _eq: false } }] },
         sort: ['date'],
       })
 
@@ -62,16 +62,14 @@ export function useAttendanceStats(teamId: string | null, season: string) {
 
       // Get all participations for these trainings
       const trainingIds = trainings.map((t) => t.id)
-      const activityFilter = trainingIds.map((id) => `activity_id="${id}"`).join(' || ')
       const participations = await fetchAllItems<Participation>('participations', {
-        filter: `activity_type="training" && (${activityFilter})` as any,
+        filter: { _and: [{ activity_type: { _eq: 'training' } }, { activity_id: { _in: trainingIds } }] },
       })
 
       // Get absences for all members in the season
       const memberIds = members.map((m) => m.id)
-      const memberFilter = memberIds.map((id) => `member="${id}"`).join(' || ')
       const absences = await fetchAllItems<Absence>('absences', {
-        filter: `(${memberFilter}) && end_date>="${start}" && start_date<="${end}"` as any,
+        filter: { _and: [{ member: { _in: memberIds } }, { end_date: { _gte: start } }, { start_date: { _lte: end } }] },
       })
 
       // Build per-member stats

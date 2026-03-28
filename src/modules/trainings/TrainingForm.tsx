@@ -96,13 +96,13 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
       return
     }
     fetchAllItems<HallSlot>('hall_slots', {
-      filter: `team~"${teamId}" && slot_type="training" && recurring=true` as any,
+      filter: { _and: [{ team: { _contains: teamId } }, { slot_type: { _eq: 'training' } }, { recurring: { _eq: true } }] },
       sort: ['day_of_week,start_time'],
     }).then(setTeamSlots).catch(() => setTeamSlots([]))
 
     const today = new Date().toISOString().split('T')[0]
     fetchAllItems<SlotClaim>('slot_claims', {
-      filter: `claimed_by_team="${teamId}" && status="active" && date>="${today}"` as any,
+      filter: { _and: [{ claimed_by_team: { _eq: teamId } }, { status: { _eq: 'active' } }, { date: { _gte: today } }] },
       sort: ['date,start_time'],
     }).then(setTeamClaims).catch(() => setTeamClaims([]))
   }, [teamId])

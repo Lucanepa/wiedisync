@@ -140,9 +140,8 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
         })
         const teamIds = myTeams.map((mt) => mt.team)
         if (teamIds.length > 0) {
-          const teamFilter = teamIds.map((id) => `team="${id}"`).join(' || ')
           const teammates = await fetchAllItems('member_teams', {
-            filter: `(${teamFilter}) && member!="${user.id}"` as any,
+            filter: { _and: [{ team: { _in: teamIds } }, { member: { _neq: user.id } }] },
           })
           const conflict = teammates.find(
             (mt) => (mt.expand as { member?: { number?: number } })?.member?.number === number

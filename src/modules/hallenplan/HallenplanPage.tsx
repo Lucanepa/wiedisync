@@ -364,7 +364,7 @@ export default function HallenplanPage() {
                 }
                 if (slotTeam && slotStartTime && slotEndTime && dbDay != null) {
                   const results = await fetchItems<HallSlot>('hall_slots', { limit: 1,
-                    filter: `team="${slotTeam}" && day_of_week=${dbDay} && start_time="${slotStartTime}" && end_time="${slotEndTime}"` as any,
+                    filter: { _and: [{ team: { _contains: slotTeam } }, { day_of_week: { _eq: dbDay } }, { start_time: { _eq: slotStartTime } }, { end_time: { _eq: slotEndTime } }] },
                   })
                   if (results.length > 0) parentSlot = results[0]
                 }

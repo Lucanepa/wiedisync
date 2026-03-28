@@ -57,17 +57,16 @@ export default function PlayerProfile() {
   useEffect(() => {
     if (!memberId || !memberTeams?.length) return
     const teamIds = memberTeams.map((mt) => mt.team)
-    const teamFilter = teamIds.map((id) => `team="${id}"`).join(' || ')
     Promise.all([
       fetchAllItems<{ id: string; date: string }>('trainings', {
-        filter: `(${teamFilter}) && date>="${start}" && date<="${end}" && cancelled=false` as any,
+        filter: { _and: [{ team: { _in: teamIds } }, { date: { _gte: start } }, { date: { _lte: end } }, { cancelled: { _eq: false } }] },
         fields: ['id', 'date'],
       }),
       fetchAllItems<Participation>('participations', {
-        filter: `member="${memberId}" && activity_type="training"` as any,
+        filter: { _and: [{ member: { _eq: memberId } }, { activity_type: { _eq: 'training' } }] },
       }),
       fetchAllItems<Absence>('absences', {
-        filter: `member="${memberId}" && end_date>="${start}" && start_date<="${end}"` as any,
+        filter: { _and: [{ member: { _eq: memberId } }, { end_date: { _gte: start } }, { start_date: { _lte: end } }] },
       }),
     ])
       .then(([trainings, participations, seasonAbsences]) => {
@@ -95,17 +94,16 @@ export default function PlayerProfile() {
   useEffect(() => {
     if (!memberId || !memberTeams?.length) return
     const teamIds = memberTeams.map((mt) => mt.team)
-    const kscwTeamFilter = teamIds.map((id) => `kscw_team="${id}"`).join(' || ')
     Promise.all([
       fetchAllItems<{ id: string; date: string }>('games', {
-        filter: `(${kscwTeamFilter}) && date>="${start}" && date<="${end}" && status!="postponed"` as any,
+        filter: { _and: [{ kscw_team: { _in: teamIds } }, { date: { _gte: start } }, { date: { _lte: end } }, { status: { _neq: 'postponed' } }] },
         fields: ['id', 'date'],
       }),
       fetchAllItems<Participation>('participations', {
-        filter: `member="${memberId}" && activity_type="game"` as any,
+        filter: { _and: [{ member: { _eq: memberId } }, { activity_type: { _eq: 'game' } }] },
       }),
       fetchAllItems<Absence>('absences', {
-        filter: `member="${memberId}" && end_date>="${start}" && start_date<="${end}"` as any,
+        filter: { _and: [{ member: { _eq: memberId } }, { end_date: { _gte: start } }, { start_date: { _lte: end } }] },
       }),
     ])
       .then(([games, participations, seasonAbsences]) => {

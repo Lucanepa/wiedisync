@@ -163,7 +163,7 @@ export default function SlotEditor({
   async function cascadeChanges(slotId: string, oldSlot: HallSlot, newData: typeof form) {
     const today = new Date().toISOString().slice(0, 10)
     const futureTrainings = await fetchAllItems<{id: string}>('trainings', {
-      filter: `hall_slot="${slotId}" && date>="${today}"` as any,
+      filter: { _and: [{ hall_slot: { _eq: slotId } }, { date: { _gte: today } }] },
     })
     if (futureTrainings.length === 0) return
 

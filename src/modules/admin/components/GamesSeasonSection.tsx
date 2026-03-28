@@ -62,11 +62,11 @@ export default function GamesSeasonSection() {
 
         const [upcomingResult, recentResult, winLossResult, scorerResult] = await Promise.all([
           fetchItems<GameRecord>('games', { limit: 10,
-            filter: `date >= "${todayStr}" && date <= "${weekLaterStr}"` as any,
+            filter: { _and: [{ date: { _gte: todayStr } }, { date: { _lte: weekLaterStr } }] },
             sort: ['date'],
           }),
           fetchItems<GameRecord>('games', { limit: 5,
-            filter: `date < "${todayStr}" && (home_score > 0 || away_score > 0)` as any,
+            filter: { _and: [{ date: { _lt: todayStr } }, { _or: [{ home_score: { _gt: 0 } }, { away_score: { _gt: 0 } }] }] },
             sort: ['-date'],
           }),
           kscwApi('/admin/sql', {

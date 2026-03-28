@@ -22,7 +22,7 @@ type ExpandedGame = Game & {
 
 export default function ScorerAssignPage() {
   const { t } = useTranslation('scorerAssign')
-  const { hasAdminAccessToSport } = useAuth()
+  const { user, hasAdminAccessToSport } = useAuth()
 
   const season = getCurrentSeason()
   const { start: seasonStart, end: seasonEnd } = getSeasonDateRange(season)
@@ -58,6 +58,7 @@ export default function ScorerAssignPage() {
 
   const { data: memberTeams } = usePB<MemberTeam>('member_teams', {
     all: true,
+    enabled: !!user,
   })
 
   // State

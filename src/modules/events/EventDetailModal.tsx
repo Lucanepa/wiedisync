@@ -54,7 +54,7 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
   // Fetch sessions for multi-session events
   const hasSessionMode = event?.participation_mode && event.participation_mode !== 'whole'
   const { data: sessions } = usePB<EventSession>('event_sessions', {
-    filter: event ? `event="${event.id}"` : '',
+    filter: event ? { event: { _eq: event.id } } : undefined,
     sort: 'sort_order,date,start_time',
     perPage: 100,
     enabled: !!event && !!hasSessionMode,
@@ -364,11 +364,15 @@ function EventSessionNote({ eventId, sessions }: { eventId: string; sessions: Ev
   const { user } = useAuth()
   const { update } = useMutation<Participation>('participations')
 
-  const sessionFilter = sessions.map(s => `session_id="${s.id}"`).join(' || ')
   const { data: allParts, refetch } = usePB<Participation>('participations', {
-    filter: user && eventId
-      ? `member="${user.id}" && activity_type="event" && activity_id="${eventId}" && (${sessionFilter})`
-      : '',
+    filter: user && eventId ? {
+      _and: [
+        { member: { _eq: user.id } },
+        { activity_type: { _eq: 'event' } },
+        { activity_id: { _eq: eventId } },
+        { session_id: { _in: sessions.map(s => s.id) } },
+      ],
+    } : undefined,
     all: true,
     enabled: !!user && !!eventId && sessions.length > 0,
   })

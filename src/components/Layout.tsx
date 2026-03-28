@@ -160,9 +160,9 @@ export default function Layout() {
     }
   }, [location.pathname, isAdmin, isAdminMode, setAdminMode])
   const { data: memberTeams } = usePB<ExpandedMemberTeam>('member_teams', {
-    filter: user ? `member="${user.id}"` : '',
-    expand: 'team',
+    filter: user ? { member: { _eq: user.id } } : undefined,
     perPage: 10,
+    enabled: !!user,
   })
 
   return (

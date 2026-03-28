@@ -82,9 +82,10 @@ export default function FeedbackPage() {
   const [submitting, setSubmitting] = useState(false)
 
   const { data: submissions, refetch } = usePB<FeedbackRecord>('feedback', {
-    filter: user ? { user: { _eq: user.id } } : { id: { _eq: -1 } },
+    filter: user ? { user: { _eq: user.id } } : undefined,
     sort: '-created',
     all: true,
+    enabled: !!user,
   })
 
   // GitHub issues

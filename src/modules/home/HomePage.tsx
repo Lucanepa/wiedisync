@@ -6,6 +6,7 @@ import { useCollection } from '../../lib/query'
 import { useNotifications } from '../../hooks/useNotifications'
 import { useSportPreference } from '../../hooks/useSportPreference'
 import { formatDate, formatDateCompact, formatTime, formatWeekday } from '../../utils/dateHelpers'
+import { relId } from '../../utils/relations'
 import TeamChip from '../../components/TeamChip'
 import StatusBadge from '../../components/StatusBadge'
 import { stripHtml } from '../../components/RichText'
@@ -78,7 +79,10 @@ export default function HomePage() {
   })
   const memberTeams = memberTeamsRaw ?? []
 
-  const userTeamIds = useMemo(() => [...new Set([...memberTeams.map((mt) => mt.team), ...coachTeamIds])], [memberTeams, coachTeamIds])
+  const userTeamIds = useMemo(() => [...new Set([
+    ...memberTeams.map((mt) => relId(mt.team)),
+    ...coachTeamIds,
+  ].filter(Boolean))], [memberTeams, coachTeamIds])
   const hasTeams = userTeamIds.length > 0
 
   // Build team filter for games

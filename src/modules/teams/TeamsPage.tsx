@@ -9,6 +9,7 @@ import TeamCard from './TeamCard'
 import type { Team, MemberTeam } from '../../types'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import { getCurrentSeason } from '../../utils/dateHelpers'
+import { relId } from '../../utils/relations'
 
 export default function TeamsPage() {
   const { t } = useTranslation('teams')
@@ -33,7 +34,7 @@ export default function TeamsPage() {
   const visibleTeams = teams.filter((team) => effectiveCanViewTeam(team.id))
 
   const countByTeam = memberTeams.reduce<Record<string, number>>((acc, mt) => {
-    acc[mt.team] = (acc[mt.team] ?? 0) + 1
+    acc[relId(mt.team)] = (acc[relId(mt.team)] ?? 0) + 1
     return acc
   }, {})
 

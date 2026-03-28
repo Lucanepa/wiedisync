@@ -10,6 +10,7 @@ import StatusBadge from '../../components/StatusBadge'
 import EmptyState from '../../components/EmptyState'
 import { getFileUrl } from '../../utils/pbFile'
 import { coercePositions, getPositionI18nKey } from '../../utils/memberPositions'
+import { relId } from '../../utils/relations'
 import { formatDate, getCurrentSeason, getSeasonDateRange } from '../../utils/dateHelpers'
 import ImageLightbox from '../../components/ImageLightbox'
 import type { Member, MemberTeam, Team, Absence, Participation } from '../../types'
@@ -63,7 +64,7 @@ export default function PlayerProfile() {
   // Training attendance
   useEffect(() => {
     if (!memberId || !memberTeams?.length) return
-    const teamIds = memberTeams.map((mt) => mt.team)
+    const teamIds = memberTeams.map((mt) => relId(mt.team))
     Promise.all([
       fetchAllItems<{ id: string; date: string }>('trainings', {
         filter: { _and: [{ team: { _in: teamIds } }, { date: { _gte: start } }, { date: { _lte: end } }, { cancelled: { _eq: false } }] },
@@ -100,7 +101,7 @@ export default function PlayerProfile() {
   // Game attendance
   useEffect(() => {
     if (!memberId || !memberTeams?.length) return
-    const teamIds = memberTeams.map((mt) => mt.team)
+    const teamIds = memberTeams.map((mt) => relId(mt.team))
     Promise.all([
       fetchAllItems<{ id: string; date: string }>('games', {
         filter: { _and: [{ kscw_team: { _in: teamIds } }, { date: { _gte: start } }, { date: { _lte: end } }, { status: { _neq: 'postponed' } }] },
@@ -156,7 +157,7 @@ export default function PlayerProfile() {
     ? asObj<Team>(memberTeams.find((mt) => asObj<Team>(mt.team)?.name === fromTeam)?.team)
     : null
 
-  const isCoach = memberTeams.some((mt) => isCoachOf(mt.team))
+  const isCoach = memberTeams.some((mt) => isCoachOf(relId(mt.team)))
 
   return (
     <div className="mx-auto max-w-3xl">

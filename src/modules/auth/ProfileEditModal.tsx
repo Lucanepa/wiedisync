@@ -10,6 +10,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { getFileUrl } from '../../utils/pbFile'
 import { coercePositions, getPositionI18nKey, getSelectablePositions } from '../../utils/memberPositions'
 import { pbLangToI18n } from '../../utils/languageMap'
+import { relId } from '../../utils/relations'
 import { LANGUAGES, type PbLanguage } from '../../i18n/languageConfig'
 import deFlag from '../../assets/flags/de.svg'
 import gbFlag from '../../assets/flags/gb.svg'
@@ -142,7 +143,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
         const myTeams = await fetchAllItems('member_teams', {
           filter: { member: { _eq: user.id } },
         })
-        const teamIds = myTeams.map((mt) => mt.team)
+        const teamIds = myTeams.map((mt) => relId(mt.team))
         if (teamIds.length > 0) {
           const teammates = await fetchAllItems('member_teams', {
             filter: { _and: [{ team: { _in: teamIds } }, { member: { _neq: user.id } }] },

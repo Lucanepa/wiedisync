@@ -6,6 +6,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useTheme } from '../../hooks/useTheme'
 import { useCollection } from '../../lib/query'
 import { logActivity } from '../../utils/logActivity'
+import { relId } from '../../utils/relations'
 import { Button } from '@/components/ui/button'
 import Modal from '@/components/Modal'
 import DatenschutzPage from '../legal/DatenschutzPage'
@@ -194,7 +195,7 @@ export default function SignUpPage() {
   }
 
   // Existing team IDs for filtering
-  const existingTeamIds = existingTeams.map((mt) => mt.team)
+  const existingTeamIds = existingTeams.map((mt) => relId(mt.team))
   const hasExistingTeams = existingTeams.length > 0
 
   // Toggle additional team selection

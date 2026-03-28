@@ -27,24 +27,27 @@ interface GameDetailModalProps {
   readOnly?: boolean
 }
 
+/** Helper to safely extract an expanded relation object (Directus returns the object inline, or a raw ID string when not expanded) */
+function asObj<T>(val: T | string | string[] | null | undefined): T | null {
+  return val != null && typeof val === 'object' && !Array.isArray(val) ? (val as T) : null
+}
+
 type ExpandedGame = Game & {
-  expand?: {
-    kscw_team?: Team & BaseRecord
-    hall?: Hall & BaseRecord
-    scorer_member?: Member & BaseRecord
-    scoreboard_member?: Member & BaseRecord
-    scorer_scoreboard_member?: Member & BaseRecord
-    scorer_duty_team?: Team & BaseRecord
-    scoreboard_duty_team?: Team & BaseRecord
-    scorer_scoreboard_duty_team?: Team & BaseRecord
-    bb_scorer_member?: Member & BaseRecord
-    bb_timekeeper_member?: Member & BaseRecord
-    bb_24s_official?: Member & BaseRecord
-    bb_duty_team?: Team & BaseRecord
-    bb_scorer_duty_team?: Team & BaseRecord
-    bb_timekeeper_duty_team?: Team & BaseRecord
-    bb_24s_duty_team?: Team & BaseRecord
-  }
+  kscw_team: (Team & BaseRecord) | string
+  hall: (Hall & BaseRecord) | string
+  scorer_member: (Member & BaseRecord) | string
+  scoreboard_member: (Member & BaseRecord) | string
+  scorer_scoreboard_member: (Member & BaseRecord) | string
+  scorer_duty_team: (Team & BaseRecord) | string
+  scoreboard_duty_team: (Team & BaseRecord) | string
+  scorer_scoreboard_duty_team: (Team & BaseRecord) | string
+  bb_scorer_member: (Member & BaseRecord) | string
+  bb_timekeeper_member: (Member & BaseRecord) | string
+  bb_24s_official: (Member & BaseRecord) | string
+  bb_duty_team: (Team & BaseRecord) | string
+  bb_scorer_duty_team: (Team & BaseRecord) | string
+  bb_timekeeper_duty_team: (Team & BaseRecord) | string
+  bb_24s_duty_team: (Team & BaseRecord) | string
 }
 
 function parseSets(json: unknown): Array<{ home: number; away: number }> {
@@ -117,21 +120,21 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
   useEffect(() => {
     setFullGame(null)
     if (!game) return
-    const exp = (game as ExpandedGame).expand
+    const exp = game as unknown as ExpandedGame
     const needsExpand =
-      (game.scorer_member && !exp?.scorer_member) ||
-      (game.scoreboard_member && !exp?.scoreboard_member) ||
-      (game.scorer_scoreboard_member && !exp?.scorer_scoreboard_member) ||
-      (game.scorer_duty_team && !exp?.scorer_duty_team) ||
-      (game.scoreboard_duty_team && !exp?.scoreboard_duty_team) ||
-      (game.scorer_scoreboard_duty_team && !exp?.scorer_scoreboard_duty_team) ||
-      (game.bb_scorer_member && !exp?.bb_scorer_member) ||
-      (game.bb_timekeeper_member && !exp?.bb_timekeeper_member) ||
-      (game.bb_24s_official && !exp?.bb_24s_official) ||
-      (game.bb_duty_team && !exp?.bb_duty_team) ||
-      (game.bb_scorer_duty_team && !exp?.bb_scorer_duty_team) ||
-      (game.bb_timekeeper_duty_team && !exp?.bb_timekeeper_duty_team) ||
-      (game.bb_24s_duty_team && !exp?.bb_24s_duty_team)
+      (game.scorer_member && !asObj(exp.scorer_member)) ||
+      (game.scoreboard_member && !asObj(exp.scoreboard_member)) ||
+      (game.scorer_scoreboard_member && !asObj(exp.scorer_scoreboard_member)) ||
+      (game.scorer_duty_team && !asObj(exp.scorer_duty_team)) ||
+      (game.scoreboard_duty_team && !asObj(exp.scoreboard_duty_team)) ||
+      (game.scorer_scoreboard_duty_team && !asObj(exp.scorer_scoreboard_duty_team)) ||
+      (game.bb_scorer_member && !asObj(exp.bb_scorer_member)) ||
+      (game.bb_timekeeper_member && !asObj(exp.bb_timekeeper_member)) ||
+      (game.bb_24s_official && !asObj(exp.bb_24s_official)) ||
+      (game.bb_duty_team && !asObj(exp.bb_duty_team)) ||
+      (game.bb_scorer_duty_team && !asObj(exp.bb_scorer_duty_team)) ||
+      (game.bb_timekeeper_duty_team && !asObj(exp.bb_timekeeper_duty_team)) ||
+      (game.bb_24s_duty_team && !asObj(exp.bb_24s_duty_team))
     if (needsExpand) {
       fetchItem<Game>('games', game.id, { fields: ['*', ...GAME_EXPAND.split(',').map(r => `${r}.*`)] }).then(r => setFullGame(r)).catch(() => {})
     }
@@ -148,8 +151,8 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
 
   if (!game) return null
 
-  const expanded = (fullGame ?? game) as ExpandedGame
-  const expandedHall = expanded.expand?.hall
+  const expanded = (fullGame ?? game) as unknown as ExpandedGame
+  const expandedHall = asObj<Hall & BaseRecord>(expanded.hall)
   const awayHall = game.away_hall_json
   const awayMapsUrl = awayHall
     ? awayHall.plus_code
@@ -159,8 +162,9 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
         : ''
     : ''
   const hall = expandedHall ?? (awayHall ? { name: awayHall.name, address: awayHall.address, city: awayHall.city, maps_url: awayMapsUrl } : null)
-  const rawKscwTeam = expanded.expand?.kscw_team?.name ?? ''
-  const kscwSport = expanded.expand?.kscw_team?.sport as 'volleyball' | 'basketball' | undefined
+  const kscwTeamObj = asObj<Team & BaseRecord>(expanded.kscw_team)
+  const rawKscwTeam = kscwTeamObj?.name ?? ''
+  const kscwSport = kscwTeamObj?.sport as 'volleyball' | 'basketball' | undefined
   const kscwTeam = rawKscwTeam && kscwSport ? pbNameToColorKey(rawKscwTeam, kscwSport) : rawKscwTeam
   const sets = parseSets(game.sets_json)
   const intlLocale = i18n.language === 'gsw' ? 'de-CH' : i18n.language
@@ -347,7 +351,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
               </>
             )}
             <div className="ml-auto border-l pl-3 dark:border-gray-600">
-              <ParticipationSummary activityType="game" activityId={game.id} compact coachMemberIds={[...(expanded.expand?.kscw_team?.coach ?? []), ...(expanded.expand?.kscw_team?.captain ?? []), ...(expanded.expand?.kscw_team?.team_responsible ?? [])]} />
+              <ParticipationSummary activityType="game" activityId={game.id} compact coachMemberIds={[...(kscwTeamObj?.coach ?? []), ...(kscwTeamObj?.captain ?? []), ...(kscwTeamObj?.team_responsible ?? [])]} />
             </div>
             {/* Participation note */}
             {!hasAbsence && effectiveStatus && (
@@ -453,30 +457,30 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
             <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
               {t('scorerDuties')}
             </h4>
-            {expanded.expand?.scorer_scoreboard_member ? (
+            {asObj<Member & BaseRecord>(expanded.scorer_scoreboard_member) ? (
               <DutyPersonRow
                 label={t('scorerTaefeler')}
-                member={expanded.expand.scorer_scoreboard_member}
-                dutyTeam={expanded.expand.scorer_scoreboard_duty_team}
+                member={asObj<Member & BaseRecord>(expanded.scorer_scoreboard_member)}
+                dutyTeam={asObj<Team & BaseRecord>(expanded.scorer_scoreboard_duty_team)}
                 showContact={showScorerContact}
               />
             ) : (
               <>
-                {(expanded.expand?.scorer_member || game.scorer_person) && (
+                {(asObj<Member & BaseRecord>(expanded.scorer_member) || game.scorer_person) && (
                   <DutyPersonRow
                     label={t('scorer')}
-                    member={expanded.expand?.scorer_member}
+                    member={asObj<Member & BaseRecord>(expanded.scorer_member)}
                     fallbackName={game.scorer_person}
-                    dutyTeam={expanded.expand?.scorer_duty_team}
+                    dutyTeam={asObj<Team & BaseRecord>(expanded.scorer_duty_team)}
                     showContact={showScorerContact}
                   />
                 )}
-                {(expanded.expand?.scoreboard_member || game.scoreboard_person) && (
+                {(asObj<Member & BaseRecord>(expanded.scoreboard_member) || game.scoreboard_person) && (
                   <DutyPersonRow
                     label={t('scoreboard')}
-                    member={expanded.expand?.scoreboard_member}
+                    member={asObj<Member & BaseRecord>(expanded.scoreboard_member)}
                     fallbackName={game.scoreboard_person}
-                    dutyTeam={expanded.expand?.scoreboard_duty_team}
+                    dutyTeam={asObj<Team & BaseRecord>(expanded.scoreboard_duty_team)}
                     showContact={showScorerContact}
                   />
                 )}
@@ -492,27 +496,27 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
             <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
               {t('officialsDuties')}
             </h4>
-            {(expanded.expand?.bb_scorer_member || game.bb_scorer_member) && (
+            {(asObj<Member & BaseRecord>(expanded.bb_scorer_member) || game.bb_scorer_member) && (
               <DutyPersonRow
                 label={t('bbScorer')}
-                member={expanded.expand?.bb_scorer_member}
-                dutyTeam={expanded.expand?.bb_scorer_duty_team ?? expanded.expand?.bb_duty_team}
+                member={asObj<Member & BaseRecord>(expanded.bb_scorer_member)}
+                dutyTeam={asObj<Team & BaseRecord>(expanded.bb_scorer_duty_team) ?? asObj<Team & BaseRecord>(expanded.bb_duty_team)}
                 showContact={showScorerContact}
               />
             )}
-            {(expanded.expand?.bb_timekeeper_member || game.bb_timekeeper_member) && (
+            {(asObj<Member & BaseRecord>(expanded.bb_timekeeper_member) || game.bb_timekeeper_member) && (
               <DutyPersonRow
                 label={t('bbTimekeeper')}
-                member={expanded.expand?.bb_timekeeper_member}
-                dutyTeam={expanded.expand?.bb_timekeeper_duty_team ?? expanded.expand?.bb_duty_team}
+                member={asObj<Member & BaseRecord>(expanded.bb_timekeeper_member)}
+                dutyTeam={asObj<Team & BaseRecord>(expanded.bb_timekeeper_duty_team) ?? asObj<Team & BaseRecord>(expanded.bb_duty_team)}
                 showContact={showScorerContact}
               />
             )}
-            {(expanded.expand?.bb_24s_official || game.bb_24s_official) && (
+            {(asObj<Member & BaseRecord>(expanded.bb_24s_official) || game.bb_24s_official) && (
               <DutyPersonRow
                 label={t('bb24sOfficial')}
-                member={expanded.expand?.bb_24s_official}
-                dutyTeam={expanded.expand?.bb_24s_duty_team ?? expanded.expand?.bb_duty_team}
+                member={asObj<Member & BaseRecord>(expanded.bb_24s_official)}
+                dutyTeam={asObj<Team & BaseRecord>(expanded.bb_24s_duty_team) ?? asObj<Team & BaseRecord>(expanded.bb_duty_team)}
                 showContact={showScorerContact}
               />
             )}
@@ -520,7 +524,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
         )}
 
         {/* Tasks */}
-        {game.status === 'scheduled' && user && isFeatureEnabled(expanded.expand?.kscw_team?.features_enabled, 'tasks') && (
+        {game.status === 'scheduled' && user && isFeatureEnabled(kscwTeamObj?.features_enabled, 'tasks') && (
           <div className="border-t dark:border-gray-700 px-6 py-4">
             <TasksSection
               activityType="game"
@@ -532,7 +536,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
         )}
 
         {/* Carpool — away games only */}
-        {game.type === 'away' && game.status === 'scheduled' && user && isFeatureEnabled(expanded.expand?.kscw_team?.features_enabled, 'carpool') && (
+        {game.type === 'away' && game.status === 'scheduled' && user && isFeatureEnabled(kscwTeamObj?.features_enabled, 'carpool') && (
           <div className="border-t dark:border-gray-700 px-6 py-4">
             <CarpoolSection gameId={game.id} />
           </div>
@@ -609,7 +613,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
       title={t('participationRoster')}
       respondBy={game?.respond_by}
       activityStartTime={game?.time}
-      showRsvpTime={isFeatureEnabled(expanded.expand?.kscw_team?.features_enabled, 'show_rsvp_time')}
+      showRsvpTime={isFeatureEnabled(kscwTeamObj?.features_enabled, 'show_rsvp_time')}
     />
     </>
   )

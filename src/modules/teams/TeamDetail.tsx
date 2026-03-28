@@ -20,6 +20,10 @@ import { coercePositions } from '../../utils/memberPositions'
 import { getCurrentSeason } from '../../utils/dateHelpers'
 import ImageLightbox from '../../components/ImageLightbox'
 import type { Team, Member, Sponsor } from '../../types'
+
+function asObj<T>(val: T | string | null | undefined): T | null {
+  return val != null && typeof val === 'object' ? val as T : null
+}
 import PollsSection from '../polls/PollsSection'
 import { isFeatureEnabled } from '../../utils/featureToggles'
 import { createRecord, deleteRecord, fetchAllItems, fetchItems, updateRecord } from '../../lib/api'
@@ -40,9 +44,10 @@ export default function TeamDetail() {
   const { data: pendingMembers, refetch: refetchPending } = usePendingMembers(canManage ? teamId : undefined)
 
   // Team join requests from existing members
-  interface TeamRequest { id: string; collectionId: string; collectionName: string; member: string; team: string; status: string; expand?: { member?: Member } }
+  interface TeamRequest { id: string; collectionId: string; collectionName: string; member: Member | string; team: string; status: string }
   const { data: teamRequestsRaw, refetch: refetchTeamRequests } = useCollection<TeamRequest>('team_requests', {
     filter: canManage && teamId ? { _and: [{ team: { _eq: teamId } }, { status: { _eq: 'pending' } }] } : { id: { _eq: -1 } },
+    fields: ['*', 'member.*'],
     limit: 50,
     enabled: canManage && !!teamId,
   })
@@ -145,8 +150,8 @@ export default function TeamDetail() {
     const sorted = [...members]
     const dir = sortDir === 'asc' ? 1 : -1
     sorted.sort((a, b) => {
-      const ma = a.expand?.member
-      const mb = b.expand?.member
+      const ma = asObj<Member>(a.member)
+      const mb = asObj<Member>(b.member)
       if (!ma || !mb) return 0
       let cmp = 0
       switch (sortKey) {
@@ -214,7 +219,7 @@ export default function TeamDetail() {
   }
 
   async function handleApproveRequest(request: TeamRequest) {
-    const member = request.expand?.member
+    const member = asObj<Member>(request.member)
     if (!member) return
     const guestLevel = requestGuestLevels[request.id] ?? 0
     try {
@@ -448,7 +453,7 @@ export default function TeamDetail() {
             ))}
             {/* Team join requests from existing members */}
             {teamRequests.map((req) => {
-              const member = req.expand?.member
+              const member = asObj<Member>(req.member)
               const selectedLevel = requestGuestLevels[req.id] ?? 0
               return (
                 <div key={req.id} className="rounded-lg bg-white p-3 dark:bg-gray-800">
@@ -537,7 +542,7 @@ export default function TeamDetail() {
               <tbody>
                 {sortedMembers.map((mt) => (
                   <MemberRow
-                    key={mt.id}
+                    key={mt.id as string}
                     memberTeam={mt}
                     teamId={team.id}
                     teamSlug={team.name}

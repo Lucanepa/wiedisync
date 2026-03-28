@@ -17,7 +17,15 @@ import { Button } from '@/components/ui/button'
 import { isFeatureEnabled } from '../../utils/featureToggles'
 import type { Event, Team, Participation } from '../../types'
 
-type EventExpanded = Event & { expand?: { teams?: Team[] } }
+function asTeams(teams: (Team | string)[] | null | undefined): Team[] {
+  if (!Array.isArray(teams) || teams.length === 0) return []
+  return typeof teams[0] === 'object' ? (teams as Team[]) : []
+}
+
+function teamId(val: Team | string | null | undefined): string {
+  if (!val) return ''
+  return typeof val === 'object' ? val.id : val
+}
 
 export default function EventsPage() {
   const { t } = useTranslation('events')
@@ -27,8 +35,8 @@ export default function EventsPage() {
   const [formOpen, setFormOpen] = useState(false)
   const [editingEvent, setEditingEvent] = useState<Event | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [rosterEvent, setRosterEvent] = useState<EventExpanded | null>(null)
-  const [selectedEvent, setSelectedEvent] = useState<EventExpanded | null>(null)
+  const [rosterEvent, setRosterEvent] = useState<Event | null>(null)
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
   const [showPast, setShowPast] = useState(false)
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null)
 
@@ -61,10 +69,11 @@ export default function EventsPage() {
     return conditions.length === 1 ? conditions[0] : { _and: conditions }
   }, [allUserTeamIds, selectedTeam, showPast, today])
 
-  const { data: eventsRaw, isLoading, refetch } = useCollection<EventExpanded>('events', {
+  const { data: eventsRaw, isLoading, refetch } = useCollection<Event>('events', {
     filter: eventFilter,
     sort: ['start_date'],
     limit: 50,
+    fields: ['*', 'teams.*'],
     enabled: !teamsLoading,
   })
   const events = eventsRaw ?? []
@@ -171,7 +180,7 @@ export default function EventsPage() {
               // Admins can edit all events
               const canEdit = isAdmin || (isCoach && (
                 event.teams.length === 0 ||
-                event.teams.some((tid) => isCoachOf(tid))
+                event.teams.some((tid) => isCoachOf(teamId(tid)))
               ))
               return (
                 <EventCard
@@ -219,11 +228,11 @@ export default function EventsPage() {
         activityType="event"
         activityId={rosterEvent?.id ?? ''}
         activityDate={rosterEvent?.start_date ?? ''}
-        teamIds={rosterEvent?.teams ?? []}
+        teamIds={(rosterEvent?.teams ?? []).map(t => teamId(t))}
         title={t('participation')}
         respondBy={rosterEvent?.respond_by}
         maxPlayers={rosterEvent?.max_players}
-        showRsvpTime={(rosterEvent?.expand?.teams ?? []).some(t => isFeatureEnabled(t.features_enabled, 'show_rsvp_time'))}
+        showRsvpTime={asTeams(rosterEvent?.teams).some(t => isFeatureEnabled(t.features_enabled, 'show_rsvp_time'))}
       />
     </div>
   )

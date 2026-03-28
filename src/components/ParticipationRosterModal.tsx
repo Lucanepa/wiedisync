@@ -7,6 +7,10 @@ import { useCollection } from '../lib/query'
 import { fetchAllItems } from '../lib/api'
 import { getFileUrl } from '../utils/pbFile'
 import type { Participation, Absence, Member, Team, EventSession } from '../types'
+
+function asObj<T>(val: T | string | null | undefined): T | null {
+  return val != null && typeof val === 'object' ? val as T : null
+}
 import { formatDate, getDeadlineDate, formatRelativeTime, formatDateTimeCompact } from '../utils/dateHelpers'
 
 interface ParticipationRosterModalProps {
@@ -128,8 +132,8 @@ export default function ParticipationRosterModal({
   const memberList: Member[] = isClubWide
     ? clubWideMembers
     : members
-        .map((mt) => mt.expand?.member)
-        .filter((m): m is Member => m !== undefined)
+        .map((mt) => asObj<Member>(mt.member))
+        .filter((m): m is Member => m !== null)
         .sort((a, b) => (a.last_name ?? '').localeCompare(b.last_name ?? ''))
 
   const memberIds = memberList.map((m) => m.id)

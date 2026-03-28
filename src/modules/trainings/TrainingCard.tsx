@@ -10,8 +10,18 @@ import ParticipationWarningBadge from '../../components/ParticipationWarningBadg
 import { getTrainingWarnings } from '../../utils/participationWarnings'
 import type { Training, Team, Hall, Member, Participation } from '../../types'
 
+function asObj<T>(val: T | string | null | undefined): T | null {
+  return val != null && typeof val === 'object' ? val as T : null
+}
+function getId(val: { id: string } | string | null | undefined): string {
+  if (val == null) return ''
+  return typeof val === 'object' ? val.id : val
+}
+
 type TrainingExpanded = Training & {
-  expand?: { team?: Team; hall?: Hall; coach?: Member }
+  team: Team | string
+  hall: Hall | string
+  coach: Member | string
 }
 
 interface TrainingCardProps {
@@ -38,9 +48,10 @@ const statusBorderColor: Record<string, string> = {
 export default function TrainingCard({ training, participations, myParticipation, onOpenRoster, onEdit, onDelete, onParticipationSaved }: TrainingCardProps) {
   const { t } = useTranslation('trainings')
   const { user, canParticipateIn } = useAuth()
-  const team = training.expand?.team
-  const hall = training.expand?.hall
-  const coach = training.expand?.coach
+  const team = asObj<Team>(training.team)
+  const hall = asObj<Hall>(training.hall)
+  const coach = asObj<Member>(training.coach)
+  const teamId = getId(training.team)
   const myStatus = myParticipation?.status ?? null
   const warnings = getTrainingWarnings(participations ?? [], training.min_participants)
 
@@ -92,14 +103,14 @@ export default function TrainingCard({ training, participations, myParticipation
       {!training.cancelled && (
         <div className="mt-2.5 flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
-            {user && canParticipateIn(training.team) && (
+            {user && canParticipateIn(teamId) && (
               <TrainingParticipation training={training} existingParticipation={myParticipation} onSaved={onParticipationSaved} />
             )}
           </div>
           <div className="flex shrink-0 items-center gap-1">
             {onOpenRoster && (
               <button
-                onClick={() => onOpenRoster(training.id, training.team, training.date)}
+                onClick={() => onOpenRoster(training.id, teamId, training.date)}
                 className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-600 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
                 title={t('participation')}
               >
@@ -195,7 +206,7 @@ function TrainingParticipation({ training, existingParticipation, onSaved }: { t
   const { t } = useTranslation('participation')
   const { t: tTrainings } = useTranslation('trainings')
   const { user, isStaffOnly } = useAuth()
-  const isStaff = isStaffOnly(training.team)
+  const isStaff = isStaffOnly(getId(training.team))
   const { create, update } = useMutation<Participation>('participations')
 
   const deadlinePassed = training.respond_by

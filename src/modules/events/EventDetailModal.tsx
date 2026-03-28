@@ -17,7 +17,15 @@ import { isFeatureEnabled } from '../../utils/featureToggles'
 import { Calendar, Clock, MapPin, Users, Check, MessageSquare, UserPlus } from 'lucide-react'
 import type { Event, Team, EventSession, Participation } from '../../types'
 
-type EventExpanded = Event & { expand?: { teams?: Team[] } }
+function asTeams(teams: (Team | string)[] | null | undefined): Team[] {
+  if (!Array.isArray(teams) || teams.length === 0) return []
+  return typeof teams[0] === 'object' ? (teams as Team[]) : []
+}
+
+function teamId(val: Team | string | null | undefined): string {
+  if (!val) return ''
+  return typeof val === 'object' ? val.id : val
+}
 
 const eventTypeColors: Record<string, { bg: string; text: string }> = {
   verein: { bg: '#dbeafe', text: '#1e40af' },
@@ -34,7 +42,7 @@ function isHtml(str: string): boolean {
 }
 
 interface EventDetailModalProps {
-  event: EventExpanded | null
+  event: Event | null
   onClose: () => void
 }
 
@@ -46,10 +54,10 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
   const [sessionSheetOpen, setSessionSheetOpen] = useState(false)
 
   const canParticipate = !!user && !!event && (
-    !event.teams?.length || event.teams.some((tid) => canParticipateIn(tid))
+    !event.teams?.length || event.teams.some((tid) => canParticipateIn(teamId(tid)))
   )
-  const isStaff = !!event?.teams?.[0] && isCoachOf(event.teams[0])
-  const isStaffParticipant = !!event?.teams?.[0] && isStaffOnly(event.teams[0])
+  const isStaff = !!event?.teams?.[0] && isCoachOf(teamId(event.teams[0]))
+  const isStaffParticipant = !!event?.teams?.[0] && isStaffOnly(teamId(event.teams[0]))
 
   // Fetch sessions for multi-session events
   const hasSessionMode = event?.participation_mode && event.participation_mode !== 'whole'
@@ -63,7 +71,7 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
 
   if (!event) return null
 
-  const teams = event.expand?.teams ?? []
+  const teams = asTeams(event.teams)
 
   return (
     <>
@@ -128,7 +136,7 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
               <TasksSection
                 activityType="event"
                 activityId={event.id}
-                teamId={event.teams?.[0]}
+                teamId={teamId(event.teams?.[0])}
                 canManage={isStaff}
               />
             </div>
@@ -183,19 +191,19 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
         activityType="event"
         activityId={event.id}
         activityDate={event.start_date}
-        teamIds={event.teams ?? []}
+        teamIds={(event.teams ?? []).map(t => teamId(t))}
         title={`${event.title} — ${formatDate(event.start_date)}`}
         respondBy={event.respond_by}
         maxPlayers={event.max_players}
         participationMode={event.participation_mode}
         eventSessions={hasSessionMode ? sessions : undefined}
-        showRsvpTime={(event.expand?.teams ?? []).some(t => isFeatureEnabled(t.features_enabled, 'show_rsvp_time'))}
+        showRsvpTime={asTeams(event.teams).some(t => isFeatureEnabled(t.features_enabled, 'show_rsvp_time'))}
       />
     </>
   )
 }
 
-function EventParticipation({ event, isStaff, isStaffParticipant }: { event: EventExpanded; isStaff: boolean; isStaffParticipant: boolean }) {
+function EventParticipation({ event, isStaff, isStaffParticipant }: { event: Event; isStaff: boolean; isStaffParticipant: boolean }) {
   const { t } = useTranslation('participation')
   const { participation, effectiveStatus, hasAbsence, note: savedNote, setStatus, saveConfirmed, dismissConfirmed } = useParticipation(
     'event',

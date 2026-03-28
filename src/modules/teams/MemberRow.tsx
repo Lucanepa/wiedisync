@@ -7,8 +7,12 @@ import StatusBadge from '../../components/StatusBadge'
 import { getFileUrl } from '../../utils/pbFile'
 import ImageLightbox from '../../components/ImageLightbox'
 import type { ExpandedMemberTeam } from '../../hooks/useTeamMembers'
-import type { Team } from '../../types'
+import type { Team, Member, MemberTeam } from '../../types'
 import { cn } from '@/lib/utils'
+
+function asObj<T>(val: T | string | null | undefined): T | null {
+  return val != null && typeof val === 'object' ? val as T : null
+}
 import { Button } from '../../components/ui/button'
 import { updateRecord } from '../../lib/api'
 
@@ -49,7 +53,7 @@ export function getMemberRole(memberId: string, team?: Team | null): string | nu
 
 export default function MemberRow({ memberTeam, teamId: _teamId, teamSlug, team, canEdit, isAdmin, showContact = true, onTeamUpdate, onExtendShell, isEditing }: MemberRowProps) {
   const { t } = useTranslation('teams')
-  const member = memberTeam.expand?.member
+  const member = asObj<Member>(memberTeam.member)
   const [editingField, setEditingField] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
   const [lightboxOpen, setLightboxOpen] = useState(false)
@@ -73,9 +77,10 @@ export default function MemberRow({ memberTeam, teamId: _teamId, teamSlug, team,
     try {
       await updateRecord('members', member!.id, { [field]: value })
       logActivity('update', 'members', member!.id, { [field]: value })
-      // Update the local expand to reflect change immediately
-      if (memberTeam.expand?.member) {
-        ;(memberTeam.expand.member as Record<string, unknown>)[field] = value
+      // Update the local member to reflect change immediately
+      const memberRef = asObj<Member>(memberTeam.member)
+      if (memberRef) {
+        ;(memberRef as Record<string, unknown>)[field] = value
       }
     } catch {
       // ignore
@@ -149,13 +154,13 @@ export default function MemberRow({ memberTeam, teamId: _teamId, teamSlug, team,
           >
             {displayName}
           </Link>
-          {(memberTeam.guest_level ?? 0) > 0 && (
+          {((memberTeam as MemberTeam).guest_level ?? 0) > 0 && (
             <span className={`ml-1.5 rounded px-1.5 py-0.5 text-[10px] font-medium ${
-              memberTeam.guest_level === 1 ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
-              : memberTeam.guest_level === 2 ? 'bg-orange-100/70 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400'
+              (memberTeam as MemberTeam).guest_level === 1 ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
+              : (memberTeam as MemberTeam).guest_level === 2 ? 'bg-orange-100/70 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400'
               : 'bg-orange-100/50 text-orange-500 dark:bg-orange-900/10 dark:text-orange-500'
             }`}>
-              G{memberTeam.guest_level}
+              G{(memberTeam as MemberTeam).guest_level}
             </span>
           )}
         </div>

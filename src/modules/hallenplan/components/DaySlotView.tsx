@@ -172,10 +172,9 @@ export default function DaySlotView({
   }
 
   function getTeamName(slot: HallSlot): string {
-    const expanded = (slot as Record<string, unknown>).expand as
-      | Record<string, Record<string, unknown>>
-      | undefined
-    return (expanded?.team?.name as string) ?? ''
+    const first = slot.team?.[0]
+    if (first != null && typeof first === 'object') return (first as { name: string }).name ?? ''
+    return ''
   }
 
   const { startMin, endMin } = getDayRange(dayIndex)

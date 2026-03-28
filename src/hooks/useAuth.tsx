@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback, useMemo, t
 import { readMe, readItems } from '@directus/sdk'
 import { client, login as apiLogin, logout as apiLogout, refreshAuth, isAuthenticated, API_URL } from '../lib/api'
 import { queryClient } from '../lib/query'
+import { setSentryUser } from '../lib/sentry'
 import i18n from '../i18n'
 import { pbLangToI18n } from '../utils/languageMap'
 import { getCurrentSeason } from '../utils/dateHelpers'
@@ -140,6 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const member = await fetchMember()
         if (member) {
           setUser(member)
+          setSentryUser({ id: member.id, email: member.email, name: member.name })
           await loadTeamContext(member.id)
         } else {
           // Token refreshed but no linked member — clear auth
@@ -170,7 +172,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     await apiLogin(email, password)
     const member = await fetchMember()
-    if (member) { setUser(member); await loadTeamContext(member.id) }
+    if (member) {
+      setUser(member)
+      setSentryUser({ id: member.id, email: member.email, name: member.name })
+      await loadTeamContext(member.id)
+    }
   }, [fetchMember, loadTeamContext])
 
   const loginWithOAuth = useCallback(async (provider: string) => {
@@ -179,6 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     apiLogout()
+    setSentryUser(null)
     setUser(null)
     setCoachTeamIds([]); setCoachTeamNames([])
     setMemberTeamIds([]); setMemberTeamNames([])

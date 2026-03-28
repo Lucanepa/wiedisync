@@ -3,7 +3,11 @@ import { fetchItem, fetchAllItems, updateRecord } from '../lib/api'
 import { coercePositions, normalizePositionsForSport } from '../utils/memberPositions'
 import type { Member, MemberTeam, Team } from '../types'
 
-export type ExpandedMemberTeam = MemberTeam & { expand?: { member?: Member } }
+function asObj<T>(val: T | string | null | undefined): T | null {
+  return val != null && typeof val === 'object' ? val as T : null
+}
+
+export type ExpandedMemberTeam = Omit<MemberTeam, 'member'> & { member: (Member & { id: string }) | string }
 
 export function useTeamMembers(teamId: string | undefined, season?: string) {
   const [members, setMembers] = useState<ExpandedMemberTeam[]>([])
@@ -30,7 +34,7 @@ export function useTeamMembers(teamId: string | undefined, season?: string) {
       })
       const updates: Promise<unknown>[] = []
       const normalized = result.map((mt) => {
-        const member = mt.expand?.member
+        const member = asObj<Member>(mt.member)
         if (!member) return mt
         const originalPositions = coercePositions(member.position)
         const safePositions = normalizePositionsForSport(member.position, team.sport)
@@ -38,11 +42,8 @@ export function useTeamMembers(teamId: string | undefined, season?: string) {
           updates.push(updateRecord('members', member.id, { position: safePositions }))
           return {
             ...mt,
-            expand: {
-              ...mt.expand,
-              member: { ...member, position: safePositions },
-            },
-          }
+            member: { ...member, position: safePositions } as Member,
+          } as ExpandedMemberTeam
         }
         return mt
       })
@@ -108,7 +109,7 @@ export function useMultiTeamMembers(teamIds: string[]) {
       // Deduplicate by member ID — keep the first occurrence
       const seen = new Set<string>()
       const deduped = result.filter(mt => {
-        const memberId = mt.expand?.member?.id ?? mt.member
+        const memberId = asObj<Member>(mt.member)?.id ?? (mt.member as string)
         if (seen.has(memberId)) return false
         seen.add(memberId)
         return true

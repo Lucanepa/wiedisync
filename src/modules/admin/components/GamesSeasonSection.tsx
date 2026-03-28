@@ -5,13 +5,11 @@ import { fetchItems, kscwApi } from '../../../lib/api'
 interface GameRecord {
   id: string
   date: string
+  home_team: string
+  away_team: string
   home_score: number
   away_score: number
   venue: string
-  expand?: {
-    home_team?: { id: string; name: string }
-    away_team?: { id: string; name: string }
-  }
 }
 
 interface WinLossRow {
@@ -144,7 +142,7 @@ body: {
                   {formatDate(game.date)}
                 </span>
                 <span className="font-medium truncate">
-                  {game.expand?.home_team?.name ?? '?'} vs {game.expand?.away_team?.name ?? '?'}
+                  {game.home_team ?? '?'} vs {game.away_team ?? '?'}
                 </span>
                 {game.venue && (
                   <span className="text-xs text-muted-foreground ml-auto shrink-0 truncate max-w-[100px]">
@@ -175,7 +173,7 @@ body: {
                   {formatDate(game.date)}
                 </span>
                 <span className="truncate">
-                  {game.expand?.home_team?.name ?? '?'} vs {game.expand?.away_team?.name ?? '?'}
+                  {game.home_team ?? '?'} vs {game.away_team ?? '?'}
                 </span>
                 <span className="font-semibold tabular-nums ml-auto shrink-0">
                   {game.home_score}:{game.away_score}

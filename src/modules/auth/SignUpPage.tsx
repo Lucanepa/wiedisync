@@ -25,6 +25,10 @@ import chFlag from '../../assets/flags/ch.svg'
 import type { Team, MemberTeam } from '../../types'
 import { client, createRecord, fetchAllItems, kscwApi, updateRecord } from '../../lib/api'
 
+function asObj<T>(val: T | string | null | undefined): T | null {
+  return val != null && typeof val === 'object' ? val as T : null
+}
+
 const flagMap: Record<string, string> = { de: deFlag, gb: gbFlag, fr: frFlag, it: itFlag, ch: chFlag }
 const TURNSTILE_SITE_KEY = '0x4AAAAAACoYmx3xiDfRbmv9'
 
@@ -65,7 +69,7 @@ export default function SignUpPage() {
   const [otpError, setOtpError] = useState('')
 
   // Multi-team state (for ClubDesk imports)
-  const [existingTeams, setExistingTeams] = useState<(MemberTeam & { expand?: { team?: Team } })[]>([])
+  const [existingTeams, setExistingTeams] = useState<(MemberTeam & { team: Team | string })[]>([])
   const [additionalTeamIds, setAdditionalTeamIds] = useState<string[]>([])
 
   const { data: teamsRaw } = useCollection<Team>('teams', {
@@ -164,7 +168,7 @@ export default function SignUpPage() {
       // Fetch existing member_teams for the current season
       try {
         const season = getCurrentSeason()
-        const mts = await fetchAllItems<MemberTeam & { expand?: { team?: Team } }>('member_teams', {
+        const mts = await fetchAllItems<MemberTeam & { team: Team | string }>('member_teams', {
           filter: { _and: [{ member: { _eq: (user as any)?.id } }, { season: { _eq: season } }] },
           fields: ['*', 'team.*'],
         })
@@ -493,8 +497,9 @@ export default function SignUpPage() {
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {existingTeams.map((mt) => {
-                      const teamName = mt.expand?.team?.name || mt.team
-                      const league = mt.expand?.team?.league
+                      const teamObj = asObj<Team>(mt.team)
+                      const teamName = teamObj?.name || (mt.team as string)
+                      const league = teamObj?.league
                       return (
                         <span
                           key={mt.id}

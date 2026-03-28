@@ -13,11 +13,8 @@ import TeamChip from '../../components/TeamChip'
 import { runAssignment, getTeamCounts, type GameAssignment } from './components/AssignmentAlgorithm'
 import { updateRecord } from '../../lib/api'
 
-type ExpandedGame = Game & {
-  expand?: {
-    kscw_team?: Team
-    hall?: Hall
-  }
+function asObj<T>(val: T | string | null | undefined): T | null {
+  return val != null && typeof val === 'object' ? val as T : null
 }
 
 export default function ScorerAssignPage() {
@@ -32,7 +29,7 @@ export default function ScorerAssignPage() {
   }
 
   // Data loading
-  const { data: allGamesRaw, isLoading: gamesLoading } = useCollection<ExpandedGame>('games', {
+  const { data: allGamesRaw, isLoading: gamesLoading } = useCollection<Game>('games', {
     filter: { _and: [{ date: { _gte: seasonStart } }, { date: { _lte: seasonEnd } }, { status: { _neq: 'cancelled' } }] },
     sort: ['date', 'time'],
     all: true,
@@ -82,8 +79,9 @@ export default function ScorerAssignPage() {
     () => {
       const map = new Map<string, { id: string; name: string }>()
       for (const g of allGames) {
-        if (g.expand?.hall) {
-          map.set(g.expand.hall.id, { id: g.expand.hall.id, name: g.expand.hall.name })
+        const hall = asObj<Hall>(g.hall)
+        if (hall) {
+          map.set(hall.id, { id: hall.id, name: hall.name })
         }
       }
       return Array.from(map.values())
@@ -233,8 +231,7 @@ export default function ScorerAssignPage() {
               {assignments.map((a) => {
                 const game = homeGames.find((g) => g.id === a.gameId)
                 if (!game) return null
-                const expanded = game as ExpandedGame
-                const hallName = expanded.expand?.hall?.name ?? ''
+                const hallName = asObj<Hall>(game.hall)?.name ?? ''
 
                 const isExisting = a.conflicts.some((c) => c.key === 'existingKept')
                 const hasNoAssignment = !a.scorerTeamId && !a.scoreboardTeamId && !a.combinedTeamId

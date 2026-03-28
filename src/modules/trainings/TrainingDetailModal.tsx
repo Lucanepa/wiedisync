@@ -12,8 +12,18 @@ import { isFeatureEnabled } from '../../utils/featureToggles'
 import type { Training, Team, Hall, Member } from '../../types'
 import { MapPin, Clock, MessageSquare, User, Users, Calendar, Check, UserPlus } from 'lucide-react'
 
+function asObj<T>(val: T | string | null | undefined): T | null {
+  return val != null && typeof val === 'object' ? val as T : null
+}
+function getId(val: { id: string } | string | null | undefined): string {
+  if (val == null) return ''
+  return typeof val === 'object' ? val.id : val
+}
+
 type TrainingExpanded = Training & {
-  expand?: { team?: Team; hall?: Hall; coach?: Member }
+  team: Team | string
+  hall: Hall | string
+  coach: Member | string
 }
 
 interface TrainingDetailModalProps {
@@ -26,14 +36,15 @@ export default function TrainingDetailModal({ training, onClose }: TrainingDetai
   const { user, canParticipateIn, isCoachOf, isStaffOnly } = useAuth()
   const [rosterOpen, setRosterOpen] = useState(false)
 
-  const canParticipate = !!user && !!training?.team && canParticipateIn(training.team)
-  const isStaff = !!training?.team && isCoachOf(training.team)
+  const teamId = getId(training?.team)
+  const canParticipate = !!user && !!teamId && canParticipateIn(teamId)
+  const isStaff = !!teamId && isCoachOf(teamId)
 
   if (!training) return null
 
-  const team = training.expand?.team
-  const hall = training.expand?.hall
-  const coach = training.expand?.coach
+  const team = asObj<Team>(training.team)
+  const hall = asObj<Hall>(training.hall)
+  const coach = asObj<Member>(training.coach)
 
   return (
     <>
@@ -108,12 +119,12 @@ export default function TrainingDetailModal({ training, onClose }: TrainingDetai
           )}
 
           {/* Tasks */}
-          {user && !training.cancelled && isFeatureEnabled(training.expand?.team?.features_enabled, 'tasks') && (
+          {user && !training.cancelled && isFeatureEnabled(asObj<Team>(training.team)?.features_enabled, 'tasks') && (
             <div className="border-t border-gray-200 pt-3 dark:border-gray-700">
               <TasksSection
                 activityType="training"
                 activityId={training.id}
-                teamId={training.team}
+                teamId={teamId}
                 canManage={isStaff}
               />
             </div>
@@ -124,7 +135,7 @@ export default function TrainingDetailModal({ training, onClose }: TrainingDetai
             <div className="space-y-3 border-t border-gray-200 pt-3 dark:border-gray-700">
               {/* Participation buttons */}
               {canParticipate && (
-                <TrainingParticipation training={training} isStaff={isStaff} isStaffParticipant={!!training.team && isStaffOnly(training.team)} />
+                <TrainingParticipation training={training} isStaff={isStaff} isStaffParticipant={!!teamId && isStaffOnly(teamId)} />
               )}
 
               {/* Summary + roster button */}
@@ -145,18 +156,18 @@ export default function TrainingDetailModal({ training, onClose }: TrainingDetai
         </div>
       </Modal>
 
-      {training.team && (
+      {teamId && (
         <ParticipationRosterModal
           open={rosterOpen}
           onClose={() => setRosterOpen(false)}
           activityType="training"
           activityId={training.id}
           activityDate={training.date}
-          teamIds={training.team ? [training.team] : []}
+          teamIds={teamId ? [teamId] : []}
           title={`${team?.name ?? ''} — ${formatDate(training.date)}`}
           respondBy={training.respond_by}
           activityStartTime={training.start_time}
-          showRsvpTime={isFeatureEnabled(training.expand?.team?.features_enabled, 'show_rsvp_time')}
+          showRsvpTime={isFeatureEnabled(asObj<Team>(training.team)?.features_enabled, 'show_rsvp_time')}
         />
       )}
     </>

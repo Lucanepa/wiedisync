@@ -13,7 +13,13 @@ import DatePicker from '@/components/ui/DatePicker'
 import { Switch } from '@/components/ui/switch'
 import { createRecord, fetchAllItems, fetchItem } from '../../lib/api'
 
-type SlotExpanded = HallSlot & { expand?: { team?: Team; hall?: Hall } }
+function asObj<T>(val: T | string | null | undefined): T | null {
+  return val != null && typeof val === 'object' ? val as T : null
+}
+
+type SlotExpanded = HallSlot & {
+  hall: Hall | string
+}
 
 interface RecurringTrainingModalProps {
   open: boolean
@@ -38,6 +44,7 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
     filter: { slot_type: { _eq: 'training' } },
     sort: ['day_of_week', 'start_time'],
     limit: 100,
+    fields: ['*', 'hall.*'],
   })
   const allSlots = allSlotsRaw ?? []
 
@@ -157,7 +164,9 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
   }, [slot?.id, slot?.team]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // When slot changes, default the hall to the slot's hall
-  const effectiveHallId = hallId || slot?.hall || ''
+  const hallVal = slot?.hall as Hall | string | undefined
+  const slotHallId = typeof hallVal === 'object' ? hallVal?.id : hallVal
+  const effectiveHallId = hallId || slotHallId || ''
 
   const effectiveEndDate = untilSeasonEnd ? getSeasonEndDate() : endDate
 
@@ -169,7 +178,7 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
     const end = new Date(effectiveEndDate)
     // DB: 0=Mon..6=Sun → convert to JS: 0=Sun..6=Sat
     const targetJsDay = (slot.day_of_week + 1) % 7
-    const closureHallId = effectiveHallId || slot.hall || ''
+    const closureHallId = effectiveHallId || slotHallId || ''
 
     const current = new Date(start)
     // Advance to first matching day
@@ -266,7 +275,7 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
   const labelCls = 'block text-sm font-medium text-gray-700 dark:text-gray-300'
 
   if (done) {
-    const teamName = slot?.expand?.team?.name ?? ''
+    const teamName = asObj<Team>(slot?.team?.[0])?.name ?? ''
     const hallName = halls.find((h) => h.id === effectiveHallId)?.name ?? ''
     return (
       <Modal open={open} onClose={handleClose} title={t('recurringTitle')} size="sm">
@@ -347,7 +356,7 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
                     : ''
               return (
                 <option key={s.id} value={s.id}>
-                  {s.expand?.team?.name ?? '?'} — {tc(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'][s.day_of_week])} {s.start_time}–{s.end_time} ({s.expand?.hall?.name ?? '?'}){dateSuffix}
+                  {asObj<Team>(s.team?.[0])?.name ?? '?'} — {tc(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'][s.day_of_week])} {s.start_time}–{s.end_time} ({asObj<Hall>(s.hall)?.name ?? '?'}){dateSuffix}
                 </option>
               )
             })}

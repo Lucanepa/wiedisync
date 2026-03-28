@@ -7,12 +7,14 @@ import TeamChip from '../../components/TeamChip'
 import { pbNameToColorKey } from '../../utils/teamColors'
 import { formatDate } from '../../utils/dateHelpers'
 
+function asObj<T>(val: T | string | null | undefined): T | null {
+  return val != null && typeof val === 'object' ? val as T : null
+}
+
 type ExpandedExpense = RefereeExpense & {
-  expand?: {
-    game?: Game & BaseRecord
-    team?: Team & BaseRecord
-    paid_by_member?: Member & BaseRecord
-  }
+  game: (Game & BaseRecord) | string
+  team: (Team & BaseRecord) | string
+  paid_by_member: (Member & BaseRecord) | string
 }
 
 export default function RefereeExpensesPage() {
@@ -41,6 +43,7 @@ export default function RefereeExpensesPage() {
   const { data: expensesRaw, isLoading } = useCollection<ExpandedExpense>('referee_expenses', {
     filter,
     sort: ['-created'],
+    fields: ['*', 'game.*', 'team.*', 'paid_by_member.*'],
     all: true,
   })
   const expenses = expensesRaw ?? []
@@ -49,7 +52,8 @@ export default function RefereeExpensesPage() {
   const seasons = useMemo(() => {
     const s = new Set<string>()
     expenses.forEach((e) => {
-      if (e.expand?.game?.season) s.add(e.expand.game.season)
+      const game = asObj<Game & BaseRecord>(e.game)
+      if (game?.season) s.add(game.season)
     })
     return Array.from(s).sort().reverse()
   }, [expenses])
@@ -57,16 +61,18 @@ export default function RefereeExpensesPage() {
   const exportCsv = () => {
     const header = ['Date', 'Home Team', 'Away Team', 'League', 'KSCW Team', 'Paid By', 'Amount (CHF)', 'Notes']
     const rows = expenses.map((e) => {
-      const game = e.expand?.game
-      const paidBy = e.expand?.paid_by_member
-        ? `${e.expand.paid_by_member.first_name} ${e.expand.paid_by_member.last_name}`
+      const game = asObj<Game & BaseRecord>(e.game)
+      const paidByMember = asObj<Member & BaseRecord>(e.paid_by_member)
+      const paidBy = paidByMember
+        ? `${paidByMember.first_name} ${paidByMember.last_name}`
         : e.paid_by_other || ''
+      const teamObj = asObj<Team & BaseRecord>(e.team)
       return [
         game?.date ? formatDate(game.date) : '',
         game?.home_team || '',
         game?.away_team || '',
         game?.league || '',
-        e.expand?.team?.name || '',
+        teamObj?.name || '',
         paidBy,
         e.amount ? e.amount.toFixed(2) : '',
         e.notes || '',
@@ -147,13 +153,14 @@ export default function RefereeExpensesPage() {
             </thead>
             <tbody>
               {expenses.map((expense) => {
-                const game = expense.expand?.game
-                const team = expense.expand?.team
+                const game = asObj<Game & BaseRecord>(expense.game)
+                const team = asObj<Team & BaseRecord>(expense.team)
                 const teamKey = team?.name && team?.sport
                   ? pbNameToColorKey(team.name, team.sport)
                   : team?.name || ''
-                const paidBy = expense.expand?.paid_by_member
-                  ? `${expense.expand.paid_by_member.first_name} ${expense.expand.paid_by_member.last_name}`
+                const paidByMember = asObj<Member & BaseRecord>(expense.paid_by_member)
+                const paidBy = paidByMember
+                  ? `${paidByMember.first_name} ${paidByMember.last_name}`
                   : expense.paid_by_other || '–'
 
                 return (

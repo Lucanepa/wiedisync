@@ -20,9 +20,8 @@ interface TeamRequest {
   collectionId: string
   collectionName: string
   member: string
-  team: string
+  team: Team | string
   status: 'pending' | 'approved' | 'rejected' | 'cancelled'
-  expand?: { team?: Team }
 }
 
 export default function TeamRequestModal({ open, onClose, onComplete, currentTeamIds }: TeamRequestModalProps) {

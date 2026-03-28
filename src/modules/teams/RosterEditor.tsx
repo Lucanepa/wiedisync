@@ -20,6 +20,10 @@ import type { Team, Member, MemberPosition, MemberTeam, LicenceType, TeamSetting
 import { Button } from '../../components/ui/button'
 import { fetchItems, updateRecord } from '../../lib/api'
 
+function asObj<T>(val: T | string | null | undefined): T | null {
+  return val != null && typeof val === 'object' ? val as T : null
+}
+
 type LeadershipRole = 'coach' | 'captain' | 'team_responsible'
 const ROLES: LeadershipRole[] = ['coach', 'captain', 'team_responsible']
 
@@ -98,8 +102,8 @@ export default function RosterEditor() {
 
   const sortedMembers = useMemo(() => {
     return [...members].sort((a, b) => {
-      const ma = a.expand?.member
-      const mb = b.expand?.member
+      const ma = asObj<Member>(a.member)
+      const mb = asObj<Member>(b.member)
       if (!ma || !mb) return 0
       return (ma.last_name ?? '').localeCompare(mb.last_name ?? '') || (ma.first_name ?? '').localeCompare(mb.first_name ?? '')
     })
@@ -169,9 +173,10 @@ export default function RosterEditor() {
       await updateRecord('members', memberId, { licences: next })
       logActivity('update', 'members', memberId, { licences: next })
       // Update local state
-      const mt = members.find((m) => m.expand?.member?.id === memberId)
-      if (mt?.expand?.member) {
-        ;(mt.expand.member as Record<string, unknown>).licences = next
+      const mt = members.find((m) => asObj<Member>(m.member)?.id === memberId)
+      const _memberRef = mt ? asObj<Member>(mt.member) : null
+      if (_memberRef) {
+        ;(_memberRef as Record<string, unknown>).licences = next
       }
     } catch {
       toast.error(t('common:errorSaving'))
@@ -183,9 +188,10 @@ export default function RosterEditor() {
     try {
       await updateRecord('members', memberId, { number: num })
       logActivity('update', 'members', memberId, { number: num })
-      const mt = members.find((m) => m.expand?.member?.id === memberId)
-      if (mt?.expand?.member) {
-        ;(mt.expand.member as Record<string, unknown>).number = num
+      const mt = members.find((m) => asObj<Member>(m.member)?.id === memberId)
+      const _memberRef = mt ? asObj<Member>(mt.member) : null
+      if (_memberRef) {
+        ;(_memberRef as Record<string, unknown>).number = num
       }
     } catch {
       toast.error(t('common:errorSaving'))
@@ -197,9 +203,10 @@ export default function RosterEditor() {
     try {
       await updateRecord('members', memberId, { position: positions })
       logActivity('update', 'members', memberId, { position: positions })
-      const mt = members.find((m) => m.expand?.member?.id === memberId)
-      if (mt?.expand?.member) {
-        ;(mt.expand.member as Record<string, unknown>).position = positions
+      const mt = members.find((m) => asObj<Member>(m.member)?.id === memberId)
+      const _memberRef = mt ? asObj<Member>(mt.member) : null
+      if (_memberRef) {
+        ;(_memberRef as Record<string, unknown>).position = positions
       }
     } catch {
       toast.error(t('common:errorSaving'))
@@ -316,7 +323,7 @@ export default function RosterEditor() {
         ) : (
           <div className="mt-4 space-y-2">
             {sortedMembers.map((mt) => {
-              const member = mt.expand?.member
+              const member = asObj<Member>(mt.member)
               if (!member) return null
               const initials = `${member.first_name?.[0] ?? ''}${member.last_name?.[0] ?? ''}`.toUpperCase()
               const roles = team ? getMemberRoles(member.id, team) : []
@@ -324,7 +331,7 @@ export default function RosterEditor() {
               const nonPlaying = isNonPlayingStaff(member.id, team, memberPositions)
               const selectablePositions = getSelectablePositions(team?.sport, memberPositions)
               return (
-                <div key={mt.id} className="flex items-center gap-3 rounded-lg border bg-white dark:bg-gray-800 dark:border-gray-700 px-4 py-2.5">
+                <div key={mt.id as string} className="flex items-center gap-3 rounded-lg border bg-white dark:bg-gray-800 dark:border-gray-700 px-4 py-2.5">
                   {member.photo ? (
                     <img
                       src={getFileUrl('members', member.id, member.photo)}
@@ -435,11 +442,11 @@ export default function RosterEditor() {
                   {/* Guest level cycle */}
                   <button
                     onClick={async () => {
-                      const currentLevel = mt.guest_level ?? 0
+                      const currentLevel = (mt.guest_level as number) ?? 0
                       const nextLevel = (currentLevel + 1) % 4
                       try {
-                        await updateRecord('member_teams', mt.id, { guest_level: nextLevel })
-                        logActivity('update', 'member_teams', mt.id, { guest_level: nextLevel })
+                        await updateRecord('member_teams', mt.id as string, { guest_level: nextLevel })
+                        logActivity('update', 'member_teams', mt.id as string, { guest_level: nextLevel })
                         ;(mt as Record<string, unknown>).guest_level = nextLevel
                       } catch { toast.error(t('common:errorSaving')) }
                     }}
@@ -484,7 +491,7 @@ export default function RosterEditor() {
                   </div>
 
                   <button
-                    onClick={() => setRemovingId(mt.id)}
+                    onClick={() => setRemovingId(mt.id as string)}
                     className="shrink-0 text-sm text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
                   >
                     {t('common:remove')}
@@ -553,7 +560,7 @@ export default function RosterEditor() {
         title={t('removeConfirmTitle')}
         message={t('removeConfirmMessage', {
           name: (() => {
-            const m = members.find((mt) => mt.id === removingId)?.expand?.member
+            const m = asObj<Member>(members.find((mt) => mt.id === removingId)?.member)
             return m ? displayName(m) : ''
           })(),
         })}

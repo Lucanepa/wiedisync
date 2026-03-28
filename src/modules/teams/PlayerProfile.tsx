@@ -15,7 +15,11 @@ import ImageLightbox from '../../components/ImageLightbox'
 import type { Member, MemberTeam, Team, Absence, Participation } from '../../types'
 import { fetchAllItems, fetchItem } from '../../lib/api'
 
-type ExpandedMemberTeam = MemberTeam & { expand?: { team?: Team } }
+function asObj<T>(val: T | string | null | undefined): T | null {
+  return val != null && typeof val === 'object' ? val as T : null
+}
+
+type ExpandedMemberTeam = MemberTeam & { team: Team | string }
 
 export default function PlayerProfile() {
   const { t } = useTranslation('teams')
@@ -29,6 +33,7 @@ export default function PlayerProfile() {
 
   const { data: memberTeamsRaw } = useCollection<ExpandedMemberTeam>('member_teams', {
     filter: memberId ? { member: { _eq: memberId } } : { id: { _eq: -1 } },
+    fields: ['*', 'team.*'],
     limit: 20,
   })
   const memberTeams = memberTeamsRaw ?? []
@@ -148,7 +153,7 @@ export default function PlayerProfile() {
 
   // Resolve the "from" team for breadcrumb
   const fromTeamData = fromTeam
-    ? memberTeams.find((mt) => mt.expand?.team?.name === fromTeam)?.expand?.team
+    ? asObj<Team>(memberTeams.find((mt) => asObj<Team>(mt.team)?.name === fromTeam)?.team)
     : null
 
   const isCoach = memberTeams.some((mt) => isCoachOf(mt.team))
@@ -274,11 +279,14 @@ export default function PlayerProfile() {
         {/* Teams row */}
         <div className="border-t border-gray-100 bg-gray-50 px-6 py-3 dark:border-gray-700 dark:bg-gray-800/50">
           <div className="flex flex-wrap items-center gap-2">
-            {memberTeams.map((mt) => (
-              <Link key={mt.id} to={`/teams/${mt.expand?.team?.name ?? mt.team}`}>
-                <TeamChip team={mt.expand?.team?.name ?? '?'} />
-              </Link>
-            ))}
+            {memberTeams.map((mt) => {
+              const teamObj = asObj<Team>(mt.team)
+              return (
+                <Link key={mt.id} to={`/teams/${teamObj?.name ?? (mt.team as string)}`}>
+                  <TeamChip team={teamObj?.name ?? '?'} />
+                </Link>
+              )
+            })}
             {memberTeams.length === 0 && (
               <p className="text-sm text-gray-500 dark:text-gray-400">{t('noTeams')}</p>
             )}

@@ -27,8 +27,18 @@ import {
 } from '@/components/ui/dropdown-menu'
 import type { Training, Team, Hall, Member, Participation } from '../../types'
 
+function asObj<T>(val: T | string | null | undefined): T | null {
+  return val != null && typeof val === 'object' ? val as T : null
+}
+function getId(val: { id: string } | string | null | undefined): string {
+  if (val == null) return ''
+  return typeof val === 'object' ? val.id : val
+}
+
 type TrainingExpanded = Training & {
-  expand?: { team?: Team; hall?: Hall; coach?: Member }
+  team: Team | string
+  hall: Hall | string
+  coach: Member | string
 }
 
 export default function TrainingsPage() {
@@ -77,6 +87,7 @@ export default function TrainingsPage() {
     filter: effectiveFilter,
     sort: ['date'],
     limit: 50,
+    fields: ['*', 'team.*', 'hall.*', 'coach.*'],
     enabled: !teamsLoading,
   })
   const trainings = trainingsRaw ?? []
@@ -241,9 +252,9 @@ export default function TrainingsPage() {
                 participations={participationsByActivity.get(training.id)}
                 myParticipation={myParticipationByActivity.get(training.id)}
                 onParticipationSaved={refetchParticipations}
-                onOpenRoster={(id, teamId, date) => setRosterTraining({ id, teamId, date, showRsvpTime: isFeatureEnabled(training.expand?.team?.features_enabled, 'show_rsvp_time') })}
-                onEdit={(effectiveIsAdmin || isCoachOf(training.team)) ? handleEdit : undefined}
-                onDelete={(effectiveIsAdmin || isCoachOf(training.team)) ? setDeletingId : undefined}
+                onOpenRoster={(id, teamId, date) => setRosterTraining({ id, teamId, date, showRsvpTime: isFeatureEnabled(asObj<Team>(training.team)?.features_enabled, 'show_rsvp_time') })}
+                onEdit={(effectiveIsAdmin || isCoachOf(getId(training.team))) ? handleEdit : undefined}
+                onDelete={(effectiveIsAdmin || isCoachOf(getId(training.team))) ? setDeletingId : undefined}
               />
             ))}
             </div>

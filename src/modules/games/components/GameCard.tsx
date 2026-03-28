@@ -35,11 +35,14 @@ interface GameCardProps {
   onParticipationSaved?: () => void
 }
 
+/** Helper to safely extract an expanded relation object (Directus returns the object inline, or a raw ID string when not expanded) */
+function asObj<T>(val: T | string | null | undefined): T | null {
+  return val != null && typeof val === 'object' ? (val as T) : null
+}
+
 type ExpandedGame = Game & {
-  expand?: {
-    kscw_team?: Team & BaseRecord
-    hall?: Hall & BaseRecord
-  }
+  kscw_team: (Team & BaseRecord) | string
+  hall: (Hall & BaseRecord) | string
 }
 
 function StatusBadge({ status }: { status: Game['status'] }) {
@@ -74,15 +77,16 @@ export default function GameCard({ game, onClick, variant = 'card', participatio
   const { t } = useTranslation('games')
   const { user, canParticipateIn } = useAuth()
   const canParticipate = !!user && !!game.kscw_team && canParticipateIn(game.kscw_team)
-  const expanded = game as ExpandedGame
-  const expandedHall = expanded.expand?.hall
+  const expanded = game as unknown as ExpandedGame
+  const expandedHall = asObj<Hall & BaseRecord>(expanded.hall)
   const hallInfo = expandedHall
     ? [expandedHall.name, expandedHall.city].filter(Boolean).join(', ')
     : game.away_hall_json
       ? [game.away_hall_json.name, game.away_hall_json.city].filter(Boolean).join(', ')
       : ''
-  const rawTeamName = expanded.expand?.kscw_team?.name ?? ''
-  const teamSport = expanded.expand?.kscw_team?.sport as 'volleyball' | 'basketball' | undefined
+  const kscwTeamObj = asObj<Team & BaseRecord>(expanded.kscw_team)
+  const rawTeamName = kscwTeamObj?.name ?? ''
+  const teamSport = kscwTeamObj?.sport as 'volleyball' | 'basketball' | undefined
   const kscwTeamName = rawTeamName && teamSport ? pbNameToColorKey(rawTeamName, teamSport) : rawTeamName
 
   if (variant === 'compact') {
@@ -106,7 +110,7 @@ export default function GameCard({ game, onClick, variant = 'card', participatio
               <div>{short}</div>
               {game.time && <div>{formatTime(game.time)}</div>}
             </div>
-            {expanded.expand?.kscw_team?.sport === 'basketball'
+            {kscwTeamObj?.sport === 'basketball'
               ? <BasketballIcon className="h-5 w-5 shrink-0" filled />
               : <VolleyballIcon className="h-5 w-5 shrink-0" filled />}
             <div className="min-w-0 flex-1">
@@ -140,7 +144,7 @@ export default function GameCard({ game, onClick, variant = 'card', participatio
 
           {/* Col 2: Sport icon */}
           <div>
-            {expanded.expand?.kscw_team?.sport === 'basketball'
+            {kscwTeamObj?.sport === 'basketball'
               ? <BasketballIcon className="h-5 w-5" filled />
               : <VolleyballIcon className="h-5 w-5" filled />}
           </div>
@@ -276,7 +280,7 @@ export default function GameCard({ game, onClick, variant = 'card', participatio
           <div className="whitespace-pre-line">{leagueShort(game.league)}</div>
           {kscwTeamName && (
             <div className="flex items-center gap-1 pt-0.5">
-              {expanded.expand?.kscw_team?.sport === 'basketball'
+              {kscwTeamObj?.sport === 'basketball'
                 ? <BasketballIcon className="h-3.5 w-3.5" filled />
                 : <VolleyballIcon className="h-3.5 w-3.5" filled />}
               <TeamChip team={kscwTeamName} size="xs" />

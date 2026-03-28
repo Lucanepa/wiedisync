@@ -2,6 +2,10 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Game, Member, Team } from '../../../types'
 import type { ExpandedGame } from './ScorerRow'
+
+function asObj<T>(val: T | string | null | undefined): T | null {
+  return val != null && typeof val === 'object' ? val as T : null
+}
 import { DutyStatus } from './ScorerRow'
 import TeamChip from '../../../components/TeamChip'
 import { formatTime } from '../../../utils/dateHelpers'
@@ -56,15 +60,15 @@ export default function TeamOverview({ games, members, sport }: TeamOverviewProp
 
       if (sport === 'volleyball') {
         if (game.scorer_scoreboard_duty_team) {
-          const teamName = eg.expand?.scorer_scoreboard_duty_team?.name ?? '?'
+          const teamName = asObj<Team>(game.scorer_scoreboard_duty_team)?.name ?? '?'
           addEntry(teamName, { game: eg, dutyType: 'scorer_scoreboard', teamName, memberName: getMemberName(game.scorer_scoreboard_member) })
         }
         if (game.scorer_duty_team) {
-          const teamName = eg.expand?.scorer_duty_team?.name ?? '?'
+          const teamName = asObj<Team>(game.scorer_duty_team)?.name ?? '?'
           addEntry(teamName, { game: eg, dutyType: 'scorer', teamName, memberName: getMemberName(game.scorer_member) })
         }
         if (game.scoreboard_duty_team) {
-          const teamName = eg.expand?.scoreboard_duty_team?.name ?? '?'
+          const teamName = asObj<Team>(game.scoreboard_duty_team)?.name ?? '?'
           addEntry(teamName, { game: eg, dutyType: 'scoreboard', teamName, memberName: getMemberName(game.scoreboard_member) })
         }
       } else {
@@ -72,15 +76,15 @@ export default function TeamOverview({ games, members, sport }: TeamOverviewProp
         const timekeeperTeam = game.bb_timekeeper_duty_team || game.bb_duty_team
         const _24sTeam = game.bb_24s_duty_team || game.bb_duty_team
         if (scorerTeam) {
-          const teamName = (eg.expand as Record<string, Team | undefined>)?.bb_scorer_duty_team?.name ?? eg.expand?.bb_duty_team?.name ?? '?'
+          const teamName = asObj<Team>(game.bb_scorer_duty_team)?.name ?? asObj<Team>(game.bb_duty_team)?.name ?? '?'
           addEntry(teamName, { game: eg, dutyType: 'bb_scorer', teamName, memberName: getMemberName(game.bb_scorer_member) })
         }
         if (timekeeperTeam) {
-          const teamName = (eg.expand as Record<string, Team | undefined>)?.bb_timekeeper_duty_team?.name ?? eg.expand?.bb_duty_team?.name ?? '?'
+          const teamName = asObj<Team>(game.bb_timekeeper_duty_team)?.name ?? asObj<Team>(game.bb_duty_team)?.name ?? '?'
           addEntry(teamName, { game: eg, dutyType: 'bb_timekeeper', teamName, memberName: getMemberName(game.bb_timekeeper_member) })
         }
         if (_24sTeam && game.bb_24s_official) {
-          const teamName = (eg.expand as Record<string, Team | undefined>)?.bb_24s_duty_team?.name ?? eg.expand?.bb_duty_team?.name ?? '?'
+          const teamName = asObj<Team>(game.bb_24s_duty_team)?.name ?? asObj<Team>(game.bb_duty_team)?.name ?? '?'
           addEntry(teamName, { game: eg, dutyType: 'bb_24s_official', teamName, memberName: getMemberName(game.bb_24s_official) })
         }
       }

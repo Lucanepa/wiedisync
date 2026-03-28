@@ -16,6 +16,10 @@ import TeamRequestModal from './TeamRequestModal'
 import type { MemberTeam, Team, Absence, LicenceType } from '../../types'
 import { updateRecord } from '../../lib/api'
 
+function asObj<T>(val: T | string | null | undefined): T | null {
+  return val != null && typeof val === 'object' ? val as T : null
+}
+
 const LICENCE_LABELS: Record<LicenceType, string> = {
   scorer_vb: 'licenceScorer',
   referee_vb: 'licenceReferee',
@@ -25,7 +29,7 @@ const LICENCE_LABELS: Record<LicenceType, string> = {
   referee_bb: 'licenceRefereeBB',
 }
 
-type ExpandedMemberTeam = MemberTeam & { expand?: { team?: Team } }
+type ExpandedMemberTeam = MemberTeam & { team: Team | string }
 
 export default function ProfilePage() {
   const { user } = useAuth()
@@ -37,22 +41,24 @@ export default function ProfilePage() {
 
   const { data: memberTeamsRaw } = useCollection<ExpandedMemberTeam>('member_teams', {
     filter: user ? { member: { _eq: user.id } } : undefined,
+    fields: ['*', 'team.*'],
     limit: 20,
     enabled: !!user,
   })
   const memberTeams = memberTeamsRaw ?? []
 
   // Pending team requests
-  interface TeamRequest { id: string; collectionId: string; collectionName: string; member: string; team: string; status: string; expand?: { team?: Team } }
+  interface TeamRequest { id: string; collectionId: string; collectionName: string; member: string; team: Team | string; status: string }
   const { data: pendingRequestsRaw, refetch: refetchRequests } = useCollection<TeamRequest>('team_requests', {
     filter: user ? { _and: [{ member: { _eq: user.id } }, { status: { _eq: 'pending' } }] } : undefined,
+    fields: ['*', 'team.*'],
     limit: 20,
     enabled: !!user,
   })
   const pendingRequests = pendingRequestsRaw ?? []
 
   const currentTeamIds = useMemo(
-    () => memberTeams.map((mt) => mt.expand?.team?.id ?? mt.team),
+    () => memberTeams.map((mt) => asObj<Team>(mt.team)?.id ?? (mt.team as string)),
     [memberTeams],
   )
 
@@ -126,7 +132,7 @@ export default function ProfilePage() {
             {memberTeams.length > 0 && (
               <div className="flex flex-col">
                 {memberTeams.map((mt, i) => {
-                  const team = mt.expand?.team
+                  const team = asObj<Team>(mt.team)
                   const teamRoles: string[] = [tt('rolePlayer')]
                   if (team) {
                     if (team.coach?.includes(user.id)) teamRoles.push(tt('roleCoach'))
@@ -164,7 +170,7 @@ export default function ProfilePage() {
                 {pendingRequests.map((req) => (
                   <div key={req.id} className="flex items-center gap-2.5 py-1.5 pl-5">
                     <Clock className="h-3.5 w-3.5 text-amber-500" />
-                    <TeamChip team={req.expand?.team?.name ?? '?'} size="sm" />
+                    <TeamChip team={asObj<Team>(req.team)?.name ?? '?'} size="sm" />
                     <span className="text-xs text-amber-600 dark:text-amber-400">{t('pendingApproval')}</span>
                     <button
                       onClick={() => handleCancelRequest(req.id)}

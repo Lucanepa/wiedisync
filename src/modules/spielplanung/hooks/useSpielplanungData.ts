@@ -36,9 +36,13 @@ function buildGameFilter(
   return { _and: conditions }
 }
 
+function asObj<T>(val: T | string | null | undefined): T | null {
+  return val != null && typeof val === 'object' ? val as T : null
+}
+
 function gameToCalendarEntry(game: Game): CalendarEntry {
-  const expandedTeam = (game.expand as { kscw_team?: Team })?.kscw_team
-  const expandedHall = (game.expand as { hall?: { name: string } })?.hall
+  const expandedTeam = asObj<Team>(game.kscw_team)
+  const expandedHall = asObj<{ name: string }>(game.hall)
 
   return {
     id: game.id,

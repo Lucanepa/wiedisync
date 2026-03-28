@@ -39,8 +39,6 @@ export function gameToVirtualSlots(
 
   if (!game.hall) return []
 
-  const expanded = (game as Record<string, unknown>).expand as Record<string, unknown> | undefined
-
   // Check if the team is basketball → spread across KWI A + KWI B
   const team = teams.find((t) => t.id === game.kscw_team)
   const isBB = team?.sport === 'basketball'
@@ -68,7 +66,6 @@ export function gameToVirtualSlots(
     valid_until: gameDate,
     label: `${game.home_team} vs ${game.away_team}`,
     notes: game.league || '',
-    expand: expanded ? { team: expanded.kscw_team } : undefined,
     _virtual: {
       source: 'game',
       sourceId: game.id,
@@ -90,8 +87,6 @@ export function trainingToVirtualSlot(
   if (dayIndex === -1) return null
   if (!training.start_time || !training.end_time) return null
 
-  const expanded = (training as Record<string, unknown>).expand as Record<string, unknown> | undefined
-
   return {
     id: `training-${training.id}`,
     collectionId: '',
@@ -112,7 +107,6 @@ export function trainingToVirtualSlot(
       ? `Abgesagt${training.cancel_reason ? ': ' + training.cancel_reason : ''}`
       : '',
     notes: training.notes || '',
-    expand: expanded ? { team: expanded.team } : undefined,
     _virtual: {
       source: 'training',
       sourceId: training.id,
@@ -499,7 +493,6 @@ export function mergeVirtualSlots(
         if (isClosedOnDate(slot.hall, gameDate, closures)) continue
 
         const claim = claimsByKey.get(`${slot.id}-${gameDate}`)
-        const expanded = (slot as Record<string, unknown>).expand as Record<string, unknown> | undefined
 
         freedFromAway.push({
           ...slot,
@@ -513,7 +506,6 @@ export function mergeVirtualSlots(
             isClaimed: !!claim,
             claimRecord: claim,
           },
-          expand: expanded,
         } as HallSlot)
       }
     }
@@ -613,7 +605,6 @@ export function mergeVirtualSlots(
     if (!dateStr) continue
     if (isClosedOnDate(slot.hall, dateStr, closures)) continue
     const claim = claimsByKey.get(`${slot.id}-${dateStr}`)
-    const expanded = (slot as Record<string, unknown>).expand as Record<string, unknown> | undefined
     recurringFreedKeys.add(`${slot.id}-${dayIdx}`)
     freedRecurringSlots.push({
       ...slot,
@@ -628,7 +619,6 @@ export function mergeVirtualSlots(
         claimRecord: claim,
         isTemplateFreed: true,
       },
-      expand: expanded,
     } as HallSlot)
   }
 

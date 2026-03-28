@@ -10,6 +10,11 @@ import {
 import { format, isBefore, isAfter, isSameDay } from 'date-fns'
 import { formatTime } from '../../../utils/dateHelpers'
 
+/** Safely narrow a relation value that may be a raw ID string or a populated object. */
+function asObj<T>(val: T | string | null | undefined): T | null {
+  return val != null && typeof val === 'object' ? val as T : null
+}
+
 interface UseCalendarDataOptions {
   filters: CalendarFilterState
   /** Visible range start (inclusive) */
@@ -63,9 +68,9 @@ function addEventTeamFilter(baseParts: Record<string, unknown>[], teamIds: strin
   return { _and: conditions }
 }
 
-function gameToEntry(game: Game): CalendarEntry {
-  const expandedTeam = (game.expand as { kscw_team?: Team })?.kscw_team
-  const expandedHall = (game.expand as { hall?: { name: string } })?.hall
+function gameToEntry(game: Game & { kscw_team?: Team | string; hall?: { name: string } | string }): CalendarEntry {
+  const expandedTeam = asObj<Team>(game.kscw_team)
+  const expandedHall = asObj<{ name: string }>(game.hall)
 
   return {
     id: game.id,
@@ -84,9 +89,9 @@ function gameToEntry(game: Game): CalendarEntry {
   }
 }
 
-function trainingToEntry(training: Training): CalendarEntry {
-  const expandedTeam = (training.expand as { team?: Team })?.team
-  const expandedHall = (training.expand as { hall?: { name: string } })?.hall
+function trainingToEntry(training: Training & { team?: Team | string; hall?: { name: string } | string }): CalendarEntry {
+  const expandedTeam = asObj<Team>(training.team)
+  const expandedHall = asObj<{ name: string }>(training.hall)
 
   return {
     id: training.id,
@@ -127,8 +132,8 @@ function eventToEntry(event: Event): CalendarEntry {
   }
 }
 
-function closureToEntry(closure: HallClosure): CalendarEntry {
-  const expandedHall = (closure.expand as { hall?: { name: string } })?.hall
+function closureToEntry(closure: HallClosure & { hall?: { name: string } | string }): CalendarEntry {
+  const expandedHall = asObj<{ name: string }>(closure.hall)
   const hallName = expandedHall?.name ?? ''
   const start = parseDate(closure.start_date)
   const end = parseDate(closure.end_date)
@@ -216,6 +221,7 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
       filters.selectedTeamIds,
       'kscw_team',
     ),
+    fields: ['*', 'kscw_team.*', 'hall.*'],
     sort: ['date', 'time'],
     all: true,
   })
@@ -228,6 +234,7 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
       filters.selectedTeamIds,
       'team',
     ),
+    fields: ['*', 'team.*', 'hall.*'],
     sort: ['date', 'start_time'],
     all: true,
   })
@@ -237,6 +244,7 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
   const { data: closuresRawData, isLoading: closuresLoading } = useCollection<HallClosure>('hall_closures', {
     enabled: fetchClosures || fetchHallEvents,
     filter: { _and: [{ start_date: { _lte: fetchRange.end } }, { end_date: { _gte: fetchRange.start } }] },
+    fields: ['*', 'hall.*'],
     all: true,
   })
   const closuresRaw = closuresRawData ?? []
@@ -272,12 +280,12 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
   })
   const teamMemberLinks = teamMemberLinksRaw ?? []
 
-  const { data: absencesRaw, isLoading: absencesLoading } = useCollection<Absence & { expand?: { member?: { first_name: string; last_name: string; name: string } } }>('absences', {
+  const { data: absencesRaw, isLoading: absencesLoading } = useCollection<Absence & { member?: { first_name: string; last_name: string; name: string } | string }>('absences', {
     enabled: fetchAbsences,
     filter: fetchAbsences
       ? { _and: [{ end_date: { _gte: fetchRange.start } }, { start_date: { _lte: fetchRange.end } }] }
       : { id: { _eq: -1 } },
-    fields: ['id', 'member', 'start_date', 'end_date', 'reason', 'reason_detail', 'affects', 'expand.member.first_name', 'expand.member.name'],
+    fields: ['id', 'member.*', 'start_date', 'end_date', 'reason', 'reason_detail', 'affects'],
     sort: ['start_date'],
     all: true,
   })
@@ -348,7 +356,7 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
         // Also check affects field: skip if affects specific teams that don't match
         const affects = (a as Record<string, unknown>).affects as string[] | undefined
         if (teamIdSet && affects && affects.length > 0 && !affects.includes('all') && !affects.some((id) => teamIdSet.has(id))) continue
-        const m = a.expand?.member
+        const m = asObj<{ first_name: string; last_name: string; name: string }>(a.member)
         const firstName = m?.first_name || m?.name || '?'
         all.push(absenceToEntry(a, firstName))
       }

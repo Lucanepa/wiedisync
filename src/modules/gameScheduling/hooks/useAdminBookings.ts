@@ -2,11 +2,9 @@ import { useState, useEffect, useCallback } from 'react'
 import type { GameSchedulingBooking, GameSchedulingOpponent, GameSchedulingSlot } from '../../../types'
 import { fetchAllItems, kscwApi } from '../../../lib/api'
 
-export interface ExpandedBooking extends GameSchedulingBooking {
-  expand?: {
-    opponent?: GameSchedulingOpponent
-    slot?: GameSchedulingSlot
-  }
+export type ExpandedBooking = GameSchedulingBooking & {
+  opponent: GameSchedulingOpponent | string
+  slot: GameSchedulingSlot | string
 }
 
 export function useAdminBookings(seasonId: string | undefined) {

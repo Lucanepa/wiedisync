@@ -13,6 +13,10 @@ import { pbLangToI18n } from '../../utils/languageMap'
 import { LANGUAGES, type PbLanguage } from '../../i18n/languageConfig'
 import deFlag from '../../assets/flags/de.svg'
 import gbFlag from '../../assets/flags/gb.svg'
+
+function asObj<T>(val: T | string | null | undefined): T | null {
+  return val != null && typeof val === 'object' ? val as T : null
+}
 import frFlag from '../../assets/flags/fr.svg'
 import itFlag from '../../assets/flags/it.svg'
 import chFlag from '../../assets/flags/ch.svg'
@@ -144,10 +148,10 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
             filter: { _and: [{ team: { _in: teamIds } }, { member: { _neq: user.id } }] },
           })
           const conflict = teammates.find(
-            (mt) => (mt.expand as { member?: { number?: number } })?.member?.number === number
+            (mt) => asObj<{ number?: number; name?: string }>(mt.member as any)?.number === number
           )
           if (conflict) {
-            const conflictName = (conflict.expand as { member?: { name?: string } })?.member?.name ?? '?'
+            const conflictName = asObj<{ number?: number; name?: string }>(conflict.member as any)?.name ?? '?'
             setError(t('numberTaken', { name: conflictName }))
             setLoading(false)
             return

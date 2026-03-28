@@ -3,6 +3,10 @@ import { getSeasonDateRange } from '../../utils/dateHelpers'
 import type { Training, Participation, Absence, Member, MemberTeam } from '../../types'
 import { fetchAllItems } from '../../lib/api'
 
+function asObj<T>(val: T | string | null | undefined): T | null {
+  return val != null && typeof val === 'object' ? val as T : null
+}
+
 export interface PlayerStats {
   memberId: string
   memberName: string
@@ -34,13 +38,14 @@ export function useAttendanceStats(teamId: string | null, season: string) {
       const { start, end } = getSeasonDateRange(season)
 
       // Get team members
-      const memberTeams = await fetchAllItems<MemberTeam & { expand?: { member?: Member } }>('member_teams', {
+      const memberTeams = await fetchAllItems<MemberTeam & { member: Member | string }>('member_teams', {
         filter: { team: { _eq: teamId } },
+        fields: ['*', 'member.*'],
       })
 
       const members = memberTeams
-        .map((mt) => mt.expand?.member)
-        .filter((m): m is Member => m !== undefined)
+        .map((mt) => asObj<Member>(mt.member))
+        .filter((m): m is Member => m !== null)
 
       if (members.length === 0) {
         setStats([])

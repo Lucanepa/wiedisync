@@ -115,7 +115,7 @@ export default function GamesPage() {
   const { data: gamesRaw, isLoading: gamesLoading } = useCollection<Game>(
     'games',
     gameQuery && !teamsLoading
-      ? { filter: gameQuery.filter, sort: gameQuery.sort.split(','), limit: perPage }
+      ? { filter: gameQuery.filter, sort: gameQuery.sort.split(','), limit: perPage, fields: ['*', 'kscw_team.*', 'hall.*'] }
       : { filter: { id: { _eq: -1 } }, limit: 1 },
   )
   const games = gamesRaw ?? []
@@ -151,7 +151,8 @@ export default function GamesPage() {
     // Compute warnings per game
     const warnsByGame = new Map<string, Warning[]>()
     for (const g of games) {
-      const sport = (g as any).expand?.kscw_team?.sport as 'volleyball' | 'basketball' | undefined
+      const kscwTeamObj = (g as any).kscw_team
+      const sport = (kscwTeamObj != null && typeof kscwTeamObj === 'object' ? kscwTeamObj.sport : undefined) as 'volleyball' | 'basketball' | undefined
       if (!sport) continue
       const parts = (byGame.get(g.id) ?? []) as ParticipationWithMember[]
       const warnings = getGameWarnings(parts, sport, g.min_participants || undefined)

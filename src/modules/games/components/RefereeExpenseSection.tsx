@@ -14,8 +14,13 @@ interface RefereeExpenseSectionProps {
   canEdit: boolean
 }
 
+/** Helper to safely extract an expanded relation object (Directus returns the object inline, or a raw ID string when not expanded) */
+function asObj<T>(val: T | string | null | undefined): T | null {
+  return val != null && typeof val === 'object' ? (val as T) : null
+}
+
 type ExpandedExpense = RefereeExpense & {
-  expand?: { paid_by_member?: Member & BaseRecord }
+  paid_by_member: (Member & BaseRecord) | string
 }
 
 const OTHER_VALUE = '__other__'
@@ -54,7 +59,8 @@ export default function RefereeExpenseSection({ gameId, teamId, canEdit }: Refer
         if (!record) throw new Error('not found')
         if (cancelled) return
         setExisting(record)
-        setPaidBy(record.paid_by_member || (record.paid_by_other ? OTHER_VALUE : ''))
+        const paidByMemberId = typeof record.paid_by_member === 'string' ? record.paid_by_member : (asObj<Member & BaseRecord>(record.paid_by_member)?.id ?? '')
+        setPaidBy(paidByMemberId || (record.paid_by_other ? OTHER_VALUE : ''))
         setOtherName(record.paid_by_other || '')
         setAmount(record.amount ? String(record.amount) : '')
         setNotes(record.notes || '')
@@ -68,8 +74,11 @@ export default function RefereeExpenseSection({ gameId, teamId, canEdit }: Refer
       )
       .then((team) => {
         if (cancelled) return
-        const expanded = team as Team & BaseRecord & { expand?: { coach?: (Member & BaseRecord)[]; team_responsible?: (Member & BaseRecord)[] } }
-        const all = [...(expanded.expand?.coach ?? []), ...(expanded.expand?.team_responsible ?? [])]
+        const t = team as Team & BaseRecord & { coach?: (Member & BaseRecord)[] | string[]; team_responsible?: (Member & BaseRecord)[] | string[] }
+        // Filter to only expanded objects (not raw ID strings)
+        const coachObjs = (Array.isArray(t.coach) ? t.coach : []).filter((c) => typeof c === 'object' && c !== null) as (Member & BaseRecord)[]
+        const trObjs = (Array.isArray(t.team_responsible) ? t.team_responsible : []).filter((c) => typeof c === 'object' && c !== null) as (Member & BaseRecord)[]
+        const all = [...coachObjs, ...trObjs]
         // Deduplicate by id
         const seen = new Set<string>()
         setCoaches(all.filter((m) => { if (seen.has(m.id)) return false; seen.add(m.id); return true }))
@@ -90,7 +99,7 @@ export default function RefereeExpenseSection({ gameId, teamId, canEdit }: Refer
 
     // Add roster members
     for (const mt of members) {
-      const m = mt.expand?.member
+      const m = typeof mt.member === 'object' ? mt.member : null
       if (!m || seen.has(m.id)) continue
       seen.add(m.id)
       options.push({ value: m.id, label: `${m.first_name} ${m.last_name}` })
@@ -141,8 +150,9 @@ export default function RefereeExpenseSection({ gameId, teamId, canEdit }: Refer
   if (loading) return null
 
   const isFormMode = (!existing && canEdit) || editing
-  const paidByName = existing?.expand?.paid_by_member
-    ? `${existing.expand.paid_by_member.first_name} ${existing.expand.paid_by_member.last_name}`
+  const paidByMemberObj = existing ? asObj<Member & BaseRecord>(existing.paid_by_member) : null
+  const paidByName = paidByMemberObj
+    ? `${paidByMemberObj.first_name} ${paidByMemberObj.last_name}`
     : existing?.paid_by_other || ''
 
   // Auto-open when editing or when form needs to show for first entry
@@ -230,7 +240,8 @@ export default function RefereeExpenseSection({ gameId, teamId, canEdit }: Refer
                   setEditing(false)
                   // Reset to existing values
                   if (existing) {
-                    setPaidBy(existing.paid_by_member || (existing.paid_by_other ? OTHER_VALUE : ''))
+                    const memberId = typeof existing.paid_by_member === 'string' ? existing.paid_by_member : (asObj<Member & BaseRecord>(existing.paid_by_member)?.id ?? '')
+                    setPaidBy(memberId || (existing.paid_by_other ? OTHER_VALUE : ''))
                     setOtherName(existing.paid_by_other || '')
                     setAmount(existing.amount ? String(existing.amount) : '')
                     setNotes(existing.notes || '')

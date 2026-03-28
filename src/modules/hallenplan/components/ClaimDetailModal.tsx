@@ -39,10 +39,9 @@ export default function ClaimDetailModal({ slot, claim, halls, teams, onClose, o
   const originalTeams = teams.filter((tm) => slot.team.includes(tm.id))
   const claimingTeam = teams.find((tm) => tm.id === claim.claimed_by_team)
 
-  // Resolve claiming member name from expand
-  const expandedClaim = claim as Record<string, unknown>
-  const claimedByMember = expandedClaim.expand
-    ? ((expandedClaim.expand as Record<string, { first_name?: string; last_name?: string }>)?.claimed_by_member)
+  // Resolve claiming member name from expanded relation
+  const claimedByMember = typeof claim.claimed_by_member === 'object' && claim.claimed_by_member != null
+    ? (claim.claimed_by_member as { first_name?: string; last_name?: string })
     : null
   const memberName = claimedByMember
     ? `${claimedByMember.first_name || ''} ${claimedByMember.last_name || ''}`.trim()

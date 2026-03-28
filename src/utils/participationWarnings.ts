@@ -1,4 +1,8 @@
-import type { Participation, ParticipationWithMember } from '../types'
+import type { Participation, ParticipationWithMember, Member } from '../types'
+
+function asObj<T>(val: T | string | null | undefined): T | null {
+  return val != null && typeof val === 'object' ? val as T : null
+}
 
 export type WarningLevel = 'red' | 'yellow'
 export interface Warning {
@@ -19,7 +23,7 @@ function countConfirmedPlayers(participations: Participation[]): number {
 function countConfirmedFieldPlayers(participations: ParticipationWithMember[]): number {
   return participations.filter((p) => {
     if (p.status !== 'confirmed' || p.is_staff) return false
-    const positions = p.expand?.member?.position ?? []
+    const positions = asObj<Pick<Member, 'id' | 'position'>>(p.member)?.position ?? []
     return !positions.includes('libero')
   }).length
 }

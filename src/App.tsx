@@ -42,9 +42,28 @@ import PublicTerminplanungPage from './modules/gameScheduling/pages/PublicTermin
 import OpponentFlowPage from './modules/gameScheduling/pages/OpponentFlowPage'
 import FeedbackPage from './modules/feedback/FeedbackPage'
 import ChangelogPage from './modules/changelog/ChangelogPage'
+import { SentryErrorBoundary } from './lib/sentry'
+
+function SentryFallback() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
+      <div className="text-center space-y-4 p-8">
+        <h1 className="text-2xl font-bold">Etwas ist schiefgelaufen</h1>
+        <p className="text-muted-foreground">Ein unerwarteter Fehler ist aufgetreten.</p>
+        <button
+          className="rounded-md bg-brand-600 px-4 py-2 text-white hover:bg-brand-700"
+          onClick={() => window.location.reload()}
+        >
+          Seite neu laden
+        </button>
+      </div>
+    </div>
+  )
+}
 
 export default function App() {
   return (
+    <SentryErrorBoundary fallback={<SentryFallback />}>
     <QueryProvider>
     <ThemeProvider>
     <AuthProvider>
@@ -96,5 +115,6 @@ export default function App() {
     </AuthProvider>
     </ThemeProvider>
     </QueryProvider>
+    </SentryErrorBoundary>
   )
 }

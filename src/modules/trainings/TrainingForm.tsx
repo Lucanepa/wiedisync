@@ -17,6 +17,10 @@ import type { Training, Team, Hall, HallSlot, SlotClaim, TeamSettings } from '..
 import type { RecurringEditScope } from './RecurringEditDialog'
 import { fetchAllItems, fetchItem, updateRecord } from '../../lib/api'
 
+function asObj<T>(val: T | string | null | undefined): T | null {
+  return val != null && typeof val === 'object' ? val as T : null
+}
+
 // day_of_week in DB: 0=Mon, 1=Tue, ..., 6=Sun
 const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
 
@@ -152,7 +156,7 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
       })
       .map((s) => ({
         key: `slot-${s.id}`,
-        label: `${tc(DAY_KEYS[s.day_of_week])} ${s.start_time.slice(0, 5)}–${s.end_time.slice(0, 5)}${(s.expand as Record<string, Hall>)?.hall?.name ? `, ${(s.expand as Record<string, Hall>).hall.name}` : ''}`,
+        label: `${tc(DAY_KEYS[s.day_of_week])} ${s.start_time.slice(0, 5)}–${s.end_time.slice(0, 5)}${asObj<Hall>(s.hall)?.name ? `, ${asObj<Hall>(s.hall)!.name}` : ''}`,
         startTime: s.start_time,
         endTime: s.end_time,
         hallId: s.hall,
@@ -164,7 +168,7 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
       .filter((c) => c.date.split(' ')[0] === date)
       .map((c) => ({
         key: `claim-${c.id}`,
-        label: `${c.start_time.slice(0, 5)}–${c.end_time.slice(0, 5)}${(c.expand as Record<string, Hall>)?.hall?.name ? `, ${(c.expand as Record<string, Hall>).hall.name}` : ''}`,
+        label: `${c.start_time.slice(0, 5)}–${c.end_time.slice(0, 5)}${asObj<Hall>(c.hall)?.name ? `, ${asObj<Hall>(c.hall)!.name}` : ''}`,
         startTime: c.start_time,
         endTime: c.end_time,
         hallId: c.hall,

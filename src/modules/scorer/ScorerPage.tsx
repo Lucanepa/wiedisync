@@ -161,8 +161,8 @@ export default function ScorerPage() {
   } = useScorerDelegations()
 
   const getGameSport = (g: Game): 'volleyball' | 'basketball' => {
-    const expandedTeam = (g as { expand?: { kscw_team?: Team } }).expand?.kscw_team
-    return expandedTeam?.sport ?? (g.source === 'basketplan' ? 'basketball' : 'volleyball')
+    const teamObj = g.kscw_team != null && typeof g.kscw_team === 'object' ? g.kscw_team as unknown as Team : null
+    return teamObj?.sport ?? (g.source === 'basketplan' ? 'basketball' : 'volleyball')
   }
 
   useRealtime<Game>('games', () => { refetch() }, ['update'])

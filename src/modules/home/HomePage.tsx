@@ -21,17 +21,25 @@ import type { Game, Event, Team, Training, Hall, Member, MemberTeam, Notificatio
 import { ClipboardList, Clock, AlertTriangle, Trophy, Bell, Calendar, LayoutGrid, List } from 'lucide-react'
 import LoadingSpinner from '../../components/LoadingSpinner'
 
-type ExpandedGame = Game & {
-  expand?: { kscw_team?: Team & BaseRecord; hall?: BaseRecord }
+/** Safely narrow a relation value that may be a raw ID string or a populated object. */
+function asObj<T>(val: T | string | null | undefined): T | null {
+  return val != null && typeof val === 'object' ? val as T : null
 }
 
-type EventExpanded = Event & { expand?: { teams?: Team[] } }
+type ExpandedGame = Game & {
+  kscw_team?: Team & BaseRecord | string
+  hall?: BaseRecord | string
+}
+
+type EventExpanded = Event & { teams?: Team[] | string[] }
 
 type TrainingExpanded = Training & {
-  expand?: { team?: Team; hall?: Hall; coach?: Member }
+  team?: Team | string
+  hall?: Hall | string
+  coach?: Member | string
 }
 
-type MemberTeamExpanded = MemberTeam & { expand?: { team?: Team } }
+type MemberTeamExpanded = MemberTeam & { team?: Team | string }
 
 
 export default function HomePage() {
@@ -64,6 +72,7 @@ export default function HomePage() {
   // Fetch user's team memberships (only when logged in)
   const { data: memberTeamsRaw, isLoading: memberTeamsLoading } = useCollection<MemberTeamExpanded>('member_teams', {
     filter: user ? { member: { _eq: user.id } } : { id: { _eq: -1 } },
+    fields: ['*', 'team.*'],
     limit: 20,
     enabled: !!user,
   })
@@ -86,6 +95,7 @@ export default function HomePage() {
   }, [today, sportFilter])
   const { data: allNextGamesRaw, isLoading: gamesLoading } = useCollection<ExpandedGame>('games', {
     filter: allGamesFilter,
+    fields: ['*', 'kscw_team.*', 'hall.*'],
     sort: ['date', 'time'],
     limit: 5,
     enabled: showAllGames || !hasTeams,
@@ -101,6 +111,7 @@ export default function HomePage() {
   }, [today, teamGameFilter, sportFilter])
   const { data: myNextGamesRaw } = useCollection<ExpandedGame>('games', {
     filter: myGamesFilter,
+    fields: ['*', 'kscw_team.*', 'hall.*'],
     sort: ['date', 'time'],
     limit: 5,
     enabled: hasTeams && !showAllGames,
@@ -115,6 +126,7 @@ export default function HomePage() {
   }, [sportFilter])
   const { data: allLatestResultsRaw, isLoading: resultsLoading } = useCollection<ExpandedGame>('games', {
     filter: allResultsFilter,
+    fields: ['*', 'kscw_team.*', 'hall.*'],
     sort: ['-date', '-time'],
     limit: 5,
     enabled: showAllResults || !hasTeams,
@@ -130,6 +142,7 @@ export default function HomePage() {
   }, [teamGameFilter, sportFilter])
   const { data: myLatestResultsRaw } = useCollection<ExpandedGame>('games', {
     filter: myResultsFilter,
+    fields: ['*', 'kscw_team.*', 'hall.*'],
     sort: ['-date', '-time'],
     limit: 5,
     enabled: hasTeams && !showAllResults,
@@ -151,6 +164,7 @@ export default function HomePage() {
 
   const { data: nextTrainingsRaw, isLoading: trainingsLoading } = useCollection<TrainingExpanded>('trainings', {
     filter: trainingFilter as Record<string, unknown> | undefined,
+    fields: ['*', 'team.*', 'hall.*', 'coach.*'],
     sort: ['date', 'start_time'],
     limit: 10,
     enabled: hasTeams,
@@ -182,6 +196,7 @@ export default function HomePage() {
 
   const { data: eventsRaw, isLoading: eventsLoading } = useCollection<EventExpanded>('events', {
     filter: eventFilter,
+    fields: ['*', 'teams.*'],
     sort: ['start_date'],
     limit: 10,
   })
@@ -544,7 +559,7 @@ function CompactGameRow({ game, showScore, onClick, participationStatus }: { gam
         </div>
 
         {/* Sport icon */}
-        {game.expand?.kscw_team?.sport === 'basketball'
+        {asObj<Team & BaseRecord>(game.kscw_team)?.sport === 'basketball'
           ? <BasketballIcon className="h-5 w-5 shrink-0" filled />
           : <VolleyballIcon className="h-5 w-5 shrink-0" filled />}
 
@@ -583,8 +598,8 @@ function CompactGameRow({ game, showScore, onClick, participationStatus }: { gam
 
 function CompactTrainingRow({ training, onClick, participationStatus }: { training: TrainingExpanded; onClick?: () => void; participationStatus?: string }) {
   const { user } = useAuth()
-  const team = training.expand?.team
-  const hall = training.expand?.hall
+  const team = asObj<Team>(training.team)
+  const hall = asObj<Hall>(training.hall)
   const dateStr = training.date ? formatDate(training.date) : ''
   const weekday = training.date ? formatWeekday(training.date) : ''
 
@@ -680,8 +695,8 @@ function AppointmentRow({ appointment, onClick, participationStatus }: {
     if (g.time) timeStr = formatTime(g.time)
   } else if (appointment.type === 'training') {
     const tr = appointment.data as TrainingExpanded
-    const team = tr.expand?.team
-    const hall = tr.expand?.hall
+    const team = asObj<Team>(tr.team)
+    const hall = asObj<Hall>(tr.hall)
     label = [team?.name, hall?.name].filter(Boolean).join(' · ')
     if (tr.start_time) timeStr = formatTime(tr.start_time)
   } else {
@@ -846,7 +861,7 @@ function HomeSections({
 function EventRow({ event, onClick, participationStatus }: { event: EventExpanded; onClick: () => void; participationStatus?: string }) {
   const { i18n } = useTranslation()
   const effectiveStatus = participationStatus
-  const teams = event.expand?.teams ?? []
+  const teams = (Array.isArray(event.teams) ? (event.teams as (Team | string)[]).filter((t): t is Team => typeof t === 'object' && t != null) : [])
 
   const statusBorderColor: Record<string, string> = {
     confirmed: 'bg-green-500 dark:bg-green-400',

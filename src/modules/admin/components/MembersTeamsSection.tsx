@@ -2,17 +2,15 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { fetchAllItems, kscwApi } from '../../../lib/api'
 
+interface TeamMember { id: string; name: string }
+
 interface TeamRecord {
   id: string
   name: string
   sport: string
   slug: string
-  coach: string
-  captain: string
-  expand?: {
-    coach?: { id: string; name: string }
-    captain?: { id: string; name: string }
-  }
+  coach: TeamMember[] | string[] | string
+  captain: TeamMember[] | string[] | string
 }
 
 interface UnapprovedMember {
@@ -31,6 +29,14 @@ function getShortName(name: string): string {
   return name.length > 5 ? name.slice(0, 5) : name
 }
 
+function firstMemberName(val: TeamMember[] | string[] | string): string | null {
+  if (Array.isArray(val) && val.length > 0) {
+    const first = val[0]
+    return typeof first === 'object' && first !== null ? (first as TeamMember).name : null
+  }
+  return null
+}
+
 export default function MembersTeamsSection() {
   const { t } = useTranslation('admin')
   const [teams, setTeams] = useState<TeamWithCount[]>([])
@@ -46,7 +52,7 @@ export default function MembersTeamsSection() {
         const [teamRecords, sqlResult, unapprovedResult] = await Promise.all([
           fetchAllItems<TeamRecord>('teams', {
             sort: ['name'],
-            fields: ['id', 'name', 'sport', 'slug', 'coach', 'captain', 'expand'],
+            fields: ['id', 'name', 'sport', 'slug', 'coach.id', 'coach.name', 'captain.id', 'captain.name'],
           }),
           kscwApi('/admin/sql', {
             method: 'POST',
@@ -158,10 +164,10 @@ body: {
                   <td className="py-1.5 pr-3 font-medium">{team.name}</td>
                   <td className="py-1.5 pr-3 text-right tabular-nums">{team.memberCount}</td>
                   <td className="py-1.5 pr-3 text-muted-foreground">
-                    {team.expand?.coach?.name ?? '—'}
+                    {firstMemberName(team.coach) ?? '—'}
                   </td>
                   <td className="py-1.5 text-muted-foreground">
-                    {team.expand?.captain?.name ?? '—'}
+                    {firstMemberName(team.captain) ?? '—'}
                   </td>
                 </tr>
               ))}

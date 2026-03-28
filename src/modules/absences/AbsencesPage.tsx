@@ -17,9 +17,7 @@ import WeeklyUnavailabilityCard from './WeeklyUnavailabilityCard'
 import WeeklyUnavailabilityForm from './WeeklyUnavailabilityForm'
 import { Button } from '@/components/ui/button'
 import TabBar from '../../components/TabBar'
-import type { Absence, Member, Team } from '../../types'
-
-type AbsenceExpanded = Absence & { expand?: { member?: Member } }
+import type { Absence, Team } from '../../types'
 
 export default function AbsencesPage() {
   const { t } = useTranslation('absences')
@@ -53,18 +51,20 @@ export default function AbsencesPage() {
   }, [selectedTeam, visibleTeamIds, allTeams])
 
   // Standard absences (exclude weekly)
-  const { data: myAbsencesRaw, refetch } = useCollection<AbsenceExpanded>('absences', {
+  const { data: myAbsencesRaw, refetch } = useCollection<Absence>('absences', {
     filter: user ? { _and: [{ member: { _eq: user.id } }, { type: { _neq: 'weekly' } }] } : { id: { _eq: -1 } },
     sort: ['-start_date'],
     limit: 50,
+    fields: ['*', 'member.*'],
   })
   const myAbsences = myAbsencesRaw ?? []
 
   // Weekly unavailabilities
-  const { data: myWeeklyRaw, refetch: refetchWeekly } = useCollection<AbsenceExpanded>('absences', {
+  const { data: myWeeklyRaw, refetch: refetchWeekly } = useCollection<Absence>('absences', {
     filter: user ? { _and: [{ member: { _eq: user.id } }, { type: { _eq: 'weekly' } }] } : { id: { _eq: -1 } },
     sort: ['-start_date'],
     limit: 50,
+    fields: ['*', 'member.*'],
   })
   const myWeekly = myWeeklyRaw ?? []
 

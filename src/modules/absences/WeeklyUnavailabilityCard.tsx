@@ -2,6 +2,10 @@ import { useTranslation } from 'react-i18next'
 import { formatDate } from '../../utils/dateHelpers'
 import type { Absence, Member } from '../../types'
 
+function asObj<T>(val: T | string | null | undefined): T | null {
+  return val != null && typeof val === 'object' ? val as T : null
+}
+
 const DAY_KEYS = ['dayMon', 'dayTue', 'dayWed', 'dayThu', 'dayFri', 'daySat', 'daySun'] as const
 
 const AFFECTS_COLORS: Record<string, string> = {
@@ -12,7 +16,7 @@ const AFFECTS_COLORS: Record<string, string> = {
 }
 
 interface WeeklyUnavailabilityCardProps {
-  absence: Absence & { expand?: { member?: Member } }
+  absence: Absence
   onEdit: (absence: Absence) => void
   onDelete: (absenceId: string) => void
   showMemberName?: boolean
@@ -21,7 +25,7 @@ interface WeeklyUnavailabilityCardProps {
 
 export default function WeeklyUnavailabilityCard({ absence, onEdit, onDelete, showMemberName, canEdit }: WeeklyUnavailabilityCardProps) {
   const { t } = useTranslation('absences')
-  const memberName = absence.expand?.member?.name
+  const memberName = asObj<Member>(absence.member)?.name
 
   const affectsLabels: Record<string, string> = {
     trainings: t('affectsTrainings'),

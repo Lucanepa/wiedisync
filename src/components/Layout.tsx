@@ -25,7 +25,11 @@ import {
   HeartPulse, Settings, ChevronDown, MessageSquare, Banknote,
 } from 'lucide-react'
 
-type ExpandedMemberTeam = MemberTeam & { expand?: { team?: Team } }
+function asObj<T>(val: T | string | null | undefined): T | null {
+  return val != null && typeof val === 'object' ? val as T : null
+}
+
+type ExpandedMemberTeam = MemberTeam & { team: Team | string }
 
 function useNavItems(isLoggedIn: boolean, isApproved: boolean) {
   const { t } = useTranslation('nav')
@@ -161,6 +165,7 @@ export default function Layout() {
   }, [location.pathname, isAdmin, isAdminMode, setAdminMode])
   const { data: memberTeamsRaw } = useCollection<ExpandedMemberTeam>('member_teams', {
     filter: user ? { member: { _eq: user.id } } : undefined,
+    fields: ['*', 'team.*'],
     limit: 10,
     enabled: !!user,
   })
@@ -387,7 +392,7 @@ export default function Layout() {
                       {memberTeams.length > 0 && (
                         <div className="mt-0.5 flex flex-wrap gap-1">
                           {memberTeams.map((mt) => (
-                            <TeamChip key={mt.id} team={mt.expand?.team?.name ?? '?'} size="sm" />
+                            <TeamChip key={mt.id} team={asObj<Team>(mt.team)?.name ?? '?'} size="sm" />
                           ))}
                         </div>
                       )}

@@ -4,7 +4,7 @@ export interface BaseRecord {
   updated?: string
   date_created?: string
   date_updated?: string
-  /** PocketBase-style expand bag; Directus uses nested relations instead. */
+  /** @deprecated Directus returns nested relations inline; kept for transition. */
   expand?: Record<string, unknown>
   [key: string]: unknown
 }
@@ -391,7 +391,7 @@ export interface UserLog extends BaseRecord {
 }
 
 export type ParticipationWithMember = Participation & {
-  expand?: { member?: Pick<Member, 'id' | 'position'> }
+  member: Pick<Member, 'id' | 'position'> | string
 }
 
 // ── Game Scheduling (Terminplanung) ──────────────────────────────────

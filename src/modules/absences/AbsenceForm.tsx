@@ -13,6 +13,10 @@ import { Checkbox } from '@/components/ui/checkbox'
 import AffectsMultiSelect from '@/components/AffectsMultiSelect'
 import type { Absence, Member, MemberTeam } from '../../types'
 
+function asObj<T>(val: T | string | null | undefined): T | null {
+  return val != null && typeof val === 'object' ? val as T : null
+}
+
 interface AbsenceFormProps {
   open: boolean
   absence?: Absence | null
@@ -36,9 +40,10 @@ export default function AbsenceForm({ open, absence, onSave, onCancel }: Absence
   const allMembers = allMembersRaw ?? []
 
   // Coaches: fetch team members via member_teams with expanded member data
-  const { data: memberTeamsRaw, error: memberTeamsError } = useCollection<MemberTeam & { expand?: { member?: Member } }>('member_teams', {
+  const { data: memberTeamsRaw, error: memberTeamsError } = useCollection<MemberTeam>('member_teams', {
     filter: coachTeamIds.length > 0 ? { team: { _in: coachTeamIds } } : { id: { _eq: -1 } },
     all: true,
+    fields: ['*', 'member.*'],
     enabled: effectiveIsCoach && !effectiveIsAdmin && coachTeamIds.length > 0,
   })
   const memberTeams = memberTeamsRaw ?? []
@@ -50,7 +55,7 @@ export default function AbsenceForm({ open, absence, onSave, onCancel }: Absence
     const seen = new Set<string>()
     const members: Member[] = []
     for (const mt of memberTeams) {
-      const m = mt.expand?.member
+      const m = asObj<Member>(mt.member)
       if (m && !seen.has(m.id)) {
         seen.add(m.id)
         members.push(m)

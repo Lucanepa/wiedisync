@@ -196,7 +196,7 @@ export default function HomePage() {
 
   const { data: eventsRaw, isLoading: eventsLoading } = useCollection<EventExpanded>('events', {
     filter: eventFilter,
-    fields: ['*', 'teams.*'],
+    fields: ['*', 'teams.teams_id.*'],
     sort: ['start_date'],
     limit: 10,
   })
@@ -880,7 +880,7 @@ function HomeSections({
 function EventRow({ event, onClick, participationStatus }: { event: EventExpanded; onClick: () => void; participationStatus?: string }) {
   const { i18n } = useTranslation()
   const effectiveStatus = participationStatus
-  const teams = (Array.isArray(event.teams) ? (event.teams as (Team | string)[]).filter((t): t is Team => typeof t === 'object' && t != null) : [])
+  const teams = (Array.isArray(event.teams) ? event.teams.map((t: any) => t?.teams_id ?? t).filter((t): t is Team => t != null && typeof t === 'object' && 'name' in t) : [])
 
   const statusBorderColor: Record<string, string> = {
     confirmed: 'bg-green-500 dark:bg-green-400',

@@ -17,14 +17,19 @@ import { isFeatureEnabled } from '../../utils/featureToggles'
 import { Calendar, Clock, MapPin, Users, Check, MessageSquare, UserPlus } from 'lucide-react'
 import type { Event, Team, EventSession, Participation } from '../../types'
 
-function asTeams(teams: (Team | string)[] | null | undefined): Team[] {
+function asTeams(teams: unknown[] | null | undefined): Team[] {
   if (!Array.isArray(teams) || teams.length === 0) return []
-  return typeof teams[0] === 'object' ? (teams as Team[]) : []
+  return teams
+    .map((t: any) => t?.teams_id ?? t)
+    .filter((t): t is Team => t != null && typeof t === 'object' && 'name' in t)
 }
 
-function teamId(val: Team | string | null | undefined): string {
+function teamId(val: unknown): string {
   if (!val) return ''
-  return typeof val === 'object' ? val.id : val
+  if (typeof val === 'string') return val
+  if (typeof val === 'number') return String(val)
+  const obj = (val as any)?.teams_id ?? val
+  return typeof obj === 'object' ? String((obj as any).id ?? '') : String(obj ?? '')
 }
 
 const eventTypeColors: Record<string, { bg: string; text: string }> = {

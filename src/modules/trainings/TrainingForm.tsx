@@ -5,7 +5,7 @@ import LocationCombobox from '@/components/LocationCombobox'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import { useMutation } from '../../hooks/useMutation'
-import { usePB } from '../../hooks/usePB'
+import { useCollection } from '../../lib/query'
 import { logActivity } from '../../utils/logActivity'
 import { parseRespondByTime } from '../../utils/dateHelpers'
 import { Button } from '@/components/ui/button'
@@ -51,8 +51,10 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
   const { hasAdminAccessToTeam, coachTeamIds } = useAuth()
   const { effectiveIsAdmin } = useAdminMode()
 
-  const { data: allTeams } = usePB<Team>('teams', { filter: { active: { _eq: true } }, sort: 'name', perPage: 50 })
-  const { data: halls } = usePB<Hall>('halls', { sort: 'name', perPage: 50 })
+  const { data: allTeamsRaw } = useCollection<Team>('teams', { filter: { active: { _eq: true } }, sort: ['name'], limit: 50 })
+  const allTeams = allTeamsRaw ?? []
+  const { data: hallsRaw } = useCollection<Hall>('halls', { sort: ['name'], limit: 50 })
+  const halls = hallsRaw ?? []
 
   // Non-admin coaches only see their own teams; admins in admin mode see all teams they have access to
   const teams = useMemo(

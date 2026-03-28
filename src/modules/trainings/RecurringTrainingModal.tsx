@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import Modal from '@/components/Modal'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
-import { usePB } from '../../hooks/usePB'
+import { useCollection } from '../../lib/query'
 import { formatDate, formatDateCompact, toISODate } from '../../utils/dateHelpers'
 import { logActivity } from '../../utils/logActivity'
 import type { HallSlot, HallClosure, Team, Hall } from '../../types'
@@ -34,11 +34,12 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
 
   const { hasAdminAccessToTeam, coachTeamIds } = useAuth()
   const { effectiveIsAdmin } = useAdminMode()
-  const { data: allSlots } = usePB<SlotExpanded>('hall_slots', {
+  const { data: allSlotsRaw } = useCollection<SlotExpanded>('hall_slots', {
     filter: { slot_type: { _eq: 'training' } },
-    sort: 'day_of_week,start_time',
-    perPage: 100,
+    sort: ['day_of_week', 'start_time'],
+    limit: 100,
   })
+  const allSlots = allSlotsRaw ?? []
 
   // Filter by selected team, or fall back to coach's teams (non-admin)
   // Sort: current/past slots first (by valid_from asc), then future slots (by valid_from asc)
@@ -57,8 +58,10 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
     })
   }, [selectedTeamId, allSlots, effectiveIsAdmin, hasAdminAccessToTeam, coachTeamIds])
 
-  const { data: halls } = usePB<Hall>('halls', { sort: 'name', perPage: 50 })
-  const { data: closures } = usePB<HallClosure>('hall_closures', { all: true })
+  const { data: hallsRaw } = useCollection<Hall>('halls', { sort: ['name'], limit: 50 })
+  const halls = hallsRaw ?? []
+  const { data: closuresRaw } = useCollection<HallClosure>('hall_closures', { all: true })
+  const closures = closuresRaw ?? []
 
   const [selectedSlot, setSelectedSlot] = useState('')
   const [startDate, setStartDate] = useState('')

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import Modal from '@/components/Modal'
 import { useMultiTeamMembers } from '../hooks/useTeamMembers'
 import { useTeamParticipations, useAllEventParticipations } from '../hooks/useParticipation'
-import { usePB } from '../hooks/usePB'
+import { useCollection } from '../lib/query'
 import { fetchAllItems } from '../lib/api'
 import { getFileUrl } from '../utils/pbFile'
 import type { Participation, Absence, Member, Team, EventSession } from '../types'
@@ -72,11 +72,12 @@ export default function ParticipationRosterModal({
   const [activeSessionTab, setActiveSessionTab] = useState<string | null>(null) // null = overall
 
   // Fetch team leadership roles (coach, captain, team_responsible)
-  const { data: teams } = usePB<Team>('teams', {
+  const { data: teamsRaw } = useCollection<Team>('teams', {
     filter: teamIds.length > 0 ? { id: { _in: teamIds } } : undefined,
-    fields: 'id,coach,captain,team_responsible',
+    fields: ['id', 'coach', 'captain', 'team_responsible'],
     enabled: teamIds.length > 0 && open,
   })
+  const teams = teamsRaw ?? []
   const leadershipRoles = useMemo(() => {
     const map = new Map<string, string>()
     for (const team of teams) {
@@ -95,7 +96,7 @@ export default function ParticipationRosterModal({
   const hasSessionMode = participationMode && participationMode !== 'whole' && eventSessions && eventSessions.length > 0
 
   // Club-wide: fetch all participations for the event, then resolve member info
-  const { data: clubWideParticipations, isLoading: clubWidePartsLoading } = usePB<Participation>('participations', {
+  const { data: clubWideParticipationsRaw, isLoading: clubWidePartsLoading } = useCollection<Participation>('participations', {
     filter: isClubWide && activityId ? {
       _and: [
         { activity_type: { _eq: activityType } },
@@ -105,6 +106,7 @@ export default function ParticipationRosterModal({
     all: true,
     enabled: isClubWide && !!activityId && open,
   })
+  const clubWideParticipations = clubWideParticipationsRaw ?? []
 
   useEffect(() => {
     if (!isClubWide || !open || clubWideParticipations.length === 0) {

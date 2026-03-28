@@ -3,7 +3,7 @@ import { Link, Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Plus, X, Clock } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
-import { usePB } from '../../hooks/usePB'
+import { useCollection } from '../../lib/query'
 import { Button } from '@/components/ui/button'
 import StatusBadge from '../../components/StatusBadge'
 import TeamChip from '../../components/TeamChip'
@@ -35,19 +35,21 @@ export default function ProfilePage() {
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [teamRequestOpen, setTeamRequestOpen] = useState(false)
 
-  const { data: memberTeams } = usePB<ExpandedMemberTeam>('member_teams', {
+  const { data: memberTeamsRaw } = useCollection<ExpandedMemberTeam>('member_teams', {
     filter: user ? { member: { _eq: user.id } } : undefined,
-    perPage: 20,
+    limit: 20,
     enabled: !!user,
   })
+  const memberTeams = memberTeamsRaw ?? []
 
   // Pending team requests
   interface TeamRequest { id: string; collectionId: string; collectionName: string; member: string; team: string; status: string; expand?: { team?: Team } }
-  const { data: pendingRequests, refetch: refetchRequests } = usePB<TeamRequest>('team_requests', {
+  const { data: pendingRequestsRaw, refetch: refetchRequests } = useCollection<TeamRequest>('team_requests', {
     filter: user ? { _and: [{ member: { _eq: user.id } }, { status: { _eq: 'pending' } }] } : undefined,
-    perPage: 20,
+    limit: 20,
     enabled: !!user,
   })
+  const pendingRequests = pendingRequestsRaw ?? []
 
   const currentTeamIds = useMemo(
     () => memberTeams.map((mt) => mt.expand?.team?.id ?? mt.team),
@@ -65,12 +67,13 @@ export default function ProfilePage() {
 
   const today = toISODate(new Date())
 
-  const { data: activeAbsences } = usePB<Absence>('absences', {
+  const { data: activeAbsencesRaw } = useCollection<Absence>('absences', {
     filter: user ? { _and: [{ member: { _eq: user.id } }, { end_date: { _gte: today } }] } : undefined,
-    sort: 'start_date',
-    perPage: 20,
+    sort: ['start_date'],
+    limit: 20,
     enabled: !!user,
   })
+  const activeAbsences = activeAbsencesRaw ?? []
 
   if (!user) return <Navigate to="/login" replace />
 

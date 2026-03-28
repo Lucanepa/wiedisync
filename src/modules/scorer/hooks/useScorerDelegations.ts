@@ -1,6 +1,6 @@
 import { useMemo, useCallback } from 'react'
 import type { ScorerDelegation, Member } from '../../../types'
-import { usePB } from '../../../hooks/usePB'
+import { useCollection } from '../../../lib/query'
 import { useRealtime } from '../../../hooks/useRealtime'
 import { useAuth } from '../../../hooks/useAuth'
 import { logActivity } from '../../../utils/logActivity'
@@ -14,25 +14,27 @@ export function useScorerDelegations() {
     data: delegations,
     isLoading,
     refetch,
-  } = usePB<ScorerDelegation>('scorer_delegations', {
+  } = useCollection<ScorerDelegation>('scorer_delegations', {
     filter: userId
       ? { _and: [{ status: { _eq: 'pending' } }, { _or: [{ from_member: { _eq: userId } }, { to_member: { _eq: userId } }] }] }
       : { id: { _eq: -1 } },
-    sort: '-created',
-    perPage: 50,
+    sort: ['-created'],
+    limit: 50,
     enabled: !!userId,
   })
 
   useRealtime<ScorerDelegation>('scorer_delegations', () => { refetch() }, ['create', 'update'])
 
+  const delegationsArr = delegations ?? []
+
   const pendingIncoming = useMemo(
-    () => delegations.filter((d) => d.to_member === userId && d.status === 'pending'),
-    [delegations, userId],
+    () => delegationsArr.filter((d) => d.to_member === userId && d.status === 'pending'),
+    [delegationsArr, userId],
   )
 
   const pendingOutgoing = useMemo(
-    () => delegations.filter((d) => d.from_member === userId && d.status === 'pending'),
-    [delegations, userId],
+    () => delegationsArr.filter((d) => d.from_member === userId && d.status === 'pending'),
+    [delegationsArr, userId],
   )
 
   const createDelegation = useCallback(

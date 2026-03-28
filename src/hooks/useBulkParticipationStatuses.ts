@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { usePB } from './usePB'
+import { useCollection } from '../lib/query'
 import { useAuth } from './useAuth'
 import { useRealtime } from './useRealtime'
 import type { Participation, Absence } from '../types'
@@ -18,8 +18,8 @@ export function useBulkParticipationStatuses(
   const { user } = useAuth()
 
   // Build a single filter for all participations: member=X && (activity_id=A || activity_id=B || ...)
-  const participationFilter = useMemo((): Record<string, unknown> | string => {
-    if (!user || activities.length === 0) return ''
+  const participationFilter = useMemo((): Record<string, unknown> | undefined => {
+    if (!user || activities.length === 0) return undefined
     return { _and: [{ member: { _eq: user.id } }, { activity_id: { _in: activities.map(a => a.id) } }] }
   }, [user, activities])
 
@@ -30,22 +30,24 @@ export function useBulkParticipationStatuses(
     return { minDate: dates[0] ?? '', maxDate: dates[dates.length - 1] ?? '' }
   }, [activities])
 
-  const absenceFilter = useMemo((): Record<string, unknown> | string => {
-    if (!user || !minDate || !maxDate) return ''
+  const absenceFilter = useMemo((): Record<string, unknown> | undefined => {
+    if (!user || !minDate || !maxDate) return undefined
     return { _and: [{ member: { _eq: user.id } }, { start_date: { _lte: maxDate } }, { end_date: { _gte: minDate } }] }
   }, [user, minDate, maxDate])
 
-  const { data: participations, isLoading: partLoading, refetch: refetchParticipations } = usePB<Participation>('participations', {
+  const { data: participationsRaw, isLoading: partLoading, refetch: refetchParticipations } = useCollection<Participation>('participations', {
     filter: participationFilter,
     all: true,
     enabled: !!user && activities.length > 0,
   })
+  const participations = participationsRaw ?? []
 
-  const { data: absences, isLoading: absLoading } = usePB<Absence>('absences', {
+  const { data: absencesRaw, isLoading: absLoading } = useCollection<Absence>('absences', {
     filter: absenceFilter,
-    perPage: 50,
+    limit: 50,
     enabled: !!user && !!minDate,
   })
+  const absences = absencesRaw ?? []
 
   // Realtime: refetch when any participation for the current user changes
   const activityIdSet = useMemo(() => new Set(activities.map((a) => a.id)), [activities])

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useParams, useSearchParams, Link } from 'react-router-dom'
 import { XCircle, ChevronRight, Mail, Phone, Award, Calendar, TrendingUp, AlertCircle } from 'lucide-react'
 import { differenceInYears } from 'date-fns'
-import { usePB } from '../../hooks/usePB'
+import { useCollection } from '../../lib/query'
 import { useAuth } from '../../hooks/useAuth'
 import TeamChip from '../../components/TeamChip'
 import StatusBadge from '../../components/StatusBadge'
@@ -27,19 +27,21 @@ export default function PlayerProfile() {
   const [loading, setLoading] = useState(true)
   const [lightboxOpen, setLightboxOpen] = useState(false)
 
-  const { data: memberTeams } = usePB<ExpandedMemberTeam>('member_teams', {
+  const { data: memberTeamsRaw } = useCollection<ExpandedMemberTeam>('member_teams', {
     filter: memberId ? { member: { _eq: memberId } } : { id: { _eq: -1 } },
-    perPage: 20,
+    limit: 20,
   })
+  const memberTeams = memberTeamsRaw ?? []
 
   const season = getCurrentSeason()
   const { start, end } = getSeasonDateRange(season)
 
-  const { data: absences } = usePB<Absence>('absences', {
+  const { data: absencesRaw } = useCollection<Absence>('absences', {
     filter: memberId ? { _and: [{ member: { _eq: memberId } }, { end_date: { _gte: new Date().toISOString().split('T')[0] } }] } : { id: { _eq: -1 } },
-    sort: 'start_date',
-    perPage: 20,
+    sort: ['start_date'],
+    limit: 20,
   })
+  const absences = absencesRaw ?? []
 
   const [trainingStats, setTrainingStats] = useState<{ total: number; present: number } | null>(null)
   const [gameStats, setGameStats] = useState<{ total: number; present: number } | null>(null)

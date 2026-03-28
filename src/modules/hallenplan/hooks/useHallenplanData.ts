@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { usePB } from '../../../hooks/usePB'
+import { useCollection } from '../../../lib/query'
 import type { Hall, HallSlot, HallClosure, Team, Game, Training, HallEvent, SlotClaim } from '../../../types'
 import {
   gameToVirtualSlots,
@@ -17,16 +17,18 @@ export function useHallenplanData(
   sundayStr: string,
   weekDays: Date[],
 ) {
-  const { data: halls, isLoading: hallsLoading } = usePB<Hall>('halls', {
-    sort: 'name',
-    perPage: 50,
+  const { data: hallsRaw, isLoading: hallsLoading } = useCollection<Hall>('halls', {
+    sort: ['name'],
+    limit: 50,
   })
+  const halls = hallsRaw ?? []
 
-  const { data: teams, isLoading: teamsLoading } = usePB<Team>('teams', {
+  const { data: teamsRaw, isLoading: teamsLoading } = useCollection<Team>('teams', {
     filter: { active: { _eq: true } },
-    sort: 'name',
-    perPage: 50,
+    sort: ['name'],
+    limit: 50,
   })
+  const teams = teamsRaw ?? []
 
   const hallCondition = selectedHallIds.length > 0
     ? { hall: { _in: selectedHallIds } }
@@ -38,14 +40,15 @@ export function useHallenplanData(
   const slotFilterConditions = [...dateConditions, ...(hallCondition ? [hallCondition] : [])]
 
   const {
-    data: rawSlots,
+    data: rawSlotsData,
     isLoading: slotsLoading,
     refetch: refetchSlots,
-  } = usePB<HallSlot>('hall_slots', {
+  } = useCollection<HallSlot>('hall_slots', {
     filter: { _and: slotFilterConditions },
     all: true,
-    sort: 'day_of_week,start_time',
+    sort: ['day_of_week', 'start_time'],
   })
+  const rawSlots = rawSlotsData ?? []
 
   const closureDateConditions: Record<string, unknown>[] = [
     { start_date: { _lte: sundayStr } },
@@ -54,44 +57,49 @@ export function useHallenplanData(
   const closureFilterConditions = [...closureDateConditions, ...(hallCondition ? [hallCondition] : [])]
 
   const {
-    data: closures,
+    data: closuresData,
     isLoading: closuresLoading,
     refetch: refetchClosures,
-  } = usePB<HallClosure>('hall_closures', {
+  } = useCollection<HallClosure>('hall_closures', {
     filter: { _and: closureFilterConditions },
-    perPage: 100,
+    limit: 100,
   })
+  const closures = closuresData ?? []
 
   // Games for this week (exclude postponed)
-  const { data: games, isLoading: gamesLoading } = usePB<Game>('games', {
+  const { data: gamesRaw, isLoading: gamesLoading } = useCollection<Game>('games', {
     filter: { _and: [{ date: { _gte: mondayStr } }, { date: { _lte: sundayStr } }, { status: { _neq: 'postponed' } }] },
-    perPage: 100,
-    sort: 'date,time',
+    limit: 100,
+    sort: ['date', 'time'],
   })
+  const games = gamesRaw ?? []
 
   // Trainings for this week
-  const { data: trainings, isLoading: trainingsLoading } = usePB<Training>('trainings', {
+  const { data: trainingsRaw, isLoading: trainingsLoading } = useCollection<Training>('trainings', {
     filter: { _and: [{ date: { _gte: mondayStr } }, { date: { _lte: sundayStr } }] },
     all: true,
-    sort: 'date,start_time',
+    sort: ['date', 'start_time'],
   })
+  const trainings = trainingsRaw ?? []
 
   // Hall events (GCal) for this week
-  const { data: hallEvents, isLoading: hallEventsLoading } = usePB<HallEvent>('hall_events', {
+  const { data: hallEventsRaw, isLoading: hallEventsLoading } = useCollection<HallEvent>('hall_events', {
     filter: { _and: [{ date: { _gte: mondayStr } }, { date: { _lte: sundayStr } }] },
-    perPage: 100,
-    sort: 'date,start_time',
+    limit: 100,
+    sort: ['date', 'start_time'],
   })
+  const hallEvents = hallEventsRaw ?? []
 
   // Slot claims for this week
   const {
-    data: slotClaims,
+    data: slotClaimsRaw,
     isLoading: claimsLoading,
     refetch: refetchClaims,
-  } = usePB<SlotClaim>('slot_claims', {
+  } = useCollection<SlotClaim>('slot_claims', {
     filter: { _and: [{ date: { _gte: mondayStr } }, { date: { _lte: sundayStr } }, { status: { _eq: 'active' } }] },
-    perPage: 100,
+    limit: 100,
   })
+  const slotClaims = slotClaimsRaw ?? []
 
   // Convert GCal closure events ("Halle geschlossen") into synthetic HallClosure records
   // and merge with real closures (deduplicating where a hall_closures record already exists)

@@ -7,7 +7,7 @@ import { useTeamMembers } from '../../hooks/useTeamMembers'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import { usePendingMembers } from '../../hooks/usePendingMembers'
-import { usePB } from '../../hooks/usePB'
+import { useCollection } from '../../lib/query'
 import { Button } from '@/components/ui/button'
 import TeamChip from '../../components/TeamChip'
 import EmptyState from '../../components/EmptyState'
@@ -41,11 +41,12 @@ export default function TeamDetail() {
 
   // Team join requests from existing members
   interface TeamRequest { id: string; collectionId: string; collectionName: string; member: string; team: string; status: string; expand?: { member?: Member } }
-  const { data: teamRequests, refetch: refetchTeamRequests } = usePB<TeamRequest>('team_requests', {
+  const { data: teamRequestsRaw, refetch: refetchTeamRequests } = useCollection<TeamRequest>('team_requests', {
     filter: canManage && teamId ? { _and: [{ team: { _eq: teamId } }, { status: { _eq: 'pending' } }] } : { id: { _eq: -1 } },
-    perPage: 50,
+    limit: 50,
     enabled: canManage && !!teamId,
   })
+  const teamRequests = teamRequestsRaw ?? []
 
   const [teamSponsors, setTeamSponsors] = useState<Sponsor[]>([])
 

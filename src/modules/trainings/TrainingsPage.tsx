@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
-import { usePB } from '../../hooks/usePB'
+import { useCollection } from '../../lib/query'
 import { useRealtime } from '../../hooks/useRealtime'
 import { useMutation } from '../../hooks/useMutation'
 import TeamFilter from '../../components/TeamFilter'
@@ -52,14 +52,14 @@ export default function TrainingsPage() {
   }, [allUserTeamIds, autoSelected])
 
   // Non-admins: always scope to own teams + coached teams
-  const effectiveFilter = useMemo((): Record<string, unknown> | string => {
+  const effectiveFilter = useMemo((): Record<string, unknown> | undefined => {
     const conditions: Record<string, unknown>[] = []
     if (selectedTeam) conditions.push({ team: { _eq: selectedTeam } })
     else if (!effectiveIsAdmin && allUserTeamIds.length > 0) {
       conditions.push({ team: { _in: allUserTeamIds } })
     }
     if (!showPast) conditions.push({ date: { _gte: today } })
-    if (conditions.length === 0) return ''
+    if (conditions.length === 0) return undefined
     return conditions.length === 1 ? conditions[0] : { _and: conditions }
   }, [selectedTeam, effectiveIsAdmin, allUserTeamIds, showPast, today])
 
@@ -73,12 +73,13 @@ export default function TrainingsPage() {
   const [rosterTraining, setRosterTraining] = useState<{ id: string; teamId: string; date: string; showRsvpTime?: boolean } | null>(null)
   const recurringSelectionMade = useRef(false)
 
-  const { data: trainings, isLoading, refetch } = usePB<TrainingExpanded>('trainings', {
+  const { data: trainingsRaw, isLoading, refetch } = useCollection<TrainingExpanded>('trainings', {
     filter: effectiveFilter,
-    sort: 'date',
-    perPage: 50,
+    sort: ['date'],
+    limit: 50,
     enabled: !teamsLoading,
   })
+  const trainings = trainingsRaw ?? []
 
   // Batch-fetch ALL participations for visible trainings in ONE request (fixes N+1 / 429 storm)
   const trainingIds = useMemo(() => trainings.map((t) => t.id), [trainings])
@@ -87,11 +88,12 @@ export default function TrainingsPage() {
     return { _and: [{ activity_type: { _eq: 'training' } }, { activity_id: { _in: trainingIds } }] }
   }, [trainingIds])
 
-  const { data: allParticipations, refetch: refetchParticipations } = usePB<Participation>('participations', {
-    filter: participationFilter,
+  const { data: allParticipationsRaw, refetch: refetchParticipations } = useCollection<Participation>('participations', {
+    filter: participationFilter as Record<string, unknown> | undefined,
     all: true,
     enabled: trainingIds.length > 0,
   })
+  const allParticipations = allParticipationsRaw ?? []
 
   // Build maps: activityId → participations[], activityId → user's participation
   const { participationsByActivity, myParticipationByActivity } = useMemo(() => {

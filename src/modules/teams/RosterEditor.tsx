@@ -8,7 +8,7 @@ import { coercePositions, getPositionI18nKey, getSelectablePositions, isNonPlayi
 import { useAuth } from '../../hooks/useAuth'
 import { useTeamMembers } from '../../hooks/useTeamMembers'
 import { useMutation } from '../../hooks/useMutation'
-import { usePB } from '../../hooks/usePB'
+import { useCollection } from '../../lib/query'
 import TeamChip from '../../components/TeamChip'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import InviteExternalUserModal from './InviteExternalUserModal'
@@ -69,7 +69,8 @@ export default function RosterEditor() {
   const { teamSlug } = useParams<{ teamSlug: string }>()
   const { isCoachOf } = useAuth()
   const season = getCurrentSeason()
-  const { data: allMembers } = usePB<Member>('members', { filter: { kscw_membership_active: { _eq: true } }, all: true, sort: 'last_name', fields: 'id,name,first_name,last_name,photo,number,position,licences' })
+  const { data: allMembersRaw } = useCollection<Member>('members', { filter: { kscw_membership_active: { _eq: true } }, all: true, sort: ['last_name'], fields: ['id', 'name', 'first_name', 'last_name', 'photo', 'number', 'position', 'licences'] })
+  const allMembers = allMembersRaw ?? []
   const { create, remove } = useMutation<MemberTeam>('member_teams')
 
   const [team, setTeam] = useState<Team | null>(null)

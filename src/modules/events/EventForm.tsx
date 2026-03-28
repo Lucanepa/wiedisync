@@ -4,7 +4,7 @@ import Modal from '@/components/Modal'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import { useMutation } from '../../hooks/useMutation'
-import { usePB } from '../../hooks/usePB'
+import { useCollection } from '../../lib/query'
 import { Button } from '@/components/ui/button'
 import { FormInput, FormTextarea, FormField } from '@/components/FormField'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -60,7 +60,8 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
   const { user, coachTeamIds } = useAuth()
   const { effectiveIsAdmin } = useAdminMode()
   const { create, update, isLoading } = useMutation<Event>('events')
-  const { data: allTeams } = usePB<Team>('teams', { filter: { active: { _eq: true } }, sort: 'name', perPage: 50 })
+  const { data: allTeamsRaw } = useCollection<Team>('teams', { filter: { active: { _eq: true } }, sort: ['name'], limit: 50 })
+  const allTeams = allTeamsRaw ?? []
 
   // Filter teams by permissions: admins see all, coaches see only their teams
   const availableTeams = useMemo(() => {
@@ -99,12 +100,13 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
   const [error, setError] = useState('')
 
   // Fetch existing sessions when editing
-  const { data: existingSessions } = usePB<EventSession>('event_sessions', {
+  const { data: existingSessionsRaw } = useCollection<EventSession>('event_sessions', {
     filter: event ? { event: { _eq: event.id } } : { id: { _eq: -1 } },
-    sort: 'sort_order,date,start_time',
-    perPage: 100,
+    sort: ['sort_order', 'date', 'start_time'],
+    limit: 100,
     enabled: !!event,
   })
+  const existingSessions = existingSessionsRaw ?? []
 
   useEffect(() => {
     if (event) {

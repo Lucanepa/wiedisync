@@ -9,7 +9,7 @@ import ParticipationRosterModal from '../../components/ParticipationRosterModal'
 import SessionParticipationSheet from '../../components/SessionParticipationSheet'
 import { useAuth } from '../../hooks/useAuth'
 import { useParticipation } from '../../hooks/useParticipation'
-import { usePB } from '../../hooks/usePB'
+import { useCollection } from '../../lib/query'
 import { useMutation } from '../../hooks/useMutation'
 import { formatDate, formatTime } from '../../utils/dateHelpers'
 import TasksSection from '../tasks/TasksSection'
@@ -53,12 +53,13 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
 
   // Fetch sessions for multi-session events
   const hasSessionMode = event?.participation_mode && event.participation_mode !== 'whole'
-  const { data: sessions } = usePB<EventSession>('event_sessions', {
+  const { data: sessionsRaw } = useCollection<EventSession>('event_sessions', {
     filter: event ? { event: { _eq: event.id } } : undefined,
-    sort: 'sort_order,date,start_time',
-    perPage: 100,
+    sort: ['sort_order', 'date', 'start_time'],
+    limit: 100,
     enabled: !!event && !!hasSessionMode,
   })
+  const sessions = sessionsRaw ?? []
 
   if (!event) return null
 
@@ -364,7 +365,7 @@ function EventSessionNote({ eventId, sessions }: { eventId: string; sessions: Ev
   const { user } = useAuth()
   const { update } = useMutation<Participation>('participations')
 
-  const { data: allParts, refetch } = usePB<Participation>('participations', {
+  const { data: allPartsRaw, refetch } = useCollection<Participation>('participations', {
     filter: user && eventId ? {
       _and: [
         { member: { _eq: user.id } },
@@ -376,6 +377,7 @@ function EventSessionNote({ eventId, sessions }: { eventId: string; sessions: Ev
     all: true,
     enabled: !!user && !!eventId && sessions.length > 0,
   })
+  const allParts = allPartsRaw ?? []
 
   const savedNote = allParts[0]?.note ?? ''
   const [noteText, setNoteText] = useState(savedNote)

@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { usePB } from '../../../hooks/usePB'
+import { useCollection } from '../../../lib/query'
 import type { Game, HallClosure, Team } from '../../../types'
 import type { CalendarEntry, SpielplanungFilterState } from '../../../types/calendar'
 import { parseDate, toDateKey, eachDayOfInterval } from '../../../utils/dateUtils'
@@ -63,23 +63,25 @@ export function useSpielplanungData({
   const gameFilter = buildGameFilter(filters, seasonStart, seasonEnd)
 
   const {
-    data: games,
+    data: gamesRaw,
     isLoading: gamesLoading,
     error: gamesError,
-  } = usePB<Game>('games', {
+  } = useCollection<Game>('games', {
     filter: gameFilter,
-    sort: 'date,time',
+    sort: ['date', 'time'],
     all: true,
   })
+  const games = gamesRaw ?? []
 
   const {
-    data: closures,
+    data: closuresRaw,
     isLoading: closuresLoading,
     error: closuresError,
-  } = usePB<HallClosure>('hall_closures', {
+  } = useCollection<HallClosure>('hall_closures', {
     filter: { _and: [{ start_date: { _lte: seasonEnd } }, { end_date: { _gte: seasonStart } }] },
     all: true,
   })
+  const closures = closuresRaw ?? []
 
   const entries = useMemo(() => games.map(gameToCalendarEntry), [games])
 

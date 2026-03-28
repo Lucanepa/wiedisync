@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Navigate } from 'react-router-dom'
 import type { Game, Team, Training, Member, MemberTeam, Hall } from '../../types'
-import { usePB } from '../../hooks/usePB'
+import { useCollection } from '../../lib/query'
 import { useAuth } from '../../hooks/useAuth'
 import { getCurrentSeason, getSeasonDateRange, formatDateCompact, formatTime } from '../../utils/dateHelpers'
 import { logActivity } from '../../utils/logActivity'
@@ -32,34 +32,39 @@ export default function ScorerAssignPage() {
   }
 
   // Data loading
-  const { data: allGames, isLoading: gamesLoading } = usePB<ExpandedGame>('games', {
+  const { data: allGamesRaw, isLoading: gamesLoading } = useCollection<ExpandedGame>('games', {
     filter: { _and: [{ date: { _gte: seasonStart } }, { date: { _lte: seasonEnd } }, { status: { _neq: 'cancelled' } }] },
-    sort: 'date,time',
+    sort: ['date', 'time'],
     all: true,
   })
+  const allGames = allGamesRaw ?? []
 
-  const { data: teams } = usePB<Team>('teams', {
+  const { data: teamsRaw } = useCollection<Team>('teams', {
     filter: { _and: [{ sport: { _eq: 'volleyball' } }, { active: { _eq: true } }] },
-    sort: 'name',
+    sort: ['name'],
     all: true,
   })
+  const teams = teamsRaw ?? []
 
-  const { data: trainings } = usePB<Training>('trainings', {
+  const { data: trainingsRaw } = useCollection<Training>('trainings', {
     filter: { _and: [{ date: { _gte: seasonStart } }, { date: { _lte: seasonEnd } }, { cancelled: { _eq: false } }] },
-    fields: 'id,team,date,start_time,end_time',
+    fields: ['id', 'team', 'date', 'start_time', 'end_time'],
     all: true,
   })
+  const trainings = trainingsRaw ?? []
 
-  const { data: members } = usePB<Member>('members', {
+  const { data: membersRaw } = useCollection<Member>('members', {
     filter: { kscw_membership_active: { _eq: true } },
-    fields: 'id,name,first_name,last_name,licences',
+    fields: ['id', 'name', 'first_name', 'last_name', 'licences'],
     all: true,
   })
+  const members = membersRaw ?? []
 
-  const { data: memberTeams } = usePB<MemberTeam>('member_teams', {
+  const { data: memberTeamsRaw } = useCollection<MemberTeam>('member_teams', {
     all: true,
     enabled: !!user,
   })
+  const memberTeams = memberTeamsRaw ?? []
 
   // State
   const [assignments, setAssignments] = useState<GameAssignment[]>([])

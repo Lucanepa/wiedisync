@@ -2,6 +2,15 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [2.7.0] — 2026-03-28
+
+### Infrastructure
+
+- **Directus relation expansion** — Migrated all 62 files from PocketBase `obj.expand?.relation` pattern to Directus inline relation access with `fields: ['*', 'relation.*']` queries. Added `asObj<T>()` type-safe helper for runtime narrowing across all modules (games, trainings, events, scorer, hallenplan, calendar, auth, admin, teams, carpool).
+- **Sentry error tracking** — Added `@sentry/react` with ErrorBoundary (German fallback UI), automatic user context on login/logout, `@sentry/vite-plugin` for source map uploads, and session replay. Configured via `VITE_SENTRY_DSN` env var.
+- **Cloudflare Web Analytics** — CSP headers updated; enable via CF Pages dashboard toggle (no code changes needed, privacy-first, no cookies).
+- **Participations public access** — Added public read permission for participations collection in Directus so unauthenticated homepage game cards load correctly.
+
 ## [2.6.1] — 2026-03-27
 
 ### Bug Fixes

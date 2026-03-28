@@ -36,15 +36,17 @@ export default function ProfilePage() {
   const [teamRequestOpen, setTeamRequestOpen] = useState(false)
 
   const { data: memberTeams } = usePB<ExpandedMemberTeam>('member_teams', {
-    filter: user ? { member: { _eq: user.id } } : { id: { _eq: -1 } },
+    filter: user ? { member: { _eq: user.id } } : undefined,
     perPage: 20,
+    enabled: !!user,
   })
 
   // Pending team requests
   interface TeamRequest { id: string; collectionId: string; collectionName: string; member: string; team: string; status: string; expand?: { team?: Team } }
   const { data: pendingRequests, refetch: refetchRequests } = usePB<TeamRequest>('team_requests', {
-    filter: user ? { _and: [{ member: { _eq: user.id } }, { status: { _eq: 'pending' } }] } : { id: { _eq: -1 } },
+    filter: user ? { _and: [{ member: { _eq: user.id } }, { status: { _eq: 'pending' } }] } : undefined,
     perPage: 20,
+    enabled: !!user,
   })
 
   const currentTeamIds = useMemo(
@@ -64,9 +66,10 @@ export default function ProfilePage() {
   const today = toISODate(new Date())
 
   const { data: activeAbsences } = usePB<Absence>('absences', {
-    filter: user ? { _and: [{ member: { _eq: user.id } }, { end_date: { _gte: today } }] } : { id: { _eq: -1 } },
+    filter: user ? { _and: [{ member: { _eq: user.id } }, { end_date: { _gte: today } }] } : undefined,
     sort: 'start_date',
     perPage: 20,
+    enabled: !!user,
   })
 
   if (!user) return <Navigate to="/login" replace />

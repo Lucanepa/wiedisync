@@ -117,6 +117,7 @@ export default function ScorerPage() {
 
   const { data: allMemberTeams } = usePB<MemberTeam>('member_teams', {
     all: true,
+    enabled: !!user,
   })
   const teamMemberIds = useMemo(() => {
     const map = new Map<string, Set<string>>()

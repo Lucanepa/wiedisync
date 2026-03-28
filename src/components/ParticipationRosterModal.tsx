@@ -73,7 +73,7 @@ export default function ParticipationRosterModal({
 
   // Fetch team leadership roles (coach, captain, team_responsible)
   const { data: teams } = usePB<Team>('teams', {
-    filter: teamIds.length > 0 ? teamIds.map(id => `id="${id}"`).join(' || ') : '',
+    filter: teamIds.length > 0 ? { id: { _in: teamIds } } : undefined,
     fields: 'id,coach,captain,team_responsible',
     enabled: teamIds.length > 0 && open,
   })
@@ -96,9 +96,12 @@ export default function ParticipationRosterModal({
 
   // Club-wide: fetch all participations for the event, then resolve member info
   const { data: clubWideParticipations, isLoading: clubWidePartsLoading } = usePB<Participation>('participations', {
-    filter: isClubWide && activityId
-      ? `activity_type="${activityType}" && activity_id="${activityId}"`
-      : '',
+    filter: isClubWide && activityId ? {
+      _and: [
+        { activity_type: { _eq: activityType } },
+        { activity_id: { _eq: activityId } },
+      ],
+    } : undefined,
     all: true,
     enabled: isClubWide && !!activityId && open,
   })

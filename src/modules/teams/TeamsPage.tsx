@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Users } from 'lucide-react'
-import { usePB } from '../../hooks/usePB'
+import { useCollection } from '../../lib/query'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import EmptyState from '../../components/EmptyState'
@@ -14,16 +14,18 @@ export default function TeamsPage() {
   const { t } = useTranslation('teams')
   const { canViewTeam, memberTeamIds, coachTeamIds } = useAuth()
   const { effectiveIsAdmin } = useAdminMode()
-  const { data: teams, isLoading } = usePB<Team>('teams', {
+  const { data: teamsRaw, isLoading } = useCollection<Team>('teams', {
     filter: { active: { _eq: true } },
-    sort: 'name',
-    perPage: 50,
+    sort: ['name'],
+    limit: 50,
   })
+  const teams = teamsRaw ?? []
   const season = getCurrentSeason()
-  const { data: memberTeams } = usePB<MemberTeam>('member_teams', {
+  const { data: memberTeamsRaw } = useCollection<MemberTeam>('member_teams', {
     filter: { season: { _eq: season } },
     all: true,
   })
+  const memberTeams = memberTeamsRaw ?? []
 
   const hasElevatedAccess = effectiveIsAdmin
   const effectiveCanViewTeam = (teamId: string) =>

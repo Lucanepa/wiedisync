@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { usePB } from '../../../hooks/usePB'
+import { useCollection } from '../../../lib/query'
 import { useMutation } from '../../../hooks/useMutation'
 import { useRealtime } from '../../../hooks/useRealtime'
 import { useAuth } from '../../../hooks/useAuth'
@@ -8,14 +8,15 @@ import type { Task, TaskTemplate } from '../../../types'
 export function useTasks(activityType: 'game' | 'training' | 'event', activityId: string) {
   const { user } = useAuth()
 
-  const { data: tasks, isLoading, refetch } = usePB<Task>('tasks', {
+  const { data: tasksRaw, isLoading, refetch } = useCollection<Task>('tasks', {
     filter: activityId
       ? { _and: [{ activity_type: { _eq: activityType } }, { activity_id: { _eq: activityId } }] }
       : { id: { _eq: -1 } },
     all: true,
-    sort: 'sort_order',
+    sort: ['sort_order'],
     enabled: !!activityId,
   })
+  const tasks = tasksRaw ?? []
 
   const { create, update, remove } = useMutation<Task>('tasks')
 
@@ -101,11 +102,12 @@ export function useTasks(activityType: 'game' | 'training' | 'event', activityId
 export function useTaskTemplates(teamId?: string) {
   const { user } = useAuth()
 
-  const { data: templates, isLoading, refetch } = usePB<TaskTemplate>('task_templates', {
+  const { data: templatesRaw, isLoading, refetch } = useCollection<TaskTemplate>('task_templates', {
     filter: teamId ? { team: { _eq: teamId } } : { id: { _eq: -1 } },
     all: true,
     enabled: !!teamId,
   })
+  const templates = templatesRaw ?? []
 
   const { create, remove } = useMutation<TaskTemplate>('task_templates')
 

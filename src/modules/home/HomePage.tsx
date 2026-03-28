@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
-import { usePB } from '../../hooks/usePB'
+import { useCollection } from '../../lib/query'
 import { useNotifications } from '../../hooks/useNotifications'
 import { useSportPreference } from '../../hooks/useSportPreference'
 import { formatDate, formatDateCompact, formatTime, formatWeekday } from '../../utils/dateHelpers'
@@ -62,11 +62,12 @@ export default function HomePage() {
   }, [sport])
 
   // Fetch user's team memberships (only when logged in)
-  const { data: memberTeams, isLoading: memberTeamsLoading } = usePB<MemberTeamExpanded>('member_teams', {
+  const { data: memberTeamsRaw, isLoading: memberTeamsLoading } = useCollection<MemberTeamExpanded>('member_teams', {
     filter: user ? { member: { _eq: user.id } } : { id: { _eq: -1 } },
-    perPage: 20,
+    limit: 20,
     enabled: !!user,
   })
+  const memberTeams = memberTeamsRaw ?? []
 
   const userTeamIds = useMemo(() => [...new Set([...memberTeams.map((mt) => mt.team), ...coachTeamIds])], [memberTeams, coachTeamIds])
   const hasTeams = userTeamIds.length > 0
@@ -83,12 +84,13 @@ export default function HomePage() {
     if (sportFilter) conditions.push(sportFilter)
     return { _and: conditions }
   }, [today, sportFilter])
-  const { data: allNextGames, isLoading: gamesLoading } = usePB<ExpandedGame>('games', {
+  const { data: allNextGamesRaw, isLoading: gamesLoading } = useCollection<ExpandedGame>('games', {
     filter: allGamesFilter,
-    sort: 'date,time',
-    perPage: 5,
+    sort: ['date', 'time'],
+    limit: 5,
     enabled: showAllGames || !hasTeams,
   })
+  const allNextGames = allNextGamesRaw ?? []
 
   // Next 5 upcoming games (my teams only)
   const myGamesFilter = useMemo((): Record<string, unknown> => {
@@ -97,12 +99,13 @@ export default function HomePage() {
     if (sportFilter) conditions.push(sportFilter)
     return { _and: conditions }
   }, [today, teamGameFilter, sportFilter])
-  const { data: myNextGames } = usePB<ExpandedGame>('games', {
+  const { data: myNextGamesRaw } = useCollection<ExpandedGame>('games', {
     filter: myGamesFilter,
-    sort: 'date,time',
-    perPage: 5,
+    sort: ['date', 'time'],
+    limit: 5,
     enabled: hasTeams && !showAllGames,
   })
+  const myNextGames = myNextGamesRaw ?? []
 
   // Latest 5 results (all) — only fetch when user toggled "show all" or has no teams
   const allResultsFilter = useMemo((): Record<string, unknown> => {
@@ -110,12 +113,13 @@ export default function HomePage() {
     if (sportFilter) conditions.push(sportFilter)
     return conditions.length === 1 ? conditions[0] : { _and: conditions }
   }, [sportFilter])
-  const { data: allLatestResults, isLoading: resultsLoading } = usePB<ExpandedGame>('games', {
+  const { data: allLatestResultsRaw, isLoading: resultsLoading } = useCollection<ExpandedGame>('games', {
     filter: allResultsFilter,
-    sort: '-date,-time',
-    perPage: 5,
+    sort: ['-date', '-time'],
+    limit: 5,
     enabled: showAllResults || !hasTeams,
   })
+  const allLatestResults = allLatestResultsRaw ?? []
 
   // Latest 5 results (my teams only)
   const myResultsFilter = useMemo((): Record<string, unknown> => {
@@ -124,12 +128,13 @@ export default function HomePage() {
     if (sportFilter) conditions.push(sportFilter)
     return conditions.length === 1 ? conditions[0] : { _and: conditions }
   }, [teamGameFilter, sportFilter])
-  const { data: myLatestResults } = usePB<ExpandedGame>('games', {
+  const { data: myLatestResultsRaw } = useCollection<ExpandedGame>('games', {
     filter: myResultsFilter,
-    sort: '-date,-time',
-    perPage: 5,
+    sort: ['-date', '-time'],
+    limit: 5,
     enabled: hasTeams && !showAllResults,
   })
+  const myLatestResults = myLatestResultsRaw ?? []
 
   // Next trainings for user's teams
   const trainingFilter = useMemo((): Record<string, unknown> | string => {
@@ -144,12 +149,13 @@ export default function HomePage() {
     return { _and: conditions }
   }, [userTeamIds, hasTeams, today, sport])
 
-  const { data: nextTrainings, isLoading: trainingsLoading } = usePB<TrainingExpanded>('trainings', {
-    filter: trainingFilter,
-    sort: 'date,start_time',
-    perPage: 10,
+  const { data: nextTrainingsRaw, isLoading: trainingsLoading } = useCollection<TrainingExpanded>('trainings', {
+    filter: trainingFilter as Record<string, unknown> | undefined,
+    sort: ['date', 'start_time'],
+    limit: 10,
     enabled: hasTeams,
   })
+  const nextTrainings = nextTrainingsRaw ?? []
 
   // Decide which games/results to show
   const nextGames = hasTeams && !showAllGames ? myNextGames : allNextGames
@@ -174,11 +180,12 @@ export default function HomePage() {
     return { _and: conditions }
   }, [today, hasTeams, userTeamIds])
 
-  const { data: events, isLoading: eventsLoading } = usePB<EventExpanded>('events', {
+  const { data: eventsRaw, isLoading: eventsLoading } = useCollection<EventExpanded>('events', {
     filter: eventFilter,
-    sort: 'start_date',
-    perPage: 10,
+    sort: ['start_date'],
+    limit: 10,
   })
+  const events = eventsRaw ?? []
 
   // Bulk-fetch participation statuses for all displayed activities (2 queries total
   // instead of 2 per row) so banners appear together with everything else.

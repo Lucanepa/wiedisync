@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { usePB } from '../hooks/usePB'
+import { useCollection } from '../lib/query'
 import TeamChip from './TeamChip'
 import type { Team } from '../types'
 
@@ -13,7 +13,8 @@ interface TeamFilterProps {
 }
 
 export default function TeamFilter({ selected, onChange, limitToTeamIds, groupBySport }: TeamFilterProps) {
-  const { data: allTeams } = usePB<Team>('teams', { filter: { active: { _eq: true } }, sort: 'name', perPage: 50 })
+  const { data: allTeamsRaw } = useCollection<Team>('teams', { filter: { active: { _eq: true } }, sort: ['name'], limit: 50 })
+  const allTeams = allTeamsRaw ?? []
 
   const teams = useMemo(() => {
     if (!limitToTeamIds || limitToTeamIds.length === 0) return allTeams

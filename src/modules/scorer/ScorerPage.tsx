@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Game, Member, Team, MemberTeam, ScorerDelegation } from '../../types'
-import { usePB } from '../../hooks/usePB'
+import { useCollection } from '../../lib/query'
 import { useRealtime } from '../../hooks/useRealtime'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
@@ -26,12 +26,6 @@ type SportTab = 'volleyball' | 'basketball'
 type VbDutyTypeFilter = 'all' | 'scorer' | 'scoreboard' | 'scorer_scoreboard'
 type VbUnassignedFilter = 'all' | 'scorer' | 'scoreboard' | 'scorer_scoreboard' | 'any'
 type BbUnassignedFilter = 'all' | 'bb_scorer' | 'bb_timekeeper' | 'bb_24s_official' | 'any'
-
-const VB_EXPAND =
-  'kscw_team,hall,scorer_member,scoreboard_member,scorer_scoreboard_member,scorer_duty_team,scoreboard_duty_team,scorer_scoreboard_duty_team'
-const BB_EXPAND =
-  'kscw_team,hall,bb_scorer_member,bb_timekeeper_member,bb_24s_official,bb_duty_team,bb_scorer_duty_team,bb_timekeeper_duty_team,bb_24s_duty_team'
-const EXPAND_FIELDS = `${VB_EXPAND},${BB_EXPAND}`
 
 const PAST_PAGE_SIZE = 5
 
@@ -61,31 +55,33 @@ export default function ScorerPage() {
   const today = useMemo(() => new Date().toISOString().split('T')[0], [])
 
   const {
-    data: upcomingGames,
+    data: upcomingGamesRaw,
     isLoading: gamesLoading,
     refetch,
-  } = usePB<Game>('games', {
+  } = useCollection<Game>('games', {
     filter: { _and: [{ type: { _eq: 'home' } }, { date: { _gte: today } }, { status: { _nin: ['completed', 'postponed'] } }] },
-    sort: 'date,time',
-    expand: EXPAND_FIELDS,
-    perPage: 200,
+    sort: ['date', 'time'],
+    limit: 200,
   })
+  const upcomingGames = upcomingGamesRaw ?? []
 
-  const { data: allPastGames, isLoading: pastLoading } = usePB<Game>('games', {
+  const { data: allPastGamesRaw, isLoading: pastLoading } = useCollection<Game>('games', {
     filter: { _and: [{ type: { _eq: 'home' } }, { date: { _lt: today } }] },
-    sort: '-date,-time',
-    expand: EXPAND_FIELDS,
-    perPage: 200,
+    sort: ['-date', '-time'],
+    limit: 200,
     enabled: showPast,
   })
+  const allPastGames = allPastGamesRaw ?? []
 
   // Reminder email toggle (superuser only)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: appSettings, refetch: refetchSettings } = usePB<any>('app_settings', {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: appSettingsRaw, refetch: refetchSettings } = useCollection<any>('app_settings', {
     filter: { key: { _eq: 'scorer_reminders_enabled' } },
-    perPage: 1,
+    limit: 1,
     enabled: isSuperAdmin,
   })
+  const appSettings = appSettingsRaw ?? []
   const reminderSetting = appSettings[0] as { id: string; enabled: boolean } | undefined
   const remindersEnabled = reminderSetting?.enabled ?? false
 
@@ -102,23 +98,26 @@ export default function ScorerPage() {
     }
   }
 
-  const { data: members } = usePB<Member>('members', {
+  const { data: membersRaw } = useCollection<Member>('members', {
     filter: { kscw_membership_active: { _eq: true } },
-    sort: 'last_name,first_name',
+    sort: ['last_name', 'first_name'],
     all: true,
-    fields: 'id,name,first_name,last_name,licences,kscw_membership_active,phone,email',
+    fields: ['id', 'name', 'first_name', 'last_name', 'licences', 'kscw_membership_active', 'phone', 'email'],
   })
+  const members = membersRaw ?? []
 
-  const { data: teams } = usePB<Team>('teams', {
+  const { data: teamsRaw } = useCollection<Team>('teams', {
     filter: { active: { _eq: true } },
-    sort: 'name',
+    sort: ['name'],
     all: true,
   })
+  const teams = teamsRaw ?? []
 
-  const { data: allMemberTeams } = usePB<MemberTeam>('member_teams', {
+  const { data: allMemberTeamsRaw } = useCollection<MemberTeam>('member_teams', {
     all: true,
     enabled: !!user,
   })
+  const allMemberTeams = allMemberTeamsRaw ?? []
   const teamMemberIds = useMemo(() => {
     const map = new Map<string, Set<string>>()
     for (const mt of allMemberTeams) {

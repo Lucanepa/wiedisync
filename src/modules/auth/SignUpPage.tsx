@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
 import { useAuth } from '../../hooks/useAuth'
 import { useTheme } from '../../hooks/useTheme'
-import { usePB } from '../../hooks/usePB'
+import { useCollection } from '../../lib/query'
 import { logActivity } from '../../utils/logActivity'
 import { Button } from '@/components/ui/button'
 import Modal from '@/components/Modal'
@@ -68,11 +68,12 @@ export default function SignUpPage() {
   const [existingTeams, setExistingTeams] = useState<(MemberTeam & { expand?: { team?: Team } })[]>([])
   const [additionalTeamIds, setAdditionalTeamIds] = useState<string[]>([])
 
-  const { data: teams } = usePB<Team>('teams', {
+  const { data: teamsRaw } = useCollection<Team>('teams', {
     filter: { active: { _eq: true } },
-    sort: 'name',
+    sort: ['name'],
     all: true,
   })
+  const teams = teamsRaw ?? []
 
   const filteredTeams = teams.filter((t) => t.sport === selectedSport)
 

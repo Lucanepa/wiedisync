@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { Bug, Lightbulb, MessageCircle, Paperclip, X, ExternalLink, ChevronDown, ChevronRight, CheckCircle2, AlertCircle } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
-import { usePB } from '../../hooks/usePB'
+import { useCollection } from '../../lib/query'
 import { formatRelativeTime } from '../../utils/dateHelpers'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
@@ -81,12 +81,13 @@ export default function FeedbackPage() {
   const [files, setFiles] = useState<File[]>([])
   const [submitting, setSubmitting] = useState(false)
 
-  const { data: submissions, refetch } = usePB<FeedbackRecord>('feedback', {
+  const { data: submissionsRaw, refetch } = useCollection<FeedbackRecord>('feedback', {
     filter: user ? { user: { _eq: user.id } } : undefined,
-    sort: '-created',
+    sort: ['-created'],
     all: true,
     enabled: !!user,
   })
+  const submissions = submissionsRaw ?? []
 
   // GitHub issues
   const [issues, setIssues] = useState<GitHubIssue[]>([])

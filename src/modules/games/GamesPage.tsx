@@ -4,7 +4,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import { useSportPreference } from '../../hooks/useSportPreference'
 import type { Game, Ranking, Team, Participation, ParticipationWithMember } from '../../types'
-import { usePB } from '../../hooks/usePB'
+import { useCollection } from '../../lib/query'
 import { useRealtime } from '../../hooks/useRealtime'
 import { teamIds } from '../../utils/teamColors'
 import SportToggle from '../../components/SportToggle'
@@ -58,7 +58,8 @@ export default function GamesPage() {
   const INITIAL_LIMIT = 20
 
   // Fetch all KSCW teams to map name → PB id
-  const { data: allTeams } = usePB<Team>('teams', { sort: 'name', all: true, fields: 'id,name' })
+  const { data: allTeamsRaw } = useCollection<Team>('teams', { sort: ['name'], all: true, fields: ['id', 'name'] })
+  const allTeams = allTeamsRaw ?? []
   const teamNameToId = useMemo(() => {
     const map = new Map<string, string>()
     for (const t of allTeams) map.set(t.name, t.id)
@@ -111,12 +112,13 @@ export default function GamesPage() {
 
   const perPage = showAll ? 500 : INITIAL_LIMIT
 
-  const { data: games, isLoading: gamesLoading } = usePB<Game>(
+  const { data: gamesRaw, isLoading: gamesLoading } = useCollection<Game>(
     'games',
     gameQuery && !teamsLoading
-      ? { filter: gameQuery.filter, sort: gameQuery.sort, perPage }
-      : { filter: { id: { _eq: -1 } }, perPage: 1 },
+      ? { filter: gameQuery.filter, sort: gameQuery.sort.split(','), limit: perPage }
+      : { filter: { id: { _eq: -1 } }, limit: 1 },
   )
+  const games = gamesRaw ?? []
 
   // Batch-fetch ALL participations for visible games in ONE request
   const gameIds = useMemo(() => games.map((g) => g.id), [games])
@@ -125,11 +127,12 @@ export default function GamesPage() {
     return { _and: [{ activity_type: { _eq: 'game' } }, { activity_id: { _in: gameIds } }] }
   }, [gameIds])
 
-  const { data: allParticipations, refetch: refetchParticipations } = usePB<Participation>('participations', {
-    filter: participationFilter,
+  const { data: allParticipationsRaw, refetch: refetchParticipations } = useCollection<Participation>('participations', {
+    filter: participationFilter as Record<string, unknown> | undefined,
     all: true,
     enabled: gameIds.length > 0,
   })
+  const allParticipations = allParticipationsRaw ?? []
 
   useRealtime('participations', () => refetchParticipations())
 
@@ -158,10 +161,11 @@ export default function GamesPage() {
   }, [allParticipations, user, games])
 
   // Rankings — always fetch (small dataset), group client-side
-  const { data: allRankings, isLoading: rankingsLoading } = usePB<Ranking>('rankings', {
-    sort: 'league,rank',
-    perPage: 2000,
+  const { data: allRankingsRaw, isLoading: rankingsLoading } = useCollection<Ranking>('rankings', {
+    sort: ['league', 'rank'],
+    limit: 2000,
   })
+  const allRankings = allRankingsRaw ?? []
 
   const leagueGroups = useMemo(() => {
     const grouped = new Map<string, Ranking[]>()

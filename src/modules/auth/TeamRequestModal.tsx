@@ -4,7 +4,7 @@ import Modal from '@/components/Modal'
 import { Button } from '@/components/ui/button'
 import SearchableSelect from '@/components/ui/SearchableSelect'
 import { useAuth } from '../../hooks/useAuth'
-import { usePB } from '../../hooks/usePB'
+import { useCollection } from '../../lib/query'
 import type { Team } from '../../types'
 import { createRecord } from '../../lib/api'
 
@@ -33,17 +33,19 @@ export default function TeamRequestModal({ open, onClose, onComplete, currentTea
   const [error, setError] = useState('')
 
   // Fetch all active teams
-  const { data: allTeams } = usePB<Team>('teams', {
+  const { data: allTeamsRaw } = useCollection<Team>('teams', {
     filter: { active: { _eq: true } },
-    sort: 'name',
-    perPage: 50,
+    sort: ['name'],
+    limit: 50,
   })
+  const allTeams = allTeamsRaw ?? []
 
   // Fetch existing pending requests for this user
-  const { data: pendingRequests } = usePB<TeamRequest>('team_requests', {
+  const { data: pendingRequestsRaw } = useCollection<TeamRequest>('team_requests', {
     filter: user ? { _and: [{ member: { _eq: user.id } }, { status: { _eq: 'pending' } }] } : { id: { _eq: -1 } },
-    perPage: 50,
+    limit: 50,
   })
+  const pendingRequests = pendingRequestsRaw ?? []
 
   const pendingTeamIds = useMemo(
     () => pendingRequests.map((r) => r.team),

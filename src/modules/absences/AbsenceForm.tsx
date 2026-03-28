@@ -4,7 +4,7 @@ import Modal from '@/components/Modal'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import { useMutation } from '../../hooks/useMutation'
-import { usePB } from '../../hooks/usePB'
+import { useCollection } from '../../lib/query'
 import { Button } from '@/components/ui/button'
 import { FormTextarea } from '@/components/FormField'
 import DatePicker from '@/components/ui/DatePicker'
@@ -26,20 +26,22 @@ export default function AbsenceForm({ open, absence, onSave, onCancel }: Absence
   const { effectiveIsCoach, effectiveIsAdmin } = useAdminMode()
   const { create, update, isLoading } = useMutation<Absence>('absences')
   // Admins: fetch all active members directly
-  const { data: allMembers } = usePB<Member>('members', {
+  const { data: allMembersRaw } = useCollection<Member>('members', {
     filter: { kscw_membership_active: { _eq: true } },
-    sort: 'last_name',
+    sort: ['last_name'],
     all: true,
-    fields: 'id,first_name,last_name,name',
+    fields: ['id', 'first_name', 'last_name', 'name'],
     enabled: effectiveIsAdmin,
   })
+  const allMembers = allMembersRaw ?? []
 
   // Coaches: fetch team members via member_teams with expanded member data
-  const { data: memberTeams, error: memberTeamsError } = usePB<MemberTeam & { expand?: { member?: Member } }>('member_teams', {
+  const { data: memberTeamsRaw, error: memberTeamsError } = useCollection<MemberTeam & { expand?: { member?: Member } }>('member_teams', {
     filter: coachTeamIds.length > 0 ? { team: { _in: coachTeamIds } } : { id: { _eq: -1 } },
     all: true,
     enabled: effectiveIsCoach && !effectiveIsAdmin && coachTeamIds.length > 0,
   })
+  const memberTeams = memberTeamsRaw ?? []
 
   // Build visible members: admins see all, coaches see their team members
   const visibleMembers = useMemo(() => {

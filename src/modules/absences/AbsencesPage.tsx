@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { ClipboardList, Upload, CalendarClock } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
-import { usePB } from '../../hooks/usePB'
+import { useCollection } from '../../lib/query'
 import { useMutation } from '../../hooks/useMutation'
 import { useRealtime } from '../../hooks/useRealtime'
 import TeamFilter from '../../components/TeamFilter'
@@ -35,7 +35,8 @@ export default function AbsencesPage() {
   const [editingWeekly, setEditingWeekly] = useState<Absence | null>(null)
 
   // Fetch all active teams (needed to resolve "Alle" selection to actual IDs)
-  const { data: allTeams } = usePB<Team>('teams', { filter: { active: { _eq: true } }, sort: 'name', perPage: 50 })
+  const { data: allTeamsRaw } = useCollection<Team>('teams', { filter: { active: { _eq: true } }, sort: ['name'], limit: 50 })
+  const allTeams = allTeamsRaw ?? []
 
   // Only show all teams when admin mode is active; otherwise scope to own teams
   const visibleTeamIds = useMemo(() => {
@@ -52,18 +53,20 @@ export default function AbsencesPage() {
   }, [selectedTeam, visibleTeamIds, allTeams])
 
   // Standard absences (exclude weekly)
-  const { data: myAbsences, refetch } = usePB<AbsenceExpanded>('absences', {
+  const { data: myAbsencesRaw, refetch } = useCollection<AbsenceExpanded>('absences', {
     filter: user ? { _and: [{ member: { _eq: user.id } }, { type: { _neq: 'weekly' } }] } : { id: { _eq: -1 } },
-    sort: '-start_date',
-    perPage: 50,
+    sort: ['-start_date'],
+    limit: 50,
   })
+  const myAbsences = myAbsencesRaw ?? []
 
   // Weekly unavailabilities
-  const { data: myWeekly, refetch: refetchWeekly } = usePB<AbsenceExpanded>('absences', {
+  const { data: myWeeklyRaw, refetch: refetchWeekly } = useCollection<AbsenceExpanded>('absences', {
     filter: user ? { _and: [{ member: { _eq: user.id } }, { type: { _eq: 'weekly' } }] } : { id: { _eq: -1 } },
-    sort: '-start_date',
-    perPage: 50,
+    sort: ['-start_date'],
+    limit: 50,
   })
+  const myWeekly = myWeeklyRaw ?? []
 
   const { remove } = useMutation<Absence>('absences')
 

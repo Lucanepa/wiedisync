@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { usePB } from '../../../hooks/usePB'
+import { useCollection } from '../../../lib/query'
 import { useMutation } from '../../../hooks/useMutation'
 import { useAuth } from '../../../hooks/useAuth'
 import { useRealtime } from '../../../hooks/useRealtime'
@@ -8,12 +8,13 @@ import type { Poll, PollVote } from '../../../types'
 export function usePolls(teamId: string) {
   const { user } = useAuth()
 
-  const { data: polls, refetch: refetchPolls, isLoading } = usePB<Poll>('polls', {
+  const { data: pollsRaw, refetch: refetchPolls, isLoading } = useCollection<Poll>('polls', {
     filter: teamId ? { team: { _eq: teamId } } : { id: { _eq: -1 } },
-    sort: '-created',
+    sort: ['-created'],
     all: true,
     enabled: !!teamId,
   })
+  const polls = pollsRaw ?? []
 
   const { create: createPoll, update: updatePoll, remove: removePoll } = useMutation<Poll>('polls')
 
@@ -58,11 +59,12 @@ export function usePolls(teamId: string) {
 export function usePollVotes(pollId: string) {
   const { user } = useAuth()
 
-  const { data: votes, refetch, isLoading } = usePB<PollVote>('poll_votes', {
+  const { data: votesRaw, refetch, isLoading } = useCollection<PollVote>('poll_votes', {
     filter: pollId ? { poll: { _eq: pollId } } : { id: { _eq: -1 } },
     all: true,
     enabled: !!pollId,
   })
+  const votes = votesRaw ?? []
 
   const { create, update } = useMutation<PollVote>('poll_votes')
 

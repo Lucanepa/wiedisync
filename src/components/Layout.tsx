@@ -16,7 +16,7 @@ import SidebarNotifications from './SidebarNotifications'
 import SwitchToggle from '@/components/SwitchToggle'
 import LanguageDropdown from '@/components/LanguageDropdown'
 import TeamChip from './TeamChip'
-import { usePB } from '../hooks/usePB'
+import { useCollection } from '../lib/query'
 import ProfileEditModal from '../modules/auth/ProfileEditModal'
 import type { MemberTeam, Team } from '../types'
 import {
@@ -159,11 +159,12 @@ export default function Layout() {
       setAdminMode(true)
     }
   }, [location.pathname, isAdmin, isAdminMode, setAdminMode])
-  const { data: memberTeams } = usePB<ExpandedMemberTeam>('member_teams', {
+  const { data: memberTeamsRaw } = useCollection<ExpandedMemberTeam>('member_teams', {
     filter: user ? { member: { _eq: user.id } } : undefined,
-    perPage: 10,
+    limit: 10,
     enabled: !!user,
   })
+  const memberTeams = memberTeamsRaw ?? []
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { PartyPopper } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
-import { usePB } from '../../hooks/usePB'
+import { useCollection } from '../../lib/query'
 import { useMutation } from '../../hooks/useMutation'
 import { useRealtime } from '../../hooks/useRealtime'
 import EmptyState from '../../components/EmptyState'
@@ -61,12 +61,13 @@ export default function EventsPage() {
     return conditions.length === 1 ? conditions[0] : { _and: conditions }
   }, [allUserTeamIds, selectedTeam, showPast, today])
 
-  const { data: events, isLoading, refetch } = usePB<EventExpanded>('events', {
+  const { data: eventsRaw, isLoading, refetch } = useCollection<EventExpanded>('events', {
     filter: eventFilter,
-    sort: 'start_date',
-    perPage: 50,
+    sort: ['start_date'],
+    limit: 50,
     enabled: !teamsLoading,
   })
+  const events = eventsRaw ?? []
 
   const { remove } = useMutation<Event>('events')
 
@@ -79,11 +80,12 @@ export default function EventsPage() {
     return { _and: [{ activity_type: { _eq: 'event' } }, { activity_id: { _in: eventIds } }] }
   }, [eventIds])
 
-  const { data: allParticipations, refetch: refetchParticipations } = usePB<Participation>('participations', {
-    filter: participationFilter,
+  const { data: allParticipationsRaw, refetch: refetchParticipations } = useCollection<Participation>('participations', {
+    filter: participationFilter as Record<string, unknown> | undefined,
     all: true,
     enabled: eventIds.length > 0,
   })
+  const allParticipations = allParticipationsRaw ?? []
 
   useRealtime('participations', () => refetchParticipations())
 

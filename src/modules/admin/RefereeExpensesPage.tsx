@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Download } from 'lucide-react'
 import type { RefereeExpense, Game, Team, Member, BaseRecord } from '../../types'
-import { usePB } from '../../hooks/usePB'
+import { useCollection } from '../../lib/query'
 import TeamChip from '../../components/TeamChip'
 import { pbNameToColorKey } from '../../utils/teamColors'
 import { formatDate } from '../../utils/dateHelpers'
@@ -21,11 +21,12 @@ export default function RefereeExpensesPage() {
   const [seasonFilter, setSeasonFilter] = useState('')
 
   // Fetch all volleyball teams for filter dropdown
-  const { data: vbTeams } = usePB<Team & BaseRecord>('teams', {
+  const { data: vbTeamsRaw } = useCollection<Team & BaseRecord>('teams', {
     filter: { _and: [{ sport: { _eq: 'volleyball' } }, { active: { _eq: true } }] },
-    sort: 'name',
+    sort: ['name'],
     all: true,
   })
+  const vbTeams = vbTeamsRaw ?? []
 
   // Build filter
   const filter = useMemo((): Record<string, unknown> => {
@@ -37,11 +38,12 @@ export default function RefereeExpensesPage() {
   }, [teamFilter, seasonFilter])
 
   // Fetch expenses
-  const { data: expenses, isLoading } = usePB<ExpandedExpense>('referee_expenses', {
+  const { data: expensesRaw, isLoading } = useCollection<ExpandedExpense>('referee_expenses', {
     filter,
-    sort: '-created',
+    sort: ['-created'],
     all: true,
   })
+  const expenses = expensesRaw ?? []
 
   // Extract unique seasons from game data
   const seasons = useMemo(() => {

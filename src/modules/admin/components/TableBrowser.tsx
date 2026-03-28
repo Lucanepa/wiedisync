@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { fetchItems } from '../../../lib/api'
-import { usePB } from '../../../hooks/usePB'
+import { useCollection } from '../../../lib/query'
 import ResultsTable from './ResultsTable'
 import SchemaViewer from './SchemaViewer'
 import RecordEditModal from './RecordEditModal'
@@ -42,19 +42,26 @@ export default function TableBrowser({ collections, loadingCollections }: TableB
 
   const selectedCol = collections.find((c) => c.name === selected)
 
-  // Build sort string
-  const sort = sortField ? `${sortDir}${sortField}` : ''
+  // Build sort array
+  const sort = sortField ? [`${sortDir}${sortField}`] : undefined
+
+  // Parse filter string as JSON object (if provided)
+  const parsedFilter = useMemo((): Record<string, unknown> | undefined => {
+    if (!appliedFilter) return undefined
+    try { return JSON.parse(appliedFilter) } catch { return undefined }
+  }, [appliedFilter])
 
   // Fetch records for selected collection
-  const { data: records, total, isLoading, refetch } = usePB(selected, {
-    page,
-    perPage: PER_PAGE,
+  const { data: recordsRaw, isLoading, refetch } = useCollection(selected, {
+    offset: (page - 1) * PER_PAGE,
+    limit: PER_PAGE,
     sort,
-    filter: appliedFilter,
+    filter: parsedFilter,
     enabled: !!selected,
   })
-
-  const totalPages = Math.ceil(total / PER_PAGE)
+  const records = recordsRaw ?? []
+  const total = records.length
+  const totalPages = Math.max(1, Math.ceil(total / PER_PAGE))
 
   // Column names for the results table
   const columns = useMemo(() => {

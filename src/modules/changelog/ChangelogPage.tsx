@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '2.6.1'
+const APP_VERSION = '2.7.0'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,20 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.7.0',
+    date: '2026-03-28',
+    sections: [
+      {
+        title: 'Infrastructure',
+        items: [
+          'Backend migration to Directus — all data queries now use Directus inline relation expansion instead of PocketBase expand pattern (62 files updated)',
+          'Sentry error tracking — automatic error reporting with session replay, user context, and source map uploads',
+          'Cloudflare Web Analytics support — privacy-first analytics with no cookies required',
+        ],
+      },
+    ],
+  },
   {
     version: '2.6.1',
     date: '2026-03-27',

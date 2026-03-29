@@ -22,6 +22,7 @@ const CHANGELOG: ChangelogEntry[] = [
           'All custom API endpoints ported to Directus — game scheduling, team invites, iCal feeds, contact form, scorer reminders, and OTP verification',
           'Batch notification system — activity reminders and deadline alerts now use efficient SQL queries instead of per-member processing',
           'Daily sync crons — Swiss Volley and Basketplan game/ranking syncs now run automatically from Directus (06:00 and 06:05 UTC)',
+          'Web push notifications now delivered via Directus — deadline reminders, upcoming activities, and scorer delegation updates trigger push',
         ],
       },
     ],

@@ -36,7 +36,7 @@ export default function ClaimDetailModal({ slot, claim, halls, teams, onClose, o
   const [confirmRelease, setConfirmRelease] = useState(false)
 
   const hallName = halls.find((h) => h.id === slot.hall)?.name ?? ''
-  const originalTeams = teams.filter((tm) => slot.team.includes(tm.id))
+  const originalTeams = teams.filter((tm) => slot.team?.includes(tm.id))
   const claimingTeam = teams.find((tm) => tm.id === claim.claimed_by_team)
 
   // Resolve claiming member name from expanded relation

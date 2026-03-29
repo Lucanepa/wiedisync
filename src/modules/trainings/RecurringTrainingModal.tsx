@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import Modal from '@/components/Modal'
+import { wrapFkAsArray } from '../../lib/api'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import { useCollection } from '../../lib/query'
@@ -43,7 +44,7 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
     limit: 100,
     fields: ['*', 'hall.*'],
   })
-  const allSlots = allSlotsRaw ?? []
+  const allSlots = wrapFkAsArray(allSlotsRaw ?? [], 'team' as keyof SlotExpanded)
 
   // Filter by selected team, or fall back to coach's teams (non-admin)
   // Sort: current/past slots first (by valid_from asc), then future slots (by valid_from asc)

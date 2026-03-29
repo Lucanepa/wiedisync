@@ -92,7 +92,7 @@ export default function HallenplanPage() {
           return false
         }
         // Filter by sport
-        if (!s.team.some(t => allowedTeams.has(t))) return false
+        if (!s.team?.some(t => allowedTeams.has(t))) return false
         // VB mode: filter out BB game hall events (GCal basketball games)
         if (sportFilter === 'vb' && s._virtual?.source === 'hall_event' && s.slot_type === 'game') return false
         return true

@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useCollection } from '../../../lib/query'
+import { wrapFkAsArray } from '../../../lib/api'
 import type { Hall, HallSlot, HallClosure, Team, Game, Training, HallEvent, SlotClaim } from '../../../types'
 import {
   gameToVirtualSlots,
@@ -48,7 +49,7 @@ export function useHallenplanData(
     all: true,
     sort: ['day_of_week', 'start_time'],
   })
-  const rawSlots = rawSlotsData ?? []
+  const rawSlots = wrapFkAsArray(rawSlotsData ?? [], 'team')
 
   const closureDateConditions: Record<string, unknown>[] = [
     { start_date: { _lte: sundayStr } },

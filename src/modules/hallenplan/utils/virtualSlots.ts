@@ -336,7 +336,7 @@ export function mergeVirtualSlots(
         if (
           slot.recurring &&
           slot.slot_type === 'training' &&
-          slot.team.includes(game.kscw_team) &&
+          slot.team?.includes(game.kscw_team) &&
           slot.day_of_week === dayIndex
         ) {
           suppressedSlotDays.add(`${slot.id}-${dayIndex}`)
@@ -487,7 +487,7 @@ export function mergeVirtualSlots(
       if (
         slot.recurring &&
         slot.slot_type === 'training' &&
-        slot.team.includes(game.kscw_team) &&
+        slot.team?.includes(game.kscw_team) &&
         slot.day_of_week === dayIndex
       ) {
         if (isClosedOnDate(slot.hall, gameDate, closures)) continue

@@ -9,7 +9,7 @@ import {
 } from '../../../utils/dateUtils'
 import { format, isBefore, isAfter, isSameDay } from 'date-fns'
 import { formatTime } from '../../../utils/dateHelpers'
-import { asObj } from '../../../utils/relations'
+import { asObj, relId } from '../../../utils/relations'
 
 interface UseCalendarDataOptions {
   filters: CalendarFilterState
@@ -251,6 +251,7 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
       buildDateFilter('start_date', fetchRange.start, fetchRange.end),
       filters.selectedTeamIds,
     ),
+    fields: ['id', 'start_date', 'end_date', 'all_day', 'title', 'location', 'description'],
     sort: ['start_date'],
     all: true,
   })
@@ -259,6 +260,7 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
   const { data: hallEventsRaw, isLoading: hallEventsLoading } = useCollection<HallEvent>('hall_events', {
     enabled: fetchHallEvents,
     filter: { _and: buildDateFilter('date', fetchRange.start, fetchRange.end) },
+    fields: ['id', 'date', 'title', 'start_time', 'end_time', 'all_day', 'location'],
     sort: ['date', 'start_time'],
     all: true,
   })
@@ -344,11 +346,11 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
 
     if (fetchAbsences) {
       // Filter absences by team membership when team filter is active
-      const teamMemberIds = hasTeamFilter ? new Set(teamMemberLinks.map((mt) => mt.member)) : null
+      const teamMemberIds = hasTeamFilter ? new Set(teamMemberLinks.map((mt) => relId(mt.member))) : null
       const teamIdSet = hasTeamFilter ? new Set(filters.selectedTeamIds) : null
       for (const a of absences) {
         // Skip if team filter active and member not in selected teams
-        if (teamMemberIds && !teamMemberIds.has(a.member)) continue
+        if (teamMemberIds && !teamMemberIds.has(relId(a.member))) continue
         // Also check affects field: skip if affects specific teams that don't match
         const affects = (a as Record<string, unknown>).affects as string[] | undefined
         if (teamIdSet && affects && affects.length > 0 && !affects.includes('all') && !affects.some((id) => teamIdSet.has(id))) continue

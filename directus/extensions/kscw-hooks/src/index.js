@@ -282,5 +282,43 @@ export default ({ action, schedule }, { services, database, logger, getSchema })
     }
   })
 
-  log.info('KSCW hooks loaded: 1 action, 7 crons (validations+notifications in Postgres)')
+  // ── 9. Cron: Swiss Volley Sync (06:00 UTC) ────────────────────
+  // Calls the existing SV sync endpoint via internal HTTP
+
+  schedule('0 6 * * *', async () => {
+    const token = process.env.DIRECTUS_ADMIN_TOKEN
+    if (!token) { log.warn('SV sync skipped: DIRECTUS_ADMIN_TOKEN not set'); return }
+    try {
+      const res = await fetch('http://localhost:8055/kscw/admin/sv-sync', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const body = await res.text()
+      if (!res.ok) throw new Error(`${res.status} ${body}`)
+      log.info(`SV sync cron: ${body}`)
+    } catch (err) {
+      log.error(`SV sync cron: ${err.message}`)
+    }
+  })
+
+  // ── 10. Cron: Basketplan Sync (06:05 UTC) ─────────────────────
+  // Calls the existing BP sync endpoint via internal HTTP
+
+  schedule('5 6 * * *', async () => {
+    const token = process.env.DIRECTUS_ADMIN_TOKEN
+    if (!token) { log.warn('BP sync skipped: DIRECTUS_ADMIN_TOKEN not set'); return }
+    try {
+      const res = await fetch('http://localhost:8055/kscw/admin/bp-sync', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const body = await res.text()
+      if (!res.ok) throw new Error(`${res.status} ${body}`)
+      log.info(`BP sync cron: ${body}`)
+    } catch (err) {
+      log.error(`BP sync cron: ${err.message}`)
+    }
+  })
+
+  log.info('KSCW hooks loaded: 1 action, 9 crons (validations+notifications in Postgres)')
 }

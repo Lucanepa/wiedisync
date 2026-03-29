@@ -89,7 +89,7 @@ export default function ICalModal({ open, mode, onClose, entries }: ICalModalPro
       if (selectedTeamIds.length > 0) {
         params.set('team', selectedTeamIds.join(','))
       }
-      const icalUrl = `${BASE_URL}/api/ical?${params.toString()}`
+      const icalUrl = `${BASE_URL}/kscw/ical?${params.toString()}`
       const webcalUrl = icalUrl.replace(/^https?:/, 'webcal:')
       window.open(webcalUrl, '_self')
     } else {

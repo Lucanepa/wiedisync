@@ -1,279 +1,286 @@
 /**
- * KSCW Directus Hooks Extension
+ * KSCW Directus Hooks Extension — Lean Version
  *
- * Migrated from PocketBase hooks. Covers:
- * 1. Data integrity (team_permissions, member_defaults)
- * 2. Activity tracking (wiedisync_active on auth)
- * 3. Notifications (activity changes)
- * 4. Participation guards (guest bumping, waitlist)
+ * Most validation & notification logic has been pushed to Postgres triggers:
+ *   - trg_slot_claims_validate      (past dates, duplicate claims)
+ *   - trg_members_shell_convert     (shell→full on password set)
+ *   - trg_members_coach_approval_guard (coach_approved requires member_teams)
+ *   - trg_participations_guest_block (guests can't confirm games)
+ *   - trg_trainings_revoke_claims   (auto-revoke on uncancelling)
+ *   - trg_games_notify              (batch notifications on game CRUD)
+ *   - trg_trainings_notify          (batch notifications on training CRUD)
+ *   - trg_events_notify             (batch notifications on event CRUD)
+ *   - trg_scorer_delegation_validate (same-team auto-accept)
+ *   - Postgres DEFAULT values: members.language='german', birthdate_visibility='full'
+ *
+ * This extension only handles logic that CANNOT run in Postgres:
+ *   1. Auth hooks (wiedisync_active on login — needs Directus auth event)
+ *   2. Crons with email/HTTP (participation reminders, scorer reminders, shell lifecycle)
+ *   3. Notification cleanup (old notifications)
  */
 
-export default ({ filter, action, schedule, init }, { services, database, logger, getSchema }) => {
+export default ({ action, schedule }, { services, database, logger, getSchema }) => {
   const log = logger.child({ extension: 'kscw-hooks' })
 
-  // ── 1. Member Defaults ──────────────────────────────────────────
-  // Ensure required fields on member creation (was: member_defaults.pb.js)
+  // ── 1. Wiedisync Active on Auth ─────────────────────────────────
+  // Mark wiedisync_active=true on successful login
+  // (Can't be a Postgres trigger because Directus auth doesn't write to members table)
 
-  filter('members.items.create', async (payload) => {
-    if (!payload.language) payload.language = 'german'
-    if (payload.kscw_membership_active === undefined) payload.kscw_membership_active = true
-    if (payload.wiedisync_active === undefined) payload.wiedisync_active = false
-    if (payload.birthdate_visibility === undefined) payload.birthdate_visibility = 'full'
-    return payload
-  })
-
-  // ── 2. Team Permission Guards ───────────────────────────────────
-  // Enforce coach_approved_team requires member_teams (was: team_permissions.pb.js)
-
-  filter('members.items.update', async (payload, meta, { database: db }) => {
-    if (payload.coach_approved_team === true) {
-      const memberId = meta.keys?.[0]
-      if (memberId) {
-        const mt = await db('member_teams').where('member', memberId).first()
-        if (!mt) {
-          throw new Error('Cannot approve team coaching without member_teams record')
-        }
-      }
-    }
-    return payload
-  })
-
-  // ── 3. Wiedisync Active on Auth ─────────────────────────────────
-  // Mark wiedisync_active=true on successful login (was: wiedisync_active.pb.js)
-
-  action('auth.login', async ({ user }, { database: db }) => {
+  action('auth.login', async ({ user }) => {
     if (!user) return
     try {
-      // Find member linked to this user
-      const member = await db('members').where('user', user).first()
-      if (member && !member.wiedisync_active) {
-        await db('members').where('id', member.id).update({ wiedisync_active: true })
-        log.info(`Member ${member.id} marked wiedisync_active`)
-      }
+      await database('members')
+        .where('user', user)
+        .where('wiedisync_active', false)
+        .update({ wiedisync_active: true })
     } catch (err) {
-      log.warn(`wiedisync_active update failed: ${err.message}`)
+      log.warn(`wiedisync_active: ${err.message}`)
     }
   })
 
-  // ── 4. Participation Priority & Guest Bumping ───────────────────
-  // Block guests from game confirmations, handle waitlist (was: participation_priority.pb.js)
-
-  filter('participations.items.create', async (payload, meta, { database: db }) => {
-    if (payload.activity_type === 'game' && payload.status === 'confirmed') {
-      // Check if member is a guest (guest_level > 0)
-      if (payload.member) {
-        const mt = await db('member_teams')
-          .where('member', payload.member)
-          .where('guest_level', '>', 0)
-          .first()
-        if (mt) {
-          throw new Error('Guests cannot directly confirm game participation')
-        }
-      }
-    }
-    return payload
-  })
-
-  // ── 5. Slot Claim Validation ────────────────────────────────────
-  // No past dates, no duplicates (was: slot_claims.pb.js)
-
-  filter('slot_claims.items.create', async (payload, meta, { database: db }) => {
-    if (payload.date) {
-      const claimDate = new Date(payload.date)
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      if (claimDate < today) {
-        throw new Error('Cannot claim slots in the past')
-      }
-    }
-
-    // Check for duplicate active claims
-    if (payload.hall_slot && payload.date) {
-      const existing = await db('slot_claims')
-        .where('hall_slot', payload.hall_slot)
-        .where('date', payload.date)
-        .where('status', 'active')
-        .first()
-      if (existing) {
-        throw new Error('This slot is already claimed for this date')
-      }
-    }
-
-    return payload
-  })
-
-  // ── 6. Auto-revoke slot claims when training uncancelled ────────
-
-  action('trainings.items.update', async (meta, { database: db }) => {
-    const keys = meta.keys || []
-    for (const id of keys) {
-      try {
-        const training = await db('trainings').where('id', id).first()
-        if (training && !training.cancelled && training.hall_slot) {
-          // If training was uncancelled, revoke any active claims on its slot for that date
-          await db('slot_claims')
-            .where('hall_slot', training.hall_slot)
-            .where('date', training.date)
-            .where('freed_reason', 'cancelled_training')
-            .where('status', 'active')
-            .update({ status: 'revoked' })
-        }
-      } catch (err) {
-        log.warn(`Slot claim auto-revoke failed for training ${id}: ${err.message}`)
-      }
-    }
-  })
-
-  // ── 7. Notification on Activity Changes ─────────────────────────
-  // Create notifications when games/trainings/events change (was: notifications.pb.js)
-
-  action('games.items.update', async (meta, { database: db }) => {
-    const keys = meta.keys || []
-    for (const id of keys) {
-      try {
-        const game = await db('games').where('id', id).first()
-        if (!game || !game.kscw_team) continue
-
-        // Get team members
-        const members = await db('member_teams')
-          .where('team', game.kscw_team)
-          .select('member')
-
-        for (const { member } of members) {
-          await db('notifications').insert({
-            member,
-            type: 'activity_change',
-            title: `Game updated: ${game.home_team} vs ${game.away_team}`,
-            body: `${game.date} ${game.time || ''}`,
-            activity_type: 'game',
-            activity_id: String(id),
-            team: game.kscw_team,
-            read: false,
-          })
-        }
-      } catch (err) {
-        log.warn(`Game notification failed for ${id}: ${err.message}`)
-      }
-    }
-  })
-
-  action('trainings.items.create', async (meta, { database: db }) => {
-    const key = meta.key
-    if (!key) return
-    try {
-      const training = await db('trainings').where('id', key).first()
-      if (!training || !training.team) return
-
-      const members = await db('member_teams')
-        .where('team', training.team)
-        .select('member')
-
-      for (const { member } of members) {
-        await db('notifications').insert({
-          member,
-          type: 'upcoming_activity',
-          title: 'New training scheduled',
-          body: `${training.date} ${training.start_time || ''}-${training.end_time || ''}`,
-          activity_type: 'training',
-          activity_id: String(key),
-          team: training.team,
-          read: false,
-        })
-      }
-    } catch (err) {
-      log.warn(`Training notification failed: ${err.message}`)
-    }
-  })
-
-  // ── 8. Cron: Shell Account Expiry ───────────────────────────────
-  // Daily at 02:00 UTC — expire shell accounts past shell_expires (was: shell_crons.pb.js)
+  // ── 2. Cron: Shell Account Expiry (02:00 UTC) ──────────────────
+  // Batch UPDATE — no loop needed
 
   schedule('0 2 * * *', async () => {
-    log.info('Cron: shell account expiry check')
     try {
-      const now = new Date().toISOString()
-      const expired = await database('members')
+      const count = await database('members')
         .where('shell', true)
-        .where('shell_expires', '<', now)
+        .where('shell_expires', '<', new Date().toISOString())
         .whereNotNull('shell_expires')
-        .select('id', 'email')
-
-      for (const m of expired) {
-        await database('members').where('id', m.id).update({
-          kscw_membership_active: false,
-        })
-        log.info(`Shell expired: ${m.email}`)
-      }
-      log.info(`Shell expiry: ${expired.length} accounts deactivated`)
+        .where('kscw_membership_active', true)
+        .update({ kscw_membership_active: false })
+      if (count > 0) log.info(`Shell expiry: ${count} deactivated`)
     } catch (err) {
-      log.error(`Shell expiry cron failed: ${err.message}`)
+      log.error(`Shell expiry: ${err.message}`)
     }
   })
 
-  // ── 9. Cron: Participation Reminders ────────────────────────────
-  // Daily at 07:00 UTC — remind unresponded members (was: participation_reminders.pb.js)
+  // ── 3. Cron: Invite Expiry (03:00 UTC) ─────────────────────────
+  // Expire pending team_invites past their expiry date
+
+  schedule('0 3 * * *', async () => {
+    try {
+      const count = await database('team_invites')
+        .where('status', 'pending')
+        .where('expires_at', '<', new Date().toISOString())
+        .update({ status: 'expired' })
+      if (count > 0) log.info(`Invite expiry: ${count} expired`)
+    } catch (err) {
+      log.error(`Invite expiry: ${err.message}`)
+    }
+  })
+
+  // ── 4. Cron: Scorer Delegation Expiry (05:00 UTC) ──────────────
+  // Expire pending delegations for past games
+
+  schedule('0 5 * * *', async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0]
+      const count = await database('scorer_delegations')
+        .where('status', 'pending')
+        .whereIn('game', function () {
+          this.select('id').from('games').where('date', '<', today)
+        })
+        .update({ status: 'expired' })
+      if (count > 0) log.info(`Delegation expiry: ${count} expired`)
+    } catch (err) {
+      log.error(`Delegation expiry: ${err.message}`)
+    }
+  })
+
+  // ── 5. Cron: Notification Cleanup (04:00 UTC) ──────────────────
+  // Delete notifications older than 60 days
+
+  schedule('0 4 * * *', async () => {
+    try {
+      const cutoff = new Date()
+      cutoff.setDate(cutoff.getDate() - 60)
+      const count = await database('notifications')
+        .where('date_created', '<', cutoff.toISOString())
+        .delete()
+      if (count > 0) log.info(`Notification cleanup: ${count} deleted`)
+    } catch (err) {
+      log.error(`Notification cleanup: ${err.message}`)
+    }
+  })
+
+  // ── 6. Cron: Participation Reminders (07:00 UTC) ───────────────
+  // Creates in-app notifications for unresponded members when deadline is tomorrow.
+  // Uses batch INSERT...SELECT — no per-member loop.
 
   schedule('0 7 * * *', async () => {
-    log.info('Cron: participation reminder check')
     try {
       const tomorrow = new Date()
       tomorrow.setDate(tomorrow.getDate() + 1)
       const tomorrowStr = tomorrow.toISOString().split('T')[0]
 
-      // Find games/trainings with respond_by = tomorrow
-      const games = await database('games')
-        .where('respond_by', '>=', tomorrowStr + 'T00:00:00')
-        .where('respond_by', '<', tomorrowStr + 'T23:59:59')
-        .whereNotNull('kscw_team')
-        .select('id', 'kscw_team', 'home_team', 'away_team', 'date')
+      // Games with respond_by = tomorrow
+      const gamesInserted = await database.raw(`
+        INSERT INTO notifications (member, type, title, body, activity_type, activity_id, team, read)
+        SELECT mt.member, 'deadline_reminder',
+               'RSVP: ' || COALESCE(g.home_team, '') || ' vs ' || COALESCE(g.away_team, ''),
+               COALESCE(g.date::text, ''),
+               'game', g.id::text, g.kscw_team, false
+        FROM games g
+        JOIN member_teams mt ON mt.team = g.kscw_team
+        WHERE g.respond_by::date = ?::date
+          AND g.kscw_team IS NOT NULL
+          AND NOT EXISTS (
+            SELECT 1 FROM participations p
+            WHERE p.activity_type = 'game' AND p.activity_id = g.id::text AND p.member = mt.member
+          )
+      `, [tomorrowStr])
 
-      for (const game of games) {
-        const teamMembers = await database('member_teams')
-          .where('team', game.kscw_team)
-          .select('member')
+      // Trainings with respond_by = tomorrow
+      const trainingsInserted = await database.raw(`
+        INSERT INTO notifications (member, type, title, body, activity_type, activity_id, team, read)
+        SELECT mt.member, 'deadline_reminder',
+               'RSVP: Training ' || COALESCE(t.date::text, ''),
+               COALESCE(t.start_time::text, ''),
+               'training', t.id::text, t.team, false
+        FROM trainings t
+        JOIN member_teams mt ON mt.team = t.team
+        WHERE t.respond_by::date = ?::date
+          AND t.team IS NOT NULL
+          AND t.cancelled = false
+          AND NOT EXISTS (
+            SELECT 1 FROM participations p
+            WHERE p.activity_type = 'training' AND p.activity_id = t.id::text AND p.member = mt.member
+          )
+      `, [tomorrowStr])
 
-        const responded = await database('participations')
-          .where('activity_type', 'game')
-          .where('activity_id', String(game.id))
-          .select('member')
-        const respondedIds = new Set(responded.map(r => r.member))
+      // Auto-cancel trainings past deadline with insufficient participation
+      const autoCancelled = await database.raw(`
+        UPDATE trainings SET cancelled = true, cancel_reason = 'auto_cancel_min_not_met'
+        WHERE auto_cancel_on_min = true
+          AND cancelled = false
+          AND respond_by IS NOT NULL
+          AND respond_by::date <= CURRENT_DATE
+          AND min_participants > 0
+          AND (
+            SELECT COUNT(*) FROM participations p
+            WHERE p.activity_type = 'training' AND p.activity_id = trainings.id::text AND p.status = 'confirmed'
+          ) < min_participants
+      `)
 
-        for (const { member } of teamMembers) {
-          if (!respondedIds.has(member)) {
-            await database('notifications').insert({
-              member,
-              type: 'deadline_reminder',
-              title: 'RSVP reminder',
-              body: `Please respond: ${game.home_team} vs ${game.away_team} on ${game.date}`,
-              activity_type: 'game',
-              activity_id: String(game.id),
-              team: game.kscw_team,
-              read: false,
-            })
-          }
+      // Auto-decline tentatives past deadline (per-team feature)
+      await database.raw(`
+        UPDATE participations SET status = 'declined'
+        WHERE status = 'tentative'
+          AND activity_type IN ('game', 'training')
+          AND EXISTS (
+            SELECT 1 FROM (
+              SELECT id::text AS aid, respond_by, team AS team_id FROM trainings WHERE respond_by IS NOT NULL
+              UNION ALL
+              SELECT id::text AS aid, respond_by, kscw_team AS team_id FROM games WHERE respond_by IS NOT NULL
+            ) a
+            JOIN teams t ON t.id = a.team_id
+            WHERE a.aid = participations.activity_id
+              AND a.respond_by::date <= CURRENT_DATE
+              AND t.auto_decline_tentative = true
+          )
+      `)
+
+      log.info(`Participation reminders: games=${gamesInserted?.rowCount || 0}, trainings=${trainingsInserted?.rowCount || 0}, auto-cancelled=${autoCancelled?.rowCount || 0}`)
+    } catch (err) {
+      log.error(`Participation reminders: ${err.message}`)
+    }
+  })
+
+  // ── 7. Cron: Daily Notification Reminders (06:30 UTC) ──────────
+  // Upcoming activity notifications for tomorrow's games/trainings/events
+
+  schedule('30 6 * * *', async () => {
+    try {
+      const tomorrow = new Date()
+      tomorrow.setDate(tomorrow.getDate() + 1)
+      const tomorrowStr = tomorrow.toISOString().split('T')[0]
+
+      // Games tomorrow
+      await database.raw(`
+        INSERT INTO notifications (member, type, title, body, activity_type, activity_id, team, read)
+        SELECT mt.member, 'upcoming_activity',
+               COALESCE(g.home_team, '') || ' vs ' || COALESCE(g.away_team, ''),
+               COALESCE(g.time, ''),
+               'game', g.id::text, g.kscw_team, false
+        FROM games g
+        JOIN member_teams mt ON mt.team = g.kscw_team
+        WHERE g.date = ?::date AND g.kscw_team IS NOT NULL
+          AND COALESCE(g.status, '') NOT IN ('completed', 'postponed', 'cancelled')
+      `, [tomorrowStr])
+
+      // Trainings tomorrow
+      await database.raw(`
+        INSERT INTO notifications (member, type, title, body, activity_type, activity_id, team, read)
+        SELECT mt.member, 'upcoming_activity',
+               'Training ' || COALESCE(t.start_time::text, ''),
+               '',
+               'training', t.id::text, t.team, false
+        FROM trainings t
+        JOIN member_teams mt ON mt.team = t.team
+        WHERE t.date = ?::date AND t.team IS NOT NULL AND t.cancelled = false
+      `, [tomorrowStr])
+
+      // Events tomorrow
+      await database.raw(`
+        INSERT INTO notifications (member, type, title, body, activity_type, activity_id, team, read)
+        SELECT DISTINCT mt.member, 'upcoming_activity',
+               COALESCE(e.title, 'Event'),
+               '',
+               'event', e.id::text, et.teams_id, false
+        FROM events e
+        JOIN events_teams et ON et.events_id = e.id
+        JOIN member_teams mt ON mt.team = et.teams_id
+        WHERE e.start_date = ?::date
+      `, [tomorrowStr])
+
+      log.info('Daily notification reminders sent')
+    } catch (err) {
+      log.error(`Daily reminders: ${err.message}`)
+    }
+  })
+
+  // ── 8. Cron: Shell Reminder (09:00 UTC) ────────────────────────
+  // Email shell members 10 days before expiry
+
+  schedule('0 9 * * *', async () => {
+    try {
+      const reminderDate = new Date()
+      reminderDate.setDate(reminderDate.getDate() + 10)
+      const reminderStr = reminderDate.toISOString().split('T')[0]
+
+      const expiring = await database('members')
+        .where('shell', true)
+        .where('kscw_membership_active', true)
+        .where('shell_reminder_sent', false)
+        .whereNotNull('shell_expires')
+        .whereRaw("shell_expires::date <= ?::date", [reminderStr])
+        .select('id', 'email', 'first_name', 'shell_expires')
+
+      if (expiring.length === 0) return
+
+      const schema = await getSchema()
+      const { MailService } = services
+      const mailService = new MailService({ schema, knex: database })
+
+      for (const m of expiring) {
+        if (!m.email || m.email.includes('@placeholder')) continue
+        try {
+          await mailService.send({
+            to: m.email,
+            subject: 'WiediSync — Dein Gastkonto läuft bald ab',
+            text: `Hallo ${m.first_name || ''},\n\nDein WiediSync-Gastkonto läuft am ${m.shell_expires} ab.\nMelde dich bei deinem Coach, um es zu verlängern.\n\nKSC Wiedikon`,
+          })
+          await database('members').where('id', m.id).update({ shell_reminder_sent: true })
+        } catch (mailErr) {
+          log.warn(`Shell reminder mail failed for ${m.email}: ${mailErr.message}`)
         }
       }
-      log.info(`Participation reminders sent for ${games.length} games`)
+      log.info(`Shell reminder: ${expiring.length} members notified`)
     } catch (err) {
-      log.error(`Participation reminder cron failed: ${err.message}`)
+      log.error(`Shell reminder: ${err.message}`)
     }
   })
 
-  // ── 10. Cron: Scorer Delegation Expiry ──────────────────────────
-  // Daily at 05:00 UTC (was: scorer_delegation.pb.js)
-
-  schedule('0 5 * * *', async () => {
-    log.info('Cron: scorer delegation expiry')
-    try {
-      const result = await database('scorer_delegations')
-        .where('status', 'pending')
-        .where('created', '<', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
-        .update({ status: 'expired' })
-      log.info(`Expired ${result} pending delegations`)
-    } catch (err) {
-      log.error(`Delegation expiry cron failed: ${err.message}`)
-    }
-  })
-
-  log.info('KSCW hooks loaded: 7 filters, 4 actions, 3 crons')
+  log.info('KSCW hooks loaded: 1 action, 7 crons (validations+notifications in Postgres)')
 }

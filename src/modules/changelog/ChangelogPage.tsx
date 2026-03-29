@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '2.7.2'
+const APP_VERSION = '2.8.0'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,20 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.8.0',
+    date: '2026-03-29',
+    sections: [
+      {
+        title: 'Infrastructure',
+        items: [
+          'Backend hooks migrated to Postgres triggers — notifications, validations, and data guards now run at the database level for faster response times and lower memory usage',
+          'All custom API endpoints ported to Directus — game scheduling, team invites, iCal feeds, contact form, scorer reminders, and OTP verification',
+          'Batch notification system — activity reminders and deadline alerts now use efficient SQL queries instead of per-member processing',
+        ],
+      },
+    ],
+  },
   {
     version: '2.7.2',
     date: '2026-03-29',

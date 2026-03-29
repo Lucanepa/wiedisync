@@ -2,6 +2,15 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [2.8.0] — 2026-03-29
+
+### Infrastructure
+
+- **Postgres triggers** — Moved 9 validation and notification hooks from Node.js into Postgres triggers: slot claim validation, shell member conversion, coach approval guard, guest participation block, training claim revocation, and batch notifications on games/trainings/events CRUD. Zero Node RAM overhead — triggers use efficient `INSERT...SELECT` for batch member notifications.
+- **Directus custom endpoints** — Ported all 30+ PocketBase `routerAdd` hooks to Directus endpoint extension: shell invites (create/claim/extend/info), OTP email verification, password set, contact form with coach routing, game scheduling (7 routes), iCal feed (volleyball/basketball/all), GCal sync, scorer reminders, feedback→GitHub, scorer delegation accept/decline.
+- **Optimized crons** — Participation reminders, daily notification reminders, auto-cancel trainings, and auto-decline tentatives now use batch SQL instead of per-member loops. Shell expiry, invite expiry, and notification cleanup are single UPDATE/DELETE statements.
+- **Postgres DEFAULT values** — `members.language` defaults to `'german'`, `members.birthdate_visibility` to `'full'` at the database level, eliminating the member_defaults filter hook.
+
 ## [2.7.2] — 2026-03-29
 
 ### Features

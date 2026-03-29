@@ -52,7 +52,7 @@ export default function AbsencesPage() {
 
   // Standard absences (exclude weekly)
   const { data: myAbsencesRaw, refetch } = useCollection<Absence>('absences', {
-    filter: user ? { _and: [{ member: { _eq: user.id } }, { type: { _neq: 'weekly' } }] } : { id: { _eq: -1 } },
+    filter: user ? { _and: [{ member: { _eq: user.id } }, { _or: [{ type: { _null: true } }, { type: { _neq: 'weekly' } }] }] } : { id: { _eq: -1 } },
     sort: ['-start_date'],
     limit: 50,
     fields: ['*', 'member.*'],

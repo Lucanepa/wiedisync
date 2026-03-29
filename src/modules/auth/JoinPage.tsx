@@ -31,7 +31,6 @@ export default function JoinPage() {
   const [submitError, setSubmitError] = useState('')
 
   const [claimedEmail, setClaimedEmail] = useState('')
-  const [otpId, setOtpId] = useState('')
   const [otpError, setOtpError] = useState('')
   const [otpLoading, setOtpLoading] = useState(false)
 
@@ -62,9 +61,8 @@ export default function JoinPage() {
       const finalEmail = res.email ?? email.trim().toLowerCase()
       setClaimedEmail(finalEmail)
 
-      // Request OTP instead of password reset
-      const otpRes = await kscwApi<{ otpId: string }>('/auth/request-otp', { method: 'POST', body: { email: finalEmail } })
-      setOtpId(otpRes.otpId)
+      // Send OTP for email verification
+      await kscwApi('/verify-email', { method: 'POST', body: { email: finalEmail } })
       setPhase('otp')
     } catch {
       setSubmitError(t('join:error'))
@@ -77,7 +75,7 @@ export default function JoinPage() {
     setOtpError('')
     setOtpLoading(true)
     try {
-      await kscwApi('/auth/verify-otp', { method: 'POST', body: { otpId: otpId, code: code } })
+      await kscwApi('/verify-email/confirm', { method: 'POST', body: { email: claimedEmail, code } })
       setPhase('set-password')
     } catch {
       setOtpError(t('auth:otpInvalid'))
@@ -89,8 +87,7 @@ export default function JoinPage() {
   async function handleOtpResend() {
     setOtpError('')
     try {
-      const otpRes = await kscwApi<{ otpId: string }>('/auth/request-otp', { method: 'POST', body: { email: claimedEmail } })
-      setOtpId(otpRes.otpId)
+      await kscwApi('/verify-email', { method: 'POST', body: { email: claimedEmail } })
     } catch {
       setOtpError(t('auth:otpResendError'))
     }
@@ -238,6 +235,7 @@ export default function JoinPage() {
 
               <SetPasswordForm
                 title={t('auth:setPasswordTitle')}
+                email={claimedEmail}
                 onSuccess={handlePasswordSuccess}
               />
             </div>

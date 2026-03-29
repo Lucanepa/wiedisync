@@ -7,10 +7,12 @@ import { Button } from '@/components/ui/button'
 interface SetPasswordFormProps {
   title: string
   description?: string
+  /** Email for unauthenticated set-password (OTP-verified). Omit if user is already authenticated. */
+  email?: string
   onSuccess: () => void
 }
 
-export function SetPasswordForm({ title, description, onSuccess }: SetPasswordFormProps) {
+export function SetPasswordForm({ title, description, email, onSuccess }: SetPasswordFormProps) {
   const { t } = useTranslation('auth')
   const [password, setPassword] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
@@ -35,7 +37,7 @@ export function SetPasswordForm({ title, description, onSuccess }: SetPasswordFo
     try {
       await kscwApi('/set-password', {
         method: 'POST',
-        body: { password, passwordConfirm },
+        body: { password, ...(email ? { email } : {}) },
       })
       onSuccess()
     } catch (err: unknown) {

@@ -6,7 +6,6 @@ import { useAuth } from '../../hooks/useAuth'
 import { useTheme } from '../../hooks/useTheme'
 import { useCollection } from '../../lib/query'
 import { logActivity } from '../../utils/logActivity'
-import { asObj } from '../../utils/relations'
 import { Button } from '@/components/ui/button'
 import Modal from '@/components/Modal'
 import DatenschutzPage from '../legal/DatenschutzPage'
@@ -63,7 +62,6 @@ export default function SignUpPage() {
   const [otpError, setOtpError] = useState('')
 
   // Claim flow state (for existing/ClubDesk members)
-  const [claimMemberId, setClaimMemberId] = useState<string | null>(null)
   const [existingTeams, setExistingTeams] = useState<{ id: string; name: string; league?: string; sport?: string }[]>([])
   const [additionalTeamIds, setAdditionalTeamIds] = useState<string[]>([])
 
@@ -131,11 +129,10 @@ export default function SignUpPage() {
   async function handleOtpVerifyComplete(code: string) {
     setOtpError('')
     try {
-      const res = await kscwApi<{ verificationToken: string }>('/verify-email/confirm', {
+      await kscwApi('/verify-email/confirm', {
         method: 'POST',
         body: { email: email.trim().toLowerCase(), code },
       })
-      setVerificationToken(res.verificationToken)
       setStep('register')
     } catch {
       setOtpError(t('otpInvalid'))
@@ -159,24 +156,11 @@ export default function SignUpPage() {
   async function handleOtpClaimComplete(code: string) {
     setOtpError('')
     try {
-      await kscwApi('/auth/verify-otp', { method: 'POST', body: { otpId: otpId, code: code } })
-      // Pre-fill form with existing member data
-      const member = (user as any)
-      if (member) {
-        if (member.first_name) setFirstName(member.first_name)
-        if (member.last_name) setLastName(member.last_name)
-      }
-      // Fetch existing member_teams for the current season
-      try {
-        const season = getCurrentSeason()
-        const mts = await fetchAllItems<MemberTeam & { team: Team | string }>('member_teams', {
-          filter: { _and: [{ member: { _eq: (user as any)?.id } }, { season: { _eq: season } }] },
-          fields: ['*', 'team.*'],
-        })
-        setExistingTeams(mts)
-      } catch {
-        // No existing teams — that's fine
-      }
+      await kscwApi('/verify-email/confirm', {
+        method: 'POST',
+        body: { email: email.trim().toLowerCase(), code },
+      })
+      // Name + teams already pre-filled from check-email response
       setStep('complete-profile')
     } catch {
       setOtpError(t('otpInvalid'))
@@ -187,15 +171,14 @@ export default function SignUpPage() {
   async function handleOtpClaimResend() {
     setOtpError('')
     try {
-      const otpRes = await kscwApi<{ otpId: string }>('/auth/request-otp', { method: 'POST', body: { email: email.trim().toLowerCase() } })
-      setOtpId(otpRes.otpId)
+      await kscwApi('/verify-email', { method: 'POST', body: { email: email.trim().toLowerCase() } })
     } catch {
       setOtpError(t('registrationFailed'))
     }
   }
 
   // Existing team IDs for filtering
-  const existingTeamIds = existingTeams.map((mt) => relId(mt.team))
+  const existingTeamIds = existingTeams.map((t) => t.id)
   const hasExistingTeams = existingTeams.length > 0
 
   // Toggle additional team selection
@@ -229,35 +212,36 @@ export default function SignUpPage() {
 
     setLoading(true)
     try {
-      // Set password via custom endpoint (also attempts auto-approve)
-      await kscwApi('/set-password', {
+      // Set password + create Directus user (unauthenticated, OTP-verified)
+      const res = await kscwApi<{ member_id?: string }>('/set-password', {
         method: 'POST',
-        body: { password, passwordConfirm },
+        body: { email: email.trim().toLowerCase(), password },
       })
 
-      // Update profile fields
-      const updateData: Record<string, string> = {
-        first_name: firstName,
-        last_name: lastName,
-        name: `${firstName} ${lastName}`,
-      }
-      // Set requested_team to the first additional team (for pending page display)
-      if (additionalTeamIds.length > 0) {
-        updateData.requested_team = additionalTeamIds[0]
-      }
-      await updateRecord('members', (user as any)!.id, updateData)
+      // Login with new credentials
+      await login(email.trim().toLowerCase(), password)
 
-      // Create team_requests for additional teams
-      for (const teamId of additionalTeamIds) {
-        await createRecord('team_requests', {
-          member: (user as any)!.id,
-          team: teamId,
-          status: 'pending',
-        })
-      }
+      // Now authenticated — update profile and create team requests
+      const memberId = res.member_id
+      if (memberId) {
+        const updateData: Record<string, string> = {
+          first_name: firstName,
+          last_name: lastName,
+          name: `${firstName} ${lastName}`,
+        }
+        if (additionalTeamIds.length > 0) {
+          updateData.requested_team = additionalTeamIds[0]
+        }
+        await updateRecord('members', memberId, updateData)
 
-      // Refresh auth to pick up approval status
-      await client.refresh()
+        for (const teamId of additionalTeamIds) {
+          await createRecord('team_requests', {
+            member: memberId,
+            team: teamId,
+            status: 'pending',
+          })
+        }
+      }
 
       // If user has existing teams → auto-approved → home
       // If only new teams requested → pending
@@ -290,26 +274,20 @@ export default function SignUpPage() {
 
     setLoading(true)
     try {
-      // Derive club from the selected team
-      // const selectedTeamObj = teams.find((t) => t.id === selectedTeam)
-      const newMember = await createRecord('members', {
-        first_name: firstName,
-        last_name: lastName,
-        name: `${firstName} ${lastName}`,
-        email: email.trim().toLowerCase(),
-        emailVisibility: true,
-        password,
-        passwordConfirm,
-        role: ['user'],
-        kscw_membership_active: true,
-        coach_approved_team: false,
-        requested_team: selectedTeam,
-        wiedisync_active: true,
-        language: selectedLanguage,
-        birthdate_visibility: 'hidden',
+      // Create Directus user + member via backend (OTP-verified)
+      const res = await kscwApi<{ member_id: string }>('/register', {
+        method: 'POST',
+        body: {
+          email: email.trim().toLowerCase(),
+          password,
+          first_name: firstName,
+          last_name: lastName,
+          team: selectedTeam,
+          language: selectedLanguage,
+        },
       })
       await login(email.trim().toLowerCase(), password)
-      logActivity('create', 'members', (newMember as any).id, { first_name: firstName, last_name: lastName, requested_team: selectedTeam })
+      logActivity('create', 'members', res.member_id, { first_name: firstName, last_name: lastName, requested_team: selectedTeam })
       navigate('/pending', { replace: true })
     } catch {
       setError(t('registrationFailed'))
@@ -324,8 +302,7 @@ export default function SignUpPage() {
     setStep('email')
     setError('')
     setOtpError('')
-    setOtpId('')
-    setVerificationToken('')
+    setExistingTeams([])
   }
 
   return (
@@ -497,22 +474,17 @@ export default function SignUpPage() {
                     {t('yourTeams')}
                   </label>
                   <div className="flex flex-wrap gap-2">
-                    {existingTeams.map((mt) => {
-                      const teamObj = asObj<Team>(mt.team)
-                      const teamName = teamObj?.name || (mt.team as string)
-                      const league = teamObj?.league
-                      return (
-                        <span
-                          key={mt.id}
-                          className="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                        >
-                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                          </svg>
-                          {teamName}{league ? ` — ${league}` : ''}
-                        </span>
-                      )
-                    })}
+                    {existingTeams.map((team) => (
+                      <span
+                        key={team.id}
+                        className="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                      >
+                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                        </svg>
+                        {team.name}{team.league ? ` — ${team.league}` : ''}
+                      </span>
+                    ))}
                   </div>
                 </div>
               )}

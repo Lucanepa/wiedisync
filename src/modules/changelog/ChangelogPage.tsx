@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '2.9.0'
+const APP_VERSION = '3.0.0'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,26 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.0.0',
+    date: '2026-03-29',
+    sections: [
+      {
+        title: 'Directus Migration',
+        items: [
+          'Backend fully migrated from PocketBase to Directus 11 on PostgreSQL — all data, files, users, and passwords transferred',
+          'Google OAuth login now works via Directus SSO (OpenID Connect)',
+          'All auth flows (signup, login, OTP verification, password reset, shell invites) rewired to Directus',
+          'Turnstile CAPTCHA validation ported to Directus filter hooks',
+          'Branded email templates for password reset, invitations, OTP codes, and scorer reminders',
+          'Web push notifications delivered via Directus endpoints and cron hooks',
+          'Daily Swiss Volley and Basketplan sync crons running from Directus (06:00/06:05 UTC)',
+          '9 Postgres triggers replace Node.js validation hooks — zero extra memory',
+          'PocketBase fully decommissioned',
+        ],
+      },
+    ],
+  },
   {
     version: '2.9.0',
     date: '2026-03-29',

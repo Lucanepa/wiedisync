@@ -2,6 +2,25 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.0.0] — 2026-03-29
+
+### Breaking
+
+- **PocketBase → Directus migration** — Backend fully migrated from PocketBase (SQLite) to Directus 11 (PostgreSQL). All API endpoints, auth flows, and data moved. PocketBase containers decommissioned.
+
+### Infrastructure
+
+- **Production Directus** — `directus.kscw.ch` deployed on VPS port 8096 with PostgreSQL (`directus_kscw_prod`), CF tunnel, Google OAuth SSO, and branded email templates.
+- **Data migration** — 4026 records, 54 files, 464 users created and linked. Bcrypt password hashes transferred from PB. Polymorphic activity IDs remapped.
+- **Schema sync tooling** — `npm run schema:pull/diff/push` scripts using Directus snapshot API for dev→prod alignment.
+- **9 Postgres triggers** — Validation and notification logic (slot claims, shell conversion, coach approval, guest block, training claim revocation, game/training/event notifications, scorer delegation) runs at database level with zero Node.js overhead.
+- **30+ custom endpoints** — Shell invites, OTP verification, password set, contact form, game scheduling (7 routes), iCal feed, GCal sync, scorer reminders, feedback→GitHub, scorer delegation, web push.
+- **10 cron jobs** — Shell/invite/delegation expiry, notification cleanup, participation reminders, daily activity alerts, shell reminder emails, SV sync (06:00), BP sync (06:05).
+- **Web push via Directus** — Push subscription endpoints and delivery integrated into notification crons.
+- **Turnstile CAPTCHA** — Filter hook validates on unauthenticated member/feedback creation + check-email endpoint.
+- **Branded emails** — Liquid templates (password reset, invitation) + JS template helper (OTP, scorer reminders) with KSCW dark-mode design.
+- **PB decommissioned** — Containers removed, tunnel routes deleted, dev data purged. PB prod data preserved as backup at `/opt/pocketbase-kscw/`.
+
 ## [2.9.0] — 2026-03-29
 
 ### Security

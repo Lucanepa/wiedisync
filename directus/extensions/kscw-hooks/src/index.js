@@ -63,6 +63,49 @@ async function sendPushToMembers(db, memberIds, title, body, url, tag, log) {
   }
 }
 
+// ── Role Sync ────────────────────────────────────────────────────
+// Keeps each member's Directus user role in sync with their app role
+// (members.role array) and coach/TR junction membership.
+//
+// Directus 11: one role per user, multiple policies per role.
+// Priority: superuser/admin > Sport Admin > Vorstand+Coach > Vorstand > Team Leader > Member
+
+/**
+ * Determine the correct Directus role for a member.
+ * @returns {{ userId: string, roleName: string } | null}
+ */
+async function resolveDirectusRole(db, memberId) {
+  const member = await db('members').where('id', memberId).select('role', 'user').first()
+  if (!member || !member.user) return null
+
+  const roles = Array.isArray(member.role) ? member.role : []
+
+  if (roles.includes('superuser') || roles.includes('admin')) {
+    return { userId: member.user, roleName: 'Superuser' }
+  }
+  if (roles.includes('vb_admin') || roles.includes('bb_admin')) {
+    return { userId: member.user, roleName: 'Sport Admin' }
+  }
+
+  // Check coach/TR junctions
+  const isCoach = await db('teams_coach').where('members_id', memberId).first()
+  const isTR = await db('teams_team_responsible').where('members_id', memberId).first()
+  const isTeamLeader = !!(isCoach || isTR)
+
+  // Vorstand who is also a coach → Team Leader (higher write access)
+  if (roles.includes('vorstand') && isTeamLeader) {
+    return { userId: member.user, roleName: 'Team Leader' }
+  }
+  if (roles.includes('vorstand')) {
+    return { userId: member.user, roleName: 'Vorstand' }
+  }
+  if (isTeamLeader) {
+    return { userId: member.user, roleName: 'Team Leader' }
+  }
+
+  return { userId: member.user, roleName: 'Member' }
+}
+
 // ── Turnstile CAPTCHA ────────────────────────────────────────────
 // Directus filter hooks don't receive HTTP headers, so we use AsyncLocalStorage
 // to bridge the X-Turnstile-Token header from middleware into filter hooks.
@@ -131,6 +174,95 @@ export default ({ action, filter, init, schedule }, { services, database, logger
         .update({ wiedisync_active: true })
     } catch (err) {
       log.warn(`wiedisync_active: ${err.message}`)
+    }
+  })
+
+  // ── 1b. Role Sync — keep Directus user role in sync ─────────────
+  // When members.role changes or coach/TR junctions change, update the
+  // linked Directus user's role to the correct tier.
+
+  let roleNameToId = null
+
+  async function getRoleMap() {
+    if (roleNameToId) return roleNameToId
+    const roles = await database('directus_roles').select('id', 'name')
+    roleNameToId = Object.fromEntries(roles.map(r => [r.name, r.id]))
+    return roleNameToId
+  }
+
+  async function syncMemberRole(memberId) {
+    try {
+      const map = await getRoleMap()
+      const result = await resolveDirectusRole(database, memberId)
+      if (!result) return
+
+      const roleId = map[result.roleName]
+      if (!roleId) {
+        log.warn(`[role-sync] Role "${result.roleName}" not found in Directus`)
+        return
+      }
+
+      const currentUser = await database('directus_users').where('id', result.userId).select('role').first()
+      if (currentUser && currentUser.role !== roleId) {
+        await database('directus_users').where('id', result.userId).update({ role: roleId })
+        log.info(`[role-sync] Member ${memberId} → ${result.roleName}`)
+      }
+    } catch (err) {
+      log.warn(`[role-sync] Failed for member ${memberId}: ${err.message}`)
+    }
+  }
+
+  // Sync when members.role array changes
+  action('members.items.update', async ({ keys, payload }) => {
+    if (!payload || !('role' in payload)) return
+    for (const id of keys) {
+      await syncMemberRole(id)
+    }
+  })
+
+  // Sync when coach/TR junctions change (create)
+  action('teams_coach.items.create', async ({ payload }) => {
+    if (payload?.members_id) await syncMemberRole(payload.members_id)
+  })
+  action('teams_team_responsible.items.create', async ({ payload }) => {
+    if (payload?.members_id) await syncMemberRole(payload.members_id)
+  })
+
+  // Sync when coach/TR junctions change (delete)
+  // Capture member IDs before deletion via filter, then sync in action
+  const pendingJunctionDeletes = new Map()
+
+  filter('teams_coach.items.delete', async (keys) => {
+    try {
+      const rows = await database('teams_coach').whereIn('id', keys).select('members_id')
+      for (const r of rows) pendingJunctionDeletes.set(`coach-${r.members_id}`, r.members_id)
+    } catch (e) { /* ignore */ }
+    return keys
+  })
+
+  filter('teams_team_responsible.items.delete', async (keys) => {
+    try {
+      const rows = await database('teams_team_responsible').whereIn('id', keys).select('members_id')
+      for (const r of rows) pendingJunctionDeletes.set(`tr-${r.members_id}`, r.members_id)
+    } catch (e) { /* ignore */ }
+    return keys
+  })
+
+  action('teams_coach.items.delete', async () => {
+    for (const [key, memberId] of pendingJunctionDeletes) {
+      if (key.startsWith('coach-')) {
+        await syncMemberRole(memberId)
+        pendingJunctionDeletes.delete(key)
+      }
+    }
+  })
+
+  action('teams_team_responsible.items.delete', async () => {
+    for (const [key, memberId] of pendingJunctionDeletes) {
+      if (key.startsWith('tr-')) {
+        await syncMemberRole(memberId)
+        pendingJunctionDeletes.delete(key)
+      }
     }
   })
 
@@ -479,5 +611,5 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     return payload
   })
 
-  log.info('KSCW hooks loaded: 1 action, 2 filters (Turnstile, member privacy), 9 crons (validations+notifications in Postgres)')
+  log.info('KSCW hooks loaded: role-sync (5 actions, 2 filters), Turnstile, member privacy, 9 crons (validations+notifications in Postgres)')
 }

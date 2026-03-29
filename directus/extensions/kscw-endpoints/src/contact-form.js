@@ -66,7 +66,7 @@ export function registerContactForm(router, { database, logger, services, getSch
         text: `Name: ${name}\nEmail: ${email}\nBetreff: ${subject || '-'}\n\n${message}`,
       })
 
-      log.info(`Contact form sent to ${toEmail} from ${email}`)
+      log.info(`Contact form sent to team ${team_id} contact`)
       res.json({ success: true })
     } catch (err) {
       log.error(`contact: ${err.message}`)

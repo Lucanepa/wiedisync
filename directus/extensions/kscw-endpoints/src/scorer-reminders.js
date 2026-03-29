@@ -145,7 +145,7 @@ export function registerScorerReminders(router, { database, logger, services, ge
       res.json({ status: 'ok', tomorrow: tomorrowYMD(), ...result })
     } catch (err) {
       log.error(`scorer-reminders: ${err.message}`)
-      res.status(500).json({ error: err.message })
+      res.status(500).json({ error: 'Internal error' })
     }
   })
 
@@ -160,7 +160,7 @@ export function registerScorerReminders(router, { database, logger, services, ge
 
       res.json({ status: 'ok', tomorrow, games })
     } catch (err) {
-      res.status(500).json({ error: err.message })
+      res.status(500).json({ error: 'Internal error' })
     }
   })
 }

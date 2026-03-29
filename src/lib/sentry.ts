@@ -31,9 +31,17 @@ export function initSentry() {
       Sentry.replayIntegration(),
     ],
 
-    // Don't send events from local dev
+    // Don't send events from local dev; scrub PII from breadcrumbs
     beforeSend(event) {
       if (host === 'localhost' || host === '127.0.0.1') return null
+      // Strip email-like strings from breadcrumb messages
+      if (event.breadcrumbs) {
+        for (const bc of event.breadcrumbs) {
+          if (typeof bc.message === 'string') {
+            bc.message = bc.message.replace(/[\w.+-]+@[\w.-]+\.\w+/g, '[REDACTED]')
+          }
+        }
+      }
       return event
     },
   })
@@ -45,7 +53,8 @@ export function initSentry() {
  */
 export function setSentryUser(user: { id: string; email?: string; name?: string } | null) {
   if (user) {
-    Sentry.setUser({ id: user.id, email: user.email, username: user.name })
+    // Only send user ID to Sentry — no PII (email/name)
+    Sentry.setUser({ id: user.id })
   } else {
     Sentry.setUser(null)
   }

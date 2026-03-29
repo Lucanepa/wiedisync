@@ -19,6 +19,50 @@
  *   3. Notification cleanup (old notifications)
  */
 
+// Import push helpers from endpoints extension (same Directus instance)
+const PUSH_WORKER_URL = process.env.PUSH_WORKER_URL || 'https://kscw-push.lucanepa.workers.dev'
+const PUSH_AUTH_SECRET = process.env.PUSH_AUTH_SECRET || ''
+
+async function sendPushToMembers(db, memberIds, title, body, url, tag, log) {
+  if (!memberIds || memberIds.length === 0 || !PUSH_AUTH_SECRET) return
+  try {
+    const subscriptions = await db('push_subscriptions')
+      .whereIn('member', memberIds)
+      .select('endpoint', 'p256dh', 'auth')
+    if (subscriptions.length === 0) return
+
+    const resp = await fetch(`${PUSH_WORKER_URL}/push`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${PUSH_AUTH_SECRET}`,
+      },
+      body: JSON.stringify({
+        subscriptions: subscriptions.map(s => ({
+          endpoint: s.endpoint,
+          keys: { p256dh: s.p256dh, auth: s.auth },
+        })),
+        title: title || 'KSC Wiedikon',
+        body: body || '',
+        url: url || 'https://wiedisync.kscw.ch',
+        ...(tag ? { tag } : {}),
+      }),
+      signal: AbortSignal.timeout(15000),
+    })
+
+    if (resp.ok) {
+      const data = await resp.json()
+      // Clean up expired subscriptions
+      if (data.expired?.length > 0) {
+        await db('push_subscriptions').whereIn('endpoint', data.expired).delete()
+      }
+      log.info(`[push] Sent ${data.sent || 0}, failed ${data.failed || 0}, cleaned ${data.expired?.length || 0}`)
+    }
+  } catch (err) {
+    log.warn(`[push] Failed: ${err.message}`)
+  }
+}
+
 export default ({ action, schedule }, { services, database, logger, getSchema }) => {
   const log = logger.child({ extension: 'kscw-hooks' })
 
@@ -182,6 +226,21 @@ export default ({ action, schedule }, { services, database, logger, getSchema })
       `)
 
       log.info(`Participation reminders: games=${gamesInserted?.rowCount || 0}, trainings=${trainingsInserted?.rowCount || 0}, auto-cancelled=${autoCancelled?.rowCount || 0}`)
+
+      // Send push notifications for deadline reminders
+      try {
+        const deadlineMembers = await database('notifications')
+          .where('type', 'deadline_reminder')
+          .where('read', false)
+          .whereRaw("date_created::date = CURRENT_DATE")
+          .distinct('member')
+          .pluck('member')
+        if (deadlineMembers.length > 0) {
+          await sendPushToMembers(database, deadlineMembers, 'RSVP Erinnerung', 'Anmeldefrist läuft morgen ab', 'https://wiedisync.kscw.ch', 'deadline_reminder', log)
+        }
+      } catch (pushErr) {
+        log.warn(`Deadline push: ${pushErr.message}`)
+      }
     } catch (err) {
       log.error(`Participation reminders: ${err.message}`)
     }
@@ -235,6 +294,21 @@ export default ({ action, schedule }, { services, database, logger, getSchema })
       `, [tomorrowStr])
 
       log.info('Daily notification reminders sent')
+
+      // Send push notifications for upcoming activities
+      try {
+        const upcomingMembers = await database('notifications')
+          .where('type', 'upcoming_activity')
+          .where('read', false)
+          .whereRaw("date_created::date = CURRENT_DATE")
+          .distinct('member')
+          .pluck('member')
+        if (upcomingMembers.length > 0) {
+          await sendPushToMembers(database, upcomingMembers, 'Morgen', 'Du hast morgen eine Aktivität', 'https://wiedisync.kscw.ch', 'upcoming_activity', log)
+        }
+      } catch (pushErr) {
+        log.warn(`Upcoming push: ${pushErr.message}`)
+      }
     } catch (err) {
       log.error(`Daily reminders: ${err.message}`)
     }

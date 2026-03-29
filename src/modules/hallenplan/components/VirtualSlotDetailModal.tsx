@@ -30,7 +30,7 @@ export default function VirtualSlotDetailModal({ slot, halls, teams, isAdmin, on
   const meta = slot._virtual!
 
   const hallName = halls.find((h) => h.id === slot.hall)?.name ?? ''
-  const teamObjs = teams.filter((tm) => slot.team.includes(tm.id))
+  const teamObjs = teams.filter((tm) => slot.team?.includes(tm.id))
   const teamName = teamObjs.map((tm) => tm.name).join(', ')
 
   function renderGame() {

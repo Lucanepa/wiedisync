@@ -120,6 +120,19 @@ function stringifyId<T>(item: T): T {
   return item
 }
 
+/**
+ * Wrap a single FK value into an array of string IDs.
+ * Used for fields that were multi-relations in PB but single FKs in Directus.
+ */
+export function wrapFkAsArray<T>(items: T[], field: keyof T): T[] {
+  return items.map(item => {
+    if (!item || typeof item !== 'object') return item
+    const val = (item as Record<string, unknown>)[field as string]
+    if (Array.isArray(val)) return item
+    return { ...item, [field as string]: val != null ? [String(val)] : [] }
+  })
+}
+
 /** Fetch a list of items. Returns the array directly. */
 export async function fetchItems<T = Record<string, unknown>>(
   collection: string,

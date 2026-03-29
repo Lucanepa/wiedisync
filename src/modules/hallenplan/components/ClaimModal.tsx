@@ -41,7 +41,7 @@ export default function ClaimModal({ slot, halls, teams, rawSlots, weekDays, onC
   const meta = slot._virtual
   const isManuallyFree = !meta && !slot.team?.length
   const hallName = halls.find((h) => h.id === slot.hall)?.name ?? ''
-  const originalTeams = teams.filter((tm) => slot.team.includes(tm.id))
+  const originalTeams = teams.filter((tm) => slot.team?.includes(tm.id))
   const coachTeams = teams.filter((tm) => coachTeamIds.includes(tm.id) || hasAdminAccessToTeam(tm.id))
   const [selectedTeamId, setSelectedTeamId] = useState(coachTeams[0]?.id || '')
 
@@ -85,7 +85,7 @@ export default function ClaimModal({ slot, halls, teams, rawSlots, weekDays, onC
       (s) =>
         s.recurring &&
         s.slot_type === 'training' &&
-        s.team.length === slot.team.length && s.team.every(t => slot.team.includes(t)) &&
+        (s.team?.length ?? 0) === (slot.team?.length ?? 0) && (s.team ?? []).every(t => slot.team?.includes(t)) &&
         s.day_of_week === slot.day_of_week,
     )
     hallSlotId = matchingSlot?.id || ''

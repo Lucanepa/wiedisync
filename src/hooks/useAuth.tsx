@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback, useMemo, type ReactNode } from 'react'
 import { readMe, readItems } from '@directus/sdk'
-import { client, login as apiLogin, logout as apiLogout, refreshAuth, isAuthenticated, API_URL } from '../lib/api'
+import { client, login as apiLogin, logout as apiLogout, refreshAuth, isAuthenticated, API_URL, fetchItems } from '../lib/api'
 import { queryClient } from '../lib/query'
 import { setSentryUser } from '../lib/sentry'
 import i18n from '../i18n'
@@ -68,10 +68,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const me = await client.request(readMe({ fields: ['id'] }))
       if (!me?.id) return null
-      const members = await client.request(readItems('members', {
+      const members = await fetchItems<MemberUser>('members', {
         filter: { user: { _eq: me.id } },
         limit: 1,
-      } as never)) as MemberUser[]
+      })
       return members[0] ?? null
     } catch {
       return null

@@ -130,7 +130,7 @@ export default function InfraHealthPage() {
     const svcResults: HealthCheck[] = []
 
     // API Prod — use shared hook result (already fetched on mount/refresh)
-    const hookApiService = infraRef.current.services.find(s => s.name === 'Directus' || s.name === 'PocketBase')
+    const hookApiService = infraRef.current.services.find(s => s.name === 'Directus')
     const apiProdOk = hookApiService?.status === 'ok'
     svcResults.push({
       name: t('infraPbProd'),

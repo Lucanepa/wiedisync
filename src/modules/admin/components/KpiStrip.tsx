@@ -94,7 +94,7 @@ export default function KpiStrip({ infraHealth: infra }: { infraHealth: InfraHea
   }, []) // empty deps — intentional single fetch on mount
 
   // Derive health/sync status from hook (no useEffect needed, no re-fetch loop)
-  const apiHealthy = infra.services.some(s => s.name === 'PocketBase' && s.status === 'ok')
+  const apiHealthy = infra.services.some(s => s.name === 'Directus' && s.status === 'ok')
   const syncStale = infra.syncs.some(s => s.isStale)
 
   const isLoading = data === null

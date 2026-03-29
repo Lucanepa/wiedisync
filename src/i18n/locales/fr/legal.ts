@@ -52,7 +52,7 @@ export default {
 
   storageTitle: '6. Stockage des donnees',
   storageServer:
-    'Les donnees sont stockees sur un serveur auto-heberge en Suisse (PocketBase). Le frontend est servi via Cloudflare Pages.',
+    'Les donnees sont stockees sur un serveur auto-heberge en Suisse (Directus). Le frontend est servi via Cloudflare Pages.',
   storageLocal:
     'Les preferences non personnelles suivantes sont stockees dans votre navigateur : schema de couleurs (clair/sombre) et parametre de langue. Pour les utilisateurs connectes, un jeton de session est stocke dans le navigateur.',
   storageNoCookies:

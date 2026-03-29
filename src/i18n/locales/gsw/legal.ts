@@ -52,7 +52,7 @@ export default {
 
   storageTitle: '6. Datespeicherig',
   storageServer:
-    'D Date werded uf emne selber betribne Server i de Schwiiz gspeicheret (PocketBase). S Frontend wird über Cloudflare Pages breitstellt.',
+    'D Date werded uf emne selber betribne Server i de Schwiiz gspeicheret (Directus). S Frontend wird über Cloudflare Pages breitstellt.',
   storageLocal:
     'Im Browser werded folgendi nöd-personebezogeni Iistellige gspeicheret: Farbschema (hell/dunkel) und Spraachiistellig. Für iigloggte Nutzer wird es Sitzigstoken im Browser gspeicheret.',
   storageNoCookies:

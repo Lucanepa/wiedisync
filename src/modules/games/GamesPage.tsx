@@ -134,6 +134,7 @@ export default function GamesPage() {
 
   const { data: allParticipationsRaw, refetch: refetchParticipations } = useCollection<Participation>('participations', {
     filter: participationFilter as Record<string, unknown> | undefined,
+    fields: ['id', 'activity_id', 'activity_type', 'member', 'status', 'note', 'session_id', 'guest_count', 'is_staff', 'waitlisted_at', 'date_created', 'date_updated'],
     all: true,
     enabled: gameIds.length > 0,
   })
@@ -169,6 +170,7 @@ export default function GamesPage() {
   // Rankings — always fetch (small dataset), group client-side
   const { data: allRankingsRaw, isLoading: rankingsLoading } = useCollection<Ranking>('rankings', {
     sort: ['league', 'rank'],
+    fields: ['id', 'league', 'rank', 'team_id', 'team_name', 'points', 'wins', 'losses', 'wins_clear', 'wins_narrow', 'defeats_clear', 'defeats_narrow', 'sets_won', 'sets_lost', 'points_for', 'points_against', 'games_played', 'season'],
     limit: 2000,
   })
   const allRankings = allRankingsRaw ?? []

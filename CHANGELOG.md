@@ -2,6 +2,18 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [2.7.2] — 2026-03-29
+
+### Features
+
+- **Google OAuth SSO** — Configured Directus dev SSO with OpenID driver for Google login. Redirect allow list includes dev, prod, and localhost callback URLs.
+
+### Bug Fixes
+
+- **Fixed hallenplan crash** — `hall_slots.team` is a single M2O integer FK in Directus (was multi-relation array in PocketBase). Added `wrapFkAsArray()` utility to normalize single FKs into arrays at fetch time. Added null safety to all `slot.team` accesses across hallenplan components.
+- **Fixed 403 on games, sponsors, trainings** — Directus rejects PocketBase-style dot-notation relational filters (`'kscw_team.sport'`). Converted to nested object syntax (`{kscw_team: {sport: ...}}`).
+- **Excluded incomplete games** — Games without an opponent, date, or time are now filtered out at the query level across all views (games, home, spielplanung, hallenplan, calendar).
+
 ## [2.7.1] — 2026-03-29
 
 ### Bug Fixes

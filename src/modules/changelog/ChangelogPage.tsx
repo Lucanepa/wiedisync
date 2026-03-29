@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '2.7.1'
+const APP_VERSION = '2.7.2'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,26 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.7.2',
+    date: '2026-03-29',
+    sections: [
+      {
+        title: 'Features',
+        items: [
+          'Google login — you can now sign in with your Google account',
+        ],
+      },
+      {
+        title: 'Bug Fixes',
+        items: [
+          'Fixed hall plan crash when slots have no team assigned',
+          'Fixed games, sponsors, and training data not loading for logged-in users',
+          'Incomplete games (missing opponent, date, or time) are no longer shown',
+        ],
+      },
+    ],
+  },
   {
     version: '2.7.1',
     date: '2026-03-29',

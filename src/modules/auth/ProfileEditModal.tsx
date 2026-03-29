@@ -119,7 +119,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
     if (!user?.email) return
     setResetLoading(true)
     try {
-      await kscwApi('/auth/request-password-reset', { method: 'POST', body: { email: user.email } })
+      await kscwApi('/password-request', { method: 'POST', body: { email: user.email } })
       setResetSent(true)
     } catch {
       setError(t('errorSaving'))

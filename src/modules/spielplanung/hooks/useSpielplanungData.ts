@@ -20,6 +20,7 @@ function buildGameFilter(
   const conditions: Record<string, unknown>[] = [
     { date: { _gte: seasonStart } },
     { date: { _lte: seasonEnd } },
+    { away_team: { _nnull: true } },
   ]
 
   if (filters.sport !== 'all') {

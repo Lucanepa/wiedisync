@@ -213,7 +213,7 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
   const { data: gamesRaw, isLoading: gamesLoading } = useCollection<Game>('games', {
     enabled: fetchGames,
     filter: addTeamFilter(
-      buildDateFilter('date', fetchRange.start, fetchRange.end),
+      [...buildDateFilter('date', fetchRange.start, fetchRange.end), { away_team: { _nnull: true } }, { time: { _nnull: true } }],
       filters.selectedTeamIds,
       'kscw_team',
     ),

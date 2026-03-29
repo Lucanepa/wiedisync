@@ -229,7 +229,7 @@ export function assetUrl(fileId: string | null | undefined, transforms?: string)
 /** Call a custom KSCW endpoint. */
 export async function kscwApi<T = unknown>(
   path: string,
-  options?: { method?: string; body?: unknown },
+  options?: { method?: string; body?: unknown; headers?: Record<string, string> },
 ): Promise<T> {
   const token = getAccessToken()
   const res = await fetch(`${API_URL}/kscw${path}`, {
@@ -237,6 +237,7 @@ export async function kscwApi<T = unknown>(
     headers: {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options?.headers,
     },
     ...(options?.body ? { body: JSON.stringify(options.body) } : {}),
   })

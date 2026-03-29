@@ -73,8 +73,15 @@ export default {
     // ── Public: Check Email ─────────────────────────────────────
     router.post('/check-email', async (req, res) => {
       try {
-        const { email } = req.body
+        const { email, turnstile_token } = req.body
         if (!email) return res.status(400).json({ error: 'Email required' })
+
+        // Turnstile validation (public endpoint — belt-and-suspenders with filter hook)
+        const captchaToken = turnstile_token || req.headers['x-turnstile-token']
+        if (captchaToken && !(await verifyTurnstile(captchaToken))) {
+          return res.status(400).json({ error: 'Captcha verification failed' })
+        }
+
         const normalised = email.toLowerCase().trim()
 
         const member = await database('members')
@@ -370,14 +377,26 @@ export default {
 
         await database('email_verifications').insert({ email, code, expires_at: expiresAt, verified: false })
 
-        // Send OTP email
+        // Send branded OTP email
         const schema = await getSchema()
         const { MailService } = services
         const mailService = new MailService({ schema, knex: database })
+        const { buildEmailLayout, buildAlertBox } = await import('./email-template.js')
+        const otpBody =
+          '<div style="font-size:14px;color:#e2e8f0;margin-bottom:16px">Verwende den folgenden Code, um deine E-Mail-Adresse zu verifizieren:</div>' +
+          '<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px"><tr><td align="center" style="padding:20px 0">' +
+          `<div style="font-size:36px;font-weight:700;color:#FFC832;letter-spacing:6px;font-family:monospace">${code}</div>` +
+          '</td></tr></table>' +
+          buildAlertBox('info', 'Gültigkeit', 'Dieser Code ist 10 Minuten gültig.')
+        const otpHtml = buildEmailLayout(otpBody, {
+          title: 'Verifizierungscode',
+          subtitle: 'WiediSync — KSC Wiedikon',
+        })
         await mailService.send({
           to: email,
           subject: `WiediSync — Verifizierungscode: ${code}`,
-          text: `Dein Verifizierungscode: ${code}\n\nDieser Code ist 10 Minuten gültig.\n\nKSC Wiedikon`,
+          html: otpHtml,
+          text: `Dein Verifizierungscode: ${code}\n\nDieser Code ist 10 Minuten gültig.\n\nKSC Wiedikon\nwiedisync.kscw.ch`,
         })
 
         res.json({ success: true })
@@ -408,29 +427,132 @@ export default {
       }
     })
 
-    // ── Set Password (OTP-authenticated) ────────────────────────
-    // POST /kscw/set-password — set password after OTP auth
+    // ── Set Password ──────────────────────────────────────────────
+    // POST /kscw/set-password
+    // Two modes:
+    //   1. Authenticated (Bearer token) → updates current user's password
+    //   2. Unauthenticated (email in body) → verifies OTP was confirmed,
+    //      creates Directus user if needed, sets password
 
     router.post('/set-password', async (req, res) => {
       try {
-        requireAuth(req)
-        const { password } = req.body
+        const { password, email: rawEmail } = req.body
         if (!password || password.length < 8) {
           return res.status(400).json({ error: 'Password must be at least 8 characters' })
         }
 
-        const userId = req.accountability.user
         const schema = await getSchema()
         const { UsersService } = services
-        const usersService = new UsersService({ schema, knex: database })
-        await usersService.updateOne(userId, { password })
+        const adminUsersService = new UsersService({ schema, knex: database, accountability: { admin: true } })
+        let userId
+        let memberId
 
-        // Mark member as active
+        if (req.accountability?.user) {
+          // Mode 1: Authenticated user changing password
+          userId = req.accountability.user
+          const member = await database('members').where('user', userId).select('id').first()
+          memberId = member?.id
+        } else if (rawEmail) {
+          // Mode 2: OTP-verified user setting initial password
+          const email = rawEmail.toLowerCase().trim()
+
+          // Verify email was OTP-confirmed
+          const verification = await database('email_verifications')
+            .where('email', email).where('verified', true)
+            .orderBy('id', 'desc').first()
+          if (!verification) {
+            return res.status(400).json({ error: 'Email not verified' })
+          }
+
+          const member = await database('members').where('email', email).first()
+          if (!member) return res.status(404).json({ error: 'Member not found' })
+          memberId = member.id
+
+          if (member.user) {
+            // Member already linked to a Directus user — update password
+            userId = member.user
+          } else {
+            // Create Directus user and link to member
+            userId = await adminUsersService.createOne({
+              email, password,
+              first_name: member.first_name || '',
+              last_name: member.last_name || '',
+            })
+            await database('members').where('id', member.id).update({ user: userId })
+          }
+
+          // Clean up used verifications
+          await database('email_verifications').where('email', email).delete()
+        } else {
+          return res.status(401).json({ error: 'Authentication or email required' })
+        }
+
+        await adminUsersService.updateOne(userId, { password })
         await database('members').where('user', userId).update({ wiedisync_active: true })
 
-        res.json({ success: true })
+        res.json({ success: true, member_id: memberId ? String(memberId) : undefined })
       } catch (err) {
         log.error(`set-password: ${err.message}`)
+        res.status(err.status || 500).json({ error: err.message })
+      }
+    })
+
+    // ── Register (new member) ──────────────────────────────────
+    // POST /kscw/register — create Directus user + member after OTP verification
+
+    router.post('/register', async (req, res) => {
+      try {
+        const { email: rawEmail, password, first_name, last_name, team, language } = req.body
+        if (!rawEmail || !password || !first_name || !last_name || !team) {
+          return res.status(400).json({ error: 'email, password, first_name, last_name, team required' })
+        }
+        if (password.length < 8) {
+          return res.status(400).json({ error: 'Password must be at least 8 characters' })
+        }
+        const email = rawEmail.toLowerCase().trim()
+
+        // Verify email was OTP-confirmed
+        const verification = await database('email_verifications')
+          .where('email', email).where('verified', true)
+          .orderBy('id', 'desc').first()
+        if (!verification) {
+          return res.status(400).json({ error: 'Email not verified' })
+        }
+
+        // Check not already registered
+        const existing = await database('members').where('email', email).first()
+        if (existing) return res.status(400).json({ error: 'Email already registered' })
+
+        const schema = await getSchema()
+        const { UsersService } = services
+        const adminUsersService = new UsersService({ schema, knex: database, accountability: { admin: true } })
+
+        // Create Directus user
+        const userId = await adminUsersService.createOne({
+          email, password, first_name, last_name,
+        })
+
+        // Create member record linked to user
+        const [member] = await database('members').insert({
+          user: userId,
+          first_name, last_name, email,
+          name: `${first_name} ${last_name}`,
+          role: JSON.stringify(['user']),
+          kscw_membership_active: true,
+          coach_approved_team: false,
+          requested_team: team,
+          wiedisync_active: true,
+          language: language || 'german',
+          birthdate_visibility: 'hidden',
+        }).returning('id')
+
+        // Clean up verification
+        await database('email_verifications').where('email', email).delete()
+
+        log.info(`New member registered: ${email} → team ${team}`)
+        res.json({ success: true, member_id: String(member.id || member) })
+      } catch (err) {
+        log.error(`register: ${err.message}`)
         res.status(err.status || 500).json({ error: err.message })
       }
     })

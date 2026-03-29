@@ -6,7 +6,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useTheme } from '../../hooks/useTheme'
 import { useCollection } from '../../lib/query'
 import { logActivity } from '../../utils/logActivity'
-import { asObj, relId } from '../../utils/relations'
+import { asObj } from '../../utils/relations'
 import { Button } from '@/components/ui/button'
 import Modal from '@/components/Modal'
 import DatenschutzPage from '../legal/DatenschutzPage'
@@ -16,15 +16,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { LANGUAGES, type BackendLanguage } from '../../i18n/languageConfig'
 import { backendLangToI18n } from '../../utils/languageMap'
 import { OtpInput } from '../../components/OtpInput'
-import { getCurrentSeason } from '../../utils/dateHelpers'
 import { Checkbox } from '@/components/ui/checkbox'
 import deFlag from '../../assets/flags/de.svg'
 import gbFlag from '../../assets/flags/gb.svg'
 import frFlag from '../../assets/flags/fr.svg'
 import itFlag from '../../assets/flags/it.svg'
 import chFlag from '../../assets/flags/ch.svg'
-import type { Team, MemberTeam } from '../../types'
-import { client, createRecord, fetchAllItems, kscwApi, updateRecord } from '../../lib/api'
+import type { Team } from '../../types'
+import { createRecord, kscwApi, updateRecord } from '../../lib/api'
 
 const flagMap: Record<string, string> = { de: deFlag, gb: gbFlag, fr: frFlag, it: itFlag, ch: chFlag }
 const TURNSTILE_SITE_KEY = '0x4AAAAAACoYmx3xiDfRbmv9'
@@ -57,16 +56,15 @@ export default function SignUpPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [showPrivacy, setShowPrivacy] = useState(false)
-  const [, setTurnstileToken] = useState('')
+  const [turnstileToken, setTurnstileToken] = useState('')
   const turnstileRef = useRef<TurnstileInstance>(null)
 
   // OTP state
-  const [otpId, setOtpId] = useState('')
-  const [, setVerificationToken] = useState('')
   const [otpError, setOtpError] = useState('')
 
-  // Multi-team state (for ClubDesk imports)
-  const [existingTeams, setExistingTeams] = useState<(MemberTeam & { team: Team | string })[]>([])
+  // Claim flow state (for existing/ClubDesk members)
+  const [claimMemberId, setClaimMemberId] = useState<string | null>(null)
+  const [existingTeams, setExistingTeams] = useState<{ id: string; name: string; league?: string; sport?: string }[]>([])
   const [additionalTeamIds, setAdditionalTeamIds] = useState<string[]>([])
 
   const { data: teamsRaw } = useCollection<Team>('teams', {
@@ -92,9 +90,13 @@ export default function SignUpPage() {
     setLoading(true)
 
     try {
-      const res = await kscwApi<{ exists: boolean; claimed: boolean }>('/check-email', {
+      const res = await kscwApi<{
+        exists: boolean; claimed: boolean;
+        first_name?: string; last_name?: string;
+        existing_teams?: { id: number; name: string; league?: string; sport?: string }[];
+      }>('/check-email', {
         method: 'POST',
-        body: { email: email.trim().toLowerCase() },
+        body: { email: email.trim().toLowerCase(), turnstile_token: turnstileToken },
       })
 
       if (res.exists && res.claimed) {
@@ -102,9 +104,11 @@ export default function SignUpPage() {
         navigate('/login', { state: { email: email.trim().toLowerCase(), accountExists: true } })
         return
       } else if (res.exists) {
-        // Account exists but not claimed — request OTP for claim
-        const otpRes = await kscwApi<{ otpId: string }>('/auth/request-otp', { method: 'POST', body: { email: email.trim().toLowerCase() } })
-        setOtpId(otpRes.otpId)
+        // Account exists but not claimed — pre-fill data and send OTP
+        if (res.first_name) setFirstName(res.first_name)
+        if (res.last_name) setLastName(res.last_name)
+        if (res.existing_teams) setExistingTeams(res.existing_teams.map(t => ({ ...t, id: String(t.id) })))
+        await kscwApi('/verify-email', { method: 'POST', body: { email: email.trim().toLowerCase() } })
         setStep('otp-claim')
       } else {
         // New member — send verification email OTP

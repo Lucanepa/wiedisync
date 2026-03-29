@@ -63,8 +63,60 @@ async function sendPushToMembers(db, memberIds, title, body, url, tag, log) {
   }
 }
 
-export default ({ action, schedule }, { services, database, logger, getSchema }) => {
+// ── Turnstile CAPTCHA ────────────────────────────────────────────
+// Directus filter hooks don't receive HTTP headers, so we use AsyncLocalStorage
+// to bridge the X-Turnstile-Token header from middleware into filter hooks.
+import { AsyncLocalStorage } from 'node:async_hooks'
+
+const turnstileStore = new AsyncLocalStorage()
+const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET || ''
+
+async function verifyTurnstile(token) {
+  if (!TURNSTILE_SECRET) return true // skip in dev
+  if (!token) return false
+  const resp = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `secret=${TURNSTILE_SECRET}&response=${token}`,
+  })
+  const data = await resp.json()
+  return data.success === true
+}
+
+export default ({ action, filter, init, schedule }, { services, database, logger, getSchema }) => {
   const log = logger.child({ extension: 'kscw-hooks' })
+
+  // ── 0. Turnstile Middleware + Filter Hooks ─────────────────────
+  // Capture X-Turnstile-Token from request headers via AsyncLocalStorage,
+  // then validate in filter hooks for public item creation.
+
+  init('middlewares.before', ({ app }) => {
+    app.use((req, _res, next) => {
+      const token = req.headers['x-turnstile-token'] || ''
+      turnstileStore.run({ turnstileToken: token }, next)
+    })
+  })
+
+  // Block unauthenticated members.create and feedback.create without valid Turnstile
+  filter('items.create', async (payload, meta, context) => {
+    const collection = meta.collection
+    if (collection !== 'members' && collection !== 'feedback') return payload
+
+    // Skip for authenticated users (admins creating members, logged-in feedback)
+    if (context.accountability?.user) return payload
+
+    // Skip in dev (no secret configured)
+    if (!TURNSTILE_SECRET) return payload
+
+    const store = turnstileStore.getStore()
+    const token = store?.turnstileToken
+    if (!(await verifyTurnstile(token))) {
+      const err = new Error('Captcha verification failed')
+      err.status = 403
+      throw err
+    }
+    return payload
+  })
 
   // ── 1. Wiedisync Active on Auth ─────────────────────────────────
   // Mark wiedisync_active=true on successful login
@@ -394,5 +446,5 @@ export default ({ action, schedule }, { services, database, logger, getSchema })
     }
   })
 
-  log.info('KSCW hooks loaded: 1 action, 9 crons (validations+notifications in Postgres)')
+  log.info('KSCW hooks loaded: 1 action, 1 filter (Turnstile), 9 crons (validations+notifications in Postgres)')
 }

@@ -5,6 +5,8 @@
  * Cron registered in hooks extension (09:00 UTC)
  */
 
+import { buildEmailLayout, buildInfoCard, formatDateCH, weekday } from './email-template.js'
+
 function tomorrowYMD() {
   const d = new Date()
   d.setDate(d.getDate() + 1)
@@ -15,6 +17,11 @@ function arrivalMinutes(role, sport) {
   if (sport === 'basketball') return 15
   if (role === 'taefeler') return 10
   return 30 // scorer default
+}
+
+const ROLE_LABELS = {
+  scorer: 'Scorer', taefeler: 'Täfeler',
+  bb_anschreiber: 'Anschreiber', bb_zeitnehmer: 'Zeitnehmer', bb_24s: '24s-Operator',
 }
 
 const ROLE_MEMBER = {
@@ -75,21 +82,50 @@ export function registerScorerReminders(router, { database, logger, services, ge
         }
 
         const subject = `Schreibereinsatz morgen: ${game.home_team} vs ${game.away_team}`
+        const roleLabel = ROLE_LABELS[role] || role
+        const sportKey = sport === 'basketball' ? 'bb' : 'vb'
+        const dateStr = `${weekday(game.date)}, ${formatDateCH(game.date)}`
+
+        const infoRows = [
+          { label: 'Spiel', value: `${game.home_team} vs ${game.away_team}` },
+          { label: 'Datum', value: dateStr, halfWidth: true },
+          { label: 'Anpfiff', value: gameTime, halfWidth: true },
+          { label: 'Ankunft', value: `${arrivalTime} (${arrival} Min. vor Anpfiff)`, halfWidth: true },
+          { label: 'Rolle', value: roleLabel, halfWidth: true },
+        ]
+        if (hall) infoRows.push({ label: 'Halle', value: hall.name })
+
+        const bodyHtml =
+          `<div style="font-size:14px;color:#e2e8f0;margin-bottom:16px">Du bist morgen als <strong>${roleLabel}</strong> eingeteilt.</div>` +
+          buildInfoCard(infoRows)
+
+        const html = buildEmailLayout(bodyHtml, {
+          title: 'Schreibereinsatz',
+          subtitle: `${game.home_team} vs ${game.away_team}`,
+          sport: sportKey,
+          greeting: `Hallo ${member.first_name},`,
+          ctaUrl: 'https://wiedisync.kscw.ch/scorer',
+          ctaLabel: 'Schreibereinsätze anzeigen',
+        })
+
         const text = [
           `Hallo ${member.first_name},`,
           '',
-          `Du bist morgen als ${role} eingeteilt:`,
+          `Du bist morgen als ${roleLabel} eingeteilt:`,
           `Spiel: ${game.home_team} vs ${game.away_team}`,
-          `Datum: ${game.date}`,
+          `Datum: ${dateStr}`,
           `Anpfiff: ${gameTime}`,
           `Ankunft: ${arrivalTime} (${arrival} Min. vor Anpfiff)`,
           hall ? `Halle: ${hall.name}` : '',
           '',
+          'https://wiedisync.kscw.ch/scorer',
+          '',
           'KSC Wiedikon',
+          'wiedisync.kscw.ch',
         ].filter(Boolean).join('\n')
 
         try {
-          await mailService.send({ to: member.email, subject, text })
+          await mailService.send({ to: member.email, subject, html, text })
           sent++
         } catch (mailErr) {
           log.warn(`Scorer reminder failed for ${member.email}: ${mailErr.message}`)

@@ -23,7 +23,7 @@ function buildGameFilter(
   ]
 
   if (filters.sport !== 'all') {
-    conditions.push({ 'kscw_team.sport': { _eq: filters.sport } })
+    conditions.push({ kscw_team: { sport: { _eq: filters.sport } } })
   }
 
   if (filters.selectedTeamIds.length > 0) {

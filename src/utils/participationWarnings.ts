@@ -1,8 +1,5 @@
 import type { Participation, ParticipationWithMember, Member } from '../types'
-
-function asObj<T>(val: T | string | null | undefined): T | null {
-  return val != null && typeof val === 'object' ? val as T : null
-}
+import { asObj } from './relations'
 
 export type WarningLevel = 'red' | 'yellow'
 export interface Warning {

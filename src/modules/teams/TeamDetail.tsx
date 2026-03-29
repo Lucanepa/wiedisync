@@ -20,10 +20,7 @@ import { coercePositions } from '../../utils/memberPositions'
 import { getCurrentSeason } from '../../utils/dateHelpers'
 import ImageLightbox from '../../components/ImageLightbox'
 import type { Team, Member, Sponsor } from '../../types'
-
-function asObj<T>(val: T | string | null | undefined): T | null {
-  return val != null && typeof val === 'object' ? val as T : null
-}
+import { asObj } from '../../utils/relations'
 import PollsSection from '../polls/PollsSection'
 import { isFeatureEnabled } from '../../utils/featureToggles'
 import { createRecord, deleteRecord, fetchAllItems, fetchItems, updateRecord } from '../../lib/api'

@@ -2,10 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { getSeasonDateRange } from '../../utils/dateHelpers'
 import type { Training, Participation, Absence, Member, MemberTeam } from '../../types'
 import { fetchAllItems } from '../../lib/api'
-
-function asObj<T>(val: T | string | null | undefined): T | null {
-  return val != null && typeof val === 'object' ? val as T : null
-}
+import { asObj } from '../../utils/relations'
 
 export interface PlayerStats {
   memberId: string
@@ -130,9 +127,9 @@ export function useAttendanceStats(teamId: string | null, season: string) {
         const memberParticipations = participations.filter((p) => p.member === member.id)
         if (memberParticipations.length > 0) {
           const latest = memberParticipations.reduce((a, b) =>
-            (a.updated ?? a.date_updated ?? '') > (b.updated ?? b.date_updated ?? '') ? a : b
+            (a.date_updated ?? '') > (b.date_updated ?? '') ? a : b
           )
-          memberStats[member.id].lastResponseAt = latest.updated ?? latest.date_updated ?? null
+          memberStats[member.id].lastResponseAt = latest.date_updated ?? null
         }
       }
 

@@ -19,15 +19,12 @@ import TeamChip from './TeamChip'
 import { useCollection } from '../lib/query'
 import ProfileEditModal from '../modules/auth/ProfileEditModal'
 import type { MemberTeam, Team } from '../types'
+import { asObj } from '../utils/relations'
 import {
   Home, Calendar, Trophy, UserX, PenSquare, PartyPopper, Users,
   ClipboardList, Building2, CalendarClock, Database, Activity,
   HeartPulse, Settings, ChevronDown, MessageSquare, Banknote,
 } from 'lucide-react'
-
-function asObj<T>(val: T | string | null | undefined): T | null {
-  return val != null && typeof val === 'object' ? val as T : null
-}
 
 type ExpandedMemberTeam = MemberTeam & { team: Team | string }
 

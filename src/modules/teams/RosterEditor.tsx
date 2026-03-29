@@ -19,10 +19,7 @@ import { getCurrentSeason } from '../../utils/dateHelpers'
 import type { Team, Member, MemberPosition, MemberTeam, LicenceType, TeamSettings } from '../../types'
 import { Button } from '../../components/ui/button'
 import { fetchItems, updateRecord } from '../../lib/api'
-
-function asObj<T>(val: T | string | null | undefined): T | null {
-  return val != null && typeof val === 'object' ? val as T : null
-}
+import { asObj, relId } from '../../utils/relations'
 
 type LeadershipRole = 'coach' | 'captain' | 'team_responsible'
 const ROLES: LeadershipRole[] = ['coach', 'captain', 'team_responsible']
@@ -73,7 +70,7 @@ export default function RosterEditor() {
   const { teamSlug } = useParams<{ teamSlug: string }>()
   const { isCoachOf } = useAuth()
   const season = getCurrentSeason()
-  const { data: allMembersRaw } = useCollection<Member>('members', { filter: { kscw_membership_active: { _eq: true } }, all: true, sort: ['last_name'], fields: ['id', 'name', 'first_name', 'last_name', 'photo', 'number', 'position', 'licences'] })
+  const { data: allMembersRaw } = useCollection<Member>('members', { filter: { kscw_membership_active: { _eq: true } }, all: true, sort: ['last_name'], fields: ['id', 'first_name', 'last_name', 'photo', 'number', 'position', 'licences'] })
   const allMembers = allMembersRaw ?? []
   const { create, remove } = useMutation<MemberTeam>('member_teams')
 
@@ -109,7 +106,7 @@ export default function RosterEditor() {
     })
   }, [members])
 
-  const rosterMemberIds = new Set(members.map((mt) => mt.member))
+  const rosterMemberIds = new Set(members.map((mt) => relId(mt.member)))
   const searchLower = search.toLowerCase()
   const availableMembers = allMembers.filter(
     (m) =>

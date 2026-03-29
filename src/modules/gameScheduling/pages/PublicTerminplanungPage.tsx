@@ -31,7 +31,7 @@ export default function PublicTerminplanungPage() {
       try {
         const [teamRecords, seasons] = await Promise.all([
           fetchAllItems<Team>('teams', { filter: { _and: [{ active: { _eq: true } }, { sport: { _eq: 'volleyball' } }] }, sort: ['name'] }),
-          fetchAllItems('game_scheduling_seasons', { filter: { status: { _eq: 'open' } }, sort: ['-created'] }),
+          fetchAllItems('game_scheduling_seasons', { filter: { status: { _eq: 'open' } }, sort: ['-id'] }),
         ])
         setTeams(teamRecords)
         setSeasonOpen(seasons.length > 0)

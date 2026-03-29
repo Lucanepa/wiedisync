@@ -2,10 +2,7 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Game, Member, Team } from '../../../types'
 import type { ExpandedGame } from './ScorerRow'
-
-function asObj<T>(val: T | string | null | undefined): T | null {
-  return val != null && typeof val === 'object' ? val as T : null
-}
+import { asObj } from '../../../utils/relations'
 import { DutyStatus } from './ScorerRow'
 import TeamChip from '../../../components/TeamChip'
 import { formatTime } from '../../../utils/dateHelpers'

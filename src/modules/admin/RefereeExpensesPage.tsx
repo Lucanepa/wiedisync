@@ -6,10 +6,7 @@ import { useCollection } from '../../lib/query'
 import TeamChip from '../../components/TeamChip'
 import { teamNameToColorKey } from '../../utils/teamColors'
 import { formatDate } from '../../utils/dateHelpers'
-
-function asObj<T>(val: T | string | null | undefined): T | null {
-  return val != null && typeof val === 'object' ? val as T : null
-}
+import { asObj } from '../../utils/relations'
 
 type ExpandedExpense = RefereeExpense & {
   game: (Game & BaseRecord) | string
@@ -42,7 +39,7 @@ export default function RefereeExpensesPage() {
   // Fetch expenses
   const { data: expensesRaw, isLoading } = useCollection<ExpandedExpense>('referee_expenses', {
     filter,
-    sort: ['-created'],
+    sort: ['-id'],
     fields: ['*', 'game.*', 'team.*', 'paid_by_member.*'],
     all: true,
   })

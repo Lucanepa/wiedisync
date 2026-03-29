@@ -7,10 +7,7 @@ import { useCollection } from '../lib/query'
 import { fetchAllItems } from '../lib/api'
 import { getFileUrl } from '../utils/fileUrl'
 import type { Participation, Absence, Member, Team, EventSession } from '../types'
-
-function asObj<T>(val: T | string | null | undefined): T | null {
-  return val != null && typeof val === 'object' ? val as T : null
-}
+import { asObj } from '../utils/relations'
 import { formatDate, getDeadlineDate, formatRelativeTime, formatDateTimeCompact } from '../utils/dateHelpers'
 
 interface ParticipationRosterModalProps {

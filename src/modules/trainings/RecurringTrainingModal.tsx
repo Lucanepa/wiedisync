@@ -12,10 +12,7 @@ import TeamChip from '../../components/TeamChip'
 import DatePicker from '@/components/ui/DatePicker'
 import { Switch } from '@/components/ui/switch'
 import { createRecord, fetchAllItems, fetchItem } from '../../lib/api'
-
-function asObj<T>(val: T | string | null | undefined): T | null {
-  return val != null && typeof val === 'object' ? val as T : null
-}
+import { relId, asObj } from '../../utils/relations'
 
 type SlotExpanded = HallSlot & {
   hall: Hall | string
@@ -52,8 +49,8 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
   // Sort: current/past slots first (by valid_from asc), then future slots (by valid_from asc)
   const slots = useMemo(() => {
     const filtered = selectedTeamId
-      ? allSlots.filter((s) => s.team.includes(selectedTeamId))
-      : allSlots.filter((s) => s.team.some(t => (effectiveIsAdmin && hasAdminAccessToTeam(t)) || coachTeamIds.includes(t)))
+      ? allSlots.filter((s) => s.team?.includes(selectedTeamId))
+      : allSlots.filter((s) => s.team?.some(t => (effectiveIsAdmin && hasAdminAccessToTeam(t)) || coachTeamIds.includes(t)))
     const today = new Date().toISOString().slice(0, 10)
     return [...filtered].sort((a, b) => {
       if (a.day_of_week !== b.day_of_week) return a.day_of_week - b.day_of_week
@@ -164,8 +161,7 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
   }, [slot?.id, slot?.team]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // When slot changes, default the hall to the slot's hall
-  const hallVal = slot?.hall as Hall | string | undefined
-  const slotHallId = typeof hallVal === 'object' ? hallVal?.id : hallVal
+  const slotHallId = relId(slot?.hall)
   const effectiveHallId = hallId || slotHallId || ''
 
   const effectiveEndDate = untilSeasonEnd ? getSeasonEndDate() : endDate

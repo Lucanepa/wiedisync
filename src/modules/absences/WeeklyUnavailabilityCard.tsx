@@ -1,10 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { formatDate } from '../../utils/dateHelpers'
 import type { Absence, Member } from '../../types'
-
-function asObj<T>(val: T | string | null | undefined): T | null {
-  return val != null && typeof val === 'object' ? val as T : null
-}
+import { asObj } from '../../utils/relations'
 
 const DAY_KEYS = ['dayMon', 'dayTue', 'dayWed', 'dayThu', 'dayFri', 'daySat', 'daySun'] as const
 

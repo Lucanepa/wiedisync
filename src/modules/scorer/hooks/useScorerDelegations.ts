@@ -18,7 +18,7 @@ export function useScorerDelegations() {
     filter: userId
       ? { _and: [{ status: { _eq: 'pending' } }, { _or: [{ from_member: { _eq: userId } }, { to_member: { _eq: userId } }] }] }
       : { id: { _eq: -1 } },
-    sort: ['-created'],
+    sort: ['-id'],
     limit: 50,
     enabled: !!userId,
   })

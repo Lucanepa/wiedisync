@@ -2,10 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { fetchItem, fetchAllItems, updateRecord } from '../lib/api'
 import { coercePositions, normalizePositionsForSport } from '../utils/memberPositions'
 import type { Member, MemberTeam, Team } from '../types'
-
-function asObj<T>(val: T | string | null | undefined): T | null {
-  return val != null && typeof val === 'object' ? val as T : null
-}
+import { asObj } from '../utils/relations'
 
 export type ExpandedMemberTeam = Omit<MemberTeam, 'member'> & { member: (Member & { id: string }) | string }
 

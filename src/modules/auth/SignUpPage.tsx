@@ -6,7 +6,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useTheme } from '../../hooks/useTheme'
 import { useCollection } from '../../lib/query'
 import { logActivity } from '../../utils/logActivity'
-import { relId } from '../../utils/relations'
+import { asObj, relId } from '../../utils/relations'
 import { Button } from '@/components/ui/button'
 import Modal from '@/components/Modal'
 import DatenschutzPage from '../legal/DatenschutzPage'
@@ -25,10 +25,6 @@ import itFlag from '../../assets/flags/it.svg'
 import chFlag from '../../assets/flags/ch.svg'
 import type { Team, MemberTeam } from '../../types'
 import { client, createRecord, fetchAllItems, kscwApi, updateRecord } from '../../lib/api'
-
-function asObj<T>(val: T | string | null | undefined): T | null {
-  return val != null && typeof val === 'object' ? val as T : null
-}
 
 const flagMap: Record<string, string> = { de: deFlag, gb: gbFlag, fr: frFlag, it: itFlag, ch: chFlag }
 const TURNSTILE_SITE_KEY = '0x4AAAAAACoYmx3xiDfRbmv9'

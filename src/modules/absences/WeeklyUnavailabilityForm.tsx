@@ -12,10 +12,7 @@ import SearchableSelect from '@/components/ui/SearchableSelect'
 import { Checkbox } from '@/components/ui/checkbox'
 import AffectsMultiSelect from '@/components/AffectsMultiSelect'
 import type { Absence, Member, MemberTeam } from '../../types'
-
-function asObj<T>(val: T | string | null | undefined): T | null {
-  return val != null && typeof val === 'object' ? val as T : null
-}
+import { asObj } from '../../utils/relations'
 
 const DAY_KEYS = ['dayMon', 'dayTue', 'dayWed', 'dayThu', 'dayFri', 'daySat', 'daySun'] as const
 

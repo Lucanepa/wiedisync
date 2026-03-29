@@ -85,22 +85,36 @@ export function isAuthenticated(): boolean {
 
 // ── Data helpers ────────────────────────────────────────────────────
 
-/** Coerce Directus integer IDs to strings for frontend compat. */
+/**
+ * Numeric data fields that must stay as numbers (not foreign keys).
+ * Every other integer field is assumed to be a FK/ID and gets stringified.
+ */
+const KEEP_AS_NUMBER = new Set([
+  'home_score', 'away_score', 'min_participants', 'max_participants',
+  'max_players', 'day_of_week', 'guest_level', 'amount', 'rank',
+  'points', 'won', 'lost', 'played', 'draws', 'sets_won', 'sets_lost',
+  'points_won', 'points_lost', 'point_diff',
+  'wins_clear', 'wins_narrow', 'defeats_clear', 'defeats_narrow',
+  'sort_order', 'number', 'yob', 'courts', 'lat', 'lon',
+  'game_min_participants', 'game_respond_by_days',
+  'training_min_participants', 'training_respond_by_days',
+  'guest_count', 'confirmed_proposal', 'seats_available',
+  'respond_by_days', 'count',
+])
+
+/** Coerce Directus integer IDs/FKs to strings for frontend compat. */
 function stringifyIds<T>(items: T[]): T[] {
-  return items.map(item => {
-    if (item && typeof item === 'object') {
-      const obj = { ...item } as Record<string, unknown>
-      if (typeof obj.id === 'number') obj.id = String(obj.id)
-      return obj as T
-    }
-    return item
-  })
+  return items.map(item => stringifyId(item))
 }
 
 function stringifyId<T>(item: T): T {
   if (item && typeof item === 'object') {
     const obj = { ...item } as Record<string, unknown>
-    if (typeof obj.id === 'number') obj.id = String(obj.id)
+    for (const key of Object.keys(obj)) {
+      if (typeof obj[key] === 'number' && !KEEP_AS_NUMBER.has(key)) {
+        obj[key] = String(obj[key])
+      }
+    }
     return obj as T
   }
   return item

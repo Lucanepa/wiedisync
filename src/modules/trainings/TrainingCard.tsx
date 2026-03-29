@@ -9,14 +9,7 @@ import { formatDate, formatWeekday, formatTime, getDeadlineDate } from '../../ut
 import ParticipationWarningBadge from '../../components/ParticipationWarningBadge'
 import { getTrainingWarnings } from '../../utils/participationWarnings'
 import type { Training, Team, Hall, Member, Participation } from '../../types'
-
-function asObj<T>(val: T | string | null | undefined): T | null {
-  return val != null && typeof val === 'object' ? val as T : null
-}
-function getId(val: { id: string } | string | null | undefined): string {
-  if (val == null) return ''
-  return typeof val === 'object' ? val.id : val
-}
+import { asObj, relId } from '../../utils/relations'
 
 type TrainingExpanded = Training & {
   team: Team | string
@@ -51,7 +44,7 @@ export default function TrainingCard({ training, participations, myParticipation
   const team = asObj<Team>(training.team)
   const hall = asObj<Hall>(training.hall)
   const coach = asObj<Member>(training.coach)
-  const teamId = getId(training.team)
+  const teamId = relId(training.team)
   const myStatus = myParticipation?.status ?? null
   const warnings = getTrainingWarnings(participations ?? [], training.min_participants)
 
@@ -206,7 +199,7 @@ function TrainingParticipation({ training, existingParticipation, onSaved }: { t
   const { t } = useTranslation('participation')
   const { t: tTrainings } = useTranslation('trainings')
   const { user, isStaffOnly } = useAuth()
-  const isStaff = isStaffOnly(getId(training.team))
+  const isStaff = isStaffOnly(relId(training.team))
   const { create, update } = useMutation<Participation>('participations')
 
   const deadlinePassed = training.respond_by

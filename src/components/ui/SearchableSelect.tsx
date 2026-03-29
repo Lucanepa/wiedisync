@@ -143,7 +143,7 @@ export default function SearchableSelect({
         )}
       </div>
       {open && createPortal(
-        <div ref={dropdownRef} style={dropdownStyle} className="rounded-md border bg-popover shadow-md">
+        <div ref={dropdownRef} style={dropdownStyle} className="cursor-default rounded-md border bg-popover shadow-md">
           <ul className="max-h-60 overflow-auto py-1" role="listbox">
             {filtered.length === 0 && (
               <li className="px-3 py-2 text-sm text-muted-foreground">{t('noResults')}</li>
@@ -154,7 +154,7 @@ export default function SearchableSelect({
                 role="option"
                 aria-selected={value === option.value}
                 className={cn(
-                  'flex cursor-pointer items-center px-3 py-2 text-sm hover:bg-accent',
+                  'flex cursor-pointer select-none items-center px-3 py-2 text-sm hover:bg-accent',
                   value === option.value && 'bg-accent',
                 )}
                 onMouseDown={(e) => {

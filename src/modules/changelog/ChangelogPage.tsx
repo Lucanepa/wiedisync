@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '2.7.0'
+const APP_VERSION = '2.7.1'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,28 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.7.1',
+    date: '2026-03-29',
+    sections: [
+      {
+        title: 'Bug Fixes',
+        items: [
+          'Fixed data comparison issues — relation fields (team, hall, member assignments) now correctly match across all pages',
+          'Fixed scorer duty page loading error — removed non-existent field from member queries',
+          'Fixed sorting on recently created records across scorer, polls, feedback, and scheduling pages',
+          'Fixed training and game filters to correctly include records with no status set',
+        ],
+      },
+      {
+        title: 'Infrastructure',
+        items: [
+          'Added automatic timestamps (created/updated) to all database collections — 3886 existing records backfilled',
+          'Increased login session duration from 15 minutes to 1 hour',
+        ],
+      },
+    ],
+  },
   {
     version: '2.7.0',
     date: '2026-03-28',

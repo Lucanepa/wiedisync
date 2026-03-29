@@ -2,6 +2,26 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [2.7.1] — 2026-03-29
+
+### Bug Fixes
+
+- **Integer FK stringification** — Enhanced `stringifyIds()` to convert all Directus integer foreign key fields to strings (not just `id`). Fixes silent comparison failures across all pages where relation fields like `kscw_team`, `hall`, `scorer_duty_team` were returned as integers but compared to string IDs.
+- **Removed non-existent `name` field** from members collection queries (scorer, roster editor) — caused 403 errors in Directus.
+- **Fixed sort field names** — Replaced PocketBase `created`/`updated` with Directus `date_created`/`date_updated` across 10 files.
+- **Fixed `_neq` NULL exclusion** — Added null fallback on hallenplan and player profile status filters.
+- **Fixed null safety** on `hall_slots.team` array access in recurring training modal.
+
+### Code Quality
+
+- **Deduplicated 30+ local `asObj()` definitions** — replaced with imports from shared `src/utils/relations.ts`.
+- **Replaced 3 `getId()` duplicates** with `relId()` from shared utility.
+
+### Infrastructure
+
+- **Added Directus system fields** — `date_created`, `date_updated`, `user_created`, `user_updated` on all 42 collections. Backfilled 3886 existing records.
+- **Increased Directus dev token TTL** from 15min to 1 hour (refresh token from 7d to 30d).
+
 ## [2.7.0] — 2026-03-28
 
 ### Infrastructure

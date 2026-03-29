@@ -57,7 +57,7 @@ export function registerGameScheduling(router, { database, logger, services, get
       res.json({ success: true, token, expires_at: expiresAt })
     } catch (err) {
       log.error(`terminplanung/register: ${err.message}`)
-      res.status(500).json({ error: err.message })
+      res.status(500).json({ error: 'Internal error' })
     }
   })
 
@@ -121,7 +121,7 @@ export function registerGameScheduling(router, { database, logger, services, get
       res.json({ success: true })
     } catch (err) {
       log.error(`terminplanung/book-home: ${err.message}`)
-      res.status(500).json({ error: err.message })
+      res.status(500).json({ error: 'Internal error' })
     }
   })
 
@@ -149,7 +149,7 @@ export function registerGameScheduling(router, { database, logger, services, get
       res.json({ success: true, proposals_count: proposals.length })
     } catch (err) {
       log.error(`terminplanung/propose-away: ${err.message}`)
-      res.status(500).json({ error: err.message })
+      res.status(500).json({ error: 'Internal error' })
     }
   })
 
@@ -197,7 +197,7 @@ export function registerGameScheduling(router, { database, logger, services, get
       res.json({ success: true, created })
     } catch (err) {
       log.error(`generate-slots: ${err.message}`)
-      res.status(500).json({ error: err.message })
+      res.status(500).json({ error: 'Internal error' })
     }
   })
 
@@ -240,7 +240,7 @@ export function registerGameScheduling(router, { database, logger, services, get
       res.json({ success: true })
     } catch (err) {
       log.error(`confirm-away: ${err.message}`)
-      res.status(500).json({ error: err.message })
+      res.status(500).json({ error: 'Internal error' })
     }
   })
 
@@ -253,7 +253,7 @@ export function registerGameScheduling(router, { database, logger, services, get
       await database('game_scheduling_slots').where('id', slot_id).update({ blocked: !!blocked })
       res.json({ success: true })
     } catch (err) {
-      res.status(500).json({ error: err.message })
+      res.status(500).json({ error: 'Internal error' })
     }
   })
 }

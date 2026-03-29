@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react'
+import DOMPurify from 'dompurify'
 import { useTranslation } from 'react-i18next'
 import type { Game, Member, Team, MemberTeam, ScorerDelegation } from '../../types'
 import { useCollection } from '../../lib/query'
@@ -415,9 +416,9 @@ export default function ScorerPage() {
             <div>
               <h3 className="font-semibold text-gray-900 dark:text-gray-100">{t('infoArrivalTitle')}</h3>
               {/* eslint-disable-next-line react/no-danger -- hardcoded i18n */}
-              <p className="mt-1 [&_strong]:font-semibold" dangerouslySetInnerHTML={{ __html: t('infoArrivalScorer') }} />
+              <p className="mt-1 [&_strong]:font-semibold" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(t('infoArrivalScorer')) }} />
               {/* eslint-disable-next-line react/no-danger -- hardcoded i18n */}
-              <p className="mt-1 [&_strong]:font-semibold" dangerouslySetInnerHTML={{ __html: t('infoArrivalTaefeler') }} />
+              <p className="mt-1 [&_strong]:font-semibold" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(t('infoArrivalTaefeler')) }} />
             </div>
           </div>
           <div className="flex gap-3 rounded-lg bg-red-50/80 px-3 py-2.5 dark:bg-red-900/10">
@@ -433,7 +434,7 @@ export default function ScorerPage() {
               <h3 className="font-semibold text-gray-900 dark:text-gray-100">{t('infoRequirementsTitle')}</h3>
               <p className="mt-1">{t('infoRequirements')}</p>
               {/* eslint-disable-next-line react/no-danger -- hardcoded i18n */}
-              <p className="mt-1 [&_strong]:font-semibold" dangerouslySetInnerHTML={{ __html: t('infoRequirementsArrival') }} />
+              <p className="mt-1 [&_strong]:font-semibold" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(t('infoRequirementsArrival')) }} />
             </div>
           </div>
           <div className="flex gap-3">

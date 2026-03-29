@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '2.8.0'
+const APP_VERSION = '2.8.1'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,18 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.8.1',
+    date: '2026-03-29',
+    sections: [
+      {
+        title: 'Improvements',
+        items: [
+          'Branded email templates — all emails (password reset, invitations, OTP codes, scorer reminders) now use the KSCW dark-mode design with logo and sport accent colors',
+        ],
+      },
+    ],
+  },
   {
     version: '2.8.0',
     date: '2026-03-29',

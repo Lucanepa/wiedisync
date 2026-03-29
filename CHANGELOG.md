@@ -2,6 +2,12 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [2.8.1] — 2026-03-29
+
+### Improvements
+
+- **Branded email templates** — All KSCW emails now use consistent dark-mode branded design. Directus auth emails (password reset, user invitation) use Liquid templates mounted into the container. OTP verification emails display a large gold code with alert box. Scorer reminder emails include sport-aware accent colors (VB gold / BB orange), game info cards, and CTA to scorer page. Shared JS template helper (`email-template.js`) ported from PocketBase `email_template_lib.js`. All emails include both HTML and plain-text fallbacks.
+
 ## [2.8.0] — 2026-03-29
 
 ### Infrastructure

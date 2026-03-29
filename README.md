@@ -10,8 +10,8 @@ Internal platform for **KSC Wiedikon** — managing teams, games, trainings, and
 |-------|------------|
 | Frontend | React 19 + TypeScript + Vite |
 | Styling | Tailwind CSS v4 + shadcn/ui |
-| Backend | [PocketBase](https://pocketbase.io) 0.36 (SQLite REST API + Realtime) |
-| Auth | Google OAuth via PocketBase |
+| Backend | [Directus](https://directus.io) (Postgres REST API + Realtime) |
+| Auth | Google OAuth via Directus |
 | Testing | Playwright (E2E), Vitest (unit) |
 | Hosting | Cloudflare Pages (frontend), Infomaniak VPS (backend) |
 | i18n | i18next (German/English) |
@@ -70,4 +70,4 @@ npm run test:unit       # Vitest unit tests
 ## Related
 
 - [KSCW Website](https://github.com/Lucanepa/kscw-website) — Public club website (Astro)
-- [PocketBase API](https://api.kscw.ch) — Backend API
+- [Directus API](https://directus.kscw.ch) — Backend API (PocketBase at api.kscw.ch kept as fallback)

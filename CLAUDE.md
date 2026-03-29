@@ -80,10 +80,12 @@ PocketBase uses SQLite. Violating these rules **will corrupt the database** (hap
 ## Domains & Hosting
 
 - **`kscw.ch`** — currently ClubDesk (external). Will eventually be migrated to point at KSCW platform. **Do NOT change until explicitly confirmed.**
-- **`wiedisync.kscw.ch`** — React app production, CF Pages project `wiedisync` (`prod` branch) → `api.kscw.ch`
-- **`wiedisync.pages.dev`** — React app dev/preview, CF Pages project `wiedisync` (`dev` branch) → `api-dev.kscw.ch` (auto-detected via hostname in `src/pb.ts`)
-- **`api.kscw.ch`** — PocketBase API production, CF Tunnel → VPS `:8091`
-- **`api-dev.kscw.ch`** — PocketBase API dev, CF Tunnel → VPS `:8092`
+- **`wiedisync.kscw.ch`** — React app production, CF Pages project `wiedisync` (`prod` branch) → `directus.kscw.ch`
+- **`wiedisync.pages.dev`** — React app dev/preview, CF Pages project `wiedisync` (`dev` branch) → `directus-dev.kscw.ch` (auto-detected via hostname in `src/lib/api.ts`)
+- **`directus.kscw.ch`** — Directus API production (Coolify container)
+- **`directus-dev.kscw.ch`** — Directus API dev (Coolify container)
+- **`api.kscw.ch`** — PocketBase API production (fallback, kept running) CF Tunnel → VPS `:8091`
+- **`api-dev.kscw.ch`** — PocketBase API dev (fallback) CF Tunnel → VPS `:8092`
 - **`kscw-website.pages.dev`** — Public club website (static HTML), CF Pages project `kscw-website`. **Deploy to dev/preview only** until further notice — do NOT push website changes to production.
 - **`kscw-push.lucanepa.workers.dev`** — Web push CF Worker
 
@@ -91,15 +93,15 @@ See `INFRA.md → Domains & Hosting Overview` for full domain map, future migrat
 
 ## Branches & Dev-First Workflow
 
-- `prod` → production (`wiedisync.kscw.ch`, PB: `api.kscw.ch`)
-- `dev` → preview (`wiedisync.pages.dev`, PB: `api-dev.kscw.ch`)
+- `prod` → production (`wiedisync.kscw.ch`, API: `directus.kscw.ch`)
+- `dev` → preview (`wiedisync.pages.dev`, API: `directus-dev.kscw.ch`)
 
 **All changes go through `dev` first.** Never push directly to `prod`. When asked to push/deploy Wiedisync or the public website, always push to `dev` unless explicitly told to push to `prod`/production. Workflow:
 
 1. Develop and commit on `dev` branch
 2. Deploy frontend to dev (push `dev` → Cloudflare Pages preview)
-3. Deploy hooks to dev PB (`/opt/pocketbase-kscw-dev/pb_hooks/`, restart `pocketbase-kscw-dev`)
-4. Test on `wiedisync.pages.dev` against `api-dev.kscw.ch`
+3. Deploy Directus extensions to dev (Coolify auto-deploy on push)
+4. Test on `wiedisync.pages.dev` against `directus-dev.kscw.ch`
 5. Once confirmed working, merge `dev` → `prod` (with user approval)
 6. Deploy hooks to prod PB and push `prod` to trigger production build
 

@@ -4,7 +4,7 @@ import { useInfraHealth } from '../../hooks/useInfraHealth'
 import { API_URL, fetchItems } from '../../lib/api'
 
 const PROD_URL = API_URL
-const DEV_URL = 'https://api-dev.kscw.ch'
+const DEV_URL = 'https://directus-dev.kscw.ch'
 const PUSH_WORKER_URL = 'https://kscw-push.lucanepa.workers.dev'
 
 type Status = 'healthy' | 'down' | 'stale' | 'checking' | 'unknown'
@@ -130,7 +130,7 @@ export default function InfraHealthPage() {
     const svcResults: HealthCheck[] = []
 
     // API Prod — use shared hook result (already fetched on mount/refresh)
-    const hookApiService = infraRef.current.services.find(s => s.name === 'PocketBase')
+    const hookApiService = infraRef.current.services.find(s => s.name === 'Directus' || s.name === 'PocketBase')
     const apiProdOk = hookApiService?.status === 'ok'
     svcResults.push({
       name: t('infraPbProd'),
@@ -140,7 +140,7 @@ export default function InfraHealthPage() {
     })
 
     // API Dev (no-cors fallback — dev server may not whitelist this origin)
-    const devHealth = await checkEndpoint(`${DEV_URL}/api/health`, true)
+    const devHealth = await checkEndpoint(`${DEV_URL}/server/health`, true)
     svcResults.push({
       name: t('infraPbDev'),
       status: devHealth.ok ? 'healthy' : devHealth.cors ? 'unknown' : 'down',
@@ -164,8 +164,8 @@ export default function InfraHealthPage() {
       responseTime: push.cors ? null : push.ms,
     })
 
-    // Hooks deployed (check a known hook endpoint)
-    const hooks = await checkEndpoint(`${PROD_URL}/api/public/teams`)
+    // Extensions deployed (check a known KSCW endpoint)
+    const hooks = await checkEndpoint(`${PROD_URL}/kscw/health`)
     svcResults.push({
       name: t('infraHooksDeployed'),
       status: hooks.ok ? 'healthy' : 'down',

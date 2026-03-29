@@ -21,11 +21,11 @@ export function useAdminBookings(seasonId: string | undefined) {
         fetchAllItems<ExpandedBooking>('game_scheduling_bookings', {
           filter: { season: { _eq: seasonId } },
           fields: ['*', 'opponent.*', 'slot.*'],
-          sort: ['-id'],
+          sort: ['-date_created'],
         }),
         fetchAllItems<GameSchedulingOpponent>('game_scheduling_opponents', {
           filter: { season: { _eq: seasonId } },
-          sort: ['-id'],
+          sort: ['-date_created'],
         }),
         fetchAllItems<GameSchedulingSlot>('game_scheduling_slots', {
           filter: { season: { _eq: seasonId } },

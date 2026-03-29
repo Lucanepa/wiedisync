@@ -16,10 +16,7 @@ import { Switch } from '@/components/ui/switch'
 import type { Training, Team, Hall, HallSlot, SlotClaim, TeamSettings } from '../../types'
 import type { RecurringEditScope } from './RecurringEditDialog'
 import { fetchAllItems, fetchItem, updateRecord } from '../../lib/api'
-
-function asObj<T>(val: T | string | null | undefined): T | null {
-  return val != null && typeof val === 'object' ? val as T : null
-}
+import { asObj } from '../../utils/relations'
 
 // day_of_week in DB: 0=Mon, 1=Tue, ..., 6=Sun
 const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']

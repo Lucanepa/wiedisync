@@ -6,7 +6,7 @@ import { useCollection } from '../../lib/query'
 import { useNotifications } from '../../hooks/useNotifications'
 import { useSportPreference } from '../../hooks/useSportPreference'
 import { formatDate, formatDateCompact, formatTime, formatWeekday } from '../../utils/dateHelpers'
-import { relId } from '../../utils/relations'
+import { asObj, relId } from '../../utils/relations'
 import TeamChip from '../../components/TeamChip'
 import StatusBadge from '../../components/StatusBadge'
 import { stripHtml } from '../../components/RichText'
@@ -21,11 +21,6 @@ import { useBulkParticipationStatuses } from '../../hooks/useBulkParticipationSt
 import type { Game, Event, Team, Training, Hall, Member, MemberTeam, Notification, BaseRecord } from '../../types'
 import { ClipboardList, Clock, AlertTriangle, Trophy, Bell, Calendar, LayoutGrid, List } from 'lucide-react'
 import LoadingSpinner from '../../components/LoadingSpinner'
-
-/** Safely narrow a relation value that may be a raw ID string or a populated object. */
-function asObj<T>(val: T | string | null | undefined): T | null {
-  return val != null && typeof val === 'object' ? val as T : null
-}
 
 type ExpandedGame = Game & {
   kscw_team?: Team & BaseRecord | string

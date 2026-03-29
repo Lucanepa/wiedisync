@@ -13,6 +13,7 @@ import type { Warning } from '../../../utils/participationWarnings'
 import { useAuth } from '../../../hooks/useAuth'
 import { useMutation } from '../../../hooks/useMutation'
 import type { Participation } from '../../../types'
+import { asObj } from '../../../utils/relations'
 
 function parseSets(json: unknown): Array<{ home: number; away: number }> {
   if (!Array.isArray(json)) return []
@@ -33,11 +34,6 @@ interface GameCardProps {
   warnings?: Warning[]
   /** Called after a participation save — parent can refetch */
   onParticipationSaved?: () => void
-}
-
-/** Helper to safely extract an expanded relation object (Directus returns the object inline, or a raw ID string when not expanded) */
-function asObj<T>(val: T | string | null | undefined): T | null {
-  return val != null && typeof val === 'object' ? (val as T) : null
 }
 
 type ExpandedGame = Game & {

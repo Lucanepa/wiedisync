@@ -9,10 +9,7 @@ import ImageLightbox from '../../components/ImageLightbox'
 import type { ExpandedMemberTeam } from '../../hooks/useTeamMembers'
 import type { Team, Member, MemberTeam } from '../../types'
 import { cn } from '@/lib/utils'
-
-function asObj<T>(val: T | string | null | undefined): T | null {
-  return val != null && typeof val === 'object' ? val as T : null
-}
+import { asObj } from '../../utils/relations'
 import { Button } from '../../components/ui/button'
 import { updateRecord } from '../../lib/api'
 

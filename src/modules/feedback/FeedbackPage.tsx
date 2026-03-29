@@ -81,7 +81,7 @@ export default function FeedbackPage() {
 
   const { data: submissionsRaw, refetch } = useCollection<FeedbackRecord>('feedback', {
     filter: user ? { user: { _eq: user.id } } : undefined,
-    sort: ['-created'],
+    sort: ['-id'],
     all: true,
     enabled: !!user,
   })

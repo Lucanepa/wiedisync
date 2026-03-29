@@ -10,14 +10,11 @@ import { useAuth } from '../../hooks/useAuth'
 import { getFileUrl } from '../../utils/fileUrl'
 import { coercePositions, getPositionI18nKey, getSelectablePositions } from '../../utils/memberPositions'
 import { backendLangToI18n } from '../../utils/languageMap'
-import { relId } from '../../utils/relations'
+import { asObj, relId } from '../../utils/relations'
 import { LANGUAGES, type BackendLanguage } from '../../i18n/languageConfig'
 import deFlag from '../../assets/flags/de.svg'
 import gbFlag from '../../assets/flags/gb.svg'
 
-function asObj<T>(val: T | string | null | undefined): T | null {
-  return val != null && typeof val === 'object' ? val as T : null
-}
 import frFlag from '../../assets/flags/fr.svg'
 import itFlag from '../../assets/flags/it.svg'
 import chFlag from '../../assets/flags/ch.svg'

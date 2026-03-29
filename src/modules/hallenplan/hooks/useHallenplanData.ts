@@ -68,7 +68,7 @@ export function useHallenplanData(
 
   // Games for this week (exclude postponed)
   const { data: gamesRaw, isLoading: gamesLoading } = useCollection<Game>('games', {
-    filter: { _and: [{ date: { _gte: mondayStr } }, { date: { _lte: sundayStr } }, { status: { _neq: 'postponed' } }] },
+    filter: { _and: [{ date: { _gte: mondayStr } }, { date: { _lte: sundayStr } }, { _or: [{ status: { _neq: 'postponed' } }, { status: { _null: true } }] }] },
     limit: 100,
     sort: ['date', 'time'],
   })

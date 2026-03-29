@@ -8,7 +8,7 @@ export function usePendingMembers(teamId?: string) {
 
   const result = useCollection<Member>('members', {
     filter,
-    sort: ['-created'],
+    sort: ['-id'],
     all: true,
     enabled: !!teamId,
   })

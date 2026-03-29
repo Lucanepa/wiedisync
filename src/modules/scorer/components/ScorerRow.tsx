@@ -28,11 +28,9 @@ interface ScorerRowProps {
   getDelegationTargetName: (delegation: ScorerDelegation, members: Member[]) => string
 }
 
-export type ExpandedGame = Game
+import { asObj } from '../../../utils/relations'
 
-function asObj<T>(val: T | string | null | undefined): T | null {
-  return val != null && typeof val === 'object' ? val as T : null
-}
+export type ExpandedGame = Game
 
 function getDateFormatter(locale: string) {
   const loc = locale === 'de' ? 'de-CH' : 'en-GB'

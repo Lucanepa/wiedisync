@@ -18,6 +18,7 @@ import RefereeExpenseSection from './RefereeExpenseSection'
 import TasksSection from '../../tasks/TasksSection'
 import CarpoolSection from '../../carpool/CarpoolSection'
 import { isFeatureEnabled } from '../../../utils/featureToggles'
+import { asObj } from '../../../utils/relations'
 
 const GAME_EXPAND = 'kscw_team,hall,scorer_member,scoreboard_member,scorer_scoreboard_member,scorer_duty_team,scoreboard_duty_team,scorer_scoreboard_duty_team,bb_scorer_member,bb_timekeeper_member,bb_24s_official,bb_duty_team,bb_scorer_duty_team,bb_timekeeper_duty_team,bb_24s_duty_team'
 
@@ -25,11 +26,6 @@ interface GameDetailModalProps {
   game: Game | null
   onClose: () => void
   readOnly?: boolean
-}
-
-/** Helper to safely extract an expanded relation object (Directus returns the object inline, or a raw ID string when not expanded) */
-function asObj<T>(val: T | string | string[] | null | undefined): T | null {
-  return val != null && typeof val === 'object' && !Array.isArray(val) ? (val as T) : null
 }
 
 type ExpandedGame = Game & {

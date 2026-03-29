@@ -12,7 +12,7 @@ export function useGameSchedulingSeason() {
     setIsLoading(true)
     try {
       const records = await fetchAllItems<GameSchedulingSeason>('game_scheduling_seasons', {
-        sort: ['-created'],
+        sort: ['-id'],
       })
       setAllSeasons(records)
       // Auto-select the open one, or the most recent

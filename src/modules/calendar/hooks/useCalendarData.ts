@@ -9,11 +9,7 @@ import {
 } from '../../../utils/dateUtils'
 import { format, isBefore, isAfter, isSameDay } from 'date-fns'
 import { formatTime } from '../../../utils/dateHelpers'
-
-/** Safely narrow a relation value that may be a raw ID string or a populated object. */
-function asObj<T>(val: T | string | null | undefined): T | null {
-  return val != null && typeof val === 'object' ? val as T : null
-}
+import { asObj } from '../../../utils/relations'
 
 interface UseCalendarDataOptions {
   filters: CalendarFilterState

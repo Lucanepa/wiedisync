@@ -10,15 +10,8 @@ import { formatDate, formatWeekday, formatTime, getDeadlineDate } from '../../ut
 import TasksSection from '../tasks/TasksSection'
 import { isFeatureEnabled } from '../../utils/featureToggles'
 import type { Training, Team, Hall, Member } from '../../types'
+import { asObj, relId } from '../../utils/relations'
 import { MapPin, Clock, MessageSquare, User, Users, Calendar, Check, UserPlus } from 'lucide-react'
-
-function asObj<T>(val: T | string | null | undefined): T | null {
-  return val != null && typeof val === 'object' ? val as T : null
-}
-function getId(val: { id: string } | string | null | undefined): string {
-  if (val == null) return ''
-  return typeof val === 'object' ? val.id : val
-}
 
 type TrainingExpanded = Training & {
   team: Team | string
@@ -36,7 +29,7 @@ export default function TrainingDetailModal({ training, onClose }: TrainingDetai
   const { user, canParticipateIn, isCoachOf, isStaffOnly } = useAuth()
   const [rosterOpen, setRosterOpen] = useState(false)
 
-  const teamId = getId(training?.team)
+  const teamId = relId(training?.team)
   const canParticipate = !!user && !!teamId && canParticipateIn(teamId)
   const isStaff = !!teamId && isCoachOf(teamId)
 

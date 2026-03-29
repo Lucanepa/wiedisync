@@ -2,10 +2,7 @@ import { useTranslation } from 'react-i18next'
 import StatusBadge from '../../components/StatusBadge'
 import { formatDate } from '../../utils/dateHelpers'
 import type { Absence, Member } from '../../types'
-
-function asObj<T>(val: T | string | null | undefined): T | null {
-  return val != null && typeof val === 'object' ? val as T : null
-}
+import { asObj } from '../../utils/relations'
 
 interface AbsenceCardProps {
   absence: Absence

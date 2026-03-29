@@ -10,15 +10,11 @@ import StatusBadge from '../../components/StatusBadge'
 import EmptyState from '../../components/EmptyState'
 import { getFileUrl } from '../../utils/fileUrl'
 import { coercePositions, getPositionI18nKey } from '../../utils/memberPositions'
-import { relId } from '../../utils/relations'
+import { asObj, relId } from '../../utils/relations'
 import { formatDate, getCurrentSeason, getSeasonDateRange } from '../../utils/dateHelpers'
 import ImageLightbox from '../../components/ImageLightbox'
 import type { Member, MemberTeam, Team, Absence, Participation } from '../../types'
 import { fetchAllItems, fetchItem } from '../../lib/api'
-
-function asObj<T>(val: T | string | null | undefined): T | null {
-  return val != null && typeof val === 'object' ? val as T : null
-}
 
 type ExpandedMemberTeam = MemberTeam & { team: Team | string }
 
@@ -104,7 +100,7 @@ export default function PlayerProfile() {
     const teamIds = memberTeams.map((mt) => relId(mt.team))
     Promise.all([
       fetchAllItems<{ id: string; date: string }>('games', {
-        filter: { _and: [{ kscw_team: { _in: teamIds } }, { date: { _gte: start } }, { date: { _lte: end } }, { status: { _neq: 'postponed' } }] },
+        filter: { _and: [{ kscw_team: { _in: teamIds } }, { date: { _gte: start } }, { date: { _lte: end } }, { _or: [{ status: { _neq: 'postponed' } }, { status: { _null: true } }] }] },
         fields: ['id', 'date'],
       }),
       fetchAllItems<Participation>('participations', {

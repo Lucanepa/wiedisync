@@ -4,6 +4,7 @@ import type { Game, HallClosure, Team } from '../../../types'
 import type { CalendarEntry, SpielplanungFilterState } from '../../../types/calendar'
 import { parseDate, toDateKey, eachDayOfInterval } from '../../../utils/dateUtils'
 import { formatTime } from '../../../utils/dateHelpers'
+import { asObj } from '../../../utils/relations'
 
 interface UseSpielplanungDataOptions {
   filters: SpielplanungFilterState
@@ -34,10 +35,6 @@ function buildGameFilter(
   }
 
   return { _and: conditions }
-}
-
-function asObj<T>(val: T | string | null | undefined): T | null {
-  return val != null && typeof val === 'object' ? val as T : null
 }
 
 function gameToCalendarEntry(game: Game): CalendarEntry {

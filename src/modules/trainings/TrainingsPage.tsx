@@ -26,14 +26,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import type { Training, Team, Hall, Member, Participation } from '../../types'
-
-function asObj<T>(val: T | string | null | undefined): T | null {
-  return val != null && typeof val === 'object' ? val as T : null
-}
-function getId(val: { id: string } | string | null | undefined): string {
-  if (val == null) return ''
-  return typeof val === 'object' ? val.id : val
-}
+import { asObj, relId } from '../../utils/relations'
 
 type TrainingExpanded = Training & {
   team: Team | string
@@ -253,8 +246,8 @@ export default function TrainingsPage() {
                 myParticipation={myParticipationByActivity.get(training.id)}
                 onParticipationSaved={refetchParticipations}
                 onOpenRoster={(id, teamId, date) => setRosterTraining({ id, teamId, date, showRsvpTime: isFeatureEnabled(asObj<Team>(training.team)?.features_enabled, 'show_rsvp_time') })}
-                onEdit={(effectiveIsAdmin || isCoachOf(getId(training.team))) ? handleEdit : undefined}
-                onDelete={(effectiveIsAdmin || isCoachOf(getId(training.team))) ? setDeletingId : undefined}
+                onEdit={(effectiveIsAdmin || isCoachOf(relId(training.team))) ? handleEdit : undefined}
+                onDelete={(effectiveIsAdmin || isCoachOf(relId(training.team))) ? setDeletingId : undefined}
               />
             ))}
             </div>

@@ -7,16 +7,12 @@ import { useMutation } from '../../../hooks/useMutation'
 import { useAuth } from '../../../hooks/useAuth'
 import SearchableSelect from '../../../components/ui/SearchableSelect'
 import { fetchItems, fetchItem } from '../../../lib/api'
+import { asObj } from '../../../utils/relations'
 
 interface RefereeExpenseSectionProps {
   gameId: string
   teamId: string
   canEdit: boolean
-}
-
-/** Helper to safely extract an expanded relation object (Directus returns the object inline, or a raw ID string when not expanded) */
-function asObj<T>(val: T | string | null | undefined): T | null {
-  return val != null && typeof val === 'object' ? (val as T) : null
 }
 
 type ExpandedExpense = RefereeExpense & {

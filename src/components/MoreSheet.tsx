@@ -11,10 +11,7 @@ import AdminToggle from './AdminToggle'
 import { useAdminMode } from '../hooks/useAdminMode'
 import { Bell, UserX, PenSquare, CalendarDays, ClipboardList, Building2, CalendarClock, Database, HeartPulse, LogIn, User, Settings, ChevronDown, ScrollText, MessageSquare, Banknote } from 'lucide-react'
 import type { MemberTeam, Team } from '../types'
-
-function asObj<T>(val: T | string | null | undefined): T | null {
-  return val != null && typeof val === 'object' ? val as T : null
-}
+import { asObj } from '../utils/relations'
 
 type ExpandedMemberTeam = MemberTeam & { team: Team | string }
 

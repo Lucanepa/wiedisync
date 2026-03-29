@@ -1,10 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { fetchAllItems, fetchItem } from '../lib/api'
 import type { Absence, Member, MemberTeam } from '../types'
-
-function asObj<T>(val: T | string | null | undefined): T | null {
-  return val != null && typeof val === 'object' ? val as T : null
-}
+import { asObj } from '../utils/relations'
 
 export type AbsenceWithMember = Absence & { member: Member | string }
 

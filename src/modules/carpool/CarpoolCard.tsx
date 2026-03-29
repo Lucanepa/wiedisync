@@ -2,10 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { Clock, MapPin, MessageSquare, UserCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { Carpool, CarpoolPassenger } from '../../types'
-
-function asObj<T>(val: T | string | null | undefined): T | null {
-  return val != null && typeof val === 'object' ? val as T : null
-}
+import { asObj } from '../../utils/relations'
 
 type DriverInfo = { first_name: string; last_name: string }
 type PassengerInfo = { first_name: string; last_name: string }

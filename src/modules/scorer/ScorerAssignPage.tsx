@@ -12,10 +12,7 @@ import TeamSelect from '../../components/TeamSelect'
 import TeamChip from '../../components/TeamChip'
 import { runAssignment, getTeamCounts, type GameAssignment } from './components/AssignmentAlgorithm'
 import { updateRecord } from '../../lib/api'
-
-function asObj<T>(val: T | string | null | undefined): T | null {
-  return val != null && typeof val === 'object' ? val as T : null
-}
+import { asObj } from '../../utils/relations'
 
 export default function ScorerAssignPage() {
   const { t } = useTranslation('scorerAssign')
@@ -52,7 +49,7 @@ export default function ScorerAssignPage() {
 
   const { data: membersRaw } = useCollection<Member>('members', {
     filter: { kscw_membership_active: { _eq: true } },
-    fields: ['id', 'name', 'first_name', 'last_name', 'licences'],
+    fields: ['id', 'first_name', 'last_name', 'licences'],
     all: true,
   })
   const members = membersRaw ?? []

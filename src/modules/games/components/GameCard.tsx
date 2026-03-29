@@ -1,11 +1,10 @@
 import { useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { RecordModel } from 'pocketbase'
-import type { Game, Team, Hall } from '../../../types'
+import type { Game, Team, Hall, BaseRecord } from '../../../types'
 import { formatDateCompact, formatTime } from '../../../utils/dateHelpers'
 import { leagueShort } from '../../../utils/leagueShort'
 import TeamChip from '../../../components/TeamChip'
-import { pbNameToColorKey } from '../../../utils/teamColors'
+import { teamNameToColorKey } from '../../../utils/teamColors'
 import VolleyballIcon from '../../../components/VolleyballIcon'
 import BasketballIcon from '../../../components/BasketballIcon'
 import ParticipationSummary from '../../../components/ParticipationSummary'
@@ -14,6 +13,7 @@ import type { Warning } from '../../../utils/participationWarnings'
 import { useAuth } from '../../../hooks/useAuth'
 import { useMutation } from '../../../hooks/useMutation'
 import type { Participation } from '../../../types'
+import { asObj } from '../../../utils/relations'
 
 function parseSets(json: unknown): Array<{ home: number; away: number }> {
   if (!Array.isArray(json)) return []
@@ -37,10 +37,8 @@ interface GameCardProps {
 }
 
 type ExpandedGame = Game & {
-  expand?: {
-    kscw_team?: Team & RecordModel
-    hall?: Hall & RecordModel
-  }
+  kscw_team: (Team & BaseRecord) | string
+  hall: (Hall & BaseRecord) | string
 }
 
 function StatusBadge({ status }: { status: Game['status'] }) {
@@ -75,16 +73,17 @@ export default function GameCard({ game, onClick, variant = 'card', participatio
   const { t } = useTranslation('games')
   const { user, canParticipateIn } = useAuth()
   const canParticipate = !!user && !!game.kscw_team && canParticipateIn(game.kscw_team)
-  const expanded = game as ExpandedGame
-  const expandedHall = expanded.expand?.hall
+  const expanded = game as unknown as ExpandedGame
+  const expandedHall = asObj<Hall & BaseRecord>(expanded.hall)
   const hallInfo = expandedHall
     ? [expandedHall.name, expandedHall.city].filter(Boolean).join(', ')
     : game.away_hall_json
       ? [game.away_hall_json.name, game.away_hall_json.city].filter(Boolean).join(', ')
       : ''
-  const rawTeamName = expanded.expand?.kscw_team?.name ?? ''
-  const teamSport = expanded.expand?.kscw_team?.sport as 'volleyball' | 'basketball' | undefined
-  const kscwTeamName = rawTeamName && teamSport ? pbNameToColorKey(rawTeamName, teamSport) : rawTeamName
+  const kscwTeamObj = asObj<Team & BaseRecord>(expanded.kscw_team)
+  const rawTeamName = kscwTeamObj?.name ?? ''
+  const teamSport = kscwTeamObj?.sport as 'volleyball' | 'basketball' | undefined
+  const kscwTeamName = rawTeamName && teamSport ? teamNameToColorKey(rawTeamName, teamSport) : rawTeamName
 
   if (variant === 'compact') {
     const short = game.date ? formatDateCompact(game.date) : ''
@@ -107,7 +106,7 @@ export default function GameCard({ game, onClick, variant = 'card', participatio
               <div>{short}</div>
               {game.time && <div>{formatTime(game.time)}</div>}
             </div>
-            {expanded.expand?.kscw_team?.sport === 'basketball'
+            {kscwTeamObj?.sport === 'basketball'
               ? <BasketballIcon className="h-5 w-5 shrink-0" filled />
               : <VolleyballIcon className="h-5 w-5 shrink-0" filled />}
             <div className="min-w-0 flex-1">
@@ -141,7 +140,7 @@ export default function GameCard({ game, onClick, variant = 'card', participatio
 
           {/* Col 2: Sport icon */}
           <div>
-            {expanded.expand?.kscw_team?.sport === 'basketball'
+            {kscwTeamObj?.sport === 'basketball'
               ? <BasketballIcon className="h-5 w-5" filled />
               : <VolleyballIcon className="h-5 w-5" filled />}
           </div>
@@ -277,7 +276,7 @@ export default function GameCard({ game, onClick, variant = 'card', participatio
           <div className="whitespace-pre-line">{leagueShort(game.league)}</div>
           {kscwTeamName && (
             <div className="flex items-center gap-1 pt-0.5">
-              {expanded.expand?.kscw_team?.sport === 'basketball'
+              {kscwTeamObj?.sport === 'basketball'
                 ? <BasketballIcon className="h-3.5 w-3.5" filled />
                 : <VolleyballIcon className="h-3.5 w-3.5" filled />}
               <TeamChip team={kscwTeamName} size="xs" />

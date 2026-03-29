@@ -3,18 +3,19 @@ import { Link, Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Plus, X, Clock } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
-import { usePB } from '../../hooks/usePB'
+import { useCollection } from '../../lib/query'
 import { Button } from '@/components/ui/button'
 import StatusBadge from '../../components/StatusBadge'
 import TeamChip from '../../components/TeamChip'
-import { getFileUrl } from '../../utils/pbFile'
+import { getFileUrl } from '../../utils/fileUrl'
 import { coercePositions, getPositionI18nKey } from '../../utils/memberPositions'
 import { formatDate, toISODate } from '../../utils/dateHelpers'
 import ProfileEditModal from './ProfileEditModal'
 import DeleteAccountModal from './DeleteAccountModal'
 import TeamRequestModal from './TeamRequestModal'
-import pb from '../../pb'
 import type { MemberTeam, Team, Absence, LicenceType } from '../../types'
+import { updateRecord } from '../../lib/api'
+import { asObj } from '../../utils/relations'
 
 const LICENCE_LABELS: Record<LicenceType, string> = {
   scorer_vb: 'licenceScorer',
@@ -25,7 +26,7 @@ const LICENCE_LABELS: Record<LicenceType, string> = {
   referee_bb: 'licenceRefereeBB',
 }
 
-type ExpandedMemberTeam = MemberTeam & { expand?: { team?: Team } }
+type ExpandedMemberTeam = MemberTeam & { team: Team | string }
 
 export default function ProfilePage() {
   const { user } = useAuth()
@@ -35,28 +36,32 @@ export default function ProfilePage() {
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [teamRequestOpen, setTeamRequestOpen] = useState(false)
 
-  const { data: memberTeams } = usePB<ExpandedMemberTeam>('member_teams', {
-    filter: user ? `member="${user.id}"` : '',
-    expand: 'team',
-    perPage: 20,
+  const { data: memberTeamsRaw } = useCollection<ExpandedMemberTeam>('member_teams', {
+    filter: user ? { member: { _eq: user.id } } : undefined,
+    fields: ['*', 'team.*'],
+    limit: 20,
+    enabled: !!user,
   })
+  const memberTeams = memberTeamsRaw ?? []
 
   // Pending team requests
-  interface TeamRequest { id: string; collectionId: string; collectionName: string; member: string; team: string; status: string; expand?: { team?: Team } }
-  const { data: pendingRequests, refetch: refetchRequests } = usePB<TeamRequest>('team_requests', {
-    filter: user ? `member="${user.id}" && status="pending"` : '',
-    expand: 'team',
-    perPage: 20,
+  interface TeamRequest { id: string; member: string; team: Team | string; status: string }
+  const { data: pendingRequestsRaw, refetch: refetchRequests } = useCollection<TeamRequest>('team_requests', {
+    filter: user ? { _and: [{ member: { _eq: user.id } }, { status: { _eq: 'pending' } }] } : undefined,
+    fields: ['*', 'team.*'],
+    limit: 20,
+    enabled: !!user,
   })
+  const pendingRequests = pendingRequestsRaw ?? []
 
   const currentTeamIds = useMemo(
-    () => memberTeams.map((mt) => mt.expand?.team?.id ?? mt.team),
+    () => memberTeams.map((mt) => asObj<Team>(mt.team)?.id ?? (mt.team as string)),
     [memberTeams],
   )
 
   async function handleCancelRequest(requestId: string) {
     try {
-      await pb.collection('team_requests').update(requestId, { status: 'cancelled' })
+      await updateRecord('team_requests', requestId, { status: 'cancelled' })
       refetchRequests()
     } catch {
       // ignore
@@ -65,11 +70,13 @@ export default function ProfilePage() {
 
   const today = toISODate(new Date())
 
-  const { data: activeAbsences } = usePB<Absence>('absences', {
-    filter: user ? `member="${user.id}" && end_date>="${today}"` : '',
-    sort: 'start_date',
-    perPage: 20,
+  const { data: activeAbsencesRaw } = useCollection<Absence>('absences', {
+    filter: user ? { _and: [{ member: { _eq: user.id } }, { end_date: { _gte: today } }] } : undefined,
+    sort: ['start_date'],
+    limit: 20,
+    enabled: !!user,
   })
+  const activeAbsences = activeAbsencesRaw ?? []
 
   if (!user) return <Navigate to="/login" replace />
 
@@ -122,7 +129,7 @@ export default function ProfilePage() {
             {memberTeams.length > 0 && (
               <div className="flex flex-col">
                 {memberTeams.map((mt, i) => {
-                  const team = mt.expand?.team
+                  const team = asObj<Team>(mt.team)
                   const teamRoles: string[] = [tt('rolePlayer')]
                   if (team) {
                     if (team.coach?.includes(user.id)) teamRoles.push(tt('roleCoach'))
@@ -160,7 +167,7 @@ export default function ProfilePage() {
                 {pendingRequests.map((req) => (
                   <div key={req.id} className="flex items-center gap-2.5 py-1.5 pl-5">
                     <Clock className="h-3.5 w-3.5 text-amber-500" />
-                    <TeamChip team={req.expand?.team?.name ?? '?'} size="sm" />
+                    <TeamChip team={asObj<Team>(req.team)?.name ?? '?'} size="sm" />
                     <span className="text-xs text-amber-600 dark:text-amber-400">{t('pendingApproval')}</span>
                     <button
                       onClick={() => handleCancelRequest(req.id)}

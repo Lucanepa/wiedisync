@@ -1,4 +1,11 @@
-import type { RecordModel } from 'pocketbase'
+export interface BaseRecord {
+  id: string
+  created?: string
+  updated?: string
+  date_created?: string
+  date_updated?: string
+  [key: string]: unknown
+}
 
 export type LicenceType = 'scorer_vb' | 'referee_vb' | 'otr1_bb' | 'otr2_bb' | 'otn_bb' | 'referee_bb'
 export type MemberPosition =
@@ -15,7 +22,7 @@ export type MemberPosition =
   | 'guest'
   | 'other'
 
-export interface Team extends RecordModel {
+export interface Team extends BaseRecord {
   name: string
   full_name: string
   team_id: string
@@ -37,7 +44,7 @@ export interface Team extends RecordModel {
 
 }
 
-export interface Sponsor extends RecordModel {
+export interface Sponsor extends BaseRecord {
   name: string
   logo: string
   website_url: string
@@ -65,7 +72,7 @@ export interface TeamSettings extends FeatureToggles {
   training_require_note_if_absent?: boolean
 }
 
-export interface Member extends RecordModel {
+export interface Member extends BaseRecord {
   email: string
   name: string
   first_name: string
@@ -93,7 +100,7 @@ export interface Member extends RecordModel {
 
 }
 
-export interface MemberTeam extends RecordModel {
+export interface MemberTeam extends BaseRecord {
   member: string
   team: string
   season: string
@@ -101,7 +108,7 @@ export interface MemberTeam extends RecordModel {
 
 }
 
-export interface TeamInvite extends RecordModel {
+export interface TeamInvite extends BaseRecord {
   token: string
   team: string
   invited_by: string
@@ -112,7 +119,7 @@ export interface TeamInvite extends RecordModel {
 
 }
 
-export interface Hall extends RecordModel {
+export interface Hall extends BaseRecord {
   name: string
   address: string
   city: string
@@ -145,10 +152,10 @@ export interface LocationResult {
   city: string
   lat: number | null
   lon: number | null
-  source: 'pocketbase' | 'photon'
+  source: 'directus' | 'photon'
 }
 
-export interface SlotClaim extends RecordModel {
+export interface SlotClaim extends BaseRecord {
   hall_slot: string
   hall: string
   date: string
@@ -180,7 +187,7 @@ export interface VirtualSlotMeta {
   spanHallIds?: string[]
 }
 
-export interface HallSlot extends RecordModel {
+export interface HallSlot extends BaseRecord {
   hall: string
   team: string[]
   day_of_week: number
@@ -198,7 +205,7 @@ export interface HallSlot extends RecordModel {
   _virtual?: VirtualSlotMeta
 }
 
-export interface HallClosure extends RecordModel {
+export interface HallClosure extends BaseRecord {
   hall: string
   start_date: string
   end_date: string
@@ -207,7 +214,7 @@ export interface HallClosure extends RecordModel {
 
 }
 
-export interface Game extends RecordModel {
+export interface Game extends BaseRecord {
   game_id: string
   home_team: string
   away_team: string
@@ -229,7 +236,7 @@ export interface Game extends RecordModel {
   scorer_person: string
   scoreboard_team: string
   scoreboard_person: string
-  // Volleyball duty assignments (PB field names)
+  // Volleyball duty assignments
   scorer_member: string
   scoreboard_member: string
   scorer_scoreboard_member: string
@@ -252,7 +259,7 @@ export interface Game extends RecordModel {
 
 }
 
-export interface RefereeExpense extends RecordModel {
+export interface RefereeExpense extends BaseRecord {
   game: string
   team: string
   paid_by_member: string
@@ -263,7 +270,7 @@ export interface RefereeExpense extends RecordModel {
 }
 
 
-export interface Ranking extends RecordModel {
+export interface Ranking extends BaseRecord {
   team_id: string
   team: string
   team_name: string
@@ -286,7 +293,7 @@ export interface Ranking extends RecordModel {
 
 }
 
-export interface Training extends RecordModel {
+export interface Training extends BaseRecord {
   team: string
   hall_slot: string
   date: string
@@ -306,7 +313,7 @@ export interface Training extends RecordModel {
 
 }
 
-export interface Absence extends RecordModel {
+export interface Absence extends BaseRecord {
   member: string
   start_date: string
   end_date: string
@@ -318,7 +325,7 @@ export interface Absence extends RecordModel {
   indefinite: boolean
 }
 
-export interface Event extends RecordModel {
+export interface Event extends BaseRecord {
   title: string
   description: string
   event_type: 'verein' | 'social' | 'meeting' | 'tournament' | 'trainingsweekend' | 'friendly' | 'other'
@@ -338,7 +345,7 @@ export interface Event extends RecordModel {
 
 }
 
-export interface EventSession extends RecordModel {
+export interface EventSession extends BaseRecord {
   event: string
   date: string
   start_time: string
@@ -348,7 +355,7 @@ export interface EventSession extends RecordModel {
 
 }
 
-export interface HallEvent extends RecordModel {
+export interface HallEvent extends BaseRecord {
   uid: string
   title: string
   date: string
@@ -360,7 +367,7 @@ export interface HallEvent extends RecordModel {
   source: string
 }
 
-export interface Participation extends RecordModel {
+export interface Participation extends BaseRecord {
   member: string
   activity_type: 'training' | 'game' | 'event'
   activity_id: string
@@ -373,7 +380,7 @@ export interface Participation extends RecordModel {
 
 }
 
-export interface UserLog extends RecordModel {
+export interface UserLog extends BaseRecord {
   user: string
   action: 'create' | 'update' | 'delete'
   collection_name: string
@@ -382,12 +389,12 @@ export interface UserLog extends RecordModel {
 }
 
 export type ParticipationWithMember = Participation & {
-  expand?: { member?: Pick<Member, 'id' | 'position'> }
+  member: Pick<Member, 'id' | 'position'> | string
 }
 
 // ── Game Scheduling (Terminplanung) ──────────────────────────────────
 
-export interface GameSchedulingSeason extends RecordModel {
+export interface GameSchedulingSeason extends BaseRecord {
   season: string
   status: 'setup' | 'open' | 'closed'
   spielsamstage: SpielsamstagConfig[]
@@ -408,7 +415,7 @@ export interface TeamSlotConfig {
   }
 }
 
-export interface GameSchedulingSlot extends RecordModel {
+export interface GameSchedulingSlot extends BaseRecord {
   season: string
   kscw_team: string
   date: string
@@ -422,7 +429,7 @@ export interface GameSchedulingSlot extends RecordModel {
 
 }
 
-export interface GameSchedulingOpponent extends RecordModel {
+export interface GameSchedulingOpponent extends BaseRecord {
   season: string
   club_name: string
   contact_name: string
@@ -434,7 +441,7 @@ export interface GameSchedulingOpponent extends RecordModel {
 
 }
 
-export interface GameSchedulingBooking extends RecordModel {
+export interface GameSchedulingBooking extends BaseRecord {
   season: string
   opponent: string
   type: 'home_slot_pick' | 'away_proposal'
@@ -452,7 +459,7 @@ export interface GameSchedulingBooking extends RecordModel {
 
 }
 
-export interface ScorerDelegation extends RecordModel {
+export interface ScorerDelegation extends BaseRecord {
   game: string
   role: 'scorer' | 'scoreboard' | 'scorer_scoreboard' | 'bb_scorer' | 'bb_timekeeper' | 'bb_24s_official'
   from_member: string
@@ -464,7 +471,7 @@ export interface ScorerDelegation extends RecordModel {
 
 }
 
-export interface Notification extends RecordModel {
+export interface Notification extends BaseRecord {
   member: string
   type: 'activity_change' | 'upcoming_activity' | 'deadline_reminder' | 'result_available' | 'duty_delegation_request' | 'poll_created' | 'carpool_update' | 'task_assigned'
   title: string
@@ -477,7 +484,7 @@ export interface Notification extends RecordModel {
 
 export type TaskCategory = 'setup' | 'equipment' | 'food' | 'firstAid' | 'other'
 
-export interface Task extends RecordModel {
+export interface Task extends BaseRecord {
   activity_type: 'game' | 'training' | 'event'
   activity_id: string
   label: string
@@ -490,7 +497,7 @@ export interface Task extends RecordModel {
   created_by: string
 }
 
-export interface TaskTemplate extends RecordModel {
+export interface TaskTemplate extends BaseRecord {
   name: string
   team: string
   tasks_json: Array<{ label: string; category: TaskCategory | '' }>
@@ -499,7 +506,7 @@ export interface TaskTemplate extends RecordModel {
 
 // ── Carpool ─────────────────────────────────────────────────────────────
 
-export interface Carpool extends RecordModel {
+export interface Carpool extends BaseRecord {
   game: string
   driver: string
   seats_available: number
@@ -509,7 +516,7 @@ export interface Carpool extends RecordModel {
   status: 'open' | 'full' | 'cancelled'
 }
 
-export interface CarpoolPassenger extends RecordModel {
+export interface CarpoolPassenger extends BaseRecord {
   carpool: string
   passenger: string
   status: 'confirmed' | 'cancelled'
@@ -517,7 +524,7 @@ export interface CarpoolPassenger extends RecordModel {
 
 // ── Polls ───────────────────────────────────────────────────────────────
 
-export interface Poll extends RecordModel {
+export interface Poll extends BaseRecord {
   team: string
   question: string
   options: string[]
@@ -528,7 +535,7 @@ export interface Poll extends RecordModel {
   anonymous: boolean
 }
 
-export interface PollVote extends RecordModel {
+export interface PollVote extends BaseRecord {
   poll: string
   member: string
   selected_options: number[]

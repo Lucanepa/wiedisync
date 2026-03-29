@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Users } from 'lucide-react'
-import { usePB } from '../../hooks/usePB'
+import { useCollection } from '../../lib/query'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import EmptyState from '../../components/EmptyState'
@@ -9,21 +9,24 @@ import TeamCard from './TeamCard'
 import type { Team, MemberTeam } from '../../types'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import { getCurrentSeason } from '../../utils/dateHelpers'
+import { relId } from '../../utils/relations'
 
 export default function TeamsPage() {
   const { t } = useTranslation('teams')
   const { canViewTeam, memberTeamIds, coachTeamIds } = useAuth()
   const { effectiveIsAdmin } = useAdminMode()
-  const { data: teams, isLoading } = usePB<Team>('teams', {
-    filter: 'active=true',
-    sort: 'name',
-    perPage: 50,
+  const { data: teamsRaw, isLoading } = useCollection<Team>('teams', {
+    filter: { active: { _eq: true } },
+    sort: ['name'],
+    limit: 50,
   })
+  const teams = teamsRaw ?? []
   const season = getCurrentSeason()
-  const { data: memberTeams } = usePB<MemberTeam>('member_teams', {
-    filter: `season="${season}"`,
+  const { data: memberTeamsRaw } = useCollection<MemberTeam>('member_teams', {
+    filter: { season: { _eq: season } },
     all: true,
   })
+  const memberTeams = memberTeamsRaw ?? []
 
   const hasElevatedAccess = effectiveIsAdmin
   const effectiveCanViewTeam = (teamId: string) =>
@@ -31,7 +34,7 @@ export default function TeamsPage() {
   const visibleTeams = teams.filter((team) => effectiveCanViewTeam(team.id))
 
   const countByTeam = memberTeams.reduce<Record<string, number>>((acc, mt) => {
-    acc[mt.team] = (acc[mt.team] ?? 0) + 1
+    acc[relId(mt.team)] = (acc[relId(mt.team)] ?? 0) + 1
     return acc
   }, {})
 

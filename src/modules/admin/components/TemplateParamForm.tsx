@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Play } from 'lucide-react'
 import { Button } from '../../../components/ui/button'
 import { Input } from '../../../components/ui/input'
-import pb from '../../../pb'
+import { fetchAllItems } from '../../../lib/api'
 
 export interface TemplateParam {
   name: string
@@ -49,7 +49,7 @@ export default function TemplateParamForm({ params, onRun, isRunning }: Template
 
     uniqueCollections.forEach(async (collection) => {
       try {
-        const records = await pb.collection(collection).getFullList({ sort: 'name', fields: 'id,name' })
+        const records = await fetchAllItems(collection, { sort: ['name'], fields: ['id', 'name'] })
         const options: RelationOption[] = records.map((r) => ({
           id: String(r['id']),
           name: String(r['name'] ?? r['id']),

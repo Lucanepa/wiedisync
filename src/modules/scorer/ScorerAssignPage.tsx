@@ -2,27 +2,21 @@ import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Navigate } from 'react-router-dom'
 import type { Game, Team, Training, Member, MemberTeam, Hall } from '../../types'
-import { usePB } from '../../hooks/usePB'
+import { useCollection } from '../../lib/query'
 import { useAuth } from '../../hooks/useAuth'
 import { getCurrentSeason, getSeasonDateRange, formatDateCompact, formatTime } from '../../utils/dateHelpers'
 import { logActivity } from '../../utils/logActivity'
-import pb from '../../pb'
 import { Button } from '@/components/ui/button'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import TeamSelect from '../../components/TeamSelect'
 import TeamChip from '../../components/TeamChip'
 import { runAssignment, getTeamCounts, type GameAssignment } from './components/AssignmentAlgorithm'
-
-type ExpandedGame = Game & {
-  expand?: {
-    kscw_team?: Team
-    hall?: Hall
-  }
-}
+import { updateRecord } from '../../lib/api'
+import { asObj } from '../../utils/relations'
 
 export default function ScorerAssignPage() {
   const { t } = useTranslation('scorerAssign')
-  const { hasAdminAccessToSport } = useAuth()
+  const { user, hasAdminAccessToSport } = useAuth()
 
   const season = getCurrentSeason()
   const { start: seasonStart, end: seasonEnd } = getSeasonDateRange(season)
@@ -32,34 +26,39 @@ export default function ScorerAssignPage() {
   }
 
   // Data loading
-  const { data: allGames, isLoading: gamesLoading } = usePB<ExpandedGame>('games', {
-    filter: `date>="${seasonStart}" && date<="${seasonEnd}" && status!="cancelled"`,
-    sort: '+date,+time',
-    expand: 'kscw_team,hall',
+  const { data: allGamesRaw, isLoading: gamesLoading } = useCollection<Game>('games', {
+    filter: { _and: [{ date: { _gte: seasonStart } }, { date: { _lte: seasonEnd } }, { status: { _neq: 'cancelled' } }] },
+    sort: ['date', 'time'],
     all: true,
   })
+  const allGames = allGamesRaw ?? []
 
-  const { data: teams } = usePB<Team>('teams', {
-    filter: 'sport="volleyball" && active=true',
-    sort: '+name',
+  const { data: teamsRaw } = useCollection<Team>('teams', {
+    filter: { _and: [{ sport: { _eq: 'volleyball' } }, { active: { _eq: true } }] },
+    sort: ['name'],
     all: true,
   })
+  const teams = teamsRaw ?? []
 
-  const { data: trainings } = usePB<Training>('trainings', {
-    filter: `date>="${seasonStart}" && date<="${seasonEnd}" && cancelled=false`,
-    fields: 'id,team,date,start_time,end_time',
+  const { data: trainingsRaw } = useCollection<Training>('trainings', {
+    filter: { _and: [{ date: { _gte: seasonStart } }, { date: { _lte: seasonEnd } }, { cancelled: { _eq: false } }] },
+    fields: ['id', 'team', 'date', 'start_time', 'end_time'],
     all: true,
   })
+  const trainings = trainingsRaw ?? []
 
-  const { data: members } = usePB<Member>('members', {
-    filter: 'kscw_membership_active=true',
-    fields: 'id,name,first_name,last_name,licences',
+  const { data: membersRaw } = useCollection<Member>('members', {
+    filter: { kscw_membership_active: { _eq: true } },
+    fields: ['id', 'first_name', 'last_name', 'licences'],
     all: true,
   })
+  const members = membersRaw ?? []
 
-  const { data: memberTeams } = usePB<MemberTeam>('member_teams', {
+  const { data: memberTeamsRaw } = useCollection<MemberTeam>('member_teams', {
     all: true,
+    enabled: !!user,
   })
+  const memberTeams = memberTeamsRaw ?? []
 
   // State
   const [assignments, setAssignments] = useState<GameAssignment[]>([])
@@ -77,8 +76,9 @@ export default function ScorerAssignPage() {
     () => {
       const map = new Map<string, { id: string; name: string }>()
       for (const g of allGames) {
-        if (g.expand?.hall) {
-          map.set(g.expand.hall.id, { id: g.expand.hall.id, name: g.expand.hall.name })
+        const hall = asObj<Hall>(g.hall)
+        if (hall) {
+          map.set(hall.id, { id: hall.id, name: hall.name })
         }
       }
       return Array.from(map.values())
@@ -125,7 +125,7 @@ export default function ScorerAssignPage() {
         if (a.scoreboardTeamId) fields.scoreboard_duty_team = a.scoreboardTeamId
         if (a.combinedTeamId) fields.scorer_scoreboard_duty_team = a.combinedTeamId
 
-        await pb.collection('games').update(a.gameId, fields)
+        await updateRecord('games', a.gameId, fields)
         logActivity('update', 'games', a.gameId, fields)
         updated++
       }
@@ -228,8 +228,7 @@ export default function ScorerAssignPage() {
               {assignments.map((a) => {
                 const game = homeGames.find((g) => g.id === a.gameId)
                 if (!game) return null
-                const expanded = game as ExpandedGame
-                const hallName = expanded.expand?.hall?.name ?? ''
+                const hallName = asObj<Hall>(game.hall)?.name ?? ''
 
                 const isExisting = a.conflicts.some((c) => c.key === 'existingKept')
                 const hasNoAssignment = !a.scorerTeamId && !a.scoreboardTeamId && !a.combinedTeamId

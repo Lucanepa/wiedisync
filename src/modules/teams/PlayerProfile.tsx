@@ -3,19 +3,20 @@ import { useTranslation } from 'react-i18next'
 import { useParams, useSearchParams, Link } from 'react-router-dom'
 import { XCircle, ChevronRight, Mail, Phone, Award, Calendar, TrendingUp, AlertCircle } from 'lucide-react'
 import { differenceInYears } from 'date-fns'
-import pb from '../../pb'
-import { usePB } from '../../hooks/usePB'
+import { useCollection } from '../../lib/query'
 import { useAuth } from '../../hooks/useAuth'
 import TeamChip from '../../components/TeamChip'
 import StatusBadge from '../../components/StatusBadge'
 import EmptyState from '../../components/EmptyState'
-import { getFileUrl } from '../../utils/pbFile'
+import { getFileUrl } from '../../utils/fileUrl'
 import { coercePositions, getPositionI18nKey } from '../../utils/memberPositions'
+import { asObj, relId } from '../../utils/relations'
 import { formatDate, getCurrentSeason, getSeasonDateRange } from '../../utils/dateHelpers'
 import ImageLightbox from '../../components/ImageLightbox'
 import type { Member, MemberTeam, Team, Absence, Participation } from '../../types'
+import { fetchAllItems, fetchItem } from '../../lib/api'
 
-type ExpandedMemberTeam = MemberTeam & { expand?: { team?: Team } }
+type ExpandedMemberTeam = MemberTeam & { team: Team | string }
 
 export default function PlayerProfile() {
   const { t } = useTranslation('teams')
@@ -27,20 +28,22 @@ export default function PlayerProfile() {
   const [loading, setLoading] = useState(true)
   const [lightboxOpen, setLightboxOpen] = useState(false)
 
-  const { data: memberTeams } = usePB<ExpandedMemberTeam>('member_teams', {
-    filter: memberId ? `member="${memberId}"` : '',
-    expand: 'team',
-    perPage: 20,
+  const { data: memberTeamsRaw } = useCollection<ExpandedMemberTeam>('member_teams', {
+    filter: memberId ? { member: { _eq: memberId } } : { id: { _eq: -1 } },
+    fields: ['*', 'team.*'],
+    limit: 20,
   })
+  const memberTeams = memberTeamsRaw ?? []
 
   const season = getCurrentSeason()
   const { start, end } = getSeasonDateRange(season)
 
-  const { data: absences } = usePB<Absence>('absences', {
-    filter: memberId ? `member="${memberId}" && end_date>="${new Date().toISOString().split('T')[0]}"` : '',
-    sort: 'start_date',
-    perPage: 20,
+  const { data: absencesRaw } = useCollection<Absence>('absences', {
+    filter: memberId ? { _and: [{ member: { _eq: memberId } }, { end_date: { _gte: new Date().toISOString().split('T')[0] } }] } : { id: { _eq: -1 } },
+    sort: ['start_date'],
+    limit: 20,
   })
+  const absences = absencesRaw ?? []
 
   const [trainingStats, setTrainingStats] = useState<{ total: number; present: number } | null>(null)
   const [gameStats, setGameStats] = useState<{ total: number; present: number } | null>(null)
@@ -48,8 +51,7 @@ export default function PlayerProfile() {
   useEffect(() => {
     if (!memberId) return
     setLoading(true)
-    pb.collection('members')
-      .getOne<Member>(memberId)
+    fetchItem<Member>('members', memberId)
       .then(setMember)
       .catch(() => setMember(null))
       .finally(() => setLoading(false))
@@ -58,18 +60,17 @@ export default function PlayerProfile() {
   // Training attendance
   useEffect(() => {
     if (!memberId || !memberTeams?.length) return
-    const teamIds = memberTeams.map((mt) => mt.team)
-    const teamFilter = teamIds.map((id) => `team="${id}"`).join(' || ')
+    const teamIds = memberTeams.map((mt) => relId(mt.team))
     Promise.all([
-      pb.collection('trainings').getFullList<{ id: string; date: string }>({
-        filter: `(${teamFilter}) && date>="${start}" && date<="${end}" && cancelled=false`,
-        fields: 'id,date',
+      fetchAllItems<{ id: string; date: string }>('trainings', {
+        filter: { _and: [{ team: { _in: teamIds } }, { date: { _gte: start } }, { date: { _lte: end } }, { cancelled: { _eq: false } }] },
+        fields: ['id', 'date'],
       }),
-      pb.collection('participations').getFullList<Participation>({
-        filter: `member="${memberId}" && activity_type="training"`,
+      fetchAllItems<Participation>('participations', {
+        filter: { _and: [{ member: { _eq: memberId } }, { activity_type: { _eq: 'training' } }] },
       }),
-      pb.collection('absences').getFullList<Absence>({
-        filter: `member="${memberId}" && end_date>="${start}" && start_date<="${end}"`,
+      fetchAllItems<Absence>('absences', {
+        filter: { _and: [{ member: { _eq: memberId } }, { end_date: { _gte: start } }, { start_date: { _lte: end } }] },
       }),
     ])
       .then(([trainings, participations, seasonAbsences]) => {
@@ -96,18 +97,17 @@ export default function PlayerProfile() {
   // Game attendance
   useEffect(() => {
     if (!memberId || !memberTeams?.length) return
-    const teamIds = memberTeams.map((mt) => mt.team)
-    const kscwTeamFilter = teamIds.map((id) => `kscw_team="${id}"`).join(' || ')
+    const teamIds = memberTeams.map((mt) => relId(mt.team))
     Promise.all([
-      pb.collection('games').getFullList<{ id: string; date: string }>({
-        filter: `(${kscwTeamFilter}) && date>="${start}" && date<="${end}" && status!="postponed"`,
-        fields: 'id,date',
+      fetchAllItems<{ id: string; date: string }>('games', {
+        filter: { _and: [{ kscw_team: { _in: teamIds } }, { date: { _gte: start } }, { date: { _lte: end } }, { _or: [{ status: { _neq: 'postponed' } }, { status: { _null: true } }] }] },
+        fields: ['id', 'date'],
       }),
-      pb.collection('participations').getFullList<Participation>({
-        filter: `member="${memberId}" && activity_type="game"`,
+      fetchAllItems<Participation>('participations', {
+        filter: { _and: [{ member: { _eq: memberId } }, { activity_type: { _eq: 'game' } }] },
       }),
-      pb.collection('absences').getFullList<Absence>({
-        filter: `member="${memberId}" && end_date>="${start}" && start_date<="${end}"`,
+      fetchAllItems<Absence>('absences', {
+        filter: { _and: [{ member: { _eq: memberId } }, { end_date: { _gte: start } }, { start_date: { _lte: end } }] },
       }),
     ])
       .then(([games, participations, seasonAbsences]) => {
@@ -150,10 +150,10 @@ export default function PlayerProfile() {
 
   // Resolve the "from" team for breadcrumb
   const fromTeamData = fromTeam
-    ? memberTeams.find((mt) => mt.expand?.team?.name === fromTeam)?.expand?.team
+    ? asObj<Team>(memberTeams.find((mt) => asObj<Team>(mt.team)?.name === fromTeam)?.team)
     : null
 
-  const isCoach = memberTeams.some((mt) => isCoachOf(mt.team))
+  const isCoach = memberTeams.some((mt) => isCoachOf(relId(mt.team)))
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -276,11 +276,14 @@ export default function PlayerProfile() {
         {/* Teams row */}
         <div className="border-t border-gray-100 bg-gray-50 px-6 py-3 dark:border-gray-700 dark:bg-gray-800/50">
           <div className="flex flex-wrap items-center gap-2">
-            {memberTeams.map((mt) => (
-              <Link key={mt.id} to={`/teams/${mt.expand?.team?.name ?? mt.team}`}>
-                <TeamChip team={mt.expand?.team?.name ?? '?'} />
-              </Link>
-            ))}
+            {memberTeams.map((mt) => {
+              const teamObj = asObj<Team>(mt.team)
+              return (
+                <Link key={mt.id} to={`/teams/${teamObj?.name ?? (mt.team as string)}`}>
+                  <TeamChip team={teamObj?.name ?? '?'} />
+                </Link>
+              )
+            })}
             {memberTeams.length === 0 && (
               <p className="text-sm text-gray-500 dark:text-gray-400">{t('noTeams')}</p>
             )}

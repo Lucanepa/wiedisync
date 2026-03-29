@@ -1,0 +1,440 @@
+{
+  "collection": {
+    "collection": "hall_closures",
+    "meta": {
+      "accountability": "all",
+      "archive_app_filter": true,
+      "archive_field": null,
+      "archive_value": null,
+      "collapse": "open",
+      "collection": "hall_closures",
+      "color": null,
+      "display_template": null,
+      "group": null,
+      "hidden": false,
+      "icon": "block",
+      "item_duplication_fields": null,
+      "note": null,
+      "preview_url": null,
+      "singleton": false,
+      "sort": null,
+      "sort_field": null,
+      "translations": null,
+      "unarchive_value": null,
+      "versioning": false
+    },
+    "schema": {
+      "name": "hall_closures"
+    }
+  },
+  "fields": [
+    {
+      "collection": "hall_closures",
+      "field": "id",
+      "type": "integer",
+      "meta": {
+        "collection": "hall_closures",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "id",
+        "group": null,
+        "hidden": true,
+        "interface": "numeric",
+        "note": null,
+        "options": null,
+        "readonly": true,
+        "required": false,
+        "searchable": true,
+        "sort": 1,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "id",
+        "table": "hall_closures",
+        "data_type": "integer",
+        "default_value": "nextval('hall_closures_id_seq'::regclass)",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "is_nullable": false,
+        "is_unique": true,
+        "is_indexed": false,
+        "is_primary_key": true,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": true,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "hall_closures",
+      "field": "start_date",
+      "type": "date",
+      "meta": {
+        "collection": "hall_closures",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "start_date",
+        "group": null,
+        "hidden": false,
+        "interface": "datetime",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 2,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "start_date",
+        "table": "hall_closures",
+        "data_type": "date",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "hall_closures",
+      "field": "end_date",
+      "type": "date",
+      "meta": {
+        "collection": "hall_closures",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "end_date",
+        "group": null,
+        "hidden": false,
+        "interface": "datetime",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 3,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "end_date",
+        "table": "hall_closures",
+        "data_type": "date",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "hall_closures",
+      "field": "reason",
+      "type": "string",
+      "meta": {
+        "collection": "hall_closures",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "reason",
+        "group": null,
+        "hidden": false,
+        "interface": "input",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 4,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "reason",
+        "table": "hall_closures",
+        "data_type": "character varying",
+        "default_value": null,
+        "max_length": 255,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "hall_closures",
+      "field": "source",
+      "type": "string",
+      "meta": {
+        "collection": "hall_closures",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "source",
+        "group": null,
+        "hidden": false,
+        "interface": "select-dropdown",
+        "note": null,
+        "options": {
+          "choices": [
+            {
+              "text": "hauswart",
+              "value": "hauswart"
+            },
+            {
+              "text": "admin",
+              "value": "admin"
+            },
+            {
+              "text": "auto",
+              "value": "auto"
+            },
+            {
+              "text": "gcal",
+              "value": "gcal"
+            },
+            {
+              "text": "school_holidays",
+              "value": "school_holidays"
+            }
+          ]
+        },
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 5,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "source",
+        "table": "hall_closures",
+        "data_type": "character varying",
+        "default_value": null,
+        "max_length": 255,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "hall_closures",
+      "field": "hall",
+      "type": "integer",
+      "meta": {
+        "collection": "hall_closures",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "hall",
+        "group": null,
+        "hidden": false,
+        "interface": "select-dropdown-m2o",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 6,
+        "special": [
+          "m2o"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "hall",
+        "table": "hall_closures",
+        "data_type": "integer",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": "halls",
+        "foreign_key_column": "id"
+      }
+    },
+    {
+      "collection": "hall_closures",
+      "field": "date_created",
+      "type": "timestamp",
+      "meta": {
+        "collection": "hall_closures",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "date_created",
+        "group": null,
+        "hidden": true,
+        "interface": "datetime",
+        "note": null,
+        "options": null,
+        "readonly": true,
+        "required": false,
+        "searchable": true,
+        "sort": 7,
+        "special": [
+          "date-created"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "half"
+      },
+      "schema": {
+        "name": "date_created",
+        "table": "hall_closures",
+        "data_type": "timestamp with time zone",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "hall_closures",
+      "field": "date_updated",
+      "type": "timestamp",
+      "meta": {
+        "collection": "hall_closures",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "date_updated",
+        "group": null,
+        "hidden": true,
+        "interface": "datetime",
+        "note": null,
+        "options": null,
+        "readonly": true,
+        "required": false,
+        "searchable": true,
+        "sort": 8,
+        "special": [
+          "date-updated"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "half"
+      },
+      "schema": {
+        "name": "date_updated",
+        "table": "hall_closures",
+        "data_type": "timestamp with time zone",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    }
+  ],
+  "relations": [
+    {
+      "collection": "hall_closures",
+      "field": "hall",
+      "related_collection": "halls",
+      "meta": {
+        "junction_field": null,
+        "many_collection": "hall_closures",
+        "many_field": "hall",
+        "one_allowed_collections": null,
+        "one_collection": "halls",
+        "one_collection_field": null,
+        "one_deselect_action": "nullify",
+        "one_field": null,
+        "sort_field": null
+      },
+      "schema": {
+        "table": "hall_closures",
+        "column": "hall",
+        "foreign_key_table": "halls",
+        "foreign_key_column": "id",
+        "constraint_name": "hall_closures_hall_foreign",
+        "on_update": "NO ACTION",
+        "on_delete": "SET NULL"
+      }
+    }
+  ]
+}

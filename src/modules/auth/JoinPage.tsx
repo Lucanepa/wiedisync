@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useTheme } from '../../hooks/useTheme'
-import pb from '../../pb'
 import { Button } from '@/components/ui/button'
 import { FormInput } from '@/components/FormField'
 import { OtpInput } from '../../components/OtpInput'
 import { SetPasswordForm } from '../../components/SetPasswordForm'
+import { kscwApi, logout as apiLogout } from '../../lib/api'
 
 interface InviteInfo {
   team_name: string
@@ -31,7 +31,6 @@ export default function JoinPage() {
   const [submitError, setSubmitError] = useState('')
 
   const [claimedEmail, setClaimedEmail] = useState('')
-  const [otpId, setOtpId] = useState('')
   const [otpError, setOtpError] = useState('')
   const [otpLoading, setOtpLoading] = useState(false)
 
@@ -40,8 +39,8 @@ export default function JoinPage() {
       setPhase('error')
       return
     }
-    pb.send('/api/team-invites/info/' + token, { method: 'GET' })
-      .then((res: InviteInfo) => {
+    kscwApi<InviteInfo>('/team-invites/info/' + token)
+      .then((res) => {
         setInviteInfo(res)
         setPhase('form')
       })
@@ -55,16 +54,15 @@ export default function JoinPage() {
     setSubmitError('')
     setSubmitting(true)
     try {
-      const res = await pb.send('/api/team-invites/claim', {
+      const res = await kscwApi<{ email?: string }>('/team-invites/claim', {
         method: 'POST',
         body: { token, first_name: firstName, last_name: lastName, email: email.trim().toLowerCase() },
       })
       const finalEmail = res.email ?? email.trim().toLowerCase()
       setClaimedEmail(finalEmail)
 
-      // Request OTP instead of password reset
-      const otpRes = await pb.collection('members').requestOTP(finalEmail)
-      setOtpId(otpRes.otpId)
+      // Send OTP for email verification
+      await kscwApi('/verify-email', { method: 'POST', body: { email: finalEmail } })
       setPhase('otp')
     } catch {
       setSubmitError(t('join:error'))
@@ -77,7 +75,7 @@ export default function JoinPage() {
     setOtpError('')
     setOtpLoading(true)
     try {
-      await pb.collection('members').authWithOTP(otpId, code)
+      await kscwApi('/verify-email/confirm', { method: 'POST', body: { email: claimedEmail, code } })
       setPhase('set-password')
     } catch {
       setOtpError(t('auth:otpInvalid'))
@@ -89,15 +87,14 @@ export default function JoinPage() {
   async function handleOtpResend() {
     setOtpError('')
     try {
-      const otpRes = await pb.collection('members').requestOTP(claimedEmail)
-      setOtpId(otpRes.otpId)
+      await kscwApi('/verify-email', { method: 'POST', body: { email: claimedEmail } })
     } catch {
       setOtpError(t('auth:otpResendError'))
     }
   }
 
   function handlePasswordSuccess() {
-    pb.authStore.clear()
+    apiLogout()
     setPhase('success')
   }
 
@@ -238,6 +235,7 @@ export default function JoinPage() {
 
               <SetPasswordForm
                 title={t('auth:setPasswordTitle')}
+                email={claimedEmail}
                 onSuccess={handlePasswordSuccess}
               />
             </div>

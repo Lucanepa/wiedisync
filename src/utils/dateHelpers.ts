@@ -62,9 +62,9 @@ export function toISODate(date: Date): string {
   return `${y}-${m}-${d}`
 }
 
-/** Normalize a date/datetime string to PocketBase format "YYYY-MM-DD HH:MM:SS".
- *  Handles datetime-local values ("2026-08-26T18:00"), existing PB datetimes, and date-only strings. */
-export function toPBDatetime(d: string): string {
+/** Normalize a date/datetime string to API format "YYYY-MM-DD HH:MM:SS".
+ *  Handles datetime-local values ("2026-08-26T18:00"), existing API datetimes, and date-only strings. */
+export function toApiDatetime(d: string): string {
   if (!d) return d
   const normalized = d.replace('T', ' ')
   if (normalized.includes(' ')) {

@@ -1,5 +1,4 @@
-import type { RecordModel } from 'pocketbase'
-import pb from '../../../pb'
+import { fetchAllItems, updateRecord } from '../../../lib/api'
 
 export type IssueSeverity = 'error' | 'warning'
 
@@ -29,24 +28,24 @@ function padTime(time: string): string {
   return `${match[1].padStart(2, '0')}:${match[2]}`
 }
 
-function gameLabel(record: RecordModel): string {
-  const home = record['home_team'] as string || '?'
-  const away = record['away_team'] as string || '?'
+function gameLabel(record: Record<string, unknown>): string {
+  const home = (record['home_team'] as string) || '?'
+  const away = (record['away_team'] as string) || '?'
   return `${home} vs ${away}`
 }
 
 // ── Checks ──
 
 async function checkGames(): Promise<CollectionHealth> {
-  const games = await pb.collection('games').getFullList({
-    fields: 'id,game_id,date,time,home_team,away_team,status',
-    sort: '+date,+time',
+  const games = await fetchAllItems<Record<string, unknown>>('games', {
+    fields: ['id', 'game_id', 'date', 'time', 'home_team', 'away_team', 'status'],
+    sort: ['date', 'time'],
   })
 
   const issues: DataIssue[] = []
 
   for (const g of games) {
-    const gameId = (g['game_id'] as string) || g.id
+    const gameId = (g['game_id'] as string) || String(g['id'])
     const date = g['date'] as string
     const time = g['time'] as string
     const awayTeam = g['away_team'] as string
@@ -55,7 +54,7 @@ async function checkGames(): Promise<CollectionHealth> {
     // Missing date
     if (!date) {
       issues.push({
-        id: g.id,
+        id: String(g['id']),
         collection: 'games',
         field: 'date',
         severity: 'error',
@@ -68,7 +67,7 @@ async function checkGames(): Promise<CollectionHealth> {
     // Missing away team
     if (!awayTeam || !awayTeam.trim()) {
       issues.push({
-        id: g.id,
+        id: String(g['id']),
         collection: 'games',
         field: 'away_team',
         severity: 'error',
@@ -81,7 +80,7 @@ async function checkGames(): Promise<CollectionHealth> {
     // Missing time (when date exists)
     if (date && (!time || !time.trim())) {
       issues.push({
-        id: g.id,
+        id: String(g['id']),
         collection: 'games',
         field: 'time',
         severity: 'warning',
@@ -94,7 +93,7 @@ async function checkGames(): Promise<CollectionHealth> {
     // Non-padded time
     if (time && /^\d:\d{2}$/.test(time)) {
       issues.push({
-        id: g.id,
+        id: String(g['id']),
         collection: 'games',
         field: 'time',
         severity: 'warning',
@@ -111,10 +110,10 @@ async function checkGames(): Promise<CollectionHealth> {
 
 async function checkMembers(): Promise<CollectionHealth> {
   // Get all coach-approved, active members
-  const members = await pb.collection('members').getFullList({
-    fields: 'id,first_name,last_name,coach_approved_team,wiedisync_active',
-    filter: 'coach_approved_team=true && wiedisync_active=true',
-    sort: '+last_name,+first_name',
+  const members = await fetchAllItems<Record<string, unknown>>('members', {
+    fields: ['id', 'first_name', 'last_name', 'coach_approved_team', 'wiedisync_active'],
+    filter: { _and: [{ coach_approved_team: { _eq: true } }, { wiedisync_active: { _eq: true } }] },
+    sort: ['last_name', 'first_name'],
   })
 
   // Get all current season member_teams
@@ -122,9 +121,9 @@ async function checkMembers(): Promise<CollectionHealth> {
   const seasonYear = now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1
   const season = `${seasonYear}/${(seasonYear + 1).toString().slice(2)}`
 
-  const memberTeams = await pb.collection('member_teams').getFullList({
-    fields: 'member',
-    filter: `season="${season}"`,
+  const memberTeams = await fetchAllItems<Record<string, unknown>>('member_teams', {
+    fields: ['member'],
+    filter: { season: { _eq: season } },
   })
 
   const assignedMemberIds = new Set(memberTeams.map((mt) => mt['member'] as string))
@@ -132,10 +131,10 @@ async function checkMembers(): Promise<CollectionHealth> {
   const issues: DataIssue[] = []
 
   for (const m of members) {
-    if (!assignedMemberIds.has(m.id)) {
-      const name = `${m['first_name'] || ''} ${m['last_name'] || ''}`.trim() || m.id
+    if (!assignedMemberIds.has(String(m['id']))) {
+      const name = `${m['first_name'] || ''} ${m['last_name'] || ''}`.trim() || String(m['id'])
       issues.push({
-        id: m.id,
+        id: String(m['id']),
         collection: 'members',
         field: 'member_teams',
         severity: 'warning',
@@ -158,7 +157,7 @@ export async function runAllChecks(): Promise<CollectionHealth[]> {
 
 export async function autoFix(issue: DataIssue): Promise<void> {
   if (!issue.autoFixable || issue.fixValue === undefined) return
-  await pb.collection(issue.collection).update(issue.id, {
+  await updateRecord(issue.collection, issue.id, {
     [issue.field]: issue.fixValue,
   })
 }

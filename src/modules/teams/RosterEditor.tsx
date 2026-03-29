@@ -3,22 +3,23 @@ import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
 import { useParams, Link, Navigate } from 'react-router-dom'
 import { User } from 'lucide-react'
-import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
 import { coercePositions, getPositionI18nKey, getSelectablePositions, isNonPlayingStaff } from '../../utils/memberPositions'
 import { useAuth } from '../../hooks/useAuth'
 import { useTeamMembers } from '../../hooks/useTeamMembers'
 import { useMutation } from '../../hooks/useMutation'
-import { usePB } from '../../hooks/usePB'
+import { useCollection } from '../../lib/query'
 import TeamChip from '../../components/TeamChip'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import InviteExternalUserModal from './InviteExternalUserModal'
 import TeamSponsorsEditor from './TeamSponsorsEditor'
 import EmptyState from '../../components/EmptyState'
-import { getFileUrl } from '../../utils/pbFile'
+import { getFileUrl } from '../../utils/fileUrl'
 import { getCurrentSeason } from '../../utils/dateHelpers'
 import type { Team, Member, MemberPosition, MemberTeam, LicenceType, TeamSettings } from '../../types'
 import { Button } from '../../components/ui/button'
+import { fetchItems, updateRecord } from '../../lib/api'
+import { asObj, relId } from '../../utils/relations'
 
 type LeadershipRole = 'coach' | 'captain' | 'team_responsible'
 const ROLES: LeadershipRole[] = ['coach', 'captain', 'team_responsible']
@@ -69,7 +70,8 @@ export default function RosterEditor() {
   const { teamSlug } = useParams<{ teamSlug: string }>()
   const { isCoachOf } = useAuth()
   const season = getCurrentSeason()
-  const { data: allMembers } = usePB<Member>('members', { filter: 'kscw_membership_active=true', all: true, sort: 'last_name', fields: 'id,name,first_name,last_name,photo,number,position,licences' })
+  const { data: allMembersRaw } = useCollection<Member>('members', { filter: { kscw_membership_active: { _eq: true } }, all: true, sort: ['last_name'], fields: ['id', 'first_name', 'last_name', 'photo', 'number', 'position', 'licences'] })
+  const allMembers = allMembersRaw ?? []
   const { create, remove } = useMutation<MemberTeam>('member_teams')
 
   const [team, setTeam] = useState<Team | null>(null)
@@ -86,9 +88,8 @@ export default function RosterEditor() {
 
   useEffect(() => {
     if (!teamSlug) return
-    pb.collection('teams')
-      .getFirstListItem<Team>(`name="${teamSlug}"`)
-      .then(setTeam)
+    fetchItems<Team>('teams', { filter: { name: { _eq: teamSlug } }, limit: 1 })
+      .then((items) => setTeam(items[0] ?? null))
       .catch(() => setTeam(null))
   }, [teamSlug])
 
@@ -98,14 +99,14 @@ export default function RosterEditor() {
 
   const sortedMembers = useMemo(() => {
     return [...members].sort((a, b) => {
-      const ma = a.expand?.member
-      const mb = b.expand?.member
+      const ma = asObj<Member>(a.member)
+      const mb = asObj<Member>(b.member)
       if (!ma || !mb) return 0
       return (ma.last_name ?? '').localeCompare(mb.last_name ?? '') || (ma.first_name ?? '').localeCompare(mb.first_name ?? '')
     })
   }, [members])
 
-  const rosterMemberIds = new Set(members.map((mt) => mt.member))
+  const rosterMemberIds = new Set(members.map((mt) => relId(mt.member)))
   const searchLower = search.toLowerCase()
   const availableMembers = allMembers.filter(
     (m) =>
@@ -152,7 +153,7 @@ export default function RosterEditor() {
       ? current.filter((id) => id !== memberId)
       : [...current, memberId]
     try {
-      await pb.collection('teams').update(team.id, { [role]: next })
+      await updateRecord('teams', team.id, { [role]: next })
       logActivity('update', 'teams', team.id, { [role]: next })
       setTeam((prev) => prev ? { ...prev, [role]: next } : prev)
     } catch {
@@ -166,12 +167,13 @@ export default function RosterEditor() {
     const has = currentLicences.includes(licence)
     const next = has ? currentLicences.filter((l) => l !== licence) : [...currentLicences, licence]
     try {
-      await pb.collection('members').update(memberId, { licences: next })
+      await updateRecord('members', memberId, { licences: next })
       logActivity('update', 'members', memberId, { licences: next })
       // Update local state
-      const mt = members.find((m) => m.expand?.member?.id === memberId)
-      if (mt?.expand?.member) {
-        ;(mt.expand.member as Record<string, unknown>).licences = next
+      const mt = members.find((m) => asObj<Member>(m.member)?.id === memberId)
+      const _memberRef = mt ? asObj<Member>(mt.member) : null
+      if (_memberRef) {
+        ;(_memberRef as Record<string, unknown>).licences = next
       }
     } catch {
       toast.error(t('common:errorSaving'))
@@ -181,11 +183,12 @@ export default function RosterEditor() {
   async function saveNumber(memberId: string) {
     const num = numberValue ? parseInt(numberValue, 10) : 0
     try {
-      await pb.collection('members').update(memberId, { number: num })
+      await updateRecord('members', memberId, { number: num })
       logActivity('update', 'members', memberId, { number: num })
-      const mt = members.find((m) => m.expand?.member?.id === memberId)
-      if (mt?.expand?.member) {
-        ;(mt.expand.member as Record<string, unknown>).number = num
+      const mt = members.find((m) => asObj<Member>(m.member)?.id === memberId)
+      const _memberRef = mt ? asObj<Member>(mt.member) : null
+      if (_memberRef) {
+        ;(_memberRef as Record<string, unknown>).number = num
       }
     } catch {
       toast.error(t('common:errorSaving'))
@@ -195,11 +198,12 @@ export default function RosterEditor() {
 
   async function savePosition(memberId: string, positions: MemberPosition[]) {
     try {
-      await pb.collection('members').update(memberId, { position: positions })
+      await updateRecord('members', memberId, { position: positions })
       logActivity('update', 'members', memberId, { position: positions })
-      const mt = members.find((m) => m.expand?.member?.id === memberId)
-      if (mt?.expand?.member) {
-        ;(mt.expand.member as Record<string, unknown>).position = positions
+      const mt = members.find((m) => asObj<Member>(m.member)?.id === memberId)
+      const _memberRef = mt ? asObj<Member>(mt.member) : null
+      if (_memberRef) {
+        ;(_memberRef as Record<string, unknown>).position = positions
       }
     } catch {
       toast.error(t('common:errorSaving'))
@@ -218,7 +222,7 @@ export default function RosterEditor() {
     try {
       const formData = new FormData()
       formData.append('team_picture', file)
-      const updated = await pb.collection('teams').update<Team>(team.id, formData)
+      const updated = await updateRecord<Team>('teams', team.id, formData as unknown as Record<string, unknown>)
       logActivity('update', 'teams', team.id, { team_picture: updated.team_picture })
       setTeam((prev) => prev ? { ...prev, team_picture: updated.team_picture } : prev)
       toast.success(t('common:saved'))
@@ -233,7 +237,7 @@ export default function RosterEditor() {
     if (!team) return
     setUploadingPicture(true)
     try {
-      await pb.collection('teams').update(team.id, { team_picture: null })
+      await updateRecord('teams', team.id, { team_picture: null })
       logActivity('update', 'teams', team.id, { team_picture: null })
       setTeam((prev) => prev ? { ...prev, team_picture: '' } : prev)
       toast.success(t('common:saved'))
@@ -316,7 +320,7 @@ export default function RosterEditor() {
         ) : (
           <div className="mt-4 space-y-2">
             {sortedMembers.map((mt) => {
-              const member = mt.expand?.member
+              const member = asObj<Member>(mt.member)
               if (!member) return null
               const initials = `${member.first_name?.[0] ?? ''}${member.last_name?.[0] ?? ''}`.toUpperCase()
               const roles = team ? getMemberRoles(member.id, team) : []
@@ -324,7 +328,7 @@ export default function RosterEditor() {
               const nonPlaying = isNonPlayingStaff(member.id, team, memberPositions)
               const selectablePositions = getSelectablePositions(team?.sport, memberPositions)
               return (
-                <div key={mt.id} className="flex items-center gap-3 rounded-lg border bg-white dark:bg-gray-800 dark:border-gray-700 px-4 py-2.5">
+                <div key={mt.id as string} className="flex items-center gap-3 rounded-lg border bg-white dark:bg-gray-800 dark:border-gray-700 px-4 py-2.5">
                   {member.photo ? (
                     <img
                       src={getFileUrl('members', member.id, member.photo)}
@@ -435,11 +439,11 @@ export default function RosterEditor() {
                   {/* Guest level cycle */}
                   <button
                     onClick={async () => {
-                      const currentLevel = mt.guest_level ?? 0
+                      const currentLevel = (mt.guest_level as number) ?? 0
                       const nextLevel = (currentLevel + 1) % 4
                       try {
-                        await pb.collection('member_teams').update(mt.id, { guest_level: nextLevel })
-                        logActivity('update', 'member_teams', mt.id, { guest_level: nextLevel })
+                        await updateRecord('member_teams', mt.id as string, { guest_level: nextLevel })
+                        logActivity('update', 'member_teams', mt.id as string, { guest_level: nextLevel })
                         ;(mt as Record<string, unknown>).guest_level = nextLevel
                       } catch { toast.error(t('common:errorSaving')) }
                     }}
@@ -484,7 +488,7 @@ export default function RosterEditor() {
                   </div>
 
                   <button
-                    onClick={() => setRemovingId(mt.id)}
+                    onClick={() => setRemovingId(mt.id as string)}
                     className="shrink-0 text-sm text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
                   >
                     {t('common:remove')}
@@ -553,7 +557,7 @@ export default function RosterEditor() {
         title={t('removeConfirmTitle')}
         message={t('removeConfirmMessage', {
           name: (() => {
-            const m = members.find((mt) => mt.id === removingId)?.expand?.member
+            const m = asObj<Member>(members.find((mt) => mt.id === removingId)?.member)
             return m ? displayName(m) : ''
           })(),
         })}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import pb from '../../../pb'
 import type { InfraHealth } from '../../../hooks/useInfraHealth'
+import { countItems } from '../../../lib/api'
 
 interface KpiData {
   totalMembers: number
@@ -60,42 +60,30 @@ export default function KpiStrip({ infraHealth: infra }: { infraHealth: InfraHea
   const { t } = useTranslation('admin')
   const [data, setData] = useState<KpiData | null>(null)
 
-  // Fetch PB counts once on mount — empty deps to avoid re-fetch loop
+  // Fetch KPI counts once on mount — empty deps to avoid re-fetch loop
   useEffect(() => {
     async function fetchKpis() {
       try {
         const now = new Date()
         const firstOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01 00:00:00`
 
-        const [membersResult, newMembersResult, teamsResult, vbTeamsResult, bbTeamsResult, pendingResult] =
+        const [totalMembers, newMembersThisMonth, totalTeams, vbTeams, bbTeams, pendingApprovals] =
           await Promise.all([
-            pb.collection('members').getList(1, 1, { fields: 'id' }),
-            pb.collection('members').getList(1, 1, {
-              filter: `created >= "${firstOfMonth}"`,
-              fields: 'id',
-            }),
-            pb.collection('teams').getList(1, 1, { fields: 'id' }),
-            pb.collection('teams').getList(1, 1, {
-              filter: 'sport = "volleyball"',
-              fields: 'id',
-            }),
-            pb.collection('teams').getList(1, 1, {
-              filter: 'sport = "basketball"',
-              fields: 'id',
-            }),
-            pb.collection('members').getList(1, 1, {
-              filter: 'coach_approved_team = false && requested_team != ""',
-              fields: 'id',
-            }),
+            countItems('members'),
+            countItems('members', { date_created: { _gte: firstOfMonth } }),
+            countItems('teams'),
+            countItems('teams', { sport: { _eq: 'volleyball' } }),
+            countItems('teams', { sport: { _eq: 'basketball' } }),
+            countItems('members', { _and: [{ coach_approved_team: { _eq: false } }, { requested_team: { _nempty: true } }] }),
           ])
 
         setData({
-          totalMembers: membersResult.totalItems,
-          newMembersThisMonth: newMembersResult.totalItems,
-          totalTeams: teamsResult.totalItems,
-          vbTeams: vbTeamsResult.totalItems,
-          bbTeams: bbTeamsResult.totalItems,
-          pendingApprovals: pendingResult.totalItems,
+          totalMembers,
+          newMembersThisMonth,
+          totalTeams,
+          vbTeams,
+          bbTeams,
+          pendingApprovals,
         })
       } catch {
         // Silently fail — KPI strip is non-critical
@@ -106,7 +94,7 @@ export default function KpiStrip({ infraHealth: infra }: { infraHealth: InfraHea
   }, []) // empty deps — intentional single fetch on mount
 
   // Derive health/sync status from hook (no useEffect needed, no re-fetch loop)
-  const pbHealthy = infra.services.some(s => s.name === 'PocketBase' && s.status === 'ok')
+  const apiHealthy = infra.services.some(s => s.name === 'PocketBase' && s.status === 'ok')
   const syncStale = infra.syncs.some(s => s.isStale)
 
   const isLoading = data === null
@@ -151,13 +139,13 @@ export default function KpiStrip({ infraHealth: infra }: { infraHealth: InfraHea
                 highlightColor="gold"
               />
 
-              {/* 4. PB health */}
+              {/* 4. API health */}
               <KpiCard
                 label={t('kpiHealth')}
-                value={pbHealthy ? t('kpiOk') : '✗'}
-                icon={pbHealthy ? '✓' : undefined}
-                subtitle={pbHealthy ? 'PocketBase' : 'PocketBase down'}
-                highlight={!pbHealthy}
+                value={apiHealthy ? t('kpiOk') : '✗'}
+                icon={apiHealthy ? '✓' : undefined}
+                subtitle={apiHealthy ? 'API' : 'API down'}
+                highlight={!apiHealthy}
                 highlightColor="red"
               />
 

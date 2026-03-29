@@ -425,7 +425,7 @@ export function getTeamCounts(
 
   for (const t of allTeams) {
     if (t.sport === 'volleyball' && t.active) {
-      const ownGames = allGames.filter((g) => g.kscw_team === t.id).length
+      const ownGames = allGames.filter((g) => String(g.kscw_team) === t.id).length
       counts.set(t.name, { scorer: 0, scoreboard: 0, combined: 0, totalDuties: 0, ownGames })
     }
   }

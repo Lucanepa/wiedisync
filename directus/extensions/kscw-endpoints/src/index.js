@@ -1,0 +1,696 @@
+/**
+ * KSCW Custom API Endpoints
+ *
+ * Migrated from PocketBase routerAdd hooks.
+ * All endpoints prefixed with /kscw/ (e.g., /kscw/check-email)
+ */
+
+import crypto from 'crypto'
+import { syncSvGames, syncSvRankings } from './sv-sync.js'
+import { syncBpGames, syncBpRankings } from './bp-sync.js'
+import { registerPasswordReset } from './password-reset.js'
+import { registerICalFeed } from './ical-feed.js'
+import { registerGCalSync } from './gcal-sync.js'
+import { registerScorerReminders } from './scorer-reminders.js'
+import { registerGameScheduling } from './game-scheduling.js'
+import { registerContactForm } from './contact-form.js'
+import { registerWebPush, sendPushToMember } from './web-push.js'
+
+// ── Helpers ──────────────────────────────────────────────────────
+
+const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET || ''
+
+async function verifyTurnstile(token) {
+  if (!TURNSTILE_SECRET) return true // skip in dev
+  const resp = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `secret=${TURNSTILE_SECRET}&response=${token}`,
+  })
+  const data = await resp.json()
+  return data.success === true
+}
+
+function getCurrentSeason() {
+  const now = new Date()
+  const y = now.getFullYear()
+  const m = now.getMonth()
+  return m < 8 ? `${y - 1}/${String(y).slice(2)}` : `${y}/${String(y + 1).slice(2)}`
+}
+
+function randomToken(len = 32) {
+  return crypto.randomBytes(len).toString('hex').slice(0, len)
+}
+
+function addDays(date, days) {
+  const d = new Date(date)
+  d.setDate(d.getDate() + days)
+  return d
+}
+
+function requireAdmin(req) {
+  if (!req.accountability?.admin) {
+    const err = new Error('Admin access required')
+    err.status = 403
+    throw err
+  }
+}
+
+function requireAuth(req) {
+  if (!req.accountability?.user) {
+    const err = new Error('Authentication required')
+    err.status = 401
+    throw err
+  }
+}
+
+export default {
+  id: 'kscw',
+  handler: (router, ctx) => {
+    const { services, database, logger, getSchema } = ctx
+    const log = logger.child({ extension: 'kscw-endpoints' })
+
+    // ── Public: Check Email ─────────────────────────────────────
+    router.post('/check-email', async (req, res) => {
+      try {
+        const { email, turnstile_token } = req.body
+        if (!email) return res.status(400).json({ error: 'Email required' })
+
+        // Turnstile validation (public endpoint — belt-and-suspenders with filter hook)
+        const captchaToken = turnstile_token || req.headers['x-turnstile-token']
+        if (captchaToken && !(await verifyTurnstile(captchaToken))) {
+          return res.status(400).json({ error: 'Captcha verification failed' })
+        }
+
+        const normalised = email.toLowerCase().trim()
+
+        const member = await database('members')
+          .where('email', normalised)
+          .select('id', 'wiedisync_active', 'shell', 'first_name', 'last_name')
+          .first()
+
+        const result = {
+          exists: !!member,
+          claimed: member?.wiedisync_active || false,
+          shell: member?.shell || false,
+        }
+
+        // For unclaimed members: include name + existing teams for profile pre-fill
+        if (member && !member.wiedisync_active) {
+          result.first_name = member.first_name || ''
+          result.last_name = member.last_name || ''
+          const season = getCurrentSeason()
+          const memberTeams = await database('member_teams')
+            .join('teams', 'teams.id', 'member_teams.team')
+            .where('member_teams.member', member.id)
+            .where('member_teams.season', season)
+            .select('teams.id', 'teams.name', 'teams.league', 'teams.sport', 'member_teams.guest_level')
+          result.existing_teams = memberTeams
+        }
+
+        res.json(result)
+      } catch (err) {
+        log.error(`check-email: ${err.message}`)
+        res.status(500).json({ error: 'Internal error' })
+      }
+    })
+
+    // ── Public: Teams & Sponsors ────────────────────────────────
+
+    router.get('/public/teams', async (_req, res) => {
+      try {
+        const teams = await database('teams')
+          .where('active', true)
+          .select('id', 'name', 'full_name', 'sport', 'league', 'season', 'color',
+            'team_picture', 'team_picture_pos', 'social_url')
+          .orderBy('name')
+        res.json({ data: teams })
+      } catch (err) {
+        log.error(`public/teams: ${err.message}`)
+        res.status(500).json({ error: 'Internal error' })
+      }
+    })
+
+    router.get('/public/team/:id', async (req, res) => {
+      try {
+        const team = await database('teams').where('id', req.params.id).first()
+        if (!team) return res.status(404).json({ error: 'Team not found' })
+
+        const today = new Date().toISOString().split('T')[0]
+
+        const [roster, coaches, games, trainings] = await Promise.all([
+          database('member_teams')
+            .join('members', 'members.id', 'member_teams.member')
+            .where('member_teams.team', team.id)
+            .where('members.kscw_membership_active', true)
+            .select('members.id', 'members.first_name', 'members.last_name',
+              'members.number', 'members.position', 'members.photo',
+              'member_teams.guest_level'),
+          database('teams_coach')
+            .join('members', 'members.id', 'teams_coach.members_id')
+            .where('teams_coach.teams_id', team.id)
+            .select('members.id', 'members.first_name', 'members.last_name', 'members.photo'),
+          database('games')
+            .where('kscw_team', team.id).where('date', '>=', today)
+            .orderBy('date').limit(10),
+          database('trainings')
+            .where('team', team.id).where('date', '>=', today).where('cancelled', false)
+            .orderBy('date').limit(10),
+        ])
+
+        res.json({ data: { ...team, roster, coaches, upcoming_games: games, upcoming_trainings: trainings } })
+      } catch (err) {
+        log.error(`public/team: ${err.message}`)
+        res.status(500).json({ error: 'Internal error' })
+      }
+    })
+
+    router.get('/public/sponsors', async (_req, res) => {
+      try {
+        const sponsors = await database('sponsors').where('active', true).orderBy('sort_order')
+        res.json({ data: sponsors })
+      } catch (err) {
+        log.error(`public/sponsors: ${err.message}`)
+        res.status(500).json({ error: 'Internal error' })
+      }
+    })
+
+    // ── Admin Sync Triggers ─────────────────────────────────────
+
+    router.post('/admin/sv-sync', async (req, res) => {
+      try {
+        requireAdmin(req)
+        log.info('Manual SV sync triggered')
+        const games = await syncSvGames(database, log)
+        const rankings = await syncSvRankings(database, log)
+        res.json({ status: 'ok', games, rankings })
+      } catch (err) {
+        res.status(err.status || 500).json({ error: err.message })
+      }
+    })
+
+    router.post('/admin/bp-sync', async (req, res) => {
+      try {
+        requireAdmin(req)
+        log.info('Manual BP sync triggered')
+        const games = await syncBpGames(database, log)
+        const rankings = await syncBpRankings(database, log, games.leagueHoldingIds)
+        res.json({ status: 'ok', games, rankings })
+      } catch (err) {
+        res.status(err.status || 500).json({ error: err.message })
+      }
+    })
+
+    // ── Shell Invite Endpoints ──────────────────────────────────
+
+    router.get('/team-invites/info/:token', async (req, res) => {
+      try {
+        const invite = await database('team_invites')
+          .where('token', req.params.token).where('status', 'pending').first()
+        if (!invite) return res.status(404).json({ error: 'Invite not found or expired' })
+        if (invite.expires_at && new Date() > new Date(invite.expires_at)) {
+          return res.status(400).json({ error: 'Invite expired' })
+        }
+        const team = await database('teams').where('id', invite.team).first()
+        res.json({
+          data: {
+            team_name: team?.name || 'Unknown', team_sport: team?.sport || '',
+            guest_level: invite.guest_level, expires_at: invite.expires_at,
+          },
+        })
+      } catch (err) {
+        log.error(`team-invites/info: ${err.message}`)
+        res.status(500).json({ error: 'Internal error' })
+      }
+    })
+
+    router.post('/team-invites/create', async (req, res) => {
+      try {
+        requireAuth(req)
+        const { team: teamId, guest_level } = req.body
+        if (!teamId) return res.status(400).json({ error: 'team required' })
+        const gl = parseInt(guest_level)
+        if (isNaN(gl) || gl < 0 || gl > 3) return res.status(400).json({ error: 'guest_level 0-3' })
+
+        const team = await database('teams').where('id', teamId).first()
+        if (!team) return res.status(404).json({ error: 'Team not found' })
+
+        // Permission: admin or coach/TR of this team
+        const userId = req.accountability.user
+        const isAdmin = req.accountability.admin
+        if (!isAdmin) {
+          const isCoach = await database('teams_coach')
+            .where('teams_id', teamId).where('members_id', function () {
+              this.select('id').from('members').where('user', userId)
+            }).first()
+          const isTR = await database('teams_team_responsible')
+            .where('teams_id', teamId).where('members_id', function () {
+              this.select('id').from('members').where('user', userId)
+            }).first()
+          if (!isCoach && !isTR) return res.status(403).json({ error: 'Not authorized' })
+        }
+
+        // Max 20 pending
+        const pendingCount = await database('team_invites')
+          .where('team', teamId).where('status', 'pending').count('id as cnt').first()
+        if ((pendingCount?.cnt || 0) >= 20) {
+          return res.status(400).json({ error: 'Max 20 pending invites per team' })
+        }
+
+        const token = randomToken(32)
+        const expiresAt = addDays(new Date(), 7).toISOString()
+
+        await database('team_invites').insert({
+          team: teamId, token, guest_level: gl, status: 'pending',
+          expires_at: expiresAt, created_by: userId,
+        })
+
+        res.json({ token, qr_url: `https://wiedisync.kscw.ch/join?token=${token}`, expires_at: expiresAt })
+      } catch (err) {
+        log.error(`team-invites/create: ${err.message}`)
+        res.status(err.status || 500).json({ error: err.message })
+      }
+    })
+
+    router.post('/team-invites/claim', async (req, res) => {
+      try {
+        const { token, first_name, last_name, email: rawEmail } = req.body
+        if (!token || !first_name || !last_name || !rawEmail) {
+          return res.status(400).json({ error: 'token, first_name, last_name, email required' })
+        }
+        const email = rawEmail.toLowerCase().trim()
+
+        const invite = await database('team_invites')
+          .where('token', token).where('status', 'pending').first()
+        if (!invite) return res.status(404).json({ error: 'Invalid or expired invite' })
+        if (invite.expires_at && new Date() > new Date(invite.expires_at)) {
+          return res.status(400).json({ error: 'Invite expired' })
+        }
+
+        // Check email not taken
+        const existing = await database('members').where('email', email).first()
+        if (existing) return res.status(400).json({ error: 'Email already registered' })
+
+        const team = await database('teams').where('id', invite.team).first()
+        if (!team) return res.status(400).json({ error: 'Team not found' })
+
+        const shellExpires = addDays(new Date(), 30).toISOString()
+
+        // Atomic: create member + member_teams + claim invite
+        const memberId = await database.transaction(async (trx) => {
+          const [member] = await trx('members').insert({
+            first_name, last_name, email,
+            shell: true, coach_approved_team: false, wiedisync_active: true,
+            shell_expires: shellExpires, shell_reminder_sent: false,
+            birthdate_visibility: 'hidden', language: 'german', role: JSON.stringify(['user']),
+          }).returning('id')
+
+          const mId = member.id || member
+
+          await trx('member_teams').insert({
+            member: mId, team: invite.team, season: getCurrentSeason(),
+            guest_level: invite.guest_level,
+          })
+
+          // Now member_teams exists, enable approval
+          await trx('members').where('id', mId).update({ coach_approved_team: true })
+
+          await trx('team_invites').where('id', invite.id).update({
+            status: 'claimed', claimed_by: mId, claimed_at: new Date().toISOString(),
+          })
+
+          return mId
+        })
+
+        log.info(`Shell invite claimed: ${email} → team ${team.name}`)
+        res.json({ success: true, member_id: memberId, team_name: team.name, email })
+      } catch (err) {
+        log.error(`team-invites/claim: ${err.message}`)
+        res.status(err.status || 500).json({ error: err.message })
+      }
+    })
+
+    router.post('/team-invites/extend', async (req, res) => {
+      try {
+        requireAuth(req)
+        const { member_id } = req.body
+        if (!member_id) return res.status(400).json({ error: 'member_id required' })
+
+        const member = await database('members').where('id', member_id).first()
+        if (!member) return res.status(404).json({ error: 'Member not found' })
+        if (!member.shell) return res.status(400).json({ error: 'Not a shell account' })
+
+        const newExpiry = addDays(new Date(), 30).toISOString()
+        await database('members').where('id', member_id).update({
+          shell_expires: newExpiry, kscw_membership_active: true, shell_reminder_sent: false,
+        })
+
+        res.json({ success: true, member_id, shell_expires: newExpiry })
+      } catch (err) {
+        log.error(`team-invites/extend: ${err.message}`)
+        res.status(err.status || 500).json({ error: err.message })
+      }
+    })
+
+    // ── OTP Email Verification ──────────────────────────────────
+    // POST /kscw/verify-email — send 8-digit OTP for pre-registration
+    // POST /kscw/verify-email/confirm — verify OTP code
+
+    router.post('/verify-email', async (req, res) => {
+      try {
+        const { email: rawEmail } = req.body
+        if (!rawEmail) return res.status(400).json({ error: 'Email required' })
+        const email = rawEmail.toLowerCase().trim()
+
+        // Rate limit: max 3 per hour per email
+        const oneHourAgo = new Date(Date.now() - 3600000).toISOString()
+        const recent = await database('email_verifications')
+          .where('email', email).where('date_created', '>', oneHourAgo)
+          .count('id as cnt').first()
+        if ((recent?.cnt || 0) >= 3) {
+          return res.status(429).json({ error: 'Too many requests. Try again later.' })
+        }
+
+        // Generate 8-digit code
+        const code = String(Math.floor(10000000 + Math.random() * 90000000))
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString() // 10 min
+
+        await database('email_verifications').insert({ email, code, expires_at: expiresAt, verified: false })
+
+        // Send branded OTP email
+        const schema = await getSchema()
+        const { MailService } = services
+        const mailService = new MailService({ schema, knex: database })
+        const { buildEmailLayout, buildAlertBox } = await import('./email-template.js')
+        const otpBody =
+          '<div style="font-size:14px;color:#e2e8f0;margin-bottom:16px">Verwende den folgenden Code, um deine E-Mail-Adresse zu verifizieren:</div>' +
+          '<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px"><tr><td align="center" style="padding:20px 0">' +
+          `<div style="font-size:36px;font-weight:700;color:#FFC832;letter-spacing:6px;font-family:monospace">${code}</div>` +
+          '</td></tr></table>' +
+          buildAlertBox('info', 'Gültigkeit', 'Dieser Code ist 10 Minuten gültig.')
+        const otpHtml = buildEmailLayout(otpBody, {
+          title: 'Verifizierungscode',
+          subtitle: 'WiediSync — KSC Wiedikon',
+        })
+        await mailService.send({
+          to: email,
+          subject: `WiediSync — Verifizierungscode: ${code}`,
+          html: otpHtml,
+          text: `Dein Verifizierungscode: ${code}\n\nDieser Code ist 10 Minuten gültig.\n\nKSC Wiedikon\nwiedisync.kscw.ch`,
+        })
+
+        res.json({ success: true })
+      } catch (err) {
+        log.error(`verify-email: ${err.message}`)
+        res.status(500).json({ error: 'Internal error' })
+      }
+    })
+
+    router.post('/verify-email/confirm', async (req, res) => {
+      try {
+        const { email: rawEmail, code } = req.body
+        if (!rawEmail || !code) return res.status(400).json({ error: 'email and code required' })
+        const email = rawEmail.toLowerCase().trim()
+
+        const record = await database('email_verifications')
+          .where('email', email).where('code', code).where('verified', false)
+          .where('expires_at', '>', new Date().toISOString())
+          .orderBy('id', 'desc').first()
+
+        if (!record) return res.status(400).json({ error: 'Invalid or expired code' })
+
+        await database('email_verifications').where('id', record.id).update({ verified: true })
+        res.json({ success: true, verified: true })
+      } catch (err) {
+        log.error(`verify-email/confirm: ${err.message}`)
+        res.status(500).json({ error: 'Internal error' })
+      }
+    })
+
+    // ── Set Password ──────────────────────────────────────────────
+    // POST /kscw/set-password
+    // Two modes:
+    //   1. Authenticated (Bearer token) → updates current user's password
+    //   2. Unauthenticated (email in body) → verifies OTP was confirmed,
+    //      creates Directus user if needed, sets password
+
+    router.post('/set-password', async (req, res) => {
+      try {
+        const { password, email: rawEmail } = req.body
+        if (!password || password.length < 8) {
+          return res.status(400).json({ error: 'Password must be at least 8 characters' })
+        }
+
+        const schema = await getSchema()
+        const { UsersService } = services
+        const adminUsersService = new UsersService({ schema, knex: database, accountability: { admin: true } })
+        let userId
+        let memberId
+
+        if (req.accountability?.user) {
+          // Mode 1: Authenticated user changing password
+          userId = req.accountability.user
+          const member = await database('members').where('user', userId).select('id').first()
+          memberId = member?.id
+        } else if (rawEmail) {
+          // Mode 2: OTP-verified user setting initial password
+          const email = rawEmail.toLowerCase().trim()
+
+          // Verify email was OTP-confirmed
+          const verification = await database('email_verifications')
+            .where('email', email).where('verified', true)
+            .orderBy('id', 'desc').first()
+          if (!verification) {
+            return res.status(400).json({ error: 'Email not verified' })
+          }
+
+          const member = await database('members').where('email', email).first()
+          if (!member) return res.status(404).json({ error: 'Member not found' })
+          memberId = member.id
+
+          if (member.user) {
+            // Member already linked to a Directus user — update password
+            userId = member.user
+          } else {
+            // Create Directus user and link to member
+            userId = await adminUsersService.createOne({
+              email, password,
+              first_name: member.first_name || '',
+              last_name: member.last_name || '',
+            })
+            await database('members').where('id', member.id).update({ user: userId })
+          }
+
+          // Clean up used verifications
+          await database('email_verifications').where('email', email).delete()
+        } else {
+          return res.status(401).json({ error: 'Authentication or email required' })
+        }
+
+        await adminUsersService.updateOne(userId, { password })
+        await database('members').where('user', userId).update({ wiedisync_active: true })
+
+        res.json({ success: true, member_id: memberId ? String(memberId) : undefined })
+      } catch (err) {
+        log.error(`set-password: ${err.message}`)
+        res.status(err.status || 500).json({ error: err.message })
+      }
+    })
+
+    // ── Register (new member) ──────────────────────────────────
+    // POST /kscw/register — create Directus user + member after OTP verification
+
+    router.post('/register', async (req, res) => {
+      try {
+        const { email: rawEmail, password, first_name, last_name, team, language } = req.body
+        if (!rawEmail || !password || !first_name || !last_name || !team) {
+          return res.status(400).json({ error: 'email, password, first_name, last_name, team required' })
+        }
+        if (password.length < 8) {
+          return res.status(400).json({ error: 'Password must be at least 8 characters' })
+        }
+        const email = rawEmail.toLowerCase().trim()
+
+        // Verify email was OTP-confirmed
+        const verification = await database('email_verifications')
+          .where('email', email).where('verified', true)
+          .orderBy('id', 'desc').first()
+        if (!verification) {
+          return res.status(400).json({ error: 'Email not verified' })
+        }
+
+        // Check not already registered
+        const existing = await database('members').where('email', email).first()
+        if (existing) return res.status(400).json({ error: 'Email already registered' })
+
+        const schema = await getSchema()
+        const { UsersService } = services
+        const adminUsersService = new UsersService({ schema, knex: database, accountability: { admin: true } })
+
+        // Create Directus user
+        const userId = await adminUsersService.createOne({
+          email, password, first_name, last_name,
+        })
+
+        // Create member record linked to user
+        const [member] = await database('members').insert({
+          user: userId,
+          first_name, last_name, email,
+          name: `${first_name} ${last_name}`,
+          role: JSON.stringify(['user']),
+          kscw_membership_active: true,
+          coach_approved_team: false,
+          requested_team: team,
+          wiedisync_active: true,
+          language: language || 'german',
+          birthdate_visibility: 'hidden',
+        }).returning('id')
+
+        // Clean up verification
+        await database('email_verifications').where('email', email).delete()
+
+        log.info(`New member registered: ${email} → team ${team}`)
+        res.json({ success: true, member_id: String(member.id || member) })
+      } catch (err) {
+        log.error(`register: ${err.message}`)
+        res.status(err.status || 500).json({ error: err.message })
+      }
+    })
+
+    // ── Feedback → GitHub Issue ─────────────────────────────────
+    // Auto-creates GitHub issue on feedback submission (triggered by Directus Flow or manual)
+
+    router.post('/admin/feedback-to-github', async (req, res) => {
+      try {
+        requireAdmin(req)
+        const { feedback_id } = req.body
+        if (!feedback_id) return res.status(400).json({ error: 'feedback_id required' })
+
+        const fb = await database('feedback').where('id', feedback_id).first()
+        if (!fb) return res.status(404).json({ error: 'Feedback not found' })
+
+        const GITHUB_PAT = process.env.GITHUB_PAT
+        if (!GITHUB_PAT) return res.status(500).json({ error: 'GITHUB_PAT not configured' })
+
+        const repo = fb.source === 'website' ? 'kscw-website' : 'kscw'
+        const labels = fb.type === 'bug' ? ['bug', 'user-reported'] : ['enhancement', 'user-reported']
+
+        const member = fb.member ? await database('members').where('id', fb.member).first() : null
+        const submitter = member ? `${member.first_name} ${member.last_name}` : 'Anonymous'
+
+        let body = `**Type:** ${fb.type}\n**Submitter:** ${submitter}\n\n${fb.description || ''}`
+        if (fb.screenshot) {
+          body += `\n\n**Screenshot:** [View](${process.env.PUBLIC_URL}/assets/${fb.screenshot})`
+        }
+
+        const ghResp = await fetch(`https://api.github.com/repos/Lucanepa/${repo}/issues`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${GITHUB_PAT}`,
+            'Content-Type': 'application/json',
+            Accept: 'application/vnd.github+json',
+          },
+          body: JSON.stringify({ title: fb.title || `[${fb.type}] ${fb.description?.slice(0, 60)}`, body, labels }),
+        })
+
+        if (ghResp.ok) {
+          const issue = await ghResp.json()
+          await database('feedback').where('id', feedback_id).update({
+            github_issue: issue.html_url, status: 'github',
+          })
+          res.json({ success: true, issue_url: issue.html_url })
+        } else {
+          const errText = await ghResp.text()
+          log.error(`GitHub issue creation failed: ${errText}`)
+          res.status(500).json({ error: 'GitHub API error' })
+        }
+      } catch (err) {
+        log.error(`feedback-to-github: ${err.message}`)
+        res.status(err.status || 500).json({ error: err.message })
+      }
+    })
+
+    // ── Scorer Delegation Transfer ──────────────────────────────
+    // POST /kscw/scorer-delegation/accept — accept incoming delegation
+    // POST /kscw/scorer-delegation/decline — decline incoming delegation
+
+    router.post('/scorer-delegation/accept', async (req, res) => {
+      try {
+        requireAuth(req)
+        const { delegation_id } = req.body
+        if (!delegation_id) return res.status(400).json({ error: 'delegation_id required' })
+
+        const d = await database('scorer_delegations').where('id', delegation_id).first()
+        if (!d || d.status !== 'pending') return res.status(400).json({ error: 'Invalid delegation' })
+
+        // Transfer: update game record with new member
+        const ROLE_MEMBER = { scorer: 'scorer_member', taefeler: 'taefeler_member', bb_anschreiber: 'bb_anschreiber', bb_zeitnehmer: 'bb_zeitnehmer', bb_24s: 'bb_24s' }
+        const ROLE_TEAM = { scorer: 'scorer_duty_team', taefeler: 'taefeler_duty_team', bb_anschreiber: 'bb_anschreiber_duty_team', bb_zeitnehmer: 'bb_zeitnehmer_duty_team', bb_24s: 'bb_24s_duty_team' }
+
+        const memberField = ROLE_MEMBER[d.role]
+        const teamField = ROLE_TEAM[d.role]
+        if (memberField) {
+          const updates = { [memberField]: d.to_member }
+          if (teamField && !d.same_team) updates[teamField] = d.to_team
+          await database('games').where('id', d.game).update(updates)
+        }
+
+        await database('scorer_delegations').where('id', delegation_id).update({ status: 'accepted' })
+
+        // Notify sender
+        await database('notifications').insert({
+          member: d.from_member, type: 'duty_delegation_accepted',
+          title: 'Delegation accepted', body: `Your scorer duty delegation was accepted`,
+          activity_type: 'game', activity_id: String(d.game), team: d.from_team, read: false,
+        })
+
+        // Push notification
+        sendPushToMember(database, d.from_member, 'Delegation angenommen', 'Deine Schreiber-Delegation wurde angenommen', 'https://wiedisync.kscw.ch', 'delegation', log).catch(() => {})
+
+        res.json({ success: true })
+      } catch (err) {
+        log.error(`scorer-delegation/accept: ${err.message}`)
+        res.status(err.status || 500).json({ error: err.message })
+      }
+    })
+
+    router.post('/scorer-delegation/decline', async (req, res) => {
+      try {
+        requireAuth(req)
+        const { delegation_id } = req.body
+        if (!delegation_id) return res.status(400).json({ error: 'delegation_id required' })
+
+        await database('scorer_delegations').where('id', delegation_id).where('status', 'pending')
+          .update({ status: 'declined' })
+
+        const d = await database('scorer_delegations').where('id', delegation_id).first()
+        if (d) {
+          await database('notifications').insert({
+            member: d.from_member, type: 'duty_delegation_declined',
+            title: 'Delegation declined', body: `Your scorer duty delegation was declined`,
+            activity_type: 'game', activity_id: String(d.game), team: d.from_team, read: false,
+          })
+
+          // Push notification
+          sendPushToMember(database, d.from_member, 'Delegation abgelehnt', 'Deine Schreiber-Delegation wurde abgelehnt', 'https://wiedisync.kscw.ch', 'delegation', log).catch(() => {})
+        }
+
+        res.json({ success: true })
+      } catch (err) {
+        log.error(`scorer-delegation/decline: ${err.message}`)
+        res.status(err.status || 500).json({ error: err.message })
+      }
+    })
+
+    // ── Register sub-modules ────────────────────────────────────
+    registerPasswordReset(router, ctx)
+    registerICalFeed(router, ctx)
+    registerGCalSync(router, ctx)
+    registerScorerReminders(router, ctx)
+    registerGameScheduling(router, ctx)
+    registerContactForm(router, ctx)
+    registerWebPush(router, ctx)
+
+    log.info('KSCW endpoints loaded: ~30 routes')
+  },
+}

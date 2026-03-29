@@ -1,17 +1,15 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import pb from '../../../pb'
+import { fetchItems, kscwApi } from '../../../lib/api'
 
 interface GameRecord {
   id: string
   date: string
+  home_team: string
+  away_team: string
   home_score: number
   away_score: number
   venue: string
-  expand?: {
-    home_team?: { id: string; name: string }
-    away_team?: { id: string; name: string }
-  }
 }
 
 interface WinLossRow {
@@ -61,37 +59,33 @@ export default function GamesSeasonSection() {
         const weekLaterStr = toDateStr(weekLater)
 
         const [upcomingResult, recentResult, winLossResult, scorerResult] = await Promise.all([
-          pb.collection('games').getList<GameRecord>(1, 10, {
-            filter: `date >= "${todayStr}" && date <= "${weekLaterStr}"`,
-            sort: 'date',
-            expand: 'home_team,away_team',
+          fetchItems<GameRecord>('games', { limit: 10,
+            filter: { _and: [{ date: { _gte: todayStr } }, { date: { _lte: weekLaterStr } }] },
+            sort: ['date'],
           }),
-          pb.collection('games').getList<GameRecord>(1, 5, {
-            filter: `date < "${todayStr}" && (home_score > 0 || away_score > 0)`,
-            sort: '-date',
-            expand: 'home_team,away_team',
+          fetchItems<GameRecord>('games', { limit: 5,
+            filter: { _and: [{ date: { _lt: todayStr } }, { _or: [{ home_score: { _gt: 0 } }, { away_score: { _gt: 0 } }] }] },
+            sort: ['-date'],
           }),
-          pb.send('/api/admin/sql', {
+          kscwApi('/admin/sql', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+body: {
               query: 'SELECT t.name, r.wins, r.losses, r.ranking_points FROM rankings r JOIN teams t ON r.team = t.id ORDER BY t.name',
-            }),
+            },
           }) as Promise<{ rows: [string, number, number, number][] }>,
-          pb.send('/api/admin/sql', {
+          kscwApi('/admin/sql', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+body: {
               query: "SELECT COUNT(*) as total, COUNT(sa.id) as assigned FROM games g LEFT JOIN scorer_assignments sa ON sa.game = g.id WHERE g.date >= date('now') AND g.source = 'swiss_volley'",
-            }),
+            },
           }) as Promise<{ rows: [number, number][] }>,
         ])
 
-        setUpcoming(upcomingResult.items)
-        setRecent(recentResult.items)
+        setUpcoming(upcomingResult)
+        setRecent(recentResult)
 
         if (winLossResult?.rows) {
-          const rows: WinLossRow[] = winLossResult.rows.map(([name, wins, losses, ranking_points]) => ({
+          const rows: WinLossRow[] = ((winLossResult as any).rows ?? []).map(([name, wins, losses, ranking_points]: [string, number, number, number]) => ({
             name,
             wins: wins ?? 0,
             losses: losses ?? 0,
@@ -100,8 +94,8 @@ export default function GamesSeasonSection() {
           setWinLoss(rows)
         }
 
-        if (scorerResult?.rows?.[0]) {
-          const [total, assigned] = scorerResult.rows[0]
+        if ((scorerResult as any)?.rows?.[0]) {
+          const [total, assigned] = (scorerResult as any).rows[0]
           setScorerCoverage({ total: total ?? 0, assigned: assigned ?? 0 })
         }
       } catch (err) {
@@ -148,7 +142,7 @@ export default function GamesSeasonSection() {
                   {formatDate(game.date)}
                 </span>
                 <span className="font-medium truncate">
-                  {game.expand?.home_team?.name ?? '?'} vs {game.expand?.away_team?.name ?? '?'}
+                  {game.home_team ?? '?'} vs {game.away_team ?? '?'}
                 </span>
                 {game.venue && (
                   <span className="text-xs text-muted-foreground ml-auto shrink-0 truncate max-w-[100px]">
@@ -179,7 +173,7 @@ export default function GamesSeasonSection() {
                   {formatDate(game.date)}
                 </span>
                 <span className="truncate">
-                  {game.expand?.home_team?.name ?? '?'} vs {game.expand?.away_team?.name ?? '?'}
+                  {game.home_team ?? '?'} vs {game.away_team ?? '?'}
                 </span>
                 <span className="font-semibold tabular-nums ml-auto shrink-0">
                   {game.home_score}:{game.away_score}

@@ -7,21 +7,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import DatePicker from '@/components/ui/DatePicker'
 import { Switch } from '@/components/ui/switch'
 import { useAuth } from '../../hooks/useAuth'
-import { getFileUrl } from '../../utils/pbFile'
+import { getFileUrl } from '../../utils/fileUrl'
 import { coercePositions, getPositionI18nKey, getSelectablePositions } from '../../utils/memberPositions'
-import { pbLangToI18n } from '../../utils/languageMap'
-import { LANGUAGES, type PbLanguage } from '../../i18n/languageConfig'
+import { backendLangToI18n } from '../../utils/languageMap'
+import { asObj, relId } from '../../utils/relations'
+import { LANGUAGES, type BackendLanguage } from '../../i18n/languageConfig'
 import deFlag from '../../assets/flags/de.svg'
 import gbFlag from '../../assets/flags/gb.svg'
+
 import frFlag from '../../assets/flags/fr.svg'
 import itFlag from '../../assets/flags/it.svg'
 import chFlag from '../../assets/flags/ch.svg'
 
 const flagMap: Record<string, string> = { de: deFlag, gb: gbFlag, fr: frFlag, it: itFlag, ch: chFlag }
 import { Checkbox } from '@/components/ui/checkbox'
-import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
 import type { LicenceType, MemberPosition } from '../../types'
+import { client, fetchAllItems, kscwApi, updateRecord } from '../../lib/api'
 
 const VB_LICENCES: { key: LicenceType; i18n: string }[] = [
   { key: 'scorer_vb', i18n: 'licenceScorer' },
@@ -55,7 +57,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
   const [birthdate, setBirthdate] = useState('')
   const [hidePhone, setHidePhone] = useState(false)
   const [birthdateVisibility, setBirthdateVisibility] = useState<'full' | 'year_only' | 'hidden'>('full')
-  const [language, setLanguage] = useState<PbLanguage>('german')
+  const [language, setLanguage] = useState<BackendLanguage>('german')
   const [websiteVisible, setWebsiteVisible] = useState(true)
   const [infoOpen, setInfoOpen] = useState(false)
   const [photoFile, setPhotoFile] = useState<File | null>(null)
@@ -79,7 +81,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
       setHidePhone(user.hide_phone ?? false)
       setWebsiteVisible(user.website_visible ?? true)
       setBirthdateVisibility((user.birthdate_visibility as 'full' | 'year_only' | 'hidden') || 'hidden')
-      setLanguage((user.language as PbLanguage) || 'german')
+      setLanguage((user.language as BackendLanguage) || 'german')
       setSelectedPositions(coercePositions(user.position))
       setSelectedLicences((user.licences ?? []) as LicenceType[])
       setPositionDropdownOpen(false)
@@ -107,17 +109,17 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
     setPhotoPreview(URL.createObjectURL(file))
   }
 
-  function handleLanguageChange(val: PbLanguage) {
+  function handleLanguageChange(val: BackendLanguage) {
     setLanguage(val)
     // Immediately preview the chosen language in the UI
-    i18n.changeLanguage(pbLangToI18n(val))
+    i18n.changeLanguage(backendLangToI18n(val))
   }
 
   async function handlePasswordReset() {
     if (!user?.email) return
     setResetLoading(true)
     try {
-      await pb.collection('members').requestPasswordReset(user.email)
+      await kscwApi('/password-request', { method: 'POST', body: { email: user.email } })
       setResetSent(true)
     } catch {
       setError(t('errorSaving'))
@@ -135,21 +137,19 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
     try {
       // Check for duplicate number in the same team(s)
       if (number > 0 && number !== user.number) {
-        const myTeams = await pb.collection('member_teams').getFullList({
-          filter: `member="${user.id}"`,
+        const myTeams = await fetchAllItems('member_teams', {
+          filter: { member: { _eq: user.id } },
         })
-        const teamIds = myTeams.map((mt) => mt.team)
+        const teamIds = myTeams.map((mt) => relId(mt.team))
         if (teamIds.length > 0) {
-          const teamFilter = teamIds.map((id) => `team="${id}"`).join(' || ')
-          const teammates = await pb.collection('member_teams').getFullList({
-            filter: `(${teamFilter}) && member!="${user.id}"`,
-            expand: 'member',
+          const teammates = await fetchAllItems('member_teams', {
+            filter: { _and: [{ team: { _in: teamIds } }, { member: { _neq: user.id } }] },
           })
           const conflict = teammates.find(
-            (mt) => (mt.expand as { member?: { number?: number } })?.member?.number === number
+            (mt) => asObj<{ number?: number; name?: string }>(mt.member as any)?.number === number
           )
           if (conflict) {
-            const conflictName = (conflict.expand as { member?: { name?: string } })?.member?.name ?? '?'
+            const conflictName = asObj<{ number?: number; name?: string }>(conflict.member as any)?.name ?? '?'
             setError(t('numberTaken', { name: conflictName }))
             setLoading(false)
             return
@@ -185,14 +185,14 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
           }
         }
         formData.append('photo', photoFile)
-        await pb.collection('members').update(user.id, formData)
+        await updateRecord('members', user.id, formData as unknown as Record<string, unknown>)
       } else {
-        await pb.collection('members').update(user.id, payload)
+        await updateRecord('members', user.id, payload)
       }
       logActivity('update', 'members', user.id, { first_name: firstName, last_name: lastName, email, phone, language, position: selectedPositions, licences: selectedLicences })
       // Persist language to localStorage
-      localStorage.setItem('wiedisync-lang', pbLangToI18n(language))
-      await pb.collection('members').authRefresh()
+      localStorage.setItem('wiedisync-lang', backendLangToI18n(language))
+      await client.refresh()
       onClose()
     } catch {
       setError(t('errorSaving'))
@@ -226,13 +226,13 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
 
         {/* Language selector */}
         <FormField label={`${t('language')}${onboarding ? ' *' : ''}`}>
-          <Select value={language} onValueChange={(v) => handleLanguageChange(v as PbLanguage)}>
+          <Select value={language} onValueChange={(v) => handleLanguageChange(v as BackendLanguage)}>
             <SelectTrigger className="min-h-[44px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {LANGUAGES.map((lang) => (
-                <SelectItem key={lang.pbValue} value={lang.pbValue}>
+                <SelectItem key={lang.backendValue} value={lang.backendValue}>
                   <span className="flex items-center gap-2">
                     <img src={flagMap[lang.flag]} alt="" className={`${lang.flag === 'ch' ? 'w-[15px] h-[15px]' : 'w-5 h-[15px]'} rounded-[2px]`} />
                     {lang.nativeName}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import pb from '../../../pb'
+import { countItems, fetchItems, kscwApi } from '../../../lib/api'
 
 interface RsvpRow {
   name: string
@@ -9,13 +9,10 @@ interface RsvpRow {
 
 interface UserLogRecord {
   id: string
-  user: string
+  user: string | { id: string; name: string }
   action: string
   collection_name: string
   created: string
-  expand?: {
-    user?: { id: string; name: string }
-  }
 }
 
 function simpleTimeAgo(dateStr: string): string {
@@ -58,36 +55,28 @@ export default function ActivitySection() {
         const weekAgoStr = toDateStr(sevenDaysAgo)
 
         const [rsvpResult, notifsTodayResult, notifsWeekResult, logsResult] = await Promise.all([
-          pb.send('/api/admin/sql', {
+          kscwApi('/admin/sql', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+body: {
               query: `SELECT t.name, ROUND(100.0 * COUNT(CASE WHEN p.status != '' THEN 1 END) / MAX(COUNT(p.id), 1), 0) as rate FROM participations p JOIN teams t ON p.team = t.id GROUP BY t.id ORDER BY rate DESC`,
-            }),
+            },
           }) as Promise<{ rows: [string, number][] }>,
-          pb.collection('notifications').getList(1, 1, {
-            filter: `created >= "${todayStr}"`,
-            fields: 'id',
-          }),
-          pb.collection('notifications').getList(1, 1, {
-            filter: `created >= "${weekAgoStr}"`,
-            fields: 'id',
-          }),
-          pb.collection('user_logs').getList<UserLogRecord>(1, 20, {
-            sort: '-created',
-            expand: 'user',
-            fields: 'user,action,collection_name,created,expand',
+          countItems('notifications', { date_created: { _gte: todayStr } }),
+          countItems('notifications', { date_created: { _gte: weekAgoStr } }),
+          fetchItems<UserLogRecord>('user_logs', { limit: 20,
+            sort: ['-date_created'],
+            fields: ['user.id', 'user.name', 'action', 'collection_name', 'created'],
           }),
         ])
 
         if (rsvpResult?.rows) {
           setRsvpRates(
-            rsvpResult.rows.map(([name, rate]) => ({ name, rate: rate ?? 0 }))
+            (rsvpResult as any).rows.map(([name, rate]: [string, number]) => ({ name, rate: rate ?? 0 }))
           )
         }
-        setNotifsToday(notifsTodayResult.totalItems)
-        setNotifsWeek(notifsWeekResult.totalItems)
-        setActivityLogs(logsResult.items)
+        setNotifsToday(notifsTodayResult)
+        setNotifsWeek(notifsWeekResult)
+        setActivityLogs(logsResult)
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err))
       } finally {
@@ -175,7 +164,7 @@ export default function ActivitySection() {
                 className="flex items-center gap-2 text-xs py-1 border-b border-border/50 last:border-0"
               >
                 <span className="font-medium truncate max-w-[90px]">
-                  {log.expand?.user?.name ?? log.user?.slice(0, 8) ?? '?'}
+                  {typeof log.user === 'object' ? log.user.name : (log.user?.slice(0, 8) ?? '?')}
                 </span>
                 <span className="text-muted-foreground truncate">{log.action}</span>
                 <span className="text-muted-foreground/70 truncate">{log.collection_name}</span>

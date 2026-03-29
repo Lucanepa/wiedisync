@@ -7,7 +7,7 @@ import Modal from '@/components/Modal'
 import { teamIds } from '../../../utils/teamColors'
 import { getPromotionColor, promotionBorderColors } from '../../../utils/leaguePromotion'
 import { formatNumberSwiss } from '../../../utils/formatNumber'
-import { usePB } from '../../../hooks/usePB'
+import { useCollection } from '../../../lib/query'
 import { formatDateCompact, formatTime } from '../../../utils/dateHelpers'
 
 interface RankingsTableProps {
@@ -24,11 +24,12 @@ export default function RankingsTable({ league, rankings }: RankingsTableProps) 
   const [expandedTeamId, setExpandedTeamId] = useState<string | null>(null)
 
   // Fetch all games for this league (lightweight — small dataset per league)
-  const { data: leagueGames } = usePB<Game>('games', {
-    filter: `league = "${league.replace(/"/g, '\\"')}"`,
-    sort: '-date,-time',
-    perPage: 500,
+  const { data: leagueGamesRaw } = useCollection<Game>('games', {
+    filter: { league: { _eq: league } },
+    sort: ['-date', '-time'],
+    limit: 500,
   })
+  const leagueGames = leagueGamesRaw ?? []
 
   // Set of KSCW team names in this league's rankings
   const kscwTeamNames = useMemo(() => {

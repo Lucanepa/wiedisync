@@ -1,15 +1,17 @@
-import { usePB } from './usePB'
+import { useCollection } from '../lib/query'
 import type { Team } from '../types'
 
 export function useTeams(sport?: 'volleyball' | 'basketball' | 'all') {
-  const filter =
+  const filter: Record<string, unknown> =
     sport && sport !== 'all'
-      ? `active = true && sport = "${sport}"`
-      : 'active = true'
+      ? { _and: [{ active: { _eq: true } }, { sport: { _eq: sport } }] }
+      : { active: { _eq: true } }
 
-  return usePB<Team>('teams', {
+  const result = useCollection<Team>('teams', {
     filter,
-    sort: 'name',
-    perPage: 50,
+    sort: ['name'],
+    limit: 50,
   })
+
+  return { ...result, data: result.data ?? [] }
 }

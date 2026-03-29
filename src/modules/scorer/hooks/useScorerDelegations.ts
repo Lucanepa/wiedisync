@@ -1,10 +1,10 @@
 import { useMemo, useCallback } from 'react'
 import type { ScorerDelegation, Member } from '../../../types'
-import { usePB } from '../../../hooks/usePB'
+import { useCollection } from '../../../lib/query'
 import { useRealtime } from '../../../hooks/useRealtime'
 import { useAuth } from '../../../hooks/useAuth'
-import pb from '../../../pb'
 import { logActivity } from '../../../utils/logActivity'
+import { createRecord, updateRecord } from '../../../lib/api'
 
 export function useScorerDelegations() {
   const { user } = useAuth()
@@ -14,24 +14,27 @@ export function useScorerDelegations() {
     data: delegations,
     isLoading,
     refetch,
-  } = usePB<ScorerDelegation>('scorer_delegations', {
-    filter: userId ? `status = "pending" && (from_member = "${userId}" || to_member = "${userId}")` : '',
-    sort: '-created',
-    expand: 'game,from_member,to_member,from_team,to_team',
-    perPage: 50,
+  } = useCollection<ScorerDelegation>('scorer_delegations', {
+    filter: userId
+      ? { _and: [{ status: { _eq: 'pending' } }, { _or: [{ from_member: { _eq: userId } }, { to_member: { _eq: userId } }] }] }
+      : { id: { _eq: -1 } },
+    sort: ['-date_created'],
+    limit: 50,
     enabled: !!userId,
   })
 
   useRealtime<ScorerDelegation>('scorer_delegations', () => { refetch() }, ['create', 'update'])
 
+  const delegationsArr = delegations ?? []
+
   const pendingIncoming = useMemo(
-    () => delegations.filter((d) => d.to_member === userId && d.status === 'pending'),
-    [delegations, userId],
+    () => delegationsArr.filter((d) => d.to_member === userId && d.status === 'pending'),
+    [delegationsArr, userId],
   )
 
   const pendingOutgoing = useMemo(
-    () => delegations.filter((d) => d.from_member === userId && d.status === 'pending'),
-    [delegations, userId],
+    () => delegationsArr.filter((d) => d.from_member === userId && d.status === 'pending'),
+    [delegationsArr, userId],
   )
 
   const createDelegation = useCallback(
@@ -43,7 +46,7 @@ export function useScorerDelegations() {
       toTeamId: string,
     ) => {
       const sameTeam = fromTeamId === toTeamId
-      const record = await pb.collection('scorer_delegations').create({
+      const record = await createRecord<{ id: string }>('scorer_delegations', {
         game: gameId,
         role,
         from_member: userId,
@@ -55,14 +58,14 @@ export function useScorerDelegations() {
       })
       logActivity('create', 'scorer_delegations', record.id, { game: gameId, role, to_member: toMemberId, same_team: sameTeam })
       refetch()
-      return record as ScorerDelegation
+      return record as unknown as ScorerDelegation
     },
     [userId, refetch],
   )
 
   const acceptDelegation = useCallback(
     async (delegationId: string) => {
-      await pb.collection('scorer_delegations').update(delegationId, { status: 'accepted' })
+      await updateRecord('scorer_delegations', delegationId, { status: 'accepted' })
       logActivity('update', 'scorer_delegations', delegationId, { status: 'accepted' })
       refetch()
     },
@@ -71,7 +74,7 @@ export function useScorerDelegations() {
 
   const declineDelegation = useCallback(
     async (delegationId: string) => {
-      await pb.collection('scorer_delegations').update(delegationId, { status: 'declined' })
+      await updateRecord('scorer_delegations', delegationId, { status: 'declined' })
       logActivity('update', 'scorer_delegations', delegationId, { status: 'declined' })
       refetch()
     },

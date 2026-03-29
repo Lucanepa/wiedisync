@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import type { Game, Ranking } from '../../types'
-import { usePB } from '../../hooks/usePB'
+import { useCollection } from '../../lib/query'
 import { teamIds } from '../../utils/teamColors'
 import GameTabs from './components/GameTabs'
 import type { TabKey } from './components/GameTabs'
@@ -9,11 +9,11 @@ import GameCard from './components/GameCard'
 import RankingsTable from './components/RankingsTable'
 import LoadingSpinner from '../../components/LoadingSpinner'
 
-function buildTeamFilter(team: string): string {
-  if (!team) return ''
+function buildTeamFilter(team: string): Record<string, unknown> | null {
+  if (!team) return null
   const sanitized = team.replace(/[^a-zA-Z0-9\s\-]/g, '')
-  if (!sanitized) return ''
-  return `kscw_team.name ~ "${sanitized}"`
+  if (!sanitized) return null
+  return { kscw_team: { name: { _contains: sanitized } } }
 }
 
 export default function EmbedGamesPage() {
@@ -27,34 +27,36 @@ export default function EmbedGamesPage() {
   const gameQuery = useMemo(() => {
     if (activeTab === 'rankings') return null
 
-    const parts: string[] = []
+    const conditions: Record<string, unknown>[] = []
     switch (activeTab) {
       case 'upcoming':
-        parts.push(`status = "scheduled"`, `date >= "${today}"`)
+        conditions.push({ status: { _eq: 'scheduled' } }, { date: { _gte: today } })
         break
       case 'results':
-        parts.push(`(status = "completed" || status = "live")`)
+        conditions.push({ status: { _in: ['completed', 'live'] } })
         break
     }
-    if (teamFilter) parts.push(teamFilter)
+    if (teamFilter) conditions.push(teamFilter)
 
     return {
-      filter: parts.join(' && '),
-      sort: activeTab === 'upcoming' ? '+date,+time' : '-date,-time',
+      filter: conditions.length === 1 ? conditions[0] : { _and: conditions },
+      sort: activeTab === 'upcoming' ? 'date,time' : '-date,-time',
     }
   }, [activeTab, teamFilter, today])
 
-  const { data: games, isLoading: gamesLoading } = usePB<Game>(
+  const { data: gamesRaw, isLoading: gamesLoading } = useCollection<Game>(
     'games',
     gameQuery
-      ? { filter: gameQuery.filter, sort: gameQuery.sort, expand: 'kscw_team,hall', perPage: 50 }
-      : { filter: 'id = ""', perPage: 1 },
+      ? { filter: gameQuery.filter, sort: gameQuery.sort.split(','), limit: 50 }
+      : { filter: { id: { _eq: -1 } }, limit: 1 },
   )
+  const games = gamesRaw ?? []
 
-  const { data: allRankings, isLoading: rankingsLoading } = usePB<Ranking>('rankings', {
-    sort: '+league,+rank',
-    perPage: 2000,
+  const { data: allRankingsRaw, isLoading: rankingsLoading } = useCollection<Ranking>('rankings', {
+    sort: ['league', 'rank'],
+    limit: 2000,
   })
+  const allRankings = allRankingsRaw ?? []
 
   const leagueGroups = useMemo(() => {
     const grouped = new Map<string, Ranking[]>()

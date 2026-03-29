@@ -5,8 +5,8 @@ import { useAuth } from '../../hooks/useAuth'
 import { useTheme } from '../../hooks/useTheme'
 import ProfileEditModal from './ProfileEditModal'
 import { Button } from '@/components/ui/button'
-import pb from '../../pb'
 import type { Team } from '../../types'
+import { client, fetchItem } from '../../lib/api'
 
 export default function PendingPage() {
   const { user, isApproved, isProfileComplete, isLoading, logout } = useAuth()
@@ -30,8 +30,7 @@ export default function PendingPage() {
   // Fetch the requested team name
   useEffect(() => {
     if (!user?.requested_team) return
-    pb.collection('teams')
-      .getOne<Team>(user.requested_team)
+    fetchItem<Team>('teams', user.requested_team)
       .then(setTeam)
       .catch(() => setTeam(null))
   }, [user?.requested_team])
@@ -39,7 +38,7 @@ export default function PendingPage() {
   async function handleRefresh() {
     setRefreshing(true)
     try {
-      await pb.collection('members').authRefresh()
+      await client.refresh()
     } catch {
       // ignore
     } finally {

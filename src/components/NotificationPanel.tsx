@@ -155,7 +155,7 @@ export default function NotificationPanel({
                   <div className="mt-0.5 flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
                     <span>{t(typeLabels[n.type] ?? 'activityChange')}</span>
                     <span>·</span>
-                    <span>{timeAgo(n.created, t)}</span>
+                    <span>{timeAgo(n.created ?? n.date_created ?? '', t)}</span>
                   </div>
                 </div>
               </button>

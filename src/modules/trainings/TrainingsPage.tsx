@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
-import { usePB } from '../../hooks/usePB'
+import { useCollection } from '../../lib/query'
 import { useRealtime } from '../../hooks/useRealtime'
 import { useMutation } from '../../hooks/useMutation'
 import TeamFilter from '../../components/TeamFilter'
@@ -26,9 +26,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import type { Training, Team, Hall, Member, Participation } from '../../types'
+import { asObj, relId } from '../../utils/relations'
 
 type TrainingExpanded = Training & {
-  expand?: { team?: Team; hall?: Hall; coach?: Member }
+  team: Team | string
+  hall: Hall | string
+  coach: Member | string
 }
 
 export default function TrainingsPage() {
@@ -52,14 +55,15 @@ export default function TrainingsPage() {
   }, [allUserTeamIds, autoSelected])
 
   // Non-admins: always scope to own teams + coached teams
-  const effectiveFilter = useMemo(() => {
-    const parts: string[] = []
-    if (selectedTeam) parts.push(`team="${selectedTeam}"`)
+  const effectiveFilter = useMemo((): Record<string, unknown> | undefined => {
+    const conditions: Record<string, unknown>[] = []
+    if (selectedTeam) conditions.push({ team: { _eq: selectedTeam } })
     else if (!effectiveIsAdmin && allUserTeamIds.length > 0) {
-      parts.push(`(${allUserTeamIds.map(id => `team="${id}"`).join(' || ')})`)
+      conditions.push({ team: { _in: allUserTeamIds } })
     }
-    if (!showPast) parts.push(`date >= "${today}"`)
-    return parts.join(' && ')
+    if (!showPast) conditions.push({ date: { _gte: today } })
+    if (conditions.length === 0) return undefined
+    return conditions.length === 1 ? conditions[0] : { _and: conditions }
   }, [selectedTeam, effectiveIsAdmin, allUserTeamIds, showPast, today])
 
   const [activeTab, setActiveTab] = useState<'trainings' | 'dashboard'>('trainings')
@@ -72,27 +76,28 @@ export default function TrainingsPage() {
   const [rosterTraining, setRosterTraining] = useState<{ id: string; teamId: string; date: string; showRsvpTime?: boolean } | null>(null)
   const recurringSelectionMade = useRef(false)
 
-  const { data: trainings, isLoading, refetch } = usePB<TrainingExpanded>('trainings', {
+  const { data: trainingsRaw, isLoading, refetch } = useCollection<TrainingExpanded>('trainings', {
     filter: effectiveFilter,
-    sort: 'date',
-    expand: 'team,hall,coach',
-    perPage: 50,
+    sort: ['date'],
+    limit: 50,
+    fields: ['*', 'team.*', 'hall.*', 'coach.*'],
     enabled: !teamsLoading,
   })
+  const trainings = trainingsRaw ?? []
 
   // Batch-fetch ALL participations for visible trainings in ONE request (fixes N+1 / 429 storm)
   const trainingIds = useMemo(() => trainings.map((t) => t.id), [trainings])
-  const participationFilter = useMemo(() => {
+  const participationFilter = useMemo((): Record<string, unknown> | string => {
     if (trainingIds.length === 0) return ''
-    const idClauses = trainingIds.map((id) => `activity_id="${id}"`).join(' || ')
-    return `activity_type="training" && (${idClauses})`
+    return { _and: [{ activity_type: { _eq: 'training' } }, { activity_id: { _in: trainingIds } }] }
   }, [trainingIds])
 
-  const { data: allParticipations, refetch: refetchParticipations } = usePB<Participation>('participations', {
-    filter: participationFilter,
+  const { data: allParticipationsRaw, refetch: refetchParticipations } = useCollection<Participation>('participations', {
+    filter: participationFilter as Record<string, unknown> | undefined,
     all: true,
     enabled: trainingIds.length > 0,
   })
+  const allParticipations = allParticipationsRaw ?? []
 
   // Build maps: activityId → participations[], activityId → user's participation
   const { participationsByActivity, myParticipationByActivity } = useMemo(() => {
@@ -240,9 +245,9 @@ export default function TrainingsPage() {
                 participations={participationsByActivity.get(training.id)}
                 myParticipation={myParticipationByActivity.get(training.id)}
                 onParticipationSaved={refetchParticipations}
-                onOpenRoster={(id, teamId, date) => setRosterTraining({ id, teamId, date, showRsvpTime: isFeatureEnabled(training.expand?.team?.features_enabled, 'show_rsvp_time') })}
-                onEdit={(effectiveIsAdmin || isCoachOf(training.team)) ? handleEdit : undefined}
-                onDelete={(effectiveIsAdmin || isCoachOf(training.team)) ? setDeletingId : undefined}
+                onOpenRoster={(id, teamId, date) => setRosterTraining({ id, teamId, date, showRsvpTime: isFeatureEnabled(asObj<Team>(training.team)?.features_enabled, 'show_rsvp_time') })}
+                onEdit={(effectiveIsAdmin || isCoachOf(relId(training.team))) ? handleEdit : undefined}
+                onDelete={(effectiveIsAdmin || isCoachOf(relId(training.team))) ? setDeletingId : undefined}
               />
             ))}
             </div>

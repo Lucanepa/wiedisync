@@ -1,19 +1,17 @@
 import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Download } from 'lucide-react'
-import type { RecordModel } from 'pocketbase'
-import type { RefereeExpense, Game, Team, Member } from '../../types'
-import { usePB } from '../../hooks/usePB'
+import type { RefereeExpense, Game, Team, Member, BaseRecord } from '../../types'
+import { useCollection } from '../../lib/query'
 import TeamChip from '../../components/TeamChip'
-import { pbNameToColorKey } from '../../utils/teamColors'
+import { teamNameToColorKey } from '../../utils/teamColors'
 import { formatDate } from '../../utils/dateHelpers'
+import { asObj } from '../../utils/relations'
 
 type ExpandedExpense = RefereeExpense & {
-  expand?: {
-    game?: Game & RecordModel
-    team?: Team & RecordModel
-    paid_by_member?: Member & RecordModel
-  }
+  game: (Game & BaseRecord) | string
+  team: (Team & BaseRecord) | string
+  paid_by_member: (Member & BaseRecord) | string
 }
 
 export default function RefereeExpensesPage() {
@@ -22,33 +20,37 @@ export default function RefereeExpensesPage() {
   const [seasonFilter, setSeasonFilter] = useState('')
 
   // Fetch all volleyball teams for filter dropdown
-  const { data: vbTeams } = usePB<Team & RecordModel>('teams', {
-    filter: 'sport="volleyball" && active=true',
-    sort: 'name',
+  const { data: vbTeamsRaw } = useCollection<Team & BaseRecord>('teams', {
+    filter: { _and: [{ sport: { _eq: 'volleyball' } }, { active: { _eq: true } }] },
+    sort: ['name'],
     all: true,
   })
+  const vbTeams = vbTeamsRaw ?? []
 
   // Build filter
-  const filter = useMemo(() => {
-    const parts: string[] = []
-    if (teamFilter) parts.push(`team="${teamFilter}"`)
-    if (seasonFilter) parts.push(`game.season="${seasonFilter}"`)
-    return parts.join(' && ')
+  const filter = useMemo((): Record<string, unknown> => {
+    const conditions: Record<string, unknown>[] = []
+    if (teamFilter) conditions.push({ team: { _eq: teamFilter } })
+    if (seasonFilter) conditions.push({ game: { season: { _eq: seasonFilter } } })
+    if (conditions.length === 0) return {}
+    return conditions.length === 1 ? conditions[0] : { _and: conditions }
   }, [teamFilter, seasonFilter])
 
   // Fetch expenses
-  const { data: expenses, isLoading } = usePB<ExpandedExpense>('referee_expenses', {
+  const { data: expensesRaw, isLoading } = useCollection<ExpandedExpense>('referee_expenses', {
     filter,
-    expand: 'game,team,paid_by_member',
-    sort: '-created',
+    sort: ['-date_created'],
+    fields: ['*', 'game.*', 'team.*', 'paid_by_member.*'],
     all: true,
   })
+  const expenses = expensesRaw ?? []
 
   // Extract unique seasons from game data
   const seasons = useMemo(() => {
     const s = new Set<string>()
     expenses.forEach((e) => {
-      if (e.expand?.game?.season) s.add(e.expand.game.season)
+      const game = asObj<Game & BaseRecord>(e.game)
+      if (game?.season) s.add(game.season)
     })
     return Array.from(s).sort().reverse()
   }, [expenses])
@@ -56,16 +58,18 @@ export default function RefereeExpensesPage() {
   const exportCsv = () => {
     const header = ['Date', 'Home Team', 'Away Team', 'League', 'KSCW Team', 'Paid By', 'Amount (CHF)', 'Notes']
     const rows = expenses.map((e) => {
-      const game = e.expand?.game
-      const paidBy = e.expand?.paid_by_member
-        ? `${e.expand.paid_by_member.first_name} ${e.expand.paid_by_member.last_name}`
+      const game = asObj<Game & BaseRecord>(e.game)
+      const paidByMember = asObj<Member & BaseRecord>(e.paid_by_member)
+      const paidBy = paidByMember
+        ? `${paidByMember.first_name} ${paidByMember.last_name}`
         : e.paid_by_other || ''
+      const teamObj = asObj<Team & BaseRecord>(e.team)
       return [
         game?.date ? formatDate(game.date) : '',
         game?.home_team || '',
         game?.away_team || '',
         game?.league || '',
-        e.expand?.team?.name || '',
+        teamObj?.name || '',
         paidBy,
         e.amount ? e.amount.toFixed(2) : '',
         e.notes || '',
@@ -146,13 +150,14 @@ export default function RefereeExpensesPage() {
             </thead>
             <tbody>
               {expenses.map((expense) => {
-                const game = expense.expand?.game
-                const team = expense.expand?.team
+                const game = asObj<Game & BaseRecord>(expense.game)
+                const team = asObj<Team & BaseRecord>(expense.team)
                 const teamKey = team?.name && team?.sport
-                  ? pbNameToColorKey(team.name, team.sport)
+                  ? teamNameToColorKey(team.name, team.sport)
                   : team?.name || ''
-                const paidBy = expense.expand?.paid_by_member
-                  ? `${expense.expand.paid_by_member.first_name} ${expense.expand.paid_by_member.last_name}`
+                const paidByMember = asObj<Member & BaseRecord>(expense.paid_by_member)
+                const paidBy = paidByMember
+                  ? `${paidByMember.first_name} ${paidByMember.last_name}`
                   : expense.paid_by_other || '–'
 
                 return (

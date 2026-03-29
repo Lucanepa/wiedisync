@@ -1,18 +1,16 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import pb from '../../../pb'
+import { fetchAllItems, kscwApi } from '../../../lib/api'
+
+interface TeamMember { id: string; name: string }
 
 interface TeamRecord {
   id: string
   name: string
   sport: string
   slug: string
-  coach: string
-  captain: string
-  expand?: {
-    coach?: { id: string; name: string }
-    captain?: { id: string; name: string }
-  }
+  coach: TeamMember[] | string[] | string
+  captain: TeamMember[] | string[] | string
 }
 
 interface UnapprovedMember {
@@ -31,6 +29,14 @@ function getShortName(name: string): string {
   return name.length > 5 ? name.slice(0, 5) : name
 }
 
+function firstMemberName(val: TeamMember[] | string[] | string): string | null {
+  if (Array.isArray(val) && val.length > 0) {
+    const first = val[0]
+    return typeof first === 'object' && first !== null ? (first as TeamMember).name : null
+  }
+  return null
+}
+
 export default function MembersTeamsSection() {
   const { t } = useTranslation('admin')
   const [teams, setTeams] = useState<TeamWithCount[]>([])
@@ -44,21 +50,19 @@ export default function MembersTeamsSection() {
       setError(null)
       try {
         const [teamRecords, sqlResult, unapprovedResult] = await Promise.all([
-          pb.collection('teams').getFullList<TeamRecord>({
-            sort: 'name',
-            expand: 'coach,captain',
-            fields: 'id,name,sport,slug,coach,captain,expand',
+          fetchAllItems<TeamRecord>('teams', {
+            sort: ['name'],
+            fields: ['id', 'name', 'sport', 'slug', 'coach.id', 'coach.name', 'captain.id', 'captain.name'],
           }),
-          pb.send('/api/admin/sql', {
+          kscwApi('/admin/sql', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+body: {
               query: 'SELECT mt.team, COUNT(mt.id) as cnt FROM member_teams mt GROUP BY mt.team',
-            }),
+            },
           }) as Promise<{ rows: [string, number][] }>,
-          pb.collection('members').getFullList<UnapprovedMember>({
-            filter: 'coach_approved_team = false && requested_team != ""',
-            fields: 'id,name,email,requested_team,created',
+          fetchAllItems<UnapprovedMember>('members', {
+            filter: { _and: [{ coach_approved_team: { _eq: false } }, { requested_team: { _nempty: true } }] },
+            fields: ['id', 'name', 'email', 'requested_team', 'created'],
           }),
         ])
 
@@ -70,8 +74,8 @@ export default function MembersTeamsSection() {
         }
 
         const teamsWithCount: TeamWithCount[] = teamRecords
-          .map(t => ({ ...t, memberCount: countMap[t.id] ?? 0 }))
-          .sort((a, b) => b.memberCount - a.memberCount)
+          .map((t: TeamRecord) => ({ ...t, memberCount: countMap[t.id] ?? 0 }))
+          .sort((a: TeamWithCount, b: TeamWithCount) => b.memberCount - a.memberCount)
 
         setTeams(teamsWithCount)
         setUnapproved(unapprovedResult)
@@ -160,10 +164,10 @@ export default function MembersTeamsSection() {
                   <td className="py-1.5 pr-3 font-medium">{team.name}</td>
                   <td className="py-1.5 pr-3 text-right tabular-nums">{team.memberCount}</td>
                   <td className="py-1.5 pr-3 text-muted-foreground">
-                    {team.expand?.coach?.name ?? '—'}
+                    {firstMemberName(team.coach) ?? '—'}
                   </td>
                   <td className="py-1.5 text-muted-foreground">
-                    {team.expand?.captain?.name ?? '—'}
+                    {firstMemberName(team.captain) ?? '—'}
                   </td>
                 </tr>
               ))}

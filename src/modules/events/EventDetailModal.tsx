@@ -9,7 +9,7 @@ import ParticipationRosterModal from '../../components/ParticipationRosterModal'
 import SessionParticipationSheet from '../../components/SessionParticipationSheet'
 import { useAuth } from '../../hooks/useAuth'
 import { useParticipation } from '../../hooks/useParticipation'
-import { usePB } from '../../hooks/usePB'
+import { useCollection } from '../../lib/query'
 import { useMutation } from '../../hooks/useMutation'
 import { formatDate, formatTime } from '../../utils/dateHelpers'
 import TasksSection from '../tasks/TasksSection'
@@ -17,7 +17,20 @@ import { isFeatureEnabled } from '../../utils/featureToggles'
 import { Calendar, Clock, MapPin, Users, Check, MessageSquare, UserPlus } from 'lucide-react'
 import type { Event, Team, EventSession, Participation } from '../../types'
 
-type EventExpanded = Event & { expand?: { teams?: Team[] } }
+function asTeams(teams: unknown[] | null | undefined): Team[] {
+  if (!Array.isArray(teams) || teams.length === 0) return []
+  return teams
+    .map((t: any) => t?.teams_id ?? t)
+    .filter((t): t is Team => t != null && typeof t === 'object' && 'name' in t)
+}
+
+function teamId(val: unknown): string {
+  if (!val) return ''
+  if (typeof val === 'string') return val
+  if (typeof val === 'number') return String(val)
+  const obj = (val as any)?.teams_id ?? val
+  return typeof obj === 'object' ? String((obj as any).id ?? '') : String(obj ?? '')
+}
 
 const eventTypeColors: Record<string, { bg: string; text: string }> = {
   verein: { bg: '#dbeafe', text: '#1e40af' },
@@ -34,7 +47,7 @@ function isHtml(str: string): boolean {
 }
 
 interface EventDetailModalProps {
-  event: EventExpanded | null
+  event: Event | null
   onClose: () => void
 }
 
@@ -46,23 +59,24 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
   const [sessionSheetOpen, setSessionSheetOpen] = useState(false)
 
   const canParticipate = !!user && !!event && (
-    !event.teams?.length || event.teams.some((tid) => canParticipateIn(tid))
+    !event.teams?.length || event.teams.some((tid) => canParticipateIn(teamId(tid)))
   )
-  const isStaff = !!event?.teams?.[0] && isCoachOf(event.teams[0])
-  const isStaffParticipant = !!event?.teams?.[0] && isStaffOnly(event.teams[0])
+  const isStaff = !!event?.teams?.[0] && isCoachOf(teamId(event.teams[0]))
+  const isStaffParticipant = !!event?.teams?.[0] && isStaffOnly(teamId(event.teams[0]))
 
   // Fetch sessions for multi-session events
   const hasSessionMode = event?.participation_mode && event.participation_mode !== 'whole'
-  const { data: sessions } = usePB<EventSession>('event_sessions', {
-    filter: event ? `event="${event.id}"` : '',
-    sort: '+sort_order,+date,+start_time',
-    perPage: 100,
+  const { data: sessionsRaw } = useCollection<EventSession>('event_sessions', {
+    filter: event ? { event: { _eq: event.id } } : undefined,
+    sort: ['sort_order', 'date', 'start_time'],
+    limit: 100,
     enabled: !!event && !!hasSessionMode,
   })
+  const sessions = sessionsRaw ?? []
 
   if (!event) return null
 
-  const teams = event.expand?.teams ?? []
+  const teams = asTeams(event.teams)
 
   return (
     <>
@@ -127,7 +141,7 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
               <TasksSection
                 activityType="event"
                 activityId={event.id}
-                teamId={event.teams?.[0]}
+                teamId={teamId(event.teams?.[0])}
                 canManage={isStaff}
               />
             </div>
@@ -182,19 +196,19 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
         activityType="event"
         activityId={event.id}
         activityDate={event.start_date}
-        teamIds={event.teams ?? []}
+        teamIds={(event.teams ?? []).map(t => teamId(t))}
         title={`${event.title} — ${formatDate(event.start_date)}`}
         respondBy={event.respond_by}
         maxPlayers={event.max_players}
         participationMode={event.participation_mode}
         eventSessions={hasSessionMode ? sessions : undefined}
-        showRsvpTime={(event.expand?.teams ?? []).some(t => isFeatureEnabled(t.features_enabled, 'show_rsvp_time'))}
+        showRsvpTime={asTeams(event.teams).some(t => isFeatureEnabled(t.features_enabled, 'show_rsvp_time'))}
       />
     </>
   )
 }
 
-function EventParticipation({ event, isStaff, isStaffParticipant }: { event: EventExpanded; isStaff: boolean; isStaffParticipant: boolean }) {
+function EventParticipation({ event, isStaff, isStaffParticipant }: { event: Event; isStaff: boolean; isStaffParticipant: boolean }) {
   const { t } = useTranslation('participation')
   const { participation, effectiveStatus, hasAbsence, note: savedNote, setStatus, saveConfirmed, dismissConfirmed } = useParticipation(
     'event',
@@ -364,14 +378,19 @@ function EventSessionNote({ eventId, sessions }: { eventId: string; sessions: Ev
   const { user } = useAuth()
   const { update } = useMutation<Participation>('participations')
 
-  const sessionFilter = sessions.map(s => `session_id="${s.id}"`).join(' || ')
-  const { data: allParts, refetch } = usePB<Participation>('participations', {
-    filter: user && eventId
-      ? `member="${user.id}" && activity_type="event" && activity_id="${eventId}" && (${sessionFilter})`
-      : '',
+  const { data: allPartsRaw, refetch } = useCollection<Participation>('participations', {
+    filter: user && eventId ? {
+      _and: [
+        { member: { _eq: user.id } },
+        { activity_type: { _eq: 'event' } },
+        { activity_id: { _eq: eventId } },
+        { session_id: { _in: sessions.map(s => s.id) } },
+      ],
+    } : undefined,
     all: true,
     enabled: !!user && !!eventId && sessions.length > 0,
   })
+  const allParts = allPartsRaw ?? []
 
   const savedNote = allParts[0]?.note ?? ''
   const [noteText, setNoteText] = useState(savedNote)

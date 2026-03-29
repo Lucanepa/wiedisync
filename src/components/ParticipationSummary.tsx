@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Check, X, HelpCircle, Hourglass } from 'lucide-react'
-import { usePB } from '../hooks/usePB'
+import { useCollection } from '../lib/query'
 import { useRealtime } from '../hooks/useRealtime'
 import type { Participation } from '../types'
 
@@ -29,13 +29,14 @@ export default function ParticipationSummary({
   const { t } = useTranslation('participation')
 
   const skipFetch = !!prefetched
-  const { data: fetched, isLoading, refetch } = usePB<Participation>('participations', {
+  const { data: fetchedRaw, isLoading, refetch } = useCollection<Participation>('participations', {
     filter: activityId
-      ? `activity_type="${activityType}" && activity_id="${activityId}"`
-      : '',
+      ? { _and: [{ activity_type: { _eq: activityType } }, { activity_id: { _eq: activityId } }] }
+      : { id: { _eq: -1 } },
     all: true,
     enabled: !!activityId && !skipFetch,
   })
+  const fetched = fetchedRaw ?? []
 
   // Auto-refresh when participations change (create/update/delete)
   useRealtime('participations', () => { if (!skipFetch) refetch() })

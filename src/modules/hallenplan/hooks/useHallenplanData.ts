@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
-import { usePB } from '../../../hooks/usePB'
+import { useCollection } from '../../../lib/query'
+import { wrapFkAsArray } from '../../../lib/api'
 import type { Hall, HallSlot, HallClosure, Team, Game, Training, HallEvent, SlotClaim } from '../../../types'
 import {
   gameToVirtualSlots,
@@ -17,78 +18,89 @@ export function useHallenplanData(
   sundayStr: string,
   weekDays: Date[],
 ) {
-  const { data: halls, isLoading: hallsLoading } = usePB<Hall>('halls', {
-    sort: 'name',
-    perPage: 50,
+  const { data: hallsRaw, isLoading: hallsLoading } = useCollection<Hall>('halls', {
+    sort: ['name'],
+    limit: 50,
   })
+  const halls = hallsRaw ?? []
 
-  const { data: teams, isLoading: teamsLoading } = usePB<Team>('teams', {
-    filter: 'active = true',
-    sort: 'name',
-    perPage: 50,
+  const { data: teamsRaw, isLoading: teamsLoading } = useCollection<Team>('teams', {
+    filter: { active: { _eq: true } },
+    sort: ['name'],
+    limit: 50,
   })
+  const teams = teamsRaw ?? []
 
-  const hallFilter = selectedHallIds.length > 0
-    ? `(${selectedHallIds.map((id) => `hall = "${id}"`).join(' || ')}) && `
-    : ''
-  const dateFilter = `(valid_from <= "${sundayStr}" || valid_from = "") && (valid_until >= "${mondayStr}" || valid_until = "")`
+  const hallCondition = selectedHallIds.length > 0
+    ? { hall: { _in: selectedHallIds } }
+    : null
+  const dateConditions: Record<string, unknown>[] = [
+    { _or: [{ valid_from: { _lte: sundayStr } }, { valid_from: { _null: true } }] },
+    { _or: [{ valid_until: { _gte: mondayStr } }, { valid_until: { _null: true } }] },
+  ]
+  const slotFilterConditions = [...dateConditions, ...(hallCondition ? [hallCondition] : [])]
 
   const {
-    data: rawSlots,
+    data: rawSlotsData,
     isLoading: slotsLoading,
     refetch: refetchSlots,
-  } = usePB<HallSlot>('hall_slots', {
-    filter: `${hallFilter}${dateFilter}`,
-    expand: 'team,hall',
+  } = useCollection<HallSlot>('hall_slots', {
+    filter: { _and: slotFilterConditions },
     all: true,
-    sort: 'day_of_week,start_time',
+    sort: ['day_of_week', 'start_time'],
   })
+  const rawSlots = wrapFkAsArray(rawSlotsData ?? [], 'team')
 
-  const closureDateFilter = `start_date <= "${sundayStr}" && end_date >= "${mondayStr}"`
+  const closureDateConditions: Record<string, unknown>[] = [
+    { start_date: { _lte: sundayStr } },
+    { end_date: { _gte: mondayStr } },
+  ]
+  const closureFilterConditions = [...closureDateConditions, ...(hallCondition ? [hallCondition] : [])]
 
   const {
-    data: closures,
+    data: closuresData,
     isLoading: closuresLoading,
     refetch: refetchClosures,
-  } = usePB<HallClosure>('hall_closures', {
-    filter: `${hallFilter}${closureDateFilter}`,
-    expand: 'hall',
-    perPage: 100,
+  } = useCollection<HallClosure>('hall_closures', {
+    filter: { _and: closureFilterConditions },
+    limit: 100,
   })
+  const closures = closuresData ?? []
 
   // Games for this week (exclude postponed)
-  const { data: games, isLoading: gamesLoading } = usePB<Game>('games', {
-    filter: `date >= "${mondayStr}" && date <= "${sundayStr}" && status != "postponed"`,
-    expand: 'kscw_team',
-    perPage: 100,
-    sort: 'date,time',
+  const { data: gamesRaw, isLoading: gamesLoading } = useCollection<Game>('games', {
+    filter: { _and: [{ date: { _gte: mondayStr } }, { date: { _lte: sundayStr } }, { away_team: { _nnull: true } }, { time: { _nnull: true } }, { _or: [{ status: { _neq: 'postponed' } }, { status: { _null: true } }] }] },
+    limit: 100,
+    sort: ['date', 'time'],
   })
+  const games = gamesRaw ?? []
 
   // Trainings for this week
-  const { data: trainings, isLoading: trainingsLoading } = usePB<Training>('trainings', {
-    filter: `date >= "${mondayStr}" && date <= "${sundayStr}"`,
-    expand: 'team',
+  const { data: trainingsRaw, isLoading: trainingsLoading } = useCollection<Training>('trainings', {
+    filter: { _and: [{ date: { _gte: mondayStr } }, { date: { _lte: sundayStr } }] },
     all: true,
-    sort: 'date,start_time',
+    sort: ['date', 'start_time'],
   })
+  const trainings = trainingsRaw ?? []
 
   // Hall events (GCal) for this week
-  const { data: hallEvents, isLoading: hallEventsLoading } = usePB<HallEvent>('hall_events', {
-    filter: `date >= "${mondayStr}" && date <= "${sundayStr}"`,
-    perPage: 100,
-    sort: 'date,start_time',
+  const { data: hallEventsRaw, isLoading: hallEventsLoading } = useCollection<HallEvent>('hall_events', {
+    filter: { _and: [{ date: { _gte: mondayStr } }, { date: { _lte: sundayStr } }] },
+    limit: 100,
+    sort: ['date', 'start_time'],
   })
+  const hallEvents = hallEventsRaw ?? []
 
   // Slot claims for this week
   const {
-    data: slotClaims,
+    data: slotClaimsRaw,
     isLoading: claimsLoading,
     refetch: refetchClaims,
-  } = usePB<SlotClaim>('slot_claims', {
-    filter: `date >= "${mondayStr}" && date <= "${sundayStr}" && status = "active"`,
-    expand: 'claimed_by_team,claimed_by_member,hall_slot',
-    perPage: 100,
+  } = useCollection<SlotClaim>('slot_claims', {
+    filter: { _and: [{ date: { _gte: mondayStr } }, { date: { _lte: sundayStr } }, { status: { _eq: 'active' } }] },
+    limit: 100,
   })
+  const slotClaims = slotClaimsRaw ?? []
 
   // Convert GCal closure events ("Halle geschlossen") into synthetic HallClosure records
   // and merge with real closures (deduplicating where a hall_closures record already exists)

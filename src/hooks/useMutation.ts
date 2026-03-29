@@ -1,12 +1,17 @@
+/**
+ * useMutation — backward-compatible wrapper around TanStack mutations.
+ *
+ * New code should import { useCreate, useUpdate, useDelete } from '../lib/query' directly.
+ */
+
 import { useState, useCallback } from 'react'
-import type { RecordModel } from 'pocketbase'
-import pb from '../pb'
+import { createRecord, updateRecord, deleteRecord } from '../lib/api'
+import { queryClient, keys } from '../lib/query'
 import { logActivity } from '../utils/logActivity'
 
-/** Collections where we skip logging (to avoid infinite loops or noise) */
 const SKIP_LOG = new Set(['user_logs'])
 
-export function useMutation<T extends RecordModel>(collection: string) {
+export function useMutation<T = Record<string, unknown>>(collection: string) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
 
@@ -15,10 +20,10 @@ export function useMutation<T extends RecordModel>(collection: string) {
       setIsLoading(true)
       setError(null)
       try {
-        const record = await pb.collection(collection).create<T>(data)
-        if (!SKIP_LOG.has(collection)) {
-          logActivity('create', collection, record.id, data)
-        }
+        const record = await createRecord<T>(collection, data)
+        const id = (record as Record<string, unknown>).id
+        if (!SKIP_LOG.has(collection)) logActivity('create', collection, String(id), data)
+        queryClient.invalidateQueries({ queryKey: keys.collection(collection) })
         return record
       } catch (err) {
         const e = err instanceof Error ? err : new Error(String(err))
@@ -32,14 +37,13 @@ export function useMutation<T extends RecordModel>(collection: string) {
   )
 
   const update = useCallback(
-    async (id: string, data: Record<string, unknown>) => {
+    async (id: string | number, data: Record<string, unknown>) => {
       setIsLoading(true)
       setError(null)
       try {
-        const record = await pb.collection(collection).update<T>(id, data)
-        if (!SKIP_LOG.has(collection)) {
-          logActivity('update', collection, id, data)
-        }
+        const record = await updateRecord<T>(collection, id, data)
+        if (!SKIP_LOG.has(collection)) logActivity('update', collection, String(id), data)
+        queryClient.invalidateQueries({ queryKey: keys.collection(collection) })
         return record
       } catch (err) {
         const e = err instanceof Error ? err : new Error(String(err))
@@ -53,14 +57,13 @@ export function useMutation<T extends RecordModel>(collection: string) {
   )
 
   const remove = useCallback(
-    async (id: string) => {
+    async (id: string | number) => {
       setIsLoading(true)
       setError(null)
       try {
-        await pb.collection(collection).delete(id)
-        if (!SKIP_LOG.has(collection)) {
-          logActivity('delete', collection, id)
-        }
+        await deleteRecord(collection, id)
+        if (!SKIP_LOG.has(collection)) logActivity('delete', collection, String(id))
+        queryClient.invalidateQueries({ queryKey: keys.collection(collection) })
         return true
       } catch (err) {
         const e = err instanceof Error ? err : new Error(String(err))

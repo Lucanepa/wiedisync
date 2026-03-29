@@ -3,7 +3,7 @@ import Modal from '@/components/Modal'
 import CategoryMultiSelect from '../../components/CategoryMultiSelect'
 import TeamMultiSelect from '../../components/TeamMultiSelect'
 import { useTeams } from '../../hooks/useTeams'
-import { pbNameToColorKey } from '../../utils/teamColors'
+import { teamNameToColorKey } from '../../utils/teamColors'
 import type { CalendarFilterState, SourceFilter } from '../../types/calendar'
 
 interface CalendarFiltersProps {
@@ -42,7 +42,7 @@ export default function CalendarFilters({ open, onClose, filters, onChange, allo
   const teamOptions = visibleTeams
     .filter((team) => team.sport === 'volleyball' || team.sport === 'basketball')
     .map((team) => {
-      const colorKey = pbNameToColorKey(team.name, team.sport)
+      const colorKey = teamNameToColorKey(team.name, team.sport)
       const sportLabel = team.sport === 'volleyball' ? tc('volleyball') : tc('basketball')
       const label = showGroups
         ? (team.sport === 'volleyball' ? `VB-${team.name}` : `BB-${team.name}`)

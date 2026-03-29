@@ -1,10 +1,9 @@
-import pb from '../pb'
+import { createRecord, isAuthenticated } from '../lib/api'
 
 type LogAction = 'create' | 'update' | 'delete'
 
 /**
- * Fire-and-forget activity log. Never throws — errors are silently swallowed
- * so logging never breaks the actual user action.
+ * Fire-and-forget activity log. Never throws.
  */
 export function logActivity(
   action: LogAction,
@@ -12,16 +11,11 @@ export function logActivity(
   recordId?: string,
   data?: Record<string, unknown> | null,
 ): void {
-  const userId = pb.authStore.record?.id
-  if (!userId) return
-
-  pb.collection('user_logs')
-    .create({
-      user: userId,
-      action,
-      collection_name: collectionName,
-      record_id: recordId ?? '',
-      data: data ?? null,
-    })
-    .catch(() => {})
+  if (!isAuthenticated()) return
+  createRecord('user_logs', {
+    action,
+    collection_name: collectionName,
+    record_id: recordId ?? '',
+    data: data ?? null,
+  }).catch(() => {})
 }

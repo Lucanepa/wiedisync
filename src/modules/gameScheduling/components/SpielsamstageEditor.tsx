@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import pb from '../../../pb'
 import type { Hall, SpielsamstagConfig } from '../../../types'
 import DatePicker from '@/components/ui/DatePicker'
+import { fetchAllItems } from '../../../lib/api'
 
 const DEFAULT_TIMES = ['11:00', '13:30', '16:00']
 
@@ -22,7 +22,7 @@ export default function SpielsamstageEditor({ spielsamstage, onUpdate }: Props) 
   }, [spielsamstage])
 
   useEffect(() => {
-    pb.collection('halls').getFullList<Hall>({ sort: 'name' }).then(setHalls).catch(() => {})
+    fetchAllItems<Hall>('halls', { sort: ['name'] }).then(setHalls).catch(() => {})
   }, [])
 
   const addSamstag = () => {

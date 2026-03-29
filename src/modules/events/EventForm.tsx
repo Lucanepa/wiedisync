@@ -4,8 +4,7 @@ import Modal from '@/components/Modal'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import { useMutation } from '../../hooks/useMutation'
-import { usePB } from '../../hooks/usePB'
-import pb from '../../pb'
+import { useCollection } from '../../lib/query'
 import { Button } from '@/components/ui/button'
 import { FormInput, FormTextarea, FormField } from '@/components/FormField'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -13,13 +12,14 @@ import DatePicker from '@/components/ui/DatePicker'
 import TeamMultiSelect from '@/components/TeamMultiSelect'
 import LocationCombobox from '@/components/LocationCombobox'
 import { Switch } from '@/components/ui/switch'
-import { pbNameToColorKey } from '../../utils/teamColors'
+import { teamNameToColorKey } from '../../utils/teamColors'
 import { formatDateLocale } from '../../utils/dateUtils'
-import { parseRespondByTime, toPBDatetime } from '../../utils/dateHelpers'
+import { parseRespondByTime, toApiDatetime } from '../../utils/dateHelpers'
 import type { Event, EventSession, Team } from '../../types'
+import { createRecord, deleteRecord, updateRecord } from '../../lib/api'
 
 interface SessionDraft {
-  id?: string // existing PB record id (for edit mode)
+  id?: string // existing record id (for edit mode)
   date: string
   start_time: string
   end_time: string
@@ -60,7 +60,8 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
   const { user, coachTeamIds } = useAuth()
   const { effectiveIsAdmin } = useAdminMode()
   const { create, update, isLoading } = useMutation<Event>('events')
-  const { data: allTeams } = usePB<Team>('teams', { filter: 'active=true', sort: 'name', perPage: 50 })
+  const { data: allTeamsRaw } = useCollection<Team>('teams', { filter: { active: { _eq: true } }, sort: ['name'], limit: 50 })
+  const allTeams = allTeamsRaw ?? []
 
   // Filter teams by permissions: admins see all, coaches see only their teams
   const availableTeams = useMemo(() => {
@@ -73,7 +74,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
     availableTeams.map((team) => ({
       value: team.id,
       label: team.name,
-      colorKey: pbNameToColorKey(team.name, team.sport),
+      colorKey: teamNameToColorKey(team.name, team.sport),
       group: team.sport === 'volleyball' ? tc('volleyball') : tc('basketball'),
     })),
   [availableTeams, tc])
@@ -99,12 +100,13 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
   const [error, setError] = useState('')
 
   // Fetch existing sessions when editing
-  const { data: existingSessions } = usePB<EventSession>('event_sessions', {
-    filter: event ? `event="${event.id}"` : '',
-    sort: 'sort_order,date,start_time',
-    perPage: 100,
+  const { data: existingSessionsRaw } = useCollection<EventSession>('event_sessions', {
+    filter: event ? { event: { _eq: event.id } } : { id: { _eq: -1 } },
+    sort: ['sort_order', 'date', 'start_time'],
+    limit: 100,
     enabled: !!event,
   })
+  const existingSessions = existingSessionsRaw ?? []
 
   useEffect(() => {
     if (event) {
@@ -238,8 +240,8 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
     const data = {
       title,
       event_type: eventType,
-      start_date: toPBDatetime(startDate),
-      end_date: toPBDatetime(endDate || startDate),
+      start_date: toApiDatetime(startDate),
+      end_date: toApiDatetime(endDate || startDate),
       all_day: allDay,
       location,
       description,
@@ -269,7 +271,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
       } else if (event) {
         // Switching from per_day/per_session back to whole — delete all sessions
         for (const s of existingSessions) {
-          await pb.collection('event_sessions').delete(s.id)
+          await deleteRecord('event_sessions', s.id)
         }
       }
 
@@ -601,7 +603,7 @@ async function syncSessions(
   // Delete removed
   for (const s of existing) {
     if (!draftIds.has(s.id)) {
-      await pb.collection('event_sessions').delete(s.id)
+      await deleteRecord('event_sessions', s.id)
     }
   }
 
@@ -616,9 +618,9 @@ async function syncSessions(
       sort_order: d.sort_order,
     }
     if (d.id && existingIds.has(d.id)) {
-      await pb.collection('event_sessions').update(d.id, payload)
+      await updateRecord('event_sessions', d.id, payload)
     } else {
-      await pb.collection('event_sessions').create(payload)
+      await createRecord('event_sessions', payload)
     }
   }
 }

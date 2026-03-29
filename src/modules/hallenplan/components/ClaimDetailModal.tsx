@@ -5,9 +5,9 @@ import TeamChip from '../../../components/TeamChip'
 import { useAuth } from '../../../hooks/useAuth'
 import { useAdminMode } from '../../../hooks/useAdminMode'
 import { formatDate } from '../../../utils/dateHelpers'
-import pb from '../../../pb'
 import { logActivity } from '../../../utils/logActivity'
 import type { HallSlot, Hall, Team, SlotClaim } from '../../../types'
+import { updateRecord } from '../../../lib/api'
 
 interface Props {
   slot: HallSlot
@@ -36,13 +36,12 @@ export default function ClaimDetailModal({ slot, claim, halls, teams, onClose, o
   const [confirmRelease, setConfirmRelease] = useState(false)
 
   const hallName = halls.find((h) => h.id === slot.hall)?.name ?? ''
-  const originalTeams = teams.filter((tm) => slot.team.includes(tm.id))
+  const originalTeams = teams.filter((tm) => slot.team?.includes(tm.id))
   const claimingTeam = teams.find((tm) => tm.id === claim.claimed_by_team)
 
-  // Resolve claiming member name from expand
-  const expandedClaim = claim as Record<string, unknown>
-  const claimedByMember = expandedClaim.expand
-    ? ((expandedClaim.expand as Record<string, { first_name?: string; last_name?: string }>)?.claimed_by_member)
+  // Resolve claiming member name from expanded relation
+  const claimedByMember = typeof claim.claimed_by_member === 'object' && claim.claimed_by_member != null
+    ? (claim.claimed_by_member as { first_name?: string; last_name?: string })
     : null
   const memberName = claimedByMember
     ? `${claimedByMember.first_name || ''} ${claimedByMember.last_name || ''}`.trim()
@@ -53,7 +52,7 @@ export default function ClaimDetailModal({ slot, claim, halls, teams, onClose, o
   async function handleRelease() {
     setReleasing(true)
     try {
-      await pb.collection('slot_claims').update(claim.id, { status: 'revoked' })
+      await updateRecord('slot_claims', claim.id, { status: 'revoked' })
       logActivity('update', 'slot_claims', claim.id, { status: 'revoked' })
       onReleased()
     } catch {

@@ -14,6 +14,7 @@ import { registerGCalSync } from './gcal-sync.js'
 import { registerScorerReminders } from './scorer-reminders.js'
 import { registerGameScheduling } from './game-scheduling.js'
 import { registerContactForm } from './contact-form.js'
+import { registerWebPush, sendPushToMember } from './web-push.js'
 
 // ── Helpers ──────────────────────────────────────────────────────
 
@@ -74,17 +75,33 @@ export default {
       try {
         const { email } = req.body
         if (!email) return res.status(400).json({ error: 'Email required' })
+        const normalised = email.toLowerCase().trim()
 
         const member = await database('members')
-          .where('email', email.toLowerCase().trim())
-          .select('id', 'wiedisync_active', 'shell')
+          .where('email', normalised)
+          .select('id', 'wiedisync_active', 'shell', 'first_name', 'last_name')
           .first()
 
-        res.json({
+        const result = {
           exists: !!member,
           claimed: member?.wiedisync_active || false,
           shell: member?.shell || false,
-        })
+        }
+
+        // For unclaimed members: include name + existing teams for profile pre-fill
+        if (member && !member.wiedisync_active) {
+          result.first_name = member.first_name || ''
+          result.last_name = member.last_name || ''
+          const season = getCurrentSeason()
+          const memberTeams = await database('member_teams')
+            .join('teams', 'teams.id', 'member_teams.team')
+            .where('member_teams.member', member.id)
+            .where('member_teams.season', season)
+            .select('teams.id', 'teams.name', 'teams.league', 'teams.sport', 'member_teams.guest_level')
+          result.existing_teams = memberTeams
+        }
+
+        res.json(result)
       } catch (err) {
         log.error(`check-email: ${err.message}`)
         res.status(500).json({ error: 'Internal error' })
@@ -505,6 +522,9 @@ export default {
           activity_type: 'game', activity_id: String(d.game), team: d.from_team, read: false,
         })
 
+        // Push notification
+        sendPushToMember(database, d.from_member, 'Delegation angenommen', 'Deine Schreiber-Delegation wurde angenommen', 'https://wiedisync.kscw.ch', 'delegation', log).catch(() => {})
+
         res.json({ success: true })
       } catch (err) {
         log.error(`scorer-delegation/accept: ${err.message}`)
@@ -528,6 +548,9 @@ export default {
             title: 'Delegation declined', body: `Your scorer duty delegation was declined`,
             activity_type: 'game', activity_id: String(d.game), team: d.from_team, read: false,
           })
+
+          // Push notification
+          sendPushToMember(database, d.from_member, 'Delegation abgelehnt', 'Deine Schreiber-Delegation wurde abgelehnt', 'https://wiedisync.kscw.ch', 'delegation', log).catch(() => {})
         }
 
         res.json({ success: true })
@@ -544,6 +567,7 @@ export default {
     registerScorerReminders(router, ctx)
     registerGameScheduling(router, ctx)
     registerContactForm(router, ctx)
+    registerWebPush(router, ctx)
 
     log.info('KSCW endpoints loaded: ~30 routes')
   },

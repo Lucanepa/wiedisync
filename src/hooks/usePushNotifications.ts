@@ -58,8 +58,8 @@ export function usePushNotifications() {
         return false
       }
 
-      // Get VAPID public key from PB
-      const vapidResp = await fetch(`${API_URL}/api/web-push/vapid-public-key`)
+      // Get VAPID public key from Directus
+      const vapidResp = await fetch(`${API_URL}/kscw/web-push/vapid-public-key`)
       const { publicKey } = await vapidResp.json()
 
       // Subscribe via PushManager
@@ -71,12 +71,13 @@ export function usePushNotifications() {
 
       const subJson = subscription.toJSON()
 
-      // Register with PB
-      await fetch(`${API_URL}/api/web-push/subscribe`, {
+      // Register with Directus
+      const token = getAccessToken()
+      await fetch(`${API_URL}/kscw/web-push/subscribe`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${getAccessToken()}`,
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
           endpoint: subJson.endpoint,
@@ -110,12 +111,13 @@ export function usePushNotifications() {
         // Unsubscribe from browser
         await subscription.unsubscribe()
 
-        // Remove from PB
-        await fetch(`${API_URL}/api/web-push/unsubscribe`, {
+        // Remove from Directus
+        const token = getAccessToken()
+        await fetch(`${API_URL}/kscw/web-push/unsubscribe`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${getAccessToken()}`,
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify({ endpoint }),
         })

@@ -109,12 +109,14 @@ export default function ScorerPage() {
 
   const { data: teamsRaw } = useCollection<Team>('teams', {
     filter: { active: { _eq: true } },
+    fields: ['id', 'name', 'sport'],
     sort: ['name'],
     all: true,
   })
   const teams = teamsRaw ?? []
 
   const { data: allMemberTeamsRaw } = useCollection<MemberTeam>('member_teams', {
+    fields: ['id', 'team', 'member', 'guest_level'],
     all: true,
     enabled: !!user,
   })

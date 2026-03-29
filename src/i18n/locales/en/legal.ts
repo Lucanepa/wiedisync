@@ -52,7 +52,7 @@ export default {
 
   storageTitle: '6. Data Storage',
   storageServer:
-    'Data is stored on a self-hosted server in Switzerland (PocketBase). The frontend is served via Cloudflare Pages.',
+    'Data is stored on a self-hosted server in Switzerland (Directus). The frontend is served via Cloudflare Pages.',
   storageLocal:
     'The following non-personal preferences are stored in your browser: color scheme (light/dark) and language setting. For logged-in users, a session token is stored in the browser.',
   storageNoCookies:

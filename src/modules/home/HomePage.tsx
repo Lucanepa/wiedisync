@@ -60,8 +60,8 @@ export default function HomePage() {
 
   // Sport filter for Directus queries (filter via kscw_team relation)
   const sportFilter = useMemo((): Record<string, unknown> | null => {
-    if (sport === 'vb') return { 'kscw_team.sport': { _eq: 'volleyball' } }
-    if (sport === 'bb') return { 'kscw_team.sport': { _eq: 'basketball' } }
+    if (sport === 'vb') return { kscw_team: { sport: { _eq: 'volleyball' } } }
+    if (sport === 'bb') return { kscw_team: { sport: { _eq: 'basketball' } } }
     return null
   }, [sport])
 
@@ -156,8 +156,8 @@ export default function HomePage() {
       { date: { _gte: today } },
       { cancelled: { _eq: false } },
     ]
-    if (sport === 'vb') conditions.push({ 'team.sport': { _eq: 'volleyball' } })
-    else if (sport === 'bb') conditions.push({ 'team.sport': { _eq: 'basketball' } })
+    if (sport === 'vb') conditions.push({ team: { sport: { _eq: 'volleyball' } } })
+    else if (sport === 'bb') conditions.push({ team: { sport: { _eq: 'basketball' } } })
     return { _and: conditions }
   }, [userTeamIds, hasTeams, today, sport])
 

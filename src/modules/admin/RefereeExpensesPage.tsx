@@ -31,7 +31,7 @@ export default function RefereeExpensesPage() {
   const filter = useMemo((): Record<string, unknown> => {
     const conditions: Record<string, unknown>[] = []
     if (teamFilter) conditions.push({ team: { _eq: teamFilter } })
-    if (seasonFilter) conditions.push({ 'game.season': { _eq: seasonFilter } })
+    if (seasonFilter) conditions.push({ game: { season: { _eq: seasonFilter } } })
     if (conditions.length === 0) return {}
     return conditions.length === 1 ? conditions[0] : { _and: conditions }
   }, [teamFilter, seasonFilter])

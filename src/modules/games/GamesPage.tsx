@@ -83,8 +83,8 @@ export default function GamesPage() {
 
   // Sport filter clause for Directus queries
   const sportFilter = useMemo((): Record<string, unknown> | null => {
-    if (sport === 'vb') return { 'kscw_team.sport': { _eq: 'volleyball' } }
-    if (sport === 'bb') return { 'kscw_team.sport': { _eq: 'basketball' } }
+    if (sport === 'vb') return { kscw_team: { sport: { _eq: 'volleyball' } } }
+    if (sport === 'bb') return { kscw_team: { sport: { _eq: 'basketball' } } }
     return null
   }, [sport])
 

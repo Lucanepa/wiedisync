@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import type { Hall, LocationResult } from '../types'
-import { usePB } from './usePB'
+import { useCollection } from '../lib/query'
 
 function hallToLocationResult(hall: Hall): LocationResult {
   return {
@@ -9,12 +9,13 @@ function hallToLocationResult(hall: Hall): LocationResult {
     city: hall.city,
     lat: null,
     lon: null,
-    source: 'pocketbase',
+    source: 'directus',
   }
 }
 
 export function useHallSearch(query: string) {
-  const { data: halls } = usePB<Hall>('halls', { all: true, sort: 'name' })
+  const { data: hallsRaw } = useCollection<Hall>('halls', { all: true, sort: ['name'] })
+  const halls = hallsRaw ?? []
   const [results, setResults] = useState<LocationResult[]>([])
 
   useEffect(() => {

@@ -2,10 +2,14 @@ import { useTranslation } from 'react-i18next'
 import { Clock, MapPin, MessageSquare, UserCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { Carpool, CarpoolPassenger } from '../../types'
+import { asObj } from '../../utils/relations'
+
+type DriverInfo = { first_name: string; last_name: string }
+type PassengerInfo = { first_name: string; last_name: string }
 
 interface CarpoolCardProps {
-  carpool: Carpool & { expand?: { driver?: { first_name: string; last_name: string } } }
-  passengers: Array<CarpoolPassenger & { expand?: { passenger?: { first_name: string; last_name: string } } }>
+  carpool: Carpool & { driver: DriverInfo | string }
+  passengers: Array<CarpoolPassenger & { passenger: PassengerInfo | string }>
   currentUserId?: string
   onJoin: (carpoolId: string) => void
   onLeave: (carpoolId: string) => void
@@ -15,15 +19,20 @@ interface CarpoolCardProps {
 export default function CarpoolCard({ carpool, passengers, currentUserId, onJoin, onLeave, onCancel }: CarpoolCardProps) {
   const { t } = useTranslation('carpool')
 
-  const driverName = carpool.expand?.driver
-    ? `${carpool.expand.driver.first_name} ${carpool.expand.driver.last_name}`
+  const driverObj = asObj<DriverInfo>(carpool.driver)
+  const driverName = driverObj
+    ? `${driverObj.first_name} ${driverObj.last_name}`
     : t('driver')
 
   const taken = passengers.length
   const total = carpool.seats_available
   const isFull = carpool.status === 'full'
-  const isDriver = carpool.driver === currentUserId
-  const isPassenger = passengers.some(p => p.passenger === currentUserId)
+  const driverId = typeof carpool.driver === 'object' ? (carpool.driver as unknown as { id: string }).id : carpool.driver
+  const isDriver = driverId === currentUserId
+  const isPassenger = passengers.some(p => {
+    const pid = typeof p.passenger === 'object' ? (p.passenger as unknown as { id: string }).id : p.passenger
+    return pid === currentUserId
+  })
   const progressPct = Math.min((taken / total) * 100, 100)
 
   return (
@@ -83,8 +92,9 @@ export default function CarpoolCard({ carpool, passengers, currentUserId, onJoin
           <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">{t('passengers')}</p>
           <div className="mt-1 flex flex-wrap gap-1">
             {passengers.map((p) => {
-              const name = p.expand?.passenger
-                ? `${p.expand.passenger.first_name} ${p.expand.passenger.last_name}`
+              const passengerObj = asObj<PassengerInfo>(p.passenger)
+              const name = passengerObj
+                ? `${passengerObj.first_name} ${passengerObj.last_name}`
                 : '...'
               return (
                 <span

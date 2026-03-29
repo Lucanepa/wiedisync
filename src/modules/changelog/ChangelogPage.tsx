@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '2.6.1'
+const APP_VERSION = '2.8.1'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,90 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.8.1',
+    date: '2026-03-29',
+    sections: [
+      {
+        title: 'Improvements',
+        items: [
+          'Branded email templates — all emails (password reset, invitations, OTP codes, scorer reminders) now use the KSCW dark-mode design with logo and sport accent colors',
+        ],
+      },
+    ],
+  },
+  {
+    version: '2.8.0',
+    date: '2026-03-29',
+    sections: [
+      {
+        title: 'Infrastructure',
+        items: [
+          'Backend hooks migrated to Postgres triggers — notifications, validations, and data guards now run at the database level for faster response times and lower memory usage',
+          'All custom API endpoints ported to Directus — game scheduling, team invites, iCal feeds, contact form, scorer reminders, and OTP verification',
+          'Batch notification system — activity reminders and deadline alerts now use efficient SQL queries instead of per-member processing',
+          'Daily sync crons — Swiss Volley and Basketplan game/ranking syncs now run automatically from Directus (06:00 and 06:05 UTC)',
+          'Web push notifications now delivered via Directus — deadline reminders, upcoming activities, and scorer delegation updates trigger push',
+        ],
+      },
+    ],
+  },
+  {
+    version: '2.7.2',
+    date: '2026-03-29',
+    sections: [
+      {
+        title: 'Features',
+        items: [
+          'Google login — you can now sign in with your Google account',
+        ],
+      },
+      {
+        title: 'Bug Fixes',
+        items: [
+          'Fixed hall plan crash when slots have no team assigned',
+          'Fixed games, sponsors, and training data not loading for logged-in users',
+          'Incomplete games (missing opponent, date, or time) are no longer shown',
+        ],
+      },
+    ],
+  },
+  {
+    version: '2.7.1',
+    date: '2026-03-29',
+    sections: [
+      {
+        title: 'Bug Fixes',
+        items: [
+          'Fixed data comparison issues — relation fields (team, hall, member assignments) now correctly match across all pages',
+          'Fixed scorer duty page loading error — removed non-existent field from member queries',
+          'Fixed sorting on recently created records across scorer, polls, feedback, and scheduling pages',
+          'Fixed training and game filters to correctly include records with no status set',
+        ],
+      },
+      {
+        title: 'Infrastructure',
+        items: [
+          'Added automatic timestamps (created/updated) to all database collections — 3886 existing records backfilled',
+          'Increased login session duration from 15 minutes to 1 hour',
+        ],
+      },
+    ],
+  },
+  {
+    version: '2.7.0',
+    date: '2026-03-28',
+    sections: [
+      {
+        title: 'Infrastructure',
+        items: [
+          'Backend migration to Directus — all data queries now use Directus inline relation expansion instead of PocketBase expand pattern (62 files updated)',
+          'Sentry error tracking — automatic error reporting with session replay, user context, and source map uploads',
+          'Cloudflare Web Analytics support — privacy-first analytics with no cookies required',
+        ],
+      },
+    ],
+  },
   {
     version: '2.6.1',
     date: '2026-03-27',

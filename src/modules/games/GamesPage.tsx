@@ -4,7 +4,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import { useSportPreference } from '../../hooks/useSportPreference'
 import type { Game, Ranking, Team, Participation, ParticipationWithMember } from '../../types'
-import { usePB } from '../../hooks/usePB'
+import { useCollection } from '../../lib/query'
 import { useRealtime } from '../../hooks/useRealtime'
 import { teamIds } from '../../utils/teamColors'
 import SportToggle from '../../components/SportToggle'
@@ -20,10 +20,10 @@ import SharedEmptyState from '../../components/EmptyState'
 import { getGameWarnings, type Warning } from '../../utils/participationWarnings'
 import { Calendar, Trophy, BarChart3, LayoutGrid } from 'lucide-react'
 
-function buildTeamFilter(teamPbIds: string[]): string {
-  if (teamPbIds.length === 0) return ''
-  const clauses = teamPbIds.map((id) => `kscw_team = "${id}"`)
-  return `(${clauses.join(' || ')})`
+function buildTeamFilter(teamPbIds: string[]): Record<string, unknown> | null {
+  if (teamPbIds.length === 0) return null
+  if (teamPbIds.length === 1) return { kscw_team: { _eq: teamPbIds[0] } }
+  return { kscw_team: { _in: teamPbIds } }
 }
 
 export default function GamesPage() {
@@ -57,8 +57,9 @@ export default function GamesPage() {
 
   const INITIAL_LIMIT = 20
 
-  // Fetch all KSCW teams to map name → PB id
-  const { data: allTeams } = usePB<Team>('teams', { sort: 'name', all: true, fields: 'id,name' })
+  // Fetch all KSCW teams to map name → id
+  const { data: allTeamsRaw } = useCollection<Team>('teams', { sort: ['name'], all: true, fields: ['id', 'name'] })
+  const allTeams = allTeamsRaw ?? []
   const teamNameToId = useMemo(() => {
     const map = new Map<string, string>()
     for (const t of allTeams) map.set(t.name, t.id)
@@ -70,7 +71,7 @@ export default function GamesPage() {
   const effectiveTeams = selectedTeams.length > 0
     ? selectedTeams
     : (!effectiveIsAdmin && allUserTeamNames.length > 0 ? allUserTeamNames : [])
-  // Convert name codes to PB record IDs for the kscw_team filter
+  // Convert name codes to record IDs for the kscw_team filter
   const effectiveTeamIds = effectiveTeams
     .map((name) => teamNameToId.get(name))
     .filter((id): id is string => !!id)
@@ -80,58 +81,63 @@ export default function GamesPage() {
     : (!effectiveIsAdmin && allUserTeamIds.length > 0 ? allUserTeamIds : [])
   const teamFilter = buildTeamFilter(filterTeamIds)
 
-  // Sport filter clause for PB queries
-  const sportFilter = useMemo(() => {
-    if (sport === 'vb') return 'kscw_team.sport = "volleyball"'
-    if (sport === 'bb') return 'kscw_team.sport = "basketball"'
-    return ''
+  // Sport filter clause for Directus queries
+  const sportFilter = useMemo((): Record<string, unknown> | null => {
+    if (sport === 'vb') return { kscw_team: { sport: { _eq: 'volleyball' } } }
+    if (sport === 'bb') return { kscw_team: { sport: { _eq: 'basketball' } } }
+    return null
   }, [sport])
 
   // Build game filter/sort based on active tab
   const gameQuery = useMemo(() => {
     if (activeTab === 'rankings' || activeTab === 'scoreboard') return null
 
-    const parts: string[] = []
+    // Exclude incomplete games (no date, time, or opponent)
+    const conditions: Record<string, unknown>[] = [
+      { date: { _nnull: true } },
+      { time: { _nnull: true } },
+      { away_team: { _nnull: true } },
+    ]
     switch (activeTab) {
       case 'upcoming':
-        parts.push(`status = "scheduled"`, `date >= "${today}"`)
+        conditions.push({ status: { _eq: 'scheduled' } }, { date: { _gte: today } })
         break
       case 'results':
-        parts.push(`(status = "completed" || status = "live")`)
+        conditions.push({ status: { _in: ['completed', 'live'] } })
         break
     }
-    if (teamFilter) parts.push(teamFilter)
-    if (sportFilter) parts.push(sportFilter)
+    if (teamFilter) conditions.push(teamFilter)
+    if (sportFilter) conditions.push(sportFilter)
 
     return {
-      filter: parts.join(' && '),
-      sort: activeTab === 'upcoming' ? '+date,+time' : '-date,-time',
+      filter: conditions.length === 1 ? conditions[0] : { _and: conditions },
+      sort: activeTab === 'upcoming' ? 'date,time' : '-date,-time',
     }
   }, [activeTab, teamFilter, sportFilter, today])
 
   const perPage = showAll ? 500 : INITIAL_LIMIT
 
-  const { data: games, isLoading: gamesLoading } = usePB<Game>(
+  const { data: gamesRaw, isLoading: gamesLoading } = useCollection<Game>(
     'games',
     gameQuery && !teamsLoading
-      ? { filter: gameQuery.filter, sort: gameQuery.sort, expand: 'kscw_team,hall,scorer_member,scoreboard_member,scorer_scoreboard_member,scorer_duty_team,scoreboard_duty_team,scorer_scoreboard_duty_team,bb_scorer_member,bb_timekeeper_member,bb_24s_official,bb_duty_team,bb_scorer_duty_team,bb_timekeeper_duty_team,bb_24s_duty_team', perPage }
-      : { filter: 'id = ""', perPage: 1 },
+      ? { filter: gameQuery.filter, sort: gameQuery.sort.split(','), limit: perPage, fields: ['*', 'kscw_team.*', 'hall.*'] }
+      : { filter: { id: { _eq: -1 } }, limit: 1 },
   )
+  const games = gamesRaw ?? []
 
   // Batch-fetch ALL participations for visible games in ONE request
   const gameIds = useMemo(() => games.map((g) => g.id), [games])
-  const participationFilter = useMemo(() => {
+  const participationFilter = useMemo((): Record<string, unknown> | string => {
     if (gameIds.length === 0) return ''
-    const idClauses = gameIds.map((id) => `activity_id="${id}"`).join(' || ')
-    return `activity_type="game" && (${idClauses})`
+    return { _and: [{ activity_type: { _eq: 'game' } }, { activity_id: { _in: gameIds } }] }
   }, [gameIds])
 
-  const { data: allParticipations, refetch: refetchParticipations } = usePB<Participation>('participations', {
-    filter: participationFilter,
+  const { data: allParticipationsRaw, refetch: refetchParticipations } = useCollection<Participation>('participations', {
+    filter: participationFilter as Record<string, unknown> | undefined,
     all: true,
-    expand: 'member',
     enabled: gameIds.length > 0,
   })
+  const allParticipations = allParticipationsRaw ?? []
 
   useRealtime('participations', () => refetchParticipations())
 
@@ -150,7 +156,8 @@ export default function GamesPage() {
     // Compute warnings per game
     const warnsByGame = new Map<string, Warning[]>()
     for (const g of games) {
-      const sport = (g as any).expand?.kscw_team?.sport as 'volleyball' | 'basketball' | undefined
+      const kscwTeamObj = (g as any).kscw_team
+      const sport = (kscwTeamObj != null && typeof kscwTeamObj === 'object' ? kscwTeamObj.sport : undefined) as 'volleyball' | 'basketball' | undefined
       if (!sport) continue
       const parts = (byGame.get(g.id) ?? []) as ParticipationWithMember[]
       const warnings = getGameWarnings(parts, sport, g.min_participants || undefined)
@@ -160,10 +167,11 @@ export default function GamesPage() {
   }, [allParticipations, user, games])
 
   // Rankings — always fetch (small dataset), group client-side
-  const { data: allRankings, isLoading: rankingsLoading } = usePB<Ranking>('rankings', {
-    sort: '+league,+rank',
-    perPage: 2000,
+  const { data: allRankingsRaw, isLoading: rankingsLoading } = useCollection<Ranking>('rankings', {
+    sort: ['league', 'rank'],
+    limit: 2000,
   })
+  const allRankings = allRankingsRaw ?? []
 
   const leagueGroups = useMemo(() => {
     const grouped = new Map<string, Ranking[]>()

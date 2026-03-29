@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useId } from 'react'
+import { kscwApi } from '../../../lib/api'
 import { useTranslation } from 'react-i18next'
 import { X, Plus } from 'lucide-react'
-import pb from '../../../pb'
 import { Input } from '../../../components/ui/input'
 import { Button } from '../../../components/ui/button'
 import {
@@ -130,14 +130,13 @@ export default function VisualQueryBuilder({
     if (propCollections) return
     let cancelled = false
     setLoadingCollections(true)
-    pb.send('/api/admin/sql', {
+    kscwApi<{ rows?: unknown[][] }>('/admin/sql', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+      body: {
         query: "SELECT name FROM _collections WHERE type != 'view' ORDER BY name",
-      }),
+      },
     })
-      .then((res: { rows?: unknown[][] }) => {
+      .then((res) => {
         if (cancelled) return
         const names = (res?.rows ?? []).map((r: unknown[]) => String(r[0]))
         setCollectionNames(names)
@@ -159,14 +158,13 @@ export default function VisualQueryBuilder({
     }
     let cancelled = false
     setLoadingSchema(true)
-    pb.send('/api/admin/sql', {
+    kscwApi<{ rows?: unknown[][] }>('/admin/sql', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+      body: {
         query: `SELECT fields FROM _collections WHERE name = '${collection}' LIMIT 1`,
-      }),
+      },
     })
-      .then((res: { rows?: unknown[][] }) => {
+      .then((res) => {
         if (cancelled) return
         const raw = res?.rows?.[0]?.[0]
         let parsed: SchemaField[] = []

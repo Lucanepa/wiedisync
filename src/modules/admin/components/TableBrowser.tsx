@@ -1,8 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { RecordModel } from 'pocketbase'
-import pb from '../../../pb'
-import { usePB } from '../../../hooks/usePB'
+import { fetchItems } from '../../../lib/api'
+import { useCollection } from '../../../lib/query'
 import ResultsTable from './ResultsTable'
 import SchemaViewer from './SchemaViewer'
 import RecordEditModal from './RecordEditModal'
@@ -38,24 +37,31 @@ export default function TableBrowser({ collections, loadingCollections }: TableB
   const [filterText, setFilterText] = useState('')
   const [appliedFilter, setAppliedFilter] = useState('')
   const [showSchema, setShowSchema] = useState(false)
-  const [editRecord, setEditRecord] = useState<RecordModel | null>(null)
+  const [editRecord, setEditRecord] = useState<Record<string, unknown> | null>(null)
   const [showCreate, setShowCreate] = useState(false)
 
   const selectedCol = collections.find((c) => c.name === selected)
 
-  // Build sort string
-  const sort = sortField ? `${sortDir}${sortField}` : ''
+  // Build sort array
+  const sort = sortField ? [`${sortDir}${sortField}`] : undefined
+
+  // Parse filter string as JSON object (if provided)
+  const parsedFilter = useMemo((): Record<string, unknown> | undefined => {
+    if (!appliedFilter) return undefined
+    try { return JSON.parse(appliedFilter) } catch { return undefined }
+  }, [appliedFilter])
 
   // Fetch records for selected collection
-  const { data: records, total, isLoading, refetch } = usePB(selected, {
-    page,
-    perPage: PER_PAGE,
+  const { data: recordsRaw, isLoading, refetch } = useCollection(selected, {
+    offset: (page - 1) * PER_PAGE,
+    limit: PER_PAGE,
     sort,
-    filter: appliedFilter,
+    filter: parsedFilter,
     enabled: !!selected,
   })
-
-  const totalPages = Math.ceil(total / PER_PAGE)
+  const records = recordsRaw ?? []
+  const total = records.length
+  const totalPages = Math.max(1, Math.ceil(total / PER_PAGE))
 
   // Column names for the results table
   const columns = useMemo(() => {
@@ -129,10 +135,13 @@ export default function TableBrowser({ collections, loadingCollections }: TableB
         for (let i = 0; i < idArr.length; i += 50) {
           if (cancelled) return
           const batch = idArr.slice(i, i + 50)
-          const filter = batch.map((id) => `id="${id}"`).join('||')
           try {
-            const res = await pb.collection(colName).getList(1, 50, { filter, fields: 'id,name,first_name,last_name,full_name,title,email' })
-            for (const rec of res.items) {
+            const res = await fetchItems<Record<string, unknown>>(colName, {
+              filter: { id: { _in: batch } },
+              fields: ['id', 'name', 'first_name', 'last_name', 'full_name', 'title', 'email'],
+              limit: 50,
+            })
+            for (const rec of res) {
               // Try multiple display name strategies
               const label =
                 [rec.last_name, rec.first_name].filter(Boolean).join(' ') ||
@@ -141,7 +150,7 @@ export default function TableBrowser({ collections, loadingCollections }: TableB
                 rec.title ||
                 rec.email ||
                 rec.id
-              idMap[rec.id] = label
+              idMap[String(rec.id)] = String(label)
             }
           } catch {
             // Collection might not have those fields, fall back to id
@@ -332,7 +341,7 @@ export default function TableBrowser({ collections, loadingCollections }: TableB
                   if (!row || row.closest('thead')) return
                   const idx = Array.from(row.parentElement?.children ?? []).indexOf(row)
                   if (idx >= 0 && records[idx]) {
-                    setEditRecord(records[idx])
+                    setEditRecord(records[idx] as never)
                   }
                 }}
               >

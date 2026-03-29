@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import pb from '../../../pb'
 import type { GameSchedulingSeason } from '../../../types'
+import { createRecord, fetchAllItems, updateRecord } from '../../../lib/api'
 
 export function useGameSchedulingSeason() {
   const [season, setSeason] = useState<GameSchedulingSeason | null>(null)
@@ -11,12 +11,12 @@ export function useGameSchedulingSeason() {
   const fetchSeasons = useCallback(async () => {
     setIsLoading(true)
     try {
-      const records = await pb.collection('game_scheduling_seasons').getFullList<GameSchedulingSeason>({
-        sort: '-created',
+      const records = await fetchAllItems<GameSchedulingSeason>('game_scheduling_seasons', {
+        sort: ['-date_created'],
       })
       setAllSeasons(records)
       // Auto-select the open one, or the most recent
-      const open = records.find(s => s.status === 'open')
+      const open = records.find((s: GameSchedulingSeason) => s.status === 'open')
       setSeason(open || records[0] || null)
     } catch (err) {
       setError(err instanceof Error ? err : new Error(String(err)))
@@ -28,7 +28,7 @@ export function useGameSchedulingSeason() {
   useEffect(() => { fetchSeasons() }, [fetchSeasons])
 
   const createSeason = useCallback(async (seasonName: string) => {
-    const record = await pb.collection('game_scheduling_seasons').create<GameSchedulingSeason>({
+    const record = await createRecord<GameSchedulingSeason>('game_scheduling_seasons', {
       season: seasonName,
       status: 'setup',
       spielsamstage: [],
@@ -40,7 +40,7 @@ export function useGameSchedulingSeason() {
   }, [fetchSeasons])
 
   const updateSeason = useCallback(async (id: string, data: Partial<GameSchedulingSeason>) => {
-    const record = await pb.collection('game_scheduling_seasons').update<GameSchedulingSeason>(id, data)
+    const record = await updateRecord<GameSchedulingSeason>('game_scheduling_seasons', id, data)
     await fetchSeasons()
     return record
   }, [fetchSeasons])

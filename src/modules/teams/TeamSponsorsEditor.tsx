@@ -2,9 +2,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { Plus, Trash2, Pencil, Globe, X, Upload } from 'lucide-react'
-import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
-import { getFileUrl } from '../../utils/pbFile'
+import { getFileUrl } from '../../utils/fileUrl'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
 import { Switch } from '../../components/ui/switch'
@@ -12,6 +11,7 @@ import { Label } from '../../components/ui/label'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import EmptyState from '../../components/EmptyState'
 import type { Team, Sponsor } from '../../types'
+import { createRecord, deleteRecord, fetchAllItems, updateRecord } from '../../lib/api'
 
 export default function TeamSponsorsEditor({ team }: { team: Team }) {
   const { t } = useTranslation('teams')
@@ -31,9 +31,9 @@ export default function TeamSponsorsEditor({ team }: { team: Team }) {
 
   const fetchSponsors = useCallback(async () => {
     try {
-      const records = await pb.collection('sponsors').getFullList<Sponsor>({
-        filter: `teams ~ "${team.id}"`,
-        sort: 'sort_order',
+      const records = await fetchAllItems<Sponsor>('sponsors', {
+        filter: { teams: { teams_id: { _eq: team.id } } },
+        sort: ['sort_order'],
       })
       setSponsors(records)
     } catch {
@@ -79,12 +79,12 @@ export default function TeamSponsorsEditor({ team }: { team: Team }) {
 
     try {
       if (editingId) {
-        await pb.collection('sponsors').update(editingId, formData)
+        await updateRecord('sponsors', editingId, formData as unknown as Record<string, unknown>)
         logActivity('update', 'sponsors', editingId, { name: name.trim(), website_url: websiteUrl.trim(), team_page_only: teamPageOnly })
       } else {
         formData.append('teams', team.id)
         formData.append('sort_order', String(sponsors.length))
-        const created = await pb.collection('sponsors').create(formData)
+        const created = await createRecord<{id: string}>('sponsors', formData as unknown as Record<string, unknown>)
         logActivity('create', 'sponsors', created.id, { name: name.trim(), website_url: websiteUrl.trim(), team_page_only: teamPageOnly })
       }
       toast.success(t('sponsorSaved'))
@@ -98,7 +98,7 @@ export default function TeamSponsorsEditor({ team }: { team: Team }) {
   const handleDelete = async () => {
     if (!deleteTarget) return
     try {
-      await pb.collection('sponsors').delete(deleteTarget.id)
+      await deleteRecord('sponsors', deleteTarget.id)
       logActivity('delete', 'sponsors', deleteTarget.id, { name: deleteTarget.name })
       toast.success(t('sponsorDeleted'))
       setDeleteTarget(null)
@@ -111,7 +111,7 @@ export default function TeamSponsorsEditor({ team }: { team: Team }) {
   const handleTeamPageOnlyToggle = async (sp: Sponsor) => {
     try {
       const next = !sp.team_page_only
-      await pb.collection('sponsors').update(sp.id, { team_page_only: next })
+      await updateRecord('sponsors', sp.id, { team_page_only: next })
       logActivity('update', 'sponsors', sp.id, { team_page_only: next })
       setSponsors((prev) => prev.map((s) => (s.id === sp.id ? { ...s, team_page_only: next } : s)))
     } catch {

@@ -72,8 +72,8 @@ export default function SummaryView({ slots, closures, weekDays, halls }: Summar
     for (const slot of slots) {
       const startMin = timeToMinutes(slot.start_time)
       const endMin = timeToMinutes(slot.end_time)
-      const expanded = (slot as Record<string, unknown>).expand as Record<string, Record<string, unknown>> | undefined
-      const teamName = (expanded?.team?.name as string) ?? ''
+      const first = slot.team?.[0]
+      const teamName = (first != null && typeof first === 'object') ? (first as { name: string }).name ?? '' : ''
 
       for (let m = startMin; m < endMin; m += SUMMARY_INTERVAL) {
         const bucketMin = Math.floor(m / SUMMARY_INTERVAL) * SUMMARY_INTERVAL

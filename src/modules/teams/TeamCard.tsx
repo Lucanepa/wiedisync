@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import TeamChip from '../../components/TeamChip'
 import { getTeamColor, trimBBTeamName } from '../../utils/teamColors'
-import { getFileUrl } from '../../utils/pbFile'
+import { getFileUrl } from '../../utils/fileUrl'
 import type { Team } from '../../types'
 
 interface TeamCardProps {

@@ -2,6 +2,64 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [2.8.1] — 2026-03-29
+
+### Improvements
+
+- **Branded email templates** — All KSCW emails now use consistent dark-mode branded design. Directus auth emails (password reset, user invitation) use Liquid templates mounted into the container. OTP verification emails display a large gold code with alert box. Scorer reminder emails include sport-aware accent colors (VB gold / BB orange), game info cards, and CTA to scorer page. Shared JS template helper (`email-template.js`) ported from PocketBase `email_template_lib.js`. All emails include both HTML and plain-text fallbacks.
+
+## [2.8.0] — 2026-03-29
+
+### Infrastructure
+
+- **Postgres triggers** — Moved 9 validation and notification hooks from Node.js into Postgres triggers: slot claim validation, shell member conversion, coach approval guard, guest participation block, training claim revocation, and batch notifications on games/trainings/events CRUD. Zero Node RAM overhead — triggers use efficient `INSERT...SELECT` for batch member notifications.
+- **Directus custom endpoints** — Ported all 30+ PocketBase `routerAdd` hooks to Directus endpoint extension: shell invites (create/claim/extend/info), OTP email verification, password set, contact form with coach routing, game scheduling (7 routes), iCal feed (volleyball/basketball/all), GCal sync, scorer reminders, feedback→GitHub, scorer delegation accept/decline.
+- **Optimized crons** — Participation reminders, daily notification reminders, auto-cancel trainings, and auto-decline tentatives now use batch SQL instead of per-member loops. Shell expiry, invite expiry, and notification cleanup are single UPDATE/DELETE statements.
+- **Daily sync crons** — Swiss Volley (06:00 UTC) and Basketplan (06:05 UTC) sync crons added to Directus hooks extension. Crons call the existing sync endpoints via internal HTTP with `DIRECTUS_ADMIN_TOKEN` — single source of truth, no code duplication.
+- **Web push via Directus** — Push subscription endpoints (`/kscw/web-push/*`) and `sendPushToMember`/`sendPushToMembers` helpers migrated from PocketBase hooks to Directus endpoint extension. Crons now trigger push after inserting deadline and upcoming-activity notifications. Scorer delegation accept/decline also sends push. Frontend hook updated to use Directus auth. SQL migration for `push_subscriptions` table.
+- **Postgres DEFAULT values** — `members.language` defaults to `'german'`, `members.birthdate_visibility` to `'full'` at the database level, eliminating the member_defaults filter hook.
+
+## [2.7.2] — 2026-03-29
+
+### Features
+
+- **Google OAuth SSO** — Configured Directus dev SSO with OpenID driver for Google login. Redirect allow list includes dev, prod, and localhost callback URLs.
+
+### Bug Fixes
+
+- **Fixed hallenplan crash** — `hall_slots.team` is a single M2O integer FK in Directus (was multi-relation array in PocketBase). Added `wrapFkAsArray()` utility to normalize single FKs into arrays at fetch time. Added null safety to all `slot.team` accesses across hallenplan components.
+- **Fixed 403 on games, sponsors, trainings** — Directus rejects PocketBase-style dot-notation relational filters (`'kscw_team.sport'`). Converted to nested object syntax (`{kscw_team: {sport: ...}}`).
+- **Excluded incomplete games** — Games without an opponent, date, or time are now filtered out at the query level across all views (games, home, spielplanung, hallenplan, calendar).
+
+## [2.7.1] — 2026-03-29
+
+### Bug Fixes
+
+- **Integer FK stringification** — Enhanced `stringifyIds()` to convert all Directus integer foreign key fields to strings (not just `id`). Fixes silent comparison failures across all pages where relation fields like `kscw_team`, `hall`, `scorer_duty_team` were returned as integers but compared to string IDs.
+- **Removed non-existent `name` field** from members collection queries (scorer, roster editor) — caused 403 errors in Directus.
+- **Fixed sort field names** — Replaced PocketBase `created`/`updated` with Directus `date_created`/`date_updated` across 10 files.
+- **Fixed `_neq` NULL exclusion** — Added null fallback on hallenplan and player profile status filters.
+- **Fixed null safety** on `hall_slots.team` array access in recurring training modal.
+
+### Code Quality
+
+- **Deduplicated 30+ local `asObj()` definitions** — replaced with imports from shared `src/utils/relations.ts`.
+- **Replaced 3 `getId()` duplicates** with `relId()` from shared utility.
+
+### Infrastructure
+
+- **Added Directus system fields** — `date_created`, `date_updated`, `user_created`, `user_updated` on all 42 collections. Backfilled 3886 existing records.
+- **Increased Directus dev token TTL** from 15min to 1 hour (refresh token from 7d to 30d).
+
+## [2.7.0] — 2026-03-28
+
+### Infrastructure
+
+- **Directus relation expansion** — Migrated all 62 files from PocketBase `obj.expand?.relation` pattern to Directus inline relation access with `fields: ['*', 'relation.*']` queries. Added `asObj<T>()` type-safe helper for runtime narrowing across all modules (games, trainings, events, scorer, hallenplan, calendar, auth, admin, teams, carpool).
+- **Sentry error tracking** — Added `@sentry/react` with ErrorBoundary (German fallback UI), automatic user context on login/logout, `@sentry/vite-plugin` for source map uploads, and session replay. Configured via `VITE_SENTRY_DSN` env var.
+- **Cloudflare Web Analytics** — CSP headers updated; enable via CF Pages dashboard toggle (no code changes needed, privacy-first, no cookies).
+- **Participations public access** — Added public read permission for participations collection in Directus so unauthenticated homepage game cards load correctly.
+
 ## [2.6.1] — 2026-03-27
 
 ### Bug Fixes

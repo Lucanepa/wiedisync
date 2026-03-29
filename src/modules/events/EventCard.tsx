@@ -10,7 +10,22 @@ import { useAuth } from '../../hooks/useAuth'
 import { formatDate, formatTime } from '../../utils/dateHelpers'
 import type { Event, Team, Participation } from '../../types'
 
-type EventExpanded = Event & { expand?: { teams?: Team[] } }
+/** Extract Team objects from Directus M2M junction array (events_teams[].teams_id) */
+function asTeams(teams: unknown[] | null | undefined): Team[] {
+  if (!Array.isArray(teams) || teams.length === 0) return []
+  // Directus M2M: [{ teams_id: Team }] or [{ teams_id: number }] or [Team] or [string]
+  return teams
+    .map((t: any) => t?.teams_id ?? t)
+    .filter((t): t is Team => t != null && typeof t === 'object' && 'name' in t)
+}
+
+function teamId(val: unknown): string {
+  if (!val) return ''
+  if (typeof val === 'string') return val
+  if (typeof val === 'number') return String(val)
+  const obj = (val as any)?.teams_id ?? val
+  return typeof obj === 'object' ? String((obj as any).id ?? '') : String(obj ?? '')
+}
 
 const eventTypeColors: Record<string, { bg: string; text: string }> = {
   verein: { bg: '#dbeafe', text: '#1e40af' },
@@ -28,7 +43,7 @@ function isHtml(str: string): boolean {
 }
 
 interface EventCardProps {
-  event: EventExpanded
+  event: Event
   onClick?: () => void
   onEdit?: (event: Event) => void
   onDelete?: (eventId: string) => void
@@ -52,11 +67,11 @@ const statusBorderColor: Record<string, string> = {
 export default function EventCard({ event, onClick, onEdit, onDelete, onOpenRoster, participations, myParticipation, onParticipationSaved }: EventCardProps) {
   const { t } = useTranslation('events')
   const { user, canParticipateIn } = useAuth()
-  const teams = event.expand?.teams ?? []
+  const teams = asTeams(event.teams)
   // Club-wide events (no teams): all logged-in users can RSVP
   // Team events: only members of those teams can RSVP
   const canRSVP = user && (
-    !event.teams?.length || event.teams.some((tid) => canParticipateIn(tid))
+    !event.teams?.length || event.teams.some((tid) => canParticipateIn(teamId(tid)))
   )
   const myStatus = myParticipation?.status ?? null
   const warnings = getEventWarnings(participations ?? [], event.min_participants)
@@ -161,7 +176,7 @@ export default function EventCard({ event, onClick, onEdit, onDelete, onOpenRost
             activityType="event"
             activityId={event.id}
             activityDate={event.start_date?.split(' ')[0]}
-            teamId={event.teams?.[0]}
+            teamId={teamId(event.teams?.[0])}
             respondBy={event.respond_by}
             maxPlayers={event.max_players}
             requireNoteIfAbsent={event.require_note_if_absent}

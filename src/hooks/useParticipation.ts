@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { usePB } from './usePB'
+import { useCollection } from '../lib/query'
 import { useMutation } from './useMutation'
 import { useAuth } from './useAuth'
 import { useRealtime } from './useRealtime'
@@ -15,22 +15,28 @@ export function useParticipation(
 ) {
   const { user } = useAuth()
 
-  const sessionFilter = sessionId ? ` && session_id="${sessionId}"` : ''
-  const { data: participations, refetch } = usePB<Participation>('participations', {
+  const { data: participationsRaw, refetch } = useCollection<Participation>('participations', {
     filter: user && activityId
-      ? `member="${user.id}" && activity_type="${activityType}" && activity_id="${activityId}"${sessionFilter}`
-      : '',
-    perPage: 1,
+      ? { _and: [
+          { member: { _eq: user.id } },
+          { activity_type: { _eq: activityType } },
+          { activity_id: { _eq: activityId } },
+          ...(sessionId ? [{ session_id: { _eq: sessionId } }] : []),
+        ] }
+      : { id: { _eq: -1 } },
+    limit: 1,
     enabled: !!user && !!activityId,
   })
+  const participations = participationsRaw ?? []
 
-  const { data: absencesRaw } = usePB<Absence>('absences', {
+  const { data: absencesData } = useCollection<Absence>('absences', {
     filter: user && activityDate
-      ? `member="${user.id}" && start_date<="${activityDate}" && end_date>="${activityDate}"`
-      : '',
-    perPage: 5,
+      ? { _and: [{ member: { _eq: user.id } }, { start_date: { _lte: activityDate } }, { end_date: { _gte: activityDate } }] }
+      : { id: { _eq: -1 } },
+    limit: 5,
     enabled: !!user && !!activityDate,
   })
+  const absencesRaw = absencesData ?? []
 
   const { create, update, remove } = useMutation<Participation>('participations')
 
@@ -152,20 +158,20 @@ export function useTeamParticipations(
   memberIds: string[],
   sessionId?: string,
 ) {
-  const memberFilter = memberIds.length > 0
-    ? memberIds.map((id) => `member="${id}"`).join(' || ')
-    : 'member=""'
-
-  const sessionFilter = sessionId ? ` && session_id="${sessionId}"` : ''
-  const { data, refetch, isLoading } = usePB<Participation>('participations', {
-    filter: activityId
-      ? `(${memberFilter}) && activity_type="${activityType}" && activity_id="${activityId}"${sessionFilter}`
-      : '',
+  const { data, refetch, isLoading } = useCollection<Participation>('participations', {
+    filter: activityId && memberIds.length > 0
+      ? { _and: [
+          { member: { _in: memberIds } },
+          { activity_type: { _eq: activityType } },
+          { activity_id: { _eq: activityId } },
+          ...(sessionId ? [{ session_id: { _eq: sessionId } }] : []),
+        ] }
+      : { id: { _eq: -1 } },
     all: true,
     enabled: !!activityId && memberIds.length > 0,
   })
 
-  return { participations: data, refetch, isLoading }
+  return { participations: data ?? [], refetch, isLoading }
 }
 
 /** Fetch all participations for an event across all sessions (for roster aggregation) */
@@ -173,17 +179,17 @@ export function useAllEventParticipations(
   activityId: string,
   memberIds: string[],
 ) {
-  const memberFilter = memberIds.length > 0
-    ? memberIds.map((id) => `member="${id}"`).join(' || ')
-    : 'member=""'
-
-  const { data, refetch, isLoading } = usePB<Participation>('participations', {
-    filter: activityId
-      ? `(${memberFilter}) && activity_type="event" && activity_id="${activityId}"`
-      : '',
+  const { data, refetch, isLoading } = useCollection<Participation>('participations', {
+    filter: activityId && memberIds.length > 0
+      ? { _and: [
+          { member: { _in: memberIds } },
+          { activity_type: { _eq: 'event' } },
+          { activity_id: { _eq: activityId } },
+        ] }
+      : { id: { _eq: -1 } },
     all: true,
     enabled: !!activityId && memberIds.length > 0,
   })
 
-  return { participations: data, refetch, isLoading }
+  return { participations: data ?? [], refetch, isLoading }
 }

@@ -3,6 +3,7 @@ import TeamChip from '../../components/TeamChip'
 import type { Game, Team } from '../../types'
 import { parseDate, formatDate } from '../../utils/dateUtils'
 import { formatTime } from '../../utils/dateHelpers'
+import { asObj } from '../../utils/relations'
 
 interface ListViewProps {
   games: Game[]
@@ -11,14 +12,14 @@ interface ListViewProps {
 }
 
 function getTeamName(game: Game, teams: Team[]): string {
-  const expanded = (game.expand as { kscw_team?: Team })?.kscw_team
+  const expanded = asObj<Team>(game.kscw_team)
   if (expanded) return expanded.name
   const team = teams.find((t) => t.id === game.kscw_team)
   return team?.name ?? ''
 }
 
 function getHallName(game: Game): string {
-  const expanded = (game.expand as { hall?: { name: string } })?.hall
+  const expanded = asObj<{ name: string }>(game.hall)
   return expanded?.name ?? ''
 }
 
@@ -149,7 +150,7 @@ function ByTeamView({ games, teams }: { games: Game[]; teams: Team[] }) {
       const teamId = game.kscw_team
       if (!byTeam.has(teamId)) {
         const team = teams.find((t) => t.id === teamId)
-        const expanded = (game.expand as { kscw_team?: Team })?.kscw_team
+        const expanded = asObj<Team>(game.kscw_team)
         byTeam.set(teamId, { team: team ?? expanded ?? ({ name: '?' } as Team), games: [] })
       }
       byTeam.get(teamId)!.games.push(game)

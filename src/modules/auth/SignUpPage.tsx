@@ -4,8 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
 import { useAuth } from '../../hooks/useAuth'
 import { useTheme } from '../../hooks/useTheme'
-import { usePB } from '../../hooks/usePB'
-import pb from '../../pb'
+import { useCollection } from '../../lib/query'
 import { logActivity } from '../../utils/logActivity'
 import { Button } from '@/components/ui/button'
 import Modal from '@/components/Modal'
@@ -13,17 +12,17 @@ import DatenschutzPage from '../legal/DatenschutzPage'
 import PrivacyNotice from '../../components/PrivacyNotice'
 import { FormInput, FormField } from '@/components/FormField'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { LANGUAGES, type PbLanguage } from '../../i18n/languageConfig'
-import { pbLangToI18n } from '../../utils/languageMap'
+import { LANGUAGES, type BackendLanguage } from '../../i18n/languageConfig'
+import { backendLangToI18n } from '../../utils/languageMap'
 import { OtpInput } from '../../components/OtpInput'
-import { getCurrentSeason } from '../../utils/dateHelpers'
 import { Checkbox } from '@/components/ui/checkbox'
 import deFlag from '../../assets/flags/de.svg'
 import gbFlag from '../../assets/flags/gb.svg'
 import frFlag from '../../assets/flags/fr.svg'
 import itFlag from '../../assets/flags/it.svg'
 import chFlag from '../../assets/flags/ch.svg'
-import type { Team, MemberTeam } from '../../types'
+import type { Team } from '../../types'
+import { createRecord, kscwApi, updateRecord } from '../../lib/api'
 
 const flagMap: Record<string, string> = { de: deFlag, gb: gbFlag, fr: frFlag, it: itFlag, ch: chFlag }
 const TURNSTILE_SITE_KEY = '0x4AAAAAACoYmx3xiDfRbmv9'
@@ -39,13 +38,13 @@ export default function SignUpPage() {
 
   const [step, setStep] = useState<Step>('email')
   const [email, setEmail] = useState('')
-  const [selectedLanguage, setSelectedLanguage] = useState<PbLanguage>(
-    LANGUAGES.find((l) => l.code === i18n.language)?.pbValue ?? 'german',
+  const [selectedLanguage, setSelectedLanguage] = useState<BackendLanguage>(
+    LANGUAGES.find((l) => l.code === i18n.language)?.backendValue ?? 'german',
   )
 
-  function handleLanguageChange(lang: PbLanguage) {
+  function handleLanguageChange(lang: BackendLanguage) {
     setSelectedLanguage(lang)
-    i18n.changeLanguage(pbLangToI18n(lang))
+    i18n.changeLanguage(backendLangToI18n(lang))
   }
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
@@ -60,19 +59,18 @@ export default function SignUpPage() {
   const turnstileRef = useRef<TurnstileInstance>(null)
 
   // OTP state
-  const [otpId, setOtpId] = useState('')
-  const [verificationToken, setVerificationToken] = useState('')
   const [otpError, setOtpError] = useState('')
 
-  // Multi-team state (for ClubDesk imports)
-  const [existingTeams, setExistingTeams] = useState<(MemberTeam & { expand?: { team?: Team } })[]>([])
+  // Claim flow state (for existing/ClubDesk members)
+  const [existingTeams, setExistingTeams] = useState<{ id: string; name: string; league?: string; sport?: string }[]>([])
   const [additionalTeamIds, setAdditionalTeamIds] = useState<string[]>([])
 
-  const { data: teams } = usePB<Team>('teams', {
-    filter: 'active=true',
-    sort: 'name',
+  const { data: teamsRaw } = useCollection<Team>('teams', {
+    filter: { active: { _eq: true } },
+    sort: ['name'],
     all: true,
   })
+  const teams = teamsRaw ?? []
 
   const filteredTeams = teams.filter((t) => t.sport === selectedSport)
 
@@ -90,13 +88,13 @@ export default function SignUpPage() {
     setLoading(true)
 
     try {
-      const res = await pb.send('/api/check-email', {
+      const res = await kscwApi<{
+        exists: boolean; claimed: boolean;
+        first_name?: string; last_name?: string;
+        existing_teams?: { id: number; name: string; league?: string; sport?: string }[];
+      }>('/check-email', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(turnstileToken ? { 'X-Turnstile-Token': turnstileToken } : {}),
-        },
-        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+        body: { email: email.trim().toLowerCase(), turnstile_token: turnstileToken },
       })
 
       if (res.exists && res.claimed) {
@@ -104,13 +102,15 @@ export default function SignUpPage() {
         navigate('/login', { state: { email: email.trim().toLowerCase(), accountExists: true } })
         return
       } else if (res.exists) {
-        // Account exists but not claimed — request OTP for claim
-        const otpRes = await pb.collection('members').requestOTP(email.trim().toLowerCase())
-        setOtpId(otpRes.otpId)
+        // Account exists but not claimed — pre-fill data and send OTP
+        if (res.first_name) setFirstName(res.first_name)
+        if (res.last_name) setLastName(res.last_name)
+        if (res.existing_teams) setExistingTeams(res.existing_teams.map(t => ({ ...t, id: String(t.id) })))
+        await kscwApi('/verify-email', { method: 'POST', body: { email: email.trim().toLowerCase() } })
         setStep('otp-claim')
       } else {
         // New member — send verification email OTP
-        await pb.send('/api/verify-email', {
+        await kscwApi('/verify-email', {
           method: 'POST',
           body: { email: email.trim().toLowerCase() },
         })
@@ -129,11 +129,10 @@ export default function SignUpPage() {
   async function handleOtpVerifyComplete(code: string) {
     setOtpError('')
     try {
-      const res = await pb.send('/api/verify-email/confirm', {
+      await kscwApi('/verify-email/confirm', {
         method: 'POST',
         body: { email: email.trim().toLowerCase(), code },
       })
-      setVerificationToken(res.verificationToken)
       setStep('register')
     } catch {
       setOtpError(t('otpInvalid'))
@@ -144,7 +143,7 @@ export default function SignUpPage() {
   async function handleOtpVerifyResend() {
     setOtpError('')
     try {
-      await pb.send('/api/verify-email', {
+      await kscwApi('/verify-email', {
         method: 'POST',
         body: { email: email.trim().toLowerCase() },
       })
@@ -157,24 +156,11 @@ export default function SignUpPage() {
   async function handleOtpClaimComplete(code: string) {
     setOtpError('')
     try {
-      await pb.collection('members').authWithOTP(otpId, code)
-      // Pre-fill form with existing member data
-      const member = pb.authStore.record
-      if (member) {
-        if (member.first_name) setFirstName(member.first_name)
-        if (member.last_name) setLastName(member.last_name)
-      }
-      // Fetch existing member_teams for the current season
-      try {
-        const season = getCurrentSeason()
-        const mts = await pb.collection('member_teams').getFullList<MemberTeam & { expand?: { team?: Team } }>({
-          filter: `member="${pb.authStore.record!.id}" && season="${season}"`,
-          expand: 'team',
-        })
-        setExistingTeams(mts)
-      } catch {
-        // No existing teams — that's fine
-      }
+      await kscwApi('/verify-email/confirm', {
+        method: 'POST',
+        body: { email: email.trim().toLowerCase(), code },
+      })
+      // Name + teams already pre-filled from check-email response
       setStep('complete-profile')
     } catch {
       setOtpError(t('otpInvalid'))
@@ -185,15 +171,14 @@ export default function SignUpPage() {
   async function handleOtpClaimResend() {
     setOtpError('')
     try {
-      const otpRes = await pb.collection('members').requestOTP(email.trim().toLowerCase())
-      setOtpId(otpRes.otpId)
+      await kscwApi('/verify-email', { method: 'POST', body: { email: email.trim().toLowerCase() } })
     } catch {
       setOtpError(t('registrationFailed'))
     }
   }
 
   // Existing team IDs for filtering
-  const existingTeamIds = existingTeams.map((mt) => mt.team)
+  const existingTeamIds = existingTeams.map((t) => t.id)
   const hasExistingTeams = existingTeams.length > 0
 
   // Toggle additional team selection
@@ -227,35 +212,36 @@ export default function SignUpPage() {
 
     setLoading(true)
     try {
-      // Set password via custom endpoint (also attempts auto-approve)
-      await pb.send('/api/set-password', {
+      // Set password + create Directus user (unauthenticated, OTP-verified)
+      const res = await kscwApi<{ member_id?: string }>('/set-password', {
         method: 'POST',
-        body: { password, passwordConfirm },
+        body: { email: email.trim().toLowerCase(), password },
       })
 
-      // Update profile fields
-      const updateData: Record<string, string> = {
-        first_name: firstName,
-        last_name: lastName,
-        name: `${firstName} ${lastName}`,
-      }
-      // Set requested_team to the first additional team (for pending page display)
-      if (additionalTeamIds.length > 0) {
-        updateData.requested_team = additionalTeamIds[0]
-      }
-      await pb.collection('members').update(pb.authStore.record!.id, updateData)
+      // Login with new credentials
+      await login(email.trim().toLowerCase(), password)
 
-      // Create team_requests for additional teams
-      for (const teamId of additionalTeamIds) {
-        await pb.collection('team_requests').create({
-          member: pb.authStore.record!.id,
-          team: teamId,
-          status: 'pending',
-        })
-      }
+      // Now authenticated — update profile and create team requests
+      const memberId = res.member_id
+      if (memberId) {
+        const updateData: Record<string, string> = {
+          first_name: firstName,
+          last_name: lastName,
+          name: `${firstName} ${lastName}`,
+        }
+        if (additionalTeamIds.length > 0) {
+          updateData.requested_team = additionalTeamIds[0]
+        }
+        await updateRecord('members', memberId, updateData)
 
-      // Refresh auth to pick up approval status
-      await pb.collection('members').authRefresh()
+        for (const teamId of additionalTeamIds) {
+          await createRecord('team_requests', {
+            member: memberId,
+            team: teamId,
+            status: 'pending',
+          })
+        }
+      }
 
       // If user has existing teams → auto-approved → home
       // If only new teams requested → pending
@@ -288,32 +274,20 @@ export default function SignUpPage() {
 
     setLoading(true)
     try {
-      // Derive club from the selected team
-      const selectedTeamObj = teams.find((t) => t.id === selectedTeam)
-      const newMember = await pb.collection('members').create({
-        first_name: firstName,
-        last_name: lastName,
-        name: `${firstName} ${lastName}`,
-        email: email.trim().toLowerCase(),
-        emailVisibility: true,
-        password,
-        passwordConfirm,
-        role: ['user'],
-        kscw_membership_active: true,
-        coach_approved_team: false,
-        requested_team: selectedTeam,
-        wiedisync_active: true,
-        language: selectedLanguage,
-        birthdate_visibility: 'hidden',
-        club: selectedTeamObj?.club || '',
-      }, {
-        headers: {
-          ...(turnstileToken ? { 'X-Turnstile-Token': turnstileToken } : {}),
-          ...(verificationToken ? { 'X-Verification-Token': verificationToken } : {}),
+      // Create Directus user + member via backend (OTP-verified)
+      const res = await kscwApi<{ member_id: string }>('/register', {
+        method: 'POST',
+        body: {
+          email: email.trim().toLowerCase(),
+          password,
+          first_name: firstName,
+          last_name: lastName,
+          team: selectedTeam,
+          language: selectedLanguage,
         },
       })
       await login(email.trim().toLowerCase(), password)
-      logActivity('create', 'members', newMember.id, { first_name: firstName, last_name: lastName, requested_team: selectedTeam })
+      logActivity('create', 'members', res.member_id, { first_name: firstName, last_name: lastName, requested_team: selectedTeam })
       navigate('/pending', { replace: true })
     } catch {
       setError(t('registrationFailed'))
@@ -328,8 +302,7 @@ export default function SignUpPage() {
     setStep('email')
     setError('')
     setOtpError('')
-    setOtpId('')
-    setVerificationToken('')
+    setExistingTeams([])
   }
 
   return (
@@ -374,13 +347,13 @@ export default function SignUpPage() {
 
               {/* Language */}
               <FormField label={t('language')}>
-                <Select value={selectedLanguage} onValueChange={(v) => handleLanguageChange(v as PbLanguage)}>
+                <Select value={selectedLanguage} onValueChange={(v) => handleLanguageChange(v as BackendLanguage)}>
                   <SelectTrigger className="min-h-[44px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {LANGUAGES.map((lang) => (
-                      <SelectItem key={lang.pbValue} value={lang.pbValue}>
+                      <SelectItem key={lang.backendValue} value={lang.backendValue}>
                         <span className="flex items-center gap-2">
                           <img src={flagMap[lang.flag]} alt="" className={`${lang.flag === 'ch' ? 'w-[15px] h-[15px]' : 'w-5 h-[15px]'} rounded-[2px]`} />
                           {lang.nativeName}
@@ -501,21 +474,17 @@ export default function SignUpPage() {
                     {t('yourTeams')}
                   </label>
                   <div className="flex flex-wrap gap-2">
-                    {existingTeams.map((mt) => {
-                      const teamName = mt.expand?.team?.name || mt.team
-                      const league = mt.expand?.team?.league
-                      return (
-                        <span
-                          key={mt.id}
-                          className="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                        >
-                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                          </svg>
-                          {teamName}{league ? ` — ${league}` : ''}
-                        </span>
-                      )
-                    })}
+                    {existingTeams.map((team) => (
+                      <span
+                        key={team.id}
+                        className="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                      >
+                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                        </svg>
+                        {team.name}{team.league ? ` — ${team.league}` : ''}
+                      </span>
+                    ))}
                   </div>
                 </div>
               )}

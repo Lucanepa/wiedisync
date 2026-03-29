@@ -4,7 +4,7 @@ import Modal from '@/components/Modal'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import { useMutation } from '../../hooks/useMutation'
-import { usePB } from '../../hooks/usePB'
+import { useCollection } from '../../lib/query'
 import { Button } from '@/components/ui/button'
 import { FormTextarea } from '@/components/FormField'
 import DatePicker from '@/components/ui/DatePicker'
@@ -12,6 +12,7 @@ import SearchableSelect from '@/components/ui/SearchableSelect'
 import { Checkbox } from '@/components/ui/checkbox'
 import AffectsMultiSelect from '@/components/AffectsMultiSelect'
 import type { Absence, Member, MemberTeam } from '../../types'
+import { asObj } from '../../utils/relations'
 
 const DAY_KEYS = ['dayMon', 'dayTue', 'dayWed', 'dayThu', 'dayFri', 'daySat', 'daySun'] as const
 
@@ -29,28 +30,30 @@ export default function WeeklyUnavailabilityForm({ open, absence, onSave, onCanc
   const { create, update, isLoading } = useMutation<Absence>('absences')
 
   // Admins: fetch all active members
-  const { data: allMembers } = usePB<Member>('members', {
-    filter: 'kscw_membership_active=true',
-    sort: 'last_name',
+  const { data: allMembersRaw } = useCollection<Member>('members', {
+    filter: { kscw_membership_active: { _eq: true } },
+    sort: ['last_name'],
     all: true,
-    fields: 'id,first_name,last_name,name',
+    fields: ['id', 'first_name', 'last_name', 'name'],
     enabled: effectiveIsAdmin,
   })
+  const allMembers = allMembersRaw ?? []
 
   // Coaches: fetch team members
-  const { data: memberTeams, error: memberTeamsError } = usePB<MemberTeam & { expand?: { member?: Member } }>('member_teams', {
-    filter: coachTeamIds.map((id) => `team="${id}"`).join(' || '),
-    expand: 'member',
+  const { data: memberTeamsRaw, error: memberTeamsError } = useCollection<MemberTeam>('member_teams', {
+    filter: coachTeamIds.length > 0 ? { team: { _in: coachTeamIds } } : { id: { _eq: -1 } },
     all: true,
+    fields: ['*', 'member.*'],
     enabled: effectiveIsCoach && !effectiveIsAdmin && coachTeamIds.length > 0,
   })
+  const memberTeams = memberTeamsRaw ?? []
 
   const visibleMembers = useMemo(() => {
     if (effectiveIsAdmin) return allMembers
     const seen = new Set<string>()
     const members: Member[] = []
     for (const mt of memberTeams) {
-      const m = mt.expand?.member
+      const m = asObj<Member>(mt.member)
       if (m && !seen.has(m.id)) {
         seen.add(m.id)
         members.push(m)

@@ -6,13 +6,14 @@ import { useTheme } from '../hooks/useTheme'
 import TeamChip from './TeamChip'
 import SwitchToggle from '@/components/SwitchToggle'
 import LanguageDropdown from '@/components/LanguageDropdown'
-import { getFileUrl } from '../utils/pbFile'
+import { getFileUrl } from '../utils/fileUrl'
 import AdminToggle from './AdminToggle'
 import { useAdminMode } from '../hooks/useAdminMode'
 import { Bell, UserX, PenSquare, CalendarDays, ClipboardList, Building2, CalendarClock, Database, HeartPulse, LogIn, User, Settings, ChevronDown, ScrollText, MessageSquare, Banknote } from 'lucide-react'
 import type { MemberTeam, Team } from '../types'
+import { asObj } from '../utils/relations'
 
-type ExpandedMemberTeam = MemberTeam & { expand?: { team?: Team } }
+type ExpandedMemberTeam = MemberTeam & { team: Team | string }
 
 /** Animated close: plays exit animation, then calls onClose after it finishes */
 function useAnimatedClose(onClose: () => void) {
@@ -299,7 +300,7 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
                   {memberTeams.length > 0 && (
                     <div className="mt-0.5 flex flex-wrap gap-1">
                       {memberTeams.map((mt) => (
-                        <TeamChip key={mt.id} team={mt.expand?.team?.name ?? '?'} size="sm" />
+                        <TeamChip key={mt.id} team={asObj<Team>(mt.team)?.name ?? '?'} size="sm" />
                       ))}
                     </div>
                   )}

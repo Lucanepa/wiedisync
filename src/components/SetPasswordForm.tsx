@@ -1,16 +1,18 @@
 import { useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import pb from '../pb'
+import { kscwApi } from '../lib/api'
 import { FormInput } from '@/components/FormField'
 import { Button } from '@/components/ui/button'
 
 interface SetPasswordFormProps {
   title: string
   description?: string
+  /** Email for unauthenticated set-password (OTP-verified). Omit if user is already authenticated. */
+  email?: string
   onSuccess: () => void
 }
 
-export function SetPasswordForm({ title, description, onSuccess }: SetPasswordFormProps) {
+export function SetPasswordForm({ title, description, email, onSuccess }: SetPasswordFormProps) {
   const { t } = useTranslation('auth')
   const [password, setPassword] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
@@ -33,9 +35,9 @@ export function SetPasswordForm({ title, description, onSuccess }: SetPasswordFo
 
     setLoading(true)
     try {
-      await pb.send('/api/set-password', {
+      await kscwApi('/set-password', {
         method: 'POST',
-        body: { password, passwordConfirm },
+        body: { password, ...(email ? { email } : {}) },
       })
       onSuccess()
     } catch (err: unknown) {

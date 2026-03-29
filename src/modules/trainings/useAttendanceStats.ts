@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
-import pb from '../../pb'
 import { getSeasonDateRange } from '../../utils/dateHelpers'
 import type { Training, Participation, Absence, Member, MemberTeam } from '../../types'
+import { fetchAllItems } from '../../lib/api'
+import { asObj } from '../../utils/relations'
 
 export interface PlayerStats {
   memberId: string
@@ -34,14 +35,14 @@ export function useAttendanceStats(teamId: string | null, season: string) {
       const { start, end } = getSeasonDateRange(season)
 
       // Get team members
-      const memberTeams = await pb.collection('member_teams').getFullList<MemberTeam & { expand?: { member?: Member } }>({
-        filter: `team="${teamId}"`,
-        expand: 'member',
+      const memberTeams = await fetchAllItems<MemberTeam & { member: Member | string }>('member_teams', {
+        filter: { team: { _eq: teamId } },
+        fields: ['*', 'member.*'],
       })
 
       const members = memberTeams
-        .map((mt) => mt.expand?.member)
-        .filter((m): m is Member => m !== undefined)
+        .map((mt) => asObj<Member>(mt.member))
+        .filter((m): m is Member => m !== null)
 
       if (members.length === 0) {
         setStats([])
@@ -50,9 +51,9 @@ export function useAttendanceStats(teamId: string | null, season: string) {
       }
 
       // Get non-cancelled trainings in season
-      const trainings = await pb.collection('trainings').getFullList<Training>({
-        filter: `team="${teamId}" && date>="${start}" && date<="${end}" && cancelled=false`,
-        sort: 'date',
+      const trainings = await fetchAllItems<Training>('trainings', {
+        filter: { _and: [{ team: { _eq: teamId } }, { date: { _gte: start } }, { date: { _lte: end } }, { cancelled: { _eq: false } }] },
+        sort: ['date'],
       })
 
       if (trainings.length === 0) {
@@ -63,16 +64,14 @@ export function useAttendanceStats(teamId: string | null, season: string) {
 
       // Get all participations for these trainings
       const trainingIds = trainings.map((t) => t.id)
-      const activityFilter = trainingIds.map((id) => `activity_id="${id}"`).join(' || ')
-      const participations = await pb.collection('participations').getFullList<Participation>({
-        filter: `activity_type="training" && (${activityFilter})`,
+      const participations = await fetchAllItems<Participation>('participations', {
+        filter: { _and: [{ activity_type: { _eq: 'training' } }, { activity_id: { _in: trainingIds } }] },
       })
 
       // Get absences for all members in the season
       const memberIds = members.map((m) => m.id)
-      const memberFilter = memberIds.map((id) => `member="${id}"`).join(' || ')
-      const absences = await pb.collection('absences').getFullList<Absence>({
-        filter: `(${memberFilter}) && end_date>="${start}" && start_date<="${end}"`,
+      const absences = await fetchAllItems<Absence>('absences', {
+        filter: { _and: [{ member: { _in: memberIds } }, { end_date: { _gte: start } }, { start_date: { _lte: end } }] },
       })
 
       // Build per-member stats
@@ -128,9 +127,9 @@ export function useAttendanceStats(teamId: string | null, season: string) {
         const memberParticipations = participations.filter((p) => p.member === member.id)
         if (memberParticipations.length > 0) {
           const latest = memberParticipations.reduce((a, b) =>
-            a.updated > b.updated ? a : b
+            (a.date_updated ?? '') > (b.date_updated ?? '') ? a : b
           )
-          memberStats[member.id].lastResponseAt = latest.updated
+          memberStats[member.id].lastResponseAt = latest.date_updated ?? null
         }
       }
 

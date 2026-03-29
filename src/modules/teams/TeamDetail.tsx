@@ -2,13 +2,12 @@ import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams, Link } from 'react-router-dom'
 import { Move, Check, X as XIcon, XCircle, User, ZoomIn, ZoomOut } from 'lucide-react'
-import pb from '../../pb'
 import { logActivity } from '../../utils/logActivity'
 import { useTeamMembers } from '../../hooks/useTeamMembers'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import { usePendingMembers } from '../../hooks/usePendingMembers'
-import { usePB } from '../../hooks/usePB'
+import { useCollection } from '../../lib/query'
 import { Button } from '@/components/ui/button'
 import TeamChip from '../../components/TeamChip'
 import EmptyState from '../../components/EmptyState'
@@ -16,13 +15,15 @@ import { sanitizeUrl } from '../../utils/sanitizeUrl'
 import VolleyballIcon from '../../components/VolleyballIcon'
 import BasketballIcon from '../../components/BasketballIcon'
 import MemberRow, { getMemberRole } from './MemberRow'
-import { getFileUrl } from '../../utils/pbFile'
+import { getFileUrl } from '../../utils/fileUrl'
 import { coercePositions } from '../../utils/memberPositions'
 import { getCurrentSeason } from '../../utils/dateHelpers'
 import ImageLightbox from '../../components/ImageLightbox'
 import type { Team, Member, Sponsor } from '../../types'
+import { asObj } from '../../utils/relations'
 import PollsSection from '../polls/PollsSection'
 import { isFeatureEnabled } from '../../utils/featureToggles'
+import { createRecord, deleteRecord, fetchAllItems, fetchItems, updateRecord } from '../../lib/api'
 
 type SortKey = 'name' | 'number' | 'position' | 'email' | 'phone' | 'birthdate' | 'role'
 type SortDir = 'asc' | 'desc'
@@ -40,19 +41,20 @@ export default function TeamDetail() {
   const { data: pendingMembers, refetch: refetchPending } = usePendingMembers(canManage ? teamId : undefined)
 
   // Team join requests from existing members
-  interface TeamRequest { id: string; collectionId: string; collectionName: string; member: string; team: string; status: string; expand?: { member?: Member } }
-  const { data: teamRequests, refetch: refetchTeamRequests } = usePB<TeamRequest>('team_requests', {
-    filter: canManage && teamId ? `team="${teamId}" && status="pending"` : '',
-    expand: 'member',
-    perPage: 50,
+  interface TeamRequest { id: string; member: Member | string; team: string; status: string }
+  const { data: teamRequestsRaw, refetch: refetchTeamRequests } = useCollection<TeamRequest>('team_requests', {
+    filter: canManage && teamId ? { _and: [{ team: { _eq: teamId } }, { status: { _eq: 'pending' } }] } : { id: { _eq: -1 } },
+    fields: ['*', 'member.*'],
+    limit: 50,
     enabled: canManage && !!teamId,
   })
+  const teamRequests = teamRequestsRaw ?? []
 
   const [teamSponsors, setTeamSponsors] = useState<Sponsor[]>([])
 
   useEffect(() => {
     if (!team?.id) return
-    pb.collection('sponsors').getFullList<Sponsor>({ filter: `teams ~ "${team.id}" && active = true`, sort: 'sort_order' })
+    fetchAllItems<Sponsor>('sponsors', { filter: { _and: [{ teams: { teams_id: { _eq: team.id } } }, { active: { _eq: true } }] }, sort: ['sort_order'] })
       .then(setTeamSponsors)
       .catch(() => {})
   }, [team?.id])
@@ -113,7 +115,7 @@ export default function TeamDetail() {
     if (!team) return
     const pos = `${cropPos.x}% ${cropPos.y}% ${zoom}`
     try {
-      await pb.collection('teams').update(team.id, { team_picture_pos: pos })
+      await updateRecord('teams', team.id, { team_picture_pos: pos })
       logActivity('update', 'teams', team.id, { team_picture_pos: pos })
       setTeam((prev) => prev ? { ...prev, team_picture_pos: pos } : prev)
     } catch { /* ignore */ }
@@ -145,8 +147,8 @@ export default function TeamDetail() {
     const sorted = [...members]
     const dir = sortDir === 'asc' ? 1 : -1
     sorted.sort((a, b) => {
-      const ma = a.expand?.member
-      const mb = b.expand?.member
+      const ma = asObj<Member>(a.member)
+      const mb = asObj<Member>(b.member)
       if (!ma || !mb) return 0
       let cmp = 0
       switch (sortKey) {
@@ -182,9 +184,9 @@ export default function TeamDetail() {
 
   async function handleApprove(member: Member) {
     try {
-      await pb.collection('members').update(member.id, { coach_approved_team: true })
+      await updateRecord('members', member.id, { coach_approved_team: true })
       logActivity('update', 'members', member.id, { coach_approved_team: true })
-      const mt = await pb.collection('member_teams').create({
+      const mt = await createRecord<{id: string}>('member_teams', {
         member: member.id,
         team: teamId!,
         season: getCurrentSeason(),
@@ -198,7 +200,7 @@ export default function TeamDetail() {
 
   async function handleReject(memberId: string) {
     try {
-      await pb.collection('members').delete(memberId)
+      await deleteRecord('members', memberId)
       logActivity('delete', 'members', memberId)
       refetchPending()
     } catch {
@@ -214,18 +216,18 @@ export default function TeamDetail() {
   }
 
   async function handleApproveRequest(request: TeamRequest) {
-    const member = request.expand?.member
+    const member = asObj<Member>(request.member)
     if (!member) return
     const guestLevel = requestGuestLevels[request.id] ?? 0
     try {
-      const mt = await pb.collection('member_teams').create({
+      const mt = await createRecord<{id: string}>('member_teams', {
         member: member.id,
         team: teamId!,
         season: getCurrentSeason(),
         guest_level: guestLevel,
       })
       logActivity('create', 'member_teams', mt.id, { member: member.id, team: teamId, guest_level: guestLevel })
-      await pb.collection('team_requests').update(request.id, { status: 'approved' })
+      await updateRecord('team_requests', request.id, { status: 'approved' })
       refetchTeamRequests()
     } catch {
       // ignore
@@ -234,7 +236,7 @@ export default function TeamDetail() {
 
   async function handleRejectRequest(requestId: string) {
     try {
-      await pb.collection('team_requests').update(requestId, { status: 'rejected' })
+      await updateRecord('team_requests', requestId, { status: 'rejected' })
       refetchTeamRequests()
     } catch {
       // ignore
@@ -244,9 +246,8 @@ export default function TeamDetail() {
   useEffect(() => {
     if (!teamSlug) return
     setLoading(true)
-    pb.collection('teams')
-      .getFirstListItem<Team>(`name="${teamSlug}"`)
-      .then(setTeam)
+    fetchItems<Team>('teams', { filter: { name: { _eq: teamSlug } }, limit: 1 })
+      .then((items) => setTeam(items[0] ?? null))
       .catch(() => setTeam(null))
       .finally(() => setLoading(false))
   }, [teamSlug])
@@ -449,7 +450,7 @@ export default function TeamDetail() {
             ))}
             {/* Team join requests from existing members */}
             {teamRequests.map((req) => {
-              const member = req.expand?.member
+              const member = asObj<Member>(req.member)
               const selectedLevel = requestGuestLevels[req.id] ?? 0
               return (
                 <div key={req.id} className="rounded-lg bg-white p-3 dark:bg-gray-800">
@@ -538,7 +539,7 @@ export default function TeamDetail() {
               <tbody>
                 {sortedMembers.map((mt) => (
                   <MemberRow
-                    key={mt.id}
+                    key={mt.id as string}
                     memberTeam={mt}
                     teamId={team.id}
                     teamSlug={team.name}

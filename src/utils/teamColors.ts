@@ -139,12 +139,12 @@ export function trimBBTeamName(name: string): string {
 }
 
 /**
- * Map PocketBase team.name to a teamColors key.
+ * Map a team name to a teamColors key.
  * VB teams: name matches directly (e.g. "H1" → "H1")
  * BB teams: need "BB-" prefix (e.g. "DU12" → "BB-DU12", "Lions D1" → "BB-Lions D1")
  * BB teams with long names: extract short code (e.g. "Herren 1 H1" → "BB-H1")
  */
-export function pbNameToColorKey(name: string, sport: 'volleyball' | 'basketball'): string {
+export function teamNameToColorKey(name: string, sport: 'volleyball' | 'basketball'): string {
   if (sport === 'volleyball') return name
 
   // Check if "BB-{name}" exists directly in teamColors
@@ -152,7 +152,7 @@ export function pbNameToColorKey(name: string, sport: 'volleyball' | 'basketball
   if (teamColors[direct]) return direct
 
   // Long basketball names like "Herren 1 H1", "Herren 3 (Unicorns) H4", "Damen D-Classics 1LR"
-  // Try to match against known teamColors keys by checking if the PB name contains the short code
+  // Try to match against known teamColors keys by checking if the team name contains the short code
   for (const key of Object.keys(teamColors)) {
     if (!key.startsWith('BB-')) continue
     const shortCode = key.slice(3) // e.g. "H1", "H-Classics", "Lions D1"

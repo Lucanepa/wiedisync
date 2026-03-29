@@ -2,9 +2,10 @@ import { useTranslation } from 'react-i18next'
 import StatusBadge from '../../components/StatusBadge'
 import { formatDate } from '../../utils/dateHelpers'
 import type { Absence, Member } from '../../types'
+import { asObj } from '../../utils/relations'
 
 interface AbsenceCardProps {
-  absence: Absence & { expand?: { member?: Member } }
+  absence: Absence
   onEdit: (absence: Absence) => void
   onDelete: (absenceId: string) => void
   showMemberName?: boolean
@@ -13,7 +14,7 @@ interface AbsenceCardProps {
 
 export default function AbsenceCard({ absence, onEdit, onDelete, showMemberName, canEdit }: AbsenceCardProps) {
   const { t } = useTranslation('absences')
-  const memberName = absence.expand?.member?.name
+  const memberName = asObj<Member>(absence.member)?.name
 
   const affectsLabels: Record<string, string> = {
     trainings: t('affectsTrainings'),

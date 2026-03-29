@@ -4,9 +4,9 @@ import Modal from '@/components/Modal'
 import { Button } from '@/components/ui/button'
 import SearchableSelect from '@/components/ui/SearchableSelect'
 import { useAuth } from '../../hooks/useAuth'
-import { usePB } from '../../hooks/usePB'
-import pb from '../../pb'
+import { useCollection } from '../../lib/query'
 import type { Team } from '../../types'
+import { createRecord } from '../../lib/api'
 
 interface TeamRequestModalProps {
   open: boolean
@@ -17,12 +17,9 @@ interface TeamRequestModalProps {
 
 interface TeamRequest {
   id: string
-  collectionId: string
-  collectionName: string
   member: string
-  team: string
+  team: Team | string
   status: 'pending' | 'approved' | 'rejected' | 'cancelled'
-  expand?: { team?: Team }
 }
 
 export default function TeamRequestModal({ open, onClose, onComplete, currentTeamIds }: TeamRequestModalProps) {
@@ -33,18 +30,19 @@ export default function TeamRequestModal({ open, onClose, onComplete, currentTea
   const [error, setError] = useState('')
 
   // Fetch all active teams
-  const { data: allTeams } = usePB<Team>('teams', {
-    filter: 'active=true',
-    sort: 'name',
-    perPage: 50,
+  const { data: allTeamsRaw } = useCollection<Team>('teams', {
+    filter: { active: { _eq: true } },
+    sort: ['name'],
+    limit: 50,
   })
+  const allTeams = allTeamsRaw ?? []
 
   // Fetch existing pending requests for this user
-  const { data: pendingRequests } = usePB<TeamRequest>('team_requests', {
-    filter: user ? `member="${user.id}" && status="pending"` : '',
-    expand: 'team',
-    perPage: 50,
+  const { data: pendingRequestsRaw } = useCollection<TeamRequest>('team_requests', {
+    filter: user ? { _and: [{ member: { _eq: user.id } }, { status: { _eq: 'pending' } }] } : { id: { _eq: -1 } },
+    limit: 50,
   })
+  const pendingRequests = pendingRequestsRaw ?? []
 
   const pendingTeamIds = useMemo(
     () => pendingRequests.map((r) => r.team),
@@ -63,7 +61,7 @@ export default function TeamRequestModal({ open, onClose, onComplete, currentTea
     setError('')
 
     try {
-      await pb.collection('team_requests').create({
+      await createRecord('team_requests', {
         member: user.id,
         team: selectedTeam,
         status: 'pending',

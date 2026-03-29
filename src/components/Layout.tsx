@@ -5,7 +5,7 @@ import { useAuth } from '../hooks/useAuth'
 import { useTheme } from '../hooks/useTheme'
 import { useIsDesktop } from '../hooks/useMediaQuery'
 import { useNotifications } from '../hooks/useNotifications'
-import { getFileUrl } from '../utils/pbFile'
+import { getFileUrl } from '../utils/fileUrl'
 import AdminToggle from './AdminToggle'
 import { useAdminMode } from '../hooks/useAdminMode'
 import BottomTabBar from './BottomTabBar'
@@ -16,16 +16,17 @@ import SidebarNotifications from './SidebarNotifications'
 import SwitchToggle from '@/components/SwitchToggle'
 import LanguageDropdown from '@/components/LanguageDropdown'
 import TeamChip from './TeamChip'
-import { usePB } from '../hooks/usePB'
+import { useCollection } from '../lib/query'
 import ProfileEditModal from '../modules/auth/ProfileEditModal'
 import type { MemberTeam, Team } from '../types'
+import { asObj } from '../utils/relations'
 import {
   Home, Calendar, Trophy, UserX, PenSquare, PartyPopper, Users,
   ClipboardList, Building2, CalendarClock, Database, Activity,
   HeartPulse, Settings, ChevronDown, MessageSquare, Banknote,
 } from 'lucide-react'
 
-type ExpandedMemberTeam = MemberTeam & { expand?: { team?: Team } }
+type ExpandedMemberTeam = MemberTeam & { team: Team | string }
 
 function useNavItems(isLoggedIn: boolean, isApproved: boolean) {
   const { t } = useTranslation('nav')
@@ -159,11 +160,13 @@ export default function Layout() {
       setAdminMode(true)
     }
   }, [location.pathname, isAdmin, isAdminMode, setAdminMode])
-  const { data: memberTeams } = usePB<ExpandedMemberTeam>('member_teams', {
-    filter: user ? `member="${user.id}"` : '',
-    expand: 'team',
-    perPage: 10,
+  const { data: memberTeamsRaw } = useCollection<ExpandedMemberTeam>('member_teams', {
+    filter: user ? { member: { _eq: user.id } } : undefined,
+    fields: ['*', 'team.*'],
+    limit: 10,
+    enabled: !!user,
   })
+  const memberTeams = memberTeamsRaw ?? []
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
@@ -386,7 +389,7 @@ export default function Layout() {
                       {memberTeams.length > 0 && (
                         <div className="mt-0.5 flex flex-wrap gap-1">
                           {memberTeams.map((mt) => (
-                            <TeamChip key={mt.id} team={mt.expand?.team?.name ?? '?'} size="sm" />
+                            <TeamChip key={mt.id} team={asObj<Team>(mt.team)?.name ?? '?'} size="sm" />
                           ))}
                         </div>
                       )}

@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { usePB } from '../../../hooks/usePB'
+import { useCollection } from '../../../lib/query'
 import { useMutation } from '../../../hooks/useMutation'
 import { useAuth } from '../../../hooks/useAuth'
 import { useRealtime } from '../../../hooks/useRealtime'
@@ -8,19 +8,21 @@ import type { Carpool, CarpoolPassenger } from '../../../types'
 export function useCarpool(gameId: string) {
   const { user } = useAuth()
 
-  const { data: carpools, refetch: refetchCarpools, isLoading } = usePB<Carpool>('carpools', {
-    filter: gameId ? `game="${gameId}"` : '',
+  const { data: carpoolsRaw, refetch: refetchCarpools, isLoading } = useCollection<Carpool>('carpools', {
+    filter: gameId ? { game: { _eq: gameId } } : { id: { _eq: -1 } },
     all: true,
-    expand: 'driver',
     enabled: !!gameId,
   })
+  const carpools = carpoolsRaw ?? []
 
-  const { data: passengers, refetch: refetchPassengers } = usePB<CarpoolPassenger>('carpool_passengers', {
-    filter: gameId ? carpools.map(c => `carpool="${c.id}"`).join(' || ') || 'carpool=""' : '',
+  const { data: passengersRaw, refetch: refetchPassengers } = useCollection<CarpoolPassenger>('carpool_passengers', {
+    filter: gameId && carpools.length > 0
+      ? { carpool: { _in: carpools.map(c => c.id) } }
+      : { id: { _eq: -1 } },
     all: true,
-    expand: 'passenger',
     enabled: !!gameId && carpools.length > 0,
   })
+  const passengers = passengersRaw ?? []
 
   const { create: createCarpool, update: updateCarpool } = useMutation<Carpool>('carpools')
   const { create: createPassenger, remove: removePassenger } = useMutation<CarpoolPassenger>('carpool_passengers')

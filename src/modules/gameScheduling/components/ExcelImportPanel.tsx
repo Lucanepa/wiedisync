@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import pb from '../../../pb'
+import { createRecord } from '../../../lib/api'
 
 interface ImportRow {
   Datum: string
@@ -42,7 +42,7 @@ export default function ExcelImportPanel() {
     let created = 0
     for (const row of preview) {
       try {
-        await pb.collection('games').create({
+        await createRecord('games', {
           date: row.Datum,
           home_team: row.Heimteam,
           away_team: row.Gastteam,

@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { RecordModel } from 'pocketbase'
 import type { Game, Member, Team, Hall, LicenceType, MemberTeam, ScorerDelegation } from '../../../types'
 import TeamChip from '../../../components/TeamChip'
 import AssignmentEditor from './AssignmentEditor'
@@ -29,27 +28,9 @@ interface ScorerRowProps {
   getDelegationTargetName: (delegation: ScorerDelegation, members: Member[]) => string
 }
 
-export type ExpandedGame = Game & {
-  expand?: {
-    kscw_team?: Team & RecordModel
-    hall?: Hall & RecordModel
-    // VB duty relations
-    scorer_member?: Member & RecordModel
-    scoreboard_member?: Member & RecordModel
-    scorer_scoreboard_member?: Member & RecordModel
-    scorer_duty_team?: Team & RecordModel
-    scoreboard_duty_team?: Team & RecordModel
-    scorer_scoreboard_duty_team?: Team & RecordModel
-    // BB duty relations
-    bb_scorer_member?: Member & RecordModel
-    bb_timekeeper_member?: Member & RecordModel
-    bb_24s_official?: Member & RecordModel
-    bb_duty_team?: Team & RecordModel
-    bb_scorer_duty_team?: Team & RecordModel
-    bb_timekeeper_duty_team?: Team & RecordModel
-    bb_24s_duty_team?: Team & RecordModel
-  }
-}
+import { asObj } from '../../../utils/relations'
+
+export type ExpandedGame = Game
 
 function getDateFormatter(locale: string) {
   const loc = locale === 'de' ? 'de-CH' : 'en-GB'
@@ -124,7 +105,7 @@ export function DutyStatus({ game, sport }: { game: Game; sport: 'volleyball' | 
 }
 
 function handleExportICal(game: ExpandedGame, title: string) {
-  const hallName = game.expand?.hall?.name ?? ''
+  const hallName = asObj<Hall>(game.hall)?.name ?? ''
   const entry: CalendarEntry = {
     id: `duty-${game.id}`,
     type: 'game',
@@ -165,8 +146,9 @@ export default function ScorerRow({
 }: ScorerRowProps) {
   const { t, i18n } = useTranslation('scorer')
   const expanded = game as ExpandedGame
-  const kscwTeam = expanded.expand?.kscw_team?.name ?? ''
-  const hall = expanded.expand?.hall
+  const kscwTeamObj = asObj<Team>(expanded.kscw_team)
+  const kscwTeam = kscwTeamObj?.name ?? ''
+  const hall = asObj<Hall>(expanded.hall)
   const dateStr = game.date ? getDateFormatter(i18n.language).format(new Date(game.date)) : ''
   const gameNumber = game.game_id?.replace(/^(vb_|bb_)/, '') ?? ''
 

@@ -709,7 +709,6 @@ const RELATIONS = [
   ['trainings', 'team', 'teams'],
   ['trainings', 'hall_slot', 'hall_slots'],
   ['trainings', 'hall', 'halls'],
-  ['trainings', 'coach', 'members'],
   // events
   ['events', 'hall', 'halls'],
   ['events', 'created_by', 'members'],
@@ -719,6 +718,8 @@ const RELATIONS = [
   ['participations', 'member', 'members'],
   // absences
   ['absences', 'member', 'members'],
+  // members
+  ['members', 'requested_team', 'teams'],
   // hall_slots
   ['hall_slots', 'hall', 'halls'],
   ['hall_slots', 'team', 'teams'],
@@ -791,6 +792,8 @@ const M2M_RELATIONS = [
   ['teams', 'team_responsible', 'members', 'teams_team_responsible'],
   ['teams', 'sponsors', 'sponsors', 'teams_sponsors'],
   ['events', 'teams', 'teams', 'events_teams'],
+  ['hall_events', 'hall', 'halls', 'hall_events_halls'],
+  ['hall_slots', 'teams', 'teams', 'hall_slots_teams'],
 ]
 
 // ── Main ─────────────────────────────────────────────────────────────

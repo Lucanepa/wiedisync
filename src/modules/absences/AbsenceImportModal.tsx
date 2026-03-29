@@ -1,10 +1,10 @@
 import { useState, useRef } from 'react'
+import { createRecord } from '../../lib/api'
 import { useTranslation } from 'react-i18next'
 import { Download, Upload, AlertCircle, CheckCircle2 } from 'lucide-react'
 import Modal from '@/components/Modal'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '../../hooks/useAuth'
-import pb from '../../pb'
 import {
   parseAbsenceFile,
   validateRow,
@@ -57,7 +57,7 @@ export default function AbsenceImportModal({ open, onClose, onComplete }: Absenc
 
     for (const row of validRows) {
       try {
-        await pb.collection('absences').create({
+        await createRecord('absences', {
           member: user.id,
           start_date: row.start_date,
           end_date: row.end_date,

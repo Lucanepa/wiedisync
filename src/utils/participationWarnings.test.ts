@@ -22,7 +22,7 @@ function makeParticipation(
     updated: '',
   }
   if (overrides.position) {
-    base.expand = { member: { id: base.member, position: overrides.position as any } }
+    base.member = { id: base.member, position: overrides.position as any } as any
   }
   const { position: _, ...rest } = overrides
   return { ...base, ...rest }

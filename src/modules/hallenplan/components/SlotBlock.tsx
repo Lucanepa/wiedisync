@@ -63,10 +63,11 @@ export default function SlotBlock({ positioned, teamName, hasConflict, isAdmin, 
   const isManuallyFree = !isVirtual && !slot.team?.length
 
   // Resolve claiming team name for color
-  const claimExpand = isClaimed && slot._virtual?.claimRecord
-    ? (slot._virtual.claimRecord as unknown as { expand?: { claimed_by_team?: { name: string } } }).expand
+  const claimRecord = isClaimed && slot._virtual?.claimRecord
+    ? slot._virtual.claimRecord as Record<string, unknown>
     : undefined
-  const claimTeamName = claimExpand?.claimed_by_team?.name || teamName
+  const claimedByTeam = claimRecord?.claimed_by_team
+  const claimTeamName = (claimedByTeam != null && typeof claimedByTeam === 'object' ? (claimedByTeam as { name: string }).name : undefined) || teamName
 
   const color = isHallClosure
     ? CLOSURE_COLOR

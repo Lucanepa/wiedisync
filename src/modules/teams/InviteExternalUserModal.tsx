@@ -1,9 +1,9 @@
 import { useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { QRCodeSVG } from 'qrcode.react'
-import pb from '../../pb'
 import Modal from '../../components/Modal'
 import { Button } from '../../components/ui/button'
+import { kscwApi } from '../../lib/api'
 
 type GuestLevel = 0 | 1 | 2 | 3
 
@@ -38,7 +38,7 @@ export default function InviteExternalUserModal({ open, onClose, teamId, teamNam
     setLoading(true)
     setError(null)
     try {
-      const res = await pb.send('/api/team-invites/create', {
+      const res = await kscwApi<{ url?: string; invite_url?: string; link?: string }>('/team-invites/create', {
         method: 'POST',
         body: { team: teamId, guest_level: selectedLevel },
       })

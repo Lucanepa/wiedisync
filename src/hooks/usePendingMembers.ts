@@ -1,15 +1,17 @@
-import { usePB } from './usePB'
+import { useCollection } from '../lib/query'
 import type { Member } from '../types'
 
 export function usePendingMembers(teamId?: string) {
-  const filter = teamId
-    ? `coach_approved_team=false && requested_team="${teamId}"`
-    : 'coach_approved_team=false'
+  const filter: Record<string, unknown> = teamId
+    ? { _and: [{ coach_approved_team: { _eq: false } }, { requested_team: { _eq: teamId } }] }
+    : { coach_approved_team: { _eq: false } }
 
-  return usePB<Member>('members', {
+  const result = useCollection<Member>('members', {
     filter,
-    sort: '-created',
+    sort: ['-date_created'],
     all: true,
     enabled: !!teamId,
   })
+
+  return { ...result, data: result.data ?? [] }
 }

@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Check, ChevronDown, Pencil } from 'lucide-react'
-import type { RecordModel } from 'pocketbase'
-import type { RefereeExpense, Member, Team } from '../../../types'
+import type { RefereeExpense, Member, Team, BaseRecord } from '../../../types'
 import { useTeamMembers } from '../../../hooks/useTeamMembers'
 import { useMutation } from '../../../hooks/useMutation'
 import { useAuth } from '../../../hooks/useAuth'
 import SearchableSelect from '../../../components/ui/SearchableSelect'
-import pb from '../../../pb'
+import { fetchItems, fetchItem } from '../../../lib/api'
+import { asObj } from '../../../utils/relations'
 
 interface RefereeExpenseSectionProps {
   gameId: string
@@ -16,7 +16,7 @@ interface RefereeExpenseSectionProps {
 }
 
 type ExpandedExpense = RefereeExpense & {
-  expand?: { paid_by_member?: Member & RecordModel }
+  paid_by_member: (Member & BaseRecord) | string
 }
 
 const OTHER_VALUE = '__other__'
@@ -31,7 +31,7 @@ export default function RefereeExpenseSection({ gameId, teamId, canEdit }: Refer
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [coaches, setCoaches] = useState<(Member & RecordModel)[]>([])
+  const [coaches, setCoaches] = useState<(Member & BaseRecord)[]>([])
   const [open, setOpen] = useState(false)
 
   // Form state
@@ -45,12 +45,18 @@ export default function RefereeExpenseSection({ gameId, teamId, canEdit }: Refer
     let cancelled = false
     setLoading(true)
 
-    const fetchExpense = pb.collection('referee_expenses')
-      .getFirstListItem<ExpandedExpense>(`game="${gameId}"`, { expand: 'paid_by_member' })
+    const fetchExpense = fetchItems<ExpandedExpense>('referee_expenses', {
+        filter: { game: { _eq: gameId } },
+        fields: ['*', 'paid_by_member.*'],
+        limit: 1,
+      })
+      .then((records) => records[0])
       .then((record) => {
+        if (!record) throw new Error('not found')
         if (cancelled) return
         setExisting(record)
-        setPaidBy(record.paid_by_member || (record.paid_by_other ? OTHER_VALUE : ''))
+        const paidByMemberId = typeof record.paid_by_member === 'string' ? record.paid_by_member : (asObj<Member & BaseRecord>(record.paid_by_member)?.id ?? '')
+        setPaidBy(paidByMemberId || (record.paid_by_other ? OTHER_VALUE : ''))
         setOtherName(record.paid_by_other || '')
         setAmount(record.amount ? String(record.amount) : '')
         setNotes(record.notes || '')
@@ -59,12 +65,16 @@ export default function RefereeExpenseSection({ gameId, teamId, canEdit }: Refer
         if (!cancelled) setExisting(null)
       })
 
-    const fetchCoaches = pb.collection('teams')
-      .getOne<Team & RecordModel>(teamId, { fields: 'id,coach,team_responsible', expand: 'coach,team_responsible' })
+    const fetchCoaches = fetchItem<Team & BaseRecord>(
+        'teams', teamId, { fields: ['id', 'coach.*', 'team_responsible.*'] }
+      )
       .then((team) => {
         if (cancelled) return
-        const expanded = team as Team & RecordModel & { expand?: { coach?: (Member & RecordModel)[]; team_responsible?: (Member & RecordModel)[] } }
-        const all = [...(expanded.expand?.coach ?? []), ...(expanded.expand?.team_responsible ?? [])]
+        const t = team as Team & BaseRecord & { coach?: (Member & BaseRecord)[] | string[]; team_responsible?: (Member & BaseRecord)[] | string[] }
+        // Filter to only expanded objects (not raw ID strings)
+        const coachObjs = (Array.isArray(t.coach) ? t.coach : []).filter((c) => typeof c === 'object' && c !== null) as (Member & BaseRecord)[]
+        const trObjs = (Array.isArray(t.team_responsible) ? t.team_responsible : []).filter((c) => typeof c === 'object' && c !== null) as (Member & BaseRecord)[]
+        const all = [...coachObjs, ...trObjs]
         // Deduplicate by id
         const seen = new Set<string>()
         setCoaches(all.filter((m) => { if (seen.has(m.id)) return false; seen.add(m.id); return true }))
@@ -85,7 +95,7 @@ export default function RefereeExpenseSection({ gameId, teamId, canEdit }: Refer
 
     // Add roster members
     for (const mt of members) {
-      const m = mt.expand?.member
+      const m = typeof mt.member === 'object' ? mt.member : null
       if (!m || seen.has(m.id)) continue
       seen.add(m.id)
       options.push({ value: m.id, label: `${m.first_name} ${m.last_name}` })
@@ -118,11 +128,11 @@ export default function RefereeExpenseSection({ gameId, teamId, canEdit }: Refer
       if (existing) {
         const updated = await update(existing.id, data)
         // Re-fetch with expand for display
-        const full = await pb.collection('referee_expenses').getOne<ExpandedExpense>(updated.id, { expand: 'paid_by_member' })
+        const full = await fetchItem<ExpandedExpense>('referee_expenses', updated.id, { fields: ['*', 'paid_by_member.*'] })
         setExisting(full)
       } else {
         const created = await create(data)
-        const full = await pb.collection('referee_expenses').getOne<ExpandedExpense>(created.id, { expand: 'paid_by_member' })
+        const full = await fetchItem<ExpandedExpense>('referee_expenses', created.id, { fields: ['*', 'paid_by_member.*'] })
         setExisting(full)
       }
       setEditing(false)
@@ -136,8 +146,9 @@ export default function RefereeExpenseSection({ gameId, teamId, canEdit }: Refer
   if (loading) return null
 
   const isFormMode = (!existing && canEdit) || editing
-  const paidByName = existing?.expand?.paid_by_member
-    ? `${existing.expand.paid_by_member.first_name} ${existing.expand.paid_by_member.last_name}`
+  const paidByMemberObj = existing ? asObj<Member & BaseRecord>(existing.paid_by_member) : null
+  const paidByName = paidByMemberObj
+    ? `${paidByMemberObj.first_name} ${paidByMemberObj.last_name}`
     : existing?.paid_by_other || ''
 
   // Auto-open when editing or when form needs to show for first entry
@@ -225,7 +236,8 @@ export default function RefereeExpenseSection({ gameId, teamId, canEdit }: Refer
                   setEditing(false)
                   // Reset to existing values
                   if (existing) {
-                    setPaidBy(existing.paid_by_member || (existing.paid_by_other ? OTHER_VALUE : ''))
+                    const memberId = typeof existing.paid_by_member === 'string' ? existing.paid_by_member : (asObj<Member & BaseRecord>(existing.paid_by_member)?.id ?? '')
+                    setPaidBy(memberId || (existing.paid_by_other ? OTHER_VALUE : ''))
                     setOtherName(existing.paid_by_other || '')
                     setAmount(existing.amount ? String(existing.amount) : '')
                     setNotes(existing.notes || '')

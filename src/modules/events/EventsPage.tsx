@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { PartyPopper } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
-import { usePB } from '../../hooks/usePB'
+import { useCollection } from '../../lib/query'
 import { useMutation } from '../../hooks/useMutation'
 import { useRealtime } from '../../hooks/useRealtime'
 import EmptyState from '../../components/EmptyState'
@@ -17,7 +17,20 @@ import { Button } from '@/components/ui/button'
 import { isFeatureEnabled } from '../../utils/featureToggles'
 import type { Event, Team, Participation } from '../../types'
 
-type EventExpanded = Event & { expand?: { teams?: Team[] } }
+function asTeams(teams: unknown[] | null | undefined): Team[] {
+  if (!Array.isArray(teams) || teams.length === 0) return []
+  return teams
+    .map((t: any) => t?.teams_id ?? t)
+    .filter((t): t is Team => t != null && typeof t === 'object' && 'name' in t)
+}
+
+function teamId(val: unknown): string {
+  if (!val) return ''
+  if (typeof val === 'string') return val
+  if (typeof val === 'number') return String(val)
+  const obj = (val as any)?.teams_id ?? val
+  return typeof obj === 'object' ? String((obj as any).id ?? '') : String(obj ?? '')
+}
 
 export default function EventsPage() {
   const { t } = useTranslation('events')
@@ -27,33 +40,48 @@ export default function EventsPage() {
   const [formOpen, setFormOpen] = useState(false)
   const [editingEvent, setEditingEvent] = useState<Event | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [rosterEvent, setRosterEvent] = useState<EventExpanded | null>(null)
-  const [selectedEvent, setSelectedEvent] = useState<EventExpanded | null>(null)
+  const [rosterEvent, setRosterEvent] = useState<Event | null>(null)
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
   const [showPast, setShowPast] = useState(false)
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null)
 
   const today = useMemo(() => new Date().toISOString().split('T')[0], [])
 
   // Show events for selected team, or all user teams + club-wide events
-  const eventFilter = useMemo(() => {
-    const parts: string[] = []
-    if (!showPast) parts.push(`end_date >= "${today}" || (end_date = "" && start_date >= "${today}")`)
-    if (selectedTeam) {
-      parts.push(`(teams:length = 0 || teams~"${selectedTeam}")`)
-    } else if (allUserTeamIds.length > 0) {
-      const teamClauses = allUserTeamIds.map(id => `teams~"${id}"`).join(' || ')
-      parts.push(`(teams:length = 0 || ${teamClauses})`)
+  const eventFilter = useMemo((): Record<string, unknown> => {
+    const conditions: Record<string, unknown>[] = []
+    if (!showPast) {
+      conditions.push({
+        _or: [
+          { end_date: { _gte: today } },
+          { _and: [{ end_date: { _null: true } }, { start_date: { _gte: today } }] },
+        ],
+      })
     }
-    return parts.join(' && ')
+    if (selectedTeam) {
+      conditions.push({
+        _or: [{ teams: { _null: true } }, { teams: { teams_id: { _eq: selectedTeam } } }],
+      })
+    } else if (allUserTeamIds.length > 0) {
+      conditions.push({
+        _or: [
+          { teams: { _null: true } },
+          ...allUserTeamIds.map(id => ({ teams: { teams_id: { _eq: id } } })),
+        ],
+      })
+    }
+    if (conditions.length === 0) return {}
+    return conditions.length === 1 ? conditions[0] : { _and: conditions }
   }, [allUserTeamIds, selectedTeam, showPast, today])
 
-  const { data: events, isLoading, refetch } = usePB<EventExpanded>('events', {
+  const { data: eventsRaw, isLoading, refetch } = useCollection<Event>('events', {
     filter: eventFilter,
-    sort: '+start_date',
-    expand: 'teams',
-    perPage: 50,
+    sort: ['start_date'],
+    limit: 50,
+    fields: ['*', 'teams.teams_id.*'],
     enabled: !teamsLoading,
   })
+  const events = eventsRaw ?? []
 
   const { remove } = useMutation<Event>('events')
 
@@ -61,17 +89,17 @@ export default function EventsPage() {
 
   // Batch-fetch ALL participations for visible events in ONE request
   const eventIds = useMemo(() => events.map((e) => e.id), [events])
-  const participationFilter = useMemo(() => {
+  const participationFilter = useMemo((): Record<string, unknown> | string => {
     if (eventIds.length === 0) return ''
-    const idClauses = eventIds.map((id) => `activity_id="${id}"`).join(' || ')
-    return `activity_type="event" && (${idClauses})`
+    return { _and: [{ activity_type: { _eq: 'event' } }, { activity_id: { _in: eventIds } }] }
   }, [eventIds])
 
-  const { data: allParticipations, refetch: refetchParticipations } = usePB<Participation>('participations', {
-    filter: participationFilter,
+  const { data: allParticipationsRaw, refetch: refetchParticipations } = useCollection<Participation>('participations', {
+    filter: participationFilter as Record<string, unknown> | undefined,
     all: true,
     enabled: eventIds.length > 0,
   })
+  const allParticipations = allParticipationsRaw ?? []
 
   useRealtime('participations', () => refetchParticipations())
 
@@ -157,7 +185,7 @@ export default function EventsPage() {
               // Admins can edit all events
               const canEdit = isAdmin || (isCoach && (
                 event.teams.length === 0 ||
-                event.teams.some((tid) => isCoachOf(tid))
+                event.teams.some((tid) => isCoachOf(teamId(tid)))
               ))
               return (
                 <EventCard
@@ -205,11 +233,11 @@ export default function EventsPage() {
         activityType="event"
         activityId={rosterEvent?.id ?? ''}
         activityDate={rosterEvent?.start_date ?? ''}
-        teamIds={rosterEvent?.teams ?? []}
+        teamIds={(rosterEvent?.teams ?? []).map(t => teamId(t))}
         title={t('participation')}
         respondBy={rosterEvent?.respond_by}
         maxPlayers={rosterEvent?.max_players}
-        showRsvpTime={(rosterEvent?.expand?.teams ?? []).some(t => isFeatureEnabled(t.features_enabled, 'show_rsvp_time'))}
+        showRsvpTime={asTeams(rosterEvent?.teams).some(t => isFeatureEnabled(t.features_enabled, 'show_rsvp_time'))}
       />
     </div>
   )

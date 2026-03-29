@@ -1,12 +1,22 @@
 import { useEffect, useRef } from 'react'
-import type { RecordModel, RecordSubscription } from 'pocketbase'
-import pb from '../pb'
+import { client as directus, isAuthenticated } from '../lib/api'
 
 type RealtimeAction = 'create' | 'update' | 'delete'
 
-export function useRealtime<T extends RecordModel>(
+interface RealtimeEvent<T = Record<string, unknown>> {
+  action: RealtimeAction
+  record: T
+}
+
+/**
+ * Subscribe to realtime changes on a Directus collection.
+ * Silently does nothing if not authenticated or if WebSocket fails.
+ * Uses TanStack Query cache invalidation as primary refresh mechanism —
+ * this is a bonus for instant UI updates.
+ */
+export function useRealtime<T = Record<string, unknown>>(
   collection: string,
-  callback: (data: RecordSubscription<T>) => void,
+  callback: (data: RealtimeEvent<T>) => void,
   actions?: RealtimeAction[],
 ) {
   const callbackRef = useRef(callback)
@@ -16,31 +26,52 @@ export function useRealtime<T extends RecordModel>(
   actionsRef.current = actions
 
   useEffect(() => {
-    let cancelled = false
-    let unsubscribe: (() => void) | undefined
+    // Skip if not authenticated — WebSocket requires a token
+    if (!isAuthenticated()) return
 
-    pb.collection(collection)
-      .subscribe('*', (e: RecordSubscription<T>) => {
-        if (!actionsRef.current || actionsRef.current.includes(e.action as RealtimeAction)) {
-          callbackRef.current(e)
-        }
-      })
-      .then((unsub) => {
-        if (cancelled) {
-          // Component already unmounted (e.g. React Strict Mode double-mount).
-          // Swallow 404s from stale/missing client IDs.
-          try { unsub() } catch { /* ignore */ }
-        } else {
-          unsubscribe = unsub
-        }
-      })
-      .catch(() => {
-        // Subscribe itself failed (e.g. SSE connection refused) — ignore
-      })
+    let cleanup: (() => void) | undefined
+    let cancelled = false
+
+    const setup = async () => {
+      try {
+        const { subscription, unsubscribe } = await directus.subscribe(collection, {
+          event: 'changes' as never,
+        })
+
+        if (cancelled) { try { unsubscribe() } catch {} return }
+        cleanup = unsubscribe
+
+        ;(async () => {
+          try {
+            for await (const message of subscription) {
+              if (cancelled) break
+              const event = message as unknown as { event: string; data: T[] }
+              if (!event.data) continue
+
+              let action: RealtimeAction = 'update'
+              if (event.event === 'create') action = 'create'
+              else if (event.event === 'delete') action = 'delete'
+
+              if (!actionsRef.current || actionsRef.current.includes(action)) {
+                for (const record of event.data) {
+                  callbackRef.current({ action, record })
+                }
+              }
+            }
+          } catch {
+            // Subscription iterator ended or errored — ignore
+          }
+        })()
+      } catch {
+        // WebSocket connection failed — app works fine without realtime
+      }
+    }
+
+    setup()
 
     return () => {
       cancelled = true
-      try { unsubscribe?.() } catch { /* ignore stale client ID errors */ }
+      try { cleanup?.() } catch {}
     }
   }, [collection])
 }

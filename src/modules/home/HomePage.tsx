@@ -2,10 +2,11 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
-import { usePB } from '../../hooks/usePB'
+import { useCollection } from '../../lib/query'
 import { useNotifications } from '../../hooks/useNotifications'
 import { useSportPreference } from '../../hooks/useSportPreference'
 import { formatDate, formatDateCompact, formatTime, formatWeekday } from '../../utils/dateHelpers'
+import { asObj, relId } from '../../utils/relations'
 import TeamChip from '../../components/TeamChip'
 import StatusBadge from '../../components/StatusBadge'
 import { stripHtml } from '../../components/RichText'
@@ -17,22 +18,24 @@ import TrainingDetailModal from '../trainings/TrainingDetailModal'
 import EventDetailModal from '../events/EventDetailModal'
 import ParticipationSummary from '../../components/ParticipationSummary'
 import { useBulkParticipationStatuses } from '../../hooks/useBulkParticipationStatuses'
-import type { Game, Event, Team, Training, Hall, Member, MemberTeam, Notification } from '../../types'
-import type { RecordModel } from 'pocketbase'
+import type { Game, Event, Team, Training, Hall, Member, MemberTeam, Notification, BaseRecord } from '../../types'
 import { ClipboardList, Clock, AlertTriangle, Trophy, Bell, Calendar, LayoutGrid, List } from 'lucide-react'
 import LoadingSpinner from '../../components/LoadingSpinner'
 
 type ExpandedGame = Game & {
-  expand?: { kscw_team?: Team & RecordModel; hall?: RecordModel }
+  kscw_team?: Team & BaseRecord | string
+  hall?: BaseRecord | string
 }
 
-type EventExpanded = Event & { expand?: { teams?: Team[] } }
+type EventExpanded = Event & { teams?: Team[] | string[] }
 
 type TrainingExpanded = Training & {
-  expand?: { team?: Team; hall?: Hall; coach?: Member }
+  team?: Team | string
+  hall?: Hall | string
+  coach?: Member | string
 }
 
-type MemberTeamExpanded = MemberTeam & { expand?: { team?: Team } }
+type MemberTeamExpanded = MemberTeam & { team?: Team | string }
 
 
 export default function HomePage() {
@@ -55,87 +58,117 @@ export default function HomePage() {
 
   const today = useMemo(() => new Date().toISOString().split('T')[0], [])
 
-  // Sport filter clause for PB queries (filter via kscw_team relation)
-  const sportFilter = useMemo(() => {
-    if (sport === 'vb') return 'kscw_team.sport = "volleyball"'
-    if (sport === 'bb') return 'kscw_team.sport = "basketball"'
-    return '' // 'all' — no filter
+  // Sport filter for Directus queries (filter via kscw_team relation)
+  const sportFilter = useMemo((): Record<string, unknown> | null => {
+    if (sport === 'vb') return { kscw_team: { sport: { _eq: 'volleyball' } } }
+    if (sport === 'bb') return { kscw_team: { sport: { _eq: 'basketball' } } }
+    return null
   }, [sport])
 
   // Fetch user's team memberships (only when logged in)
-  const { data: memberTeams, isLoading: memberTeamsLoading } = usePB<MemberTeamExpanded>('member_teams', {
-    filter: user ? `member="${user.id}"` : '',
-    expand: 'team',
-    perPage: 20,
+  const { data: memberTeamsRaw, isLoading: memberTeamsLoading } = useCollection<MemberTeamExpanded>('member_teams', {
+    filter: user ? { member: { _eq: user.id } } : { id: { _eq: -1 } },
+    fields: ['*', 'team.*'],
+    limit: 20,
     enabled: !!user,
   })
+  const memberTeams = memberTeamsRaw ?? []
 
-  const userTeamIds = useMemo(() => [...new Set([...memberTeams.map((mt) => mt.team), ...coachTeamIds])], [memberTeams, coachTeamIds])
+  const userTeamIds = useMemo(() => [...new Set([
+    ...memberTeams.map((mt) => relId(mt.team)),
+    ...coachTeamIds,
+  ].filter(Boolean))], [memberTeams, coachTeamIds])
   const hasTeams = userTeamIds.length > 0
 
   // Build team filter for games
-  const teamGameFilter = useMemo(() => {
-    if (!hasTeams) return ''
-    return userTeamIds.map((id) => `kscw_team="${id}"`).join(' || ')
+  const teamGameFilter = useMemo((): Record<string, unknown> | null => {
+    if (!hasTeams) return null
+    return { kscw_team: { _in: userTeamIds } }
   }, [userTeamIds, hasTeams])
 
   // Next 5 upcoming games (all) — only fetch when user toggled "show all" or has no teams
-  const allGamesFilter = [`status = "scheduled"`, `date >= "${today}"`, sportFilter].filter(Boolean).join(' && ')
-  const { data: allNextGames, isLoading: gamesLoading } = usePB<ExpandedGame>('games', {
+  const allGamesFilter = useMemo((): Record<string, unknown> => {
+    const conditions: Record<string, unknown>[] = [{ status: { _eq: 'scheduled' } }, { date: { _gte: today } }, { away_team: { _nnull: true } }]
+    if (sportFilter) conditions.push(sportFilter)
+    return { _and: conditions }
+  }, [today, sportFilter])
+  const { data: allNextGamesRaw, isLoading: gamesLoading } = useCollection<ExpandedGame>('games', {
     filter: allGamesFilter,
-    sort: '+date,+time',
-    expand: 'kscw_team,hall',
-    perPage: 5,
+    fields: ['*', 'kscw_team.*', 'hall.*'],
+    sort: ['date', 'time'],
+    limit: 5,
     enabled: showAllGames || !hasTeams,
   })
+  const allNextGames = allNextGamesRaw ?? []
 
   // Next 5 upcoming games (my teams only)
-  const myGamesFilter = [`status = "scheduled"`, `date >= "${today}"`, `(${teamGameFilter})`, sportFilter].filter(Boolean).join(' && ')
-  const { data: myNextGames } = usePB<ExpandedGame>('games', {
+  const myGamesFilter = useMemo((): Record<string, unknown> => {
+    const conditions: Record<string, unknown>[] = [{ status: { _eq: 'scheduled' } }, { date: { _gte: today } }, { away_team: { _nnull: true } }]
+    if (teamGameFilter) conditions.push(teamGameFilter)
+    if (sportFilter) conditions.push(sportFilter)
+    return { _and: conditions }
+  }, [today, teamGameFilter, sportFilter])
+  const { data: myNextGamesRaw } = useCollection<ExpandedGame>('games', {
     filter: myGamesFilter,
-    sort: '+date,+time',
-    expand: 'kscw_team,hall',
-    perPage: 5,
+    fields: ['*', 'kscw_team.*', 'hall.*'],
+    sort: ['date', 'time'],
+    limit: 5,
     enabled: hasTeams && !showAllGames,
   })
+  const myNextGames = myNextGamesRaw ?? []
 
   // Latest 5 results (all) — only fetch when user toggled "show all" or has no teams
-  const allResultsFilter = [`status = "completed"`, sportFilter].filter(Boolean).join(' && ')
-  const { data: allLatestResults, isLoading: resultsLoading } = usePB<ExpandedGame>('games', {
+  const allResultsFilter = useMemo((): Record<string, unknown> => {
+    const conditions: Record<string, unknown>[] = [{ status: { _eq: 'completed' } }, { date: { _nnull: true } }, { away_team: { _nnull: true } }]
+    if (sportFilter) conditions.push(sportFilter)
+    return { _and: conditions }
+  }, [sportFilter])
+  const { data: allLatestResultsRaw, isLoading: resultsLoading } = useCollection<ExpandedGame>('games', {
     filter: allResultsFilter,
-    sort: '-date,-time',
-    expand: 'kscw_team,hall',
-    perPage: 5,
+    fields: ['*', 'kscw_team.*', 'hall.*'],
+    sort: ['-date', '-time'],
+    limit: 5,
     enabled: showAllResults || !hasTeams,
   })
+  const allLatestResults = allLatestResultsRaw ?? []
 
   // Latest 5 results (my teams only)
-  const myResultsFilter = [`status = "completed"`, `(${teamGameFilter})`, sportFilter].filter(Boolean).join(' && ')
-  const { data: myLatestResults } = usePB<ExpandedGame>('games', {
+  const myResultsFilter = useMemo((): Record<string, unknown> => {
+    const conditions: Record<string, unknown>[] = [{ status: { _eq: 'completed' } }, { date: { _nnull: true } }, { away_team: { _nnull: true } }]
+    if (teamGameFilter) conditions.push(teamGameFilter)
+    if (sportFilter) conditions.push(sportFilter)
+    return { _and: conditions }
+  }, [teamGameFilter, sportFilter])
+  const { data: myLatestResultsRaw } = useCollection<ExpandedGame>('games', {
     filter: myResultsFilter,
-    sort: '-date,-time',
-    expand: 'kscw_team,hall',
-    perPage: 5,
+    fields: ['*', 'kscw_team.*', 'hall.*'],
+    sort: ['-date', '-time'],
+    limit: 5,
     enabled: hasTeams && !showAllResults,
   })
+  const myLatestResults = myLatestResultsRaw ?? []
 
   // Next trainings for user's teams
-  const trainingFilter = useMemo(() => {
+  const trainingFilter = useMemo((): Record<string, unknown> | string => {
     if (!hasTeams) return ''
-    const teamPart = userTeamIds.map((id) => `team="${id}"`).join(' || ')
-    const parts = [`(${teamPart})`, `date >= "${today}"`, `cancelled = false`]
-    if (sport === 'vb') parts.push('team.sport = "volleyball"')
-    else if (sport === 'bb') parts.push('team.sport = "basketball"')
-    return parts.join(' && ')
+    const conditions: Record<string, unknown>[] = [
+      { team: { _in: userTeamIds } },
+      { date: { _gte: today } },
+      { cancelled: { _eq: false } },
+    ]
+    if (sport === 'vb') conditions.push({ team: { sport: { _eq: 'volleyball' } } })
+    else if (sport === 'bb') conditions.push({ team: { sport: { _eq: 'basketball' } } })
+    return { _and: conditions }
   }, [userTeamIds, hasTeams, today, sport])
 
-  const { data: nextTrainings, isLoading: trainingsLoading } = usePB<TrainingExpanded>('trainings', {
-    filter: trainingFilter,
-    sort: '+date,+start_time',
-    expand: 'team,hall,coach',
-    perPage: 10,
+  const { data: nextTrainingsRaw, isLoading: trainingsLoading } = useCollection<TrainingExpanded>('trainings', {
+    filter: trainingFilter as Record<string, unknown> | undefined,
+    fields: ['*', 'team.*', 'hall.*', 'coach.*'],
+    sort: ['date', 'start_time'],
+    limit: 10,
     enabled: hasTeams,
   })
+  const nextTrainings = nextTrainingsRaw ?? []
 
   // Decide which games/results to show
   const nextGames = hasTeams && !showAllGames ? myNextGames : allNextGames
@@ -143,25 +176,30 @@ export default function HomePage() {
 
   // Upcoming events — scope to user's teams + club-wide events
   // Non-logged-in users only see club-wide events (no team-specific ones)
-  const eventFilter = useMemo(() => {
-    const parts = [`end_date >= "${today}"`]
+  const eventFilter = useMemo((): Record<string, unknown> => {
+    const conditions: Record<string, unknown>[] = [{ end_date: { _gte: today } }]
     if (hasTeams) {
-      const teamClauses = userTeamIds.map(id => `teams~"${id}"`).join(' || ')
-      parts.push(`(teams:length = 0 || ${teamClauses})`)
+      conditions.push({
+        _or: [
+          { teams: { _null: true } },
+          ...userTeamIds.map(id => ({ teams: { teams_id: { _eq: id } } })),
+        ],
+      })
     } else {
       // Non-logged-in: only club-wide events (no teams) with public event types
-      parts.push('teams:length = 0')
-      parts.push('(event_type = "verein" || event_type = "social")')
+      conditions.push({ teams: { _null: true } })
+      conditions.push({ event_type: { _in: ['verein', 'social'] } })
     }
-    return parts.join(' && ')
+    return { _and: conditions }
   }, [today, hasTeams, userTeamIds])
 
-  const { data: events, isLoading: eventsLoading } = usePB<EventExpanded>('events', {
+  const { data: eventsRaw, isLoading: eventsLoading } = useCollection<EventExpanded>('events', {
     filter: eventFilter,
-    sort: '+start_date',
-    expand: 'teams',
-    perPage: 10,
+    fields: ['*', 'teams.teams_id.*'],
+    sort: ['start_date'],
+    limit: 10,
   })
+  const events = eventsRaw ?? []
 
   // Bulk-fetch participation statuses for all displayed activities (2 queries total
   // instead of 2 per row) so banners appear together with everything else.
@@ -471,7 +509,7 @@ function NewsRow({ notification, onMarkAsRead }: { notification: Notification; o
   })()
 
   const timeAgo = (() => {
-    const diff = Date.now() - new Date(notification.created).getTime()
+    const diff = Date.now() - new Date(notification.created ?? notification.date_created ?? '').getTime()
     const minutes = Math.floor(diff / 60000)
     if (minutes < 1) return String(t('justNow'))
     if (minutes < 60) return String(t('minutesAgo', { count: minutes }))
@@ -532,7 +570,7 @@ function CompactGameRow({ game, showScore, onClick, participationStatus }: { gam
         </div>
 
         {/* Sport icon */}
-        {game.expand?.kscw_team?.sport === 'basketball'
+        {asObj<Team & BaseRecord>(game.kscw_team)?.sport === 'basketball'
           ? <BasketballIcon className="h-5 w-5 shrink-0" filled />
           : <VolleyballIcon className="h-5 w-5 shrink-0" filled />}
 
@@ -571,8 +609,8 @@ function CompactGameRow({ game, showScore, onClick, participationStatus }: { gam
 
 function CompactTrainingRow({ training, onClick, participationStatus }: { training: TrainingExpanded; onClick?: () => void; participationStatus?: string }) {
   const { user } = useAuth()
-  const team = training.expand?.team
-  const hall = training.expand?.hall
+  const team = asObj<Team>(training.team)
+  const hall = asObj<Hall>(training.hall)
   const dateStr = training.date ? formatDate(training.date) : ''
   const weekday = training.date ? formatWeekday(training.date) : ''
 
@@ -668,8 +706,8 @@ function AppointmentRow({ appointment, onClick, participationStatus }: {
     if (g.time) timeStr = formatTime(g.time)
   } else if (appointment.type === 'training') {
     const tr = appointment.data as TrainingExpanded
-    const team = tr.expand?.team
-    const hall = tr.expand?.hall
+    const team = asObj<Team>(tr.team)
+    const hall = asObj<Hall>(tr.hall)
     label = [team?.name, hall?.name].filter(Boolean).join(' · ')
     if (tr.start_time) timeStr = formatTime(tr.start_time)
   } else {
@@ -841,7 +879,7 @@ function HomeSections({
 function EventRow({ event, onClick, participationStatus }: { event: EventExpanded; onClick: () => void; participationStatus?: string }) {
   const { i18n } = useTranslation()
   const effectiveStatus = participationStatus
-  const teams = event.expand?.teams ?? []
+  const teams = (Array.isArray(event.teams) ? event.teams.map((t: any) => t?.teams_id ?? t).filter((t): t is Team => t != null && typeof t === 'object' && 'name' in t) : [])
 
   const statusBorderColor: Record<string, string> = {
     confirmed: 'bg-green-500 dark:bg-green-400',

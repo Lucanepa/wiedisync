@@ -1,9 +1,10 @@
 import { useMemo } from 'react'
-import { usePB } from '../../../hooks/usePB'
+import { useCollection } from '../../../lib/query'
 import type { Game, HallClosure, Team } from '../../../types'
 import type { CalendarEntry, SpielplanungFilterState } from '../../../types/calendar'
 import { parseDate, toDateKey, eachDayOfInterval } from '../../../utils/dateUtils'
 import { formatTime } from '../../../utils/dateHelpers'
+import { asObj } from '../../../utils/relations'
 
 interface UseSpielplanungDataOptions {
   filters: SpielplanungFilterState
@@ -15,31 +16,31 @@ function buildGameFilter(
   filters: SpielplanungFilterState,
   seasonStart: string,
   seasonEnd: string,
-): string {
-  const parts: string[] = []
-  parts.push(`date >= "${seasonStart}" && date <= "${seasonEnd}"`)
+): Record<string, unknown> {
+  const conditions: Record<string, unknown>[] = [
+    { date: { _gte: seasonStart } },
+    { date: { _lte: seasonEnd } },
+    { away_team: { _nnull: true } },
+  ]
 
   if (filters.sport !== 'all') {
-    parts.push(`kscw_team.sport = "${filters.sport}"`)
+    conditions.push({ kscw_team: { sport: { _eq: filters.sport } } })
   }
 
   if (filters.selectedTeamIds.length > 0) {
-    const teamClauses = filters.selectedTeamIds
-      .map((id) => `kscw_team = "${id}"`)
-      .join(' || ')
-    parts.push(`(${teamClauses})`)
+    conditions.push({ kscw_team: { _in: filters.selectedTeamIds } })
   }
 
   if (filters.gameType !== 'all') {
-    parts.push(`type = "${filters.gameType}"`)
+    conditions.push({ type: { _eq: filters.gameType } })
   }
 
-  return parts.join(' && ')
+  return { _and: conditions }
 }
 
 function gameToCalendarEntry(game: Game): CalendarEntry {
-  const expandedTeam = (game.expand as { kscw_team?: Team })?.kscw_team
-  const expandedHall = (game.expand as { hall?: { name: string } })?.hall
+  const expandedTeam = asObj<Team>(game.kscw_team)
+  const expandedHall = asObj<{ name: string }>(game.hall)
 
   return {
     id: game.id,
@@ -64,25 +65,25 @@ export function useSpielplanungData({
   const gameFilter = buildGameFilter(filters, seasonStart, seasonEnd)
 
   const {
-    data: games,
+    data: gamesRaw,
     isLoading: gamesLoading,
     error: gamesError,
-  } = usePB<Game>('games', {
+  } = useCollection<Game>('games', {
     filter: gameFilter,
-    expand: 'kscw_team,hall',
-    sort: 'date,time',
+    sort: ['date', 'time'],
     all: true,
   })
+  const games = gamesRaw ?? []
 
   const {
-    data: closures,
+    data: closuresRaw,
     isLoading: closuresLoading,
     error: closuresError,
-  } = usePB<HallClosure>('hall_closures', {
-    filter: `start_date <= "${seasonEnd}" && end_date >= "${seasonStart}"`,
-    expand: 'hall',
+  } = useCollection<HallClosure>('hall_closures', {
+    filter: { _and: [{ start_date: { _lte: seasonEnd } }, { end_date: { _gte: seasonStart } }] },
     all: true,
   })
+  const closures = closuresRaw ?? []
 
   const entries = useMemo(() => games.map(gameToCalendarEntry), [games])
 

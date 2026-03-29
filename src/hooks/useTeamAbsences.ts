@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
-import pb from '../pb'
+import { fetchAllItems, fetchItem } from '../lib/api'
 import type { Absence, Member, MemberTeam } from '../types'
+import { asObj } from '../utils/relations'
 
-export type AbsenceWithMember = Absence & { expand?: { member?: Member } }
+export type AbsenceWithMember = Absence & { member: Member | string }
 
 export function useTeamAbsences(teamIds: string[], startDate: string, endDate: string) {
   const [absences, setAbsences] = useState<AbsenceWithMember[]>([])
@@ -25,16 +26,15 @@ export function useTeamAbsences(teamIds: string[], startDate: string, endDate: s
     setError(null)
     try {
       // Get players from member_teams for all teams
-      const teamFilter = teamIds.map((id) => `team="${id}"`).join(' || ')
-      const memberTeams = await pb.collection('member_teams').getFullList<MemberTeam>({
-        filter: teamFilter,
+      const memberTeams = await fetchAllItems<MemberTeam>('member_teams', {
+        filter: { team: { _in: teamIds } },
       })
       const memberIdSet = new Set(memberTeams.map((mt) => mt.member))
 
       // Also include coaches and team_responsibles (they may not have member_teams records)
       for (const teamId of teamIds) {
         try {
-          const team = await pb.collection('teams').getOne(teamId)
+          const team = await fetchItem<Record<string, unknown>>('teams', teamId)
           const coachIds: string[] = Array.isArray(team.coach) ? team.coach : team.coach ? [team.coach] : []
           const trIds: string[] = Array.isArray(team.team_responsible) ? team.team_responsible : team.team_responsible ? [team.team_responsible] : []
           for (const id of [...coachIds, ...trIds]) {
@@ -54,11 +54,16 @@ export function useTeamAbsences(teamIds: string[], startDate: string, endDate: s
         return
       }
 
-      const memberFilter = memberIds.map((id) => `member="${id}"`).join(' || ')
-      const result = await pb.collection('absences').getFullList<AbsenceWithMember>({
-        filter: `(${memberFilter}) && end_date>="${startDate}" && start_date<="${endDate}"`,
-        expand: 'member',
-        sort: 'start_date',
+      const result = await fetchAllItems<AbsenceWithMember>('absences', {
+        filter: {
+          _and: [
+            { member: { _in: memberIds } },
+            { end_date: { _gte: startDate } },
+            { start_date: { _lte: endDate } },
+          ],
+        },
+        fields: ['*', 'member.*'],
+        sort: ['start_date'],
       })
 
       // Filter to absences that affect at least one of the selected teams
@@ -71,17 +76,18 @@ export function useTeamAbsences(teamIds: string[], startDate: string, endDate: s
       // Build member map from absence expands
       const mMap: Record<string, Member> = {}
       for (const a of relevant) {
-        if (a.expand?.member) {
-          mMap[a.member] = a.expand.member
+        const memberObj = asObj<Member>(a.member)
+        if (memberObj) {
+          mMap[memberObj.id] = memberObj
         }
       }
 
       // Fetch member details for all team members (for "available" list)
-      const missingIds = memberIds.filter((id) => !mMap[id])
+      const knownIds = new Set(Object.keys(mMap))
+      const missingIds = memberIds.filter((id) => !knownIds.has(id))
       if (missingIds.length > 0) {
-        const missingFilter = missingIds.map((id) => `id="${id}"`).join(' || ')
-        const members = await pb.collection('members').getFullList<Member>({
-          filter: missingFilter,
+        const members = await fetchAllItems<Member>('members', {
+          filter: { id: { _in: missingIds } },
         })
         for (const m of members) {
           mMap[m.id] = m

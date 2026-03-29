@@ -80,10 +80,12 @@ PocketBase uses SQLite. Violating these rules **will corrupt the database** (hap
 ## Domains & Hosting
 
 - **`kscw.ch`** — currently ClubDesk (external). Will eventually be migrated to point at KSCW platform. **Do NOT change until explicitly confirmed.**
-- **`wiedisync.kscw.ch`** — React app production, CF Pages project `wiedisync` (`prod` branch) → `api.kscw.ch`
-- **`wiedisync.pages.dev`** — React app dev/preview, CF Pages project `wiedisync` (`dev` branch) → `api-dev.kscw.ch` (auto-detected via hostname in `src/pb.ts`)
-- **`api.kscw.ch`** — PocketBase API production, CF Tunnel → VPS `:8091`
-- **`api-dev.kscw.ch`** — PocketBase API dev, CF Tunnel → VPS `:8092`
+- **`wiedisync.kscw.ch`** — React app production, CF Pages project `wiedisync` (`prod` branch) → `directus.kscw.ch`
+- **`wiedisync.pages.dev`** — React app dev/preview, CF Pages project `wiedisync` (`dev` branch) → `directus-dev.kscw.ch` (auto-detected via hostname in `src/lib/api.ts`)
+- **`directus.kscw.ch`** — Directus API production (Coolify container)
+- **`directus-dev.kscw.ch`** — Directus API dev (Coolify container)
+- **`api.kscw.ch`** — PocketBase API production (fallback, kept running) CF Tunnel → VPS `:8091`
+- **`api-dev.kscw.ch`** — PocketBase API dev (fallback) CF Tunnel → VPS `:8092`
 - **`kscw-website.pages.dev`** — Public club website (static HTML), CF Pages project `kscw-website`. **Deploy to dev/preview only** until further notice — do NOT push website changes to production.
 - **`kscw-push.lucanepa.workers.dev`** — Web push CF Worker
 
@@ -91,15 +93,15 @@ See `INFRA.md → Domains & Hosting Overview` for full domain map, future migrat
 
 ## Branches & Dev-First Workflow
 
-- `prod` → production (`wiedisync.kscw.ch`, PB: `api.kscw.ch`)
-- `dev` → preview (`wiedisync.pages.dev`, PB: `api-dev.kscw.ch`)
+- `prod` → production (`wiedisync.kscw.ch`, API: `directus.kscw.ch`)
+- `dev` → preview (`wiedisync.pages.dev`, API: `directus-dev.kscw.ch`)
 
 **All changes go through `dev` first.** Never push directly to `prod`. When asked to push/deploy Wiedisync or the public website, always push to `dev` unless explicitly told to push to `prod`/production. Workflow:
 
 1. Develop and commit on `dev` branch
 2. Deploy frontend to dev (push `dev` → Cloudflare Pages preview)
-3. Deploy hooks to dev PB (`/opt/pocketbase-kscw-dev/pb_hooks/`, restart `pocketbase-kscw-dev`)
-4. Test on `wiedisync.pages.dev` against `api-dev.kscw.ch`
+3. Deploy Directus extensions to dev (Coolify auto-deploy on push)
+4. Test on `wiedisync.pages.dev` against `directus-dev.kscw.ch`
 5. Once confirmed working, merge `dev` → `prod` (with user approval)
 6. Deploy hooks to prod PB and push `prod` to trigger production build
 
@@ -113,6 +115,12 @@ See `INFRA.md → Domains & Hosting Overview` for full domain map, future migrat
 
 ## Changelog
 <!-- Grouped by feature domain. Overwrite when stale. -->
+- **2026-03-29** — Branded email templates (v2.8.1): Created Liquid templates for Directus auth emails (password-reset, user-invitation) in `directus/templates/`. Shared JS email template helper (`email-template.js`) ported from PB `email_template_lib.js`. OTP verify-email now sends branded HTML with gold code display. Scorer reminders send sport-aware branded HTML with info cards. All emails include plain-text fallbacks. Env var `EMAIL_TEMPLATES_PATH=/directus/templates` needed on container. 4 new files, 2 modified, INFRA.md updated.
+- **2026-03-29** — Web push → Directus: Migrated push subscription endpoints and delivery helpers from PB hooks to Directus kscw-endpoints extension (`web-push.js`). 4 routes: vapid-public-key, subscribe (upsert by member+endpoint), unsubscribe, test. `sendPushToMember`/`sendPushToMembers` helpers call CF Worker with expired-sub cleanup. Crons (06:30, 07:00 UTC) now trigger push after inserting deadline/upcoming notifications. Scorer delegation accept/decline sends push. Frontend `usePushNotifications.ts` updated to `/kscw/web-push/*` Directus endpoints. SQL migration `002-push-subscriptions.sql` for Postgres table. 5 files changed.
+- **2026-03-29** — PB hooks → Postgres+Directus migration: Pushed validation & notification logic into Postgres triggers (9 triggers: slot_claims_validate, members_shell_convert, members_coach_approval_guard, participations_guest_block, trainings_revoke_claims, games_notify, trainings_notify, events_notify, scorer_delegation_validate). Added Postgres DEFAULT values for members (language, birthdate_visibility). Slimmed Directus hooks extension from 10 hooks to 1 action + 7 crons — all validation/notification hooks replaced by zero-RAM Postgres triggers using batch INSERT...SELECT. Ported 30+ PB endpoints to Directus custom extension: shell invites (create/claim/extend/info), OTP verification, set-password, contact form, game scheduling (7 routes), iCal feed (3 sport routes), GCal sync, scorer reminders, feedback→GitHub, scorer delegation accept/decline. Crons optimized with batch SQL (participation reminders, notification reminders, auto-cancel, auto-decline tentatives). Fixed iCal Date object serialization for Postgres date fields. Updated frontend iCal URL from /api/ical to /kscw/ical. SQL triggers saved in `directus/scripts/001-postgres-triggers.sql`. 10 extension files changed, 1 frontend file.
+- **2026-03-29** — Google OAuth + hallenplan + Directus filter fixes: Configured Directus dev SSO (openid driver, ISSUER_URL with `.well-known` path, IDENTIFIER_KEY=email, REDIRECT_ALLOW_LIST). Recreated container on coolify network with --env-file. Fixed hallenplan crash: `hall_slots.team` is single M2O integer FK in Directus (was multi-relation string[] in PB) — added `wrapFkAsArray()` utility in api.ts to normalize single FKs into arrays at fetch time. Added `?.` null safety to all `slot.team` accesses in virtualSlots.ts, HallenplanPage.tsx, ClaimModal, ClaimDetailModal, VirtualSlotDetailModal. Fixed 403 on games/sponsors/trainings: Directus rejects dot-notation relational filters (`'kscw_team.sport'`) — converted to nested objects (`{kscw_team: {sport: ...}}`) in 5 files (HomePage, GamesPage, EmbedGamesPage, SpielplanungData, RefereeExpensesPage). All authenticated pages tested and working. 13 files changed.
+- **2026-03-29** — Directus integer FK stringification + cleanup (v2.7.1): Enhanced `stringifyIds()` in api.ts to convert ALL integer FK fields to strings (not just `id`) — Directus returns relation fields as integers but frontend expects strings, causing silent comparison failures. Deduplicated 30+ local `asObj()` definitions into shared `src/utils/relations.ts` import. Replaced 3 `getId()` duplicates with `relId()`. Removed non-existent `name` field from members queries (403 fix). Fixed `sort: ['-created']` → `['-date_created']` or `['-id']` depending on collection schema. Fixed `_neq` NULL exclusion on hallenplan/PlayerProfile status filters. Fixed null safety on `hall_slots.team` array. Increased Directus dev token TTL from 15m→1h (recreated container with --env-file). 48 files changed.
+- **2026-03-28/29** — Directus expand migration + Sentry + data fixes (v2.7.0): Migrated 62 files from PB `obj.expand?.relation` to Directus inline relations with `asObj<T>()` helper. Added `relId()` utility for safely extracting IDs from expanded objects in filters. Fixed M2M junction pattern for events (`teams.teams_id.*`). Remapped 351 stale PB alphanumeric IDs → Directus integer IDs in participations (106), notifications (245), user_logs (30) — created `directus/scripts/remap-activity-ids.mjs`. Fixed `_neq` excluding NULLs on `absences.type`. Added Sentry error tracking + CF Web Analytics support. Sentry env vars in CF Pages. 70+ files changed.
 - **2026-03-27** — PB hooks scope fix (v2.6.1): Restored `require()` pattern for all 17 PocketBase hooks. PB 0.36 JSVM runs each callback as an isolated "program" — the recent "inline _lib.js" refactors broke helper access (ReferenceErrors), causing 400 on member_teams create, broken audit logging, and failed crons. 34 files changed (17 `.pb.js` rewritten + 17 `_lib.js` created). Deployed to prod+dev containers.
 - **2026-03-26** — Team Settings & RSVP improvements (v2.6.0): New accordion "Team Settings" section in team editor replacing flat feature toggles — 3 collapsible groups (Features, Game Defaults, Training Defaults) with iOS-style switch toggles + italic hints. Color-coded RSVP save popup (green/red/yellow). Auto-decline "Maybe" after deadline (opt-in per team). Team-level defaults for min_participants, respond_by_days, require_note, auto_cancel — pre-fill into new trainings/games. Sync hooks apply game_respond_by_days on creation. 14 files changed.
 - **2026-03-26** — Hook consolidation & VPS monitoring: Inlined 10 single-use `_lib.js` files into parent `.pb.js` hooks, deleted 3 dead hooks (clubdesk_sync, birthdate_visibility_migration). 47 → 35 hook files. Fixed `audit_log.pb.js` `log()` naming conflict with goja built-in. Fixed Coolify memory limits (need `m`/`g` suffix, not bare numbers). Bumped PB prod container to 1 GB limit. Added VPS memory monitoring (5-min cron → `/var/log/kscw-memory.log`) with daily email report via new `/api/vps-report` PB hook endpoint. Cleaned up old Docker images on VPS.

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import pb from '../pb'
+import { API_URL, fetchItems } from '../lib/api'
 
 export interface ServiceHealth {
   name: string
@@ -22,8 +22,6 @@ export interface InfraHealth {
 
 const STALE_THRESHOLD_MS = 36 * 60 * 60 * 1000 // 36 hours
 
-const PB_URL = pb.baseUrl
-
 export function useInfraHealth(): InfraHealth {
   const [services, setServices] = useState<ServiceHealth[]>([])
   const [syncs, setSyncs] = useState<SyncStatus[]>([])
@@ -32,10 +30,10 @@ export function useInfraHealth(): InfraHealth {
   const checkHealth = useCallback(async () => {
     setIsLoading(true)
     try {
-      // PB health check
-      const pbHealth = await fetch(`${PB_URL}/api/health`)
-        .then(r => ({ name: 'PocketBase', status: r.ok ? 'ok' as const : 'error' as const }))
-        .catch(() => ({ name: 'PocketBase', status: 'error' as const }))
+      // API health check
+      const pbHealth = await fetch(`${API_URL}/server/health`)
+        .then(r => ({ name: 'Directus', status: r.ok ? 'ok' as const : 'error' as const }))
+        .catch(() => ({ name: 'Directus', status: 'error' as const }))
 
       setServices([pbHealth])
 
@@ -45,12 +43,13 @@ export function useInfraHealth(): InfraHealth {
 
       for (const source of ['swiss_volley', 'basketplan']) {
         try {
-          const records = await pb.collection('games').getList(1, 1, {
-            sort: '-updated',
-            filter: `source = "${source}"`,
-            fields: 'updated',
+          const records = await fetchItems<Record<string, unknown>>('games', {
+            sort: ['-date_updated'],
+            filter: { source: { _eq: source } },
+            fields: ['date_updated'],
+            limit: 1,
           })
-          const lastUpdated = records.items[0]?.updated || null
+          const lastUpdated = (records[0]?.date_updated as string) || null
           const isStale = lastUpdated
             ? now - new Date(lastUpdated).getTime() > STALE_THRESHOLD_MS
             : true
@@ -62,11 +61,12 @@ export function useInfraHealth(): InfraHealth {
 
       // GCal sync
       try {
-        const gcalRecords = await pb.collection('hall_events').getList(1, 1, {
-          sort: '-updated',
-          fields: 'updated',
+        const gcalRecords = await fetchItems<Record<string, unknown>>('hall_events', {
+          sort: ['-date_updated'],
+          fields: ['date_updated'],
+          limit: 1,
         })
-        const lastUpdated = gcalRecords.items[0]?.updated || null
+        const lastUpdated = (gcalRecords[0]?.date_updated as string) || null
         const isStale = lastUpdated
           ? now - new Date(lastUpdated).getTime() > STALE_THRESHOLD_MS
           : true

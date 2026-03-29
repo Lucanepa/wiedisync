@@ -9,7 +9,7 @@ function hallToLocationResult(hall: Hall): LocationResult {
     city: hall.city,
     lat: null,
     lon: null,
-    source: 'pocketbase',
+    source: 'directus',
   }
 }
 

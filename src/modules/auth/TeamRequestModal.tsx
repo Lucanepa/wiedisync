@@ -17,8 +17,6 @@ interface TeamRequestModalProps {
 
 interface TeamRequest {
   id: string
-  collectionId: string
-  collectionName: string
   member: string
   team: Team | string
   status: 'pending' | 'approved' | 'rejected' | 'cancelled'

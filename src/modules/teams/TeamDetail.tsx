@@ -15,7 +15,7 @@ import { sanitizeUrl } from '../../utils/sanitizeUrl'
 import VolleyballIcon from '../../components/VolleyballIcon'
 import BasketballIcon from '../../components/BasketballIcon'
 import MemberRow, { getMemberRole } from './MemberRow'
-import { getFileUrl } from '../../utils/pbFile'
+import { getFileUrl } from '../../utils/fileUrl'
 import { coercePositions } from '../../utils/memberPositions'
 import { getCurrentSeason } from '../../utils/dateHelpers'
 import ImageLightbox from '../../components/ImageLightbox'
@@ -44,7 +44,7 @@ export default function TeamDetail() {
   const { data: pendingMembers, refetch: refetchPending } = usePendingMembers(canManage ? teamId : undefined)
 
   // Team join requests from existing members
-  interface TeamRequest { id: string; collectionId: string; collectionName: string; member: Member | string; team: string; status: string }
+  interface TeamRequest { id: string; member: Member | string; team: string; status: string }
   const { data: teamRequestsRaw, refetch: refetchTeamRequests } = useCollection<TeamRequest>('team_requests', {
     filter: canManage && teamId ? { _and: [{ team: { _eq: teamId } }, { status: { _eq: 'pending' } }] } : { id: { _eq: -1 } },
     fields: ['*', 'member.*'],

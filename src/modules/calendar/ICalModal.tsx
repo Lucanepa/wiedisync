@@ -9,7 +9,7 @@ import type { CalendarEntry } from '../../types/calendar'
 import { API_URL } from '../../lib/api'
 
 
-const PB_URL = API_URL
+const BASE_URL = API_URL
 
 type ICalMode = 'subscribe' | 'download'
 
@@ -89,7 +89,7 @@ export default function ICalModal({ open, mode, onClose, entries }: ICalModalPro
       if (selectedTeamIds.length > 0) {
         params.set('team', selectedTeamIds.join(','))
       }
-      const icalUrl = `${PB_URL}/api/ical?${params.toString()}`
+      const icalUrl = `${BASE_URL}/api/ical?${params.toString()}`
       const webcalUrl = icalUrl.replace(/^https?:/, 'webcal:')
       window.open(webcalUrl, '_self')
     } else {

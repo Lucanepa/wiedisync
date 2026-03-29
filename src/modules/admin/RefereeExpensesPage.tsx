@@ -4,7 +4,7 @@ import { Download } from 'lucide-react'
 import type { RefereeExpense, Game, Team, Member, BaseRecord } from '../../types'
 import { useCollection } from '../../lib/query'
 import TeamChip from '../../components/TeamChip'
-import { pbNameToColorKey } from '../../utils/teamColors'
+import { teamNameToColorKey } from '../../utils/teamColors'
 import { formatDate } from '../../utils/dateHelpers'
 
 function asObj<T>(val: T | string | null | undefined): T | null {
@@ -156,7 +156,7 @@ export default function RefereeExpensesPage() {
                 const game = asObj<Game & BaseRecord>(expense.game)
                 const team = asObj<Team & BaseRecord>(expense.team)
                 const teamKey = team?.name && team?.sport
-                  ? pbNameToColorKey(team.name, team.sport)
+                  ? teamNameToColorKey(team.name, team.sport)
                   : team?.name || ''
                 const paidByMember = asObj<Member & BaseRecord>(expense.paid_by_member)
                 const paidBy = paidByMember

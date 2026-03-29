@@ -30,8 +30,6 @@ const STATUS_COLORS: Record<string, string> = {
 
 interface FeedbackRecord {
   id: string
-  collectionId: string
-  collectionName: string
   type: FeedbackType
   title: string
   description: string

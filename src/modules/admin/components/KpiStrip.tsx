@@ -60,7 +60,7 @@ export default function KpiStrip({ infraHealth: infra }: { infraHealth: InfraHea
   const { t } = useTranslation('admin')
   const [data, setData] = useState<KpiData | null>(null)
 
-  // Fetch PB counts once on mount — empty deps to avoid re-fetch loop
+  // Fetch KPI counts once on mount — empty deps to avoid re-fetch loop
   useEffect(() => {
     async function fetchKpis() {
       try {
@@ -94,7 +94,7 @@ export default function KpiStrip({ infraHealth: infra }: { infraHealth: InfraHea
   }, []) // empty deps — intentional single fetch on mount
 
   // Derive health/sync status from hook (no useEffect needed, no re-fetch loop)
-  const pbHealthy = infra.services.some(s => s.name === 'PocketBase' && s.status === 'ok')
+  const apiHealthy = infra.services.some(s => s.name === 'PocketBase' && s.status === 'ok')
   const syncStale = infra.syncs.some(s => s.isStale)
 
   const isLoading = data === null
@@ -139,13 +139,13 @@ export default function KpiStrip({ infraHealth: infra }: { infraHealth: InfraHea
                 highlightColor="gold"
               />
 
-              {/* 4. PB health */}
+              {/* 4. API health */}
               <KpiCard
                 label={t('kpiHealth')}
-                value={pbHealthy ? t('kpiOk') : '✗'}
-                icon={pbHealthy ? '✓' : undefined}
-                subtitle={pbHealthy ? 'PocketBase' : 'PocketBase down'}
-                highlight={!pbHealthy}
+                value={apiHealthy ? t('kpiOk') : '✗'}
+                icon={apiHealthy ? '✓' : undefined}
+                subtitle={apiHealthy ? 'API' : 'API down'}
+                highlight={!apiHealthy}
                 highlightColor="red"
               />
 

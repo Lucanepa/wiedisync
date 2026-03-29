@@ -62,7 +62,7 @@ interface UseCollectionOptions {
 
 /**
  * Fetch items from a Directus collection with automatic caching.
- * Replaces usePB — same concepts, better performance.
+ * Fetch items from a Directus collection with automatic caching.
  */
 export function useCollection<T = Record<string, unknown>>(
   collection: string,

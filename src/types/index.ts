@@ -4,8 +4,6 @@ export interface BaseRecord {
   updated?: string
   date_created?: string
   date_updated?: string
-  /** @deprecated Directus returns nested relations inline; kept for transition. */
-  expand?: Record<string, unknown>
   [key: string]: unknown
 }
 
@@ -154,7 +152,7 @@ export interface LocationResult {
   city: string
   lat: number | null
   lon: number | null
-  source: 'pocketbase' | 'photon'
+  source: 'directus' | 'photon'
 }
 
 export interface SlotClaim extends BaseRecord {
@@ -238,7 +236,7 @@ export interface Game extends BaseRecord {
   scorer_person: string
   scoreboard_team: string
   scoreboard_person: string
-  // Volleyball duty assignments (PB field names)
+  // Volleyball duty assignments
   scorer_member: string
   scoreboard_member: string
   scorer_scoreboard_member: string

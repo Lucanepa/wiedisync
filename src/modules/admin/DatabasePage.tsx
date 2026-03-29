@@ -8,7 +8,7 @@ import TableBrowser from './components/TableBrowser'
 import type { CollectionInfo, SchemaField } from './components/TableBrowser'
 import { API_URL, kscwApi } from '../../lib/api'
 
-const PB_ADMIN_URL = `${API_URL}/admin/`
+const ADMIN_URL = `${API_URL}/admin/`
 
 export default function DatabasePage() {
   const { t } = useTranslation('admin')
@@ -70,7 +70,7 @@ export default function DatabasePage() {
           {t('database')}
         </h1>
         <a
-          href={PB_ADMIN_URL}
+          href={ADMIN_URL}
           target="_blank"
           rel="noopener noreferrer"
           className="rounded-lg bg-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"

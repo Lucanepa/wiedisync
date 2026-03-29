@@ -1,27 +1,46 @@
 /**
- * KSCW Directus 11 Permissions Setup
+ * KSCW Directus 11 Hybrid Permission Setup
  *
  * Directus 11 model: Roles → Policies → Permissions
- *   1. Create access policies (one per role)
- *   2. Attach policies to roles
- *   3. Create permissions on each policy
+ *   1. Ensure roles exist (rename old names if needed)
+ *   2. Create/find access policies (one per role tier)
+ *   3. Attach policies to roles
+ *   4. Create permissions on each policy
  *
- * Run with: node scripts/setup-permissions.mjs
+ * Roles: Administrator, Superuser (admin_access), Sport Admin, Vorstand, Team Leader, Member, Public
+ *
+ * Usage:
+ *   DIRECTUS_URL=https://directus-dev.kscw.ch ADMIN_EMAIL=admin@kscw.ch ADMIN_PASSWORD=REDACTED_ADMIN_PASSWORD node directus/scripts/setup-permissions.mjs
+ *   # Or with static token:
+ *   DIRECTUS_URL=https://directus-dev.kscw.ch DIRECTUS_TOKEN=<token> node directus/scripts/setup-permissions.mjs
  */
 
 const DIRECTUS_URL = process.env.DIRECTUS_URL || 'http://localhost:8055'
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@kscw.ch'
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'REDACTED_ADMIN_PASSWORD'
+const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || 'REDACTED_ADMIN_PASSWORD').replace(/\\!/g, '!')
+const STATIC_TOKEN = process.env.DIRECTUS_TOKEN || ''
 
 let token = null
 let stats = { ok: 0, err: 0 }
 
 async function auth() {
+  if (STATIC_TOKEN) {
+    token = STATIC_TOKEN
+    // Verify token works
+    const res = await fetch(`${DIRECTUS_URL}/server/info`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (res.ok) return
+    console.log('  Static token invalid, falling back to password auth...')
+  }
   const res = await fetch(`${DIRECTUS_URL}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD }),
   })
+  if (!res.ok) {
+    throw new Error(`Auth failed: ${res.status} — check ADMIN_EMAIL and ADMIN_PASSWORD`)
+  }
   const { data } = await res.json()
   token = data.access_token
 }
@@ -38,16 +57,55 @@ async function api(method, path, body) {
   const text = await res.text()
   if (!res.ok) {
     if (text.includes('already exists') || text.includes('RECORD_NOT_UNIQUE')) return null
-    throw new Error(`${method} ${path}: ${res.status} ${text.slice(0, 200)}`)
+    throw new Error(`${method} ${path}: ${res.status} ${text.slice(0, 300)}`)
   }
   return text ? JSON.parse(text).data : null
 }
 
-// ── Create or find a policy ─────────────────────────────────────────
+// ── Role Definitions ───��─────────────────────────────────────────
+
+const ROLE_DEFS = [
+  { name: 'Administrator', icon: 'shield', description: 'Built-in Directus admin' },
+  { name: 'Superuser', icon: 'security', description: 'Full system access (superuser + admin members)' },
+  { name: 'Sport Admin', icon: 'sports', description: 'Sport-scoped admin (vb_admin / bb_admin)' },
+  { name: 'Vorstand', icon: 'groups', description: 'Board member — read-all access' },
+  { name: 'Team Leader', icon: 'supervisor_account', description: 'Coach or team responsible' },
+  { name: 'Member', icon: 'person', description: 'Default authenticated member' },
+]
+
+// Old role names → new names
+const RENAME_MAP = { Coach: 'Team Leader', Admin: 'Sport Admin' }
+
+async function ensureRoles() {
+  const existing = await api('GET', '/roles?limit=-1')
+
+  for (const def of ROLE_DEFS) {
+    const match = existing.find(r => r.name === def.name)
+    if (match) {
+      await api('PATCH', `/roles/${match.id}`, { icon: def.icon, description: def.description })
+      console.log(`  ✓ "${def.name}" exists (${match.id})`)
+    } else {
+      const oldName = Object.entries(RENAME_MAP).find(([, v]) => v === def.name)?.[0]
+      const oldMatch = oldName ? existing.find(r => r.name === oldName) : null
+      if (oldMatch) {
+        await api('PATCH', `/roles/${oldMatch.id}`, def)
+        console.log(`  ✓ "${oldName}" → "${def.name}" (${oldMatch.id})`)
+      } else {
+        const created = await api('POST', '/roles', def)
+        console.log(`  ��� "${def.name}" created (${created.id})`)
+      }
+    }
+  }
+
+  // Return fresh role map
+  const roles = await api('GET', '/roles?limit=-1')
+  return Object.fromEntries(roles.map(r => [r.name, r.id]))
+}
+
+// ── Policy Helpers ──────────���────────────────────────────────────
 
 async function findOrCreatePolicy(name, opts = {}) {
-  // Check existing
-  const existing = await api('GET', '/policies')
+  const existing = await api('GET', '/policies?limit=-1')
   const found = existing.find(p => p.name === name)
   if (found) return found.id
 
@@ -55,268 +113,460 @@ async function findOrCreatePolicy(name, opts = {}) {
     name,
     icon: opts.icon || 'shield',
     admin_access: opts.admin_access || false,
-    app_access: opts.app_access !== false, // default true
+    app_access: opts.app_access !== false,
   })
   return policy.id
 }
 
-// ── Attach policy to role ───────────────────────────────────────────
-
 async function attachPolicyToRole(roleId, policyId) {
   try {
-    await api('POST', '/access', {
-      role: roleId,
-      policy: policyId,
-    })
+    await api('POST', '/access', { role: roleId, policy: policyId })
   } catch (e) {
-    // May already be attached
     if (!e.message.includes('RECORD_NOT_UNIQUE')) {
       console.warn(`  ⚠ attach policy: ${e.message.slice(0, 80)}`)
     }
   }
 }
 
-// ── Create permission on a policy ───────────────────────────────────
+// ── Permission Helpers ────────────��──────────────────────────────
 
-async function perm(policyId, collection, action, filter = null) {
+async function setPerm(policyId, collection, action, filter = null, fields = null) {
   const body = {
     policy: policyId,
     collection,
     action,
-    fields: ['*'],
+    fields: fields || ['*'],
   }
   if (filter) body.permissions = filter
 
   try {
     await api('POST', '/permissions', body)
     stats.ok++
-    return true
   } catch (e) {
     if (e.message.includes('RECORD_NOT_UNIQUE')) {
       stats.ok++
-      return true
+    } else {
+      console.error(`    ✗ ${collection}.${action}: ${e.message.slice(0, 120)}`)
+      stats.err++
     }
-    console.error(`  ✗ ${collection}.${action}: ${e.message.slice(0, 100)}`)
-    stats.err++
-    return false
   }
 }
 
-async function permRead(policyId, collection, filter = null) {
-  return perm(policyId, collection, 'read', filter)
+async function setPermRead(policyId, collection, filter = null, fields = null) {
+  return setPerm(policyId, collection, 'read', filter, fields)
 }
 
-async function permCRUD(policyId, collection, filter = null) {
-  await perm(policyId, collection, 'create', filter)
-  await perm(policyId, collection, 'read', filter)
-  await perm(policyId, collection, 'update', filter)
-  await perm(policyId, collection, 'delete', filter)
+async function setPermCRUD(policyId, collection, filter = null) {
+  await setPerm(policyId, collection, 'create', filter)
+  await setPerm(policyId, collection, 'read', filter)
+  await setPerm(policyId, collection, 'update', filter)
+  await setPerm(policyId, collection, 'delete', filter)
 }
 
-// ── Main ─────────────────────────────────────────────────────────────
+/**
+ * Delete all existing permissions for a policy (for idempotent re-runs)
+ */
+async function clearPolicyPermissions(policyId, policyName) {
+  const perms = await api('GET', `/permissions?filter[policy][_eq]=${policyId}&limit=-1`)
+  if (!perms || perms.length === 0) return
+  for (const p of perms) {
+    await api('DELETE', `/permissions/${p.id}`)
+  }
+  console.log(`  Cleared ${perms.length} old permissions from "${policyName}"`)
+}
+
+// ── Filter Shorthands ──────��─────────────────────────────────────
+
+/** member.user = $CURRENT_USER */
+const OWN_MEMBER = { member: { user: { _eq: '$CURRENT_USER' } } }
+
+/** user = $CURRENT_USER (members table) */
+const OWN_USER = { user: { _eq: '$CURRENT_USER' } }
+
+/** user = $CURRENT_USER (directus_users FK on user_logs) */
+const OWN_DU = { user: { _eq: '$CURRENT_USER' } }
+
+/** from_member or to_member is current user */
+const OWN_DELEGATION = {
+  _or: [
+    { from_member: { user: { _eq: '$CURRENT_USER' } } },
+    { to_member: { user: { _eq: '$CURRENT_USER' } } },
+  ],
+}
+
+/** driver = current user */
+const OWN_DRIVER = { driver: { user: { _eq: '$CURRENT_USER' } } }
+
+/** passenger = current user */
+const OWN_PASSENGER = { passenger: { user: { _eq: '$CURRENT_USER' } } }
+
+/** Fields visible to regular members when reading other members */
+const MEMBER_VISIBLE_FIELDS = [
+  'id', 'first_name', 'last_name', 'photo', 'number',
+  'position', 'licences', 'user',
+]
+
+/** Fields a member can update on their own profile */
+const MEMBER_EDITABLE_FIELDS = [
+  'first_name', 'last_name', 'phone', 'birthdate',
+  'birthdate_visibility', 'hide_phone', 'photo', 'language',
+  'position', 'number',
+]
+
+/** Public fields for teams */
+const PUBLIC_TEAM_FIELDS = [
+  'id', 'name', 'full_name', 'sport', 'league', 'season', 'team_picture',
+  'team_picture_pos', 'active', 'social_url', 'color', 'coach', 'captain',
+  'team_responsible', 'sponsors',
+]
+
+/** Public fields for games */
+const PUBLIC_GAME_FIELDS = [
+  'id', 'date', 'time', 'home_team', 'away_team', 'home_score', 'away_score',
+  'sets_json', 'league', 'round', 'season', 'kscw_team', 'status', 'source',
+  'game_id', 'hall', 'type',
+]
+
+// ── Main ──────────────────────────────────��──────────────────────
 
 async function main() {
-  console.log('🔐 KSCW Directus 11 Permissions Setup\n')
+  console.log(`\n🔐 KSCW Directus 11 Hybrid Permission Setup → ${DIRECTUS_URL}\n`)
   await auth()
 
-  // Get roles
-  const roles = await api('GET', '/roles')
-  const roleMap = {}
-  for (const r of roles) roleMap[r.name] = r.id
-  console.log('Roles:', Object.keys(roleMap).join(', '))
+  // ── 1. Ensure roles ────────────────────────────────────────────
 
-  const MEMBER_ROLE = roleMap['Member']
-  const COACH_ROLE = roleMap['Coach']
-  const ADMIN_ROLE = roleMap['Admin']
+  console.log('1. Ensuring roles...')
+  const roleMap = await ensureRoles()
+  console.log('   Roles:', JSON.stringify(roleMap, null, 2))
 
-  if (!MEMBER_ROLE || !COACH_ROLE || !ADMIN_ROLE) {
-    console.error('❌ Missing roles. Run create-users.mjs first.')
-    process.exit(1)
-  }
+  // ── 2. Create policies ───────���─────────────────────────────────
 
-  // ── 1. Create policies ──────────────────────────────────────────
+  console.log('\n2. Creating policies...')
 
-  console.log('\n📋 Creating policies...')
-
-  // Find existing public policy
-  const allPolicies = await api('GET', '/policies')
+  // Find built-in public policy
+  const allPolicies = await api('GET', '/policies?limit=-1')
   const publicPolicy = allPolicies.find(p => p.name === '$t:public_label')
   const PUBLIC_POLICY = publicPolicy?.id
-  console.log(`  Public policy: ${PUBLIC_POLICY || 'NOT FOUND'}`)
+  console.log(`  Public policy: ${PUBLIC_POLICY || 'NOT FOUND — will create'}`)
 
   const MEMBER_POLICY = await findOrCreatePolicy('KSCW Member', { icon: 'person', app_access: true })
+  const LEADER_POLICY = await findOrCreatePolicy('KSCW Team Leader', { icon: 'supervisor_account', app_access: true })
+  const VORSTAND_POLICY = await findOrCreatePolicy('KSCW Vorstand', { icon: 'groups', app_access: true })
+  const SPORT_ADMIN_POLICY = await findOrCreatePolicy('KSCW Sport Admin', { icon: 'sports', app_access: true })
+  const ADMIN_POLICY = await findOrCreatePolicy('KSCW Admin', { icon: 'admin_panel_settings', admin_access: true, app_access: true })
+
   console.log(`  Member policy: ${MEMBER_POLICY}`)
-
-  const COACH_POLICY = await findOrCreatePolicy('KSCW Coach', { icon: 'sports', app_access: true })
-  console.log(`  Coach policy: ${COACH_POLICY}`)
-
-  const ADMIN_POLICY = await findOrCreatePolicy('KSCW Admin', { icon: 'admin_panel_settings', app_access: true })
+  console.log(`  Team Leader policy: ${LEADER_POLICY}`)
+  console.log(`  Vorstand policy: ${VORSTAND_POLICY}`)
+  console.log(`  Sport Admin policy: ${SPORT_ADMIN_POLICY}`)
   console.log(`  Admin policy: ${ADMIN_POLICY}`)
 
-  // ── 2. Attach policies to roles ─────────────────────────────────
+  // ���─ 3. Attach policies to roles ──────���─────────────────────────
 
-  console.log('\n🔗 Attaching policies to roles...')
-  await attachPolicyToRole(MEMBER_ROLE, MEMBER_POLICY)
-  await attachPolicyToRole(COACH_ROLE, COACH_POLICY)
-  await attachPolicyToRole(COACH_ROLE, MEMBER_POLICY) // Coach inherits member
-  await attachPolicyToRole(ADMIN_ROLE, ADMIN_POLICY)
+  console.log('\n3. Attaching policies to roles...')
+
+  // Member role → member policy
+  await attachPolicyToRole(roleMap['Member'], MEMBER_POLICY)
+
+  // Team Leader → leader + member (inherits member permissions)
+  await attachPolicyToRole(roleMap['Team Leader'], LEADER_POLICY)
+  await attachPolicyToRole(roleMap['Team Leader'], MEMBER_POLICY)
+
+  // Vorstand → vorstand + member
+  await attachPolicyToRole(roleMap['Vorstand'], VORSTAND_POLICY)
+  await attachPolicyToRole(roleMap['Vorstand'], MEMBER_POLICY)
+
+  // Sport Admin → sport admin + leader + member (full chain)
+  await attachPolicyToRole(roleMap['Sport Admin'], SPORT_ADMIN_POLICY)
+  await attachPolicyToRole(roleMap['Sport Admin'], LEADER_POLICY)
+  await attachPolicyToRole(roleMap['Sport Admin'], MEMBER_POLICY)
+
+  // Superuser → admin policy (admin_access=true bypasses everything, but attach for consistency)
+  await attachPolicyToRole(roleMap['Superuser'], ADMIN_POLICY)
+
+  // Administrator → already has admin_access=true built-in
   console.log('  ✓ Done')
 
-  // ── 3. Public permissions ───────────────────────────────────────
+  // ── 4. Clear old permissions for idempotent re-run ─────────────
+
+  console.log('\n4. Clearing old permissions...')
+  if (PUBLIC_POLICY) await clearPolicyPermissions(PUBLIC_POLICY, 'Public')
+  await clearPolicyPermissions(MEMBER_POLICY, 'Member')
+  await clearPolicyPermissions(LEADER_POLICY, 'Team Leader')
+  await clearPolicyPermissions(VORSTAND_POLICY, 'Vorstand')
+  await clearPolicyPermissions(SPORT_ADMIN_POLICY, 'Sport Admin')
+  await clearPolicyPermissions(ADMIN_POLICY, 'Admin')
+
+  // ── 5. Public permissions ──────────────────────────────────────
 
   if (PUBLIC_POLICY) {
-    console.log('\n📖 Public read...')
-    const PUBLIC_READ = [
-      'halls', 'hall_closures', 'hall_events', 'teams', 'games', 'events',
-      'rankings', 'game_scheduling_seasons', 'game_scheduling_slots', 'sponsors',
-      // Junction tables needed for deep queries
-      'teams_coach', 'teams_captain', 'teams_team_responsible', 'teams_sponsors', 'events_teams',
-    ]
-    for (const col of PUBLIC_READ) {
-      await permRead(PUBLIC_POLICY, col)
-    }
-    // Public needs to read files (team photos, logos)
-    await permRead(PUBLIC_POLICY, 'directus_files')
-    console.log(`  ✓ ${PUBLIC_READ.length + 1} public read permissions`)
+    console.log('\n5. Public (unauthenticated) permissions...')
+
+    await setPermRead(PUBLIC_POLICY, 'teams', { active: { _eq: true } }, PUBLIC_TEAM_FIELDS)
+    await setPermRead(PUBLIC_POLICY, 'games', null, PUBLIC_GAME_FIELDS)
+    await setPermRead(PUBLIC_POLICY, 'rankings')
+    await setPermRead(PUBLIC_POLICY, 'sponsors', { active: { _eq: true } })
+
+    // Junction tables for deep queries (website needs coach names, sponsor logos)
+    await setPermRead(PUBLIC_POLICY, 'teams_sponsors')
+    await setPermRead(PUBLIC_POLICY, 'teams_coach')
+    await setPermRead(PUBLIC_POLICY, 'teams_captain')
+    await setPermRead(PUBLIC_POLICY, 'members', null, ['id', 'first_name', 'last_name', 'photo'])
+
+    // Files (team photos, logos)
+    await setPermRead(PUBLIC_POLICY, 'directus_files')
+
+    console.log(`  ✓ Public permissions set`)
+  } else {
+    console.log('\n5. ⚠ No public policy found — skipping public permissions')
   }
 
-  // ── 4. Member permissions ───────────────────────────────────────
+  // ── 6. Member permissions ──────────────────────────────────────
 
-  console.log('\n👤 Member permissions...')
+  console.log('\n6. Member permissions...')
 
-  // Read: all public + auth-only collections
-  const MEMBER_READ = [
-    'halls', 'hall_closures', 'hall_events', 'teams', 'games', 'events',
-    'rankings', 'game_scheduling_seasons', 'game_scheduling_slots', 'sponsors',
-    'hall_slots', 'slot_claims', 'event_sessions', 'app_settings',
-    'members', 'member_teams', 'trainings', 'participations', 'absences',
-    'scorer_delegations', 'referee_expenses',
+  // Read: teams, games, rankings, sponsors (no filter needed — public-level + more)
+  const MEMBER_READ_ALL = [
+    'teams', 'games', 'rankings', 'sponsors',
+    'trainings', 'events', 'event_sessions', 'events_teams',
+    'hall_slots', 'hall_closures', 'hall_events', 'hall_events_halls', 'halls', 'hall_slots_teams',
+    'slot_claims', 'news', 'app_settings',
+    'referee_expenses', 'carpools', 'carpool_passengers', 'polls',
     // Junctions
-    'teams_coach', 'teams_captain', 'teams_team_responsible', 'teams_sponsors', 'events_teams',
+    'teams_coach', 'teams_captain', 'teams_team_responsible', 'teams_sponsors',
     // Files
     'directus_files',
   ]
-  for (const col of MEMBER_READ) {
-    await permRead(MEMBER_POLICY, col)
+  for (const col of MEMBER_READ_ALL) {
+    await setPermRead(MEMBER_POLICY, col)
   }
 
-  // Own profile update
-  await perm(MEMBER_POLICY, 'members', 'update', {
-    user: { _eq: '$CURRENT_USER' },
+  // Members — limited fields for other members
+  await setPermRead(MEMBER_POLICY, 'members', null, MEMBER_VISIBLE_FIELDS)
+
+  // Members — update own profile (limited fields)
+  await setPerm(MEMBER_POLICY, 'members', 'update', OWN_USER, MEMBER_EDITABLE_FIELDS)
+
+  // Participations — read own, create, update own
+  await setPermRead(MEMBER_POLICY, 'participations', OWN_MEMBER)
+  await setPerm(MEMBER_POLICY, 'participations', 'create')
+  await setPerm(MEMBER_POLICY, 'participations', 'update', OWN_MEMBER)
+
+  // Absences — CRUD own
+  await setPermRead(MEMBER_POLICY, 'absences', OWN_MEMBER)
+  await setPerm(MEMBER_POLICY, 'absences', 'create')
+  await setPerm(MEMBER_POLICY, 'absences', 'update', OWN_MEMBER)
+  await setPerm(MEMBER_POLICY, 'absences', 'delete', OWN_MEMBER)
+
+  // Notifications — read/update/delete own
+  await setPermRead(MEMBER_POLICY, 'notifications', OWN_MEMBER)
+  await setPerm(MEMBER_POLICY, 'notifications', 'update', OWN_MEMBER)
+  await setPerm(MEMBER_POLICY, 'notifications', 'delete', OWN_MEMBER)
+
+  // Push subscriptions — CRUD own
+  await setPermRead(MEMBER_POLICY, 'push_subscriptions', OWN_MEMBER)
+  await setPerm(MEMBER_POLICY, 'push_subscriptions', 'create')
+  await setPerm(MEMBER_POLICY, 'push_subscriptions', 'update', OWN_MEMBER)
+  await setPerm(MEMBER_POLICY, 'push_subscriptions', 'delete', OWN_MEMBER)
+
+  // Member teams — read own
+  await setPermRead(MEMBER_POLICY, 'member_teams', OWN_MEMBER)
+
+  // Scorer delegations — read/create/update own
+  await setPermRead(MEMBER_POLICY, 'scorer_delegations', OWN_DELEGATION)
+  await setPerm(MEMBER_POLICY, 'scorer_delegations', 'create')
+  await setPerm(MEMBER_POLICY, 'scorer_delegations', 'update', OWN_DELEGATION)
+
+  // Team invites — read own
+  await setPermRead(MEMBER_POLICY, 'team_invites', { member: { user: { _eq: '$CURRENT_USER' } } })
+
+  // User logs — read own
+  await setPermRead(MEMBER_POLICY, 'user_logs', OWN_DU)
+
+  // Feedback — create only
+  await setPerm(MEMBER_POLICY, 'feedback', 'create')
+
+  // Tasks — read, update assigned
+  await setPermRead(MEMBER_POLICY, 'tasks')
+  await setPerm(MEMBER_POLICY, 'tasks', 'update', {
+    _or: [
+      { assigned_to: { user: { _eq: '$CURRENT_USER' } } },
+      { claimed_by: { user: { _eq: '$CURRENT_USER' } } },
+    ],
   })
 
-  // Own participations: create + update
-  await perm(MEMBER_POLICY, 'participations', 'create')
-  await perm(MEMBER_POLICY, 'participations', 'update', {
-    member: { user: { _eq: '$CURRENT_USER' } },
-  })
+  // Carpools — create, update own
+  await setPerm(MEMBER_POLICY, 'carpools', 'create')
+  await setPerm(MEMBER_POLICY, 'carpools', 'update', OWN_DRIVER)
+  await setPerm(MEMBER_POLICY, 'carpool_passengers', 'create')
+  await setPerm(MEMBER_POLICY, 'carpool_passengers', 'update', OWN_PASSENGER)
 
-  // Own absences: CRUD
-  await perm(MEMBER_POLICY, 'absences', 'create')
-  await perm(MEMBER_POLICY, 'absences', 'update', {
-    member: { user: { _eq: '$CURRENT_USER' } },
-  })
-  await perm(MEMBER_POLICY, 'absences', 'delete', {
-    member: { user: { _eq: '$CURRENT_USER' } },
-  })
+  // Polls — vote
+  await setPermRead(MEMBER_POLICY, 'poll_votes', OWN_MEMBER)
+  await setPerm(MEMBER_POLICY, 'poll_votes', 'create')
+  await setPerm(MEMBER_POLICY, 'poll_votes', 'update', OWN_MEMBER)
 
-  // Own notifications: read + update (mark read)
-  await permRead(MEMBER_POLICY, 'notifications', {
-    member: { user: { _eq: '$CURRENT_USER' } },
-  })
-  await perm(MEMBER_POLICY, 'notifications', 'update', {
-    member: { user: { _eq: '$CURRENT_USER' } },
-  })
+  // Team requests — create, read own
+  await setPerm(MEMBER_POLICY, 'team_requests', 'create')
+  await setPermRead(MEMBER_POLICY, 'team_requests', { member: { user: { _eq: '$CURRENT_USER' } } })
 
-  // Own push subscriptions
-  await permRead(MEMBER_POLICY, 'push_subscriptions', {
-    member: { user: { _eq: '$CURRENT_USER' } },
-  })
-  await perm(MEMBER_POLICY, 'push_subscriptions', 'create')
-  await perm(MEMBER_POLICY, 'push_subscriptions', 'delete', {
-    member: { user: { _eq: '$CURRENT_USER' } },
-  })
-
-  // Scorer delegations: create + update (accept/decline)
-  await perm(MEMBER_POLICY, 'scorer_delegations', 'create')
-  await perm(MEMBER_POLICY, 'scorer_delegations', 'update')
+  // Files — create (upload profile pics)
+  await setPerm(MEMBER_POLICY, 'directus_files', 'create')
 
   console.log(`  ✓ Member permissions set`)
 
-  // ── 5. Coach permissions ────────────────────────────────────────
+  // ── 7. Team Leader permissions (additive to Member) ────────────
 
-  console.log('\n🏐 Coach permissions...')
+  console.log('\n7. Team Leader permissions...')
 
-  // Coach can read everything member can + user_logs
-  await permRead(COACH_POLICY, 'user_logs')
+  // Members — read all fields (coaches need email, phone for their team)
+  await setPermRead(LEADER_POLICY, 'members')
 
-  // Coach CRUD on activities
-  await permCRUD(COACH_POLICY, 'trainings')
-  await permCRUD(COACH_POLICY, 'events')
-  await permCRUD(COACH_POLICY, 'event_sessions')
+  // Teams — update (own coached/TR teams — filter enforced at API, frontend does team-scope)
+  await setPerm(LEADER_POLICY, 'teams', 'update')
 
-  // Coach can update games (duty assignments, scores)
-  await perm(COACH_POLICY, 'games', 'update')
+  // Games — update (duty assignments, scores)
+  await setPerm(LEADER_POLICY, 'games', 'update')
 
-  // Coach can manage participations
-  await permCRUD(COACH_POLICY, 'participations')
+  // Trainings — CRU
+  await setPerm(LEADER_POLICY, 'trainings', 'create')
+  await setPerm(LEADER_POLICY, 'trainings', 'update')
 
-  // Coach can manage absences (view team)
-  await permCRUD(COACH_POLICY, 'absences')
+  // Events — CRU
+  await setPerm(LEADER_POLICY, 'events', 'create')
+  await setPerm(LEADER_POLICY, 'events', 'update')
+  await setPerm(LEADER_POLICY, 'event_sessions', 'create')
+  await setPerm(LEADER_POLICY, 'event_sessions', 'update')
+  await setPerm(LEADER_POLICY, 'events_teams', 'create')
+  await setPerm(LEADER_POLICY, 'events_teams', 'update')
+  await setPerm(LEADER_POLICY, 'events_teams', 'delete')
 
-  // Coach can manage slot claims
-  await permCRUD(COACH_POLICY, 'slot_claims')
+  // Participations — full read + CRU (coach manages team roster)
+  await setPermRead(LEADER_POLICY, 'participations')
+  await setPerm(LEADER_POLICY, 'participations', 'update') // Override member's own-only
 
-  // Coach can manage notifications
-  await perm(COACH_POLICY, 'notifications', 'create')
-  await perm(COACH_POLICY, 'notifications', 'update')
+  // Member teams — read all + CU
+  await setPermRead(LEADER_POLICY, 'member_teams')
+  await setPerm(LEADER_POLICY, 'member_teams', 'create')
+  await setPerm(LEADER_POLICY, 'member_teams', 'update')
 
-  // Coach can manage scorer delegations + referee expenses
-  await permCRUD(COACH_POLICY, 'scorer_delegations')
-  await permCRUD(COACH_POLICY, 'referee_expenses')
+  // Hall slots — CU
+  await setPerm(LEADER_POLICY, 'hall_slots', 'create')
+  await setPerm(LEADER_POLICY, 'hall_slots', 'update')
+  await setPerm(LEADER_POLICY, 'slot_claims', 'update')
 
-  // Coach can manage push subscriptions
-  await permCRUD(COACH_POLICY, 'push_subscriptions')
+  // Team invites — read all + CRUD
+  await setPermRead(LEADER_POLICY, 'team_invites')
+  await setPerm(LEADER_POLICY, 'team_invites', 'create')
+  await setPerm(LEADER_POLICY, 'team_invites', 'update')
+  await setPerm(LEADER_POLICY, 'team_invites', 'delete')
 
-  // Coach can upload files
-  await perm(COACH_POLICY, 'directus_files', 'create')
+  // Scorer delegations — read all
+  await setPermRead(LEADER_POLICY, 'scorer_delegations')
 
-  console.log(`  ✓ Coach permissions set`)
+  // Referee expenses — CRU
+  await setPerm(LEADER_POLICY, 'referee_expenses', 'create')
+  await setPerm(LEADER_POLICY, 'referee_expenses', 'update')
 
-  // ── 6. Admin permissions ────────────────────────────────────────
+  // Tasks — CRUD
+  await setPerm(LEADER_POLICY, 'tasks', 'create')
+  await setPerm(LEADER_POLICY, 'tasks', 'update')
+  await setPerm(LEADER_POLICY, 'tasks', 'delete')
 
-  console.log('\n⚙️ Admin permissions...')
+  // Task templates — CRU
+  await setPermRead(LEADER_POLICY, 'task_templates')
+  await setPerm(LEADER_POLICY, 'task_templates', 'create')
+  await setPerm(LEADER_POLICY, 'task_templates', 'update')
+
+  // Polls — CRUD
+  await setPerm(LEADER_POLICY, 'polls', 'create')
+  await setPerm(LEADER_POLICY, 'polls', 'update')
+  await setPerm(LEADER_POLICY, 'polls', 'delete')
+
+  // Team requests — read + update
+  await setPermRead(LEADER_POLICY, 'team_requests')
+  await setPerm(LEADER_POLICY, 'team_requests', 'update')
+
+  // Absences — read all (team-wide view)
+  await setPermRead(LEADER_POLICY, 'absences')
+
+  // Notifications — create (coaches send notifications)
+  await setPerm(LEADER_POLICY, 'notifications', 'create')
+
+  // User logs — read all
+  await setPermRead(LEADER_POLICY, 'user_logs')
+
+  // Game scheduling — read
+  await setPermRead(LEADER_POLICY, 'game_scheduling_seasons')
+  await setPermRead(LEADER_POLICY, 'game_scheduling_slots')
+  await setPermRead(LEADER_POLICY, 'game_scheduling_opponents')
+  await setPermRead(LEADER_POLICY, 'game_scheduling_bookings')
+
+  // Files — create (upload team photos)
+  await setPerm(LEADER_POLICY, 'directus_files', 'create')
+
+  console.log(`  ✓ Team Leader permissions set`)
+
+  // ��─ 8. Vorstand permissions (read-all + member write) ──────────
+
+  console.log('\n8. Vorstand permissions...')
+
+  // Vorstand gets read-all on everything (overrides member's filtered reads)
+  const VORSTAND_READ_ALL = [
+    'members', 'member_teams', 'participations', 'absences',
+    'notifications', 'scorer_delegations', 'team_invites',
+    'user_logs', 'feedback', 'tasks', 'task_templates',
+    'poll_votes', 'team_requests', 'push_subscriptions',
+    'game_scheduling_seasons', 'game_scheduling_slots',
+    'game_scheduling_opponents', 'game_scheduling_bookings',
+  ]
+  for (const col of VORSTAND_READ_ALL) {
+    await setPermRead(VORSTAND_POLICY, col)
+  }
+
+  console.log(`  ✓ Vorstand permissions set`)
+
+  // ���─ 9. Sport Admin permissions ───��─────────────────────────────
+
+  console.log('\n9. Sport Admin permissions...')
 
   const ALL_COLLECTIONS = [
-    'halls', 'hall_closures', 'hall_events', 'hall_slots', 'teams', 'members',
-    'member_teams', 'games', 'trainings', 'events', 'event_sessions', 'rankings',
-    'participations', 'absences', 'slot_claims', 'scorer_delegations', 'referee_expenses',
-    'notifications', 'user_logs', 'push_subscriptions', 'email_verifications',
-    'app_settings', 'sponsors', 'team_invites',
-    'game_scheduling_seasons', 'game_scheduling_slots', 'game_scheduling_opponents',
-    'game_scheduling_bookings',
-    'tasks', 'task_templates', 'carpools', 'carpool_passengers', 'polls', 'poll_votes',
-    // Junctions
-    'teams_coach', 'teams_captain', 'teams_team_responsible', 'teams_sponsors', 'events_teams',
-    'hall_events_halls', 'hall_slots_teams',
-    // Files
+    'teams', 'games', 'trainings', 'events', 'event_sessions', 'events_teams',
+    'members', 'member_teams', 'participations', 'absences',
+    'rankings', 'sponsors', 'teams_sponsors',
+    'hall_slots', 'hall_closures', 'hall_events', 'hall_events_halls', 'halls', 'hall_slots_teams',
+    'slot_claims', 'notifications', 'feedback', 'scorer_delegations', 'referee_expenses',
+    'team_invites', 'news', 'app_settings', 'user_logs',
+    'push_subscriptions', 'email_verifications',
+    'teams_coach', 'teams_captain', 'teams_team_responsible',
+    'tasks', 'task_templates', 'carpools', 'carpool_passengers',
+    'polls', 'poll_votes', 'team_requests',
+    'game_scheduling_seasons', 'game_scheduling_slots',
+    'game_scheduling_opponents', 'game_scheduling_bookings',
+    'query_templates', 'sv_vm_check',
     'directus_files',
   ]
 
   for (const col of ALL_COLLECTIONS) {
-    await permCRUD(ADMIN_POLICY, col)
+    await setPermCRUD(SPORT_ADMIN_POLICY, col)
   }
 
-  console.log(`  ✓ Admin permissions set`)
+  console.log(`  ✓ Sport Admin permissions set`)
 
-  // ── Summary ───────────────────────────────────────────────────────
+  // ── 10. Admin policy (admin_access=true — bypasses all) ────────
 
-  console.log(`\n═══════════════════════════════════════`)
-  console.log(`✅ Permissions setup complete!`)
+  console.log('\n10. Admin/Superuser — admin_access=true, bypasses all permissions')
+
+  // ── Summary ──────���─────────────────────────────────────────────
+
+  console.log(`\n${'═'.repeat(50)}`)
+  console.log(`✅ Permission setup complete!`)
   console.log(`   ${stats.ok} permissions granted`)
   console.log(`   ${stats.err} errors`)
-  console.log(`═══════════════════════════════════════`)
-  console.log(`\nNote: Superuser role has admin_access=true → bypasses all permissions`)
+  console.log(`${'═'.repeat(50)}`)
+  console.log(`\nRoles: ${Object.keys(roleMap).join(', ')}`)
+  console.log(`Admin/Superuser: admin_access=true → bypass all permissions`)
+  console.log(`Public: permissions on null-role policy "$t:public_label"\n`)
 }
 
 main().catch(err => {

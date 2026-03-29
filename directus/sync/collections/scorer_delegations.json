@@ -1,0 +1,703 @@
+{
+  "collection": {
+    "collection": "scorer_delegations",
+    "meta": {
+      "accountability": "all",
+      "archive_app_filter": true,
+      "archive_field": null,
+      "archive_value": null,
+      "collapse": "open",
+      "collection": "scorer_delegations",
+      "color": null,
+      "display_template": null,
+      "group": null,
+      "hidden": false,
+      "icon": "swap_calls",
+      "item_duplication_fields": null,
+      "note": null,
+      "preview_url": null,
+      "singleton": false,
+      "sort": null,
+      "sort_field": null,
+      "translations": null,
+      "unarchive_value": null,
+      "versioning": false
+    },
+    "schema": {
+      "name": "scorer_delegations"
+    }
+  },
+  "fields": [
+    {
+      "collection": "scorer_delegations",
+      "field": "id",
+      "type": "integer",
+      "meta": {
+        "collection": "scorer_delegations",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "id",
+        "group": null,
+        "hidden": true,
+        "interface": "numeric",
+        "note": null,
+        "options": null,
+        "readonly": true,
+        "required": false,
+        "searchable": true,
+        "sort": 1,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "id",
+        "table": "scorer_delegations",
+        "data_type": "integer",
+        "default_value": "nextval('scorer_delegations_id_seq'::regclass)",
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "is_nullable": false,
+        "is_unique": true,
+        "is_indexed": false,
+        "is_primary_key": true,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": true,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "scorer_delegations",
+      "field": "role",
+      "type": "string",
+      "meta": {
+        "collection": "scorer_delegations",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "role",
+        "group": null,
+        "hidden": false,
+        "interface": "select-dropdown",
+        "note": null,
+        "options": {
+          "choices": [
+            {
+              "text": "scorer",
+              "value": "scorer"
+            },
+            {
+              "text": "scoreboard",
+              "value": "scoreboard"
+            },
+            {
+              "text": "scorer_scoreboard",
+              "value": "scorer_scoreboard"
+            },
+            {
+              "text": "bb_scorer",
+              "value": "bb_scorer"
+            },
+            {
+              "text": "bb_timekeeper",
+              "value": "bb_timekeeper"
+            },
+            {
+              "text": "bb_24s_official",
+              "value": "bb_24s_official"
+            }
+          ]
+        },
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 2,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "role",
+        "table": "scorer_delegations",
+        "data_type": "character varying",
+        "default_value": null,
+        "max_length": 255,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "scorer_delegations",
+      "field": "same_team",
+      "type": "boolean",
+      "meta": {
+        "collection": "scorer_delegations",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "same_team",
+        "group": null,
+        "hidden": false,
+        "interface": "boolean",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 3,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "same_team",
+        "table": "scorer_delegations",
+        "data_type": "boolean",
+        "default_value": false,
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": false,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "scorer_delegations",
+      "field": "status",
+      "type": "string",
+      "meta": {
+        "collection": "scorer_delegations",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "status",
+        "group": null,
+        "hidden": false,
+        "interface": "select-dropdown",
+        "note": null,
+        "options": {
+          "choices": [
+            {
+              "text": "pending",
+              "value": "pending"
+            },
+            {
+              "text": "accepted",
+              "value": "accepted"
+            },
+            {
+              "text": "declined",
+              "value": "declined"
+            },
+            {
+              "text": "expired",
+              "value": "expired"
+            }
+          ]
+        },
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 4,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "status",
+        "table": "scorer_delegations",
+        "data_type": "character varying",
+        "default_value": null,
+        "max_length": 255,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "scorer_delegations",
+      "field": "game",
+      "type": "integer",
+      "meta": {
+        "collection": "scorer_delegations",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "game",
+        "group": null,
+        "hidden": false,
+        "interface": "select-dropdown-m2o",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 5,
+        "special": [
+          "m2o"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "game",
+        "table": "scorer_delegations",
+        "data_type": "integer",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": "games",
+        "foreign_key_column": "id"
+      }
+    },
+    {
+      "collection": "scorer_delegations",
+      "field": "from_member",
+      "type": "integer",
+      "meta": {
+        "collection": "scorer_delegations",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "from_member",
+        "group": null,
+        "hidden": false,
+        "interface": "select-dropdown-m2o",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 6,
+        "special": [
+          "m2o"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "from_member",
+        "table": "scorer_delegations",
+        "data_type": "integer",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": "members",
+        "foreign_key_column": "id"
+      }
+    },
+    {
+      "collection": "scorer_delegations",
+      "field": "to_member",
+      "type": "integer",
+      "meta": {
+        "collection": "scorer_delegations",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "to_member",
+        "group": null,
+        "hidden": false,
+        "interface": "select-dropdown-m2o",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 7,
+        "special": [
+          "m2o"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "to_member",
+        "table": "scorer_delegations",
+        "data_type": "integer",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": "members",
+        "foreign_key_column": "id"
+      }
+    },
+    {
+      "collection": "scorer_delegations",
+      "field": "from_team",
+      "type": "integer",
+      "meta": {
+        "collection": "scorer_delegations",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "from_team",
+        "group": null,
+        "hidden": false,
+        "interface": "select-dropdown-m2o",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 8,
+        "special": [
+          "m2o"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "from_team",
+        "table": "scorer_delegations",
+        "data_type": "integer",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": "teams",
+        "foreign_key_column": "id"
+      }
+    },
+    {
+      "collection": "scorer_delegations",
+      "field": "to_team",
+      "type": "integer",
+      "meta": {
+        "collection": "scorer_delegations",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "to_team",
+        "group": null,
+        "hidden": false,
+        "interface": "select-dropdown-m2o",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 9,
+        "special": [
+          "m2o"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "to_team",
+        "table": "scorer_delegations",
+        "data_type": "integer",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": "teams",
+        "foreign_key_column": "id"
+      }
+    },
+    {
+      "collection": "scorer_delegations",
+      "field": "date_created",
+      "type": "timestamp",
+      "meta": {
+        "collection": "scorer_delegations",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "date_created",
+        "group": null,
+        "hidden": true,
+        "interface": "datetime",
+        "note": null,
+        "options": null,
+        "readonly": true,
+        "required": false,
+        "searchable": true,
+        "sort": 10,
+        "special": [
+          "date-created"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "half"
+      },
+      "schema": {
+        "name": "date_created",
+        "table": "scorer_delegations",
+        "data_type": "timestamp with time zone",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "scorer_delegations",
+      "field": "date_updated",
+      "type": "timestamp",
+      "meta": {
+        "collection": "scorer_delegations",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "date_updated",
+        "group": null,
+        "hidden": true,
+        "interface": "datetime",
+        "note": null,
+        "options": null,
+        "readonly": true,
+        "required": false,
+        "searchable": true,
+        "sort": 11,
+        "special": [
+          "date-updated"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "half"
+      },
+      "schema": {
+        "name": "date_updated",
+        "table": "scorer_delegations",
+        "data_type": "timestamp with time zone",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    }
+  ],
+  "relations": [
+    {
+      "collection": "scorer_delegations",
+      "field": "game",
+      "related_collection": "games",
+      "meta": {
+        "junction_field": null,
+        "many_collection": "scorer_delegations",
+        "many_field": "game",
+        "one_allowed_collections": null,
+        "one_collection": "games",
+        "one_collection_field": null,
+        "one_deselect_action": "nullify",
+        "one_field": null,
+        "sort_field": null
+      },
+      "schema": {
+        "table": "scorer_delegations",
+        "column": "game",
+        "foreign_key_table": "games",
+        "foreign_key_column": "id",
+        "constraint_name": "scorer_delegations_game_foreign",
+        "on_update": "NO ACTION",
+        "on_delete": "SET NULL"
+      }
+    },
+    {
+      "collection": "scorer_delegations",
+      "field": "from_member",
+      "related_collection": "members",
+      "meta": {
+        "junction_field": null,
+        "many_collection": "scorer_delegations",
+        "many_field": "from_member",
+        "one_allowed_collections": null,
+        "one_collection": "members",
+        "one_collection_field": null,
+        "one_deselect_action": "nullify",
+        "one_field": null,
+        "sort_field": null
+      },
+      "schema": {
+        "table": "scorer_delegations",
+        "column": "from_member",
+        "foreign_key_table": "members",
+        "foreign_key_column": "id",
+        "constraint_name": "scorer_delegations_from_member_foreign",
+        "on_update": "NO ACTION",
+        "on_delete": "SET NULL"
+      }
+    },
+    {
+      "collection": "scorer_delegations",
+      "field": "to_member",
+      "related_collection": "members",
+      "meta": {
+        "junction_field": null,
+        "many_collection": "scorer_delegations",
+        "many_field": "to_member",
+        "one_allowed_collections": null,
+        "one_collection": "members",
+        "one_collection_field": null,
+        "one_deselect_action": "nullify",
+        "one_field": null,
+        "sort_field": null
+      },
+      "schema": {
+        "table": "scorer_delegations",
+        "column": "to_member",
+        "foreign_key_table": "members",
+        "foreign_key_column": "id",
+        "constraint_name": "scorer_delegations_to_member_foreign",
+        "on_update": "NO ACTION",
+        "on_delete": "SET NULL"
+      }
+    },
+    {
+      "collection": "scorer_delegations",
+      "field": "from_team",
+      "related_collection": "teams",
+      "meta": {
+        "junction_field": null,
+        "many_collection": "scorer_delegations",
+        "many_field": "from_team",
+        "one_allowed_collections": null,
+        "one_collection": "teams",
+        "one_collection_field": null,
+        "one_deselect_action": "nullify",
+        "one_field": null,
+        "sort_field": null
+      },
+      "schema": {
+        "table": "scorer_delegations",
+        "column": "from_team",
+        "foreign_key_table": "teams",
+        "foreign_key_column": "id",
+        "constraint_name": "scorer_delegations_from_team_foreign",
+        "on_update": "NO ACTION",
+        "on_delete": "SET NULL"
+      }
+    },
+    {
+      "collection": "scorer_delegations",
+      "field": "to_team",
+      "related_collection": "teams",
+      "meta": {
+        "junction_field": null,
+        "many_collection": "scorer_delegations",
+        "many_field": "to_team",
+        "one_allowed_collections": null,
+        "one_collection": "teams",
+        "one_collection_field": null,
+        "one_deselect_action": "nullify",
+        "one_field": null,
+        "sort_field": null
+      },
+      "schema": {
+        "table": "scorer_delegations",
+        "column": "to_team",
+        "foreign_key_table": "teams",
+        "foreign_key_column": "id",
+        "constraint_name": "scorer_delegations_to_team_foreign",
+        "on_update": "NO ACTION",
+        "on_delete": "SET NULL"
+      }
+    }
+  ]
+}

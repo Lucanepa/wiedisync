@@ -88,7 +88,7 @@ export default function HomePage() {
 
   // Next 5 upcoming games (all) — only fetch when user toggled "show all" or has no teams
   const allGamesFilter = useMemo((): Record<string, unknown> => {
-    const conditions: Record<string, unknown>[] = [{ status: { _eq: 'scheduled' } }, { date: { _gte: today } }]
+    const conditions: Record<string, unknown>[] = [{ status: { _eq: 'scheduled' } }, { date: { _gte: today } }, { away_team: { _nnull: true } }]
     if (sportFilter) conditions.push(sportFilter)
     return { _and: conditions }
   }, [today, sportFilter])
@@ -103,7 +103,7 @@ export default function HomePage() {
 
   // Next 5 upcoming games (my teams only)
   const myGamesFilter = useMemo((): Record<string, unknown> => {
-    const conditions: Record<string, unknown>[] = [{ status: { _eq: 'scheduled' } }, { date: { _gte: today } }]
+    const conditions: Record<string, unknown>[] = [{ status: { _eq: 'scheduled' } }, { date: { _gte: today } }, { away_team: { _nnull: true } }]
     if (teamGameFilter) conditions.push(teamGameFilter)
     if (sportFilter) conditions.push(sportFilter)
     return { _and: conditions }
@@ -119,9 +119,9 @@ export default function HomePage() {
 
   // Latest 5 results (all) — only fetch when user toggled "show all" or has no teams
   const allResultsFilter = useMemo((): Record<string, unknown> => {
-    const conditions: Record<string, unknown>[] = [{ status: { _eq: 'completed' } }]
+    const conditions: Record<string, unknown>[] = [{ status: { _eq: 'completed' } }, { date: { _nnull: true } }, { away_team: { _nnull: true } }]
     if (sportFilter) conditions.push(sportFilter)
-    return conditions.length === 1 ? conditions[0] : { _and: conditions }
+    return { _and: conditions }
   }, [sportFilter])
   const { data: allLatestResultsRaw, isLoading: resultsLoading } = useCollection<ExpandedGame>('games', {
     filter: allResultsFilter,
@@ -134,10 +134,10 @@ export default function HomePage() {
 
   // Latest 5 results (my teams only)
   const myResultsFilter = useMemo((): Record<string, unknown> => {
-    const conditions: Record<string, unknown>[] = [{ status: { _eq: 'completed' } }]
+    const conditions: Record<string, unknown>[] = [{ status: { _eq: 'completed' } }, { date: { _nnull: true } }, { away_team: { _nnull: true } }]
     if (teamGameFilter) conditions.push(teamGameFilter)
     if (sportFilter) conditions.push(sportFilter)
-    return conditions.length === 1 ? conditions[0] : { _and: conditions }
+    return { _and: conditions }
   }, [teamGameFilter, sportFilter])
   const { data: myLatestResultsRaw } = useCollection<ExpandedGame>('games', {
     filter: myResultsFilter,

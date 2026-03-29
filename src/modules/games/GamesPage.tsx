@@ -92,7 +92,12 @@ export default function GamesPage() {
   const gameQuery = useMemo(() => {
     if (activeTab === 'rankings' || activeTab === 'scoreboard') return null
 
-    const conditions: Record<string, unknown>[] = []
+    // Exclude incomplete games (no date, time, or opponent)
+    const conditions: Record<string, unknown>[] = [
+      { date: { _nnull: true } },
+      { time: { _nnull: true } },
+      { away_team: { _nnull: true } },
+    ]
     switch (activeTab) {
       case 'upcoming':
         conditions.push({ status: { _eq: 'scheduled' } }, { date: { _gte: today } })

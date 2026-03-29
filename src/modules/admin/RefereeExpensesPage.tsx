@@ -39,7 +39,7 @@ export default function RefereeExpensesPage() {
   // Fetch expenses
   const { data: expensesRaw, isLoading } = useCollection<ExpandedExpense>('referee_expenses', {
     filter,
-    sort: ['-id'],
+    sort: ['-date_created'],
     fields: ['*', 'game.*', 'team.*', 'paid_by_member.*'],
     all: true,
   })

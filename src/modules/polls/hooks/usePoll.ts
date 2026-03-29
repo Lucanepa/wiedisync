@@ -10,7 +10,7 @@ export function usePolls(teamId: string) {
 
   const { data: pollsRaw, refetch: refetchPolls, isLoading } = useCollection<Poll>('polls', {
     filter: teamId ? { team: { _eq: teamId } } : { id: { _eq: -1 } },
-    sort: ['-id'],
+    sort: ['-date_created'],
     all: true,
     enabled: !!teamId,
   })

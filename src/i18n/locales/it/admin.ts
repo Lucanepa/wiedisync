@@ -27,7 +27,7 @@ export default {
   selectTable: 'Seleziona una tabella...',
   collections: 'Collezioni',
   noRecords: 'Nessun record trovato.',
-  filterPlaceholder: 'Sintassi filtro PocketBase...',
+  filterPlaceholder: 'Sintassi filtro Directus...',
   filter: 'Filtro',
   newRecord: 'Nuovo record',
   noResults: 'Nessun risultato.',

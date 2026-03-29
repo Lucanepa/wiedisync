@@ -27,7 +27,7 @@ export default {
   selectTable: 'Selectionner une table...',
   collections: 'Collections',
   noRecords: 'Aucun enregistrement trouve.',
-  filterPlaceholder: 'Syntaxe de filtre PocketBase...',
+  filterPlaceholder: 'Syntaxe de filtre Directus...',
   filter: 'Filtrer',
   newRecord: 'Nouvel enregistrement',
   noResults: 'Aucun resultat.',

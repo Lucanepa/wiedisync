@@ -52,8 +52,8 @@ export default function InfraSection({ infraHealth }: { infraHealth: InfraHealth
     )
   }
 
-  const pbService = services.find(s => s.name === 'PocketBase')
-  const pbOk = pbService?.status === 'ok'
+  const directusService = services.find(s => s.name === 'Directus')
+  const directusOk = directusService?.status === 'ok'
 
   return (
     <div className="space-y-4">
@@ -61,18 +61,18 @@ export default function InfraSection({ infraHealth }: { infraHealth: InfraHealth
       <div className="flex items-center gap-2 text-sm">
         <span
           className={`inline-block w-2.5 h-2.5 rounded-full shrink-0 ${
-            pbOk ? 'bg-green-500' : 'bg-red-500'
+            directusOk ? 'bg-green-500' : 'bg-red-500'
           }`}
         />
-        <span className="font-medium">PocketBase</span>
+        <span className="font-medium">Directus</span>
         <span
           className={`text-xs px-1.5 py-0.5 rounded-full font-medium ml-1 ${
-            pbOk
+            directusOk
               ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
               : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
           }`}
         >
-          {pbOk ? t('infra_healthy') : t('infra_down')}
+          {directusOk ? t('infra_healthy') : t('infra_down')}
         </span>
       </div>
 

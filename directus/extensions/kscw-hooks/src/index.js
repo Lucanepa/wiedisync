@@ -446,5 +446,38 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     }
   })
 
-  log.info('KSCW hooks loaded: 1 action, 1 filter (Turnstile), 9 crons (validations+notifications in Postgres)')
+  // ── 11. Filter: Member Privacy (birthdate_visibility, hide_phone) ──
+  // Enforces privacy settings at the API level so even direct API access respects them.
+  // Admins and the member's own record are exempt.
+
+  filter('members.items.read', async (payload, meta, context) => {
+    // Admins see everything
+    if (context.accountability?.admin) return payload
+
+    const currentUser = context.accountability?.user || null
+
+    for (const item of payload) {
+      if (!item) continue
+
+      // Skip filtering for the member's own record
+      if (currentUser && item.user === currentUser) continue
+
+      // Birthdate visibility
+      if (item.birthdate_visibility === 'hidden') {
+        item.birthdate = null
+      } else if (item.birthdate_visibility === 'year_only' && item.birthdate) {
+        // Extract just the year (handles both '1990-01-01' and ISO datetime strings)
+        item.birthdate = String(item.birthdate).substring(0, 4)
+      }
+
+      // Phone visibility
+      if (item.hide_phone === true) {
+        item.phone = null
+      }
+    }
+
+    return payload
+  })
+
+  log.info('KSCW hooks loaded: 1 action, 2 filters (Turnstile, member privacy), 9 crons (validations+notifications in Postgres)')
 }

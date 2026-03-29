@@ -127,7 +127,7 @@ export function registerGCalSync(router, { database, logger }) {
       res.json({ status: 'ok', ...result })
     } catch (err) {
       log.error(`gcal-sync: ${err.message}`)
-      res.status(500).json({ error: err.message })
+      res.status(500).json({ error: 'Internal error' })
     }
   })
 }

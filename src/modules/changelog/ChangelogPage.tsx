@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '2.8.1'
+const APP_VERSION = '2.9.0'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,18 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '2.9.0',
+    date: '2026-03-29',
+    sections: [
+      {
+        title: 'Security',
+        items: [
+          'Security hardening for production — authorization checks on scorer delegation and shell invite endpoints, cryptographically secure OTP codes, rate limiting on OTP verification, privacy-enforced member data at API level, HSTS and CSP improvements',
+        ],
+      },
+    ],
+  },
   {
     version: '2.8.1',
     date: '2026-03-29',

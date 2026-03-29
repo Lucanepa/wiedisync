@@ -2,6 +2,21 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [2.9.0] — 2026-03-29
+
+### Security
+
+- **Authorization hardening** — Added missing authorization checks on `/scorer-delegation/accept|decline` (only recipient can act) and `/team-invites/extend` (only admin/coach/TR of member's team). Previously any authenticated user could call these endpoints for any member.
+- **Cryptographically secure OTP** — Replaced `Math.random()` with `crypto.randomBytes()` for 8-digit OTP code generation.
+- **OTP brute-force protection** — Added rate limiting (5 attempts per 15 minutes per email) on `/verify-email/confirm`.
+- **Privacy at API level** — New Directus filter hook enforces `birthdate_visibility` and `hide_phone` settings on `members.items.read`, preventing bypass via direct API calls. Admins and own-record exempt.
+- **Sentry PII removal** — Stopped sending email/name to Sentry user context; added breadcrumb email scrubbing. OTP code removed from email subject line.
+- **Error message sanitization** — All 500-status error responses across 7 endpoint files now return generic "Internal error" instead of leaking `err.message` internals.
+- **Server log PII cleanup** — Replaced email addresses in log statements with member/user IDs (3 endpoints + password reset).
+- **Feedback anonymization** — GitHub issues created from user feedback now show `Member #ID` instead of full name.
+- **Security headers** — Added `Strict-Transport-Security` (HSTS) and `frame-ancestors 'none'` to CSP.
+- **DOMPurify on i18n HTML** — Added DOMPurify sanitization to all `dangerouslySetInnerHTML` usages in ScorerRow and ScorerPage.
+
 ## [2.8.1] — 2026-03-29
 
 ### Improvements

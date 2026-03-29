@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import DOMPurify from 'dompurify'
 import { useTranslation } from 'react-i18next'
 import type { Game, Member, Team, Hall, LicenceType, MemberTeam, ScorerDelegation } from '../../../types'
 import TeamChip from '../../../components/TeamChip'
@@ -493,12 +494,12 @@ export default function ScorerRow({
                 <p
                   className="mt-1.5 text-sm leading-relaxed text-gray-600 dark:text-gray-400 [&_strong]:font-semibold [&_strong]:text-gray-900 dark:[&_strong]:text-gray-100"
                   dangerouslySetInnerHTML={{
-                    __html: t('confirmSelfAssignMessage', {
+                    __html: DOMPurify.sanitize(t('confirmSelfAssignMessage', {
                       role: roleLabel(confirmRole),
                       game: gameLabel,
                       date: dateStr,
                       interpolation: { escapeValue: false },
-                    }),
+                    })),
                   }}
                 />
               </div>
@@ -512,7 +513,7 @@ export default function ScorerRow({
                   <p
                     className="text-sm leading-relaxed text-gray-600 dark:text-gray-400 [&_strong]:font-semibold [&_strong]:text-gray-900 dark:[&_strong]:text-gray-100"
                     dangerouslySetInnerHTML={{
-                      __html: t(arrivalKey, { interpolation: { escapeValue: false } }),
+                      __html: DOMPurify.sanitize(t(arrivalKey, { interpolation: { escapeValue: false } })),
                     }}
                   />
                 </div>

@@ -3,8 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { useInfraHealth } from '../../hooks/useInfraHealth'
 import { API_URL, fetchItems } from '../../lib/api'
 
-const PB_URL = API_URL
-const PB_DEV_URL = 'https://api-dev.kscw.ch'
+const PROD_URL = API_URL
+const DEV_URL = 'https://api-dev.kscw.ch'
 const PUSH_WORKER_URL = 'https://kscw-push.lucanepa.workers.dev'
 
 type Status = 'healthy' | 'down' | 'stale' | 'checking' | 'unknown'
@@ -129,30 +129,30 @@ export default function InfraHealthPage() {
     // ── Services ──
     const svcResults: HealthCheck[] = []
 
-    // PocketBase Prod — use shared hook result (already fetched on mount/refresh)
-    const hookPbService = infraRef.current.services.find(s => s.name === 'PocketBase')
-    const pbProdOk = hookPbService?.status === 'ok'
+    // API Prod — use shared hook result (already fetched on mount/refresh)
+    const hookApiService = infraRef.current.services.find(s => s.name === 'PocketBase')
+    const apiProdOk = hookApiService?.status === 'ok'
     svcResults.push({
       name: t('infraPbProd'),
-      status: pbProdOk ? 'healthy' : 'down',
-      detail: pbProdOk ? PB_URL.replace('https://', '') : 'Unreachable',
-      responseTime: hookPbService?.latency ?? null,
+      status: apiProdOk ? 'healthy' : 'down',
+      detail: apiProdOk ? PROD_URL.replace('https://', '') : 'Unreachable',
+      responseTime: hookApiService?.latency ?? null,
     })
 
-    // PocketBase Dev (no-cors fallback — dev PB may not whitelist this origin)
-    const pbDev = await checkEndpoint(`${PB_DEV_URL}/api/health`, true)
+    // API Dev (no-cors fallback — dev server may not whitelist this origin)
+    const devHealth = await checkEndpoint(`${DEV_URL}/api/health`, true)
     svcResults.push({
       name: t('infraPbDev'),
-      status: pbDev.ok ? 'healthy' : pbDev.cors ? 'unknown' : 'down',
-      detail: pbDev.ok ? PB_DEV_URL.replace('https://', '') : pbDev.cors ? 'CORS (cross-origin)' : `HTTP ${pbDev.status}`,
-      responseTime: pbDev.ok ? pbDev.ms : null,
+      status: devHealth.ok ? 'healthy' : devHealth.cors ? 'unknown' : 'down',
+      detail: devHealth.ok ? DEV_URL.replace('https://', '') : devHealth.cors ? 'CORS (cross-origin)' : `HTTP ${devHealth.status}`,
+      responseTime: devHealth.ok ? devHealth.ms : null,
     })
 
-    // Cloudflare Tunnel (implied by PB Prod reachability)
+    // Cloudflare Tunnel (implied by API Prod reachability)
     svcResults.push({
       name: t('infraCfTunnel'),
-      status: pbProdOk ? 'healthy' : 'down',
-      detail: pbProdOk ? 'kscw-vps tunnel active' : 'Tunnel unreachable',
+      status: apiProdOk ? 'healthy' : 'down',
+      detail: apiProdOk ? 'kscw-vps tunnel active' : 'Tunnel unreachable',
     })
 
     // Push Worker (uses dedicated /health endpoint with permissive CORS)
@@ -165,7 +165,7 @@ export default function InfraHealthPage() {
     })
 
     // Hooks deployed (check a known hook endpoint)
-    const hooks = await checkEndpoint(`${PB_URL}/api/public/teams`)
+    const hooks = await checkEndpoint(`${PROD_URL}/api/public/teams`)
     svcResults.push({
       name: t('infraHooksDeployed'),
       status: hooks.ok ? 'healthy' : 'down',

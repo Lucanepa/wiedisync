@@ -7,11 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import DatePicker from '@/components/ui/DatePicker'
 import { Switch } from '@/components/ui/switch'
 import { useAuth } from '../../hooks/useAuth'
-import { getFileUrl } from '../../utils/pbFile'
+import { getFileUrl } from '../../utils/fileUrl'
 import { coercePositions, getPositionI18nKey, getSelectablePositions } from '../../utils/memberPositions'
-import { pbLangToI18n } from '../../utils/languageMap'
+import { backendLangToI18n } from '../../utils/languageMap'
 import { relId } from '../../utils/relations'
-import { LANGUAGES, type PbLanguage } from '../../i18n/languageConfig'
+import { LANGUAGES, type BackendLanguage } from '../../i18n/languageConfig'
 import deFlag from '../../assets/flags/de.svg'
 import gbFlag from '../../assets/flags/gb.svg'
 
@@ -60,7 +60,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
   const [birthdate, setBirthdate] = useState('')
   const [hidePhone, setHidePhone] = useState(false)
   const [birthdateVisibility, setBirthdateVisibility] = useState<'full' | 'year_only' | 'hidden'>('full')
-  const [language, setLanguage] = useState<PbLanguage>('german')
+  const [language, setLanguage] = useState<BackendLanguage>('german')
   const [websiteVisible, setWebsiteVisible] = useState(true)
   const [infoOpen, setInfoOpen] = useState(false)
   const [photoFile, setPhotoFile] = useState<File | null>(null)
@@ -84,7 +84,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
       setHidePhone(user.hide_phone ?? false)
       setWebsiteVisible(user.website_visible ?? true)
       setBirthdateVisibility((user.birthdate_visibility as 'full' | 'year_only' | 'hidden') || 'hidden')
-      setLanguage((user.language as PbLanguage) || 'german')
+      setLanguage((user.language as BackendLanguage) || 'german')
       setSelectedPositions(coercePositions(user.position))
       setSelectedLicences((user.licences ?? []) as LicenceType[])
       setPositionDropdownOpen(false)
@@ -112,10 +112,10 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
     setPhotoPreview(URL.createObjectURL(file))
   }
 
-  function handleLanguageChange(val: PbLanguage) {
+  function handleLanguageChange(val: BackendLanguage) {
     setLanguage(val)
     // Immediately preview the chosen language in the UI
-    i18n.changeLanguage(pbLangToI18n(val))
+    i18n.changeLanguage(backendLangToI18n(val))
   }
 
   async function handlePasswordReset() {
@@ -194,7 +194,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
       }
       logActivity('update', 'members', user.id, { first_name: firstName, last_name: lastName, email, phone, language, position: selectedPositions, licences: selectedLicences })
       // Persist language to localStorage
-      localStorage.setItem('wiedisync-lang', pbLangToI18n(language))
+      localStorage.setItem('wiedisync-lang', backendLangToI18n(language))
       await client.refresh()
       onClose()
     } catch {
@@ -229,13 +229,13 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
 
         {/* Language selector */}
         <FormField label={`${t('language')}${onboarding ? ' *' : ''}`}>
-          <Select value={language} onValueChange={(v) => handleLanguageChange(v as PbLanguage)}>
+          <Select value={language} onValueChange={(v) => handleLanguageChange(v as BackendLanguage)}>
             <SelectTrigger className="min-h-[44px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {LANGUAGES.map((lang) => (
-                <SelectItem key={lang.pbValue} value={lang.pbValue}>
+                <SelectItem key={lang.backendValue} value={lang.backendValue}>
                   <span className="flex items-center gap-2">
                     <img src={flagMap[lang.flag]} alt="" className={`${lang.flag === 'ch' ? 'w-[15px] h-[15px]' : 'w-5 h-[15px]'} rounded-[2px]`} />
                     {lang.nativeName}

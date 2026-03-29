@@ -57,7 +57,7 @@ export default function GamesPage() {
 
   const INITIAL_LIMIT = 20
 
-  // Fetch all KSCW teams to map name → PB id
+  // Fetch all KSCW teams to map name → id
   const { data: allTeamsRaw } = useCollection<Team>('teams', { sort: ['name'], all: true, fields: ['id', 'name'] })
   const allTeams = allTeamsRaw ?? []
   const teamNameToId = useMemo(() => {
@@ -71,7 +71,7 @@ export default function GamesPage() {
   const effectiveTeams = selectedTeams.length > 0
     ? selectedTeams
     : (!effectiveIsAdmin && allUserTeamNames.length > 0 ? allUserTeamNames : [])
-  // Convert name codes to PB record IDs for the kscw_team filter
+  // Convert name codes to record IDs for the kscw_team filter
   const effectiveTeamIds = effectiveTeams
     .map((name) => teamNameToId.get(name))
     .filter((id): id is string => !!id)

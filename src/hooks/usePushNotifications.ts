@@ -14,7 +14,7 @@ interface PushState {
 
 /**
  * Hook for managing Web Push notification subscriptions.
- * Handles permission requests, SW subscription, and PB registration.
+ * Handles permission requests, SW subscription, and backend registration.
  */
 export function usePushNotifications() {
   const [state, setState] = useState<PushState>({

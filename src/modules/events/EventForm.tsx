@@ -12,14 +12,14 @@ import DatePicker from '@/components/ui/DatePicker'
 import TeamMultiSelect from '@/components/TeamMultiSelect'
 import LocationCombobox from '@/components/LocationCombobox'
 import { Switch } from '@/components/ui/switch'
-import { pbNameToColorKey } from '../../utils/teamColors'
+import { teamNameToColorKey } from '../../utils/teamColors'
 import { formatDateLocale } from '../../utils/dateUtils'
-import { parseRespondByTime, toPBDatetime } from '../../utils/dateHelpers'
+import { parseRespondByTime, toApiDatetime } from '../../utils/dateHelpers'
 import type { Event, EventSession, Team } from '../../types'
 import { createRecord, deleteRecord, updateRecord } from '../../lib/api'
 
 interface SessionDraft {
-  id?: string // existing PB record id (for edit mode)
+  id?: string // existing record id (for edit mode)
   date: string
   start_time: string
   end_time: string
@@ -74,7 +74,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
     availableTeams.map((team) => ({
       value: team.id,
       label: team.name,
-      colorKey: pbNameToColorKey(team.name, team.sport),
+      colorKey: teamNameToColorKey(team.name, team.sport),
       group: team.sport === 'volleyball' ? tc('volleyball') : tc('basketball'),
     })),
   [availableTeams, tc])
@@ -240,8 +240,8 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
     const data = {
       title,
       event_type: eventType,
-      start_date: toPBDatetime(startDate),
-      end_date: toPBDatetime(endDate || startDate),
+      start_date: toApiDatetime(startDate),
+      end_date: toApiDatetime(endDate || startDate),
       all_day: allDay,
       location,
       description,

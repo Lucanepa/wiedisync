@@ -4,7 +4,7 @@ import { client, login as apiLogin, logout as apiLogout, refreshAuth, isAuthenti
 import { queryClient } from '../lib/query'
 import { setSentryUser } from '../lib/sentry'
 import i18n from '../i18n'
-import { pbLangToI18n } from '../utils/languageMap'
+import { backendLangToI18n } from '../utils/languageMap'
 import { getCurrentSeason } from '../utils/dateHelpers'
 import type { Member, Team } from '../types'
 
@@ -162,7 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Sync i18n
   useEffect(() => {
     if (user?.language) {
-      const lang = pbLangToI18n(user.language)
+      const lang = backendLangToI18n(user.language)
       if (i18n.language !== lang) { i18n.changeLanguage(lang); localStorage.setItem('wiedisync-lang', lang) }
     }
   }, [user?.language])

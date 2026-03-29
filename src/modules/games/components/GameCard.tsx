@@ -4,7 +4,7 @@ import type { Game, Team, Hall, BaseRecord } from '../../../types'
 import { formatDateCompact, formatTime } from '../../../utils/dateHelpers'
 import { leagueShort } from '../../../utils/leagueShort'
 import TeamChip from '../../../components/TeamChip'
-import { pbNameToColorKey } from '../../../utils/teamColors'
+import { teamNameToColorKey } from '../../../utils/teamColors'
 import VolleyballIcon from '../../../components/VolleyballIcon'
 import BasketballIcon from '../../../components/BasketballIcon'
 import ParticipationSummary from '../../../components/ParticipationSummary'
@@ -87,7 +87,7 @@ export default function GameCard({ game, onClick, variant = 'card', participatio
   const kscwTeamObj = asObj<Team & BaseRecord>(expanded.kscw_team)
   const rawTeamName = kscwTeamObj?.name ?? ''
   const teamSport = kscwTeamObj?.sport as 'volleyball' | 'basketball' | undefined
-  const kscwTeamName = rawTeamName && teamSport ? pbNameToColorKey(rawTeamName, teamSport) : rawTeamName
+  const kscwTeamName = rawTeamName && teamSport ? teamNameToColorKey(rawTeamName, teamSport) : rawTeamName
 
   if (variant === 'compact') {
     const short = game.date ? formatDateCompact(game.date) : ''

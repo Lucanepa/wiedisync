@@ -347,7 +347,7 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
     if (editScope === 'same_day') {
       // Same day of week: compute from source training date
       const dayOfWeek = new Date(source.date).getDay()
-      // PB doesn't have day-of-week filter, so we fetch all and filter client-side
+      // No day-of-week filter available, so we fetch all and filter client-side
       const allSiblings = await fetchAllItems<Training>('trainings', {
         filter,
         sort: ['date'],

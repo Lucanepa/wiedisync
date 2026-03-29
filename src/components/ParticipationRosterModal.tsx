@@ -5,7 +5,7 @@ import { useMultiTeamMembers } from '../hooks/useTeamMembers'
 import { useTeamParticipations, useAllEventParticipations } from '../hooks/useParticipation'
 import { useCollection } from '../lib/query'
 import { fetchAllItems } from '../lib/api'
-import { getFileUrl } from '../utils/pbFile'
+import { getFileUrl } from '../utils/fileUrl'
 import type { Participation, Absence, Member, Team, EventSession } from '../types'
 
 function asObj<T>(val: T | string | null | undefined): T | null {

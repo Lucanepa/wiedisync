@@ -7,7 +7,7 @@ import { useCollection } from '../../lib/query'
 import { Button } from '@/components/ui/button'
 import StatusBadge from '../../components/StatusBadge'
 import TeamChip from '../../components/TeamChip'
-import { getFileUrl } from '../../utils/pbFile'
+import { getFileUrl } from '../../utils/fileUrl'
 import { coercePositions, getPositionI18nKey } from '../../utils/memberPositions'
 import { formatDate, toISODate } from '../../utils/dateHelpers'
 import ProfileEditModal from './ProfileEditModal'
@@ -48,7 +48,7 @@ export default function ProfilePage() {
   const memberTeams = memberTeamsRaw ?? []
 
   // Pending team requests
-  interface TeamRequest { id: string; collectionId: string; collectionName: string; member: string; team: Team | string; status: string }
+  interface TeamRequest { id: string; member: string; team: Team | string; status: string }
   const { data: pendingRequestsRaw, refetch: refetchRequests } = useCollection<TeamRequest>('team_requests', {
     filter: user ? { _and: [{ member: { _eq: user.id } }, { status: { _eq: 'pending' } }] } : undefined,
     fields: ['*', 'team.*'],

@@ -13,8 +13,8 @@ import DatenschutzPage from '../legal/DatenschutzPage'
 import PrivacyNotice from '../../components/PrivacyNotice'
 import { FormInput, FormField } from '@/components/FormField'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { LANGUAGES, type PbLanguage } from '../../i18n/languageConfig'
-import { pbLangToI18n } from '../../utils/languageMap'
+import { LANGUAGES, type BackendLanguage } from '../../i18n/languageConfig'
+import { backendLangToI18n } from '../../utils/languageMap'
 import { OtpInput } from '../../components/OtpInput'
 import { getCurrentSeason } from '../../utils/dateHelpers'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -44,13 +44,13 @@ export default function SignUpPage() {
 
   const [step, setStep] = useState<Step>('email')
   const [email, setEmail] = useState('')
-  const [selectedLanguage, setSelectedLanguage] = useState<PbLanguage>(
-    LANGUAGES.find((l) => l.code === i18n.language)?.pbValue ?? 'german',
+  const [selectedLanguage, setSelectedLanguage] = useState<BackendLanguage>(
+    LANGUAGES.find((l) => l.code === i18n.language)?.backendValue ?? 'german',
   )
 
-  function handleLanguageChange(lang: PbLanguage) {
+  function handleLanguageChange(lang: BackendLanguage) {
     setSelectedLanguage(lang)
-    i18n.changeLanguage(pbLangToI18n(lang))
+    i18n.changeLanguage(backendLangToI18n(lang))
   }
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
@@ -370,13 +370,13 @@ export default function SignUpPage() {
 
               {/* Language */}
               <FormField label={t('language')}>
-                <Select value={selectedLanguage} onValueChange={(v) => handleLanguageChange(v as PbLanguage)}>
+                <Select value={selectedLanguage} onValueChange={(v) => handleLanguageChange(v as BackendLanguage)}>
                   <SelectTrigger className="min-h-[44px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {LANGUAGES.map((lang) => (
-                      <SelectItem key={lang.pbValue} value={lang.pbValue}>
+                      <SelectItem key={lang.backendValue} value={lang.backendValue}>
                         <span className="flex items-center gap-2">
                           <img src={flagMap[lang.flag]} alt="" className={`${lang.flag === 'ch' ? 'w-[15px] h-[15px]' : 'w-5 h-[15px]'} rounded-[2px]`} />
                           {lang.nativeName}

@@ -4,7 +4,7 @@ import { MessageSquare, X, Check } from 'lucide-react'
 import type { Game, Team, Hall, Member, BaseRecord } from '../../../types'
 import { Button } from '@/components/ui/button'
 import TeamChip from '../../../components/TeamChip'
-import { pbNameToColorKey } from '../../../utils/teamColors'
+import { teamNameToColorKey } from '../../../utils/teamColors'
 import ParticipationSummary from '../../../components/ParticipationSummary'
 import ParticipationRosterModal from '../../../components/ParticipationRosterModal'
 import { useAuth } from '../../../hooks/useAuth'
@@ -165,7 +165,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
   const kscwTeamObj = asObj<Team & BaseRecord>(expanded.kscw_team)
   const rawKscwTeam = kscwTeamObj?.name ?? ''
   const kscwSport = kscwTeamObj?.sport as 'volleyball' | 'basketball' | undefined
-  const kscwTeam = rawKscwTeam && kscwSport ? pbNameToColorKey(rawKscwTeam, kscwSport) : rawKscwTeam
+  const kscwTeam = rawKscwTeam && kscwSport ? teamNameToColorKey(rawKscwTeam, kscwSport) : rawKscwTeam
   const sets = parseSets(game.sets_json)
   const intlLocale = i18n.language === 'gsw' ? 'de-CH' : i18n.language
   const dateStr = game.date ? new Intl.DateTimeFormat(intlLocale, dateFormatOptions).format(new Date(game.date)) : ''

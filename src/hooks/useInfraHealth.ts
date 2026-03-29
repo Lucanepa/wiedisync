@@ -30,7 +30,7 @@ export function useInfraHealth(): InfraHealth {
   const checkHealth = useCallback(async () => {
     setIsLoading(true)
     try {
-      // PB health check
+      // API health check
       const pbHealth = await fetch(`${API_URL}/server/health`)
         .then(r => ({ name: 'Directus', status: r.ok ? 'ok' as const : 'error' as const }))
         .catch(() => ({ name: 'Directus', status: 'error' as const }))

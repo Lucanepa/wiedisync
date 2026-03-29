@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { createRecord, updateRecord, deleteRecord } from '../../../lib/api'
 import { logActivity } from '../../../utils/logActivity'
-import { toPBDatetime } from '../../../utils/dateHelpers'
+import { toApiDatetime } from '../../../utils/dateHelpers'
 import Modal from '@/components/Modal'
 import { Button } from '@/components/ui/button'
 import ConfirmDialog from '@/components/ConfirmDialog'
@@ -234,7 +234,7 @@ export default function RecordEditModal({
           <input
             type="datetime-local"
             value={String(value ?? '').slice(0, 16)}
-            onChange={(e) => setField(field.name, toPBDatetime(e.target.value))}
+            onChange={(e) => setField(field.name, toApiDatetime(e.target.value))}
             className={inputClass}
           />
         )

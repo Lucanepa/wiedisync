@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { LANGUAGES } from '../i18n/languageConfig'
-import { i18nToPbLang } from '../utils/languageMap'
+import { i18nToBackendLang } from '../utils/languageMap'
 import { useAuth } from '../hooks/useAuth'
 import { updateRecord } from '../lib/api'
 
@@ -49,7 +49,7 @@ export default function LanguageDropdown({ size = 'sm' }: LanguageDropdownProps)
     if (user) {
       try {
         await updateRecord('members', user.id, {
-          language: i18nToPbLang(code),
+          language: i18nToBackendLang(code),
         })
       } catch {
         // Silently fail — localStorage is the primary store

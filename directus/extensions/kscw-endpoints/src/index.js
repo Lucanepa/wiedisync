@@ -268,7 +268,7 @@ export default {
         res.json({ token, qr_url: `https://wiedisync.kscw.ch/join?token=${token}`, expires_at: expiresAt })
       } catch (err) {
         log.error(`team-invites/create: ${err.message}`)
-        res.status(err.status || 500).json({ error: err.message })
+        res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal error' })
       }
     })
 
@@ -322,11 +322,11 @@ export default {
           return mId
         })
 
-        log.info(`Shell invite claimed: ${email} → team ${team.name}`)
-        res.json({ success: true, member_id: memberId, team_name: team.name, email })
+        log.info(`Shell invite claimed: member ${memberId} → team ${team.name}`)
+        res.json({ success: true, member_id: memberId, team_name: team.name })
       } catch (err) {
         log.error(`team-invites/claim: ${err.message}`)
-        res.status(err.status || 500).json({ error: err.message })
+        res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal error' })
       }
     })
 
@@ -340,6 +340,23 @@ export default {
         if (!member) return res.status(404).json({ error: 'Member not found' })
         if (!member.shell) return res.status(400).json({ error: 'Not a shell account' })
 
+        // Permission: admin or coach/TR of member's team
+        const userId = req.accountability.user
+        if (!req.accountability.admin) {
+          const memberTeam = await database('member_teams').where('member', member_id).select('team').first()
+          if (!memberTeam) return res.status(403).json({ error: 'Not authorized' })
+          const teamId = memberTeam.team
+          const isCoach = await database('teams_coach')
+            .where('teams_id', teamId).where('members_id', function () {
+              this.select('id').from('members').where('user', userId)
+            }).first()
+          const isTR = await database('teams_team_responsible')
+            .where('teams_id', teamId).where('members_id', function () {
+              this.select('id').from('members').where('user', userId)
+            }).first()
+          if (!isCoach && !isTR) return res.status(403).json({ error: 'Not authorized' })
+        }
+
         const newExpiry = addDays(new Date(), 30).toISOString()
         await database('members').where('id', member_id).update({
           shell_expires: newExpiry, kscw_membership_active: true, shell_reminder_sent: false,
@@ -348,7 +365,7 @@ export default {
         res.json({ success: true, member_id, shell_expires: newExpiry })
       } catch (err) {
         log.error(`team-invites/extend: ${err.message}`)
-        res.status(err.status || 500).json({ error: err.message })
+        res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal error' })
       }
     })
 
@@ -371,8 +388,8 @@ export default {
           return res.status(429).json({ error: 'Too many requests. Try again later.' })
         }
 
-        // Generate 8-digit code
-        const code = String(Math.floor(10000000 + Math.random() * 90000000))
+        // Generate 8-digit code (cryptographically secure)
+        const code = String(10000000 + (crypto.randomBytes(4).readUInt32BE(0) % 90000000))
         const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString() // 10 min
 
         await database('email_verifications').insert({ email, code, expires_at: expiresAt, verified: false })
@@ -394,7 +411,7 @@ export default {
         })
         await mailService.send({
           to: email,
-          subject: `WiediSync — Verifizierungscode: ${code}`,
+          subject: 'WiediSync — Verifizierungscode',
           html: otpHtml,
           text: `Dein Verifizierungscode: ${code}\n\nDieser Code ist 10 Minuten gültig.\n\nKSC Wiedikon\nwiedisync.kscw.ch`,
         })
@@ -406,11 +423,26 @@ export default {
       }
     })
 
+    // In-memory rate limiter for OTP confirm attempts (per email)
+    const otpAttempts = new Map() // email → { count, resetAt }
+
     router.post('/verify-email/confirm', async (req, res) => {
       try {
         const { email: rawEmail, code } = req.body
         if (!rawEmail || !code) return res.status(400).json({ error: 'email and code required' })
         const email = rawEmail.toLowerCase().trim()
+
+        // Rate limit: max 5 attempts per 15 minutes per email
+        const now = Date.now()
+        const attempt = otpAttempts.get(email)
+        if (attempt && now < attempt.resetAt) {
+          if (attempt.count >= 5) {
+            return res.status(429).json({ error: 'Too many attempts. Try again later.' })
+          }
+          attempt.count++
+        } else {
+          otpAttempts.set(email, { count: 1, resetAt: now + 15 * 60 * 1000 })
+        }
 
         const record = await database('email_verifications')
           .where('email', email).where('code', code).where('verified', false)
@@ -493,7 +525,7 @@ export default {
         res.json({ success: true, member_id: memberId ? String(memberId) : undefined })
       } catch (err) {
         log.error(`set-password: ${err.message}`)
-        res.status(err.status || 500).json({ error: err.message })
+        res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal error' })
       }
     })
 
@@ -549,11 +581,11 @@ export default {
         // Clean up verification
         await database('email_verifications').where('email', email).delete()
 
-        log.info(`New member registered: ${email} → team ${team}`)
+        log.info(`New member registered: member ${member.id || member} → team ${team}`)
         res.json({ success: true, member_id: String(member.id || member) })
       } catch (err) {
         log.error(`register: ${err.message}`)
-        res.status(err.status || 500).json({ error: err.message })
+        res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal error' })
       }
     })
 
@@ -576,7 +608,7 @@ export default {
         const labels = fb.type === 'bug' ? ['bug', 'user-reported'] : ['enhancement', 'user-reported']
 
         const member = fb.member ? await database('members').where('id', fb.member).first() : null
-        const submitter = member ? `${member.first_name} ${member.last_name}` : 'Anonymous'
+        const submitter = member ? `Member #${fb.member}` : 'Anonymous'
 
         let body = `**Type:** ${fb.type}\n**Submitter:** ${submitter}\n\n${fb.description || ''}`
         if (fb.screenshot) {
@@ -606,7 +638,7 @@ export default {
         }
       } catch (err) {
         log.error(`feedback-to-github: ${err.message}`)
-        res.status(err.status || 500).json({ error: err.message })
+        res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal error' })
       }
     })
 
@@ -622,6 +654,12 @@ export default {
 
         const d = await database('scorer_delegations').where('id', delegation_id).first()
         if (!d || d.status !== 'pending') return res.status(400).json({ error: 'Invalid delegation' })
+
+        // Verify caller is the delegation recipient
+        const callerMember = await database('members').where('user', req.accountability.user).select('id').first()
+        if (!callerMember || callerMember.id !== d.to_member) {
+          return res.status(403).json({ error: 'Not authorized — only the recipient can accept' })
+        }
 
         // Transfer: update game record with new member
         const ROLE_MEMBER = { scorer: 'scorer_member', taefeler: 'taefeler_member', bb_anschreiber: 'bb_anschreiber', bb_zeitnehmer: 'bb_zeitnehmer', bb_24s: 'bb_24s' }
@@ -650,7 +688,7 @@ export default {
         res.json({ success: true })
       } catch (err) {
         log.error(`scorer-delegation/accept: ${err.message}`)
-        res.status(err.status || 500).json({ error: err.message })
+        res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal error' })
       }
     })
 
@@ -660,10 +698,17 @@ export default {
         const { delegation_id } = req.body
         if (!delegation_id) return res.status(400).json({ error: 'delegation_id required' })
 
-        await database('scorer_delegations').where('id', delegation_id).where('status', 'pending')
-          .update({ status: 'declined' })
-
         const d = await database('scorer_delegations').where('id', delegation_id).first()
+        if (!d || d.status !== 'pending') return res.status(400).json({ error: 'Invalid delegation' })
+
+        // Verify caller is the delegation recipient
+        const callerMember = await database('members').where('user', req.accountability.user).select('id').first()
+        if (!callerMember || callerMember.id !== d.to_member) {
+          return res.status(403).json({ error: 'Not authorized — only the recipient can decline' })
+        }
+
+        await database('scorer_delegations').where('id', delegation_id)
+          .update({ status: 'declined' })
         if (d) {
           await database('notifications').insert({
             member: d.from_member, type: 'duty_delegation_declined',
@@ -678,7 +723,7 @@ export default {
         res.json({ success: true })
       } catch (err) {
         log.error(`scorer-delegation/decline: ${err.message}`)
-        res.status(err.status || 500).json({ error: err.message })
+        res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal error' })
       }
     })
 

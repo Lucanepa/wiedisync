@@ -147,7 +147,7 @@ export function registerPasswordReset(router, { database, logger, services, getS
         html: buildHtml(t, resetUrl),
       })
 
-      log.info(`Password reset email sent to ${user.email} (${lang})`)
+      log.info(`Password reset email sent to user ${user.id} (${lang})`)
       res.status(204).end()
     } catch (err) {
       log.error(`password-request: ${err.message}`)

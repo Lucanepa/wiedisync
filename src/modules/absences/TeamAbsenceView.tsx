@@ -119,7 +119,7 @@ export default function TeamAbsenceView({ teamIds }: TeamAbsenceViewProps) {
             {/* Header */}
             <div
               className="grid items-center gap-3 border-b border-gray-200 bg-gray-50 px-4 py-2 text-xs font-medium uppercase tracking-wide text-gray-500 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-400"
-              style={{ gridTemplateColumns: '1fr auto 1fr auto' }}
+              style={{ gridTemplateColumns: 'auto auto auto 1fr' }}
             >
               <span>{t('common:name', { defaultValue: 'Name' })}</span>
               <span>{t('reason', { defaultValue: 'Reason' })}</span>
@@ -133,7 +133,7 @@ export default function TeamAbsenceView({ teamIds }: TeamAbsenceViewProps) {
                 <div
                   key={a.id}
                   className="grid items-center gap-3 border-b border-gray-100 bg-white px-4 py-2.5 last:border-b-0 dark:border-gray-700 dark:bg-gray-800"
-                  style={{ gridTemplateColumns: '1fr auto 1fr auto' }}
+                  style={{ gridTemplateColumns: 'auto auto auto 1fr' }}
                 >
                   <div className="min-w-0">
                     <div className="truncate text-[0.8rem] font-medium leading-tight text-gray-900 dark:text-gray-100">

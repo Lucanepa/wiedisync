@@ -114,13 +114,15 @@ interface BarSegment {
 function layoutWeek(
   weekDays: Date[],
   entries: CalendarEntry[],
-): { bars: BarSegment[]; timedByCol: CalendarEntry[][] } {
+): { bars: BarSegment[]; timedByCol: CalendarEntry[][]; absencesByCol: CalendarEntry[][] } {
   const weekStartKey = toDateKey(weekDays[0])
   const weekEndKey = toDateKey(weekDays[6])
 
   // Separate multi-day/all-day from timed single-day entries
   const spanning: CalendarEntry[] = []
   const timedByCol: CalendarEntry[][] = Array.from({ length: 7 }, () => [])
+  // Collect absences per column (handled separately — merged into one row)
+  const absencesByCol: CalendarEntry[][] = Array.from({ length: 7 }, () => [])
 
   for (const e of entries) {
     const entryEndKey = e.endDate ? toDateKey(e.endDate) : toDateKey(e.date)
@@ -128,6 +130,16 @@ function layoutWeek(
 
     // Does this entry touch this week at all?
     if (entryStartKey > weekEndKey || entryEndKey < weekStartKey) continue
+
+    // Absences are collected per-column, not laid out as spanning bars
+    if (e.type === 'absence') {
+      const startCol = entryStartKey <= weekStartKey ? 0 : weekDays.findIndex((d) => toDateKey(d) === entryStartKey)
+      const endCol = entryEndKey >= weekEndKey ? 6 : weekDays.findIndex((d) => toDateKey(d) === entryEndKey)
+      for (let c = Math.max(0, startCol); c <= Math.min(6, endCol); c++) {
+        absencesByCol[c].push(e)
+      }
+      continue
+    }
 
     if (e.allDay || e.endDate) {
       spanning.push(e)
@@ -190,7 +202,7 @@ function layoutWeek(
     })
   }
 
-  return { bars, timedByCol }
+  return { bars, timedByCol, absencesByCol }
 }
 
 /* ── component ───────────────────────────────────────────── */
@@ -285,15 +297,10 @@ export default function MonthGrid({
       {/* Week rows */}
       <div className="flex flex-1 flex-col border-l border-gray-200 dark:border-gray-700">
         {weekRows.map((week, wi) => {
-          const { bars, timedByCol } = weekLayouts[wi]
-
-          // Separate spanning bars into absences (rendered as overlay bars) and others (cell backgrounds)
-          const spanningBars = bars.filter((b) => b.entry.type !== 'absence')
-          const absenceBars = bars.filter((b) => b.entry.type === 'absence')
-          const maxAbsenceLane = absenceBars.length > 0 ? Math.max(...absenceBars.map((b) => b.lane)) + 1 : 0
-          const visibleAbsenceLanes = Math.min(maxAbsenceLane, MAX_VISIBLE_BARS)
-          const BAR_H = 18 // px per absence bar lane
-          const barAreaHeight = visibleAbsenceLanes * BAR_H
+          const { bars, timedByCol, absencesByCol } = weekLayouts[wi]
+          const hasAnyAbsence = absencesByCol.some((a) => a.length > 0)
+          const BAR_H = 18
+          const barAreaHeight = hasAnyAbsence ? BAR_H : 0
 
           return (
             <div key={wi} className="relative flex flex-1 flex-col">
@@ -307,20 +314,15 @@ export default function MonthGrid({
                   const timed = timedByCol[ci]
 
                   // Non-absence spanning entries covering this day
-                  const cellBars = spanningBars.filter(
+                  const cellBars = bars.filter(
                     (b) => ci >= b.startCol && ci < b.startCol + b.span,
                   )
                   const visibleBars = cellBars.filter((b) => b.lane < MAX_VISIBLE_BARS)
-
-                  // Hidden count: hidden non-absence bars + hidden absence bars in this col
-                  const hiddenNonAbsence = cellBars.filter((b) => b.lane >= MAX_VISIBLE_BARS).length
-                  const hiddenAbsence = absenceBars.filter(
-                    (b) => ci >= b.startCol && ci < b.startCol + b.span && b.lane >= MAX_VISIBLE_BARS,
-                  ).length
+                  const hiddenBars = cellBars.filter((b) => b.lane >= MAX_VISIBLE_BARS).length
 
                   const visibleTimed = timed.slice(0, MAX_VISIBLE_TIMED)
                   const hiddenTimed = Math.max(0, timed.length - MAX_VISIBLE_TIMED)
-                  const overflow = hiddenNonAbsence + hiddenAbsence + hiddenTimed
+                  const overflow = hiddenBars + hiddenTimed
 
                   // Pick the first visible all-day entry for full-cell background
                   const bgBar = visibleBars[0] ?? null
@@ -433,32 +435,37 @@ export default function MonthGrid({
                 })}
               </div>
 
-              {/* Absence spanning bar overlays */}
-              {absenceBars.length > 0 && (
-                <div className="pointer-events-none absolute inset-x-0 top-[28px] z-10 grid grid-cols-7" style={{ height: barAreaHeight }}>
-                  {absenceBars.filter((b) => b.lane < MAX_VISIBLE_BARS).map((bar) => {
+              {/* Absence bar overlay — single consolidated row */}
+              {hasAnyAbsence && (
+                <div className="pointer-events-none absolute inset-x-0 top-[28px] z-10 grid grid-cols-7" style={{ height: BAR_H }}>
+                  {absencesByCol.map((colAbsences, ci) => {
+                    if (colAbsences.length === 0) return null
                     const c = barColors.absence
+                    const count = colAbsences.length
+                    const label = count === 1
+                      ? colAbsences[0].title.replace(/^Absence · /, '')
+                      : `${count} absent`
                     return (
                       <button
-                        key={bar.entry.id}
+                        key={ci}
                         type="button"
-                        className={`pointer-events-auto flex items-center gap-0.5 truncate rounded px-1 text-[10px] font-medium leading-none transition-opacity hover:opacity-80 lg:text-xs ${c.bg} ${c.text} ${c.darkBg} ${c.darkText}`}
+                        className={`pointer-events-auto mx-0.5 flex items-center gap-0.5 truncate rounded px-1 text-[10px] font-medium leading-none transition-opacity hover:opacity-80 lg:text-xs ${c.bg} ${c.text} ${c.darkBg} ${c.darkText}`}
                         style={{
-                          gridColumn: `${bar.startCol + 1} / span ${bar.span}`,
-                          gridRow: bar.lane + 1,
+                          gridColumn: ci + 1,
                           height: BAR_H - 2,
                           marginTop: 1,
-                          marginLeft: bar.continued ? 0 : 2,
-                          marginRight: bar.continues ? 0 : 2,
-                          borderRadius: `${bar.continued ? 0 : 4}px ${bar.continues ? 0 : 4}px ${bar.continues ? 0 : 4}px ${bar.continued ? 0 : 4}px`,
                         }}
                         onClick={(e) => {
                           e.stopPropagation()
-                          onEntryClick?.(bar.entry)
+                          if (count === 1) {
+                            onEntryClick?.(colAbsences[0])
+                          } else {
+                            onOverflowClick?.(colAbsences, week[ci])
+                          }
                         }}
                       >
-                        {!bar.continued && <TypeIcon type="absence" className="text-current" />}
-                        {!bar.continued && <span className="truncate">{bar.entry.title.replace(/^Absence · /, '')}</span>}
+                        <TypeIcon type="absence" className="text-current" />
+                        <span className="truncate">{label}</span>
                       </button>
                     )
                   })}

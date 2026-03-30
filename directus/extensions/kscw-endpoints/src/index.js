@@ -147,9 +147,9 @@ export default {
             .select('members.id', 'members.first_name', 'members.last_name',
               'members.number', 'members.position', 'members.photo',
               'member_teams.guest_level'),
-          database('teams_coach')
-            .join('members', 'members.id', 'teams_coach.members_id')
-            .where('teams_coach.teams_id', team.id)
+          database('teams_members_3')
+            .join('members', 'members.id', 'teams_members_3.members_id')
+            .where('teams_members_3.teams_id', team.id)
             .select('members.id', 'members.first_name', 'members.last_name', 'members.photo'),
           database('games')
             .where('kscw_team', team.id).where('date', '>=', today)
@@ -270,11 +270,11 @@ export default {
         const userId = req.accountability.user
         const isAdmin = req.accountability.admin
         if (!isAdmin) {
-          const isCoach = await database('teams_coach')
+          const isCoach = await database('teams_members_3')
             .where('teams_id', teamId).where('members_id', function () {
               this.select('id').from('members').where('user', userId)
             }).first()
-          const isTR = await database('teams_team_responsible')
+          const isTR = await database('teams_members_4')
             .where('teams_id', teamId).where('members_id', function () {
               this.select('id').from('members').where('user', userId)
             }).first()
@@ -377,11 +377,11 @@ export default {
           const memberTeam = await database('member_teams').where('member', member_id).select('team').first()
           if (!memberTeam) return res.status(403).json({ error: 'Not authorized' })
           const teamId = memberTeam.team
-          const isCoach = await database('teams_coach')
+          const isCoach = await database('teams_members_3')
             .where('teams_id', teamId).where('members_id', function () {
               this.select('id').from('members').where('user', userId)
             }).first()
-          const isTR = await database('teams_team_responsible')
+          const isTR = await database('teams_members_4')
             .where('teams_id', teamId).where('members_id', function () {
               this.select('id').from('members').where('user', userId)
             }).first()

@@ -310,9 +310,9 @@ async function main() {
     await setPermRead(PUBLIC_POLICY, 'sponsors', { active: { _eq: true } })
 
     // Junction tables for deep queries (website needs coach names, sponsor logos)
-    await setPermRead(PUBLIC_POLICY, 'teams_sponsors')
-    await setPermRead(PUBLIC_POLICY, 'teams_coach')
-    await setPermRead(PUBLIC_POLICY, 'teams_captain')
+    await setPermRead(PUBLIC_POLICY, 'teams_sponsors_1')
+    await setPermRead(PUBLIC_POLICY, 'teams_members_3')  // coach junction
+    await setPermRead(PUBLIC_POLICY, 'teams_members_5')  // captain junction
     await setPermRead(PUBLIC_POLICY, 'members', null, ['id', 'first_name', 'last_name', 'photo'])
 
     // Files (team photos, logos)
@@ -330,12 +330,12 @@ async function main() {
   // Read: teams, games, rankings, sponsors (no filter needed — public-level + more)
   const MEMBER_READ_ALL = [
     'teams', 'games', 'rankings', 'sponsors',
-    'trainings', 'events', 'event_sessions', 'events_teams',
-    'hall_slots', 'hall_closures', 'hall_events', 'hall_events_halls', 'halls', 'hall_slots_teams',
+    'trainings', 'events', 'event_sessions', 'events_teams_1',
+    'hall_slots', 'hall_closures', 'hall_events', 'hall_events_halls_1', 'halls', 'hall_slots_teams',
     'slot_claims', 'news', 'app_settings',
     'referee_expenses', 'carpools', 'carpool_passengers', 'polls',
     // Junctions
-    'teams_coach', 'teams_captain', 'teams_team_responsible', 'teams_sponsors',
+    'teams_members_3', 'teams_members_5', 'teams_members_4', 'teams_sponsors_1', 'events_teams_1', 'hall_events_halls_1',
     // Files
     'directus_files',
   ]
@@ -372,7 +372,7 @@ async function main() {
   await setPerm(MEMBER_POLICY, 'push_subscriptions', 'delete', OWN_MEMBER)
 
   // Member teams — read own
-  await setPermRead(MEMBER_POLICY, 'member_teams', OWN_MEMBER)
+  await setPermRead(MEMBER_POLICY, 'member_teams')
 
   // Scorer delegations — read/create/update own
   await setPermRead(MEMBER_POLICY, 'scorer_delegations', OWN_DELEGATION)
@@ -382,7 +382,8 @@ async function main() {
   // Team invites — read own
   await setPermRead(MEMBER_POLICY, 'team_invites', { member: { user: { _eq: '$CURRENT_USER' } } })
 
-  // User logs — read own
+  // User logs — create + read own
+  await setPerm(MEMBER_POLICY, 'user_logs', 'create')
   await setPermRead(MEMBER_POLICY, 'user_logs', OWN_DU)
 
   // Feedback — create only
@@ -439,9 +440,9 @@ async function main() {
   await setPerm(LEADER_POLICY, 'events', 'update')
   await setPerm(LEADER_POLICY, 'event_sessions', 'create')
   await setPerm(LEADER_POLICY, 'event_sessions', 'update')
-  await setPerm(LEADER_POLICY, 'events_teams', 'create')
-  await setPerm(LEADER_POLICY, 'events_teams', 'update')
-  await setPerm(LEADER_POLICY, 'events_teams', 'delete')
+  await setPerm(LEADER_POLICY, 'events_teams_1', 'create')
+  await setPerm(LEADER_POLICY, 'events_teams_1', 'update')
+  await setPerm(LEADER_POLICY, 'events_teams_1', 'delete')
 
   // Participations — full read + CRU (coach manages team roster)
   await setPermRead(LEADER_POLICY, 'participations')
@@ -533,14 +534,14 @@ async function main() {
   console.log('\n9. Sport Admin permissions...')
 
   const ALL_COLLECTIONS = [
-    'teams', 'games', 'trainings', 'events', 'event_sessions', 'events_teams',
+    'teams', 'games', 'trainings', 'events', 'event_sessions', 'events_teams_1',
     'members', 'member_teams', 'participations', 'absences',
-    'rankings', 'sponsors', 'teams_sponsors',
-    'hall_slots', 'hall_closures', 'hall_events', 'hall_events_halls', 'halls', 'hall_slots_teams',
+    'rankings', 'sponsors', 'teams_sponsors_1',
+    'hall_slots', 'hall_closures', 'hall_events', 'hall_events_halls_1', 'halls', 'hall_slots_teams',
     'slot_claims', 'notifications', 'feedback', 'scorer_delegations', 'referee_expenses',
     'team_invites', 'news', 'app_settings', 'user_logs',
     'push_subscriptions', 'email_verifications',
-    'teams_coach', 'teams_captain', 'teams_team_responsible',
+    'teams_members_3', 'teams_members_5', 'teams_members_4',
     'tasks', 'task_templates', 'carpools', 'carpool_passengers',
     'polls', 'poll_votes', 'team_requests',
     'game_scheduling_seasons', 'game_scheduling_slots',

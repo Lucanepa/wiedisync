@@ -39,14 +39,14 @@ export function registerContactForm(router, { database, logger, services, getSch
       let toEmail = GENERAL_EMAIL
       if (team_id) {
         // Try to find team coaches/TR
-        const coaches = await database('teams_coach')
-          .join('members', 'members.id', 'teams_coach.members_id')
-          .where('teams_coach.teams_id', team_id)
+        const coaches = await database('teams_members_3')
+          .join('members', 'members.id', 'teams_members_3.members_id')
+          .where('teams_members_3.teams_id', team_id)
           .whereNotNull('members.email')
           .select('members.email')
-        const trs = await database('teams_team_responsible')
-          .join('members', 'members.id', 'teams_team_responsible.members_id')
-          .where('teams_team_responsible.teams_id', team_id)
+        const trs = await database('teams_members_4')
+          .join('members', 'members.id', 'teams_members_4.members_id')
+          .where('teams_members_4.teams_id', team_id)
           .whereNotNull('members.email')
           .select('members.email')
         const recipients = [...coaches, ...trs]

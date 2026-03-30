@@ -91,8 +91,8 @@ async function resolveDirectusRole(db, memberId) {
   }
 
   // Check coach/TR junctions
-  const isCoach = await db('teams_coach').where('members_id', memberId).first()
-  const isTR = await db('teams_team_responsible').where('members_id', memberId).first()
+  const isCoach = await db('teams_members_3').where('members_id', memberId).first()
+  const isTR = await db('teams_members_4').where('members_id', memberId).first()
   const isTeamResponsible = !!(isCoach || isTR)
 
   // Vorstand who is also a coach → Team Responsible (higher write access)
@@ -224,10 +224,10 @@ export default ({ action, filter, init, schedule }, { services, database, logger
   })
 
   // Sync when coach/TR junctions change (create)
-  action('teams_coach.items.create', async ({ payload }) => {
+  action('teams_members_3.items.create', async ({ payload }) => {
     if (payload?.members_id) await syncMemberRole(payload.members_id)
   })
-  action('teams_team_responsible.items.create', async ({ payload }) => {
+  action('teams_members_4.items.create', async ({ payload }) => {
     if (payload?.members_id) await syncMemberRole(payload.members_id)
   })
 
@@ -235,23 +235,23 @@ export default ({ action, filter, init, schedule }, { services, database, logger
   // Capture member IDs before deletion via filter, then sync in action
   const pendingJunctionDeletes = new Map()
 
-  filter('teams_coach.items.delete', async (keys) => {
+  filter('teams_members_3.items.delete', async (keys) => {
     try {
-      const rows = await database('teams_coach').whereIn('id', keys).select('members_id')
+      const rows = await database('teams_members_3').whereIn('id', keys).select('members_id')
       for (const r of rows) pendingJunctionDeletes.set(`coach-${r.members_id}`, r.members_id)
     } catch (e) { /* ignore */ }
     return keys
   })
 
-  filter('teams_team_responsible.items.delete', async (keys) => {
+  filter('teams_members_4.items.delete', async (keys) => {
     try {
-      const rows = await database('teams_team_responsible').whereIn('id', keys).select('members_id')
+      const rows = await database('teams_members_4').whereIn('id', keys).select('members_id')
       for (const r of rows) pendingJunctionDeletes.set(`tr-${r.members_id}`, r.members_id)
     } catch (e) { /* ignore */ }
     return keys
   })
 
-  action('teams_coach.items.delete', async () => {
+  action('teams_members_3.items.delete', async () => {
     for (const [key, memberId] of pendingJunctionDeletes) {
       if (key.startsWith('coach-')) {
         await syncMemberRole(memberId)
@@ -260,7 +260,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     }
   })
 
-  action('teams_team_responsible.items.delete', async () => {
+  action('teams_members_4.items.delete', async () => {
     for (const [key, memberId] of pendingJunctionDeletes) {
       if (key.startsWith('tr-')) {
         await syncMemberRole(memberId)

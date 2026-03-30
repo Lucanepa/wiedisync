@@ -6,6 +6,7 @@ import { useAdminMode } from '../../hooks/useAdminMode'
 import { useCollection } from '../../lib/query'
 import { useMutation } from '../../hooks/useMutation'
 import { useRealtime } from '../../hooks/useRealtime'
+import { relId } from '../../utils/relations'
 import TeamFilter from '../../components/TeamFilter'
 import EmptyState from '../../components/EmptyState'
 import ConfirmDialog from '@/components/ConfirmDialog'
@@ -176,7 +177,7 @@ export default function AbsencesPage() {
                   absence={a}
                   onEdit={handleEdit}
                   onDelete={setDeletingId}
-                  canEdit={String(a.member) === String(user?.id) || isCoach || effectiveIsCoach}
+                  canEdit={relId(a.member) === String(user?.id) || isCoach || effectiveIsCoach}
                 />
               ))}
             </div>
@@ -205,7 +206,7 @@ export default function AbsencesPage() {
                   absence={a}
                   onEdit={handleWeeklyEdit}
                   onDelete={setDeletingId}
-                  canEdit={String(a.member) === String(user?.id) || isCoach || effectiveIsCoach}
+                  canEdit={relId(a.member) === String(user?.id) || isCoach || effectiveIsCoach}
                 />
               ))}
             </div>

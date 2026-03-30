@@ -26,23 +26,23 @@ export default function AbsenceCard({ absence, onEdit, onDelete, showMemberName,
 
   return (
     <div className="rounded-lg border dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <StatusBadge status={absence.reason} />
-          <span className="text-sm text-gray-700 dark:text-gray-300">
-            {formatDate(absence.start_date)}
-            {absence.indefinite
-              ? ` — ${t('indefinite')}`
-              : absence.start_date !== absence.end_date
-                ? ` — ${formatDate(absence.end_date)}`
-                : ''
-            }
-          </span>
+      <div className="grid items-center gap-x-3 gap-y-1" style={{ gridTemplateColumns: showMemberName ? 'auto 1fr auto auto' : 'auto 1fr auto' }}>
+        {/* Row 1: badge, date range, (member name), actions */}
+        <StatusBadge status={absence.reason} />
+        <span className="text-sm text-gray-700 dark:text-gray-300">
           {showMemberName && memberName && (
-            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{memberName}</span>
+            <span className="mr-2 font-medium text-gray-900 dark:text-gray-100">{memberName} —</span>
           )}
-        </div>
-        {canEdit && (
+          {formatDate(absence.start_date)}
+          {absence.indefinite
+            ? ` — ${t('indefinite')}`
+            : absence.start_date !== absence.end_date
+              ? ` — ${formatDate(absence.end_date)}`
+              : ''
+          }
+        </span>
+        {showMemberName && <span />}
+        {canEdit ? (
           <div className="flex gap-2">
             <button
               onClick={() => onEdit(absence)}
@@ -57,7 +57,7 @@ export default function AbsenceCard({ absence, onEdit, onDelete, showMemberName,
               {t('common:delete')}
             </button>
           </div>
-        )}
+        ) : <span />}
       </div>
       {absence.reason_detail && (
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{absence.reason_detail}</p>

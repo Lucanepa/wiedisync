@@ -719,27 +719,28 @@ function AppointmentRow({ appointment, onClick, participationStatus }: {
 
   return (
     <div
-      className="flex cursor-pointer items-stretch border-b border-gray-100 last:border-b-0 hover:bg-gray-50 active:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-700/50 dark:active:bg-gray-700"
+      className="grid cursor-pointer items-center border-b border-gray-100 last:border-b-0 hover:bg-gray-50 active:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-700/50 dark:active:bg-gray-700"
+      style={{ gridTemplateColumns: 'auto 4.5rem 1.25rem 1fr auto' }}
       onClick={onClick}
     >
       {/* Participation status vertical banner */}
-      {user && effectiveStatus && (
-        <div className={`w-1 shrink-0 ${statusBorderColor[effectiveStatus] ?? ''}`} />
+      {user && effectiveStatus ? (
+        <div className={`w-1 self-stretch ${statusBorderColor[effectiveStatus] ?? ''}`} />
+      ) : (
+        <div className="w-1" />
       )}
 
-      <div className="flex flex-1 items-center gap-3 px-4 py-2.5">
-        <div className="w-20 shrink-0 text-xs text-gray-500 dark:text-gray-400">
-          <div>{weekday}</div>
-          <div>{dateStr}</div>
-          {timeStr && <div>{timeStr}</div>}
-        </div>
-        <span className="text-gray-500 dark:text-gray-400">{typeIcon[appointment.type]}</span>
-        <p className="min-w-0 flex-1 truncate text-sm text-gray-900 dark:text-gray-100">{label}</p>
+      <div className="py-2.5 pl-3 text-xs text-gray-500 dark:text-gray-400">
+        <div>{weekday}</div>
+        <div>{dateStr}</div>
+        {timeStr && <div>{timeStr}</div>}
+      </div>
+      <span className="text-gray-500 dark:text-gray-400">{typeIcon[appointment.type]}</span>
+      <p className="min-w-0 truncate px-2 text-sm text-gray-900 dark:text-gray-100">{label}</p>
 
-        {/* Participation summary */}
-        <div className="ml-auto shrink-0">
-          <ParticipationSummary activityType={appointment.type} activityId={appointment.data.id} stacked />
-        </div>
+      {/* Participation summary */}
+      <div className="shrink-0 pr-3">
+        <ParticipationSummary activityType={appointment.type} activityId={appointment.data.id} stacked />
       </div>
     </div>
   )

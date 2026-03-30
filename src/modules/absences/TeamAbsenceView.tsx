@@ -115,15 +115,26 @@ export default function TeamAbsenceView({ teamIds }: TeamAbsenceViewProps) {
             description={t('noTeamAbsencesDescription')}
           />
         ) : (
-          <div className="space-y-2">
+          <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
+            {/* Header */}
+            <div
+              className="grid items-center gap-3 border-b border-gray-200 bg-gray-50 px-4 py-2 text-xs font-medium uppercase tracking-wide text-gray-500 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-400"
+              style={{ gridTemplateColumns: '1fr auto 1fr auto' }}
+            >
+              <span>{t('common:name', { defaultValue: 'Name' })}</span>
+              <span>{t('reason', { defaultValue: 'Reason' })}</span>
+              <span>{t('period', { defaultValue: 'Period' })}</span>
+              <span>{t('note', { defaultValue: 'Note' })}</span>
+            </div>
             {sortedAbsences.map((a) => {
               const member = asObj<Member>(a.member) ?? memberMap[relId(a.member)]
               return (
                 <div
                   key={a.id}
-                  className="flex flex-wrap items-center gap-3 rounded-lg border bg-white px-4 py-2.5 dark:border-gray-700 dark:bg-gray-800"
+                  className="grid items-center gap-3 border-b border-gray-100 bg-white px-4 py-2.5 last:border-b-0 dark:border-gray-700 dark:bg-gray-800"
+                  style={{ gridTemplateColumns: '1fr auto 1fr auto' }}
                 >
-                  <span className="font-medium text-gray-900 dark:text-gray-100">
+                  <span className="truncate font-medium text-gray-900 dark:text-gray-100">
                     {[member?.first_name, member?.last_name].filter(Boolean).join(' ') || t('common:unknown')}
                   </span>
                   <StatusBadge status={a.reason} />
@@ -131,9 +142,9 @@ export default function TeamAbsenceView({ teamIds }: TeamAbsenceViewProps) {
                     {formatDate(a.start_date)}
                     {a.start_date !== a.end_date && ` — ${formatDate(a.end_date)}`}
                   </span>
-                  {a.reason_detail && (
-                    <span className="text-sm text-gray-400">({a.reason_detail})</span>
-                  )}
+                  <span className="truncate text-sm text-gray-400">
+                    {a.reason_detail || '—'}
+                  </span>
                 </div>
               )
             })}

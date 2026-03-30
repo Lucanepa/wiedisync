@@ -16,7 +16,7 @@ describe('memberPositions', () => {
       'middle',
       'opposite',
       'libero',
-      'coach',
+      'guest',
       'other',
     ])
   })
@@ -28,7 +28,7 @@ describe('memberPositions', () => {
       'small_forward',
       'power_forward',
       'center',
-      'coach',
+      'guest',
       'other',
     ])
   })

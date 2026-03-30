@@ -5,7 +5,7 @@
  *   1. members.role array (superuser, admin, vb_admin, bb_admin, vorstand)
  *   2. Coach/TR junction membership
  *
- * Priority: Superuser > Sport Admin > Vorstand+Coach → Team Leader > Vorstand > Team Leader > Member
+ * Priority: Superuser > Sport Admin > Vorstand+Coach → Team Responsible > Vorstand > Team Responsible > Member
  *
  * Usage:
  *   DIRECTUS_URL=https://directus-dev.kscw.ch ADMIN_EMAIL=admin@kscw.ch ADMIN_PASSWORD=REDACTED_ADMIN_PASSWORD node directus/scripts/backfill-roles.mjs
@@ -59,7 +59,7 @@ async function main() {
   const roleMap = Object.fromEntries(roles.map(r => [r.name, r.id]))
   console.log('Roles:', Object.entries(roleMap).map(([n, id]) => `${n}=${id.slice(0, 8)}`).join(', '))
 
-  const required = ['Superuser', 'Sport Admin', 'Vorstand', 'Team Leader', 'Member']
+  const required = ['Superuser', 'Sport Admin', 'Vorstand', 'Team Responsible', 'Member']
   for (const r of required) {
     if (!roleMap[r]) {
       console.error(`❌ Missing role "${r}". Run setup-permissions.mjs first.`)
@@ -78,7 +78,7 @@ async function main() {
   const trMemberIds = new Set(trs.map(t => t.members_id))
 
   // 4. Resolve and assign
-  const counts = { Superuser: 0, 'Sport Admin': 0, Vorstand: 0, 'Team Leader': 0, Member: 0 }
+  const counts = { Superuser: 0, 'Sport Admin': 0, Vorstand: 0, 'Team Responsible': 0, Member: 0 }
   let updated = 0, skipped = 0, errors = 0
 
   for (const m of members) {
@@ -91,11 +91,11 @@ async function main() {
     } else if (appRoles.includes('vb_admin') || appRoles.includes('bb_admin')) {
       targetRole = 'Sport Admin'
     } else if (appRoles.includes('vorstand') && isCoachOrTR) {
-      targetRole = 'Team Leader' // Vorstand+Coach → Team Leader (more write access)
+      targetRole = 'Team Responsible' // Vorstand+Coach → Team Responsible (more write access)
     } else if (appRoles.includes('vorstand')) {
       targetRole = 'Vorstand'
     } else if (isCoachOrTR) {
-      targetRole = 'Team Leader'
+      targetRole = 'Team Responsible'
     } else {
       targetRole = 'Member'
     }

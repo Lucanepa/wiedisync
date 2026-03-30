@@ -7,7 +7,7 @@
  *   3. Attach policies to roles
  *   4. Create permissions on each policy
  *
- * Roles: Administrator, Superuser (admin_access), Sport Admin, Vorstand, Team Leader, Member, Public
+ * Roles: Administrator, Superuser (admin_access), Sport Admin, Vorstand, Team Responsible, Member, Public
  *
  * Usage:
  *   DIRECTUS_URL=https://directus-dev.kscw.ch ADMIN_EMAIL=admin@kscw.ch ADMIN_PASSWORD=REDACTED_ADMIN_PASSWORD node directus/scripts/setup-permissions.mjs
@@ -69,12 +69,12 @@ const ROLE_DEFS = [
   { name: 'Superuser', icon: 'security', description: 'Full system access (superuser + admin members)' },
   { name: 'Sport Admin', icon: 'sports', description: 'Sport-scoped admin (vb_admin / bb_admin)' },
   { name: 'Vorstand', icon: 'groups', description: 'Board member — read-all access' },
-  { name: 'Team Leader', icon: 'supervisor_account', description: 'Coach or team responsible' },
+  { name: 'Team Responsible', icon: 'supervisor_account', description: 'Coach or team responsible' },
   { name: 'Member', icon: 'person', description: 'Default authenticated member' },
 ]
 
 // Old role names → new names
-const RENAME_MAP = { Coach: 'Team Leader', Admin: 'Sport Admin' }
+const RENAME_MAP = { Coach: 'Team Responsible', 'Team Responsible': 'Team Responsible', Admin: 'Sport Admin' }
 
 async function ensureRoles() {
   const existing = await api('GET', '/roles?limit=-1')
@@ -250,13 +250,13 @@ async function main() {
   console.log(`  Public policy: ${PUBLIC_POLICY || 'NOT FOUND — will create'}`)
 
   const MEMBER_POLICY = await findOrCreatePolicy('KSCW Member', { icon: 'person', app_access: true })
-  const LEADER_POLICY = await findOrCreatePolicy('KSCW Team Leader', { icon: 'supervisor_account', app_access: true })
+  const LEADER_POLICY = await findOrCreatePolicy('KSCW Team Responsible', { icon: 'supervisor_account', app_access: true })
   const VORSTAND_POLICY = await findOrCreatePolicy('KSCW Vorstand', { icon: 'groups', app_access: true })
   const SPORT_ADMIN_POLICY = await findOrCreatePolicy('KSCW Sport Admin', { icon: 'sports', app_access: true })
   const ADMIN_POLICY = await findOrCreatePolicy('KSCW Admin', { icon: 'admin_panel_settings', admin_access: true, app_access: true })
 
   console.log(`  Member policy: ${MEMBER_POLICY}`)
-  console.log(`  Team Leader policy: ${LEADER_POLICY}`)
+  console.log(`  Team Responsible policy: ${LEADER_POLICY}`)
   console.log(`  Vorstand policy: ${VORSTAND_POLICY}`)
   console.log(`  Sport Admin policy: ${SPORT_ADMIN_POLICY}`)
   console.log(`  Admin policy: ${ADMIN_POLICY}`)
@@ -268,9 +268,9 @@ async function main() {
   // Member role → member policy
   await attachPolicyToRole(roleMap['Member'], MEMBER_POLICY)
 
-  // Team Leader → leader + member (inherits member permissions)
-  await attachPolicyToRole(roleMap['Team Leader'], LEADER_POLICY)
-  await attachPolicyToRole(roleMap['Team Leader'], MEMBER_POLICY)
+  // Team Responsible → leader + member (inherits member permissions)
+  await attachPolicyToRole(roleMap['Team Responsible'], LEADER_POLICY)
+  await attachPolicyToRole(roleMap['Team Responsible'], MEMBER_POLICY)
 
   // Vorstand → vorstand + member
   await attachPolicyToRole(roleMap['Vorstand'], VORSTAND_POLICY)
@@ -292,7 +292,7 @@ async function main() {
   console.log('\n4. Clearing old permissions...')
   if (PUBLIC_POLICY) await clearPolicyPermissions(PUBLIC_POLICY, 'Public')
   await clearPolicyPermissions(MEMBER_POLICY, 'Member')
-  await clearPolicyPermissions(LEADER_POLICY, 'Team Leader')
+  await clearPolicyPermissions(LEADER_POLICY, 'Team Responsible')
   await clearPolicyPermissions(VORSTAND_POLICY, 'Vorstand')
   await clearPolicyPermissions(SPORT_ADMIN_POLICY, 'Sport Admin')
   await clearPolicyPermissions(ADMIN_POLICY, 'Admin')
@@ -415,9 +415,9 @@ async function main() {
 
   console.log(`  ✓ Member permissions set`)
 
-  // ── 7. Team Leader permissions (additive to Member) ────────────
+  // ── 7. Team Responsible permissions (additive to Member) ────────────
 
-  console.log('\n7. Team Leader permissions...')
+  console.log('\n7. Team Responsible permissions...')
 
   // Members — read all fields (coaches need email, phone for their team)
   await setPermRead(LEADER_POLICY, 'members')
@@ -505,7 +505,7 @@ async function main() {
   // Files — create (upload team photos)
   await setPerm(LEADER_POLICY, 'directus_files', 'create')
 
-  console.log(`  ✓ Team Leader permissions set`)
+  console.log(`  ✓ Team Responsible permissions set`)
 
   // ��─ 8. Vorstand permissions (read-all + member write) ──────────
 

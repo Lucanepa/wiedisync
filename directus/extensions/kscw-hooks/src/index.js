@@ -68,7 +68,7 @@ async function sendPushToMembers(db, memberIds, title, body, url, tag, log) {
 // (members.role array) and coach/TR junction membership.
 //
 // Directus 11: one role per user, multiple policies per role.
-// Priority: superuser/admin > Sport Admin > Vorstand+Coach > Vorstand > Team Leader > Member
+// Priority: superuser/admin > Sport Admin > Vorstand+Coach > Vorstand > Team Responsible > Member
 
 /**
  * Determine the correct Directus role for a member.
@@ -90,17 +90,17 @@ async function resolveDirectusRole(db, memberId) {
   // Check coach/TR junctions
   const isCoach = await db('teams_coach').where('members_id', memberId).first()
   const isTR = await db('teams_team_responsible').where('members_id', memberId).first()
-  const isTeamLeader = !!(isCoach || isTR)
+  const isTeamResponsible = !!(isCoach || isTR)
 
-  // Vorstand who is also a coach → Team Leader (higher write access)
-  if (roles.includes('vorstand') && isTeamLeader) {
-    return { userId: member.user, roleName: 'Team Leader' }
+  // Vorstand who is also a coach → Team Responsible (higher write access)
+  if (roles.includes('vorstand') && isTeamResponsible) {
+    return { userId: member.user, roleName: 'Team Responsible' }
   }
   if (roles.includes('vorstand')) {
     return { userId: member.user, roleName: 'Vorstand' }
   }
-  if (isTeamLeader) {
-    return { userId: member.user, roleName: 'Team Leader' }
+  if (isTeamResponsible) {
+    return { userId: member.user, roleName: 'Team Responsible' }
   }
 
   return { userId: member.user, roleName: 'Member' }

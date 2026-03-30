@@ -38,6 +38,7 @@ import AdminSetupPage from './modules/gameScheduling/pages/AdminSetupPage'
 import AdminDashboardPage from './modules/gameScheduling/pages/AdminDashboardPage'
 
 import JoinPage from './modules/auth/JoinPage'
+import SetPasswordPage from './modules/auth/SetPasswordPage'
 import PublicTerminplanungPage from './modules/gameScheduling/pages/PublicTerminplanungPage'
 import OpponentFlowPage from './modules/gameScheduling/pages/OpponentFlowPage'
 import FeedbackPage from './modules/feedback/FeedbackPage'
@@ -77,6 +78,7 @@ export default function App() {
           <Route path="pending" element={<PendingPage />} />
 
           <Route path="join/:token" element={<JoinPage />} />
+          <Route path="set-password" element={<SetPasswordPage />} />
           <Route path="terminplanung" element={<PublicTerminplanungPage />} />
           <Route path="terminplanung/:token" element={<OpponentFlowPage />} />
 

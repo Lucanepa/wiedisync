@@ -492,14 +492,15 @@ export default {
 
     // ── Set Password ──────────────────────────────────────────────
     // POST /kscw/set-password
-    // Two modes:
+    // Three modes:
     //   1. Authenticated (Bearer token) → updates current user's password
-    //   2. Unauthenticated (email in body) → verifies OTP was confirmed,
+    //   2. Token from password-reset email → validates token, sets password
+    //   3. Unauthenticated (email in body) → verifies OTP was confirmed,
     //      creates Directus user if needed, sets password
 
     router.post('/set-password', async (req, res) => {
       try {
-        const { password, email: rawEmail } = req.body
+        const { password, email: rawEmail, token } = req.body
         if (!password || password.length < 8) {
           return res.status(400).json({ error: 'Password must be at least 8 characters' })
         }
@@ -513,6 +514,20 @@ export default {
         if (req.accountability?.user) {
           // Mode 1: Authenticated user changing password
           userId = req.accountability.user
+          const member = await database('members').where('user', userId).select('id').first()
+          memberId = member?.id
+        } else if (token) {
+          // Mode 2: Password-reset token from email link
+          const user = await database('directus_users')
+            .where('token', token)
+            .select('id')
+            .first()
+          if (!user) {
+            return res.status(400).json({ error: 'Invalid or expired token' })
+          }
+          userId = user.id
+          // Clear the token so it can't be reused
+          await database('directus_users').where('id', userId).update({ token: null })
           const member = await database('members').where('user', userId).select('id').first()
           memberId = member?.id
         } else if (rawEmail) {

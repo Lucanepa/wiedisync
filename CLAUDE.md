@@ -57,6 +57,7 @@ positions[3]{ticker,shares,costBasis}:
 - **Extensions**: Custom endpoints in `directus/extensions/kscw-endpoints/`, hooks in `directus/extensions/kscw-hooks/`. Deploy by restarting the Directus container.
 - **Postgres triggers**: Validation logic in `directus/scripts/001-postgres-triggers.sql`. Apply via `psql` on `coolify-db`.
 - **Deleting collections or records**: Must be confirmed with the user first
+- **M2M fields MUST be created via the Directus admin UI** — creating M2M relations via the REST API results in "The relationship hasn't been configured correctly" in the admin UI, even though the API works. Always: (1) nuke the junction table + PG table + field, (2) create the M2M field via Settings → Data Model → Add Field → Many to Many in the browser, (3) restore data via API after.
 
 ## SSH to VPS (Directus host)
 

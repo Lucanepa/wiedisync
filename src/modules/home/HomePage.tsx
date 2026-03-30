@@ -557,9 +557,11 @@ function CompactGameRow({ game, showScore, onClick, participationStatus }: { gam
       className="flex cursor-pointer items-stretch border-b border-gray-100 last:border-b-0 hover:bg-gray-50 active:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-700/50 dark:active:bg-gray-700"
       onClick={onClick}
     >
-      {/* Participation status vertical banner */}
-      {user && effectiveStatus && (
+      {/* Participation status vertical banner — always render to avoid React removeChild errors */}
+      {user && effectiveStatus ? (
         <div className={`w-1 shrink-0 ${statusBorderColor[effectiveStatus] ?? ''}`} />
+      ) : (
+        <div className="w-1 shrink-0" />
       )}
 
       <div className="flex min-w-0 flex-1 items-center gap-3 px-4 py-2">
@@ -629,9 +631,11 @@ function CompactTrainingRow({ training, onClick, participationStatus }: { traini
       className="flex cursor-pointer items-stretch border-b border-gray-100 last:border-b-0 hover:bg-gray-50 active:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-700/50 dark:active:bg-gray-700"
       onClick={onClick}
     >
-      {/* Participation status vertical banner */}
-      {user && effectiveStatus && (
+      {/* Participation status vertical banner — always render to avoid React removeChild errors */}
+      {user && effectiveStatus ? (
         <div className={`w-1 shrink-0 ${statusBorderColor[effectiveStatus] ?? ''}`} />
+      ) : (
+        <div className="w-1 shrink-0" />
       )}
 
       <div className="flex flex-1 items-center gap-3 px-4 py-3">
@@ -891,8 +895,10 @@ function EventRow({ event, onClick, participationStatus }: { event: EventExpande
 
   return (
     <button onClick={onClick} className="flex w-full items-stretch overflow-hidden rounded-xl border border-gray-200 bg-white text-left shadow-card transition-shadow hover:shadow-card-hover dark:border-gray-700 dark:bg-gray-800">
-      {effectiveStatus && (
+      {effectiveStatus ? (
         <div className={`w-1 shrink-0 ${statusBorderColor[effectiveStatus] ?? ''}`} />
+      ) : (
+        <div className="w-1 shrink-0" />
       )}
       <div className="min-w-0 flex-1 p-3">
         {/* Top row: event type badge */}

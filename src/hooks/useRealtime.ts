@@ -34,9 +34,10 @@ export function useRealtime<T = Record<string, unknown>>(
 
     const setup = async () => {
       try {
-        const { subscription, unsubscribe } = await directus.subscribe(collection, {
-          event: 'changes' as never,
-        })
+        // Wrap in Promise.resolve to catch sync throws from the SDK (e.g. "No token")
+        const { subscription, unsubscribe } = await Promise.resolve(
+          directus.subscribe(collection, { event: 'changes' as never })
+        )
 
         if (cancelled) { try { unsubscribe() } catch {} return }
         cleanup = unsubscribe

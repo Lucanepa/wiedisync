@@ -29,18 +29,23 @@ export default function AbsenceCard({ absence, onEdit, onDelete, showMemberName,
       <div className="grid items-center gap-x-3 gap-y-1" style={{ gridTemplateColumns: showMemberName ? 'auto 1fr auto auto' : 'auto 1fr auto' }}>
         {/* Row 1: badge, date range, (member name), actions */}
         <StatusBadge status={absence.reason} />
-        <span className="text-sm text-gray-700 dark:text-gray-300">
+        <div className="text-sm leading-tight text-gray-700 dark:text-gray-300">
           {showMemberName && memberName && (
-            <span className="mr-2 font-medium text-gray-900 dark:text-gray-100">{memberName} —</span>
+            <div className="mb-0.5 font-medium text-gray-900 dark:text-gray-100">{memberName}</div>
           )}
-          {formatDate(absence.start_date)}
-          {absence.indefinite
-            ? ` — ${t('indefinite')}`
-            : absence.start_date !== absence.end_date
-              ? ` — ${formatDate(absence.end_date)}`
-              : ''
-          }
-        </span>
+          <div>{formatDate(absence.start_date)}</div>
+          {absence.indefinite ? (
+            <>
+              <div className="text-xs text-gray-400 dark:text-gray-500">{t('to', { defaultValue: 'to' })}</div>
+              <div>{t('indefinite')}</div>
+            </>
+          ) : absence.start_date !== absence.end_date ? (
+            <>
+              <div className="text-xs text-gray-400 dark:text-gray-500">{t('to', { defaultValue: 'to' })}</div>
+              <div>{formatDate(absence.end_date)}</div>
+            </>
+          ) : null}
+        </div>
         {showMemberName && <span />}
         {canEdit ? (
           <div className="flex gap-2">

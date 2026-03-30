@@ -128,20 +128,33 @@ export default function TeamAbsenceView({ teamIds }: TeamAbsenceViewProps) {
             </div>
             {sortedAbsences.map((a) => {
               const member = asObj<Member>(a.member) ?? memberMap[relId(a.member)]
+              const isMultiDay = a.start_date !== a.end_date
               return (
                 <div
                   key={a.id}
                   className="grid items-center gap-3 border-b border-gray-100 bg-white px-4 py-2.5 last:border-b-0 dark:border-gray-700 dark:bg-gray-800"
                   style={{ gridTemplateColumns: '1fr auto 1fr auto' }}
                 >
-                  <span className="truncate font-medium text-gray-900 dark:text-gray-100">
-                    {[member?.first_name, member?.last_name].filter(Boolean).join(' ') || t('common:unknown')}
-                  </span>
+                  <div className="min-w-0">
+                    <div className="truncate text-[0.8rem] font-medium leading-tight text-gray-900 dark:text-gray-100">
+                      {member?.first_name || t('common:unknown')}
+                    </div>
+                    {member?.last_name && (
+                      <div className="truncate text-[0.8rem] font-medium leading-tight text-gray-900 dark:text-gray-100">
+                        {member.last_name}
+                      </div>
+                    )}
+                  </div>
                   <StatusBadge status={a.reason} />
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
-                    {formatDate(a.start_date)}
-                    {a.start_date !== a.end_date && ` — ${formatDate(a.end_date)}`}
-                  </span>
+                  <div className="text-sm leading-tight text-gray-600 dark:text-gray-400">
+                    <div>{formatDate(a.start_date)}</div>
+                    {isMultiDay && (
+                      <>
+                        <div className="text-xs text-gray-400 dark:text-gray-500">{t('to', { defaultValue: 'to' })}</div>
+                        <div>{formatDate(a.end_date)}</div>
+                      </>
+                    )}
+                  </div>
                   <span className="truncate text-sm text-gray-400">
                     {a.reason_detail || '—'}
                   </span>

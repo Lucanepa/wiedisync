@@ -92,6 +92,9 @@ export default function ParticipationSummary({
     return (
       <div className="flex flex-col items-end gap-0.5 text-xs">
         <span className="inline-flex items-center gap-1 text-green-600 dark:text-green-400">
+          {!hideExtras && staffConfirmed > 0 && (
+            <span className="text-[10px] text-gray-500 dark:text-gray-400">{t('coachPresent')}</span>
+          )}
           {confirmedTotal}
           <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-green-600 text-white dark:bg-green-500"><Check className="h-2.5 w-2.5" /></span>
           {!hideExtras && hasGuestBreakdown && (
@@ -111,9 +114,6 @@ export default function ParticipationSummary({
             {declined}
             <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-white dark:bg-red-500"><X className="h-2.5 w-2.5" /></span>
           </span>
-        )}
-        {!hideExtras && staffConfirmed > 0 && (
-          <span className="text-[10px] text-gray-500 dark:text-gray-400">{t('coachPresent')}</span>
         )}
       </div>
     )

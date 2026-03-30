@@ -720,7 +720,7 @@ function AppointmentRow({ appointment, onClick, participationStatus }: {
   return (
     <div
       className="grid cursor-pointer items-center border-b border-gray-100 last:border-b-0 hover:bg-gray-50 active:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-700/50 dark:active:bg-gray-700"
-      style={{ gridTemplateColumns: 'auto 4.5rem 1.25rem 1fr auto' }}
+      style={{ gridTemplateColumns: 'auto 4.5rem 1.25rem 1fr auto', columnGap: '5px' }}
       onClick={onClick}
     >
       {/* Participation status vertical banner */}

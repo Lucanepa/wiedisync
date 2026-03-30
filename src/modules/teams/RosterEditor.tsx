@@ -43,8 +43,15 @@ function displayName(m: Member): string {
   return [m.last_name, m.first_name].filter(Boolean).join(' ') || '—'
 }
 
+/** Normalize M2M role field to string[] — Directus may return a single ID, an array of integers, or expanded objects */
+function asIdArray(val: unknown): string[] {
+  if (!val) return []
+  if (Array.isArray(val)) return val.map((v) => typeof v === 'object' && v !== null && 'members_id' in v ? String((v as { members_id: unknown }).members_id) : String(v))
+  return [String(val)]
+}
+
 function getMemberRoles(memberId: string, team: Team): LeadershipRole[] {
-  return ROLES.filter((r) => team[r]?.includes(memberId))
+  return ROLES.filter((r) => asIdArray(team[r]).includes(memberId))
 }
 
 const ROLE_SHORT: Record<LeadershipRole, string> = {
@@ -88,7 +95,7 @@ export default function RosterEditor() {
 
   useEffect(() => {
     if (!teamSlug) return
-    fetchItems<Team>('teams', { filter: { name: { _eq: teamSlug } }, limit: 1 })
+    fetchItems<Team>('teams', { filter: { name: { _eq: teamSlug } }, limit: 1, fields: ['*', 'coach.members_id', 'captain.members_id', 'team_responsible.members_id'] })
       .then((items) => setTeam(items[0] ?? null))
       .catch(() => setTeam(null))
   }, [teamSlug])
@@ -148,14 +155,18 @@ export default function RosterEditor() {
 
   const toggleRole = useCallback(async (memberId: string, role: LeadershipRole) => {
     if (!team) return
-    const current: string[] = team[role] ?? []
-    const next = current.includes(memberId)
+    const current = asIdArray(team[role])
+    const has = current.includes(memberId)
+    const nextIds = has
       ? current.filter((id) => id !== memberId)
       : [...current, memberId]
+    // Directus M2M expects junction objects with members_id
+    const junctionPayload = nextIds.map((id) => ({ members_id: id }))
     try {
-      await updateRecord('teams', team.id, { [role]: next })
-      logActivity('update', 'teams', team.id, { [role]: next })
-      setTeam((prev) => prev ? { ...prev, [role]: next } : prev)
+      await updateRecord('teams', team.id, { [role]: junctionPayload })
+      logActivity('update', 'teams', team.id, { [role]: nextIds })
+      // Store expanded format so asIdArray works on next toggle without re-fetch
+      setTeam((prev) => prev ? { ...prev, [role]: junctionPayload } : prev)
     } catch {
       toast.error(t('common:errorSaving'))
     }

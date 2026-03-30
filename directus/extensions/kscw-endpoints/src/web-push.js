@@ -11,6 +11,8 @@
  *   POST /kscw/web-push/test              — send test push (admin only)
  */
 
+import { FRONTEND_URL } from './email-template.js'
+
 const VAPID_PUBLIC_KEY = 'BKJqU0d09bzpCWv6Goq-_24NxBLHHwGkjrUrRQsyIDoECVIE5nBBFw8g3j_hjBRhOlJL2YU72b_5R_SxFedMBQs'
 const PUSH_WORKER_URL = process.env.PUSH_WORKER_URL || 'https://kscw-push.lucanepa.workers.dev'
 const PUSH_AUTH_SECRET = process.env.PUSH_AUTH_SECRET || ''
@@ -64,7 +66,7 @@ async function _sendPush(db, subscriptions, title, body, url, tag, log) {
         subscriptions: subs,
         title: title || 'KSC Wiedikon',
         body: body || '',
-        url: url || 'https://wiedisync.kscw.ch',
+        url: url || FRONTEND_URL,
         ...(tag ? { tag } : {}),
       }),
       signal: AbortSignal.timeout(15000),
@@ -195,7 +197,7 @@ export function registerWebPush(router, ctx) {
         database, memberId,
         title || 'Test Push',
         body || 'This is a test notification from KSC Wiedikon.',
-        url || 'https://wiedisync.kscw.ch',
+        url || FRONTEND_URL,
         'test', log,
       )
 

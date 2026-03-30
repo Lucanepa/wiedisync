@@ -4,7 +4,12 @@
  */
 
 const ACCENT = { vb: '#FFC832', bb: '#F97316', neutral: '#4A55A2' }
-const LOGO_URL = 'https://wiedisync.kscw.ch/wiedisync_logo.svg'
+
+/** Frontend URL — env var or auto-detect from Directus PUBLIC_URL */
+export const FRONTEND_URL = process.env.FRONTEND_URL
+  || (process.env.PUBLIC_URL?.includes('directus-dev') ? 'https://wiedisync.pages.dev' : 'https://wiedisync.kscw.ch')
+
+const LOGO_URL = `${FRONTEND_URL}/wiedisync_logo.svg`
 
 const VB_ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="44" height="44" fill="none" stroke-linecap="round" stroke-linejoin="round">' +
   '<circle cx="12" cy="12" r="10" fill="#FFC832" stroke="#4A55A2" stroke-width="1.5"/>' +
@@ -105,7 +110,8 @@ export function buildEmailLayout(bodyHtml, opts = {}) {
   }
 
   // Bottom bar
-  html += '<tr><td style="background:#0f172a;border-top:1px solid #334155;padding:14px 28px;text-align:center"><div style="font-size:11px;color:#64748b">KSC Wiedikon &middot; <a href="https://wiedisync.kscw.ch" style="color:#64748b;text-decoration:none">wiedisync.kscw.ch</a></div></td></tr>'
+  const footerHost = FRONTEND_URL.replace('https://', '')
+  html += `<tr><td style="background:#0f172a;border-top:1px solid #334155;padding:14px 28px;text-align:center"><div style="font-size:11px;color:#64748b">KSC Wiedikon &middot; <a href="${FRONTEND_URL}" style="color:#64748b;text-decoration:none">${footerHost}</a></div></td></tr>`
 
   html += '</table></td></tr></table></body></html>'
   return html

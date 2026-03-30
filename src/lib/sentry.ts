@@ -16,6 +16,7 @@ export function initSentry() {
 
   Sentry.init({
     dsn,
+    tunnel: 'https://kscw-sentry-tunnel.lucanepa.workers.dev/tunnel',
     environment: isProd ? 'production' : 'preview',
     release: import.meta.env.VITE_APP_VERSION || undefined,
 

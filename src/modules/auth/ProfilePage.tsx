@@ -9,7 +9,7 @@ import StatusBadge from '../../components/StatusBadge'
 import TeamChip from '../../components/TeamChip'
 import { getFileUrl } from '../../utils/fileUrl'
 import { coercePositions, getPositionI18nKey } from '../../utils/memberPositions'
-import { memberName } from '../../utils/relations'
+import { memberName, flattenMemberIds } from '../../utils/relations'
 import { formatDate, toISODate } from '../../utils/dateHelpers'
 import ProfileEditModal from './ProfileEditModal'
 import DeleteAccountModal from './DeleteAccountModal'
@@ -135,7 +135,7 @@ export default function ProfilePage() {
                   if (team) {
                     const tid = String(team.id)
                     if (coachTeamIds.includes(tid)) teamRoles.push(tt('roleCoach'))
-                    if (String(team.captain) === String(user.id)) teamRoles.push(tt('roleCaptain'))
+                    if (flattenMemberIds(team.captain).includes(String(user.id))) teamRoles.push(tt('roleCaptain'))
                   }
                   const isLast = i === memberTeams.length - 1
                   return (

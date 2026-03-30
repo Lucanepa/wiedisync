@@ -9,7 +9,7 @@ import ImageLightbox from '../../components/ImageLightbox'
 import type { ExpandedMemberTeam } from '../../hooks/useTeamMembers'
 import type { Team, Member, MemberTeam } from '../../types'
 import { cn } from '@/lib/utils'
-import { asObj, memberName } from '../../utils/relations'
+import { asObj, memberName, flattenMemberIds } from '../../utils/relations'
 import { Button } from '../../components/ui/button'
 import { updateRecord } from '../../lib/api'
 
@@ -42,9 +42,9 @@ const roleI18nKeys: Record<LeadershipRole, string> = {
 
 export function getMemberRole(memberId: string, team?: Team | null): string | null {
   if (!team) return null
-  if (team.coach?.includes(memberId)) return 'coach'
-  if (team.captain?.includes(memberId)) return 'captain'
-  if (team.team_responsible?.includes(memberId)) return 'team_responsible'
+  if (flattenMemberIds(team.coach).includes(memberId)) return 'coach'
+  if (flattenMemberIds(team.captain).includes(memberId)) return 'captain'
+  if (flattenMemberIds(team.team_responsible).includes(memberId)) return 'team_responsible'
   return null
 }
 
@@ -87,14 +87,16 @@ export default function MemberRow({ memberTeam, teamId: _teamId, teamSlug, team,
 
   async function toggleRole(roleKey: LeadershipRole) {
     if (!team || !onTeamUpdate) return
-    const current: string[] = team[roleKey] ?? []
-    const next = current.includes(member!.id)
+    const current = flattenMemberIds(team[roleKey])
+    const has = current.includes(member!.id)
+    const nextIds = has
       ? current.filter((id) => id !== member!.id)
       : [...current, member!.id]
+    const junctionPayload = nextIds.map((id) => ({ members_id: id }))
     try {
-      await updateRecord('teams', team.id, { [roleKey]: next })
-      logActivity('update', 'teams', team.id, { [roleKey]: next })
-      onTeamUpdate({ [roleKey]: next })
+      await updateRecord('teams', team.id, { [roleKey]: junctionPayload })
+      logActivity('update', 'teams', team.id, { [roleKey]: nextIds })
+      onTeamUpdate({ [roleKey]: junctionPayload })
     } catch {
       // ignore
     }
@@ -296,7 +298,7 @@ export default function MemberRow({ memberTeam, teamId: _teamId, teamSlug, team,
                 <div className="fixed inset-0 z-10" onClick={() => setEditingField(null)} />
                 <div className="absolute right-0 z-20 mt-1 w-44 rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-600 dark:bg-gray-800">
                   {LEADERSHIP_ROLES.map((r) => {
-                    const active = (team?.[r] ?? []).includes(member.id)
+                    const active = flattenMemberIds(team?.[r]).includes(String(member.id))
                     return (
                       <button
                         key={r}

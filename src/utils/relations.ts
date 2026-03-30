@@ -25,3 +25,23 @@ export function memberName(m: { first_name?: string; last_name?: string } | null
   if (!m) return ''
   return [m.first_name, m.last_name].filter(Boolean).join(' ')
 }
+
+/**
+ * Extract member IDs from a Directus M2M junction field (coach, captain, team_responsible).
+ * Handles: [5, 10] (raw IDs), [{members_id: 5}] (junction objects), null, undefined, non-array.
+ * Always returns string[] for safe comparison with stringified record IDs.
+ */
+export function flattenMemberIds(field: unknown): string[] {
+  if (field == null) return []
+  // Single value (Directus may return bare int/string for single-entry M2M)
+  if (!Array.isArray(field)) {
+    if (typeof field === 'object' && 'members_id' in field) return [String((field as { members_id: unknown }).members_id)]
+    return [String(field)]
+  }
+  return field.map(item => {
+    if (typeof item === 'object' && item !== null && 'members_id' in item) {
+      return String((item as { members_id: unknown }).members_id)
+    }
+    return String(item)
+  }).filter(Boolean)
+}

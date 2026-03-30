@@ -139,7 +139,7 @@ export default {
 
         const today = new Date().toISOString().split('T')[0]
 
-        const [roster, coaches, games, trainings] = await Promise.all([
+        const [roster, coaches, upcomingGames, completedGames, trainings, rankings, teamSponsors] = await Promise.all([
           database('member_teams')
             .join('members', 'members.id', 'member_teams.member')
             .where('member_teams.team', team.id)
@@ -153,13 +153,43 @@ export default {
             .select('members.id', 'members.first_name', 'members.last_name', 'members.photo'),
           database('games')
             .where('kscw_team', team.id).where('date', '>=', today)
+            .where('status', '!=', 'cancelled')
             .orderBy('date').limit(10),
+          database('games')
+            .where('kscw_team', team.id).where('status', 'completed')
+            .orderBy('date', 'desc').limit(10),
           database('trainings')
             .where('team', team.id).where('date', '>=', today).where('cancelled', false)
             .orderBy('date').limit(10),
+          // Rankings: all teams in same league+season (team.league matches overall league name)
+          team.league && team.season
+            ? database('rankings')
+                .where('league', team.league).where('season', team.season)
+                .orderBy('rank')
+            : Promise.resolve([]),
+          // Sponsors: global sponsors + team-specific sponsors
+          database('sponsors').where('active', true).orderBy('sort_order'),
         ])
 
-        res.json({ data: { ...team, roster, coaches, upcoming_games: games, upcoming_trainings: trainings } })
+        // Filter sponsors: show global sponsors (team_page_only=false) + sponsors linked to this team
+        const sponsors = teamSponsors.filter(sp => {
+          if (!sp.team_page_only) return true
+          // Check if sponsor is linked to this team via M2M
+          return sp.teams && Array.isArray(sp.teams) && sp.teams.includes(team.id)
+        })
+
+        res.json({
+          data: {
+            ...team,
+            roster,
+            coaches,
+            upcoming_games: upcomingGames,
+            results: completedGames,
+            upcoming_trainings: trainings,
+            rankings,
+            sponsors,
+          },
+        })
       } catch (err) {
         log.error(`public/team: ${err.message}`)
         res.status(500).json({ error: 'Internal error' })

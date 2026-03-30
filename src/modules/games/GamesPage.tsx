@@ -170,7 +170,7 @@ export default function GamesPage() {
   // Rankings — always fetch (small dataset), group client-side
   const { data: allRankingsRaw, isLoading: rankingsLoading } = useCollection<Ranking>('rankings', {
     sort: ['league', 'rank'],
-    fields: ['id', 'league', 'rank', 'team_id', 'team_name', 'points', 'wins', 'losses', 'wins_clear', 'wins_narrow', 'defeats_clear', 'defeats_narrow', 'sets_won', 'sets_lost', 'points_for', 'points_against', 'games_played', 'season'],
+    fields: ['id', 'league', 'rank', 'team_id', 'team_name', 'points', 'wins', 'losses', 'wins_clear', 'wins_narrow', 'defeats_clear', 'defeats_narrow', 'sets_won', 'sets_lost', 'points_won', 'points_lost', 'played', 'season'],
     limit: 2000,
   })
   const allRankings = allRankingsRaw ?? []

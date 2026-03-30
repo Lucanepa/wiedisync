@@ -202,7 +202,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isVbAdmin = roles.includes('vb_admin')
   const isBbAdmin = roles.includes('bb_admin')
   const isAdmin = isGlobalAdmin || isVbAdmin || isBbAdmin
-  const isApproved = user?.coach_approved_team === true || isAdmin
+  const isApproved = user?.coach_approved_team === true || isAdmin || memberTeamIds.length > 0 || coachTeamIds.length > 0
   const isProfileComplete = !!user?.language && !!user?.first_name
   const isVorstand = roles.includes('vorstand') || isGlobalAdmin
   const isCoach = coachTeamIds.length > 0 || isGlobalAdmin

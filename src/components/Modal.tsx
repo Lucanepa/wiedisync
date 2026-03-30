@@ -54,12 +54,12 @@ export default function Modal({ open, onClose, title, children, size = 'md', hid
 
   return (
     <Drawer open={open} onOpenChange={(o) => !o && !hideClose && onClose()}>
-      <DrawerContent className="max-h-[calc(100dvh-4rem)] overflow-y-auto overscroll-contain">
+      <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>{title}</DrawerTitle>
           <DrawerDescription className="sr-only">{title}</DrawerDescription>
         </DrawerHeader>
-        <div className="px-4 pb-4">
+        <div className="max-h-[calc(100dvh-8rem)] overflow-y-auto overscroll-contain px-4 pb-4">
           {children}
         </div>
       </DrawerContent>

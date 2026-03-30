@@ -29,7 +29,7 @@ const LICENCE_LABELS: Record<LicenceType, string> = {
 type ExpandedMemberTeam = MemberTeam & { team: Team | string }
 
 export default function ProfilePage() {
-  const { user } = useAuth()
+  const { user, coachTeamIds } = useAuth()
   const { t } = useTranslation('auth')
   const { t: tt } = useTranslation('teams')
   const [editOpen, setEditOpen] = useState(false)
@@ -132,9 +132,9 @@ export default function ProfilePage() {
                   const team = asObj<Team>(mt.team)
                   const teamRoles: string[] = [tt('rolePlayer')]
                   if (team) {
-                    if (team.coach?.includes(user.id)) teamRoles.push(tt('roleCoach'))
-                    if (team.captain?.includes(user.id)) teamRoles.push(tt('roleCaptain'))
-                    if (team.team_responsible?.includes(user.id)) teamRoles.push(tt('roleTeamResponsible'))
+                    const tid = String(team.id)
+                    if (coachTeamIds.includes(tid)) teamRoles.push(tt('roleCoach'))
+                    if (String(team.captain) === String(user.id)) teamRoles.push(tt('roleCaptain'))
                   }
                   const isLast = i === memberTeams.length - 1
                   return (

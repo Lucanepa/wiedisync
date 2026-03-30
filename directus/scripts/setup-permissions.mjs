@@ -204,11 +204,13 @@ const OWN_PASSENGER = { passenger: { user: { _eq: '$CURRENT_USER' } } }
 const MEMBER_VISIBLE_FIELDS = [
   'id', 'first_name', 'last_name', 'photo', 'number',
   'position', 'licences', 'user',
+  'coach_approved_team', 'role', 'language', 'email',
+  'requested_team', 'birthdate_visibility', 'hide_phone', 'phone',
 ]
 
 /** Fields a member can update on their own profile */
 const MEMBER_EDITABLE_FIELDS = [
-  'first_name', 'last_name', 'phone', 'birthdate',
+  'first_name', 'last_name', 'phone', 'birthdate', 'email',
   'birthdate_visibility', 'hide_phone', 'photo', 'language',
   'position', 'number', 'licences', 'website_visible',
 ]

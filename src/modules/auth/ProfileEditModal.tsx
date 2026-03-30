@@ -147,6 +147,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
       const payload: Record<string, unknown> = {
         first_name: firstName,
         last_name: lastName,
+        email,
         phone,
         number,
         hide_phone: hidePhone,
@@ -308,8 +309,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
           label={t('email')}
           type="email"
           value={email}
-          readOnly
-          className="bg-gray-50 dark:bg-gray-600"
+          onChange={(e) => setEmail(e.target.value)}
         />
 
         <FormInput

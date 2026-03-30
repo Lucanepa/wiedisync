@@ -54,6 +54,8 @@ export const client = createDirectus(API_URL)
   .with(rest())
   .with(realtime({
     authMode: 'handshake',
+    heartbeat: false,
+    reconnect: { delay: 3000, retries: 5 },
   }))
 
 // ── Auth helpers ────────────────────────────────────────────────────

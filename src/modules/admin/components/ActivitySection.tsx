@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { countItems, fetchItems, kscwApi } from '../../../lib/api'
+import { memberName } from '../../../utils/relations'
 
 interface RsvpRow {
   name: string
@@ -9,7 +10,7 @@ interface RsvpRow {
 
 interface UserLogRecord {
   id: string
-  user: string | { id: string; name: string }
+  user: string | { id: string; first_name?: string; last_name?: string }
   action: string
   collection_name: string
   created: string
@@ -164,7 +165,7 @@ body: {
                 className="flex items-center gap-2 text-xs py-1 border-b border-border/50 last:border-0"
               >
                 <span className="font-medium truncate max-w-[90px]">
-                  {typeof log.user === 'object' ? log.user.name : (log.user?.slice(0, 8) ?? '?')}
+                  {typeof log.user === 'object' ? (memberName(log.user) || log.user.id.slice(0, 8)) : (log.user?.slice(0, 8) ?? '?')}
                 </span>
                 <span className="text-muted-foreground truncate">{log.action}</span>
                 <span className="text-muted-foreground/70 truncate">{log.collection_name}</span>

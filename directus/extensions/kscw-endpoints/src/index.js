@@ -447,11 +447,31 @@ export default {
       },
     }
 
+    // In-memory IP rate limiter for OTP requests
+    const otpIpAttempts = new Map() // ip → { count, resetAt }
+
     router.post('/verify-email', async (req, res) => {
       try {
         const { email: rawEmail, lang: clientLang } = req.body
         if (!rawEmail) return res.status(400).json({ error: 'Email required' })
         const email = rawEmail.toLowerCase().trim()
+
+        // Rate limit: max 10 OTP requests per hour per IP
+        const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown'
+        const now = Date.now()
+        const ipAttempt = otpIpAttempts.get(ip)
+        if (ipAttempt && now < ipAttempt.resetAt) {
+          if (ipAttempt.count >= 10) {
+            return res.status(429).json({ error: 'Too many requests. Try again later.' })
+          }
+          ipAttempt.count++
+        } else {
+          otpIpAttempts.set(ip, { count: 1, resetAt: now + 3600000 })
+        }
+        // Clean stale entries
+        if (otpIpAttempts.size > 1000) {
+          for (const [k, v] of otpIpAttempts) { if (now > v.resetAt) otpIpAttempts.delete(k) }
+        }
 
         // Rate limit: max 3 per hour per email
         const oneHourAgo = new Date(Date.now() - 3600000).toISOString()
@@ -573,14 +593,19 @@ export default {
           // Mode 2: Password-reset token from email link
           const user = await database('directus_users')
             .where('token', token)
-            .select('id')
+            .select('id', 'token_expires_at')
             .first()
           if (!user) {
             return res.status(400).json({ error: 'Invalid or expired token' })
           }
+          // Server-side expiry check (24h tokens)
+          if (user.token_expires_at && new Date() > new Date(user.token_expires_at)) {
+            await database('directus_users').where('id', user.id).update({ token: null, token_expires_at: null })
+            return res.status(400).json({ error: 'Invalid or expired token' })
+          }
           userId = user.id
           // Clear the token so it can't be reused
-          await database('directus_users').where('id', userId).update({ token: null })
+          await database('directus_users').where('id', userId).update({ token: null, token_expires_at: null })
           const member = await database('members').where('user', userId).select('id').first()
           memberId = member?.id
         } else if (rawEmail) {
@@ -592,11 +617,11 @@ export default {
             .where('email', email).where('verified', true)
             .orderBy('id', 'desc').first()
           if (!verification) {
-            return res.status(400).json({ error: 'Email not verified' })
+            return res.status(400).json({ error: 'Invalid or expired request' })
           }
 
           const member = await database('members').where('email', email).first()
-          if (!member) return res.status(404).json({ error: 'Member not found' })
+          if (!member) return res.status(400).json({ error: 'Invalid or expired request' })
           memberId = member.id
 
           if (member.user) {

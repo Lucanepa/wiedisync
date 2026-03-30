@@ -18,7 +18,7 @@ export default defineConfig({
     }),
   ],
   build: {
-    sourcemap: true,  // Required for Sentry source maps
+    sourcemap: 'hidden',  // Uploaded to Sentry but not served publicly
   },
   resolve: {
     alias: {

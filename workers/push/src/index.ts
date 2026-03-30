@@ -36,13 +36,15 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url)
 
-    // Health endpoint — public, permissive CORS (used by infra dashboard)
+    // Health endpoint — restricted CORS
     if (url.pathname === '/health') {
-      const origin = request.headers.get('Origin') || '*'
+      const origin = request.headers.get('Origin') || ''
+      const allowedOrigin = origin && (origin === env.ALLOWED_ORIGIN || origin.endsWith('.kscw.ch'))
+        ? origin : env.ALLOWED_ORIGIN
       if (request.method === 'OPTIONS') {
-        return new Response(null, { headers: corsHeaders(origin) })
+        return new Response(null, { headers: corsHeaders(allowedOrigin) })
       }
-      return json({ ok: true }, 200, origin)
+      return json({ ok: true }, 200, allowedOrigin)
     }
 
     // CORS preflight

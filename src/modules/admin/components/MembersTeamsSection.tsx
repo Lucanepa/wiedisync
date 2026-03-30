@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { fetchAllItems, kscwApi } from '../../../lib/api'
+import { memberName } from '../../../utils/relations'
 
-interface TeamMember { id: string; name: string }
+interface TeamMember { id: string; first_name?: string; last_name?: string }
 
 interface TeamRecord {
   id: string
@@ -15,7 +16,8 @@ interface TeamRecord {
 
 interface UnapprovedMember {
   id: string
-  name: string
+  first_name: string
+  last_name: string
   email: string
   requested_team: string
   created: string
@@ -32,7 +34,7 @@ function getShortName(name: string): string {
 function firstMemberName(val: TeamMember[] | string[] | string): string | null {
   if (Array.isArray(val) && val.length > 0) {
     const first = val[0]
-    return typeof first === 'object' && first !== null ? (first as TeamMember).name : null
+    return typeof first === 'object' && first !== null ? memberName(first as TeamMember) : null
   }
   return null
 }
@@ -52,7 +54,7 @@ export default function MembersTeamsSection() {
         const [teamRecords, sqlResult, unapprovedResult] = await Promise.all([
           fetchAllItems<TeamRecord>('teams', {
             sort: ['name'],
-            fields: ['id', 'name', 'sport', 'slug', 'coach.id', 'coach.name', 'captain.id', 'captain.name'],
+            fields: ['id', 'name', 'sport', 'slug', 'coach.id', 'coach.first_name', 'coach.last_name', 'captain.id', 'captain.first_name', 'captain.last_name'],
           }),
           kscwApi('/admin/sql', {
             method: 'POST',
@@ -62,7 +64,7 @@ body: {
           }) as Promise<{ rows: [string, number][] }>,
           fetchAllItems<UnapprovedMember>('members', {
             filter: { _and: [{ coach_approved_team: { _eq: false } }, { requested_team: { _nempty: true } }] },
-            fields: ['id', 'name', 'email', 'requested_team', 'created'],
+            fields: ['id', 'first_name', 'last_name', 'email', 'requested_team', 'created'],
           }),
         ])
 
@@ -188,7 +190,7 @@ body: {
                 key={member.id}
                 className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm py-1 border-b border-border/50 last:border-0"
               >
-                <span className="font-medium text-amber-700 dark:text-amber-300">{member.name}</span>
+                <span className="font-medium text-amber-700 dark:text-amber-300">{memberName(member)}</span>
                 <span className="text-muted-foreground text-xs">{member.email}</span>
                 {member.requested_team && (
                   <span className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded">

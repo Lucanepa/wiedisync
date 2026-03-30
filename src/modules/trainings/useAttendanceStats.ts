@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { getSeasonDateRange } from '../../utils/dateHelpers'
 import type { Training, Participation, Absence, Member, MemberTeam } from '../../types'
 import { fetchAllItems } from '../../lib/api'
-import { asObj } from '../../utils/relations'
+import { asObj, memberName } from '../../utils/relations'
 
 export interface PlayerStats {
   memberId: string
@@ -80,7 +80,7 @@ export function useAttendanceStats(teamId: string | null, season: string) {
       for (const member of members) {
         memberStats[member.id] = {
           memberId: member.id,
-          memberName: member.name || `${member.first_name} ${member.last_name}`,
+          memberName: memberName(member),
           jerseyNumber: member.number,
           total: trainings.length,
           present: 0,

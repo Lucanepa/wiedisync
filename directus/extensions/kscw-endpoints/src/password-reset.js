@@ -130,9 +130,10 @@ export function registerPasswordReset(router, { database, logger, services, getS
       // but sends the default email. We skip that and send our own.
       // Instead, generate token manually:
       const token = crypto.randomBytes(20).toString('hex')
+      const tokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24h
       await database('directus_users')
         .where('id', user.id)
-        .update({ token })
+        .update({ token, token_expires_at: tokenExpiresAt })
 
       // Build reset URL pointing to frontend
       const resetUrl = `${FRONTEND_URL}/set-password?token=${token}`

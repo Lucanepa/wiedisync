@@ -30,6 +30,11 @@ export function registerContactForm(router, { database, logger, services, getSch
       if (!name || !email || !message) {
         return res.status(400).json({ error: 'name, email, message required' })
       }
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ error: 'Invalid email format' })
+      }
 
       if (turnstile_token && !(await verifyTurnstile(turnstile_token))) {
         return res.status(400).json({ error: 'Captcha verification failed' })

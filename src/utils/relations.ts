@@ -19,3 +19,9 @@ export function relId(val: unknown): string {
 export function asObj<T>(val: T | string | number | null | undefined): T | null {
   return val != null && typeof val === 'object' ? val as T : null
 }
+
+/** Build display name from first_name + last_name fields. */
+export function memberName(m: { first_name?: string; last_name?: string } | null | undefined): string {
+  if (!m) return ''
+  return [m.first_name, m.last_name].filter(Boolean).join(' ')
+}

@@ -74,7 +74,6 @@ export interface TeamSettings extends FeatureToggles {
 
 export interface Member extends BaseRecord {
   email: string
-  name: string
   first_name: string
   last_name: string
   phone: string

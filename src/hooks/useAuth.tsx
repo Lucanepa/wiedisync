@@ -141,7 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const member = await fetchMember()
         if (member) {
           setUser(member)
-          setSentryUser({ id: member.id, email: member.email, name: member.name })
+          setSentryUser({ id: member.id })
           await loadTeamContext(member.id)
         } else {
           // Token refreshed but no linked member — clear auth
@@ -174,7 +174,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const member = await fetchMember()
     if (member) {
       setUser(member)
-      setSentryUser({ id: member.id, email: member.email, name: member.name })
+      setSentryUser({ id: member.id })
       await loadTeamContext(member.id)
     }
   }, [fetchMember, loadTeamContext])

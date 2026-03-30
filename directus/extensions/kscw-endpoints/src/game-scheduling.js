@@ -62,9 +62,29 @@ export function registerGameScheduling(router, { database, logger, services, get
     }
   })
 
+  // In-memory rate limiter for token lookups (per IP)
+  const tokenAttempts = new Map() // ip → { count, resetAt }
+
   // GET /kscw/terminplanung/slots/:token — view available slots
   router.get('/terminplanung/slots/:token', async (req, res) => {
     try {
+      // Rate limit: max 10 token lookups per 15 min per IP
+      const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown'
+      const now = Date.now()
+      const attempt = tokenAttempts.get(ip)
+      if (attempt && now < attempt.resetAt) {
+        if (attempt.count >= 10) {
+          return res.status(429).json({ error: 'Too many requests. Try again later.' })
+        }
+        attempt.count++
+      } else {
+        tokenAttempts.set(ip, { count: 1, resetAt: now + 15 * 60 * 1000 })
+      }
+      // Clean stale entries periodically
+      if (tokenAttempts.size > 1000) {
+        for (const [k, v] of tokenAttempts) { if (now > v.resetAt) tokenAttempts.delete(k) }
+      }
+
       const opponent = await database('game_scheduling_opponents')
         .where('token', req.params.token).where('status', 'active').first()
       if (!opponent) return res.status(404).json({ error: 'Invalid or expired link' })

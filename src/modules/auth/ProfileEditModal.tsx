@@ -10,7 +10,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { getFileUrl } from '../../utils/fileUrl'
 import { coercePositions, getPositionI18nKey, getSelectablePositions } from '../../utils/memberPositions'
 import { backendLangToI18n } from '../../utils/languageMap'
-import { asObj, relId } from '../../utils/relations'
+import { asObj, relId, memberName } from '../../utils/relations'
 import { LANGUAGES, type BackendLanguage } from '../../i18n/languageConfig'
 import deFlag from '../../assets/flags/de.svg'
 import gbFlag from '../../assets/flags/gb.svg'
@@ -133,10 +133,11 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
             filter: { _and: [{ team: { _in: teamIds } }, { member: { _neq: user.id } }] },
           })
           const conflict = teammates.find(
-            (mt) => asObj<{ number?: number; name?: string }>(mt.member as any)?.number === number
+            (mt) => asObj<{ number?: number; first_name?: string; last_name?: string }>(mt.member as any)?.number === number
           )
           if (conflict) {
-            const conflictName = asObj<{ number?: number; name?: string }>(conflict.member as any)?.name ?? '?'
+            const conflictMember = asObj<{ number?: number; first_name?: string; last_name?: string }>(conflict.member as any)
+            const conflictName = memberName(conflictMember) || '?'
             setError(t('numberTaken', { name: conflictName }))
             setLoading(false)
             return

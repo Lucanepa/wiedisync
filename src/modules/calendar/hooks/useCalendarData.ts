@@ -9,7 +9,7 @@ import {
 } from '../../../utils/dateUtils'
 import { format, isBefore, isAfter, isSameDay } from 'date-fns'
 import { formatTime } from '../../../utils/dateHelpers'
-import { asObj, relId } from '../../../utils/relations'
+import { asObj, relId, memberName } from '../../../utils/relations'
 
 interface UseCalendarDataOptions {
   filters: CalendarFilterState
@@ -354,8 +354,8 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
         // Also check affects field: skip if affects specific teams that don't match
         const affects = (a as Record<string, unknown>).affects as string[] | undefined
         if (teamIdSet && affects && affects.length > 0 && !affects.includes('all') && !affects.some((id) => teamIdSet.has(id))) continue
-        const m = asObj<{ first_name: string; last_name: string; name: string }>(a.member)
-        const firstName = m?.first_name || m?.name || '?'
+        const m = asObj<{ first_name: string; last_name: string }>(a.member)
+        const firstName = m?.first_name || memberName(m) || '?'
         all.push(absenceToEntry(a, firstName))
       }
     }

@@ -9,7 +9,7 @@ import ImageLightbox from '../../components/ImageLightbox'
 import type { ExpandedMemberTeam } from '../../hooks/useTeamMembers'
 import type { Team, Member, MemberTeam } from '../../types'
 import { cn } from '@/lib/utils'
-import { asObj } from '../../utils/relations'
+import { asObj, memberName } from '../../utils/relations'
 import { Button } from '../../components/ui/button'
 import { updateRecord } from '../../lib/api'
 
@@ -57,7 +57,7 @@ export default function MemberRow({ memberTeam, teamId: _teamId, teamSlug, team,
 
   if (!member) return null
 
-  const displayName = [member.last_name, member.first_name].filter(Boolean).join(' ') || member.name || '—'
+  const displayName = [member.last_name, member.first_name].filter(Boolean).join(' ') || memberName(member) || '—'
   const memberPositions = coercePositions(member.position)
   const nonPlaying = isNonPlayingStaff(member.id, team, memberPositions)
   const selectablePositions = getSelectablePositions(team?.sport, memberPositions)

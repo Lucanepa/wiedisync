@@ -9,6 +9,7 @@ import StatusBadge from '../../components/StatusBadge'
 import TeamChip from '../../components/TeamChip'
 import { getFileUrl } from '../../utils/fileUrl'
 import { coercePositions, getPositionI18nKey } from '../../utils/memberPositions'
+import { memberName } from '../../utils/relations'
 import { formatDate, toISODate } from '../../utils/dateHelpers'
 import ProfileEditModal from './ProfileEditModal'
 import DeleteAccountModal from './DeleteAccountModal'
@@ -92,7 +93,7 @@ export default function ProfilePage() {
           {user.photo ? (
             <img
               src={getFileUrl('members', user.id, user.photo)}
-              alt={user.name}
+              alt={memberName(user)}
               className="h-16 w-16 rounded-full object-cover ring-2 ring-brand-500/20 dark:ring-brand-400/30"
             />
           ) : (
@@ -101,7 +102,7 @@ export default function ProfilePage() {
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <h1 className="truncate text-xl font-bold text-gray-900 dark:text-gray-100">{user.name || `${user.first_name} ${user.last_name}`.trim() || '—'}</h1>
+            <h1 className="truncate text-xl font-bold text-gray-900 dark:text-gray-100">{memberName(user) || '—'}</h1>
             {(user.number > 0 || positions.length > 0) && (
               <div className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
                 {user.number > 0 && (

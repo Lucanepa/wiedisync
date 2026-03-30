@@ -6,7 +6,8 @@
  */
 
 const SV_API_BASE = 'https://api.volleyball.ch'
-const SV_API_KEY = process.env.SV_API_KEY || 'REDACTED_SV_API_KEY'
+const SV_API_KEY = process.env.SV_API_KEY
+if (!SV_API_KEY) throw new Error('SV_API_KEY environment variable is required')
 
 const SV_TEAM_IDS = {
   '12747': 'H3', '2743': 'H1', '541': 'H2',

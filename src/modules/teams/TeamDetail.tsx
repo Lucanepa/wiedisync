@@ -184,14 +184,15 @@ export default function TeamDetail() {
 
   async function handleApprove(member: Member) {
     try {
-      await updateRecord('members', member.id, { coach_approved_team: true })
-      logActivity('update', 'members', member.id, { coach_approved_team: true })
+      // Create member_teams FIRST — Postgres trigger blocks coach_approved_team=true without it
       const mt = await createRecord<{id: string}>('member_teams', {
         member: member.id,
         team: teamId!,
         season: getCurrentSeason(),
       })
       logActivity('create', 'member_teams', mt.id, { member: member.id, team: teamId })
+      await updateRecord('members', member.id, { coach_approved_team: true })
+      logActivity('update', 'members', member.id, { coach_approved_team: true })
       refetchPending()
     } catch {
       // ignore

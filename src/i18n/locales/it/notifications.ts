@@ -10,6 +10,8 @@ export default {
   deadlineReminder: 'Scadenza',
   resultAvailable: 'Risultato',
   dutyDelegation: 'Servizio segnapunti',
+  memberJoinRequest: 'Richiesta di adesione',
+  member_join_request: '{{memberName}} vuole unirsi a {{teamName}}',
   // Delegation notification messages
   duty_delegation_request: '{{from}} vuole delegare il servizio {{role}} per {{game}} del {{date}} a te.',
   duty_delegation_accepted: '{{to}} ha accettato il servizio {{role}} per {{game}}.',

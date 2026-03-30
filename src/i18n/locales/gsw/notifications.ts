@@ -10,6 +10,8 @@ export default {
   deadlineReminder: 'Frischt',
   resultAvailable: 'Resultat',
   dutyDelegation: 'Schriiberdienst',
+  memberJoinRequest: 'Biträttsaafrag',
+  member_join_request: '{{memberName}} möcht {{teamName}} biträte',
   // Delegation notification messages
   duty_delegation_request: '{{from}} möcht dir de {{role}}-Iisatz für {{game}} am {{date}} übergäh.',
   duty_delegation_accepted: '{{to}} hät de {{role}}-Iisatz für {{game}} übernoh.',

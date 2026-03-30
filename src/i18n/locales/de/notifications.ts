@@ -10,6 +10,8 @@ export default {
   deadlineReminder: 'Frist',
   resultAvailable: 'Resultat',
   dutyDelegation: 'Schreiberdienst',
+  memberJoinRequest: 'Beitrittsanfrage',
+  member_join_request: '{{memberName}} möchte {{teamName}} beitreten',
   // Delegation notification messages
   duty_delegation_request: '{{from}} möchte dir den {{role}}-Einsatz für {{game}} am {{date}} übergeben.',
   duty_delegation_accepted: '{{to}} hat den {{role}}-Einsatz für {{game}} übernommen.',

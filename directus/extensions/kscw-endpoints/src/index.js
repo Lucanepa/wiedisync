@@ -684,8 +684,82 @@ export default {
         // Clean up verification
         await database('email_verifications').where('email', email).delete()
 
-        log.info(`New member registered: member ${member.id || member} → team ${team}`)
-        res.json({ success: true, member_id: String(member.id || member) })
+        // Notify coaches of the requested team
+        const memberId = String(member.id || member)
+        try {
+          const teamRow = await database('teams').where('id', team).select('name', 'slug').first()
+          const teamName = teamRow?.name || `Team ${team}`
+          const teamSlug = teamRow?.slug || ''
+          const coaches = await database('teams_members_3')
+            .where('teams_id', team)
+            .select('members_id')
+          const trMembers = await database('teams_members_4')
+            .where('teams_id', team)
+            .select('members_id')
+          const recipientIds = [...new Set([...coaches, ...trMembers].map(r => r.members_id))]
+
+          if (recipientIds.length > 0) {
+            // Create in-app notifications
+            const notifRows = recipientIds.map(rid => ({
+              member: rid,
+              type: 'member_join_request',
+              title: 'member_join_request',
+              body: JSON.stringify({ memberName: `${first_name} ${last_name}`, teamName }),
+              activity_type: 'team',
+              activity_id: teamSlug || String(team),
+              team: team,
+              read: false,
+            }))
+            await database('notifications').insert(notifRows)
+
+            // Send email to each coach/TR
+            const { buildEmailLayout, buildAlertBox } = await import('./email-template.js')
+            const schema = await getSchema()
+            const { MailService } = services
+            const mailService = new MailService({ schema, knex: database })
+            const coachMembers = await database('members')
+              .whereIn('id', recipientIds)
+              .select('email', 'first_name', 'language')
+            for (const coach of coachMembers) {
+              if (!coach.email) continue
+              const isGerman = !coach.language || coach.language === 'german' || coach.language === 'swiss_german'
+              const subject = isGerman
+                ? `WiediSync — Neue Beitrittsanfrage: ${first_name} ${last_name}`
+                : `WiediSync — New join request: ${first_name} ${last_name}`
+              const bodyHtml =
+                `<div style="font-size:14px;color:#e2e8f0;margin-bottom:16px">${isGerman
+                  ? `<strong>${first_name} ${last_name}</strong> möchte dem Team <strong>${teamName}</strong> beitreten.`
+                  : `<strong>${first_name} ${last_name}</strong> wants to join team <strong>${teamName}</strong>.`
+                }</div>` +
+                buildAlertBox('info', isGerman ? 'Aktion erforderlich' : 'Action required',
+                  isGerman ? 'Bitte genehmige oder lehne die Anfrage auf der Teamseite ab.' : 'Please approve or reject the request on the team page.') +
+                `<div style="text-align:center;margin-top:20px"><a href="${FRONTEND_URL}/teams/${teamSlug}" style="display:inline-block;padding:12px 24px;background:#4A55A2;color:#fff;text-decoration:none;border-radius:8px;font-weight:600">${isGerman ? 'Zur Teamseite' : 'Go to team page'}</a></div>`
+              const html = buildEmailLayout(bodyHtml, {
+                title: isGerman ? 'Neue Beitrittsanfrage' : 'New join request',
+                subtitle: `WiediSync — ${teamName}`,
+              })
+              mailService.send({
+                to: coach.email,
+                subject,
+                html,
+                text: `${first_name} ${last_name} → ${teamName}\n${FRONTEND_URL}/teams/${teamSlug}`,
+              }).catch(e => log.error(`register notify email: ${e.message}`))
+            }
+
+            // Push notifications
+            for (const rid of recipientIds) {
+              sendPushToMember(database, rid,
+                `Neue Beitrittsanfrage: ${first_name} ${last_name}`,
+                `${first_name} ${last_name} möchte ${teamName} beitreten`,
+                `${FRONTEND_URL}/teams/${teamSlug}`, 'team', log).catch(() => {})
+            }
+          }
+        } catch (notifErr) {
+          log.error(`register notification: ${notifErr.message}`)
+        }
+
+        log.info(`New member registered: member ${memberId} → team ${team}`)
+        res.json({ success: true, member_id: memberId })
       } catch (err) {
         log.error(`register: ${err.message}`)
         res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal error' })

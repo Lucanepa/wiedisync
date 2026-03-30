@@ -10,6 +10,8 @@ export default {
   deadlineReminder: 'Deadline',
   resultAvailable: 'Result',
   dutyDelegation: 'Scorer duty',
+  memberJoinRequest: 'Join request',
+  member_join_request: '{{memberName}} wants to join {{teamName}}',
   // Delegation notification messages
   duty_delegation_request: '{{from}} wants to delegate the {{role}} duty for {{game}} on {{date}} to you.',
   duty_delegation_accepted: '{{to}} accepted the {{role}} duty for {{game}}.',

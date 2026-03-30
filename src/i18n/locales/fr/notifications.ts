@@ -10,6 +10,8 @@ export default {
   deadlineReminder: 'Delai',
   resultAvailable: 'Resultat',
   dutyDelegation: 'Service de marqueur',
+  memberJoinRequest: 'Demande d\'adhésion',
+  member_join_request: '{{memberName}} souhaite rejoindre {{teamName}}',
   // Delegation notification messages
   duty_delegation_request: '{{from}} souhaite vous deleguer le service de {{role}} pour {{game}} le {{date}}.',
   duty_delegation_accepted: '{{to}} a accepte le service de {{role}} pour {{game}}.',

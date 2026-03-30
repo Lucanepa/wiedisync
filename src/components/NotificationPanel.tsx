@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ClipboardList, Clock, AlertTriangle, Trophy, Bell, ArrowRightLeft, BellRing, BellOff } from 'lucide-react'
+import { ClipboardList, Clock, AlertTriangle, Trophy, Bell, ArrowRightLeft, BellRing, BellOff, UserPlus } from 'lucide-react'
 import type { Notification } from '../types'
 import { usePushNotifications } from '../hooks/usePushNotifications'
 
@@ -19,6 +19,7 @@ const typeIcons: Record<string, React.ReactNode> = {
   deadline_reminder: <AlertTriangle className="h-4 w-4" />,
   result_available: <Trophy className="h-4 w-4" />,
   duty_delegation_request: <ArrowRightLeft className="h-4 w-4" />,
+  member_join_request: <UserPlus className="h-4 w-4" />,
 }
 
 const typeLabels: Record<string, string> = {
@@ -27,6 +28,7 @@ const typeLabels: Record<string, string> = {
   deadline_reminder: 'deadlineReminder',
   result_available: 'resultAvailable',
   duty_delegation_request: 'dutyDelegation',
+  member_join_request: 'memberJoinRequest',
 }
 
 function timeAgo(dateStr: string, t: (key: string, opts?: Record<string, unknown>) => string): string {
@@ -42,6 +44,7 @@ function timeAgo(dateStr: string, t: (key: string, opts?: Record<string, unknown
 
 function getNavigationPath(n: Notification): string {
   if (n.type === 'duty_delegation_request' || n.activity_type === 'scorer_duty') return '/scorer'
+  if (n.type === 'member_join_request' && n.activity_id) return `/teams/${n.activity_id}`
   switch (n.activity_type) {
     case 'game': return '/games'
     case 'training': return '/trainings'

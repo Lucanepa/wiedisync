@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { CalendarEntry } from '../../../types/calendar'
+import { CalendarOff } from 'lucide-react'
 import BasketballIcon from '../../../components/BasketballIcon'
 import VolleyballIcon from '../../../components/VolleyballIcon'
 import {
@@ -51,14 +52,7 @@ const TypeIcon = ({ type, sport, className = '' }: { type: string; sport?: 'voll
     )
   }
   if (type === 'absence') {
-    // Absence — calendar-off icon
-    return (
-      <svg className={`inline-block h-2.5 w-2.5 shrink-0 ${className}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="4" width="18" height="18" rx="2" />
-        <path d="M16 2v4M8 2v4M3 10h18" />
-        <path d="m9 15 6-6M9 9l6 6" />
-      </svg>
-    )
+    return <CalendarOff className={`inline-block h-2.5 w-2.5 shrink-0 ${className}`} />
   }
   if (type === 'hall') {
     // Hall events — default to basketball ball (most GCal hall events are BB games)

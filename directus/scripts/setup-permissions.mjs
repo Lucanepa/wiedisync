@@ -354,8 +354,8 @@ async function main() {
   await setPerm(MEMBER_POLICY, 'participations', 'create')
   await setPerm(MEMBER_POLICY, 'participations', 'update', OWN_MEMBER)
 
-  // Absences — CRUD own
-  await setPermRead(MEMBER_POLICY, 'absences', OWN_MEMBER)
+  // Absences — read all (team-wide view), CUD own
+  await setPermRead(MEMBER_POLICY, 'absences')
   await setPerm(MEMBER_POLICY, 'absences', 'create')
   await setPerm(MEMBER_POLICY, 'absences', 'update', OWN_MEMBER)
   await setPerm(MEMBER_POLICY, 'absences', 'delete', OWN_MEMBER)

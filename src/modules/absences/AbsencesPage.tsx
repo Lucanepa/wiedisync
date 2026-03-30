@@ -176,7 +176,7 @@ export default function AbsencesPage() {
                   absence={a}
                   onEdit={handleEdit}
                   onDelete={setDeletingId}
-                  canEdit={a.member === user?.id || isCoach || effectiveIsCoach}
+                  canEdit={String(a.member) === String(user?.id) || isCoach || effectiveIsCoach}
                 />
               ))}
             </div>
@@ -205,7 +205,7 @@ export default function AbsencesPage() {
                   absence={a}
                   onEdit={handleWeeklyEdit}
                   onDelete={setDeletingId}
-                  canEdit={a.member === user?.id || isCoach || effectiveIsCoach}
+                  canEdit={String(a.member) === String(user?.id) || isCoach || effectiveIsCoach}
                 />
               ))}
             </div>

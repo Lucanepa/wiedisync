@@ -143,7 +143,7 @@ export default function SearchableSelect({
         )}
       </div>
       {open && createPortal(
-        <div ref={dropdownRef} style={dropdownStyle} className="cursor-default rounded-md border bg-popover shadow-md">
+        <div ref={dropdownRef} data-searchable-select style={dropdownStyle} className="cursor-default rounded-md border bg-popover shadow-md">
           <ul className="max-h-60 overflow-auto py-1" role="listbox">
             {filtered.length === 0 && (
               <li className="px-3 py-2 text-sm text-muted-foreground">{t('noResults')}</li>

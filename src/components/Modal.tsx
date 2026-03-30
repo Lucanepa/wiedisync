@@ -39,7 +39,14 @@ export default function Modal({ open, onClose, title, children, size = 'md', hid
       <Dialog open={open} onOpenChange={(o) => !o && !hideClose && onClose()}>
         <DialogContent
           className={cn(sizeClasses[size], 'max-h-[calc(100vh-4rem)] overflow-y-auto')}
-          onInteractOutside={hideClose ? (e) => e.preventDefault() : undefined}
+          onInteractOutside={(e) => {
+            // Don't close modal when clicking on portalled dropdowns (SearchableSelect, etc.)
+            if ((e.target as HTMLElement).closest?.('[data-searchable-select]')) {
+              e.preventDefault()
+              return
+            }
+            if (hideClose) e.preventDefault()
+          }}
           hideClose={hideClose}
         >
           <DialogHeader>

@@ -66,7 +66,7 @@ body: {
           countItems('notifications', { date_created: { _gte: weekAgoStr } }),
           fetchItems<UserLogRecord>('user_logs', { limit: 20,
             sort: ['-date_created'],
-            fields: ['user.id', 'user.name', 'action', 'collection_name', 'created'],
+            fields: ['user.id', 'user.first_name', 'user.last_name', 'action', 'collection_name', 'created'],
           }),
         ])
 

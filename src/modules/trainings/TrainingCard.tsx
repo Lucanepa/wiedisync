@@ -9,7 +9,7 @@ import { formatDate, formatWeekday, formatTime, getDeadlineDate } from '../../ut
 import ParticipationWarningBadge from '../../components/ParticipationWarningBadge'
 import { getTrainingWarnings } from '../../utils/participationWarnings'
 import type { Training, Team, Hall, Member, Participation } from '../../types'
-import { asObj, relId } from '../../utils/relations'
+import { asObj, relId, memberName } from '../../utils/relations'
 
 type TrainingExpanded = Training & {
   team: Team | string
@@ -82,7 +82,7 @@ export default function TrainingCard({ training, participations, myParticipation
       <p className="mt-1.5 text-sm text-gray-600 dark:text-gray-400">
         {formatTime(training.start_time)} – {formatTime(training.end_time)}
         {(hall || training.hall_name) && <span> · {hall?.name || training.hall_name}</span>}
-        {coach && <span> · {coach.name}</span>}
+        {coach && <span> · {memberName(coach)}</span>}
       </p>
 
       {training.cancelled && training.cancel_reason && (

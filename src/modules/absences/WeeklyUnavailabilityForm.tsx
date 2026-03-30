@@ -12,7 +12,7 @@ import SearchableSelect from '@/components/ui/SearchableSelect'
 import { Checkbox } from '@/components/ui/checkbox'
 import AffectsMultiSelect from '@/components/AffectsMultiSelect'
 import type { Absence, Member, MemberTeam } from '../../types'
-import { asObj } from '../../utils/relations'
+import { asObj, memberName } from '../../utils/relations'
 
 const DAY_KEYS = ['dayMon', 'dayTue', 'dayWed', 'dayThu', 'dayFri', 'daySat', 'daySun'] as const
 
@@ -161,7 +161,7 @@ export default function WeeklyUnavailabilityForm({ open, absence, onSave, onCanc
             placeholder={t('common:select')}
             value={memberId}
             onChange={setMemberId}
-            options={visibleMembers.map((m) => ({ value: m.id, label: m.name || `${m.first_name} ${m.last_name}` }))}
+            options={visibleMembers.map((m) => ({ value: m.id, label: memberName(m) || '—' }))}
             error={memberTeamsError ? t('common:errorLoading') : undefined}
           />
         )}

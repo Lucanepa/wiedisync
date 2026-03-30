@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
 import { useTheme } from '../../hooks/useTheme'
 import { Button } from '@/components/ui/button'
 import { FormInput } from '@/components/FormField'
 import { Switch } from '@/components/ui/switch'
-import { kscwApi } from '../../lib/api'
 
 export default function LoginPage() {
   const { login, user } = useAuth()
@@ -35,9 +34,6 @@ export default function LoginPage() {
     if (stored) sessionStorage.removeItem('login-redirect-exists')
     return stored
   })
-  const [forgotSent, setForgotSent] = useState(false)
-  const [forgotLoading, setForgotLoading] = useState(false)
-
   const [rememberMe, setRememberMe] = useState(
     () => localStorage.getItem('wiedisync-remember-me') !== 'false',
   )
@@ -71,25 +67,6 @@ export default function LoginPage() {
     }
   }
 
-  async function handleForgotPassword() {
-    if (!email.trim()) {
-      setError(t('enterEmailFirst'))
-      return
-    }
-    setForgotLoading(true)
-    setError('')
-    try {
-      // Use our localized password reset endpoint
-      await kscwApi('/password-request', { method: 'POST', body: { email: email.trim().toLowerCase() } })
-      setForgotSent(true)
-    } catch {
-      // Always show success to not reveal if email exists
-      setForgotSent(true)
-    } finally {
-      setForgotLoading(false)
-    }
-  }
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 dark:bg-gray-900">
       <div className="w-full max-w-sm">
@@ -109,12 +86,6 @@ export default function LoginPage() {
           {showAccountExists && (
             <div className="mb-4 rounded-lg bg-blue-50 p-3 text-center text-sm text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
               {t('accountAlreadyExists')}
-            </div>
-          )}
-
-          {forgotSent && (
-            <div className="mb-4 rounded-lg bg-green-50 p-3 text-center text-sm text-green-700 dark:bg-green-900/20 dark:text-green-400">
-              {t('passwordResetSent')}
             </div>
           )}
 
@@ -140,14 +111,12 @@ export default function LoginPage() {
                 placeholder={t('passwordPlaceholder')}
               />
               <div className="mt-1 text-right">
-                <button
-                  type="button"
-                  onClick={handleForgotPassword}
-                  disabled={forgotLoading}
+                <Link
+                  to={email.trim() ? `/set-password?email=${encodeURIComponent(email.trim())}` : '/set-password'}
                   className="text-sm text-brand-600 hover:text-brand-500 dark:text-brand-400 dark:hover:text-brand-300"
                 >
-                  {forgotLoading ? '...' : t('forgotPassword')}
-                </button>
+                  {t('forgotPassword')}
+                </Link>
               </div>
             </div>
 

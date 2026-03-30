@@ -6,7 +6,7 @@ All infrastructure details (IPs, URLs, ports, credentials, deploy commands) are 
 ## Tech Stack
 - Frontend: React 19 + TypeScript + Vite + TailwindCSS v4 + shadcn/ui
 - UI Components: shadcn/ui primitives in `src/components/ui/` (lowercase), KSCW wrappers in `src/components/` (PascalCase)
-- Backend: PocketBase (SQLite, REST API, Realtime, Auth)
+- Backend: Directus (Postgres, REST API, Realtime, Auth) on Infomaniak VPS
 - Hosting: Cloudflare Pages (frontend), Infomaniak VPS + Cloudflare Tunnel (backend)
 - Language: German UI (Swiss German context), code in English
 
@@ -46,36 +46,25 @@ positions[3]{ticker,shares,costBasis}:
 - **Mobile-first**: All UI must be designed mobile-first — responsive layout, touch-friendly targets (min 44px), and tested on small screens before desktop
 - **Dark mode contrast**: Always ensure text/bg contrast in both light and dark mode. Use shadcn semantic tokens (`bg-background`, `text-foreground`, `bg-primary`) which auto-switch in dark mode. For non-semantic colors, add explicit `dark:` variants.
 - **Hallenplan virtual slots**: Games, trainings, and GCal hall events are converted to `HallSlot`-shaped objects at display time (via `_virtual` metadata field) and merged with real `hall_slots`. They're never stored in the DB. See `INFRA.md → Hallenplan Virtual Slots` for the full mapping table.
-- **Audit log**: Every PB collection has create/update/delete logging to `pb_data/audit.log` (JSONL). Also logs auth events, password resets, verification emails. Rotated daily (03:30 UTC), 30-day retention. See `INFRA.md → Audit Log`.
-- **Data integrity guards**: `coach_approved_team=true` requires `member_teams` to exist (enforced in `team_permissions.pb.js`). Shell invite creates member+team+claim atomically via `$app.runInTransaction()`. Game sync skips records with no `away_team`.
-- PocketBase hooks use isolated scopes — shared code must use `require(__hooks + "/file.js")` with `module.exports`
-- `pb_hooks/` is gitignored (contains API keys) — deployed separately via SSH/rsync
+- **Data integrity guards**: Postgres triggers enforce validation (slot claims, shell invites, coach approval). Game sync skips records with no `away_team`. See `directus/scripts/001-postgres-triggers.sql`.
 - `.env` is gitignored — Cloudflare Pages env vars handle production config
 - **Troubleshooting**: When you encounter and solve an error, document it in `INFRA.md → Troubleshooting & Gotchas`. Check that section FIRST before debugging — the fix may already be documented.
 
-## PocketBase Admin API
+## Directus Admin
 
-- **Use MCP tools, not curl**: Two PocketBase MCP servers are configured (`pocketbase-kscw-prod`, `pocketbase-kscw-dev`). Authenticate once with `auth_admin` per session, then use `list_collections`, `list_records`, `create_record`, etc. See `INFRA.md → MCP Servers` for details.
-- **Adding columns/fields and creating records**: Can be done automatically via the API (no confirmation needed)
-- **Creating collections**: ALWAYS create via the PB REST API using superuser auth (see INFRA.md for credentials and examples). Never create collections manually in the admin UI. Also update `scripts/setup-collections.ts` for reproducibility.
-- **Deleting columns, collections, or records**: Must be confirmed with the user first, but can be executed by the agent
+- **Admin UI**: `https://directus.kscw.ch/admin` (prod), `https://directus-dev.kscw.ch/admin` (dev)
+- **Schema changes**: Make on dev Directus, then use `npm run schema:pull` / `npm run schema:push` to sync to prod. See `INFRA.md → Schema Sync`.
+- **Extensions**: Custom endpoints in `directus/extensions/kscw-endpoints/`, hooks in `directus/extensions/kscw-hooks/`. Deploy by restarting the Directus container.
+- **Postgres triggers**: Validation logic in `directus/scripts/001-postgres-triggers.sql`. Apply via `psql` on `coolify-db`.
+- **Deleting collections or records**: Must be confirmed with the user first
 
-## SSH to VPS (PocketBase host)
+## SSH to VPS (Directus host)
 
-- **Use `ssh -i ~/.ssh/id_ed25519 ubuntu@100.69.245.37`** to reach the Infomaniak VPS where KSCW PocketBase runs.
-- PocketBase is a systemd service: `sudo systemctl restart pocketbase-kscw`
-- Deploy hooks via `scp` + `sudo cp` to `/opt/pocketbase-kscw/pb_hooks/`
-- See `INFRA.md → SSH to VPS` for common patterns (deploy hooks, read logs, restart PB).
-
-### SQLite Safety Rules (CRITICAL)
-
-PocketBase uses SQLite. Violating these rules **will corrupt the database** (happened 2026-03-16, required restore from backup):
-
-1. **NEVER run `sqlite3` directly against the live DB** while PocketBase is running. Use PB's API/MCP tools or the in-app SQL Editor instead.
-2. **NEVER start a second PocketBase instance** pointing at the same `pb_data` directory. Two writers = guaranteed corruption.
-3. **NEVER bulk-move/delete all hooks** from `pb_hooks/` as a debugging strategy. Instead, rename the suspect file to `.disabled` and restart.
-4. **If you need raw SQL access**, stop PocketBase first (`sudo systemctl stop pocketbase-kscw`), run your queries, then restart. Never have two processes writing to the same SQLite file.
-5. **To debug a crashing hook**, use binary search: rename half the hooks to `.disabled`, restart, check logs. Narrow down the broken file without removing everything.
+- **Use `ssh vps`** (alias in `~/.ssh/config`) to reach the Infomaniak VPS
+- Directus runs as Docker containers: `directus-kscw-prod` (port 8096), `directus-kscw-dev` (port 8095)
+- Restart: `ssh vps "sudo docker restart directus-kscw-prod"`
+- Logs: `ssh vps "sudo docker logs --tail 30 directus-kscw-prod"`
+- See `INFRA.md → Directus Management` for more commands
 
 ## Domains & Hosting
 
@@ -84,8 +73,8 @@ PocketBase uses SQLite. Violating these rules **will corrupt the database** (hap
 - **`wiedisync.pages.dev`** — React app dev/preview, CF Pages project `wiedisync` (`dev` branch) → `directus-dev.kscw.ch` (auto-detected via hostname in `src/lib/api.ts`)
 - **`directus.kscw.ch`** — Directus API production (Coolify container)
 - **`directus-dev.kscw.ch`** — Directus API dev (Coolify container)
-- **`api.kscw.ch`** — PocketBase API production (fallback, kept running) CF Tunnel → VPS `:8091`
-- **`api-dev.kscw.ch`** — PocketBase API dev (fallback) CF Tunnel → VPS `:8092`
+- ~~**`api.kscw.ch`**~~ — PocketBase (decommissioned 2026-03-30, replaced by Directus)
+- ~~**`api-dev.kscw.ch`**~~ — PocketBase dev (decommissioned 2026-03-30)
 - **`kscw-website.pages.dev`** — Public club website (static HTML), CF Pages project `kscw-website`. **Deploy to dev/preview only** until further notice — do NOT push website changes to production.
 - **`kscw-push.lucanepa.workers.dev`** — Web push CF Worker
 
@@ -103,9 +92,7 @@ See `INFRA.md → Domains & Hosting Overview` for full domain map, future migrat
 3. Deploy Directus extensions to dev (Coolify auto-deploy on push)
 4. Test on `wiedisync.pages.dev` against `directus-dev.kscw.ch`
 5. Once confirmed working, merge `dev` → `prod` (with user approval)
-6. Deploy hooks to prod PB and push `prod` to trigger production build
-
-**Dev PB daily sync**: A cron job at 04:00 UTC copies prod `pb_data` to dev PB daily (script: `/opt/pocketbase-kscw-dev/sync-from-prod.sh`, log: `/var/log/pocketbase-kscw-dev-sync.log`). Hooks are NOT synced — they stay as deployed to dev.
+6. Push `prod` to trigger production build
 
 ## Session Workflow
 

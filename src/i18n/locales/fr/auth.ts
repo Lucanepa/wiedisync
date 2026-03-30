@@ -143,6 +143,7 @@ export default {
   settingPassword: 'Définition du mot de passe...',
   passwordSetSuccess: 'Mot de passe défini avec succès !',
   passwordTooShort: 'Le mot de passe doit contenir au moins 8 caractères.',
+  passwordResetSent: 'Vérifiez vos e-mails pour définir votre mot de passe.',
   passwordResetSuccess: 'Votre mot de passe a été modifié avec succès. Vous pouvez maintenant vous connecter.',
 
   // OTP forgot-password flow

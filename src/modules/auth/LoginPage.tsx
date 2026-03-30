@@ -114,7 +114,7 @@ export default function LoginPage() {
 
           {forgotSent && (
             <div className="mb-4 rounded-lg bg-green-50 p-3 text-center text-sm text-green-700 dark:bg-green-900/20 dark:text-green-400">
-              {t('passwordResetSent') || 'Check your email to set your password.'}
+              {t('passwordResetSent')}
             </div>
           )}
 

@@ -145,6 +145,7 @@ export default {
   settingPassword: 'Passwort wird gesetzt...',
   passwordSetSuccess: 'Passwort erfolgreich gesetzt!',
   passwordTooShort: 'Das Passwort muss mindestens 8 Zeichen lang sein.',
+  passwordResetSent: 'Prüfe deine E-Mails, um dein Passwort festzulegen.',
   passwordResetSuccess: 'Dein Passwort wurde erfolgreich geändert. Du kannst dich jetzt anmelden.',
 
   // OTP forgot-password flow

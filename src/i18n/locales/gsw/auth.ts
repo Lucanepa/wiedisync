@@ -143,6 +143,7 @@ export default {
   settingPassword: 'Passwort wird gsetzt...',
   passwordSetSuccess: 'Passwort erfolgriich gsetzt!',
   passwordTooShort: 'S\'Passwort muess mindestens 8 Zeiche lang sii.',
+  passwordResetSent: 'Lueg i dini E-Mails zum dis Passwort feschtlege.',
   passwordResetSuccess: 'Dis Passwort isch erfolgriich gänderet worde. Du chasch dich jetzt aamelde.',
 
   // OTP forgot-password flow

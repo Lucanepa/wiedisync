@@ -6,11 +6,12 @@ import { kscwApi } from '../../lib/api'
 import { FormInput } from '@/components/FormField'
 import { Button } from '@/components/ui/button'
 import { OtpInput } from '@/components/OtpInput'
+import { LANGUAGES } from '@/i18n/languageConfig'
 
 type Phase = 'email' | 'otp' | 'set-password' | 'success'
 
 export default function SetPasswordPage() {
-  const { t } = useTranslation('auth')
+  const { t, i18n } = useTranslation('auth')
   const { theme } = useTheme()
   const [searchParams] = useSearchParams()
   const initialEmail = searchParams.get('email') ?? ''
@@ -41,7 +42,10 @@ export default function SetPasswordPage() {
     try {
       await kscwApi('/verify-email', {
         method: 'POST',
-        body: { email: email.trim().toLowerCase() },
+        body: {
+          email: email.trim().toLowerCase(),
+          lang: LANGUAGES.find((l) => l.code === i18n.language)?.backendValue ?? 'german',
+        },
       })
       setPhase('otp')
     } catch {

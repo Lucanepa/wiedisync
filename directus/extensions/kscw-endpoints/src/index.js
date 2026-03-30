@@ -404,9 +404,52 @@ export default {
     // POST /kscw/verify-email — send 8-digit OTP for pre-registration
     // POST /kscw/verify-email/confirm — verify OTP code
 
+    const OTP_TEMPLATES = {
+      german: {
+        subject: 'WiediSync — Verifizierungscode',
+        title: 'Verifizierungscode',
+        body: 'Verwende den folgenden Code, um deine E-Mail-Adresse zu verifizieren:',
+        validityLabel: 'Gültigkeit',
+        validityText: 'Dieser Code ist 10 Minuten gültig.',
+        plainText: (code) => `Dein Verifizierungscode: ${code}\n\nDieser Code ist 10 Minuten gültig.`,
+      },
+      swiss_german: {
+        subject: 'WiediSync — Verifizierigscode',
+        title: 'Verifizierigscode',
+        body: 'Bruuch de folgend Code, zum dini E-Mail-Adrässe z verifiziere:',
+        validityLabel: 'Gültigkeit',
+        validityText: 'De Code isch 10 Minute gültig.',
+        plainText: (code) => `Din Verifizierigscode: ${code}\n\nDe Code isch 10 Minute gültig.`,
+      },
+      english: {
+        subject: 'WiediSync — Verification Code',
+        title: 'Verification Code',
+        body: 'Use the following code to verify your email address:',
+        validityLabel: 'Validity',
+        validityText: 'This code is valid for 10 minutes.',
+        plainText: (code) => `Your verification code: ${code}\n\nThis code is valid for 10 minutes.`,
+      },
+      french: {
+        subject: 'WiediSync — Code de vérification',
+        title: 'Code de vérification',
+        body: 'Utilisez le code suivant pour vérifier votre adresse e-mail\u00a0:',
+        validityLabel: 'Validité',
+        validityText: 'Ce code est valable 10 minutes.',
+        plainText: (code) => `Votre code de vérification : ${code}\n\nCe code est valable 10 minutes.`,
+      },
+      italian: {
+        subject: 'WiediSync — Codice di verifica',
+        title: 'Codice di verifica',
+        body: 'Usa il seguente codice per verificare il tuo indirizzo e-mail:',
+        validityLabel: 'Validità',
+        validityText: 'Questo codice è valido per 10 minuti.',
+        plainText: (code) => `Il tuo codice di verifica: ${code}\n\nQuesto codice è valido per 10 minuti.`,
+      },
+    }
+
     router.post('/verify-email', async (req, res) => {
       try {
-        const { email: rawEmail } = req.body
+        const { email: rawEmail, lang: clientLang } = req.body
         if (!rawEmail) return res.status(400).json({ error: 'Email required' })
         const email = rawEmail.toLowerCase().trim()
 
@@ -418,6 +461,16 @@ export default {
         if ((recent?.cnt || 0) >= 3) {
           return res.status(429).json({ error: 'Too many requests. Try again later.' })
         }
+
+        // Resolve language: member preference > client hint > german
+        let lang = 'german'
+        const member = await database('members').where('email', email).select('language').first()
+        if (member?.language && OTP_TEMPLATES[member.language]) {
+          lang = member.language
+        } else if (clientLang && OTP_TEMPLATES[clientLang]) {
+          lang = clientLang
+        }
+        const t = OTP_TEMPLATES[lang]
 
         // Generate 8-digit code (cryptographically secure)
         const code = String(10000000 + (crypto.randomBytes(4).readUInt32BE(0) % 90000000))
@@ -431,20 +484,21 @@ export default {
         const mailService = new MailService({ schema, knex: database })
         const { buildEmailLayout, buildAlertBox } = await import('./email-template.js')
         const otpBody =
-          '<div style="font-size:14px;color:#e2e8f0;margin-bottom:16px">Verwende den folgenden Code, um deine E-Mail-Adresse zu verifizieren:</div>' +
+          `<div style="font-size:14px;color:#e2e8f0;margin-bottom:16px">${t.body}</div>` +
           '<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px"><tr><td align="center" style="padding:20px 0">' +
           `<div style="font-size:36px;font-weight:700;color:#FFC832;letter-spacing:6px;font-family:monospace">${code}</div>` +
           '</td></tr></table>' +
-          buildAlertBox('info', 'Gültigkeit', 'Dieser Code ist 10 Minuten gültig.')
+          buildAlertBox('info', t.validityLabel, t.validityText)
         const otpHtml = buildEmailLayout(otpBody, {
-          title: 'Verifizierungscode',
+          title: t.title,
           subtitle: 'WiediSync — KSC Wiedikon',
         })
         await mailService.send({
           to: email,
-          subject: 'WiediSync — Verifizierungscode',
+          from: 'WiediSync <admin@mail.kscw.ch>',
+          subject: t.subject,
           html: otpHtml,
-          text: `Dein Verifizierungscode: ${code}\n\nDieser Code ist 10 Minuten gültig.\n\nKSC Wiedikon\n${FRONTEND_URL.replace('https://', '')}`,
+          text: t.plainText(code) + `\n\nKSC Wiedikon\n${FRONTEND_URL.replace('https://', '')}`,
         })
 
         res.json({ success: true })

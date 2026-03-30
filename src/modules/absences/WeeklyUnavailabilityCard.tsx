@@ -22,7 +22,8 @@ interface WeeklyUnavailabilityCardProps {
 
 export default function WeeklyUnavailabilityCard({ absence, onEdit, onDelete, showMemberName, canEdit }: WeeklyUnavailabilityCardProps) {
   const { t } = useTranslation('absences')
-  const memberName = asObj<Member>(absence.member)?.name
+  const m = asObj<Member>(absence.member)
+  const memberName = m ? `${m.first_name} ${m.last_name}`.trim() : undefined
 
   const affectsLabels: Record<string, string> = {
     trainings: t('affectsTrainings'),

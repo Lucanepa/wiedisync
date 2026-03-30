@@ -11,6 +11,7 @@ import { parseDate, isSameDay, startOfMonth } from '../../utils/dateUtils'
 import DatePicker from '@/components/ui/DatePicker'
 import type { CalendarEntry } from '../../types/calendar'
 import type { Absence, Member } from '../../types'
+import { relId, asObj } from '../../utils/relations'
 
 interface TeamAbsenceViewProps {
   teamIds: string[]
@@ -22,8 +23,8 @@ function absencesToEntries(absences: Absence[], memberMap: Record<string, Member
     const start = parseDate(a.start_date)
     const end = parseDate(a.end_date)
     const isMultiDay = !isSameDay(start, end)
-    const m = memberMap[a.member]
-    const memberName = m?.name || [m?.first_name, m?.last_name].filter(Boolean).join(' ') || ''
+    const m = asObj<Member>(a.member) ?? memberMap[relId(a.member)]
+    const memberName = [m?.first_name, m?.last_name].filter(Boolean).join(' ') || ''
 
     return {
       id: a.id,
@@ -116,14 +117,14 @@ export default function TeamAbsenceView({ teamIds }: TeamAbsenceViewProps) {
         ) : (
           <div className="space-y-2">
             {sortedAbsences.map((a) => {
-              const member = memberMap[a.member]
+              const member = asObj<Member>(a.member) ?? memberMap[relId(a.member)]
               return (
                 <div
                   key={a.id}
                   className="flex flex-wrap items-center gap-3 rounded-lg border bg-white px-4 py-2.5 dark:border-gray-700 dark:bg-gray-800"
                 >
                   <span className="font-medium text-gray-900 dark:text-gray-100">
-                    {member?.name || [member?.first_name, member?.last_name].filter(Boolean).join(' ') || t('common:unknown')}
+                    {[member?.first_name, member?.last_name].filter(Boolean).join(' ') || t('common:unknown')}
                   </span>
                   <StatusBadge status={a.reason} />
                   <span className="text-sm text-gray-600 dark:text-gray-400">

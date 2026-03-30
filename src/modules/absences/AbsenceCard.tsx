@@ -14,7 +14,8 @@ interface AbsenceCardProps {
 
 export default function AbsenceCard({ absence, onEdit, onDelete, showMemberName, canEdit }: AbsenceCardProps) {
   const { t } = useTranslation('absences')
-  const memberName = asObj<Member>(absence.member)?.name
+  const m = asObj<Member>(absence.member)
+  const memberName = m ? `${m.first_name} ${m.last_name}`.trim() : undefined
 
   const affectsLabels: Record<string, string> = {
     trainings: t('affectsTrainings'),

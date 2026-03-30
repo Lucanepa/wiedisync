@@ -2,6 +2,10 @@ name = "kscw-sentry-tunnel"
 main = "src/index.ts"
 compatibility_date = "2024-09-23"
 
+routes = [
+  { pattern = "sentry-tunnel.kscw.ch/*", zone_name = "kscw.ch" }
+]
+
 [vars]
 SENTRY_HOST = "o4511121927766016.ingest.de.sentry.io"
 SENTRY_PROJECT_ID = "4511122247057488"

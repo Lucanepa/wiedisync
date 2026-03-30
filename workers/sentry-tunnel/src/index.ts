@@ -4,7 +4,7 @@
  * Proxies Sentry envelope requests through our own domain
  * so ad blockers don't block them.
  *
- * Frontend sends to: https://kscw-sentry.lucanepa.workers.dev/tunnel
+ * Frontend sends to: https://sentry-tunnel.kscw.ch/tunnel
  * Worker forwards to: https://o4511121927766016.ingest.de.sentry.io
  */
 

@@ -88,7 +88,7 @@ export default function RosterEditor() {
 
   useEffect(() => {
     if (!teamSlug) return
-    fetchItems<Team>('teams', { filter: { name: { _eq: teamSlug } }, limit: 1, fields: ['*', 'coach.members_id', 'captain.members_id', 'team_responsible.members_id'] })
+    fetchItems<Team>('teams', { filter: { name: { _eq: teamSlug } }, limit: 1 })
       .then((items) => setTeam(items[0] ?? null))
       .catch(() => setTeam(null))
   }, [teamSlug])

@@ -15,6 +15,7 @@ import { formatDate, formatTime } from '../../utils/dateHelpers'
 import TasksSection from '../tasks/TasksSection'
 import { isFeatureEnabled } from '../../utils/featureToggles'
 import { Calendar, Clock, MapPin, Users, Check, MessageSquare, UserPlus } from 'lucide-react'
+import { flattenMemberIds } from '../../utils/relations'
 import type { Event, Team, EventSession, Participation } from '../../types'
 
 function asTeams(teams: unknown[] | null | undefined): Team[] {
@@ -176,7 +177,7 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
             {/* Summary + roster button */}
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <ParticipationSummary activityType="event" activityId={event.id} coachMemberIds={teams.flatMap(t => [...(t.coach ?? []), ...(t.captain ?? []), ...(t.team_responsible ?? [])])} />
+                <ParticipationSummary activityType="event" activityId={event.id} coachMemberIds={teams.flatMap(t => [...flattenMemberIds(t.coach), ...flattenMemberIds(t.captain), ...flattenMemberIds(t.team_responsible)])} />
               </div>
               <button
                 onClick={() => setRosterOpen(true)}

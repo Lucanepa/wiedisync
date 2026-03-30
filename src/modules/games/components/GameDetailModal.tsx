@@ -18,7 +18,7 @@ import RefereeExpenseSection from './RefereeExpenseSection'
 import TasksSection from '../../tasks/TasksSection'
 import CarpoolSection from '../../carpool/CarpoolSection'
 import { isFeatureEnabled } from '../../../utils/featureToggles'
-import { asObj } from '../../../utils/relations'
+import { asObj, flattenMemberIds } from '../../../utils/relations'
 
 const GAME_EXPAND = 'kscw_team,hall,scorer_member,scoreboard_member,scorer_scoreboard_member,scorer_duty_team,scoreboard_duty_team,scorer_scoreboard_duty_team,bb_scorer_member,bb_timekeeper_member,bb_24s_official,bb_duty_team,bb_scorer_duty_team,bb_timekeeper_duty_team,bb_24s_duty_team'
 
@@ -347,7 +347,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
               </>
             )}
             <div className="ml-auto border-l pl-3 dark:border-gray-600">
-              <ParticipationSummary activityType="game" activityId={game.id} compact coachMemberIds={[...(kscwTeamObj?.coach ?? []), ...(kscwTeamObj?.captain ?? []), ...(kscwTeamObj?.team_responsible ?? [])]} />
+              <ParticipationSummary activityType="game" activityId={game.id} compact coachMemberIds={[...flattenMemberIds(kscwTeamObj?.coach), ...flattenMemberIds(kscwTeamObj?.captain), ...flattenMemberIds(kscwTeamObj?.team_responsible)]} />
             </div>
             {/* Participation note */}
             {!hasAbsence && effectiveStatus && (

@@ -19,7 +19,7 @@ import { getCurrentSeason } from '../../utils/dateHelpers'
 import type { Team, Member, MemberPosition, MemberTeam, LicenceType, TeamSettings } from '../../types'
 import { Button } from '../../components/ui/button'
 import { fetchItems, updateRecord } from '../../lib/api'
-import { asObj, relId } from '../../utils/relations'
+import { asObj, relId, flattenMemberIds } from '../../utils/relations'
 
 type LeadershipRole = 'coach' | 'captain' | 'team_responsible'
 const ROLES: LeadershipRole[] = ['coach', 'captain', 'team_responsible']
@@ -43,15 +43,8 @@ function displayName(m: Member): string {
   return [m.last_name, m.first_name].filter(Boolean).join(' ') || '—'
 }
 
-/** Normalize M2M role field to string[] — Directus may return a single ID, an array of integers, or expanded objects */
-function asIdArray(val: unknown): string[] {
-  if (!val) return []
-  if (Array.isArray(val)) return val.map((v) => typeof v === 'object' && v !== null && 'members_id' in v ? String((v as { members_id: unknown }).members_id) : String(v))
-  return [String(val)]
-}
-
 function getMemberRoles(memberId: string, team: Team): LeadershipRole[] {
-  return ROLES.filter((r) => asIdArray(team[r]).includes(memberId))
+  return ROLES.filter((r) => flattenMemberIds(team[r]).includes(memberId))
 }
 
 const ROLE_SHORT: Record<LeadershipRole, string> = {
@@ -155,7 +148,7 @@ export default function RosterEditor() {
 
   const toggleRole = useCallback(async (memberId: string, role: LeadershipRole) => {
     if (!team) return
-    const current = asIdArray(team[role])
+    const current = flattenMemberIds(team[role])
     const has = current.includes(memberId)
     const nextIds = has
       ? current.filter((id) => id !== memberId)
@@ -165,7 +158,7 @@ export default function RosterEditor() {
     try {
       await updateRecord('teams', team.id, { [role]: junctionPayload })
       logActivity('update', 'teams', team.id, { [role]: nextIds })
-      // Store expanded format so asIdArray works on next toggle without re-fetch
+      // Store expanded format so flattenMemberIds works on next toggle without re-fetch
       setTeam((prev) => prev ? { ...prev, [role]: junctionPayload } : prev)
     } catch {
       toast.error(t('common:errorSaving'))
@@ -181,7 +174,7 @@ export default function RosterEditor() {
       await updateRecord('members', memberId, { licences: next })
       logActivity('update', 'members', memberId, { licences: next })
       // Update local state
-      const mt = members.find((m) => asObj<Member>(m.member)?.id === memberId)
+      const mt = members.find((m) => String(asObj<Member>(m.member)?.id) === memberId)
       const _memberRef = mt ? asObj<Member>(mt.member) : null
       if (_memberRef) {
         ;(_memberRef as Record<string, unknown>).licences = next
@@ -196,7 +189,7 @@ export default function RosterEditor() {
     try {
       await updateRecord('members', memberId, { number: num })
       logActivity('update', 'members', memberId, { number: num })
-      const mt = members.find((m) => asObj<Member>(m.member)?.id === memberId)
+      const mt = members.find((m) => String(asObj<Member>(m.member)?.id) === memberId)
       const _memberRef = mt ? asObj<Member>(mt.member) : null
       if (_memberRef) {
         ;(_memberRef as Record<string, unknown>).number = num
@@ -211,7 +204,7 @@ export default function RosterEditor() {
     try {
       await updateRecord('members', memberId, { position: positions })
       logActivity('update', 'members', memberId, { position: positions })
-      const mt = members.find((m) => asObj<Member>(m.member)?.id === memberId)
+      const mt = members.find((m) => String(asObj<Member>(m.member)?.id) === memberId)
       const _memberRef = mt ? asObj<Member>(mt.member) : null
       if (_memberRef) {
         ;(_memberRef as Record<string, unknown>).position = positions

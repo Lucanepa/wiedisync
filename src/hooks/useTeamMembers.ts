@@ -106,7 +106,7 @@ export function useMultiTeamMembers(teamIds: string[]) {
       // Deduplicate by member ID — keep the first occurrence
       const seen = new Set<string>()
       const deduped = result.filter(mt => {
-        const memberId = asObj<Member>(mt.member)?.id ?? (mt.member as string)
+        const memberId = String(asObj<Member>(mt.member)?.id ?? mt.member)
         if (seen.has(memberId)) return false
         seen.add(memberId)
         return true

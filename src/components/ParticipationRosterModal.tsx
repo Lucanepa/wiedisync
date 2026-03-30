@@ -7,7 +7,7 @@ import { useCollection } from '../lib/query'
 import { fetchAllItems } from '../lib/api'
 import { getFileUrl } from '../utils/fileUrl'
 import type { Participation, Absence, Member, Team, EventSession } from '../types'
-import { asObj } from '../utils/relations'
+import { asObj, flattenMemberIds } from '../utils/relations'
 import { formatDate, getDeadlineDate, formatRelativeTime, formatDateTimeCompact } from '../utils/dateHelpers'
 
 interface ParticipationRosterModalProps {
@@ -82,9 +82,9 @@ export default function ParticipationRosterModal({
   const leadershipRoles = useMemo(() => {
     const map = new Map<string, string>()
     for (const team of teams) {
-      for (const id of team.coach ?? []) if (!map.has(id)) map.set(id, 'coach')
-      for (const id of team.captain ?? []) if (!map.has(id)) map.set(id, 'captain')
-      for (const id of team.team_responsible ?? []) if (!map.has(id)) map.set(id, 'tr')
+      for (const id of flattenMemberIds(team.coach)) if (!map.has(id)) map.set(id, 'coach')
+      for (const id of flattenMemberIds(team.captain)) if (!map.has(id)) map.set(id, 'captain')
+      for (const id of flattenMemberIds(team.team_responsible)) if (!map.has(id)) map.set(id, 'tr')
     }
     return map
   }, [teams])
@@ -131,6 +131,7 @@ export default function ParticipationRosterModal({
     : members
         .map((mt) => asObj<Member>(mt.member))
         .filter((m): m is Member => m !== null)
+        .map(m => ({ ...m, id: String(m.id) }))
         .sort((a, b) => (a.last_name ?? '').localeCompare(b.last_name ?? ''))
 
   const memberIds = memberList.map((m) => m.id)
@@ -229,8 +230,13 @@ export default function ParticipationRosterModal({
     if (open && activityDate) fetchAbsences()
   }, [open, fetchAbsences, activityDate])
 
-  // Counts — only players (non-staff)
-  const playerParticipations = participations.filter(p => !p.is_staff)
+  // Members who are both players (in memberList) and staff (coach/TR) should be
+  // treated as players — their is_staff participation counts as player participation.
+  const memberIdSet = new Set(memberList.map(m => m.id))
+
+  // Reclassify: if a participation is marked is_staff but the member is in the player list,
+  // treat it as a player participation (not staff-only).
+  const playerParticipations = participations.filter(p => !p.is_staff || memberIdSet.has(p.member))
 
   // For the overall tab on multi-session events, deduplicate by member so summary
   // counts reflect unique people, not slot-count. Use "best status" priority:
@@ -267,9 +273,14 @@ export default function ParticipationRosterModal({
   const notResponded = memberList.length - summaryParticipations.length - absentWithoutParticipation
   const totalGuests = confirmedGuests + tentativeGuests
 
-  // Staff counts
-  const staffParticipations = participations.filter(p => p.is_staff)
-  const staffConfirmed = staffParticipations.filter(p => p.status === 'confirmed').length
+  // Staff counts — only staff who are NOT also players
+  const staffParticipations = participations.filter(p => p.is_staff && !memberIdSet.has(p.member))
+  // "Coach present" = staff-only confirmed + player-coaches confirmed
+  const staffOnlyConfirmed = staffParticipations.filter(p => p.status === 'confirmed').length
+  const playerCoachConfirmed = summaryParticipations.filter(p =>
+    p.status === 'confirmed' && leadershipRoles.has(p.member)
+  ).length
+  const staffConfirmed = staffOnlyConfirmed + playerCoachConfirmed
 
   const deadlinePassed = respondBy
     ? getDeadlineDate(respondBy, activityStartTime) < new Date()

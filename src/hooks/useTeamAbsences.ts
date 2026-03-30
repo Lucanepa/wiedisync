@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { fetchAllItems, fetchItem } from '../lib/api'
 import type { Absence, Member, MemberTeam } from '../types'
-import { asObj } from '../utils/relations'
+import { asObj, flattenMemberIds } from '../utils/relations'
 
 export type AbsenceWithMember = Absence & { member: Member | string }
 
@@ -35,8 +35,8 @@ export function useTeamAbsences(teamIds: string[], startDate: string, endDate: s
       for (const teamId of teamIds) {
         try {
           const team = await fetchItem<Record<string, unknown>>('teams', teamId)
-          const coachIds: string[] = Array.isArray(team.coach) ? team.coach : team.coach ? [team.coach] : []
-          const trIds: string[] = Array.isArray(team.team_responsible) ? team.team_responsible : team.team_responsible ? [team.team_responsible] : []
+          const coachIds = flattenMemberIds(team.coach)
+          const trIds = flattenMemberIds(team.team_responsible)
           for (const id of [...coachIds, ...trIds]) {
             if (id) memberIdSet.add(id)
           }

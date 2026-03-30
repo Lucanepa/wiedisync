@@ -1,4 +1,5 @@
 import type { MemberPosition, Team } from '../types'
+import { flattenMemberIds } from './relations'
 
 const VB_POSITIONS: MemberPosition[] = ['setter', 'outside', 'middle', 'opposite', 'libero', 'guest', 'other']
 const BB_POSITIONS: MemberPosition[] = ['point_guard', 'shooting_guard', 'small_forward', 'power_forward', 'center', 'guest', 'other']
@@ -59,7 +60,7 @@ export function isNonPlayingStaff(
   positions: MemberPosition[],
 ): boolean {
   if (!team) return false
-  const isStaff = team.coach?.includes(memberId) || team.team_responsible?.includes(memberId)
+  const isStaff = flattenMemberIds(team.coach).includes(memberId) || flattenMemberIds(team.team_responsible).includes(memberId)
   if (!isStaff) return false
   const playerPositions = positions.filter((p) => p !== 'other')
   return playerPositions.length === 0

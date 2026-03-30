@@ -43,6 +43,7 @@ export function useAttendanceStats(teamId: string | null, season: string) {
       const members = memberTeams
         .map((mt) => asObj<Member>(mt.member))
         .filter((m): m is Member => m !== null)
+        .map(m => ({ ...m, id: String(m.id) }))
 
       if (members.length === 0) {
         setStats([])

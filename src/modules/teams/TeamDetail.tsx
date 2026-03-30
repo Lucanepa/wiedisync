@@ -424,18 +424,16 @@ export default function TeamDetail() {
           <div className="mt-3 space-y-3">
             {/* Signup requests */}
             {pendingMembers.map((member) => (
-              <div key={member.id} className="flex items-center justify-between rounded-lg bg-white p-3 dark:bg-gray-800">
-                <div className="min-w-0">
-                  <p className="font-medium text-gray-900 dark:text-gray-100">
-                    {member.first_name} {member.last_name}
-                  </p>
-                  <p className="truncate text-sm text-gray-500 dark:text-gray-400">{member.email}</p>
-                </div>
-                <div className="flex shrink-0 gap-2">
+              <div key={member.id} className="rounded-lg bg-white p-3 dark:bg-gray-800">
+                <p className="font-medium text-gray-900 dark:text-gray-100">
+                  {member.first_name} {member.last_name}
+                </p>
+                <p className="truncate text-sm text-gray-500 dark:text-gray-400">{member.email}</p>
+                <div className="mt-2 grid grid-cols-2 gap-2">
                   <Button
                     size="sm"
                     onClick={() => handleApprove(member)}
-                    className="bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
+                    className="w-full bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
                   >
                     {t('approve')}
                   </Button>
@@ -443,6 +441,7 @@ export default function TeamDetail() {
                     variant="destructive"
                     size="sm"
                     onClick={() => handleReject(member.id)}
+                    className="w-full"
                   >
                     {t('reject')}
                   </Button>
@@ -455,31 +454,28 @@ export default function TeamDetail() {
               const selectedLevel = requestGuestLevels[req.id] ?? 0
               return (
                 <div key={req.id} className="rounded-lg bg-white p-3 dark:bg-gray-800">
-                  <div className="flex items-center justify-between">
-                    <div className="min-w-0">
-                      <p className="font-medium text-gray-900 dark:text-gray-100">
-                        {member?.first_name} {member?.last_name}
-                      </p>
-                      <p className="truncate text-sm text-gray-500 dark:text-gray-400">
-                        {member?.email} · {t('teamJoinRequest')}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() => handleApproveRequest(req)}
-                        className="bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
-                      >
-                        {t('approve')}
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleRejectRequest(req.id)}
-                      >
-                        {t('reject')}
-                      </Button>
-                    </div>
+                  <p className="font-medium text-gray-900 dark:text-gray-100">
+                    {member?.first_name} {member?.last_name}
+                  </p>
+                  <p className="truncate text-sm text-gray-500 dark:text-gray-400">
+                    {member?.email} · {t('teamJoinRequest')}
+                  </p>
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => handleApproveRequest(req)}
+                      className="w-full bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
+                    >
+                      {t('approve')}
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleRejectRequest(req.id)}
+                      className="w-full"
+                    >
+                      {t('reject')}
+                    </Button>
                   </div>
                   <div className="mt-2 flex flex-wrap items-center gap-1.5">
                     <span className="text-xs text-gray-500 dark:text-gray-400">{t('joinAs')}</span>

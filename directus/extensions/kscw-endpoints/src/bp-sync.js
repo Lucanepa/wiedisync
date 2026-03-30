@@ -187,7 +187,19 @@ export async function syncBpGames(db, log) {
 
   log.info(`[BP Sync] ${allGames.length} unique games`)
 
-  let created = 0, updated = 0, errors = 0
+  // Batch-fetch all existing BB games into a Map (1 query instead of N)
+  const existingRows = await db('games').where('source', 'basketplan')
+    .select('id', 'game_id', 'date', 'time', 'status', 'home_score', 'away_score',
+      'home_team', 'away_team', 'hall', 'away_hall_json', 'league',
+      'referees_json', 'respond_by', 'kscw_team')
+  const existingMap = new Map(existingRows.map(r => [r.game_id, r]))
+
+  const COMPARE_FIELDS = [
+    'date', 'time', 'status', 'home_score', 'away_score',
+    'home_team', 'away_team', 'hall', 'away_hall_json', 'league',
+  ]
+
+  let created = 0, updated = 0, skipped = 0, errors = 0
 
   for (const g of allGames) {
     const gameId = `bb_${g.gameNumber}`
@@ -220,8 +232,13 @@ export async function syncBpGames(db, log) {
     if (awayHallJson) data.away_hall_json = JSON.stringify(awayHallJson)
 
     try {
-      const existing = await db('games').where('game_id', gameId).first()
+      const existing = existingMap.get(gameId)
       if (existing) {
+        // Skip if nothing meaningful changed — avoids trigger-based notification spam
+        const changed = COMPARE_FIELDS.some(f =>
+          String(data[f] ?? '') !== String(existing[f] ?? '')
+        )
+        if (!changed) { skipped++; continue }
         if (existing.respond_by && existing.date && existing.date !== g.date) {
           const offset = new Date(existing.date).getTime() - new Date(existing.respond_by).getTime()
           data.respond_by = new Date(new Date(g.date).getTime() - offset).toISOString().split('T')[0]
@@ -244,8 +261,8 @@ export async function syncBpGames(db, log) {
     }
   }
 
-  log.info(`[BP Sync] Games: ${created} created, ${updated} updated, ${errors} errors`)
-  return { created, updated, errors, leagueHoldingIds: allLhIds }
+  log.info(`[BP Sync] Games: ${created} created, ${updated} updated, ${skipped} unchanged, ${errors} errors`)
+  return { created, updated, skipped, errors, leagueHoldingIds: allLhIds }
 }
 
 export async function syncBpRankings(db, log, leagueHoldingIds = {}) {

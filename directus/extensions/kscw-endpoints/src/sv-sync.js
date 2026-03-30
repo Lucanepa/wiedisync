@@ -82,7 +82,21 @@ export async function syncSvGames(db, log) {
   const hallRows = await db('halls').whereNot('sv_hall_id', '').select('id', 'sv_hall_id')
   const hallLookup = Object.fromEntries(hallRows.map(h => [h.sv_hall_id, h.id]))
 
-  let created = 0, updated = 0, errors = 0
+  // Batch-fetch all existing SV games into a Map (1 query instead of N)
+  const existingRows = await db('games').where('source', 'swiss_volley')
+    .select('id', 'game_id', 'date', 'time', 'status', 'home_score', 'away_score',
+      'home_team', 'away_team', 'hall', 'away_hall_json', 'league', 'round',
+      'sets_json', 'referees_json', 'respond_by', 'kscw_team')
+  const existingMap = new Map(existingRows.map(r => [r.game_id, r]))
+
+  // Fields to compare — if all match, skip the update
+  const COMPARE_FIELDS = [
+    'date', 'time', 'status', 'home_score', 'away_score',
+    'home_team', 'away_team', 'hall', 'away_hall_json',
+    'league', 'round', 'sets_json', 'referees_json',
+  ]
+
+  let created = 0, updated = 0, skipped = 0, errors = 0
 
   for (const g of kscwGames) {
     try {
@@ -133,8 +147,13 @@ export async function syncSvGames(db, log) {
         source: 'swiss_volley',
       }
 
-      const existing = await db('games').where('game_id', `vb_${gameId}`).first()
+      const existing = existingMap.get(`vb_${gameId}`)
       if (existing) {
+        // Skip if nothing meaningful changed — avoids trigger-based notification spam
+        const changed = COMPARE_FIELDS.some(f =>
+          String(data[f] ?? '') !== String(existing[f] ?? '')
+        )
+        if (!changed) { skipped++; continue }
         // Adjust respond_by if date changed
         if (existing.respond_by && existing.date && existing.date !== parsed.date) {
           const offset = new Date(existing.date).getTime() - new Date(existing.respond_by).getTime()
@@ -163,8 +182,8 @@ export async function syncSvGames(db, log) {
     }
   }
 
-  log.info(`[SV Sync] Games: ${created} created, ${updated} updated, ${errors} errors`)
-  return { created, updated, errors }
+  log.info(`[SV Sync] Games: ${created} created, ${updated} updated, ${skipped} unchanged, ${errors} errors`)
+  return { created, updated, skipped, errors }
 }
 
 export async function syncSvRankings(db, log) {

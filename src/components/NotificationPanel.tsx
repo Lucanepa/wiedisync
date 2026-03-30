@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ClipboardList, Clock, AlertTriangle, Trophy, Bell, ArrowRightLeft, BellRing, BellOff } from 'lucide-react'
@@ -66,6 +66,35 @@ export default function NotificationPanel({
   const startClose = useCallback(() => setClosing(true), [])
   const onAnimEnd = useCallback(() => { if (closing) onClose() }, [closing, onClose])
 
+  // Swipe-down-to-close (mobile)
+  const panelRef = useRef<HTMLDivElement>(null)
+  const [dragY, setDragY] = useState(0)
+  const touchStart = useRef<{ y: number; scrollTop: number } | null>(null)
+
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    const el = panelRef.current
+    if (!el) return
+    touchStart.current = { y: e.touches[0].clientY, scrollTop: el.scrollTop }
+  }, [])
+
+  const onTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!touchStart.current) return
+    const dy = e.touches[0].clientY - touchStart.current.y
+    // Only allow drag-down when scrolled to top
+    if (touchStart.current.scrollTop <= 0 && dy > 0) {
+      setDragY(dy)
+      e.preventDefault()
+    }
+  }, [])
+
+  const onTouchEnd = useCallback(() => {
+    if (dragY > 100) {
+      startClose()
+    }
+    setDragY(0)
+    touchStart.current = null
+  }, [dragY, startClose])
+
   // Prevent body scroll
   useEffect(() => {
     document.body.style.overflow = 'hidden'
@@ -94,9 +123,14 @@ export default function NotificationPanel({
 
       {/* Panel */}
       <div
+        ref={panelRef}
         className={`pb-safe absolute bottom-0 left-0 right-0 max-h-[85vh] overflow-y-auto overscroll-contain rounded-t-2xl bg-white dark:bg-gray-800 lg:bottom-auto lg:left-auto lg:right-4 lg:top-4 lg:max-h-[80vh] lg:w-96 lg:rounded-2xl lg:shadow-2xl ${closing ? 'animate-sheet-down lg:animate-fade-out' : 'animate-sheet-up lg:animate-modal-enter'}`}
+        style={dragY > 0 ? { transform: `translateY(${dragY}px)`, transition: 'none' } : undefined}
         onClick={(e) => e.stopPropagation()}
         onAnimationEnd={onAnimEnd}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
       >
         {/* Handle (mobile) */}
         <div className="sticky top-0 z-10 rounded-t-2xl bg-white dark:bg-gray-800 lg:rounded-t-2xl">

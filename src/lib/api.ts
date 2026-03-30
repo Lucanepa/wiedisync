@@ -58,6 +58,23 @@ export const client = createDirectus(API_URL)
     reconnect: { delay: 3000, retries: 5 },
   }))
 
+// Catch unhandled WebSocket auth errors from the Directus SDK.
+// The SDK throws unhandled rejections when it tries to authenticate/re-authenticate
+// the WebSocket without a valid token (e.g. on /login with stale tokens, or after
+// token expiry). These are harmless — the app works fine without realtime.
+if (typeof window !== 'undefined') {
+  window.addEventListener('unhandledrejection', (e) => {
+    const msg = e.reason?.message ?? ''
+    if (
+      msg.includes('No token for authenticating the websocket') ||
+      msg.includes('No token for re-authenticating the websocket') ||
+      (msg.includes('send') && e.reason?.stack?.includes('@directus/sdk'))
+    ) {
+      e.preventDefault()
+    }
+  })
+}
+
 // ── Auth helpers ────────────────────────────────────────────────────
 
 export async function login(email: string, password: string) {

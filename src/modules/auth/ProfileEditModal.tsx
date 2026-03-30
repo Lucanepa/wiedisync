@@ -22,20 +22,9 @@ import chFlag from '../../assets/flags/ch.svg'
 const flagMap: Record<string, string> = { de: deFlag, gb: gbFlag, fr: frFlag, it: itFlag, ch: chFlag }
 import { CheckIcon } from 'lucide-react'
 import { logActivity } from '../../utils/logActivity'
-import type { LicenceType, MemberPosition } from '../../types'
+import type { MemberPosition } from '../../types'
 import { client, fetchAllItems, kscwApi, updateRecord } from '../../lib/api'
 
-const VB_LICENCES: { key: LicenceType; i18n: string }[] = [
-  { key: 'scorer_vb', i18n: 'licenceScorer' },
-  { key: 'referee_vb', i18n: 'licenceReferee' },
-]
-
-const BB_LICENCES: { key: LicenceType; i18n: string }[] = [
-  { key: 'otr1_bb', i18n: 'licenceOTR1' },
-  { key: 'otr2_bb', i18n: 'licenceOTR2' },
-  { key: 'otn_bb', i18n: 'licenceOTN' },
-  { key: 'referee_bb', i18n: 'licenceRefereeBB' },
-]
 
 interface ProfileEditModalProps {
   open: boolean
@@ -63,7 +52,6 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [selectedPositions, setSelectedPositions] = useState<MemberPosition[]>([])
-  const [selectedLicences, setSelectedLicences] = useState<LicenceType[]>([])
   const [positionDropdownOpen, setPositionDropdownOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -83,7 +71,6 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
       setBirthdateVisibility((user.birthdate_visibility as 'full' | 'year_only' | 'hidden') || 'hidden')
       setLanguage((user.language as BackendLanguage) || 'german')
       setSelectedPositions(coercePositions(user.position))
-      setSelectedLicences((user.licences ?? []) as LicenceType[])
       setPositionDropdownOpen(false)
       setPhotoFile(null)
       setPhotoPreview(null)
@@ -167,7 +154,6 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
         website_visible: websiteVisible,
         language,
         position: selectedPositions.length > 0 ? selectedPositions : ['other'],
-        licences: selectedLicences,
       }
       if (birthdate) {
         payload.birthdate = birthdate
@@ -188,7 +174,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
       } else {
         await updateRecord('members', user.id, payload)
       }
-      logActivity('update', 'members', user.id, { first_name: firstName, last_name: lastName, phone, language, position: selectedPositions, licences: selectedLicences })
+      logActivity('update', 'members', user.id, { first_name: firstName, last_name: lastName, phone, language, position: selectedPositions })
       // Persist language to localStorage
       localStorage.setItem('wiedisync-lang', backendLangToI18n(language))
       await client.refresh()
@@ -400,27 +386,6 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
           </div>
         </FormField>
 
-        {/* Licences (toggle switches) */}
-        <FormField label={t('licences')}>
-          <div className="space-y-3">
-            {(primarySport === 'basketball' ? BB_LICENCES : primarySport === 'volleyball' ? VB_LICENCES : [...VB_LICENCES, ...BB_LICENCES]).map((lic) => {
-              const active = selectedLicences.includes(lic.key)
-              return (
-                <label key={lic.key} className="flex items-center gap-3 cursor-pointer">
-                  <Switch
-                    checked={active}
-                    onCheckedChange={() => {
-                      setSelectedLicences((prev) =>
-                        active ? prev.filter((l) => l !== lic.key) : [...prev, lic.key],
-                      )
-                    }}
-                  />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">{tt(lic.i18n)}</span>
-                </label>
-              )
-            })}
-          </div>
-        </FormField>
 
         {/* Privacy — hidden in onboarding */}
         {!onboarding && (

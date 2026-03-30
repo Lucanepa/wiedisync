@@ -658,16 +658,20 @@ export default {
         const { UsersService } = services
         const adminUsersService = new UsersService({ schema, knex: database, accountability: { admin: true } })
 
-        // Create Directus user
+        // Look up the "Member" role
+        const memberRole = await database('directus_roles').where('name', 'Member').first()
+        if (!memberRole) throw new Error('Member role not found in directus_roles')
+
+        // Create Directus user with Member role
         const userId = await adminUsersService.createOne({
           email, password, first_name, last_name,
+          role: memberRole.id,
         })
 
         // Create member record linked to user
         const [member] = await database('members').insert({
           user: userId,
           first_name, last_name, email,
-          name: `${first_name} ${last_name}`,
           role: JSON.stringify(['user']),
           kscw_membership_active: true,
           coach_approved_team: false,

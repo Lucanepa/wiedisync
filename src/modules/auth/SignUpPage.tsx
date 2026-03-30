@@ -106,13 +106,13 @@ export default function SignUpPage() {
         if (res.first_name) setFirstName(res.first_name)
         if (res.last_name) setLastName(res.last_name)
         if (res.existing_teams) setExistingTeams(res.existing_teams.map(t => ({ ...t, id: String(t.id) })))
-        await kscwApi('/verify-email', { method: 'POST', body: { email: email.trim().toLowerCase() } })
+        await kscwApi('/verify-email', { method: 'POST', body: { email: email.trim().toLowerCase(), lang: selectedLanguage } })
         setStep('otp-claim')
       } else {
         // New member — send verification email OTP
         await kscwApi('/verify-email', {
           method: 'POST',
-          body: { email: email.trim().toLowerCase() },
+          body: { email: email.trim().toLowerCase(), lang: selectedLanguage },
         })
         setStep('otp-verify')
       }
@@ -145,7 +145,7 @@ export default function SignUpPage() {
     try {
       await kscwApi('/verify-email', {
         method: 'POST',
-        body: { email: email.trim().toLowerCase() },
+        body: { email: email.trim().toLowerCase(), lang: selectedLanguage },
       })
     } catch {
       setOtpError(t('registrationFailed'))
@@ -171,7 +171,7 @@ export default function SignUpPage() {
   async function handleOtpClaimResend() {
     setOtpError('')
     try {
-      await kscwApi('/verify-email', { method: 'POST', body: { email: email.trim().toLowerCase() } })
+      await kscwApi('/verify-email', { method: 'POST', body: { email: email.trim().toLowerCase(), lang: selectedLanguage } })
     } catch {
       setOtpError(t('registrationFailed'))
     }

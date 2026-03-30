@@ -2,9 +2,9 @@ import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { MapPin } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { usePhotonSearch } from '@/hooks/usePhotonSearch'
+import { useGooglePlacesSearch } from '@/hooks/useGooglePlacesSearch'
 import { useHallSearch } from '@/hooks/useHallSearch'
-import type { LocationResult, PhotonFeature } from '@/types'
+import type { LocationResult } from '@/types'
 
 interface LocationComboboxProps {
   value: string
@@ -13,18 +13,6 @@ interface LocationComboboxProps {
   placeholder?: string
   disabled?: boolean
   className?: string
-}
-
-function photonToLocationResult(f: PhotonFeature): LocationResult {
-  const p = f.properties
-  return {
-    name: p.name || '',
-    address: `${p.street || ''} ${p.housenumber || ''}`.trim(),
-    city: p.city || '',
-    lat: f.geometry.coordinates[1],
-    lon: f.geometry.coordinates[0],
-    source: 'photon',
-  }
 }
 
 export default function LocationCombobox({
@@ -42,10 +30,9 @@ export default function LocationCombobox({
   const inputRef = useRef<HTMLInputElement>(null)
 
   const { results: hallResults } = useHallSearch(search)
-  const { results: photonResults, isLoading: photonLoading } = usePhotonSearch(search)
-  const osmResults = photonResults.map(photonToLocationResult)
+  const { results: placesResults, isLoading: placesLoading } = useGooglePlacesSearch(search)
 
-  const hasResults = hallResults.length > 0 || osmResults.length > 0 || photonLoading
+  const hasResults = hallResults.length > 0 || placesResults.length > 0 || placesLoading
 
   // Close on outside click
   useEffect(() => {
@@ -124,15 +111,15 @@ export default function LocationCombobox({
               </div>
             )}
 
-            {(osmResults.length > 0 || photonLoading) && (
+            {(placesResults.length > 0 || placesLoading) && (
               <div>
                 <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">{t('searchResults')}</div>
-                {photonLoading && (
+                {placesLoading && (
                   <div className="px-2 py-1.5 text-xs text-muted-foreground">{t('searching')}</div>
                 )}
-                {osmResults.map((r, i) => (
+                {placesResults.map((r, i) => (
                   <button
-                    key={`osm-${i}`}
+                    key={`places-${i}`}
                     type="button"
                     onClick={() => handleSelect(r)}
                     className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"

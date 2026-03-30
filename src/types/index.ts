@@ -152,7 +152,7 @@ export interface LocationResult {
   city: string
   lat: number | null
   lon: number | null
-  source: 'directus' | 'photon'
+  source: 'directus' | 'photon' | 'google'
 }
 
 export interface SlotClaim extends BaseRecord {

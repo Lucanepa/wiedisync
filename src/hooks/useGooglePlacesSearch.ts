@@ -1,0 +1,118 @@
+import { useState, useEffect, useRef } from 'react'
+import type { LocationResult } from '../types'
+
+const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''
+
+export function useGooglePlacesSearch(query: string, options?: { enabled?: boolean }) {
+  const [results, setResults] = useState<LocationResult[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const abortRef = useRef<AbortController | null>(null)
+  const sessionTokenRef = useRef(crypto.randomUUID())
+  const enabled = options?.enabled ?? true
+
+  useEffect(() => {
+    if (!enabled || !API_KEY || query.length < 3) {
+      setResults([])
+      setIsLoading(false)
+      return
+    }
+
+    setIsLoading(true)
+
+    const timer = setTimeout(async () => {
+      abortRef.current?.abort()
+      const controller = new AbortController()
+      abortRef.current = controller
+
+      try {
+        const res = await fetch('https://places.googleapis.com/v1/places:autocomplete', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Goog-Api-Key': API_KEY,
+          },
+          body: JSON.stringify({
+            input: query,
+            locationBias: {
+              circle: { center: { latitude: 47.37, longitude: 8.55 }, radius: 50000 },
+            },
+            languageCode: 'de',
+            sessionToken: sessionTokenRef.current,
+          }),
+          signal: controller.signal,
+        })
+
+        if (!res.ok) throw new Error(`Places API: ${res.status}`)
+        const data = await res.json()
+        const suggestions = data.suggestions ?? []
+
+        // Fetch place details for each suggestion to get coordinates
+        const mapped: LocationResult[] = await Promise.all(
+          suggestions.slice(0, 5).map(async (s: any) => {
+            const place = s.placePrediction
+            if (!place) return null
+
+            try {
+              const detailRes = await fetch(
+                `https://places.googleapis.com/v1/${place.placeId ? `places/${place.placeId}` : place.place}?languageCode=de&sessionToken=${sessionTokenRef.current}`,
+                {
+                  headers: {
+                    'X-Goog-Api-Key': API_KEY,
+                    'X-Goog-FieldMask': 'displayName,formattedAddress,location,addressComponents',
+                  },
+                  signal: controller.signal,
+                },
+              )
+
+              if (!detailRes.ok) return fallbackResult(place)
+              const detail = await detailRes.json()
+
+              const city = detail.addressComponents?.find(
+                (c: any) => c.types?.includes('locality'),
+              )?.longText || ''
+
+              return {
+                name: detail.displayName?.text || place.structuredFormat?.mainText?.text || '',
+                address: detail.formattedAddress || '',
+                city,
+                lat: detail.location?.latitude ?? null,
+                lon: detail.location?.longitude ?? null,
+                source: 'google' as const,
+              }
+            } catch {
+              return fallbackResult(place)
+            }
+          }),
+        )
+
+        // Reset session token after Place Details call (session ends)
+        sessionTokenRef.current = crypto.randomUUID()
+
+        setResults(mapped.filter((r): r is LocationResult => r !== null))
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return
+        setResults([])
+      } finally {
+        if (!controller.signal.aborted) setIsLoading(false)
+      }
+    }, 400)
+
+    return () => {
+      clearTimeout(timer)
+      abortRef.current?.abort()
+    }
+  }, [query, enabled])
+
+  return { results, isLoading }
+}
+
+function fallbackResult(place: any): LocationResult {
+  return {
+    name: place.structuredFormat?.mainText?.text || place.text?.text || '',
+    address: place.structuredFormat?.secondaryText?.text || '',
+    city: '',
+    lat: null,
+    lon: null,
+    source: 'google',
+  }
+}

@@ -51,11 +51,12 @@ const TypeIcon = ({ type, sport, className = '' }: { type: string; sport?: 'voll
     )
   }
   if (type === 'absence') {
-    // Absence — person-off icon
+    // Absence — calendar-off icon
     return (
-      <svg className={`inline-block h-2.5 w-2.5 shrink-0 ${className}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-        <circle cx="12" cy="8" r="4" />
-        <path strokeLinecap="round" d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2" />
+      <svg className={`inline-block h-2.5 w-2.5 shrink-0 ${className}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2" />
+        <path d="M16 2v4M8 2v4M3 10h18" />
+        <path d="m9 15 6-6M9 9l6 6" />
       </svg>
     )
   }
@@ -435,42 +436,61 @@ export default function MonthGrid({
                 })}
               </div>
 
-              {/* Absence bar overlay — single consolidated row */}
-              {hasAnyAbsence && (
-                <div className="pointer-events-none absolute inset-x-0 top-[28px] z-10 grid grid-cols-7" style={{ height: BAR_H }}>
-                  {absencesByCol.map((colAbsences, ci) => {
-                    if (colAbsences.length === 0) return null
-                    const c = barColors.absence
-                    const count = colAbsences.length
-                    const label = count === 1
-                      ? colAbsences[0].title.replace(/^Absence · /, '')
-                      : `${count} absent`
-                    return (
-                      <button
-                        key={ci}
-                        type="button"
-                        className={`pointer-events-auto mx-0.5 flex items-center gap-0.5 truncate rounded px-1 text-[10px] font-medium leading-none transition-opacity hover:opacity-80 lg:text-xs ${c.bg} ${c.text} ${c.darkBg} ${c.darkText}`}
-                        style={{
-                          gridColumn: ci + 1,
-                          height: BAR_H - 2,
-                          marginTop: 1,
-                        }}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          if (count === 1) {
-                            onEntryClick?.(colAbsences[0])
-                          } else {
-                            onOverflowClick?.(colAbsences, week[ci])
-                          }
-                        }}
-                      >
-                        <TypeIcon type="absence" className="text-current" />
-                        <span className="truncate">{label}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
+              {/* Absence bar overlay — merged spans that break only when count changes */}
+              {hasAnyAbsence && (() => {
+                // Build merged segments: adjacent columns with same absence count + same IDs → one span
+                const segments: { startCol: number; span: number; count: number; absences: CalendarEntry[]; allAbsences: CalendarEntry[] }[] = []
+                for (let ci = 0; ci < 7; ci++) {
+                  const col = absencesByCol[ci]
+                  if (col.length === 0) continue
+                  const ids = col.map((a) => a.id).sort().join(',')
+                  const prev = segments[segments.length - 1]
+                  if (prev && prev.startCol + prev.span === ci && prev.absences.map((a) => a.id).sort().join(',') === ids) {
+                    prev.span++
+                    // Accumulate all unique absences across the span
+                    for (const a of col) {
+                      if (!prev.allAbsences.find((e) => e.id === a.id)) prev.allAbsences.push(a)
+                    }
+                  } else {
+                    segments.push({ startCol: ci, span: 1, count: col.length, absences: col, allAbsences: [...col] })
+                  }
+                }
+                const c = barColors.absence
+                return (
+                  <div className="pointer-events-none absolute inset-x-0 top-[28px] z-10 grid grid-cols-7" style={{ height: BAR_H }}>
+                    {segments.map((seg) => {
+                      const label = seg.count === 1
+                        ? seg.absences[0].title.replace(/^Absence · /, '')
+                        : `${seg.count} absent`
+                      return (
+                        <button
+                          key={seg.startCol}
+                          type="button"
+                          className={`pointer-events-auto flex items-center gap-0.5 truncate rounded px-1 text-[10px] font-medium leading-none transition-opacity hover:opacity-80 lg:text-xs ${c.bg} ${c.text} ${c.darkBg} ${c.darkText}`}
+                          style={{
+                            gridColumn: `${seg.startCol + 1} / span ${seg.span}`,
+                            height: BAR_H - 2,
+                            marginTop: 1,
+                            marginLeft: 2,
+                            marginRight: 2,
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if (seg.count === 1) {
+                              onEntryClick?.(seg.absences[0])
+                            } else {
+                              onOverflowClick?.(seg.allAbsences, week[seg.startCol])
+                            }
+                          }}
+                        >
+                          <TypeIcon type="absence" className="text-current" />
+                          <span className="truncate">{label}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )
+              })()}
             </div>
           )
         })}

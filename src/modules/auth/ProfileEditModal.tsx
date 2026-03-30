@@ -20,7 +20,7 @@ import itFlag from '../../assets/flags/it.svg'
 import chFlag from '../../assets/flags/ch.svg'
 
 const flagMap: Record<string, string> = { de: deFlag, gb: gbFlag, fr: frFlag, it: itFlag, ch: chFlag }
-import { Checkbox } from '@/components/ui/checkbox'
+import { CheckIcon } from 'lucide-react'
 import { logActivity } from '../../utils/logActivity'
 import type { LicenceType, MemberPosition } from '../../types'
 import { client, fetchAllItems, kscwApi, updateRecord } from '../../lib/api'
@@ -388,7 +388,9 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
                         }}
                         className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
                       >
-                        <Checkbox checked={active} tabIndex={-1} className="pointer-events-none" />
+                        <span className={`flex size-4 shrink-0 items-center justify-center rounded-[4px] border shadow-xs ${active ? 'border-primary bg-primary text-primary-foreground' : 'border-input bg-background dark:bg-input/30'}`}>
+                          {active && <CheckIcon className="size-3.5" />}
+                        </span>
                         {getPositionI18nKey(p) ? tt(getPositionI18nKey(p)!) : p}
                       </button>
                     )

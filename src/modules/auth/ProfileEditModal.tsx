@@ -160,7 +160,6 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
       const payload: Record<string, unknown> = {
         first_name: firstName,
         last_name: lastName,
-        email,
         phone,
         number,
         hide_phone: hidePhone,
@@ -189,7 +188,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
       } else {
         await updateRecord('members', user.id, payload)
       }
-      logActivity('update', 'members', user.id, { first_name: firstName, last_name: lastName, email, phone, language, position: selectedPositions, licences: selectedLicences })
+      logActivity('update', 'members', user.id, { first_name: firstName, last_name: lastName, phone, language, position: selectedPositions, licences: selectedLicences })
       // Persist language to localStorage
       localStorage.setItem('wiedisync-lang', backendLangToI18n(language))
       await client.refresh()
@@ -320,11 +319,11 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
         </div>
 
         <FormInput
-          label={`${t('email')}${onboarding ? ' *' : ''}`}
+          label={t('email')}
           type="email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
+          readOnly
+          className="bg-gray-50 dark:bg-gray-600"
         />
 
         <FormInput

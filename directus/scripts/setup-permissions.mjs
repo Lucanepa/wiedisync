@@ -210,7 +210,7 @@ const MEMBER_VISIBLE_FIELDS = [
 const MEMBER_EDITABLE_FIELDS = [
   'first_name', 'last_name', 'phone', 'birthdate',
   'birthdate_visibility', 'hide_phone', 'photo', 'language',
-  'position', 'number',
+  'position', 'number', 'licences', 'website_visible',
 ]
 
 /** Public fields for teams */

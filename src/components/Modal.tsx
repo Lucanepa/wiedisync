@@ -1,4 +1,5 @@
 import { type ReactNode } from 'react'
+import { cn } from '@/lib/utils'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import {
   Dialog,
@@ -37,7 +38,7 @@ export default function Modal({ open, onClose, title, children, size = 'md', hid
     return (
       <Dialog open={open} onOpenChange={(o) => !o && !hideClose && onClose()}>
         <DialogContent
-          className={sizeClasses[size]}
+          className={cn(sizeClasses[size], 'max-h-[calc(100vh-4rem)] overflow-y-auto')}
           onInteractOutside={hideClose ? (e) => e.preventDefault() : undefined}
           hideClose={hideClose}
         >
@@ -45,9 +46,7 @@ export default function Modal({ open, onClose, title, children, size = 'md', hid
             <DialogTitle>{title}</DialogTitle>
             <DialogDescription className="sr-only">{title}</DialogDescription>
           </DialogHeader>
-          <div className="max-h-[calc(100vh-10rem)] overflow-y-auto">
-            {children}
-          </div>
+          {children}
         </DialogContent>
       </Dialog>
     )
@@ -55,12 +54,12 @@ export default function Modal({ open, onClose, title, children, size = 'md', hid
 
   return (
     <Drawer open={open} onOpenChange={(o) => !o && !hideClose && onClose()}>
-      <DrawerContent>
+      <DrawerContent className="max-h-[calc(100dvh-4rem)] overflow-y-auto overscroll-contain">
         <DrawerHeader>
           <DrawerTitle>{title}</DrawerTitle>
           <DrawerDescription className="sr-only">{title}</DrawerDescription>
         </DrawerHeader>
-        <div className="max-h-[calc(100dvh-6rem)] overflow-y-auto overscroll-contain px-4 pb-4">
+        <div className="px-4 pb-4">
           {children}
         </div>
       </DrawerContent>

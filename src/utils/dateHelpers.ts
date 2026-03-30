@@ -62,6 +62,11 @@ export function toISODate(date: Date): string {
   return `${y}-${m}-${d}`
 }
 
+/** Today's date as YYYY-MM-DD in local timezone (NOT UTC). */
+export function todayLocal(): string {
+  return toISODate(new Date())
+}
+
 /** Normalize a date/datetime string to API format "YYYY-MM-DD HH:MM:SS".
  *  Handles datetime-local values ("2026-08-26T18:00"), existing API datetimes, and date-only strings. */
 export function toApiDatetime(d: string): string {

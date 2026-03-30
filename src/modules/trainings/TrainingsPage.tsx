@@ -5,6 +5,7 @@ import { useAdminMode } from '../../hooks/useAdminMode'
 import { useCollection } from '../../lib/query'
 import { useRealtime } from '../../hooks/useRealtime'
 import { useMutation } from '../../hooks/useMutation'
+import { todayLocal } from '../../utils/dateHelpers'
 import TeamFilter from '../../components/TeamFilter'
 import EmptyState from '../../components/EmptyState'
 import ConfirmDialog from '@/components/ConfirmDialog'
@@ -44,7 +45,7 @@ export default function TrainingsPage() {
   const [autoSelected, setAutoSelected] = useState(false)
   const [showPast, setShowPast] = useState(false)
 
-  const today = useMemo(() => new Date().toISOString().split('T')[0], [])
+  const today = useMemo(() => todayLocal(), [])
 
   // Auto-select user's first team on initial load
   useEffect(() => {

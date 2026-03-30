@@ -7,6 +7,7 @@ import { useRealtime } from '../../hooks/useRealtime'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import { logActivity } from '../../utils/logActivity'
+import { todayLocal } from '../../utils/dateHelpers'
 import { Button } from '@/components/ui/button'
 import { FormInput } from '@/components/FormField'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -53,7 +54,7 @@ export default function ScorerPage() {
   const canEdit = effectiveIsAdmin && hasAdminAccessToSport(sportTab)
   const showContact = effectiveIsAdmin && hasAdminAccessToSport(sportTab)
 
-  const today = useMemo(() => new Date().toISOString().split('T')[0], [])
+  const today = useMemo(() => todayLocal(), [])
 
   const {
     data: upcomingGamesRaw,

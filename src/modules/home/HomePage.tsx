@@ -5,7 +5,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useCollection } from '../../lib/query'
 import { useNotifications } from '../../hooks/useNotifications'
 import { useSportPreference } from '../../hooks/useSportPreference'
-import { formatDate, formatDateCompact, formatTime, formatWeekday } from '../../utils/dateHelpers'
+import { formatDate, formatDateCompact, formatTime, formatWeekday, todayLocal } from '../../utils/dateHelpers'
 import { asObj, relId } from '../../utils/relations'
 import TeamChip from '../../components/TeamChip'
 import StatusBadge from '../../components/StatusBadge'
@@ -56,7 +56,7 @@ export default function HomePage() {
   const { notifications: allNotifs, unreadCount, markAsRead, markAllAsRead } = useNotifications()
   const latestNews = allNotifs.slice(0, 3)
 
-  const today = useMemo(() => new Date().toISOString().split('T')[0], [])
+  const today = useMemo(() => todayLocal(), [])
 
   // Sport filter for Directus queries (filter via kscw_team relation)
   const sportFilter = useMemo((): Record<string, unknown> | null => {

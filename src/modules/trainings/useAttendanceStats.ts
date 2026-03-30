@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { getSeasonDateRange } from '../../utils/dateHelpers'
+import { getSeasonDateRange, todayLocal } from '../../utils/dateHelpers'
 import type { Training, Participation, Absence, Member, MemberTeam } from '../../types'
 import { fetchAllItems } from '../../lib/api'
 import { asObj, memberName } from '../../utils/relations'
@@ -92,7 +92,7 @@ export function useAttendanceStats(teamId: string | null, season: string) {
         }
       }
 
-      const today = new Date().toISOString().split('T')[0]
+      const today = todayLocal()
 
       // For each training, determine each member's status
       for (const training of trainings) {

@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import type { Game, Ranking } from '../../types'
 import { useCollection } from '../../lib/query'
 import { teamIds } from '../../utils/teamColors'
+import { todayLocal } from '../../utils/dateHelpers'
 import GameTabs from './components/GameTabs'
 import type { TabKey } from './components/GameTabs'
 import GameCard from './components/GameCard'
@@ -21,7 +22,7 @@ export default function EmbedGamesPage() {
   const teamParam = (searchParams.get('team') ?? '').toUpperCase()
   const [activeTab, setActiveTab] = useState<TabKey>('upcoming')
 
-  const today = useMemo(() => new Date().toISOString().split('T')[0], [])
+  const today = useMemo(() => todayLocal(), [])
   const teamFilter = buildTeamFilter(teamParam)
 
   const gameQuery = useMemo(() => {

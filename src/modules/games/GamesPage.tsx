@@ -7,6 +7,7 @@ import type { Game, Ranking, Team, Participation, ParticipationWithMember } from
 import { useCollection } from '../../lib/query'
 import { useRealtime } from '../../hooks/useRealtime'
 import { teamIds } from '../../utils/teamColors'
+import { todayLocal } from '../../utils/dateHelpers'
 import SportToggle from '../../components/SportToggle'
 import TeamFilterBar from './components/TeamFilterBar'
 import GameTabs from './components/GameTabs'
@@ -66,7 +67,7 @@ export default function GamesPage() {
     return map
   }, [allTeams])
 
-  const today = useMemo(() => new Date().toISOString().split('T')[0], [])
+  const today = useMemo(() => todayLocal(), [])
   // For non-admins, always scope to their teams (even if filter cleared)
   const effectiveTeams = selectedTeams.length > 0
     ? selectedTeams

@@ -7,7 +7,7 @@ import { useAdminMode } from '../../hooks/useAdminMode'
 import { useMutation } from '../../hooks/useMutation'
 import { useCollection } from '../../lib/query'
 import { logActivity } from '../../utils/logActivity'
-import { parseRespondByTime } from '../../utils/dateHelpers'
+import { parseRespondByTime, todayLocal } from '../../utils/dateHelpers'
 import { Button } from '@/components/ui/button'
 import { FormInput, FormTextarea, FormField } from '@/components/FormField'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -104,9 +104,8 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
       fields: ['*', 'teams.teams_id'],
     }).then(items => setTeamSlots(flattenM2MTeams(items))).catch(() => setTeamSlots([]))
 
-    const today = new Date().toISOString().split('T')[0]
     fetchAllItems<SlotClaim>('slot_claims', {
-      filter: { _and: [{ claimed_by_team: { _eq: teamId } }, { status: { _eq: 'active' } }, { date: { _gte: today } }] },
+      filter: { _and: [{ claimed_by_team: { _eq: teamId } }, { status: { _eq: 'active' } }, { date: { _gte: todayLocal() } }] },
       sort: ['date,start_time'],
     }).then(setTeamClaims).catch(() => setTeamClaims([]))
   }, [teamId])
@@ -340,7 +339,7 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
     }
 
     // Find sibling trainings with same hall_slot, excluding the one we already updated
-    const filter = { _and: [{ hall_slot: { _eq: source.hall_slot } }, { id: { _neq: source.id } }, { date: { _gte: new Date().toISOString().split('T')[0] } }] }
+    const filter = { _and: [{ hall_slot: { _eq: source.hall_slot } }, { id: { _neq: source.id } }, { date: { _gte: todayLocal() } }] }
 
     if (editScope === 'same_day') {
       // Same day of week: compute from source training date

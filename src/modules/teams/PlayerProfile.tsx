@@ -11,7 +11,7 @@ import EmptyState from '../../components/EmptyState'
 import { getFileUrl } from '../../utils/fileUrl'
 import { coercePositions, getPositionI18nKey } from '../../utils/memberPositions'
 import { asObj, relId, memberName } from '../../utils/relations'
-import { formatDate, getCurrentSeason, getSeasonDateRange } from '../../utils/dateHelpers'
+import { formatDate, getCurrentSeason, getSeasonDateRange, todayLocal } from '../../utils/dateHelpers'
 import ImageLightbox from '../../components/ImageLightbox'
 import type { Member, MemberTeam, Team, Absence, Participation } from '../../types'
 import { fetchAllItems, fetchItem } from '../../lib/api'
@@ -39,7 +39,7 @@ export default function PlayerProfile() {
   const { start, end } = getSeasonDateRange(season)
 
   const { data: absencesRaw } = useCollection<Absence>('absences', {
-    filter: memberId ? { _and: [{ member: { _eq: memberId } }, { end_date: { _gte: new Date().toISOString().split('T')[0] } }] } : { id: { _eq: -1 } },
+    filter: memberId ? { _and: [{ member: { _eq: memberId } }, { end_date: { _gte: todayLocal() } }] } : { id: { _eq: -1 } },
     sort: ['start_date'],
     limit: 20,
   })

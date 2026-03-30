@@ -4,6 +4,7 @@ import { PartyPopper } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { useCollection } from '../../lib/query'
 import { useMutation } from '../../hooks/useMutation'
+import { todayLocal } from '../../utils/dateHelpers'
 import { useRealtime } from '../../hooks/useRealtime'
 import EmptyState from '../../components/EmptyState'
 import ConfirmDialog from '@/components/ConfirmDialog'
@@ -45,7 +46,7 @@ export default function EventsPage() {
   const [showPast, setShowPast] = useState(false)
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null)
 
-  const today = useMemo(() => new Date().toISOString().split('T')[0], [])
+  const today = useMemo(() => todayLocal(), [])
 
   // Show events for selected team, or all user teams + club-wide events
   const eventFilter = useMemo((): Record<string, unknown> => {

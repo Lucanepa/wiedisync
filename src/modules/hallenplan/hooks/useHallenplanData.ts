@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useCollection } from '../../../lib/query'
-import { wrapFkAsArray } from '../../../lib/api'
+import { flattenM2MTeams } from '../../../lib/api'
 import type { Hall, HallSlot, HallClosure, Team, Game, Training, HallEvent, SlotClaim } from '../../../types'
 import {
   gameToVirtualSlots,
@@ -48,8 +48,9 @@ export function useHallenplanData(
     filter: { _and: slotFilterConditions },
     all: true,
     sort: ['day_of_week', 'start_time'],
+    fields: ['*', 'teams.teams_id'],
   })
-  const rawSlots = wrapFkAsArray(rawSlotsData ?? [], 'team')
+  const rawSlots = flattenM2MTeams(rawSlotsData ?? [])
 
   const closureDateConditions: Record<string, unknown>[] = [
     { start_date: { _lte: sundayStr } },

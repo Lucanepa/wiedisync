@@ -41,12 +41,13 @@ export function useHalls() {
   })
 }
 
-/** All hall slots. */
+/** All hall slots (with M2M teams resolved). */
 export function useHallSlots(filter?: Record<string, unknown>) {
   return useCollection<HallSlot>('hall_slots', {
     filter,
     all: true,
     staleTime: 60_000,
+    fields: ['*', 'teams.teams_id'],
   })
 }
 

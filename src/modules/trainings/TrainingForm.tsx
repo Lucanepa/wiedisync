@@ -15,7 +15,7 @@ import DatePicker from '@/components/ui/DatePicker'
 import { Switch } from '@/components/ui/switch'
 import type { Training, Team, Hall, HallSlot, SlotClaim, TeamSettings } from '../../types'
 import type { RecurringEditScope } from './RecurringEditDialog'
-import { fetchAllItems, fetchItem, updateRecord } from '../../lib/api'
+import { fetchAllItems, fetchItem, updateRecord, flattenM2MTeams } from '../../lib/api'
 import { asObj } from '../../utils/relations'
 
 // day_of_week in DB: 0=Mon, 1=Tue, ..., 6=Sun
@@ -99,9 +99,10 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
       return
     }
     fetchAllItems<HallSlot>('hall_slots', {
-      filter: { _and: [{ team: { _contains: teamId } }, { slot_type: { _eq: 'training' } }, { recurring: { _eq: true } }] },
+      filter: { _and: [{ teams: { teams_id: { _eq: teamId } } }, { slot_type: { _eq: 'training' } }, { recurring: { _eq: true } }] },
       sort: ['day_of_week,start_time'],
-    }).then(setTeamSlots).catch(() => setTeamSlots([]))
+      fields: ['*', 'teams.teams_id'],
+    }).then(items => setTeamSlots(flattenM2MTeams(items))).catch(() => setTeamSlots([]))
 
     const today = new Date().toISOString().split('T')[0]
     fetchAllItems<SlotClaim>('slot_claims', {

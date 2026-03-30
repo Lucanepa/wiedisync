@@ -121,16 +121,30 @@ function stringifyId<T>(item: T): T {
 }
 
 /**
- * Wrap a single FK value into an array of string IDs.
- * Used for fields that were multi-relations in PB but single FKs in Directus.
+ * Convert M2M `teams` junction array to a flat `team` string[] on HallSlot items.
+ * Directus returns M2M as [{teams_id: 5}, ...] or [57, ...] (junction row IDs).
+ * The app uses slot.team as string[] of team IDs internally.
  */
-export function wrapFkAsArray<T>(items: T[], field: keyof T): T[] {
+export function flattenM2MTeams<T extends Record<string, unknown>>(items: T[]): T[] {
   return items.map(item => {
-    if (!item || typeof item !== 'object') return item
-    const val = (item as Record<string, unknown>)[field as string]
-    if (Array.isArray(val)) return item
-    return { ...item, [field as string]: val != null ? [String(val)] : [] }
-  })
+    const teams = item.teams as unknown[] | undefined
+    if (!Array.isArray(teams)) return { ...item, team: [] }
+    const teamIds = teams.map(t => {
+      if (typeof t === 'object' && t !== null && 'teams_id' in t) return String((t as { teams_id: unknown }).teams_id)
+      return String(t)
+    }).filter(Boolean)
+    return { ...item, team: teamIds }
+  }) as T[]
+}
+
+/**
+ * Convert a flat team string[] to M2M format for saving to Directus.
+ * Strips the `team` field and adds `teams` in junction format.
+ */
+export function teamToM2M(payload: Record<string, unknown>): Record<string, unknown> {
+  const { team, ...rest } = payload
+  if (!Array.isArray(team)) return rest
+  return { ...rest, teams: (team as string[]).map(id => ({ teams_id: id })) }
 }
 
 /** Fetch a list of items. Returns the array directly. */

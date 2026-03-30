@@ -18,7 +18,7 @@ import ClaimModal from './components/ClaimModal'
 import ClaimDetailModal from './components/ClaimDetailModal'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import type { HallSlot, HallClosure, SlotClaim, Team, Hall, Training } from '../../types'
-import { fetchItem, fetchItems } from '../../lib/api'
+import { fetchItem, fetchItems, flattenM2MTeams } from '../../lib/api'
 
 export type SportFilter = 'all' | 'vb' | 'bb'
 
@@ -348,7 +348,7 @@ export default function HallenplanPage() {
             try {
               let parentSlot: HallSlot | null = null
               if (training.hall_slot) {
-                parentSlot = await fetchItem<HallSlot>('hall_slots', training.hall_slot)
+                parentSlot = flattenM2MTeams([await fetchItem<HallSlot>('hall_slots', training.hall_slot, { fields: ['*', 'teams.teams_id'] })])[0]
               } else {
                 // No hall_slot reference — find matching slot by team + day + time
                 // Use the virtual slot's own data as fallback (sourceRecord may be empty for freed slots)
@@ -364,9 +364,10 @@ export default function HallenplanPage() {
                 }
                 if (slotTeam && slotStartTime && slotEndTime && dbDay != null) {
                   const results = await fetchItems<HallSlot>('hall_slots', { limit: 1,
-                    filter: { _and: [{ team: { _contains: slotTeam } }, { day_of_week: { _eq: dbDay } }, { start_time: { _eq: slotStartTime } }, { end_time: { _eq: slotEndTime } }] },
+                    filter: { _and: [{ teams: { teams_id: { _eq: slotTeam } } }, { day_of_week: { _eq: dbDay } }, { start_time: { _eq: slotStartTime } }, { end_time: { _eq: slotEndTime } }] },
+                    fields: ['*', 'teams.teams_id'],
                   })
-                  if (results.length > 0) parentSlot = results[0]
+                  if (results.length > 0) parentSlot = flattenM2MTeams(results)[0]
                 }
               }
               if (parentSlot) {

@@ -495,7 +495,6 @@ export default {
         })
         await mailService.send({
           to: email,
-          from: 'WiediSync <admin@mail.kscw.ch>',
           subject: t.subject,
           html: otpHtml,
           text: t.plainText(code) + `\n\nKSC Wiedikon\n${FRONTEND_URL.replace('https://', '')}`,

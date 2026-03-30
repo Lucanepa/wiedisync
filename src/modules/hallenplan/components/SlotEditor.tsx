@@ -11,7 +11,7 @@ import { logActivity } from '../../../utils/logActivity'
 import { useConflictChecker } from '../hooks/useConflictChecker'
 import { minutesToTime, timeToMinutes, toISODate } from '../../../utils/dateHelpers'
 import type { Hall, HallClosure, HallSlot, Team } from '../../../types'
-import { createRecord, deleteRecord, fetchAllItems, updateRecord } from '../../../lib/api'
+import { createRecord, deleteRecord, fetchAllItems, updateRecord, teamToM2M } from '../../../lib/api'
 
 interface SlotEditorProps {
   slot: HallSlot | null
@@ -203,23 +203,24 @@ export default function SlotEditor({
       }
       let savedSlotId = slot?.id ?? ''
 
+      const m2mPayload = teamToM2M(payload)
       if (isCombo && kwiA && kwiB) {
         const hallIds = [kwiA.id, kwiB.id]
         if (slot) {
-          await updateRecord('hall_slots', slot.id, { ...payload, hall: hallIds[0] })
+          await updateRecord('hall_slots', slot.id, { ...m2mPayload, hall: hallIds[0] })
           logActivity('update', 'hall_slots', slot.id, payload)
         } else {
           for (const hid of hallIds) {
-            const rec = await createRecord<{ id: string }>('hall_slots', { ...payload, hall: hid })
+            const rec = await createRecord<{ id: string }>('hall_slots', { ...m2mPayload, hall: hid })
             logActivity('create', 'hall_slots', rec.id, { ...payload, hall: hid })
             if (!savedSlotId) savedSlotId = rec.id
           }
         }
       } else if (slot) {
-        await updateRecord('hall_slots', slot.id, payload)
+        await updateRecord('hall_slots', slot.id, m2mPayload)
         logActivity('update', 'hall_slots', slot.id, payload)
       } else {
-        const rec = await createRecord<{ id: string }>('hall_slots', payload)
+        const rec = await createRecord<{ id: string }>('hall_slots', m2mPayload)
         logActivity('create', 'hall_slots', rec.id, payload)
         savedSlotId = rec.id
       }

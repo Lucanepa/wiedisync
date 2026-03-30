@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import Modal from '@/components/Modal'
-import { wrapFkAsArray } from '../../lib/api'
+import { flattenM2MTeams } from '../../lib/api'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import { useCollection } from '../../lib/query'
@@ -42,9 +42,9 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
     filter: { slot_type: { _eq: 'training' } },
     sort: ['day_of_week', 'start_time'],
     limit: 100,
-    fields: ['*', 'hall.*'],
+    fields: ['*', 'hall.*', 'teams.teams_id'],
   })
-  const allSlots = wrapFkAsArray(allSlotsRaw ?? [], 'team' as keyof SlotExpanded)
+  const allSlots = flattenM2MTeams(allSlotsRaw ?? [])
 
   // Filter by selected team, or fall back to coach's teams (non-admin)
   // Sort: current/past slots first (by valid_from asc), then future slots (by valid_from asc)

@@ -124,7 +124,7 @@ export default function SlotBlock({ positioned, teamName, hasConflict, isAdmin, 
           ...awayStripes,
         }}
         onClick={clickable ? (e) => { e.stopPropagation(); onClick() } : undefined}
-        title={`${teamName || slot.label} — ${slot.start_time}–${slot.end_time}${slot.label ? ` — ${slot.label}` : ''}`}
+        title={`${teamName || slot.label} — ${slot.start_time?.slice(0, 5)}–${slot.end_time?.slice(0, 5)}${slot.label ? ` — ${slot.label}` : ''}`}
       >
         {hasConflict && <ConflictBadge />}
         {slot.slot_type === 'training' && <TrainingIcon />}
@@ -139,8 +139,8 @@ export default function SlotBlock({ positioned, teamName, hasConflict, isAdmin, 
         )}
         {compactShowTime && (
           <div className="relative opacity-70">
-            <div>{slot.start_time} -</div>
-            <div>{slot.end_time}</div>
+            <div>{slot.start_time?.slice(0, 5)} -</div>
+            <div>{slot.end_time?.slice(0, 5)}</div>
           </div>
         )}
       </div>
@@ -167,7 +167,7 @@ export default function SlotBlock({ positioned, teamName, hasConflict, isAdmin, 
         ...awayStripes,
       }}
       onClick={clickable ? (e) => { e.stopPropagation(); onClick() } : undefined}
-      title={`${teamName || slot.label} — ${slot.start_time}–${slot.end_time}${slot.label ? ` — ${slot.label}` : ''}`}
+      title={`${teamName || slot.label} — ${slot.start_time?.slice(0, 5)}–${slot.end_time?.slice(0, 5)}${slot.label ? ` — ${slot.label}` : ''}`}
     >
       <div className="relative">
         {hasConflict && <ConflictBadge />}
@@ -202,8 +202,8 @@ export default function SlotBlock({ positioned, teamName, hasConflict, isAdmin, 
             </div>
             {showTime && (
               <div className="relative mt-0.5 opacity-80">
-                <div>{slot.start_time} -</div>
-                <div>{slot.end_time}</div>
+                <div>{slot.start_time?.slice(0, 5)} -</div>
+                <div>{slot.end_time?.slice(0, 5)}</div>
               </div>
             )}
             {showDetails && slot.label && (
@@ -217,8 +217,8 @@ export default function SlotBlock({ positioned, teamName, hasConflict, isAdmin, 
             </div>
             {showTime && (
               <div className="relative mt-0.5 opacity-80">
-                <div>{slot.start_time} -</div>
-                <div>{slot.end_time}</div>
+                <div>{slot.start_time?.slice(0, 5)} -</div>
+                <div>{slot.end_time?.slice(0, 5)}</div>
               </div>
             )}
             {showDetails && teamName && (
@@ -241,8 +241,8 @@ export default function SlotBlock({ positioned, teamName, hasConflict, isAdmin, 
             </div>
             {showTime && (
               <div className={`relative mt-0.5 opacity-80 ${isCancelled ? 'line-through' : ''}`}>
-                <div>{slot.start_time} -</div>
-                <div>{slot.end_time}</div>
+                <div>{slot.start_time?.slice(0, 5)} -</div>
+                <div>{slot.end_time?.slice(0, 5)}</div>
               </div>
             )}
             {showDetails && slot.label && teamName && (

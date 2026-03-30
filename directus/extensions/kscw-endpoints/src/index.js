@@ -15,6 +15,7 @@ import { registerScorerReminders } from './scorer-reminders.js'
 import { registerGameScheduling } from './game-scheduling.js'
 import { registerContactForm } from './contact-form.js'
 import { registerWebPush, sendPushToMember } from './web-push.js'
+import { FRONTEND_URL } from './email-template.js'
 
 // ── Helpers ──────────────────────────────────────────────────────
 
@@ -265,7 +266,7 @@ export default {
           expires_at: expiresAt, created_by: userId,
         })
 
-        res.json({ token, qr_url: `https://wiedisync.kscw.ch/join?token=${token}`, expires_at: expiresAt })
+        res.json({ token, qr_url: `${FRONTEND_URL}/join?token=${token}`, expires_at: expiresAt })
       } catch (err) {
         log.error(`team-invites/create: ${err.message}`)
         res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal error' })
@@ -413,7 +414,7 @@ export default {
           to: email,
           subject: 'WiediSync — Verifizierungscode',
           html: otpHtml,
-          text: `Dein Verifizierungscode: ${code}\n\nDieser Code ist 10 Minuten gültig.\n\nKSC Wiedikon\nwiedisync.kscw.ch`,
+          text: `Dein Verifizierungscode: ${code}\n\nDieser Code ist 10 Minuten gültig.\n\nKSC Wiedikon\n${FRONTEND_URL.replace('https://', '')}`,
         })
 
         res.json({ success: true })
@@ -683,7 +684,7 @@ export default {
         })
 
         // Push notification
-        sendPushToMember(database, d.from_member, 'Delegation angenommen', 'Deine Schreiber-Delegation wurde angenommen', 'https://wiedisync.kscw.ch', 'delegation', log).catch(() => {})
+        sendPushToMember(database, d.from_member, 'Delegation angenommen', 'Deine Schreiber-Delegation wurde angenommen', FRONTEND_URL, 'delegation', log).catch(() => {})
 
         res.json({ success: true })
       } catch (err) {
@@ -717,7 +718,7 @@ export default {
           })
 
           // Push notification
-          sendPushToMember(database, d.from_member, 'Delegation abgelehnt', 'Deine Schreiber-Delegation wurde abgelehnt', 'https://wiedisync.kscw.ch', 'delegation', log).catch(() => {})
+          sendPushToMember(database, d.from_member, 'Delegation abgelehnt', 'Deine Schreiber-Delegation wurde abgelehnt', FRONTEND_URL, 'delegation', log).catch(() => {})
         }
 
         res.json({ success: true })

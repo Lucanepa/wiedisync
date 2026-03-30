@@ -5,7 +5,7 @@
  * Cron registered in hooks extension (09:00 UTC)
  */
 
-import { buildEmailLayout, buildInfoCard, formatDateCH, weekday } from './email-template.js'
+import { buildEmailLayout, buildInfoCard, formatDateCH, weekday, FRONTEND_URL } from './email-template.js'
 
 function tomorrowYMD() {
   const d = new Date()
@@ -104,7 +104,7 @@ export function registerScorerReminders(router, { database, logger, services, ge
           subtitle: `${game.home_team} vs ${game.away_team}`,
           sport: sportKey,
           greeting: `Hallo ${member.first_name},`,
-          ctaUrl: 'https://wiedisync.kscw.ch/scorer',
+          ctaUrl: `${FRONTEND_URL}/scorer`,
           ctaLabel: 'Schreibereinsätze anzeigen',
         })
 
@@ -118,10 +118,10 @@ export function registerScorerReminders(router, { database, logger, services, ge
           `Ankunft: ${arrivalTime} (${arrival} Min. vor Anpfiff)`,
           hall ? `Halle: ${hall.name}` : '',
           '',
-          'https://wiedisync.kscw.ch/scorer',
+          `${FRONTEND_URL}/scorer`,
           '',
           'KSC Wiedikon',
-          'wiedisync.kscw.ch',
+          FRONTEND_URL.replace('https://', ''),
         ].filter(Boolean).join('\n')
 
         try {

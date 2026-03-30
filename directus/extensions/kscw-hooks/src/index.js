@@ -19,7 +19,10 @@
  *   3. Notification cleanup (old notifications)
  */
 
-// Import push helpers from endpoints extension (same Directus instance)
+// Frontend URL — env var or auto-detect from Directus PUBLIC_URL
+const FRONTEND_URL = process.env.FRONTEND_URL
+  || (process.env.PUBLIC_URL?.includes('directus-dev') ? 'https://wiedisync.pages.dev' : 'https://wiedisync.kscw.ch')
+
 const PUSH_WORKER_URL = process.env.PUSH_WORKER_URL || 'https://kscw-push.lucanepa.workers.dev'
 const PUSH_AUTH_SECRET = process.env.PUSH_AUTH_SECRET || ''
 
@@ -44,7 +47,7 @@ async function sendPushToMembers(db, memberIds, title, body, url, tag, log) {
         })),
         title: title || 'KSC Wiedikon',
         body: body || '',
-        url: url || 'https://wiedisync.kscw.ch',
+        url: url || FRONTEND_URL,
         ...(tag ? { tag } : {}),
       }),
       signal: AbortSignal.timeout(15000),
@@ -420,7 +423,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
           .distinct('member')
           .pluck('member')
         if (deadlineMembers.length > 0) {
-          await sendPushToMembers(database, deadlineMembers, 'RSVP Erinnerung', 'Anmeldefrist läuft morgen ab', 'https://wiedisync.kscw.ch', 'deadline_reminder', log)
+          await sendPushToMembers(database, deadlineMembers, 'RSVP Erinnerung', 'Anmeldefrist läuft morgen ab', FRONTEND_URL, 'deadline_reminder', log)
         }
       } catch (pushErr) {
         log.warn(`Deadline push: ${pushErr.message}`)
@@ -488,7 +491,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
           .distinct('member')
           .pluck('member')
         if (upcomingMembers.length > 0) {
-          await sendPushToMembers(database, upcomingMembers, 'Morgen', 'Du hast morgen eine Aktivität', 'https://wiedisync.kscw.ch', 'upcoming_activity', log)
+          await sendPushToMembers(database, upcomingMembers, 'Morgen', 'Du hast morgen eine Aktivität', FRONTEND_URL, 'upcoming_activity', log)
         }
       } catch (pushErr) {
         log.warn(`Upcoming push: ${pushErr.message}`)

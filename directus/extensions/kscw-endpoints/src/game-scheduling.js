@@ -5,6 +5,7 @@
  */
 
 import crypto from 'crypto'
+import { FRONTEND_URL } from './email-template.js'
 
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET || ''
 
@@ -48,7 +49,7 @@ export function registerGameScheduling(router, { database, logger, services, get
         await mail.send({
           to: contact_email,
           subject: `KSC Wiedikon – Spielplanung`,
-          text: `Hallo ${contact_name},\n\nDein Zugangslink zur Spielplanung:\nhttps://wiedisync.kscw.ch/terminplanung/${token}\n\nDieser Link ist 30 Tage gültig.\n\nKSC Wiedikon`,
+          text: `Hallo ${contact_name},\n\nDein Zugangslink zur Spielplanung:\n${FRONTEND_URL}/terminplanung/${token}\n\nDieser Link ist 30 Tage gültig.\n\nKSC Wiedikon`,
         })
       } catch (mailErr) {
         log.warn(`Scheduling email failed: ${mailErr.message}`)

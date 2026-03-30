@@ -9,6 +9,7 @@
  */
 
 import crypto from 'crypto'
+import { FRONTEND_URL } from './email-template.js'
 
 const TEMPLATES = {
   german: {
@@ -134,10 +135,7 @@ export function registerPasswordReset(router, { database, logger, services, getS
         .update({ token })
 
       // Build reset URL pointing to frontend
-      const frontendUrl = process.env.PUBLIC_URL?.includes('directus')
-        ? 'https://wiedisync.pages.dev'
-        : (process.env.PUBLIC_URL || 'https://wiedisync.pages.dev')
-      const resetUrl = `${frontendUrl}/set-password?token=${token}`
+      const resetUrl = `${FRONTEND_URL}/set-password?token=${token}`
 
       // Send localized email
       const mailService = new MailService({ schema, knex: database })

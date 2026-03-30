@@ -15,7 +15,8 @@ export default function SetPasswordPage() {
   const [searchParams] = useSearchParams()
   const initialEmail = searchParams.get('email') ?? ''
 
-  const [phase, setPhase] = useState<Phase>('email')
+  // Skip straight to OTP phase if email provided via query param
+  const [phase, setPhase] = useState<Phase>(initialEmail ? 'otp' : 'email')
   const [email, setEmail] = useState(initialEmail)
   const [password, setPassword] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
@@ -23,7 +24,7 @@ export default function SetPasswordPage() {
   const [loading, setLoading] = useState(false)
   const autoSentRef = useRef(false)
 
-  // Auto-send OTP if email was provided via query param
+  // Auto-send OTP when starting on otp phase with pre-filled email
   useEffect(() => {
     if (initialEmail && !autoSentRef.current) {
       autoSentRef.current = true
@@ -45,6 +46,7 @@ export default function SetPasswordPage() {
       setPhase('otp')
     } catch {
       setError(t('otpRequestFailed'))
+      setPhase('email') // Fall back to email form on failure
     } finally {
       setLoading(false)
     }

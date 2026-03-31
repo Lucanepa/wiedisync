@@ -129,7 +129,7 @@ export default function RosterEditor() {
   const toggleRole = useCallback(async (memberId: string, role: LeadershipRole) => {
     if (!team) return
     const currentId = relId(team[role])
-    const isCurrent = currentId === memberId
+    const isCurrent = currentId === String(memberId)
     // captain is M2O (single FK) — set to member ID or null
     const nextValue = isCurrent ? null : memberId
     try {
@@ -284,7 +284,7 @@ export default function RosterEditor() {
               const member = asObj<Member>(mt.member)
               if (!member) return null
               const initials = `${member.first_name?.[0] ?? ''}${member.last_name?.[0] ?? ''}`.toUpperCase()
-              const isCaptain = team ? relId(team.captain) === member.id : false
+              const isCaptain = team ? relId(team.captain) === String(member.id) : false
               const memberPositions = coercePositions(member.position)
               const nonPlaying = isNonPlayingStaff(member.id, team, memberPositions)
               const selectablePositions = getSelectablePositions(team?.sport, memberPositions)

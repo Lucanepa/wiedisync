@@ -155,13 +155,13 @@ export default function InfraHealthPage() {
       detail: apiProdOk ? 'kscw-vps tunnel active' : 'Tunnel unreachable',
     })
 
-    // Push Worker (uses dedicated /health endpoint with permissive CORS)
-    const push = await checkEndpoint(`${PUSH_WORKER_URL}/health`)
+    // Push Worker (no CORS headers — use no-cors fallback, opaque = reachable)
+    const push = await checkEndpoint(`${PUSH_WORKER_URL}/health`, true)
     svcResults.push({
       name: t('infraPushWorker'),
-      status: (push.ok || push.status === 405 || push.status === 404) ? 'healthy' : push.cors ? 'unknown' : 'down',
-      detail: push.cors ? 'CORS (cross-origin)' : PUSH_WORKER_URL.replace('https://', ''),
-      responseTime: push.cors ? null : push.ms,
+      status: push.ok ? 'healthy' : 'down',
+      detail: push.ok ? PUSH_WORKER_URL.replace('https://', '') : 'Unreachable',
+      responseTime: push.ok ? push.ms : null,
     })
 
     // Directus extensions deployed (check a known KSCW endpoint)

@@ -44,12 +44,13 @@ export function useInfraHealth(): InfraHealth {
       for (const source of ['swiss_volley', 'basketplan']) {
         try {
           const records = await fetchItems<Record<string, unknown>>('games', {
-            sort: ['-date_updated'],
+            sort: ['-date_created'],
             filter: { source: { _eq: source } },
-            fields: ['date_updated'],
+            fields: ['date_created', 'date_updated'],
             limit: 1,
           })
-          const lastUpdated = (records[0]?.date_updated as string) || null
+          const rec = records[0]
+          const lastUpdated = (rec?.date_updated as string) || (rec?.date_created as string) || null
           const isStale = lastUpdated
             ? now - new Date(lastUpdated).getTime() > STALE_THRESHOLD_MS
             : true
@@ -62,11 +63,12 @@ export function useInfraHealth(): InfraHealth {
       // GCal sync
       try {
         const gcalRecords = await fetchItems<Record<string, unknown>>('hall_events', {
-          sort: ['-date_updated'],
-          fields: ['date_updated'],
+          sort: ['-date_created'],
+          fields: ['date_created', 'date_updated'],
           limit: 1,
         })
-        const lastUpdated = (gcalRecords[0]?.date_updated as string) || null
+        const rec = gcalRecords[0]
+        const lastUpdated = (rec?.date_updated as string) || (rec?.date_created as string) || null
         const isStale = lastUpdated
           ? now - new Date(lastUpdated).getTime() > STALE_THRESHOLD_MS
           : true

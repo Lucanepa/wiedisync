@@ -16,41 +16,15 @@ import TeamSponsorsEditor from './TeamSponsorsEditor'
 import EmptyState from '../../components/EmptyState'
 import { getFileUrl } from '../../utils/fileUrl'
 import { getCurrentSeason } from '../../utils/dateHelpers'
-import type { Team, Member, MemberPosition, MemberTeam, LicenceType, TeamSettings } from '../../types'
+import type { Team, Member, MemberPosition, MemberTeam, TeamSettings } from '../../types'
 import { Button } from '../../components/ui/button'
 import { fetchItems, updateRecord } from '../../lib/api'
 import { asObj, relId, flattenMemberIds } from '../../utils/relations'
 
 type LeadershipRole = 'coach' | 'captain' | 'team_responsible'
-const ROLES: LeadershipRole[] = ['coach', 'captain', 'team_responsible']
-
-const VB_LICENCES: { key: LicenceType; label: string; i18n: string }[] = [
-  { key: 'scorer_vb', label: 'S', i18n: 'licenceScorer' },
-  { key: 'referee_vb', label: 'R', i18n: 'licenceReferee' },
-]
-
-const BB_LICENCES: { key: LicenceType; label: string; i18n: string }[] = [
-  { key: 'otr1_bb', label: 'OTR1', i18n: 'licenceOTR1' },
-  { key: 'otr2_bb', label: 'OTR2', i18n: 'licenceOTR2' },
-  { key: 'otn_bb', label: 'OTN', i18n: 'licenceOTN' },
-  { key: 'referee_bb', label: 'R', i18n: 'licenceRefereeBB' },
-]
-
-const LICENCE_ACTIVE = 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
-const LICENCE_INACTIVE = 'bg-gray-100 text-gray-400 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-500 dark:hover:bg-gray-600'
 
 function displayName(m: Member): string {
   return [m.last_name, m.first_name].filter(Boolean).join(' ') || '—'
-}
-
-function getMemberRoles(memberId: string, team: Team): LeadershipRole[] {
-  return ROLES.filter((r) => flattenMemberIds(team[r]).includes(memberId))
-}
-
-const ROLE_SHORT: Record<LeadershipRole, string> = {
-  coach: 'C',
-  captain: 'Cap',
-  team_responsible: 'TR',
 }
 
 const ROLE_I18N: Record<LeadershipRole, string> = {
@@ -63,6 +37,12 @@ const ROLE_COLORS: Record<LeadershipRole, string> = {
   coach: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
   captain: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300',
   team_responsible: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
+}
+
+const ROLE_SHORT: Record<LeadershipRole, string> = {
+  coach: 'C',
+  captain: 'Cap',
+  team_responsible: 'TR',
 }
 
 export default function RosterEditor() {
@@ -88,7 +68,7 @@ export default function RosterEditor() {
 
   useEffect(() => {
     if (!teamSlug) return
-    fetchItems<Team>('teams', { filter: { name: { _eq: teamSlug } }, limit: 1 })
+    fetchItems<Team>('teams', { filter: { name: { _eq: teamSlug } }, limit: 1, fields: ['*', 'captain.members_id'] })
       .then((items) => setTeam(items[0] ?? null))
       .catch(() => setTeam(null))
   }, [teamSlug])
@@ -164,25 +144,6 @@ export default function RosterEditor() {
       toast.error(t('common:errorSaving'))
     }
   }, [team, t])
-
-  const licenceOptions = team?.sport === 'basketball' ? BB_LICENCES : VB_LICENCES
-
-  const toggleLicence = useCallback(async (memberId: string, licence: LicenceType, currentLicences: LicenceType[]) => {
-    const has = currentLicences.includes(licence)
-    const next = has ? currentLicences.filter((l) => l !== licence) : [...currentLicences, licence]
-    try {
-      await updateRecord('members', memberId, { licences: next })
-      logActivity('update', 'members', memberId, { licences: next })
-      // Update local state
-      const mt = members.find((m) => String(asObj<Member>(m.member)?.id) === memberId)
-      const _memberRef = mt ? asObj<Member>(mt.member) : null
-      if (_memberRef) {
-        ;(_memberRef as Record<string, unknown>).licences = next
-      }
-    } catch {
-      toast.error(t('common:errorSaving'))
-    }
-  }, [members, t])
 
   async function saveNumber(memberId: string) {
     const num = numberValue ? parseInt(numberValue, 10) : 0
@@ -327,7 +288,7 @@ export default function RosterEditor() {
               const member = asObj<Member>(mt.member)
               if (!member) return null
               const initials = `${member.first_name?.[0] ?? ''}${member.last_name?.[0] ?? ''}`.toUpperCase()
-              const roles = team ? getMemberRoles(member.id, team) : []
+              const isCaptain = team ? flattenMemberIds(team.captain).includes(member.id) : false
               const memberPositions = coercePositions(member.position)
               const nonPlaying = isNonPlayingStaff(member.id, team, memberPositions)
               const selectablePositions = getSelectablePositions(team?.sport, memberPositions)
@@ -419,77 +380,18 @@ export default function RosterEditor() {
                     )}
                   </div>
 
-                  {/* Role toggles */}
-                  <div className="hidden sm:flex gap-1">
-                    {ROLES.map((r) => {
-                      const active = roles.includes(r)
-                      return (
-                        <button
-                          key={r}
-                          onClick={() => toggleRole(member.id, r)}
-                          title={t(ROLE_I18N[r])}
-                          className={`rounded px-1.5 py-0.5 text-xs font-medium transition-colors ${
-                            active
-                              ? ROLE_COLORS[r]
-                              : 'bg-gray-100 text-gray-400 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-500 dark:hover:bg-gray-600'
-                          }`}
-                        >
-                          {ROLE_SHORT[r]}
-                        </button>
-                      )
-                    })}
-                  </div>
-
-                  {/* Guest level cycle */}
+                  {/* Captain toggle */}
                   <button
-                    onClick={async () => {
-                      const currentLevel = (mt.guest_level as number) ?? 0
-                      const nextLevel = (currentLevel + 1) % 4
-                      try {
-                        await updateRecord('member_teams', mt.id as string, { guest_level: nextLevel })
-                        logActivity('update', 'member_teams', mt.id as string, { guest_level: nextLevel })
-                        ;(mt as Record<string, unknown>).guest_level = nextLevel
-                      } catch { toast.error(t('common:errorSaving')) }
-                    }}
-                    title={(() => {
-                      const level = mt.guest_level ?? 0
-                      return level === 0 ? t('guestLevel0') : t('guestLevelTooltip', { level })
-                    })()}
-                    className={`rounded px-1.5 py-0.5 text-xs font-medium transition-colors ${
-                      (() => {
-                        const level = mt.guest_level ?? 0
-                        if (level === 0) return 'bg-gray-100 text-gray-400 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-500 dark:hover:bg-gray-600'
-                        if (level === 1) return 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300'
-                        if (level === 2) return 'bg-orange-100/70 text-orange-600 dark:bg-orange-900/60 dark:text-orange-400'
-                        return 'bg-orange-100/50 text-orange-500 dark:bg-orange-900/40 dark:text-orange-500'
-                      })()
+                    onClick={() => toggleRole(member.id, 'captain')}
+                    title={t(ROLE_I18N.captain)}
+                    className={`hidden sm:inline-flex rounded px-1.5 py-0.5 text-xs font-medium transition-colors ${
+                      isCaptain
+                        ? ROLE_COLORS.captain
+                        : 'bg-gray-100 text-gray-400 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-500 dark:hover:bg-gray-600'
                     }`}
                   >
-                    {(() => {
-                      const level = mt.guest_level ?? 0
-                      return level === 0 ? t('guestBadge') : `G${level}`
-                    })()}
+                    {ROLE_SHORT.captain}
                   </button>
-
-                  {/* Licence toggles */}
-                  <div className="hidden sm:flex gap-1">
-                    {licenceOptions.map((lic) => {
-                      const memberLicences = (member.licences ?? []) as LicenceType[]
-                      const active = memberLicences.includes(lic.key)
-                      return (
-                        <button
-                          key={lic.key}
-                          onClick={() => toggleLicence(member.id, lic.key, memberLicences)}
-                          title={t(lic.i18n)}
-                          className={`rounded px-1.5 py-0.5 text-xs font-medium transition-colors ${
-                            active ? LICENCE_ACTIVE : LICENCE_INACTIVE
-                          }`}
-                        >
-                          {lic.label}
-                        </button>
-                      )
-                    })}
-                  </div>
 
                   <button
                     onClick={() => setRemovingId(mt.id as string)}

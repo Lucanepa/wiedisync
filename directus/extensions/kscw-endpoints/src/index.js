@@ -6,6 +6,8 @@
  */
 
 import crypto from 'crypto'
+import fs from 'fs'
+import path from 'path'
 import { syncSvGames, syncSvRankings } from './sv-sync.js'
 import { syncBpGames, syncBpRankings } from './bp-sync.js'
 import { registerPasswordReset } from './password-reset.js'
@@ -16,6 +18,7 @@ import { registerGameScheduling } from './game-scheduling.js'
 import { registerContactForm } from './contact-form.js'
 import { registerWebPush, sendPushToMember } from './web-push.js'
 import { FRONTEND_URL } from './email-template.js'
+import { logErrorToFile, logAuthDenial, logWarning, cleanOldLogs } from './error-log.js'
 
 // ── Helpers ──────────────────────────────────────────────────────
 
@@ -65,6 +68,7 @@ function scrubBody(body) {
 /**
  * Log endpoint errors with full context: WHO (user/member), WHAT (endpoint),
  * WHY (error + stack), and WHICH (request body, scrubbed).
+ * Writes to both Directus logger (stdout) AND persistent JSONL file.
  */
 function logEndpointError(log, endpoint, err, req) {
   const userId = req?.accountability?.user || null
@@ -81,6 +85,8 @@ function logEndpointError(log, endpoint, err, req) {
     query: req?.query || undefined,
     stack: err.stack,
   })
+  // Also write to persistent file
+  logErrorToFile(endpoint, err, req)
 }
 
 function requireAdmin(req, log) {
@@ -93,6 +99,7 @@ function requireAdmin(req, log) {
         method: req.method,
       })
     }
+    logAuthDenial(req.path, req, 'admin_required')
     const err = new Error('Admin access required')
     err.status = 403
     throw err
@@ -109,6 +116,7 @@ function requireAuth(req, log) {
         ip: req.ip || req.headers?.['x-forwarded-for'] || 'unknown',
       })
     }
+    logAuthDenial(req.path, req, 'auth_required')
     const err = new Error('Authentication required')
     err.status = 401
     throw err
@@ -979,6 +987,77 @@ export default {
         res.json({ success: true })
       } catch (err) {
         logEndpointError(log, 'scorer-delegation/decline', err, req)
+        res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal error' })
+      }
+    })
+
+    // ── Admin: Error Logs ────────────────────────────────────────
+    // GET /kscw/admin/error-logs — read persistent error log files
+    // Query: ?date=YYYY-MM-DD (default: today), &level=error|warn, &endpoint=xxx,
+    //        &userId=xxx, &event=xxx, &limit=200, &search=xxx
+
+    const ERROR_LOG_DIR = process.env.ERROR_LOG_DIR || '/directus/logs'
+
+    router.get('/admin/error-logs', async (req, res) => {
+      try {
+        requireAdmin(req, log)
+
+        const date = req.query.date || new Date().toISOString().slice(0, 10)
+        const limit = Math.min(parseInt(req.query.limit) || 200, 1000)
+        const levelFilter = req.query.level || null
+        const endpointFilter = req.query.endpoint || null
+        const userIdFilter = req.query.userId || null
+        const eventFilter = req.query.event || null
+        const searchFilter = req.query.search || null
+
+        const logPath = path.join(ERROR_LOG_DIR, `errors-${date}.jsonl`)
+
+        if (!fs.existsSync(logPath)) {
+          return res.json({ data: [], date, message: 'No log file for this date' })
+        }
+
+        const raw = fs.readFileSync(logPath, 'utf-8')
+        const lines = raw.trim().split('\n').filter(Boolean)
+
+        let entries = lines.map(line => {
+          try { return JSON.parse(line) } catch { return null }
+        }).filter(Boolean)
+
+        // Apply filters
+        if (levelFilter) entries = entries.filter(e => e.level === levelFilter)
+        if (endpointFilter) entries = entries.filter(e => e.endpoint?.includes(endpointFilter))
+        if (userIdFilter) entries = entries.filter(e => e.userId === userIdFilter)
+        if (eventFilter) entries = entries.filter(e => e.event === eventFilter)
+        if (searchFilter) {
+          const q = searchFilter.toLowerCase()
+          entries = entries.filter(e => JSON.stringify(e).toLowerCase().includes(q))
+        }
+
+        // Most recent first, capped by limit
+        entries = entries.reverse().slice(0, limit)
+
+        res.json({ data: entries, date, total: entries.length })
+      } catch (err) {
+        logEndpointError(log, 'admin/error-logs', err, req)
+        res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal error' })
+      }
+    })
+
+    // GET /kscw/admin/error-logs/dates — list available log dates
+    router.get('/admin/error-logs/dates', async (req, res) => {
+      try {
+        requireAdmin(req, log)
+        const files = fs.readdirSync(ERROR_LOG_DIR)
+          .filter(f => f.startsWith('errors-') && f.endsWith('.jsonl'))
+          .map(f => {
+            const date = f.replace('errors-', '').replace('.jsonl', '')
+            const stat = fs.statSync(path.join(ERROR_LOG_DIR, f))
+            return { date, size: stat.size, lines: fs.readFileSync(path.join(ERROR_LOG_DIR, f), 'utf-8').trim().split('\n').length }
+          })
+          .sort((a, b) => b.date.localeCompare(a.date))
+        res.json({ data: files })
+      } catch (err) {
+        logEndpointError(log, 'admin/error-logs/dates', err, req)
         res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal error' })
       }
     })

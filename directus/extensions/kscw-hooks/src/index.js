@@ -19,6 +19,8 @@
  *   3. Notification cleanup (old notifications)
  */
 
+import { logCronError, logWarning, logAuthDenial, cleanOldLogs, writeErrorLog } from '../../kscw-endpoints/src/error-log.js'
+
 // Frontend URL — env var or auto-detect from Directus PUBLIC_URL
 const FRONTEND_URL = process.env.FRONTEND_URL
   || (process.env.PUBLIC_URL?.includes('directus-dev') ? 'https://wiedisync.pages.dev' : 'https://wiedisync.kscw.ch')
@@ -63,6 +65,7 @@ async function sendPushToMembers(db, memberIds, title, body, url, tag, log) {
     }
   } catch (err) {
     log.warn({ msg: `[push] Failed: ${err.message}`, event: 'push_send', memberCount: memberIds?.length, stack: err.stack })
+    logWarning('push_send_failed', err.message, { memberCount: memberIds?.length, stack: err.stack })
   }
 }
 
@@ -162,6 +165,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
         collection,
         event: 'captcha_failed',
       })
+      logWarning('captcha_failed', 'Turnstile verification failed', { collection })
       const err = new Error('Captcha verification failed')
       err.status = 403
       throw err
@@ -182,6 +186,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
         .update({ wiedisync_active: true })
     } catch (err) {
       log.warn({ msg: `wiedisync_active: ${err.message}`, event: 'auth.login', userId: user, stack: err.stack })
+      logWarning('auth_login_hook', err.message, { userId: user, stack: err.stack })
     }
   })
 
@@ -217,6 +222,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       }
     } catch (err) {
       log.warn({ msg: `[role-sync] Failed for member ${memberId}: ${err.message}`, event: 'role_sync', memberId, stack: err.stack })
+      logWarning('role_sync', err.message, { memberId, stack: err.stack })
     }
   }
 
@@ -288,6 +294,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       if (count > 0) log.info(`Shell expiry: ${count} deactivated`)
     } catch (err) {
       log.error({ msg: `Shell expiry: ${err.message}`, event: 'cron.shell_expiry', stack: err.stack })
+      logCronError('shell_expiry', err)
     }
   })
 
@@ -303,6 +310,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       if (count > 0) log.info(`Invite expiry: ${count} expired`)
     } catch (err) {
       log.error({ msg: `Invite expiry: ${err.message}`, event: 'cron.invite_expiry', stack: err.stack })
+      logCronError('invite_expiry', err)
     }
   })
 
@@ -321,6 +329,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       if (count > 0) log.info(`Delegation expiry: ${count} expired`)
     } catch (err) {
       log.error({ msg: `Delegation expiry: ${err.message}`, event: 'cron.delegation_expiry', stack: err.stack })
+      logCronError('delegation_expiry', err)
     }
   })
 
@@ -337,6 +346,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       if (count > 0) log.info(`Notification cleanup: ${count} deleted`)
     } catch (err) {
       log.error({ msg: `Notification cleanup: ${err.message}`, event: 'cron.notification_cleanup', stack: err.stack })
+      logCronError('notification_cleanup', err)
     }
   })
 
@@ -432,9 +442,11 @@ export default ({ action, filter, init, schedule }, { services, database, logger
         }
       } catch (pushErr) {
         log.warn({ msg: `Deadline push: ${pushErr.message}`, event: 'cron.deadline_push', stack: pushErr.stack })
+        logCronError('deadline_push', pushErr)
       }
     } catch (err) {
       log.error({ msg: `Participation reminders: ${err.message}`, event: 'cron.participation_reminders', stack: err.stack })
+      logCronError('participation_reminders', err)
     }
   })
 
@@ -500,9 +512,11 @@ export default ({ action, filter, init, schedule }, { services, database, logger
         }
       } catch (pushErr) {
         log.warn({ msg: `Upcoming push: ${pushErr.message}`, event: 'cron.upcoming_push', stack: pushErr.stack })
+        logCronError('upcoming_push', pushErr)
       }
     } catch (err) {
       log.error({ msg: `Daily reminders: ${err.message}`, event: 'cron.daily_reminders', stack: err.stack })
+      logCronError('daily_reminders', err)
     }
   })
 
@@ -540,11 +554,13 @@ export default ({ action, filter, init, schedule }, { services, database, logger
           await database('members').where('id', m.id).update({ shell_reminder_sent: true })
         } catch (mailErr) {
           log.warn({ msg: `Shell reminder mail failed for member ${m.id}`, event: 'cron.shell_reminder', memberId: m.id, stack: mailErr.stack })
+          logCronError('shell_reminder_mail', mailErr, { memberId: m.id })
         }
       }
       log.info(`Shell reminder: ${expiring.length} members notified`)
     } catch (err) {
       log.error({ msg: `Shell reminder: ${err.message}`, event: 'cron.shell_reminder', stack: err.stack })
+      logCronError('shell_reminder', err)
     }
   })
 
@@ -564,6 +580,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       log.info(`SV sync cron: ${body}`)
     } catch (err) {
       log.error({ msg: `SV sync cron: ${err.message}`, event: 'cron.sv_sync', stack: err.stack })
+      logCronError('sv_sync', err)
     }
   })
 
@@ -583,6 +600,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       log.info(`BP sync cron: ${body}`)
     } catch (err) {
       log.error({ msg: `BP sync cron: ${err.message}`, event: 'cron.bp_sync', stack: err.stack })
+      logCronError('bp_sync', err)
     }
   })
 
@@ -619,5 +637,17 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     return payload
   })
 
-  log.info('KSCW hooks loaded: role-sync (5 actions, 2 filters), Turnstile, member privacy, 9 crons (validations+notifications in Postgres)')
+  // ── 12. Cron: Error Log Cleanup (03:30 UTC) ─────────────────────
+  // Delete error log files older than 30 days
+
+  schedule('30 3 * * *', () => {
+    try {
+      cleanOldLogs()
+      log.info('Error log cleanup completed')
+    } catch (err) {
+      log.error({ msg: `Error log cleanup: ${err.message}`, event: 'cron.error_log_cleanup', stack: err.stack })
+    }
+  })
+
+  log.info('KSCW hooks loaded: role-sync (5 actions, 2 filters), Turnstile, member privacy, 10 crons (validations+notifications in Postgres)')
 }

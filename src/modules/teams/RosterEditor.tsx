@@ -61,6 +61,7 @@ export default function RosterEditor() {
   const [numberValue, setNumberValue] = useState('')
   const [editingPosition, setEditingPosition] = useState<string | null>(null)
   const [localOverrides, setLocalOverrides] = useState<Record<string, { position?: MemberPosition[]; number?: number }>>({})
+  const [guestOverrides, setGuestOverrides] = useState<Record<string, number>>({})
   const [uploadingPicture, setUploadingPicture] = useState(false)
   const [inviteModalOpen, setInviteModalOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -385,6 +386,39 @@ export default function RosterEditor() {
                   >
                     {ROLE_SHORT.captain}
                   </button>
+
+                  {/* Guest level cycle: 0 → G1 → G2 → G3 → 0 */}
+                  {(() => {
+                    const mtId = String(mt.id)
+                    const level = guestOverrides[mtId] ?? (mt.guest_level as number) ?? 0
+                    return (
+                      <button
+                        onClick={async () => {
+                          const nextLevel = (level + 1) % 4
+                          setGuestOverrides((prev) => ({ ...prev, [mtId]: nextLevel }))
+                          try {
+                            await updateRecord('member_teams', mtId, { guest_level: nextLevel })
+                            logActivity('update', 'member_teams', mtId, { guest_level: nextLevel })
+                          } catch {
+                            setGuestOverrides((prev) => ({ ...prev, [mtId]: level }))
+                            toast.error(t('common:errorSaving'))
+                          }
+                        }}
+                        title={level === 0 ? t('guestLevel0') : t('guestLevelTooltip', { level })}
+                        className={`rounded px-1.5 py-0.5 text-xs font-medium transition-colors ${
+                          level === 0
+                            ? 'bg-gray-100 text-gray-400 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-500 dark:hover:bg-gray-600'
+                            : level === 1
+                              ? 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300'
+                              : level === 2
+                                ? 'bg-orange-100/70 text-orange-600 dark:bg-orange-900/60 dark:text-orange-400'
+                                : 'bg-orange-100/50 text-orange-500 dark:bg-orange-900/40 dark:text-orange-500'
+                        }`}
+                      >
+                        {level === 0 ? t('guestBadge') : `G${level}`}
+                      </button>
+                    )
+                  })()}
 
                   <button
                     onClick={() => setRemovingId(mt.id as string)}

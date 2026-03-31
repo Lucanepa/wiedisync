@@ -173,6 +173,45 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     return payload
   })
 
+  // ── 0b. Cascade: Directus user deletion → delete linked member ──
+  // When a user is deleted from Directus admin UI, also delete the linked member.
+  // The Postgres CASCADE constraints then clean up all member-owned data.
+
+  // Capture member IDs before user deletion (filter runs before delete)
+  const pendingUserDeletes = new Map()
+
+  filter('users.delete', async (keys) => {
+    try {
+      const members = await database('members').whereIn('user', keys).select('id', 'user', 'email')
+      for (const m of members) {
+        pendingUserDeletes.set(m.user, { memberId: m.id, email: m.email })
+      }
+    } catch (e) {
+      log.warn({ msg: `user-delete cascade lookup failed: ${e.message}`, event: 'cascade_delete' })
+    }
+    return keys
+  })
+
+  action('users.delete', async ({ keys }) => {
+    for (const userId of keys) {
+      const pending = pendingUserDeletes.get(userId)
+      if (!pending) continue
+      pendingUserDeletes.delete(userId)
+      try {
+        // Clean up email verifications (not FK-linked)
+        if (pending.email) {
+          await database('email_verifications').where('email', pending.email).delete()
+        }
+        // Delete member — CASCADE handles all child records
+        await database('members').where('id', pending.memberId).delete()
+        log.info(`[cascade] Deleted member ${pending.memberId} (user ${userId} deleted from admin)`)
+      } catch (err) {
+        log.error({ msg: `[cascade] Member delete failed for ${pending.memberId}: ${err.message}`, event: 'cascade_delete', userId, memberId: pending.memberId, stack: err.stack })
+        logCronError('cascade_delete', err, { userId, memberId: pending.memberId })
+      }
+    }
+  })
+
   // ── 1. Wiedisync Active on Auth ─────────────────────────────────
   // Mark wiedisync_active=true on successful login
   // (Can't be a Postgres trigger because Directus auth doesn't write to members table)

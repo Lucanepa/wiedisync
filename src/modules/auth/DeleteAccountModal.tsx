@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
 import Modal from '@/components/Modal'
 import { Button } from '@/components/ui/button'
-import { deleteRecord } from '../../lib/api'
+import { kscwApi } from '../../lib/api'
 
 interface DeleteAccountModalProps {
   open: boolean
@@ -35,7 +35,7 @@ export default function DeleteAccountModal({ open, onClose, userEmail }: DeleteA
     setIsDeleting(true)
     setError(null)
     try {
-      await deleteRecord('members', user.id)
+      await kscwApi('/delete-account', { method: 'POST', body: { member_id: user.id } })
       logout()
       navigate('/', { replace: true })
     } catch {

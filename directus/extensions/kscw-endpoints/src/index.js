@@ -186,6 +186,69 @@ export default {
       }
     })
 
+    // ── Delete Account (cascade) ─────────────────────────────────
+    // POST /kscw/delete-account — deletes member + Directus user + all cascade data
+    // Auth required: user can only delete their own account, or admin can delete any
+
+    router.post('/delete-account', async (req, res) => {
+      try {
+        requireAuth(req, log)
+
+        const userId = req.accountability.user
+        const isAdmin = req.accountability.admin
+        const { member_id } = req.body
+
+        // Resolve which member to delete
+        let targetMemberId = member_id
+        if (!targetMemberId) {
+          // Default: delete own account
+          const self = await database('members').where('user', userId).select('id').first()
+          if (!self) return res.status(404).json({ error: 'Member not found' })
+          targetMemberId = self.id
+        } else if (!isAdmin) {
+          // Non-admin can only delete their own account
+          const self = await database('members').where('user', userId).select('id').first()
+          if (!self || String(self.id) !== String(targetMemberId)) {
+            return res.status(403).json({ error: 'Can only delete your own account' })
+          }
+        }
+
+        const member = await database('members').where('id', targetMemberId).select('id', 'user', 'email').first()
+        if (!member) return res.status(404).json({ error: 'Member not found' })
+
+        const linkedUserId = member.user
+
+        // Clean up email verifications (not FK-linked)
+        if (member.email) {
+          await database('email_verifications').where('email', member.email).delete()
+        }
+
+        // Delete member — CASCADE will handle member_teams, participations,
+        // notifications, absences, user_logs, scorer_delegations, poll_votes,
+        // slot_claims, push_subscriptions, coach/captain/TR junctions
+        await database('members').where('id', targetMemberId).delete()
+
+        // Delete linked Directus user (if exists)
+        if (linkedUserId) {
+          try {
+            const schema = await getSchema()
+            const { UsersService } = services
+            const adminUsersService = new UsersService({ schema, knex: database, accountability: { admin: true } })
+            await adminUsersService.deleteOne(linkedUserId)
+          } catch (userErr) {
+            // Log but don't fail — member is already deleted
+            log.warn({ msg: `delete-account: Directus user deletion failed for ${linkedUserId}`, error: userErr.message })
+          }
+        }
+
+        log.info(`Account deleted: member ${targetMemberId}${linkedUserId ? `, user ${linkedUserId}` : ''}${isAdmin && member_id ? ' (by admin)' : ''}`)
+        res.json({ success: true, deleted_member: targetMemberId })
+      } catch (err) {
+        logEndpointError(log, 'delete-account', err, req)
+        res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal error' })
+      }
+    })
+
     // ── Public: Check Email ─────────────────────────────────────
     router.post('/check-email', async (req, res) => {
       try {

@@ -35,7 +35,8 @@ export function initSentry() {
       Sentry.replayIntegration(),
     ],
 
-    // Don't send events from local dev; scrub PII from breadcrumbs
+    // Don't send events from local dev; scrub PII from breadcrumbs;
+    // forward all errors to backend JSONL log
     beforeSend(event) {
       if (host === 'localhost' || host === '127.0.0.1') return null
       // Strip email-like strings from breadcrumb messages
@@ -46,6 +47,22 @@ export function initSentry() {
           }
         }
       }
+
+      // Forward unhandled errors to backend log (API/auth errors already forwarded)
+      const isUnhandled = event.exception?.values?.[0]?.mechanism?.handled === false
+      if (isUnhandled) {
+        const ex = event.exception?.values?.[0]
+        sendToErrorLog({
+          source: 'frontend',
+          event: 'unhandled_error',
+          error: ex?.value || 'Unknown error',
+          type: ex?.type || 'Error',
+          page: event.request?.url || (typeof window !== 'undefined' ? window.location.pathname : null),
+          userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+          stack: ex?.stacktrace?.frames?.slice(-5).map(f => `${f.filename}:${f.lineno}:${f.colno} ${f.function || ''}`).join(' <- '),
+        })
+      }
+
       return event
     },
   })
@@ -175,6 +192,24 @@ export function captureApiError(
       error: err.message,
     },
   )
+
+  // Forward to backend JSONL log
+  sendToErrorLog({
+    source: 'frontend',
+    event: 'api_error',
+    operation: context.operation,
+    collection: context.collection,
+    recordId: context.recordId,
+    endpoint: context.endpoint,
+    method: context.method,
+    status: context.status,
+    responseBody: context.responseBody?.slice(0, 1000),
+    payload: safePayload,
+    page: window.location.pathname,
+    userAgent: navigator.userAgent,
+    error: err.message,
+    stack: err.stack?.slice(0, 2000),
+  })
 }
 
 /**
@@ -200,6 +235,18 @@ export function captureAuthError(
     Sentry.captureException(err)
   })
   console.error(`[Auth Error] ${context.action}`, { method: context.method, error: err.message })
+
+  // Forward to backend JSONL log
+  sendToErrorLog({
+    source: 'frontend',
+    event: 'auth_error',
+    action: context.action,
+    method: context.method,
+    page: window.location.pathname,
+    userAgent: navigator.userAgent,
+    error: err.message,
+    stack: err.stack?.slice(0, 2000),
+  })
 }
 
 /**
@@ -234,6 +281,40 @@ function scrubPii(obj: Record<string, unknown>): Record<string, unknown> {
     }
   }
   return result
+}
+
+// ── Forward client errors to backend JSONL log ──────────────────
+
+const API_BASE = (typeof window !== 'undefined' && window.location.hostname === 'wiedisync.kscw.ch')
+  ? 'https://directus.kscw.ch'
+  : (import.meta.env.VITE_DIRECTUS_URL || 'https://directus-dev.kscw.ch')
+
+/**
+ * Fire-and-forget: send a client error to the backend JSONL log.
+ * Never throws — logging should not break the app.
+ */
+function sendToErrorLog(entry: Record<string, unknown>) {
+  try {
+    // Skip in local dev
+    if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) return
+
+    const token = (() => {
+      try {
+        const raw = localStorage.getItem('directus_auth') || sessionStorage.getItem('directus_auth')
+        return raw ? JSON.parse(raw)?.access_token : null
+      } catch { return null }
+    })()
+
+    fetch(`${API_BASE}/kscw/client-error`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(entry),
+      keepalive: true, // survives page unload
+    }).catch(() => {}) // truly fire-and-forget
+  } catch { /* never block */ }
 }
 
 /** Re-export ErrorBoundary for use in App.tsx */

@@ -131,6 +131,61 @@ export default {
     const { services, database, logger, getSchema } = ctx
     const log = logger.child({ extension: 'kscw-endpoints' })
 
+    // ── Client Error Ingestion ─────────────────────────────────
+    // POST /kscw/client-error — receives frontend errors and writes to JSONL log.
+    // Rate-limited, accepts both auth and unauth requests.
+
+    const clientErrorIp = new Map() // ip → { count, resetAt }
+
+    router.post('/client-error', (req, res) => {
+      try {
+        // Rate limit: 30 errors per minute per IP
+        const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown'
+        const now = Date.now()
+        const ipEntry = clientErrorIp.get(ip)
+        if (ipEntry && now < ipEntry.resetAt) {
+          if (ipEntry.count >= 30) return res.status(429).end()
+          ipEntry.count++
+        } else {
+          clientErrorIp.set(ip, { count: 1, resetAt: now + 60000 })
+        }
+        // Clean stale entries
+        if (clientErrorIp.size > 500) {
+          for (const [k, v] of clientErrorIp) { if (now > v.resetAt) clientErrorIp.delete(k) }
+        }
+
+        const body = req.body
+        if (!body || typeof body !== 'object') return res.status(400).end()
+
+        // Write to JSONL — add userId from auth if available
+        const { writeErrorLog } = require('./error-log.js')
+        writeErrorLog({
+          level: 'error',
+          source: 'frontend',
+          event: body.event || 'client_error',
+          userId: req.accountability?.user || null,
+          operation: body.operation || null,
+          collection: body.collection || null,
+          recordId: body.recordId || null,
+          endpoint: body.endpoint || null,
+          method: body.method || null,
+          status: body.status || null,
+          action: body.action || null,
+          page: body.page || null,
+          userAgent: body.userAgent || null,
+          responseBody: typeof body.responseBody === 'string' ? body.responseBody.slice(0, 1000) : null,
+          payload: body.payload || null,
+          error: body.error || null,
+          type: body.type || null,
+          stack: typeof body.stack === 'string' ? body.stack.slice(0, 2000) : null,
+        })
+
+        res.status(204).end()
+      } catch {
+        res.status(500).end()
+      }
+    })
+
     // ── Public: Check Email ─────────────────────────────────────
     router.post('/check-email', async (req, res) => {
       try {

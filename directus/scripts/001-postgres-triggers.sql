@@ -129,6 +129,19 @@ BEGIN
     v_body := COALESCE(OLD.date::text, '');
   END IF;
 
+  -- Skip notifications for past games (allow result_available up to 3 days after)
+  IF v_type = 'result_available' THEN
+    IF NEW.date < CURRENT_DATE - INTERVAL '3 days' THEN
+      IF TG_OP = 'DELETE' THEN RETURN OLD; ELSE RETURN NEW; END IF;
+    END IF;
+  ELSE
+    IF TG_OP = 'DELETE' THEN
+      IF OLD.date < CURRENT_DATE THEN RETURN OLD; END IF;
+    ELSE
+      IF NEW.date < CURRENT_DATE THEN RETURN NEW; END IF;
+    END IF;
+  END IF;
+
   INSERT INTO notifications (member, type, title, body, activity_type, activity_id, team, read)
   SELECT mt.member, v_type, v_title, v_body, 'game', v_game_id::text, v_team_id, false
   FROM member_teams mt WHERE mt.team = v_team_id;
@@ -170,6 +183,13 @@ BEGIN
     v_body := COALESCE(OLD.date::text, '');
   END IF;
 
+  -- Skip notifications for past trainings
+  IF TG_OP = 'DELETE' THEN
+    IF OLD.date < CURRENT_DATE THEN RETURN OLD; END IF;
+  ELSE
+    IF NEW.date < CURRENT_DATE THEN RETURN NEW; END IF;
+  END IF;
+
   INSERT INTO notifications (member, type, title, body, activity_type, activity_id, team, read)
   SELECT mt.member, v_type, v_title, v_body, 'training', v_id::text, v_team_id, false
   FROM member_teams mt WHERE mt.team = v_team_id;
@@ -198,6 +218,13 @@ BEGIN
   ELSIF TG_OP = 'DELETE' THEN
     v_id := OLD.id; v_type := 'activity_change';
     v_title := COALESCE(OLD.title, 'Event deleted');
+  END IF;
+
+  -- Skip notifications for past events
+  IF TG_OP = 'DELETE' THEN
+    IF OLD.start_date < CURRENT_DATE THEN RETURN OLD; END IF;
+  ELSE
+    IF NEW.start_date < CURRENT_DATE THEN RETURN NEW; END IF;
   END IF;
 
   INSERT INTO notifications (member, type, title, body, activity_type, activity_id, team, read)

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useInfraHealth } from '../../hooks/useInfraHealth'
-import { API_URL, fetchItems } from '../../lib/api'
+import { API_URL, fetchItems, countItems, getAccessToken } from '../../lib/api'
 
 const PROD_URL = API_URL
 const DEV_URL = 'https://directus-dev.kscw.ch'
@@ -14,6 +14,7 @@ interface HealthCheck {
   status: Status
   detail: string
   responseTime?: number | null
+  value?: string | number | null
 }
 
 function statusColor(s: Status) {
@@ -72,6 +73,9 @@ function Card({ check }: { check: HealthCheck }) {
       {check.detail && (
         <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">{check.detail}</p>
       )}
+      {check.value != null && (
+        <p className="mt-1 text-lg font-bold text-gray-900 dark:text-white">{check.value}</p>
+      )}
       {check.responseTime != null && (
         <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
           {t('infraResponseTime')}: {check.responseTime}ms
@@ -104,6 +108,7 @@ export default function InfraHealthPage() {
   const [services, setServices] = useState<HealthCheck[]>([])
   const [syncs, setSyncs] = useState<HealthCheck[]>([])
   const [crons, setCrons] = useState<HealthCheck[]>([])
+  const [stats, setStats] = useState<HealthCheck[]>([])
   const [lastCheck, setLastCheck] = useState<string>('')
   const [loading, setLoading] = useState(false)
 
@@ -173,6 +178,58 @@ export default function InfraHealthPage() {
       responseTime: hooks.ms,
     })
 
+    // Postgres DB (check via Directus — if items query works, DB is alive)
+    const dbStart = Date.now()
+    try {
+      await fetchItems('teams', { limit: 1, fields: ['id'] })
+      svcResults.push({
+        name: t('infraPostgres'),
+        status: 'healthy',
+        detail: 'coolify-db',
+        responseTime: Date.now() - dbStart,
+      })
+    } catch {
+      svcResults.push({ name: t('infraPostgres'), status: 'down', detail: 'Query failed' })
+    }
+
+    // Error Log — today's error count
+    try {
+      const token = getAccessToken()
+      const res = await fetch(`${PROD_URL}/kscw/admin/error-logs?limit=1`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+      if (res.ok) {
+        const data = await res.json()
+        const total = data.total ?? 0
+        svcResults.push({
+          name: t('infraErrorLog'),
+          status: total === 0 ? 'healthy' : total <= 10 ? 'stale' : 'down',
+          detail: total === 0 ? t('infraNoErrors') : `${total} ${t('infraErrorsToday')}`,
+          value: total,
+        })
+      }
+    } catch {
+      svcResults.push({ name: t('infraErrorLog'), status: 'unknown', detail: '' })
+    }
+
+    // CF Pages — wiedisync (check if frontend is reachable)
+    const cfWiedisync = await checkEndpoint('https://wiedisync.kscw.ch/', true)
+    svcResults.push({
+      name: 'CF Pages (WiediSync)',
+      status: cfWiedisync.ok ? 'healthy' : 'down',
+      detail: cfWiedisync.ok ? 'wiedisync.kscw.ch' : 'Unreachable',
+      responseTime: cfWiedisync.ok ? cfWiedisync.ms : null,
+    })
+
+    // CF Pages — kscw-website
+    const cfWebsite = await checkEndpoint('https://kscw-website.pages.dev/', true)
+    svcResults.push({
+      name: 'CF Pages (Website)',
+      status: cfWebsite.ok ? 'healthy' : 'down',
+      detail: cfWebsite.ok ? 'kscw-website.pages.dev' : 'Unreachable',
+      responseTime: cfWebsite.ok ? cfWebsite.ms : null,
+    })
+
     setServices(svcResults)
 
     // Trigger shared hook refresh (updates syncs via useEffect above)
@@ -182,26 +239,122 @@ export default function InfraHealthPage() {
     const cronResults: HealthCheck[] = []
     const CRON_STALE = 48 * 3600000 // 48h
 
-    // Notifications
+    // Notifications (created by Postgres triggers on game/training/event CRUD)
     try {
-      const notif = await fetchItems<{ created: string }>('notifications', {
+      const notif = await fetchItems<{ date_created: string }>('notifications', {
         limit: 1,
         sort: ['-date_created'],
         fields: ['date_created'],
       })
       if (notif.length) {
-        const diff = Date.now() - new Date(notif[0].created).getTime()
+        const last = notif[0].date_created
+        const diff = Date.now() - new Date(last).getTime()
         cronResults.push({
           name: t('infraNotifCron'),
           status: diff > CRON_STALE ? 'stale' : 'healthy',
-          detail: timeAgo(notif[0].created, t),
+          detail: timeAgo(last, t),
         })
+      } else {
+        cronResults.push({ name: t('infraNotifCron'), status: 'unknown', detail: t('infraNoData') })
       }
     } catch {
       cronResults.push({ name: t('infraNotifCron'), status: 'unknown', detail: '' })
     }
 
+    // Participation Reminders (deadline_reminder notifications from 07:00 UTC cron)
+    try {
+      const reminders = await fetchItems<{ date_created: string }>('notifications', {
+        limit: 1,
+        sort: ['-date_created'],
+        filter: { type: { _eq: 'deadline_reminder' } },
+        fields: ['date_created'],
+      })
+      if (reminders.length) {
+        const last = reminders[0].date_created
+        const diff = Date.now() - new Date(last).getTime()
+        cronResults.push({
+          name: t('infraParticipationCron'),
+          status: diff > CRON_STALE ? 'stale' : 'healthy',
+          detail: timeAgo(last, t),
+        })
+      } else {
+        cronResults.push({ name: t('infraParticipationCron'), status: 'unknown', detail: t('infraNoData') })
+      }
+    } catch {
+      cronResults.push({ name: t('infraParticipationCron'), status: 'unknown', detail: '' })
+    }
+
+    // Upcoming Activity Reminders (06:30 UTC cron)
+    try {
+      const upcoming = await fetchItems<{ date_created: string }>('notifications', {
+        limit: 1,
+        sort: ['-date_created'],
+        filter: { type: { _eq: 'upcoming_activity' } },
+        fields: ['date_created'],
+      })
+      if (upcoming.length) {
+        const last = upcoming[0].date_created
+        const diff = Date.now() - new Date(last).getTime()
+        cronResults.push({
+          name: t('infraUpcomingCron'),
+          status: diff > CRON_STALE ? 'stale' : 'healthy',
+          detail: timeAgo(last, t),
+        })
+      } else {
+        cronResults.push({ name: t('infraUpcomingCron'), status: 'unknown', detail: t('infraNoData') })
+      }
+    } catch {
+      cronResults.push({ name: t('infraUpcomingCron'), status: 'unknown', detail: '' })
+    }
+
+    // Shell Expiry (02:00 UTC — check if any expired shells remain active)
+    try {
+      const expired = await countItems('members', {
+        shell: { _eq: true },
+        kscw_membership_active: { _eq: true },
+        shell_expires: { _lt: new Date().toISOString() },
+      })
+      cronResults.push({
+        name: t('infraShellExpiry'),
+        status: expired === 0 ? 'healthy' : 'stale',
+        detail: expired === 0 ? t('infraAllCleaned') : `${expired} ${t('infraExpiredRemain')}`,
+      })
+    } catch {
+      cronResults.push({ name: t('infraShellExpiry'), status: 'unknown', detail: '' })
+    }
+
+    // Push Delivery (check last push subscription activity)
+    try {
+      const subs = await countItems('push_subscriptions')
+      cronResults.push({
+        name: t('infraPushDelivery'),
+        status: subs > 0 ? 'healthy' : 'stale',
+        detail: `${subs} ${t('infraActiveSubs')}`,
+        value: subs,
+      })
+    } catch {
+      cronResults.push({ name: t('infraPushDelivery'), status: 'unknown', detail: '' })
+    }
+
     setCrons(cronResults)
+
+    // ── Stats ──
+    const statResults: HealthCheck[] = []
+
+    try {
+      const [members, teams, games] = await Promise.all([
+        countItems('members', { kscw_membership_active: { _eq: true } }),
+        countItems('teams', { active: { _eq: true } }),
+        countItems('games'),
+      ])
+      statResults.push(
+        { name: t('infraActiveMembers'), status: 'healthy', detail: '', value: members },
+        { name: t('infraActiveTeams'), status: 'healthy', detail: '', value: teams },
+        { name: t('infraTotalGames'), status: 'healthy', detail: '', value: games },
+      )
+    } catch { /* skip stats on error */ }
+
+    setStats(statResults)
     setLastCheck(new Date().toLocaleTimeString())
     setLoading(false)
   }, [t])
@@ -247,6 +400,7 @@ export default function InfraHealthPage() {
       <Section title={t('infraServices')} checks={services} />
       <Section title={t('infraDataSyncs')} checks={syncs} />
       <Section title={t('infraCronJobs')} checks={crons} />
+      {stats.length > 0 && <Section title={t('infraStats')} checks={stats} />}
     </div>
   )
 }

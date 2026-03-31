@@ -48,6 +48,7 @@ positions[3]{ticker,shares,costBasis}:
 - **Hallenplan virtual slots**: Games, trainings, and GCal hall events are converted to `HallSlot`-shaped objects at display time (via `_virtual` metadata field) and merged with real `hall_slots`. They're never stored in the DB. See `INFRA.md → Hallenplan Virtual Slots` for the full mapping table.
 - **Data integrity guards**: Postgres triggers enforce validation (slot claims, shell invites, coach approval). Game sync skips records with no `away_team`. See `directus/scripts/001-postgres-triggers.sql`.
 - `.env` is gitignored — Cloudflare Pages env vars handle production config
+- **Error logging**: ALL errors (frontend + backend) are logged to persistent JSONL files and accessible via `GET /kscw/admin/error-logs`. Load `/kscw-error-logs` skill for full query reference. Frontend errors also go to Sentry (de.sentry.io, org "kscw"). Check error logs FIRST when debugging any issue.
 - **Troubleshooting**: When you encounter and solve an error, document it in `INFRA.md → Troubleshooting & Gotchas`. Check that section FIRST before debugging — the fix may already be documented.
 
 ## Directus Admin

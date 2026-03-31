@@ -2,22 +2,35 @@ import { useTranslation } from 'react-i18next'
 import ConflictBadge from './ConflictBadge'
 import type { PositionedSlot } from '../utils/timeGrid'
 
-/** Training icon SVG — occupies most of the slot as a watermark */
-const TrainingIcon = () => (
-  <svg className="absolute inset-0 m-auto h-[60%] w-[60%] opacity-15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-    <path d="M16.05 10.966a5 2.5 0 0 1-8.1 0" />
-    <path d="m16.923 14.049 4.48 2.04a1 1 0 0 1 .001 1.831l-8.574 3.9a2 2 0 0 1-1.66 0l-8.574-3.91a1 1 0 0 1 0-1.83l4.484-2.04" />
-    <path d="M16.949 14.14a5 2.5 0 1 1-9.9 0L10.063 3.5a2 2 0 0 1 3.874 0z" />
-    <path d="M9.194 6.57a5 2.5 0 0 0 5.61 0" />
+/** Volleyball ball watermark */
+const VolleyballIcon = () => (
+  <svg className="absolute inset-0 m-auto h-[60%] w-[60%] opacity-15" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" fill="currentColor" stroke="currentColor" strokeWidth="1.5" opacity="0.3" />
+    <path d="M11.1 7.1a16.55 16.55 0 0 1 10.9 4" stroke="currentColor" strokeWidth="1.5" />
+    <path d="M12 12a12.6 12.6 0 0 1-8.7 5" stroke="currentColor" strokeWidth="1.5" />
+    <path d="M16.8 13.6a16.55 16.55 0 0 1-9 7.5" stroke="currentColor" strokeWidth="1.5" />
+    <path d="M20.7 17a12.8 12.8 0 0 0-8.7-5 13.3 13.3 0 0 1 0-10" stroke="currentColor" strokeWidth="1.5" />
+    <path d="M6.3 3.8a16.55 16.55 0 0 0 1.9 11.5" stroke="currentColor" strokeWidth="1.5" />
   </svg>
 )
 
-/** Trophy/cup SVG — occupies most of the slot as a watermark */
-const GameIcon = () => (
-  <svg className="absolute inset-0 m-auto h-[60%] w-[60%] opacity-15" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M7 4V2h10v2h3a1 1 0 011 1v3c0 2.21-1.79 4-4 4h-.54A5.98 5.98 0 0113 14.92V17h3v2h1v2H7v-2h1v-2h3v-2.08A5.98 5.98 0 017.54 12H7c-2.21 0-4-1.79-4-4V5a1 1 0 011-1h3zm0 2H5v2c0 1.1.9 2 2 2h.2A6.03 6.03 0 017 8V6zm10 0v2c0 .7-.08 1.38-.2 2H17c1.1 0 2-.9 2-2V6h-2z" />
+/** Basketball ball watermark */
+const BasketballIcon = () => (
+  <svg className="absolute inset-0 m-auto h-[60%] w-[60%] opacity-15" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round" style={{ transform: 'rotate(90deg)' }}>
+    <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.3" />
+    <path d="M4.93 4.93c4.08 2.64 8.74 3.2 14.14 0" stroke="currentColor" strokeWidth="1.5" />
+    <path d="M4.93 19.07c4.08-2.64 8.74-3.2 14.14 0" stroke="currentColor" strokeWidth="1.5" />
+    <line x1="12" y1="2" x2="12" y2="22" stroke="currentColor" strokeWidth="1.5" />
+    <line x1="2" y1="12" x2="22" y2="12" stroke="currentColor" strokeWidth="1.5" />
   </svg>
 )
+
+/** Sport-specific ball icon watermark */
+const SlotIcon = ({ sport }: { sport?: string }) => {
+  if (sport === 'volleyball') return <VolleyballIcon />
+  if (sport === 'basketball') return <BasketballIcon />
+  return null
+}
 
 const FREED_COLOR = { bg: '#a7f3d0', text: '#064e3b', border: '#10b981' }
 const CLOSURE_COLOR = { bg: '#1f2937', text: '#f87171', border: '#991b1b' }
@@ -27,12 +40,12 @@ const CLOSURE_PATTERN = /geschlossen|gesperrt|closed/i
 /** Sport+type color scheme for hallenplan slots */
 const SLOT_COLORS: Record<string, Record<string, { bg: string; text: string; border: string }>> = {
   volleyball: {
-    training: { bg: '#3b82f6', text: '#ffffff', border: '#2563eb' },  // blue-500
+    training: { bg: '#FFC832', text: '#1a1a1a', border: '#e6b400' },  // KSCW gold
     game:     { bg: '#FFC832', text: '#1a1a1a', border: '#e6b400' },  // KSCW gold
   },
   basketball: {
-    training: { bg: '#1f2937', text: '#ffffff', border: '#111827' },  // gray-800 (black)
-    game:     { bg: '#f97316', text: '#ffffff', border: '#ea580c' },  // orange-500
+    training: { bg: '#f97316', text: '#1a1a1a', border: '#ea580c' },  // orange-500
+    game:     { bg: '#f97316', text: '#1a1a1a', border: '#ea580c' },  // orange-500
   },
 }
 
@@ -163,8 +176,7 @@ export default function SlotBlock({ positioned, teamName, teamSport, hasConflict
         title={tooltip}
       >
         {hasConflict && <ConflictBadge />}
-        {slot.slot_type === 'training' && <TrainingIcon />}
-        {slot.slot_type === 'game' && <GameIcon />}
+        <SlotIcon sport={teamSport} />
         <span className={`relative truncate font-semibold ${isCancelled && !isFreed ? 'line-through' : ''}`}>
           {(isFreed || isManuallyFree) ? t('slotFreed') : isClaimed ? t('slotClaimed') : typeLabels[slot.slot_type] || slot.label}
         </span>
@@ -230,8 +242,7 @@ export default function SlotBlock({ positioned, teamName, teamSport, hasConflict
             </svg>
           </span>
         )}
-        {slot.slot_type === 'training' && <TrainingIcon />}
-        {slot.slot_type === 'game' && <GameIcon />}
+        <SlotIcon sport={teamSport} />
         {(isFreed || isManuallyFree) ? (
           <>
             <div className="relative flex items-center gap-1">

@@ -18,7 +18,7 @@ import { registerGameScheduling } from './game-scheduling.js'
 import { registerContactForm } from './contact-form.js'
 import { registerWebPush, sendPushToMember } from './web-push.js'
 import { FRONTEND_URL } from './email-template.js'
-import { logErrorToFile, logAuthDenial, logWarning, cleanOldLogs } from './error-log.js'
+import { writeErrorLog, logErrorToFile, logAuthDenial, logWarning, cleanOldLogs } from './error-log.js'
 
 // ── Helpers ──────────────────────────────────────────────────────
 
@@ -158,7 +158,6 @@ export default {
         if (!body || typeof body !== 'object') return res.status(400).end()
 
         // Write to JSONL — add userId from auth if available
-        const { writeErrorLog } = require('./error-log.js')
         writeErrorLog({
           level: 'error',
           source: 'frontend',

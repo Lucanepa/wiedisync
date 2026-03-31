@@ -164,12 +164,12 @@ export default function InfraHealthPage() {
       responseTime: push.cors ? null : push.ms,
     })
 
-    // Extensions deployed (check a known KSCW endpoint)
-    const hooks = await checkEndpoint(`${PROD_URL}/kscw/health`)
+    // Directus extensions deployed (check a known KSCW endpoint)
+    const hooks = await checkEndpoint(`${PROD_URL}/kscw/web-push/vapid-public-key`)
     svcResults.push({
       name: t('infraHooksDeployed'),
       status: hooks.ok ? 'healthy' : 'down',
-      detail: hooks.ok ? t('infra_healthy') : 'Hook endpoints not responding',
+      detail: hooks.ok ? 'KSCW extensions active' : 'Extensions not responding',
       responseTime: hooks.ms,
     })
 

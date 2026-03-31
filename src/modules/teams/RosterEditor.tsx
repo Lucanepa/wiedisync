@@ -146,11 +146,7 @@ export default function RosterEditor() {
     try {
       await updateRecord('members', memberId, { number: num })
       logActivity('update', 'members', memberId, { number: num })
-      const mt = members.find((m) => String(asObj<Member>(m.member)?.id) === memberId)
-      const _memberRef = mt ? asObj<Member>(mt.member) : null
-      if (_memberRef) {
-        ;(_memberRef as Record<string, unknown>).number = num
-      }
+      refetch()
     } catch {
       toast.error(t('common:errorSaving'))
     }
@@ -161,11 +157,7 @@ export default function RosterEditor() {
     try {
       await updateRecord('members', memberId, { position: positions })
       logActivity('update', 'members', memberId, { position: positions })
-      const mt = members.find((m) => String(asObj<Member>(m.member)?.id) === memberId)
-      const _memberRef = mt ? asObj<Member>(mt.member) : null
-      if (_memberRef) {
-        ;(_memberRef as Record<string, unknown>).position = positions
-      }
+      refetch()
     } catch {
       toast.error(t('common:errorSaving'))
     }

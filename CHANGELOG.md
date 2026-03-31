@@ -2,6 +2,12 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.1.0] — 2026-03-31
+
+### Features
+
+- **Error log annotations** — Errors can now be marked as `solved`, `important`, or `open` with resolution notes and commit references. Solved errors are hidden by default when checking logs, so only new/unresolved errors surface. Bulk annotation supported. Backed by Postgres `error_annotations` table with MD5-based entry hashing. New endpoints: `POST /kscw/admin/error-logs/annotate`, `POST /kscw/admin/error-logs/annotate-bulk`, `GET /kscw/admin/error-logs/annotations`. Existing `GET /kscw/admin/error-logs` now returns `_hash` and `_annotation` per entry and accepts `?show_solved=true`.
+
 ## [3.0.0] — 2026-03-29
 
 ### Breaking

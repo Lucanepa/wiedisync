@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.0.0'
+const APP_VERSION = '3.1.0'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,18 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.1.0',
+    date: '2026-03-31',
+    sections: [
+      {
+        title: 'Admin',
+        items: [
+          'Error-Log-Annotationen: Fehler können als gelöst, wichtig oder offen markiert werden — mit Notizen und Commit-Referenzen. Gelöste Fehler werden standardmässig ausgeblendet.',
+        ],
+      },
+    ],
+  },
   {
     version: '3.0.0',
     date: '2026-03-29',

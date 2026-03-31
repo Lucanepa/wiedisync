@@ -39,11 +39,6 @@ const ROLE_COLORS: Record<LeadershipRole, string> = {
   team_responsible: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
 }
 
-const ROLE_SHORT: Record<LeadershipRole, string> = {
-  coach: 'C',
-  captain: 'Cap',
-  team_responsible: 'TR',
-}
 
 export default function RosterEditor() {
   const { t } = useTranslation('teams')

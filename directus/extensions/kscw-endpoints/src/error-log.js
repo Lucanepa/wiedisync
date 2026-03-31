@@ -12,6 +12,7 @@
 
 import fs from 'fs'
 import path from 'path'
+import crypto from 'crypto'
 
 const LOG_DIR = process.env.ERROR_LOG_DIR || '/directus/logs'
 const MAX_AGE_DAYS = 30
@@ -102,6 +103,15 @@ export function logWarning(event, message, extra) {
     message,
     ...extra,
   })
+}
+
+/**
+ * Compute a stable hash for a log entry.
+ * Uses ts|event|error — unique per entry since ts is millisecond-precision.
+ */
+export function computeErrorHash(entry) {
+  const key = `${entry.ts || ''}|${entry.event || ''}|${entry.error || ''}`
+  return crypto.createHash('md5').update(key).digest('hex')
 }
 
 /**

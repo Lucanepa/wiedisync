@@ -177,7 +177,13 @@ export function registerICalFeed(router, { database, logger }) {
       res.set('Cache-Control', 'public, max-age=3600')
       res.send(lines.join('\r\n'))
     } catch (err) {
-      log.error(`ical-feed: ${err.message}`)
+      log.error({
+        msg: `ical-feed: ${err.message}`,
+        endpoint: 'ical-feed',
+        method: req.method,
+        query: { source: req.query?.source, team: req.query?.team, sport: sportFilter },
+        stack: err.stack,
+      })
       res.status(500).json({ error: 'Internal error' })
     }
   }

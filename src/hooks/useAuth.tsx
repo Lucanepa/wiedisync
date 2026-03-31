@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback, useMemo, t
 import { readMe, readItems } from '@directus/sdk'
 import { client, login as apiLogin, logout as apiLogout, refreshAuth, isAuthenticated, API_URL, fetchItems } from '../lib/api'
 import { queryClient } from '../lib/query'
-import { setSentryUser } from '../lib/sentry'
+import { setSentryUser, captureAuthError, captureApiError, addBreadcrumb } from '../lib/sentry'
 import i18n from '../i18n'
 import { backendLangToI18n } from '../utils/languageMap'
 import { getCurrentSeason } from '../utils/dateHelpers'
@@ -126,7 +126,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       setTeamSportById(sportById)
       setTeamsReady(true)
-    } catch {
+    } catch (err) {
+      captureApiError(err, { operation: 'loadTeamContext', collection: 'member_teams' })
       setTeamsReady(true)
     }
   }, [])
@@ -141,13 +142,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const member = await fetchMember()
         if (member) {
           setUser(member)
+          addBreadcrumb('auth.init', { memberId: member.id })
           setSentryUser({ id: member.id })
           await loadTeamContext(member.id)
         } else {
           // Token refreshed but no linked member — clear auth
           await apiLogout()
         }
-      } catch {
+      } catch (err) {
+        captureAuthError(err, { action: 'session_restore' })
         // Refresh failed — token is stale/invalid, clear everything
         await apiLogout()
         // Force reload to clear SDK internal state
@@ -167,13 +170,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user?.language])
 
+  // Enrich Sentry user context once user + teams are fully loaded
+  useEffect(() => {
+    if (!user || !teamsReady) return
+    setSentryUser({
+      id: user.id,
+      roles: Array.isArray(user.role) ? user.role : [],
+      memberTeamIds,
+      coachTeamIds,
+      primarySport: memberSports.size === 1 ? [...memberSports][0] : 'both',
+      isAdmin: Array.isArray(user.role) && (
+        user.role.includes('admin') || user.role.includes('superuser') ||
+        user.role.includes('vb_admin') || user.role.includes('bb_admin')
+      ),
+    })
+  }, [user, teamsReady, memberTeamIds, coachTeamIds, memberSports])
+
   // ── Actions ─────────────────────────────────────────────────────
 
   const login = useCallback(async (email: string, password: string) => {
+    addBreadcrumb('auth.login_attempt')
     await apiLogin(email, password)
     const member = await fetchMember()
     if (member) {
       setUser(member)
+      addBreadcrumb('auth.login_success', { memberId: member.id })
       setSentryUser({ id: member.id })
       await loadTeamContext(member.id)
     }

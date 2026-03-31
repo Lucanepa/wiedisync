@@ -10,6 +10,7 @@
 import { QueryClient, QueryClientProvider, useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { fetchItems, fetchAllItems, fetchItem, countItems, createRecord, updateRecord, deleteRecord } from './api'
+import { captureApiError } from './sentry'
 
 // ── Query Client ────────────────────────────────────────────────────
 
@@ -20,6 +21,13 @@ export const queryClient = new QueryClient({
       gcTime: 5 * 60_000,       // 5min garbage collection
       refetchOnWindowFocus: false,
       retry: 1,
+    },
+    mutations: {
+      onError: (error) => {
+        // Global fallback — individual api.ts helpers already capture with full context,
+        // but this catches anything that slips through (e.g. post-mutation logic errors)
+        captureApiError(error, { operation: 'mutation_global_fallback' })
+      },
     },
   },
 })
@@ -131,7 +139,10 @@ export function useCreate<T = Record<string, unknown>>(
       qc.invalidateQueries({ queryKey: keys.collection(collection) })
       callbacks?.onSuccess?.(data)
     },
-    onError: callbacks?.onError,
+    onError: (error) => {
+      captureApiError(error, { operation: 'useCreate', collection })
+      callbacks?.onError?.(error)
+    },
   })
 }
 
@@ -147,7 +158,10 @@ export function useUpdate<T = Record<string, unknown>>(
       qc.invalidateQueries({ queryKey: keys.collection(collection) })
       callbacks?.onSuccess?.(data)
     },
-    onError: callbacks?.onError,
+    onError: (error, variables) => {
+      captureApiError(error, { operation: 'useUpdate', collection, recordId: variables.id })
+      callbacks?.onError?.(error)
+    },
   })
 }
 
@@ -163,7 +177,10 @@ export function useDelete(
       qc.invalidateQueries({ queryKey: keys.collection(collection) })
       callbacks?.onSuccess?.(undefined)
     },
-    onError: callbacks?.onError,
+    onError: (error, id) => {
+      captureApiError(error, { operation: 'useDelete', collection, recordId: id })
+      callbacks?.onError?.(error)
+    },
   })
 }
 

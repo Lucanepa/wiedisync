@@ -10,6 +10,7 @@ import {
   readItems, readItem, createItem, updateItem, deleteItem,
   aggregate,
 } from '@directus/sdk'
+import { captureApiError, captureAuthError } from './sentry'
 
 // ── Config ──────────────────────────────────────────────────────────
 
@@ -78,7 +79,12 @@ if (typeof window !== 'undefined') {
 // ── Auth helpers ────────────────────────────────────────────────────
 
 export async function login(email: string, password: string) {
-  return client.login(email, password)
+  try {
+    return await client.login(email, password)
+  } catch (err) {
+    captureAuthError(err, { action: 'login', method: 'password' })
+    throw err
+  }
 }
 
 export async function logout() {
@@ -89,7 +95,12 @@ export async function logout() {
 }
 
 export async function refreshAuth() {
-  return client.refresh()
+  try {
+    return await client.refresh()
+  } catch (err) {
+    captureAuthError(err, { action: 'token_refresh' })
+    throw err
+  }
 }
 
 export function getAccessToken(): string | null {
@@ -187,8 +198,13 @@ export async function fetchItems<T = Record<string, unknown>>(
   if (query?.offset !== undefined) q.offset = query.offset
   if (query?.deep) q.deep = query.deep
   if (query?.search) q.search = query.search
-  const items = await client.request<T[]>(readItems(collection, q as never))
-  return stringifyIds(items)
+  try {
+    const items = await client.request<T[]>(readItems(collection, q as never))
+    return stringifyIds(items)
+  } catch (err) {
+    captureApiError(err, { operation: 'fetchItems', collection, payload: q as Record<string, unknown> })
+    throw err
+  }
 }
 
 /** Fetch all items (no pagination). */
@@ -201,7 +217,12 @@ export async function fetchAllItems<T = Record<string, unknown>>(
     deep?: Record<string, unknown>
   },
 ): Promise<T[]> {
-  return fetchItems<T>(collection, { ...query, limit: -1 })
+  try {
+    return await fetchItems<T>(collection, { ...query, limit: -1 })
+  } catch (err) {
+    captureApiError(err, { operation: 'fetchAllItems', collection })
+    throw err
+  }
 }
 
 /** Fetch a single item by ID. */
@@ -210,8 +231,13 @@ export async function fetchItem<T = Record<string, unknown>>(
   id: string | number,
   query?: { fields?: string[] },
 ): Promise<T> {
-  const item = await client.request<T>(readItem(collection, id, query as never))
-  return stringifyId(item)
+  try {
+    const item = await client.request<T>(readItem(collection, id, query as never))
+    return stringifyId(item)
+  } catch (err) {
+    captureApiError(err, { operation: 'fetchItem', collection, recordId: id })
+    throw err
+  }
 }
 
 /** Count items in a collection. */
@@ -219,11 +245,16 @@ export async function countItems(
   collection: string,
   filter?: Record<string, unknown>,
 ): Promise<number> {
-  const result = await client.request(aggregate(collection, {
-    aggregate: { count: '*' },
-    query: filter ? { filter } as never : undefined,
-  }))
-  return Number(result[0]?.count ?? 0)
+  try {
+    const result = await client.request(aggregate(collection, {
+      aggregate: { count: '*' },
+      query: filter ? { filter } as never : undefined,
+    }))
+    return Number(result[0]?.count ?? 0)
+  } catch (err) {
+    captureApiError(err, { operation: 'countItems', collection })
+    throw err
+  }
 }
 
 /** Create a new item. */
@@ -231,8 +262,13 @@ export async function createRecord<T = Record<string, unknown>>(
   collection: string,
   data: Record<string, unknown>,
 ): Promise<T> {
-  const item = await client.request<T>(createItem(collection, data as never))
-  return stringifyId(item)
+  try {
+    const item = await client.request<T>(createItem(collection, data as never))
+    return stringifyId(item)
+  } catch (err) {
+    captureApiError(err, { operation: 'createRecord', collection, payload: data })
+    throw err
+  }
 }
 
 /** Update an item. */
@@ -241,8 +277,13 @@ export async function updateRecord<T = Record<string, unknown>>(
   id: string | number,
   data: Record<string, unknown>,
 ): Promise<T> {
-  const item = await client.request<T>(updateItem(collection, id, data as never))
-  return stringifyId(item)
+  try {
+    const item = await client.request<T>(updateItem(collection, id, data as never))
+    return stringifyId(item)
+  } catch (err) {
+    captureApiError(err, { operation: 'updateRecord', collection, recordId: id, payload: data })
+    throw err
+  }
 }
 
 /** Delete an item. */
@@ -250,7 +291,12 @@ export async function deleteRecord(
   collection: string,
   id: string | number,
 ): Promise<void> {
-  await client.request(deleteItem(collection, id))
+  try {
+    await client.request(deleteItem(collection, id))
+  } catch (err) {
+    captureApiError(err, { operation: 'deleteRecord', collection, recordId: id })
+    throw err
+  }
 }
 
 /** Get a Directus asset URL (images, files). */
@@ -265,15 +311,40 @@ export async function kscwApi<T = unknown>(
   options?: { method?: string; body?: unknown; headers?: Record<string, string> },
 ): Promise<T> {
   const token = getAccessToken()
-  const res = await fetch(`${API_URL}/kscw${path}`, {
-    method: options?.method || 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options?.headers,
-    },
-    ...(options?.body ? { body: JSON.stringify(options.body) } : {}),
-  })
-  if (!res.ok) throw new Error(`API ${path}: ${res.status}`)
+  const method = options?.method || 'GET'
+  let res: Response
+  try {
+    res = await fetch(`${API_URL}/kscw${path}`, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...options?.headers,
+      },
+      ...(options?.body ? { body: JSON.stringify(options.body) } : {}),
+    })
+  } catch (err) {
+    // Network error (offline, DNS, CORS)
+    captureApiError(err, {
+      operation: 'kscwApi',
+      endpoint: path,
+      method,
+      payload: options?.body as Record<string, unknown> | undefined,
+    })
+    throw err
+  }
+  if (!res.ok) {
+    const responseBody = await res.text().catch(() => '')
+    const err = new Error(`API ${path}: ${res.status}`)
+    captureApiError(err, {
+      operation: 'kscwApi',
+      endpoint: path,
+      method,
+      status: res.status,
+      responseBody,
+      payload: options?.body as Record<string, unknown> | undefined,
+    })
+    throw err
+  }
   return res.json()
 }

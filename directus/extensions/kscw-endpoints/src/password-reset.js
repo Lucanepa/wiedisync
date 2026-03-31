@@ -149,7 +149,13 @@ export function registerPasswordReset(router, { database, logger, services, getS
       log.info(`Password reset email sent to user ${user.id} (${lang})`)
       res.status(204).end()
     } catch (err) {
-      log.error(`password-request: ${err.message}`)
+      log.error({
+        msg: `password-request: ${err.message}`,
+        endpoint: 'password-request',
+        userId: null,
+        method: req.method,
+        stack: err.stack,
+      })
       // Always 204 to not leak info
       res.status(204).end()
     }

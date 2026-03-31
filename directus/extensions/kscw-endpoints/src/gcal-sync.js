@@ -71,7 +71,7 @@ export function registerGCalSync(router, { database, logger }) {
     for (const calId of GCAL_IDS) {
       const url = `https://calendar.google.com/calendar/ical/${encodeURIComponent(calId)}/public/basic.ics`
       const resp = await fetch(url)
-      if (!resp.ok) { log.warn(`GCal fetch failed for ${calId}: ${resp.status}`); continue }
+      if (!resp.ok) { log.warn({ msg: `GCal fetch failed for ${calId}: ${resp.status}`, endpoint: 'gcal-sync', calendarId: calId, httpStatus: resp.status }); continue }
       const icsText = await resp.text()
       const events = parseIcs(icsText)
 
@@ -126,7 +126,7 @@ export function registerGCalSync(router, { database, logger }) {
       const result = await runSync(database)
       res.json({ status: 'ok', ...result })
     } catch (err) {
-      log.error(`gcal-sync: ${err.message}`)
+      log.error({ msg: `gcal-sync: ${err.message}`, endpoint: 'gcal-sync', userId: req?.accountability?.user || null, method: req?.method, stack: err.stack })
       res.status(500).json({ error: 'Internal error' })
     }
   })

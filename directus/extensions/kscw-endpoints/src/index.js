@@ -49,21 +49,73 @@ function addDays(date, days) {
   return d
 }
 
-function requireAdmin(req) {
+// ── PII scrubbing for request body logging ─────────────────────
+const PII_KEYS = new Set(['email', 'password', 'phone', 'birthdate', 'first_name', 'last_name', 'token', 'otp', 'code', 'turnstile_token'])
+
+function scrubBody(body) {
+  if (!body || typeof body !== 'object') return body
+  const safe = {}
+  for (const [k, v] of Object.entries(body)) {
+    safe[k] = PII_KEYS.has(k) ? '[REDACTED]' : v
+  }
+  return safe
+}
+
+// ── Structured error logging ───────────────────────────────────
+/**
+ * Log endpoint errors with full context: WHO (user/member), WHAT (endpoint),
+ * WHY (error + stack), and WHICH (request body, scrubbed).
+ */
+function logEndpointError(log, endpoint, err, req) {
+  const userId = req?.accountability?.user || null
+  const isAdmin = req?.accountability?.admin || false
+  log.error({
+    msg: `${endpoint}: ${err.message}`,
+    endpoint,
+    userId,
+    isAdmin,
+    status: err.status || 500,
+    method: req?.method,
+    body: req?.body ? scrubBody(req.body) : undefined,
+    params: req?.params || undefined,
+    query: req?.query || undefined,
+    stack: err.stack,
+  })
+}
+
+function requireAdmin(req, log) {
   if (!req.accountability?.admin) {
+    if (log) {
+      log.warn({
+        msg: 'Admin access denied',
+        userId: req.accountability?.user || null,
+        endpoint: req.path,
+        method: req.method,
+      })
+    }
     const err = new Error('Admin access required')
     err.status = 403
     throw err
   }
 }
 
-function requireAuth(req) {
+function requireAuth(req, log) {
   if (!req.accountability?.user) {
+    if (log) {
+      log.warn({
+        msg: 'Authentication required — unauthenticated request blocked',
+        endpoint: req.path,
+        method: req.method,
+        ip: req.ip || req.headers?.['x-forwarded-for'] || 'unknown',
+      })
+    }
     const err = new Error('Authentication required')
     err.status = 401
     throw err
   }
 }
+
+export { logEndpointError, scrubBody }
 
 export default {
   id: 'kscw',
@@ -111,7 +163,7 @@ export default {
 
         res.json(result)
       } catch (err) {
-        log.error(`check-email: ${err.message}`)
+        logEndpointError(log, 'check-email', err, req)
         res.status(500).json({ error: 'Internal error' })
       }
     })
@@ -127,7 +179,7 @@ export default {
           .orderBy('name')
         res.json({ data: teams })
       } catch (err) {
-        log.error(`public/teams: ${err.message}`)
+        logEndpointError(log, 'public/teams', err, _req)
         res.status(500).json({ error: 'Internal error' })
       }
     })
@@ -191,7 +243,7 @@ export default {
           },
         })
       } catch (err) {
-        log.error(`public/team: ${err.message}`)
+        logEndpointError(log, 'public/team', err, req)
         res.status(500).json({ error: 'Internal error' })
       }
     })
@@ -201,7 +253,7 @@ export default {
         const sponsors = await database('sponsors').where('active', true).orderBy('sort_order')
         res.json({ data: sponsors })
       } catch (err) {
-        log.error(`public/sponsors: ${err.message}`)
+        logEndpointError(log, 'public/sponsors', err, _req)
         res.status(500).json({ error: 'Internal error' })
       }
     })
@@ -210,25 +262,27 @@ export default {
 
     router.post('/admin/sv-sync', async (req, res) => {
       try {
-        requireAdmin(req)
+        requireAdmin(req, log)
         log.info('Manual SV sync triggered')
         const games = await syncSvGames(database, log)
         const rankings = await syncSvRankings(database, log)
         res.json({ status: 'ok', games, rankings })
       } catch (err) {
-        res.status(err.status || 500).json({ error: err.message })
+        logEndpointError(log, 'admin/sv-sync', err, req)
+        res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal error' })
       }
     })
 
     router.post('/admin/bp-sync', async (req, res) => {
       try {
-        requireAdmin(req)
+        requireAdmin(req, log)
         log.info('Manual BP sync triggered')
         const games = await syncBpGames(database, log)
         const rankings = await syncBpRankings(database, log, games.leagueHoldingIds)
         res.json({ status: 'ok', games, rankings })
       } catch (err) {
-        res.status(err.status || 500).json({ error: err.message })
+        logEndpointError(log, 'admin/bp-sync', err, req)
+        res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal error' })
       }
     })
 
@@ -250,14 +304,14 @@ export default {
           },
         })
       } catch (err) {
-        log.error(`team-invites/info: ${err.message}`)
+        logEndpointError(log, 'team-invites/info', err, req)
         res.status(500).json({ error: 'Internal error' })
       }
     })
 
     router.post('/team-invites/create', async (req, res) => {
       try {
-        requireAuth(req)
+        requireAuth(req, log)
         const { team: teamId, guest_level } = req.body
         if (!teamId) return res.status(400).json({ error: 'team required' })
         const gl = parseInt(guest_level)
@@ -298,7 +352,7 @@ export default {
 
         res.json({ token, qr_url: `${FRONTEND_URL}/join?token=${token}`, expires_at: expiresAt })
       } catch (err) {
-        log.error(`team-invites/create: ${err.message}`)
+        logEndpointError(log, 'team-invites/create', err, req)
         res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal error' })
       }
     })
@@ -356,14 +410,14 @@ export default {
         log.info(`Shell invite claimed: member ${memberId} → team ${team.name}`)
         res.json({ success: true, member_id: memberId, team_name: team.name })
       } catch (err) {
-        log.error(`team-invites/claim: ${err.message}`)
+        logEndpointError(log, 'team-invites/claim', err, req)
         res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal error' })
       }
     })
 
     router.post('/team-invites/extend', async (req, res) => {
       try {
-        requireAuth(req)
+        requireAuth(req, log)
         const { member_id } = req.body
         if (!member_id) return res.status(400).json({ error: 'member_id required' })
 
@@ -395,7 +449,7 @@ export default {
 
         res.json({ success: true, member_id, shell_expires: newExpiry })
       } catch (err) {
-        log.error(`team-invites/extend: ${err.message}`)
+        logEndpointError(log, 'team-invites/extend', err, req)
         res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal error' })
       }
     })
@@ -522,7 +576,7 @@ export default {
 
         res.json({ success: true })
       } catch (err) {
-        log.error(`verify-email: ${err.message}`)
+        logEndpointError(log, 'verify-email', err, req)
         res.status(500).json({ error: 'Internal error' })
       }
     })
@@ -558,7 +612,7 @@ export default {
         await database('email_verifications').where('id', record.id).update({ verified: true })
         res.json({ success: true, verified: true })
       } catch (err) {
-        log.error(`verify-email/confirm: ${err.message}`)
+        logEndpointError(log, 'verify-email/confirm', err, req)
         res.status(500).json({ error: 'Internal error' })
       }
     })
@@ -648,7 +702,7 @@ export default {
 
         res.json({ success: true, member_id: memberId ? String(memberId) : undefined })
       } catch (err) {
-        log.error(`set-password: ${err.message}`)
+        logEndpointError(log, 'set-password', err, req)
         res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal error' })
       }
     })
@@ -786,7 +840,7 @@ export default {
         log.info(`New member registered: member ${memberId} → team ${team}`)
         res.json({ success: true, member_id: memberId })
       } catch (err) {
-        log.error(`register: ${err.message}`)
+        logEndpointError(log, 'register', err, req)
         res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal error' })
       }
     })
@@ -796,7 +850,7 @@ export default {
 
     router.post('/admin/feedback-to-github', async (req, res) => {
       try {
-        requireAdmin(req)
+        requireAdmin(req, log)
         const { feedback_id } = req.body
         if (!feedback_id) return res.status(400).json({ error: 'feedback_id required' })
 
@@ -839,7 +893,7 @@ export default {
           res.status(500).json({ error: 'GitHub API error' })
         }
       } catch (err) {
-        log.error(`feedback-to-github: ${err.message}`)
+        logEndpointError(log, 'feedback-to-github', err, req)
         res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal error' })
       }
     })
@@ -850,7 +904,7 @@ export default {
 
     router.post('/scorer-delegation/accept', async (req, res) => {
       try {
-        requireAuth(req)
+        requireAuth(req, log)
         const { delegation_id } = req.body
         if (!delegation_id) return res.status(400).json({ error: 'delegation_id required' })
 
@@ -889,14 +943,14 @@ export default {
 
         res.json({ success: true })
       } catch (err) {
-        log.error(`scorer-delegation/accept: ${err.message}`)
+        logEndpointError(log, 'scorer-delegation/accept', err, req)
         res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal error' })
       }
     })
 
     router.post('/scorer-delegation/decline', async (req, res) => {
       try {
-        requireAuth(req)
+        requireAuth(req, log)
         const { delegation_id } = req.body
         if (!delegation_id) return res.status(400).json({ error: 'delegation_id required' })
 
@@ -924,7 +978,7 @@ export default {
 
         res.json({ success: true })
       } catch (err) {
-        log.error(`scorer-delegation/decline: ${err.message}`)
+        logEndpointError(log, 'scorer-delegation/decline', err, req)
         res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal error' })
       }
     })

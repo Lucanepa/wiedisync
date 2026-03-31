@@ -74,7 +74,13 @@ export function registerContactForm(router, { database, logger, services, getSch
       log.info(`Contact form sent to team ${team_id} contact`)
       res.json({ success: true })
     } catch (err) {
-      log.error(`contact: ${err.message}`)
+      log.error({
+        msg: `contact: ${err.message}`,
+        endpoint: 'contact',
+        method: req.method,
+        body: { team_id: req.body?.team_id, sport: req.body?.sport },
+        stack: err.stack,
+      })
       res.status(500).json({ error: 'Internal error' })
     }
   })

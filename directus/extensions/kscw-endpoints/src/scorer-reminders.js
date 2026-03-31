@@ -144,7 +144,7 @@ export function registerScorerReminders(router, { database, logger, services, ge
       const result = await sendReminders(database, getSchema, MailService)
       res.json({ status: 'ok', tomorrow: tomorrowYMD(), ...result })
     } catch (err) {
-      log.error(`scorer-reminders: ${err.message}`)
+      log.error({ msg: `scorer-reminders: ${err.message}`, endpoint: 'scorer-reminders', userId: req?.accountability?.user || null, method: req?.method, stack: err.stack })
       res.status(500).json({ error: 'Internal error' })
     }
   })

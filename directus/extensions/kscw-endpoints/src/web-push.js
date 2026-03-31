@@ -110,7 +110,10 @@ export function registerWebPush(router, ctx) {
   // POST /kscw/web-push/subscribe — upsert subscription (auth required)
   router.post('/web-push/subscribe', async (req, res) => {
     try {
-      if (!req.accountability?.user) return res.status(401).json({ error: 'Authentication required' })
+      if (!req.accountability?.user) {
+        log.warn({ msg: 'web-push/subscribe: unauthenticated request', endpoint: 'web-push/subscribe', method: req.method })
+        return res.status(401).json({ error: 'Authentication required' })
+      }
 
       const userId = req.accountability.user
       const member = await database('members').where('user', userId).select('id').first()
@@ -148,7 +151,7 @@ export function registerWebPush(router, ctx) {
       log.info(`New push subscription for member ${member.id}`)
       res.status(201).json({ success: true, created: true })
     } catch (err) {
-      log.error(`web-push/subscribe: ${err.message}`)
+      log.error({ msg: `web-push/subscribe: ${err.message}`, endpoint: 'web-push/subscribe', userId: req.accountability?.user, method: req.method, stack: err.stack })
       res.status(500).json({ error: 'Internal error' })
     }
   })
@@ -156,7 +159,10 @@ export function registerWebPush(router, ctx) {
   // POST /kscw/web-push/unsubscribe — remove subscription (auth required)
   router.post('/web-push/unsubscribe', async (req, res) => {
     try {
-      if (!req.accountability?.user) return res.status(401).json({ error: 'Authentication required' })
+      if (!req.accountability?.user) {
+        log.warn({ msg: 'web-push/unsubscribe: unauthenticated request', endpoint: 'web-push/unsubscribe', method: req.method })
+        return res.status(401).json({ error: 'Authentication required' })
+      }
 
       const userId = req.accountability.user
       const member = await database('members').where('user', userId).select('id').first()
@@ -173,7 +179,7 @@ export function registerWebPush(router, ctx) {
       log.info(`Unsubscribed push for member ${member.id}`)
       res.json({ success: true })
     } catch (err) {
-      log.error(`web-push/unsubscribe: ${err.message}`)
+      log.error({ msg: `web-push/unsubscribe: ${err.message}`, endpoint: 'web-push/unsubscribe', userId: req.accountability?.user, method: req.method, stack: err.stack })
       res.status(500).json({ error: 'Internal error' })
     }
   })
@@ -181,7 +187,10 @@ export function registerWebPush(router, ctx) {
   // POST /kscw/web-push/test — send test push (admin only)
   router.post('/web-push/test', async (req, res) => {
     try {
-      if (!req.accountability?.admin) return res.status(403).json({ error: 'Admin access required' })
+      if (!req.accountability?.admin) {
+        log.warn({ msg: 'web-push/test: non-admin request', endpoint: 'web-push/test', userId: req.accountability?.user, method: req.method })
+        return res.status(403).json({ error: 'Admin access required' })
+      }
 
       const { member_id, title, body, url } = req.body
 
@@ -204,7 +213,7 @@ export function registerWebPush(router, ctx) {
       log.info(`Test push to member ${memberId}: ${JSON.stringify(result)}`)
       res.json(result)
     } catch (err) {
-      log.error(`web-push/test: ${err.message}`)
+      log.error({ msg: `web-push/test: ${err.message}`, endpoint: 'web-push/test', userId: req.accountability?.user, method: req.method, body: { member_id: req.body?.member_id }, stack: err.stack })
       res.status(500).json({ error: 'Internal error' })
     }
   })

@@ -3,6 +3,9 @@
  *
  * DSN is read from VITE_SENTRY_DSN env var.
  * Source maps are uploaded at build time via @sentry/vite-plugin.
+ *
+ * Provides rich error context: who (user + role + teams), what (operation),
+ * which (collection + record ID), and why (status + response body).
  */
 
 import * as Sentry from '@sentry/react'
@@ -48,17 +51,189 @@ export function initSentry() {
   })
 }
 
+// ── User context ─────────────────────────────────────────────────
+
+interface SentryUserContext {
+  id: string
+  roles?: string[]
+  memberTeamIds?: string[]
+  coachTeamIds?: string[]
+  primarySport?: string
+  isAdmin?: boolean
+}
+
 /**
  * Set the Sentry user context after login.
+ * Includes role, teams, and sport so every error carries WHO context.
  * Call with null on logout.
  */
-export function setSentryUser(user: { id: string; email?: string; name?: string } | null) {
+export function setSentryUser(user: SentryUserContext | null) {
   if (user) {
     // Only send user ID to Sentry — no PII (email/name)
     Sentry.setUser({ id: user.id })
+    Sentry.setTag('user.role', user.roles?.join(',') || 'member')
+    Sentry.setTag('user.sport', user.primarySport || 'unknown')
+    Sentry.setTag('user.is_admin', String(!!user.isAdmin))
+    Sentry.setContext('user_teams', {
+      member_of: user.memberTeamIds ?? [],
+      coach_of: user.coachTeamIds ?? [],
+    })
   } else {
     Sentry.setUser(null)
+    Sentry.setTag('user.role', undefined)
+    Sentry.setTag('user.sport', undefined)
+    Sentry.setTag('user.is_admin', undefined)
+    Sentry.setContext('user_teams', null)
   }
+}
+
+// ── API error capture ────────────────────────────────────────────
+
+/** Structured API error with full context for Sentry + console. */
+export class ApiError extends Error {
+  status: number
+  responseBody: string
+  collection: string
+  operation: string
+  recordId?: string | number
+
+  constructor(opts: {
+    message: string
+    status: number
+    responseBody: string
+    collection: string
+    operation: string
+    recordId?: string | number
+  }) {
+    super(opts.message)
+    this.name = 'ApiError'
+    this.status = opts.status
+    this.responseBody = opts.responseBody
+    this.collection = opts.collection
+    this.operation = opts.operation
+    this.recordId = opts.recordId
+  }
+}
+
+/**
+ * Capture an API error with full operation context to Sentry + console.
+ * Called automatically from api.ts data helpers — no manual wiring needed.
+ */
+export function captureApiError(
+  error: unknown,
+  context: {
+    operation: string       // e.g. 'fetchItems', 'createRecord', 'kscwApi'
+    collection?: string     // e.g. 'games', 'participations'
+    recordId?: string | number
+    endpoint?: string       // for kscwApi calls
+    method?: string         // HTTP method
+    status?: number
+    responseBody?: string
+    payload?: Record<string, unknown>  // request body (PII-scrubbed)
+  },
+) {
+  const err = error instanceof Error ? error : new Error(String(error))
+
+  // Scrub PII from payload before sending
+  const safePayload = context.payload ? scrubPii(context.payload) : undefined
+
+  Sentry.withScope((scope) => {
+    scope.setTag('error.operation', context.operation)
+    if (context.collection) scope.setTag('error.collection', context.collection)
+    if (context.status) scope.setTag('error.status', String(context.status))
+    if (context.method) scope.setTag('error.method', context.method)
+    scope.setContext('api_error', {
+      operation: context.operation,
+      collection: context.collection ?? null,
+      recordId: context.recordId ?? null,
+      endpoint: context.endpoint ?? null,
+      method: context.method ?? null,
+      status: context.status ?? null,
+      responseBody: context.responseBody?.slice(0, 2000) ?? null,
+      payload: safePayload ?? null,
+      page: window.location.pathname,
+    })
+    scope.setFingerprint([
+      context.operation,
+      context.collection ?? 'unknown',
+      String(context.status ?? 'unknown'),
+    ])
+    scope.setLevel(context.status && context.status < 500 ? 'warning' : 'error')
+    Sentry.captureException(err)
+  })
+
+  // Also log to console for dev tools debugging
+  console.error(
+    `[API Error] ${context.operation}${context.collection ? ` on ${context.collection}` : ''}${context.recordId ? `#${context.recordId}` : ''}`,
+    {
+      status: context.status,
+      endpoint: context.endpoint,
+      method: context.method,
+      page: window.location.pathname,
+      response: context.responseBody?.slice(0, 500),
+      payload: safePayload,
+      error: err.message,
+    },
+  )
+}
+
+/**
+ * Log an auth-related event (login failure, token refresh failure, OAuth error).
+ */
+export function captureAuthError(
+  error: unknown,
+  context: {
+    action: string          // e.g. 'login', 'token_refresh', 'oauth_callback'
+    method?: string         // 'password', 'oauth', 'otp'
+  },
+) {
+  const err = error instanceof Error ? error : new Error(String(error))
+  Sentry.withScope((scope) => {
+    scope.setTag('auth.action', context.action)
+    if (context.method) scope.setTag('auth.method', context.method)
+    scope.setContext('auth_error', {
+      action: context.action,
+      method: context.method ?? null,
+      page: window.location.pathname,
+    })
+    scope.setLevel('warning')
+    Sentry.captureException(err)
+  })
+  console.error(`[Auth Error] ${context.action}`, { method: context.method, error: err.message })
+}
+
+/**
+ * Add a navigation breadcrumb for debugging context.
+ * Called from route changes so Sentry knows what page the user was on.
+ */
+export function addBreadcrumb(message: string, data?: Record<string, unknown>) {
+  Sentry.addBreadcrumb({
+    category: 'app',
+    message,
+    data,
+    level: 'info',
+  })
+}
+
+// ── PII scrubbing ────────────────────────────────────────────────
+
+const PII_FIELDS = new Set([
+  'email', 'password', 'phone', 'birthdate', 'first_name', 'last_name',
+  'address', 'iban', 'token', 'access_token', 'refresh_token', 'otp',
+])
+
+function scrubPii(obj: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {}
+  for (const [key, val] of Object.entries(obj)) {
+    if (PII_FIELDS.has(key)) {
+      result[key] = '[REDACTED]'
+    } else if (val && typeof val === 'object' && !Array.isArray(val)) {
+      result[key] = scrubPii(val as Record<string, unknown>)
+    } else {
+      result[key] = val
+    }
+  }
+  return result
 }
 
 /** Re-export ErrorBoundary for use in App.tsx */

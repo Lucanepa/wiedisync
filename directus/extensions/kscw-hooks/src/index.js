@@ -62,7 +62,7 @@ async function sendPushToMembers(db, memberIds, title, body, url, tag, log) {
       log.info(`[push] Sent ${data.sent || 0}, failed ${data.failed || 0}, cleaned ${data.expired?.length || 0}`)
     }
   } catch (err) {
-    log.warn(`[push] Failed: ${err.message}`)
+    log.warn({ msg: `[push] Failed: ${err.message}`, event: 'push_send', memberCount: memberIds?.length, stack: err.stack })
   }
 }
 
@@ -157,6 +157,11 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     const store = turnstileStore.getStore()
     const token = store?.turnstileToken
     if (!(await verifyTurnstile(token))) {
+      log.warn({
+        msg: 'Turnstile CAPTCHA failed on public create',
+        collection,
+        event: 'captcha_failed',
+      })
       const err = new Error('Captcha verification failed')
       err.status = 403
       throw err
@@ -176,7 +181,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
         .where('wiedisync_active', false)
         .update({ wiedisync_active: true })
     } catch (err) {
-      log.warn(`wiedisync_active: ${err.message}`)
+      log.warn({ msg: `wiedisync_active: ${err.message}`, event: 'auth.login', userId: user, stack: err.stack })
     }
   })
 
@@ -211,7 +216,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
         log.info(`[role-sync] Member ${memberId} → ${result.roleName}`)
       }
     } catch (err) {
-      log.warn(`[role-sync] Failed for member ${memberId}: ${err.message}`)
+      log.warn({ msg: `[role-sync] Failed for member ${memberId}: ${err.message}`, event: 'role_sync', memberId, stack: err.stack })
     }
   }
 
@@ -282,7 +287,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
         .update({ kscw_membership_active: false })
       if (count > 0) log.info(`Shell expiry: ${count} deactivated`)
     } catch (err) {
-      log.error(`Shell expiry: ${err.message}`)
+      log.error({ msg: `Shell expiry: ${err.message}`, event: 'cron.shell_expiry', stack: err.stack })
     }
   })
 
@@ -297,7 +302,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
         .update({ status: 'expired' })
       if (count > 0) log.info(`Invite expiry: ${count} expired`)
     } catch (err) {
-      log.error(`Invite expiry: ${err.message}`)
+      log.error({ msg: `Invite expiry: ${err.message}`, event: 'cron.invite_expiry', stack: err.stack })
     }
   })
 
@@ -315,7 +320,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
         .update({ status: 'expired' })
       if (count > 0) log.info(`Delegation expiry: ${count} expired`)
     } catch (err) {
-      log.error(`Delegation expiry: ${err.message}`)
+      log.error({ msg: `Delegation expiry: ${err.message}`, event: 'cron.delegation_expiry', stack: err.stack })
     }
   })
 
@@ -331,7 +336,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
         .delete()
       if (count > 0) log.info(`Notification cleanup: ${count} deleted`)
     } catch (err) {
-      log.error(`Notification cleanup: ${err.message}`)
+      log.error({ msg: `Notification cleanup: ${err.message}`, event: 'cron.notification_cleanup', stack: err.stack })
     }
   })
 
@@ -426,10 +431,10 @@ export default ({ action, filter, init, schedule }, { services, database, logger
           await sendPushToMembers(database, deadlineMembers, 'RSVP Erinnerung', 'Anmeldefrist läuft morgen ab', FRONTEND_URL, 'deadline_reminder', log)
         }
       } catch (pushErr) {
-        log.warn(`Deadline push: ${pushErr.message}`)
+        log.warn({ msg: `Deadline push: ${pushErr.message}`, event: 'cron.deadline_push', stack: pushErr.stack })
       }
     } catch (err) {
-      log.error(`Participation reminders: ${err.message}`)
+      log.error({ msg: `Participation reminders: ${err.message}`, event: 'cron.participation_reminders', stack: err.stack })
     }
   })
 
@@ -494,10 +499,10 @@ export default ({ action, filter, init, schedule }, { services, database, logger
           await sendPushToMembers(database, upcomingMembers, 'Morgen', 'Du hast morgen eine Aktivität', FRONTEND_URL, 'upcoming_activity', log)
         }
       } catch (pushErr) {
-        log.warn(`Upcoming push: ${pushErr.message}`)
+        log.warn({ msg: `Upcoming push: ${pushErr.message}`, event: 'cron.upcoming_push', stack: pushErr.stack })
       }
     } catch (err) {
-      log.error(`Daily reminders: ${err.message}`)
+      log.error({ msg: `Daily reminders: ${err.message}`, event: 'cron.daily_reminders', stack: err.stack })
     }
   })
 
@@ -534,12 +539,12 @@ export default ({ action, filter, init, schedule }, { services, database, logger
           })
           await database('members').where('id', m.id).update({ shell_reminder_sent: true })
         } catch (mailErr) {
-          log.warn(`Shell reminder mail failed for ${m.email}: ${mailErr.message}`)
+          log.warn({ msg: `Shell reminder mail failed for member ${m.id}`, event: 'cron.shell_reminder', memberId: m.id, stack: mailErr.stack })
         }
       }
       log.info(`Shell reminder: ${expiring.length} members notified`)
     } catch (err) {
-      log.error(`Shell reminder: ${err.message}`)
+      log.error({ msg: `Shell reminder: ${err.message}`, event: 'cron.shell_reminder', stack: err.stack })
     }
   })
 
@@ -558,7 +563,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       if (!res.ok) throw new Error(`${res.status} ${body}`)
       log.info(`SV sync cron: ${body}`)
     } catch (err) {
-      log.error(`SV sync cron: ${err.message}`)
+      log.error({ msg: `SV sync cron: ${err.message}`, event: 'cron.sv_sync', stack: err.stack })
     }
   })
 
@@ -577,7 +582,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       if (!res.ok) throw new Error(`${res.status} ${body}`)
       log.info(`BP sync cron: ${body}`)
     } catch (err) {
-      log.error(`BP sync cron: ${err.message}`)
+      log.error({ msg: `BP sync cron: ${err.message}`, event: 'cron.bp_sync', stack: err.stack })
     }
   })
 

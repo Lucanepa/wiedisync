@@ -57,7 +57,7 @@ export function registerGameScheduling(router, { database, logger, services, get
 
       res.json({ success: true, token, expires_at: expiresAt })
     } catch (err) {
-      log.error(`terminplanung/register: ${err.message}`)
+      log.error({ msg: `terminplanung/register: ${err.message}`, endpoint: 'terminplanung/register', userId: req.accountability?.user || null, method: req.method, stack: err.stack })
       res.status(500).json({ error: 'Internal error' })
     }
   })
@@ -110,7 +110,7 @@ export function registerGameScheduling(router, { database, logger, services, get
         },
       })
     } catch (err) {
-      log.error(`terminplanung/slots: ${err.message}`)
+      log.error({ msg: `terminplanung/slots: ${err.message}`, endpoint: 'terminplanung/slots', userId: req.accountability?.user || null, method: req.method, stack: err.stack })
       res.status(500).json({ error: 'Internal error' })
     }
   })
@@ -141,7 +141,7 @@ export function registerGameScheduling(router, { database, logger, services, get
 
       res.json({ success: true })
     } catch (err) {
-      log.error(`terminplanung/book-home: ${err.message}`)
+      log.error({ msg: `terminplanung/book-home: ${err.message}`, endpoint: 'terminplanung/book-home', userId: req.accountability?.user || null, method: req.method, stack: err.stack })
       res.status(500).json({ error: 'Internal error' })
     }
   })
@@ -169,7 +169,7 @@ export function registerGameScheduling(router, { database, logger, services, get
 
       res.json({ success: true, proposals_count: proposals.length })
     } catch (err) {
-      log.error(`terminplanung/propose-away: ${err.message}`)
+      log.error({ msg: `terminplanung/propose-away: ${err.message}`, endpoint: 'terminplanung/propose-away', userId: req.accountability?.user || null, method: req.method, stack: err.stack })
       res.status(500).json({ error: 'Internal error' })
     }
   })
@@ -217,7 +217,7 @@ export function registerGameScheduling(router, { database, logger, services, get
 
       res.json({ success: true, created })
     } catch (err) {
-      log.error(`generate-slots: ${err.message}`)
+      log.error({ msg: `generate-slots: ${err.message}`, endpoint: 'generate-slots', userId: req.accountability?.user || null, method: req.method, stack: err.stack })
       res.status(500).json({ error: 'Internal error' })
     }
   })
@@ -260,7 +260,7 @@ export function registerGameScheduling(router, { database, logger, services, get
 
       res.json({ success: true })
     } catch (err) {
-      log.error(`confirm-away: ${err.message}`)
+      log.error({ msg: `confirm-away: ${err.message}`, endpoint: 'confirm-away', userId: req.accountability?.user || null, method: req.method, stack: err.stack })
       res.status(500).json({ error: 'Internal error' })
     }
   })

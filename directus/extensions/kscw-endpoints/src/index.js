@@ -19,6 +19,7 @@ import { registerContactForm } from './contact-form.js'
 import { registerWebPush, sendPushToMember } from './web-push.js'
 import { FRONTEND_URL } from './email-template.js'
 import { writeErrorLog, logErrorToFile, logAuthDenial, logWarning, cleanOldLogs } from './error-log.js'
+import { registerStats } from './stats.js'
 
 // ── Helpers ──────────────────────────────────────────────────────
 
@@ -1190,7 +1191,8 @@ export default {
     registerGameScheduling(router, ctx)
     registerContactForm(router, ctx)
     registerWebPush(router, ctx)
+    registerStats(router, ctx)
 
-    log.info('KSCW endpoints loaded: ~30 routes')
+    log.info('KSCW endpoints loaded: ~40 routes')
   },
 }

@@ -35,4 +35,5 @@ export default {
   changelog: 'Journal des modifications',
   whatsNew: 'Nouveautes',
   refereeExpenses: 'Frais d\'arbitrage',
+  clubStats: 'Statistiques',
 } as const

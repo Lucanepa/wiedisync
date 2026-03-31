@@ -35,4 +35,5 @@ export default {
   changelog: 'Changelog',
   whatsNew: "What's New",
   refereeExpenses: 'Referee expenses',
+  clubStats: 'Club Stats',
 } as const

@@ -23,7 +23,7 @@ import { asObj } from '../utils/relations'
 import {
   Home, Calendar, Trophy, UserX, PenSquare, PartyPopper, Users,
   ClipboardList, Building2, CalendarClock, Database, Activity,
-  HeartPulse, Settings, ChevronDown, MessageSquare, Banknote,
+  HeartPulse, Settings, ChevronDown, MessageSquare, Banknote, BarChart3,
 } from 'lucide-react'
 
 type ExpandedMemberTeam = MemberTeam & { team: Team | string }
@@ -63,6 +63,7 @@ function useNavItems(isLoggedIn: boolean, isApproved: boolean) {
       { to: '/admin/hallenplan', label: t('hallenplan'), icon: <Building2 className={iconClass} /> },
       { to: '/admin/terminplanung', label: t('terminplanung'), icon: <CalendarClock className={iconClass} /> },
       { to: '/admin/referee-expenses', label: t('refereeExpenses'), icon: <Banknote className={iconClass} /> },
+      { to: '/admin/club-stats', label: t('clubStats'), icon: <BarChart3 className={iconClass} /> },
       { to: '/admin/database', label: t('manageDb'), icon: <Database className={iconClass} /> },
     ],
     superadminItems: [

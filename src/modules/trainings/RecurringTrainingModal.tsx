@@ -59,6 +59,13 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
   // Show team picker when no external team is selected and user manages 2+ teams
   const needsTeamPicker = !selectedTeamId && managedTeams.length >= 2
 
+  // Team name lookup for slot labels (flattenM2MTeams strips expanded objects to IDs)
+  const teamNameById = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const t of teamsRaw ?? []) map.set(t.id, t.name)
+    return map
+  }, [teamsRaw])
+
   const { data: allSlotsRaw } = useCollection<SlotExpanded>('hall_slots', {
     filter: { slot_type: { _eq: 'training' } },
     sort: ['day_of_week', 'start_time'],
@@ -335,27 +342,41 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
   return (
     <Modal open={open} onClose={handleClose} title={t('recurringTitle')} size="md">
       <div className="space-y-4">
-        {needsTeamPicker && (
-          <div>
-            <label className={labelCls}>{tc('team')}</label>
-            <select
-              value={localTeamId ?? ''}
-              onChange={(e) => {
-                setLocalTeamId(e.target.value || null)
-                setSelectedSlot('')
-                setHallId('')
-                setStartDate('')
-                setEndDate('')
-              }}
-              className={inputCls}
-            >
-              <option value="">{tc('select')}</option>
-              {managedTeams.map((team) => (
-                <option key={team.id} value={team.id}>{team.name}</option>
-              ))}
-            </select>
-          </div>
-        )}
+        {needsTeamPicker && (() => {
+          const vb = managedTeams.filter(t => t.sport === 'volleyball')
+          const bb = managedTeams.filter(t => t.sport === 'basketball')
+          const hasBoth = vb.length > 0 && bb.length > 0
+          return (
+            <div>
+              <label className={labelCls}>{tc('team')}</label>
+              <select
+                value={localTeamId ?? ''}
+                onChange={(e) => {
+                  setLocalTeamId(e.target.value || null)
+                  setSelectedSlot('')
+                  setHallId('')
+                  setStartDate('')
+                  setEndDate('')
+                }}
+                className={inputCls}
+              >
+                <option value="">{tc('select')}</option>
+                {hasBoth ? (
+                  <>
+                    <optgroup label="Volleyball">
+                      {vb.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    </optgroup>
+                    <optgroup label="Basketball">
+                      {bb.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    </optgroup>
+                  </>
+                ) : (
+                  managedTeams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)
+                )}
+              </select>
+            </div>
+          )
+        })()}
 
         <div>
           <label className={labelCls}>{t('selectSlot')}</label>
@@ -396,9 +417,10 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
                   : hasEnd
                     ? ` [${t('slotUntil')} ${formatDateCompact(until)}]`
                     : ''
+              const teamLabel = activeTeamId ? '' : `${teamNameById.get(s.team?.[0] ?? '') ?? '?'} — `
               return (
                 <option key={s.id} value={s.id}>
-                  {asObj<Team>(s.team?.[0])?.name ?? '?'} — {tc(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'][s.day_of_week])} {s.start_time}–{s.end_time} ({asObj<Hall>(s.hall)?.name ?? '?'}){dateSuffix}
+                  {teamLabel}{tc(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'][s.day_of_week])} {s.start_time}–{s.end_time} ({asObj<Hall>(s.hall)?.name ?? '?'}){dateSuffix}
                 </option>
               )
             })}

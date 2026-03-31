@@ -150,7 +150,7 @@ export function captureApiError(
     payload?: Record<string, unknown>  // request body (PII-scrubbed)
   },
 ) {
-  const err = error instanceof Error ? error : new Error(String(error))
+  const err = toError(error)
 
   // Scrub PII from payload before sending
   const safePayload = context.payload ? scrubPii(context.payload) : undefined
@@ -224,7 +224,7 @@ export function captureAuthError(
     method?: string         // 'password', 'oauth', 'otp'
   },
 ) {
-  const err = error instanceof Error ? error : new Error(String(error))
+  const err = toError(error)
   Sentry.withScope((scope) => {
     scope.setTag('auth.action', context.action)
     if (context.method) scope.setTag('auth.method', context.method)
@@ -263,6 +263,31 @@ export function addBreadcrumb(message: string, data?: Record<string, unknown>) {
     data,
     level: 'info',
   })
+}
+
+// ── Error normalization ──────────────────────────────────────────
+
+/**
+ * Convert any thrown value into a proper Error with a readable message.
+ * Directus SDK throws plain objects like { errors: [{ message: '...' }] }
+ * which stringify as "[object Object]" in Sentry.
+ */
+function toError(error: unknown): Error {
+  if (error instanceof Error) return error
+  if (error && typeof error === 'object') {
+    const obj = error as Record<string, unknown>
+    // Directus SDK: { errors: [{ message: '...' }] }
+    if (Array.isArray(obj.errors) && obj.errors[0]?.message) {
+      return new Error(String(obj.errors[0].message))
+    }
+    // Generic: { message: '...' }
+    if (typeof obj.message === 'string') {
+      return new Error(obj.message)
+    }
+    // Last resort: JSON.stringify
+    try { return new Error(JSON.stringify(error).slice(0, 500)) } catch { /* fall through */ }
+  }
+  return new Error(String(error))
 }
 
 // ── PII scrubbing ────────────────────────────────────────────────

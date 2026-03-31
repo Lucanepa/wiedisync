@@ -18,7 +18,7 @@ import { registerGameScheduling } from './game-scheduling.js'
 import { registerContactForm } from './contact-form.js'
 import { registerWebPush, sendPushToMember } from './web-push.js'
 import { FRONTEND_URL } from './email-template.js'
-import { writeErrorLog, logErrorToFile, logAuthDenial, logWarning, cleanOldLogs } from './error-log.js'
+import { writeErrorLog, logErrorToFile, logAuthDenial, logWarning, cleanOldLogs, computeErrorHash } from './error-log.js'
 import { registerStats } from './stats.js'
 
 // ── Helpers ──────────────────────────────────────────────────────
@@ -1129,11 +1129,12 @@ export default {
         const eventFilter = req.query.event || null
         const projectFilter = req.query.project || null
         const searchFilter = req.query.search || null
+        const showSolved = req.query.show_solved === 'true'
 
         const logPath = path.join(ERROR_LOG_DIR, `errors-${date}.jsonl`)
 
         if (!fs.existsSync(logPath)) {
-          return res.json({ data: [], date, message: 'No log file for this date' })
+          return res.json({ data: [], date, total: 0, message: 'No log file for this date' })
         }
 
         const raw = fs.readFileSync(logPath, 'utf-8')
@@ -1142,6 +1143,26 @@ export default {
         let entries = lines.map(line => {
           try { return JSON.parse(line) } catch { return null }
         }).filter(Boolean)
+
+        // Compute hashes and merge annotations
+        const hashes = entries.map(e => computeErrorHash(e))
+        const annotations = await database('error_annotations')
+          .whereIn('error_hash', [...new Set(hashes)])
+        const annoMap = Object.fromEntries(annotations.map(a => [a.error_hash, a]))
+
+        entries = entries.map((e, i) => {
+          const anno = annoMap[hashes[i]]
+          return {
+            ...e,
+            _hash: hashes[i],
+            _annotation: anno ? { status: anno.status, note: anno.note, resolved_commit: anno.resolved_commit, date_updated: anno.date_updated } : null,
+          }
+        })
+
+        // Hide solved by default
+        if (!showSolved) {
+          entries = entries.filter(e => e._annotation?.status !== 'solved')
+        }
 
         // Apply filters
         if (levelFilter) entries = entries.filter(e => e.level === levelFilter)
@@ -1179,6 +1200,88 @@ export default {
         res.json({ data: files })
       } catch (err) {
         logEndpointError(log, 'admin/error-logs/dates', err, req)
+        res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal error' })
+      }
+    })
+
+    // POST /kscw/admin/error-logs/annotate — create or update a single annotation
+    router.post('/admin/error-logs/annotate', async (req, res) => {
+      try {
+        requireAdmin(req, log)
+        const { error_hash, error_date, status, note, resolved_commit } = req.body
+        if (!error_hash || !error_date) {
+          return res.status(400).json({ error: 'error_hash and error_date are required' })
+        }
+        if (status && !['open', 'solved', 'important'].includes(status)) {
+          return res.status(400).json({ error: 'status must be open, solved, or important' })
+        }
+
+        const result = await database.raw(`
+          INSERT INTO error_annotations (error_hash, error_date, status, note, resolved_commit, user_created)
+          VALUES (?, ?, ?, ?, ?, ?)
+          ON CONFLICT (error_hash) DO UPDATE SET
+            status = COALESCE(EXCLUDED.status, error_annotations.status),
+            note = COALESCE(EXCLUDED.note, error_annotations.note),
+            resolved_commit = COALESCE(EXCLUDED.resolved_commit, error_annotations.resolved_commit),
+            date_updated = NOW()
+          RETURNING *
+        `, [error_hash, error_date, status || 'open', note || null, resolved_commit || null, req.accountability?.user || null])
+
+        res.json({ data: result.rows[0] })
+      } catch (err) {
+        logEndpointError(log, 'admin/error-logs/annotate', err, req)
+        res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal error' })
+      }
+    })
+
+    // POST /kscw/admin/error-logs/annotate-bulk — annotate multiple entries at once
+    router.post('/admin/error-logs/annotate-bulk', async (req, res) => {
+      try {
+        requireAdmin(req, log)
+        const { error_hashes, error_date, status, note, resolved_commit } = req.body
+        if (!Array.isArray(error_hashes) || !error_hashes.length || !error_date) {
+          return res.status(400).json({ error: 'error_hashes[] and error_date are required' })
+        }
+        if (status && !['open', 'solved', 'important'].includes(status)) {
+          return res.status(400).json({ error: 'status must be open, solved, or important' })
+        }
+
+        const userId = req.accountability?.user || null
+        const values = error_hashes.map(h => `(${database.raw('?, ?, ?, ?, ?, ?', [h, error_date, status || 'solved', note || null, resolved_commit || null, userId]).toString()})`)
+
+        const result = await database.raw(`
+          INSERT INTO error_annotations (error_hash, error_date, status, note, resolved_commit, user_created)
+          VALUES ${values.join(', ')}
+          ON CONFLICT (error_hash) DO UPDATE SET
+            status = COALESCE(EXCLUDED.status, error_annotations.status),
+            note = COALESCE(EXCLUDED.note, error_annotations.note),
+            resolved_commit = COALESCE(EXCLUDED.resolved_commit, error_annotations.resolved_commit),
+            date_updated = NOW()
+          RETURNING *
+        `)
+
+        res.json({ data: result.rows, count: result.rows.length })
+      } catch (err) {
+        logEndpointError(log, 'admin/error-logs/annotate-bulk', err, req)
+        res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal error' })
+      }
+    })
+
+    // GET /kscw/admin/error-logs/annotations — list annotations, optionally filtered
+    router.get('/admin/error-logs/annotations', async (req, res) => {
+      try {
+        requireAdmin(req, log)
+        const statusFilter = req.query.status || null
+        const dateFilter = req.query.date || null
+
+        let query = database('error_annotations').orderBy('date_updated', 'desc').limit(200)
+        if (statusFilter) query = query.where('status', statusFilter)
+        if (dateFilter) query = query.where('error_date', dateFilter)
+
+        const rows = await query
+        res.json({ data: rows, total: rows.length })
+      } catch (err) {
+        logEndpointError(log, 'admin/error-logs/annotations', err, req)
         res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal error' })
       }
     })

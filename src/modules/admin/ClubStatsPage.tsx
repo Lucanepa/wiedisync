@@ -150,6 +150,26 @@ function ProgressBar({ value, max, color = 'bg-primary' }: { value: number; max:
   )
 }
 
+function SportHeading({ sport }: { sport: string }) {
+  return (
+    <tr>
+      <td colSpan={99} className="pt-4 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        {sport === 'volleyball' ? '🏐 Volleyball' : '🏀 Basketball'}
+      </td>
+    </tr>
+  )
+}
+
+/** Insert sport heading rows into a sorted-by-sport list */
+function groupBySport<T extends { sport: string }>(items: T[]): { sport: string; items: T[] }[] {
+  const vb = items.filter(i => i.sport === 'volleyball')
+  const bb = items.filter(i => i.sport === 'basketball')
+  const groups: { sport: string; items: T[] }[] = []
+  if (vb.length > 0) groups.push({ sport: 'volleyball', items: vb })
+  if (bb.length > 0) groups.push({ sport: 'basketball', items: bb })
+  return groups
+}
+
 // ── Main ─────────────────────────────────────────────────────────
 
 export default function ClubStatsPage() {
@@ -270,16 +290,21 @@ export default function ClubStatsPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.roster.map(r => (
-                <tr key={r.team_id} className="border-b border-border/50 hover:bg-muted/30">
-                  <td className="py-2 pr-3">
-                    <TeamChip team={r.team_name} size="sm" />
-                  </td>
-                  <td className="py-2 pr-3 text-center tabular-nums">{n(r.roster_size)}{n(r.guest_count) > 0 && <span className="text-muted-foreground"> +{n(r.guest_count)}</span>}</td>
-                  <td className="py-2 pr-3 text-center tabular-nums">{n(r.members_with_scorer_licence)}</td>
-                  <td className="py-2 pr-3 text-center tabular-nums">{n(r.coach_count)}</td>
-                  <td className="py-2 text-center tabular-nums">{n(r.captain_count)}</td>
-                </tr>
+              {groupBySport(filtered.roster).map(group => (
+                <>
+                  <SportHeading key={`h-${group.sport}`} sport={group.sport} />
+                  {group.items.map(r => (
+                    <tr key={r.team_id} className="border-b border-border/50 hover:bg-muted/30">
+                      <td className="py-2 pr-3">
+                        <TeamChip team={r.team_name} size="sm" />
+                      </td>
+                      <td className="py-2 pr-3 text-center tabular-nums">{n(r.roster_size)}{n(r.guest_count) > 0 && <span className="text-muted-foreground"> +{n(r.guest_count)}</span>}</td>
+                      <td className="py-2 pr-3 text-center tabular-nums">{n(r.members_with_scorer_licence)}</td>
+                      <td className="py-2 pr-3 text-center tabular-nums">{n(r.coach_count)}</td>
+                      <td className="py-2 text-center tabular-nums">{n(r.captain_count)}</td>
+                    </tr>
+                  ))}
+                </>
               ))}
             </tbody>
           </table>
@@ -288,20 +313,29 @@ export default function ClubStatsPage() {
 
       {/* Schreiber Coverage */}
       <DashboardSection id="stats-schreiber" title={t('clubStatsSchreiberCoverage')} icon="✍️">
-        <div className="space-y-3">
-          {filtered.schreiber.filter(s => n(s.total_home_games) > 0).map(s => {
-            const assigned = s.sport === 'volleyball' ? n(s.vb_any_duty_assigned) : n(s.bb_any_duty_assigned)
-            const total = n(s.total_home_games)
-            return (
-              <div key={s.team_id}>
-                <div className="flex items-center justify-between mb-1">
-                  <TeamChip team={s.team_name} size="sm" />
-                  <span className="text-sm tabular-nums text-muted-foreground">{assigned}/{total} ({pct(assigned, total)})</span>
-                </div>
-                <ProgressBar value={assigned} max={total} color={assigned === total ? 'bg-green-500' : assigned > 0 ? 'bg-amber-500' : 'bg-destructive'} />
+        <div className="space-y-4">
+          {groupBySport(filtered.schreiber.filter(s => n(s.total_home_games) > 0)).map(group => (
+            <div key={group.sport}>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                {group.sport === 'volleyball' ? '🏐 Volleyball' : '🏀 Basketball'}
+              </p>
+              <div className="space-y-3">
+                {group.items.map(s => {
+                  const assigned = s.sport === 'volleyball' ? n(s.vb_any_duty_assigned) : n(s.bb_any_duty_assigned)
+                  const total = n(s.total_home_games)
+                  return (
+                    <div key={s.team_id}>
+                      <div className="flex items-center justify-between mb-1">
+                        <TeamChip team={s.team_name} size="sm" />
+                        <span className="text-sm tabular-nums text-muted-foreground">{assigned}/{total} ({pct(assigned, total)})</span>
+                      </div>
+                      <ProgressBar value={assigned} max={total} color={assigned === total ? 'bg-green-500' : assigned > 0 ? 'bg-amber-500' : 'bg-destructive'} />
+                    </div>
+                  )
+                })}
               </div>
-            )
-          })}
+            </div>
+          ))}
         </div>
       </DashboardSection>
 
@@ -333,24 +367,29 @@ export default function ClubStatsPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.participation.filter(p => n(p.games_total) > 0 || n(p.trainings_total) > 0).map(p => (
-                <tr key={p.team_id} className="border-b border-border/50 hover:bg-muted/30">
-                  <td className="py-2 pr-3"><TeamChip team={p.team_name} size="sm" /></td>
-                  <td className="py-2 pr-3 text-center tabular-nums">
-                    {n(p.games_total) > 0
-                      ? <span title={`${n(p.games_confirmed)}✓ ${n(p.games_declined)}✗ ${n(p.games_tentative)}?`}>
-                          {n(p.games_responses)} / {n(p.games_total)} {t('clubStatsGames')}
-                        </span>
-                      : '–'}
-                  </td>
-                  <td className="py-2 text-center tabular-nums">
-                    {n(p.trainings_total) > 0
-                      ? <span title={`${n(p.trainings_confirmed)}✓ ${n(p.trainings_declined)}✗ ${n(p.trainings_tentative)}?`}>
-                          {n(p.trainings_responses)} / {n(p.trainings_total)} {t('clubStatsTrainings')}
-                        </span>
-                      : '–'}
-                  </td>
-                </tr>
+              {groupBySport(filtered.participation.filter(p => n(p.games_total) > 0 || n(p.trainings_total) > 0)).map(group => (
+                <>
+                  <SportHeading key={`h-${group.sport}`} sport={group.sport} />
+                  {group.items.map(p => (
+                    <tr key={p.team_id} className="border-b border-border/50 hover:bg-muted/30">
+                      <td className="py-2 pr-3"><TeamChip team={p.team_name} size="sm" /></td>
+                      <td className="py-2 pr-3 text-center tabular-nums">
+                        {n(p.games_total) > 0
+                          ? <span title={`${n(p.games_confirmed)}✓ ${n(p.games_declined)}✗ ${n(p.games_tentative)}?`}>
+                              {n(p.games_responses)} / {n(p.games_total)} {t('clubStatsGames')}
+                            </span>
+                          : '–'}
+                      </td>
+                      <td className="py-2 text-center tabular-nums">
+                        {n(p.trainings_total) > 0
+                          ? <span title={`${n(p.trainings_confirmed)}✓ ${n(p.trainings_declined)}✗ ${n(p.trainings_tentative)}?`}>
+                              {n(p.trainings_responses)} / {n(p.trainings_total)} {t('clubStatsTrainings')}
+                            </span>
+                          : '–'}
+                      </td>
+                    </tr>
+                  ))}
+                </>
               ))}
             </tbody>
           </table>
@@ -371,14 +410,19 @@ export default function ClubStatsPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.results.map(r => (
-                <tr key={`${r.team_id}-${r.season}`} className="border-b border-border/50 hover:bg-muted/30">
-                  <td className="py-2 pr-3"><TeamChip team={r.team_name} size="sm" /></td>
-                  <td className="py-2 pr-3 text-sm text-muted-foreground">{r.season}</td>
-                  <td className="py-2 pr-3 text-center tabular-nums">{n(r.games_played)}</td>
-                  <td className="py-2 pr-3 text-center tabular-nums text-green-600 dark:text-green-400">{n(r.total_wins)}</td>
-                  <td className="py-2 text-center tabular-nums text-red-600 dark:text-red-400">{n(r.total_losses)}</td>
-                </tr>
+              {groupBySport(filtered.results).map(group => (
+                <>
+                  <SportHeading key={`h-${group.sport}`} sport={group.sport} />
+                  {group.items.map(r => (
+                    <tr key={`${r.team_id}-${r.season}`} className="border-b border-border/50 hover:bg-muted/30">
+                      <td className="py-2 pr-3"><TeamChip team={r.team_name} size="sm" /></td>
+                      <td className="py-2 pr-3 text-sm text-muted-foreground">{r.season}</td>
+                      <td className="py-2 pr-3 text-center tabular-nums">{n(r.games_played)}</td>
+                      <td className="py-2 pr-3 text-center tabular-nums text-green-600 dark:text-green-400">{n(r.total_wins)}</td>
+                      <td className="py-2 text-center tabular-nums text-red-600 dark:text-red-400">{n(r.total_losses)}</td>
+                    </tr>
+                  ))}
+                </>
               ))}
             </tbody>
           </table>
@@ -400,14 +444,19 @@ export default function ClubStatsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.delegations.map(d => (
-                  <tr key={d.team_id} className="border-b border-border/50 hover:bg-muted/30">
-                    <td className="py-2 pr-3"><TeamChip team={d.team_name} size="sm" /></td>
-                    <td className="py-2 pr-3 text-center tabular-nums">{n(d.total_delegations)}</td>
-                    <td className="py-2 pr-3 text-center tabular-nums text-green-600 dark:text-green-400">{n(d.accepted)}</td>
-                    <td className="py-2 pr-3 text-center tabular-nums text-red-600 dark:text-red-400">{n(d.declined_count)}</td>
-                    <td className="py-2 text-center tabular-nums text-amber-600 dark:text-amber-400">{n(d.pending)}</td>
-                  </tr>
+                {groupBySport(filtered.delegations).map(group => (
+                  <>
+                    <SportHeading key={`h-${group.sport}`} sport={group.sport} />
+                    {group.items.map(d => (
+                      <tr key={d.team_id} className="border-b border-border/50 hover:bg-muted/30">
+                        <td className="py-2 pr-3"><TeamChip team={d.team_name} size="sm" /></td>
+                        <td className="py-2 pr-3 text-center tabular-nums">{n(d.total_delegations)}</td>
+                        <td className="py-2 pr-3 text-center tabular-nums text-green-600 dark:text-green-400">{n(d.accepted)}</td>
+                        <td className="py-2 pr-3 text-center tabular-nums text-red-600 dark:text-red-400">{n(d.declined_count)}</td>
+                        <td className="py-2 text-center tabular-nums text-amber-600 dark:text-amber-400">{n(d.pending)}</td>
+                      </tr>
+                    ))}
+                  </>
                 ))}
               </tbody>
             </table>

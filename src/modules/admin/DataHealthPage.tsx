@@ -77,12 +77,14 @@ function CollectionCard({
     <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800/50">
       {/* Header */}
       <button
-        onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center gap-3 px-4 py-3 text-left"
+        onClick={() => health.issues.length > 0 && setExpanded(!expanded)}
+        className={`flex w-full items-center gap-3 px-4 py-3 text-left ${health.issues.length === 0 ? 'cursor-default' : ''}`}
       >
-        {expanded
-          ? <ChevronDown className="h-4 w-4 text-gray-400" />
-          : <ChevronRight className="h-4 w-4 text-gray-400" />
+        {health.issues.length > 0
+          ? (expanded
+            ? <ChevronDown className="h-4 w-4 text-gray-400" />
+            : <ChevronRight className="h-4 w-4 text-gray-400" />)
+          : <span className="h-4 w-4" />
         }
         <span className="text-sm font-semibold text-gray-900 dark:text-white">
           {health.collection}

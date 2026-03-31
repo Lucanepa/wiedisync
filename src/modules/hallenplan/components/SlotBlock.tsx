@@ -1,6 +1,4 @@
 import { useTranslation } from 'react-i18next'
-import TeamChip from '../../../components/TeamChip'
-import { getTeamColor } from '../../../utils/teamColors'
 import ConflictBadge from './ConflictBadge'
 import type { PositionedSlot } from '../utils/timeGrid'
 
@@ -23,7 +21,46 @@ const GameIcon = () => (
 
 const FREED_COLOR = { bg: '#a7f3d0', text: '#064e3b', border: '#10b981' }
 const CLOSURE_COLOR = { bg: '#1f2937', text: '#f87171', border: '#991b1b' }
+const FALLBACK_COLOR = { bg: '#6b7280', text: '#ffffff', border: '#4b5563' }
 const CLOSURE_PATTERN = /geschlossen|gesperrt|closed/i
+
+/** Sport+type color scheme for hallenplan slots */
+const SLOT_COLORS: Record<string, Record<string, { bg: string; text: string; border: string }>> = {
+  volleyball: {
+    training: { bg: '#3b82f6', text: '#ffffff', border: '#2563eb' },  // blue-500
+    game:     { bg: '#FFC832', text: '#1a1a1a', border: '#e6b400' },  // KSCW gold
+  },
+  basketball: {
+    training: { bg: '#1f2937', text: '#ffffff', border: '#111827' },  // gray-800 (black)
+    game:     { bg: '#f97316', text: '#ffffff', border: '#ea580c' },  // orange-500
+  },
+}
+
+function getSlotColor(sport: string | undefined, slotType: string) {
+  const sportColors = SLOT_COLORS[sport ?? '']
+  if (!sportColors) return FALLBACK_COLOR
+  return sportColors[slotType] ?? FALLBACK_COLOR
+}
+
+/** Inline sport icon for slot content */
+const SportIcon = ({ sport, className = '' }: { sport?: string; className?: string }) => {
+  if (sport === 'volleyball') return (
+    <svg className={`inline-block shrink-0 ${className}`} viewBox="0 0 24 24" fill="currentColor" width="12" height="12">
+      <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="2" />
+      <path d="M12 2C12 2 12 12 12 12" stroke="currentColor" strokeWidth="1.5" fill="none" />
+      <path d="M12 12C12 12 20.5 7 21.5 6.5" stroke="currentColor" strokeWidth="1.5" fill="none" />
+      <path d="M12 12C12 12 3.5 7 2.5 6.5" stroke="currentColor" strokeWidth="1.5" fill="none" />
+    </svg>
+  )
+  if (sport === 'basketball') return (
+    <svg className={`inline-block shrink-0 ${className}`} viewBox="0 0 24 24" fill="currentColor" width="12" height="12">
+      <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="2" />
+      <path d="M2 12h20M12 2v20" stroke="currentColor" strokeWidth="1.5" fill="none" />
+      <path d="M5.5 4.5c3 3 3 7 0 11M18.5 4.5c-3 3-3 7 0 11" stroke="currentColor" strokeWidth="1.5" fill="none" />
+    </svg>
+  )
+  return null
+}
 
 const typeLabels: Record<string, string> = {
   training: 'Training',
@@ -36,6 +73,7 @@ const typeLabels: Record<string, string> = {
 interface SlotBlockProps {
   positioned: PositionedSlot
   teamName: string
+  teamSport?: 'volleyball' | 'basketball'
   hasConflict: boolean
   isAdmin: boolean
   isCoach?: boolean
@@ -47,7 +85,7 @@ interface SlotBlockProps {
   onClick: () => void
 }
 
-export default function SlotBlock({ positioned, teamName, hasConflict, isAdmin, isCoach = false, coachTeamIds = [], compact = false, isBoosted = false, hallSpan = 1, onClick }: SlotBlockProps) {
+export default function SlotBlock({ positioned, teamName, teamSport, hasConflict, isAdmin, isCoach = false, coachTeamIds = [], compact = false, isBoosted = false, hallSpan = 1, onClick }: SlotBlockProps) {
   const { t } = useTranslation('hallenplan')
   const { slot, top, height, left, width: baseWidth } = positioned
   // When spanning multiple hall columns, multiply the width
@@ -62,22 +100,15 @@ export default function SlotBlock({ positioned, teamName, hasConflict, isAdmin, 
   // A real slot with no team = manually created "free" slot
   const isManuallyFree = !isVirtual && !slot.team?.length
 
-  // Resolve claiming team name for color
-  const claimRecord = isClaimed && slot._virtual?.claimRecord
-    ? slot._virtual.claimRecord as Record<string, unknown>
-    : undefined
-  const claimedByTeam = claimRecord?.claimed_by_team
-  const claimTeamName = (claimedByTeam != null && typeof claimedByTeam === 'object' ? (claimedByTeam as { name: string }).name : undefined) || teamName
-
   const color = isHallClosure
     ? CLOSURE_COLOR
     : (isFreed || isManuallyFree)
       ? FREED_COLOR
       : isClaimed
-        ? getTeamColor(claimTeamName)
+        ? getSlotColor(teamSport, slot.slot_type)
         : isHallEvent
           ? { bg: '#e0f2fe', text: '#0c4a6e', border: '#7dd3fc' }
-          : getTeamColor(teamName)
+          : getSlotColor(teamSport, slot.slot_type)
 
   // Freed/claimed/manually-free slots are clickable for coaches; own-team real slots too
   const isOwnTeamSlot = isCoach && slot.team?.length && slot.team.some(t => coachTeamIds.includes(t))
@@ -93,8 +124,6 @@ export default function SlotBlock({ positioned, teamName, hasConflict, isAdmin, 
   const isGame = slot.slot_type === 'game'
   const zClass = isBoosted ? 'z-40' : isGame ? 'z-30' : 'z-20'
 
-  // Game slots get gold border and pulse animation
-  const gameGoldBorder = isGame && !isFreed && !isClaimed ? '#FFC832' : undefined
   const gamePulseClass = isGame && !isFreed && !isClaimed && !isCancelled ? 'animate-game-pulse' : ''
 
   const awayStripes = isAway
@@ -103,14 +132,21 @@ export default function SlotBlock({ positioned, teamName, hasConflict, isAdmin, 
       }
     : undefined
 
+  // Build tooltip: "Team \u2013 Type \u2013 HH:MM\u2013HH:MM"
+  const tooltipParts: string[] = []
+  if (teamName) tooltipParts.push(teamName)
+  if (typeLabels[slot.slot_type]) tooltipParts.push(typeLabels[slot.slot_type])
+  tooltipParts.push(`${slot.start_time?.slice(0, 5)}\u2013${slot.end_time?.slice(0, 5)}`)
+  const tooltip = tooltipParts.join(' \u2013 ')
+
   // Compact mode: colored box with team name + type label inside
   if (compact) {
-    const compactShowType = height >= 24 && slot.slot_type !== 'training'
+    const compactShowType = height >= 24
     const compactShowTime = height >= 36
 
     return (
       <div
-        className={`absolute ${zClass} overflow-hidden rounded-sm ${isGame && !isFreed && !isClaimed ? 'border' : 'border-l-2'} ${borderStyle} px-0.5 py-px text-[9px] leading-tight shadow-sm ${gamePulseClass} ${
+        className={`absolute ${zClass} overflow-hidden rounded-sm border-l-2 ${borderStyle} px-0.5 py-px text-[9px] leading-tight shadow-sm ${gamePulseClass} ${
           clickable ? 'cursor-pointer hover:brightness-95' : ''
         }`}
         style={{
@@ -120,21 +156,22 @@ export default function SlotBlock({ positioned, teamName, hasConflict, isAdmin, 
           width: `calc(${width}% - 1px)`,
           backgroundColor: color.bg + bgOpacity,
           color: color.text,
-          borderColor: gameGoldBorder || color.border,
+          borderColor: color.border,
           ...awayStripes,
         }}
         onClick={clickable ? (e) => { e.stopPropagation(); onClick() } : undefined}
-        title={`${teamName || slot.label} — ${slot.start_time?.slice(0, 5)}–${slot.end_time?.slice(0, 5)}${slot.label ? ` — ${slot.label}` : ''}`}
+        title={tooltip}
       >
         {hasConflict && <ConflictBadge />}
         {slot.slot_type === 'training' && <TrainingIcon />}
         {slot.slot_type === 'game' && <GameIcon />}
         <span className={`relative truncate font-semibold ${isCancelled && !isFreed ? 'line-through' : ''}`}>
-          {(isFreed || isManuallyFree) ? t('slotFreed') : isClaimed ? t('slotClaimed') : teamName || slot.label || typeLabels[slot.slot_type]}
+          {(isFreed || isManuallyFree) ? t('slotFreed') : isClaimed ? t('slotClaimed') : typeLabels[slot.slot_type] || slot.label}
         </span>
-        {compactShowType && (
-          <div className={`relative truncate opacity-80 ${isCancelled && !isFreed ? 'line-through' : ''}`}>
-            {isFreed || isClaimed ? (teamName || '') : typeLabels[slot.slot_type]}
+        {compactShowType && teamName && (
+          <div className={`relative flex items-center gap-0.5 truncate opacity-90 ${isCancelled && !isFreed ? 'line-through' : ''}`}>
+            <SportIcon sport={teamSport} />
+            <span className="truncate">{teamName}</span>
           </div>
         )}
         {compactShowTime && (
@@ -153,7 +190,7 @@ export default function SlotBlock({ positioned, teamName, hasConflict, isAdmin, 
 
   return (
     <div
-      className={`absolute ${zClass} overflow-hidden rounded-md ${isGame && !isFreed && !isClaimed ? 'border-2' : 'border-l-4'} ${borderStyle} px-1.5 py-0.5 text-xs leading-tight shadow-sm transition-all ${gamePulseClass} ${
+      className={`absolute ${zClass} overflow-hidden rounded-md border-l-4 ${borderStyle} px-1.5 py-0.5 text-xs leading-tight shadow-sm transition-all ${gamePulseClass} ${
         clickable ? 'cursor-pointer hover:brightness-95' : ''
       }`}
       style={{
@@ -163,11 +200,11 @@ export default function SlotBlock({ positioned, teamName, hasConflict, isAdmin, 
         width: `calc(${width}% - 2px)`,
         backgroundColor: color.bg + bgOpacity,
         color: color.text,
-        borderColor: gameGoldBorder || color.border,
+        borderColor: color.border,
         ...awayStripes,
       }}
       onClick={clickable ? (e) => { e.stopPropagation(); onClick() } : undefined}
-      title={`${teamName || slot.label} — ${slot.start_time?.slice(0, 5)}–${slot.end_time?.slice(0, 5)}${slot.label ? ` — ${slot.label}` : ''}`}
+      title={tooltip}
     >
       <div className="relative">
         {hasConflict && <ConflictBadge />}
@@ -228,26 +265,20 @@ export default function SlotBlock({ positioned, teamName, hasConflict, isAdmin, 
         ) : (
           <>
             <div className="relative flex items-center gap-1">
-              {teamName ? (
-                <TeamChip team={teamName} size="sm" />
-              ) : (
-                showDetails && <span className="truncate font-medium">{slot.label}</span>
-              )}
-              {showDetails && slot.slot_type !== 'training' && teamName && (
-                <span className={`opacity-80 ${isCancelled ? 'line-through' : ''}`}>
-                  {typeLabels[slot.slot_type]}
-                </span>
-              )}
+              <span className={`truncate font-semibold ${isCancelled ? 'line-through' : ''}`}>
+                {typeLabels[slot.slot_type] || slot.label}
+              </span>
+              <SportIcon sport={teamSport} />
             </div>
+            {teamName && (
+              <div className={`relative mt-0.5 truncate font-medium opacity-90 ${isCancelled ? 'line-through' : ''}`}>
+                {teamName}
+              </div>
+            )}
             {showTime && (
               <div className={`relative mt-0.5 opacity-80 ${isCancelled ? 'line-through' : ''}`}>
                 <div>{slot.start_time?.slice(0, 5)} -</div>
                 <div>{slot.end_time?.slice(0, 5)}</div>
-              </div>
-            )}
-            {showDetails && slot.label && teamName && (
-              <div className={`relative mt-0.5 truncate font-medium ${isCancelled ? 'line-through text-gray-500' : ''}`}>
-                {slot.label}
               </div>
             )}
           </>

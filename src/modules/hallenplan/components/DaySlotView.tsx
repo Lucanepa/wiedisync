@@ -177,6 +177,12 @@ export default function DaySlotView({
     return ''
   }
 
+  function getTeamSport(slot: HallSlot): 'volleyball' | 'basketball' | undefined {
+    const first = slot.team?.[0]
+    if (first != null && typeof first === 'object') return (first as { sport?: string }).sport as 'volleyball' | 'basketball' | undefined
+    return undefined
+  }
+
   const { startMin, endMin } = getDayRange(dayIndex)
   const inactiveTopH = Math.max(0, ((startMin - baseMinute) / SLOT_MINUTES) * SLOT_HEIGHT)
   const inactiveBottomTop = ((endMin - baseMinute) / SLOT_MINUTES) * SLOT_HEIGHT
@@ -305,6 +311,7 @@ export default function DaySlotView({
                     key={ps.slot.id}
                     positioned={ps}
                     teamName={getTeamName(ps.slot)}
+                    teamSport={getTeamSport(ps.slot)}
                     hasConflict={conflictSet.has(ps.slot.id)}
                     isAdmin={isAdmin}
                     isCoach={isCoach}

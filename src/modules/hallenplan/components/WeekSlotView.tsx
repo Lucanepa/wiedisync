@@ -301,6 +301,12 @@ export default function WeekSlotView({
     return ''
   }
 
+  function getTeamSport(slot: HallSlot): 'volleyball' | 'basketball' | undefined {
+    const first = slot.team?.[0]
+    if (first != null && typeof first === 'object') return (first as { sport?: string }).sport as 'volleyball' | 'basketball' | undefined
+    return undefined
+  }
+
   return (
     <div className="rounded-lg bg-white shadow-card dark:bg-gray-800">
       <div className="min-w-[700px] overflow-x-auto">
@@ -497,6 +503,7 @@ export default function WeekSlotView({
                           key={ps.slot.id}
                           positioned={ps}
                           teamName={getTeamName(ps.slot)}
+                          teamSport={getTeamSport(ps.slot)}
                           hasConflict={conflictSet.has(ps.slot.id)}
                           isAdmin={isAdmin}
                           isCoach={isCoach}
@@ -567,6 +574,7 @@ export default function WeekSlotView({
                           key={ps.slot.id}
                           positioned={ps}
                           teamName={getTeamName(ps.slot)}
+                          teamSport={getTeamSport(ps.slot)}
                           hasConflict={conflictSet.has(ps.slot.id)}
                           isAdmin={isAdmin}
                           isCoach={isCoach}

@@ -2,7 +2,6 @@ import { useMemo } from 'react'
 import type { HallSlot, HallClosure, Hall } from '../../../types'
 import { toISODate } from '../../../utils/dateHelpers'
 import { timeToMinutes } from '../../../utils/dateHelpers'
-import { getTeamColor } from '../../../utils/teamColors'
 import { START_HOUR, END_HOUR } from '../utils/timeGrid'
 
 const DAY_HEADERS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const
@@ -17,8 +16,28 @@ const typeLabels: Record<string, string> = {
   other: '',
 }
 
+/** Sport+type color scheme (shared with SlotBlock) */
+const SLOT_COLORS: Record<string, Record<string, { bg: string; text: string; border: string }>> = {
+  volleyball: {
+    training: { bg: '#3b82f6', text: '#ffffff', border: '#2563eb' },
+    game:     { bg: '#FFC832', text: '#1a1a1a', border: '#e6b400' },
+  },
+  basketball: {
+    training: { bg: '#1f2937', text: '#ffffff', border: '#111827' },
+    game:     { bg: '#f97316', text: '#ffffff', border: '#ea580c' },
+  },
+}
+const FALLBACK_COLOR = { bg: '#6b7280', text: '#ffffff', border: '#4b5563' }
+
+function getSlotColor(sport: string | undefined, slotType: string) {
+  const sportColors = SLOT_COLORS[sport ?? '']
+  if (!sportColors) return FALLBACK_COLOR
+  return sportColors[slotType] ?? FALLBACK_COLOR
+}
+
 interface CellInfo {
   teamName: string
+  teamSport?: string
   slotType: string
   label: string
   isAway: boolean
@@ -74,6 +93,7 @@ export default function SummaryView({ slots, closures, weekDays, halls }: Summar
       const endMin = timeToMinutes(slot.end_time)
       const first = slot.team?.[0]
       const teamName = (first != null && typeof first === 'object') ? (first as { name: string }).name ?? '' : ''
+      const teamSport = (first != null && typeof first === 'object') ? (first as { sport?: string }).sport : undefined
 
       for (let m = startMin; m < endMin; m += SUMMARY_INTERVAL) {
         const bucketMin = Math.floor(m / SUMMARY_INTERVAL) * SUMMARY_INTERVAL
@@ -82,6 +102,7 @@ export default function SummaryView({ slots, closures, weekDays, halls }: Summar
         if (!map.has(key)) {
           map.set(key, {
             teamName,
+            teamSport,
             slotType: slot.slot_type,
             label: slot.label || '',
             isAway: !!slot._virtual?.isAway,
@@ -216,7 +237,7 @@ export default function SummaryView({ slots, closures, weekDays, halls }: Summar
                 if (cell) {
                   const color = cell.slotType === 'event'
                     ? { bg: '#e0f2fe', text: '#0c4a6e', border: '#7dd3fc' }
-                    : getTeamColor(cell.teamName)
+                    : getSlotColor(cell.teamSport, cell.slotType)
                   const opacity = cell.isAway ? '55' : cell.isCancelled ? '77' : 'cc'
                   // Only show text on the first row of a contiguous block
                   const isFirstRow = !isPrevSameSlot(dayIndex, hall.id, minutes)
@@ -241,7 +262,7 @@ export default function SummaryView({ slots, closures, weekDays, halls }: Summar
                         backgroundColor: color.bg + opacity,
                         color: color.text,
                       }}
-                      title={`${cell.teamName || cell.label} — ${typeLabels[cell.slotType] || cell.slotType}`}
+                      title={`${cell.teamName || cell.label} \u2013 ${typeLabels[cell.slotType] || cell.slotType}`}
                     >
                       {displayText && <span className="truncate">{displayText}</span>}
                       {displayType && <span className="ml-0.5 font-normal opacity-80">{displayType}</span>}

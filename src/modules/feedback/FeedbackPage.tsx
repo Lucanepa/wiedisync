@@ -39,8 +39,8 @@ interface FeedbackRecord {
   status: string
   github_issue: string
   user: string
-  created: string
-  updated: string
+  date_created: string
+  date_updated: string
 }
 
 interface GitHubLabel {
@@ -373,7 +373,7 @@ export default function FeedbackPage() {
                     </Badge>
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium text-gray-900 dark:text-white">{item.title}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">{formatDate(item.created)}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">{formatDate(item.date_created)}</div>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[item.status] || ''}`}>

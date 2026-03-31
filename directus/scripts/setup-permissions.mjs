@@ -315,8 +315,13 @@ async function main() {
     await setPermRead(PUBLIC_POLICY, 'teams_members_5')  // captain junction
     await setPermRead(PUBLIC_POLICY, 'members', null, ['id', 'first_name', 'last_name', 'photo'])
 
-    // Files (team photos, logos)
+    // Feedback — public create (kscw-website form, validated by Turnstile hook)
+    await setPerm(PUBLIC_POLICY, 'feedback', 'create', null,
+      ['type', 'title', 'description', 'source', 'source_url', 'status', 'name', 'email', 'screenshot'])
+
+    // Files (team photos, logos, feedback screenshots)
     await setPermRead(PUBLIC_POLICY, 'directus_files')
+    await setPerm(PUBLIC_POLICY, 'directus_files', 'create')
 
     console.log(`  ✓ Public permissions set`)
   } else {
@@ -349,8 +354,8 @@ async function main() {
   // Members — update own profile (limited fields)
   await setPerm(MEMBER_POLICY, 'members', 'update', OWN_USER, MEMBER_EDITABLE_FIELDS)
 
-  // Participations — read own, create, update own
-  await setPermRead(MEMBER_POLICY, 'participations', OWN_MEMBER)
+  // Participations — read all (needed for roster/warnings), create, update own
+  await setPermRead(MEMBER_POLICY, 'participations')
   await setPerm(MEMBER_POLICY, 'participations', 'create')
   await setPerm(MEMBER_POLICY, 'participations', 'update', OWN_MEMBER)
 

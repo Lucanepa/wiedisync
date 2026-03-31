@@ -990,8 +990,8 @@ export default {
         const repo = fb.source === 'website' ? 'kscw-website' : 'kscw'
         const labels = fb.type === 'bug' ? ['bug', 'user-reported'] : ['enhancement', 'user-reported']
 
-        const member = fb.member ? await database('members').where('id', fb.member).first() : null
-        const submitter = member ? `Member #${fb.member}` : 'Anonymous'
+        const member = fb.user ? await database('members').where('id', fb.user).first() : null
+        const submitter = member ? `Member #${fb.user}` : (fb.name || 'Anonymous')
 
         let body = `**Type:** ${fb.type}\n**Submitter:** ${submitter}\n\n${fb.description || ''}`
         if (fb.screenshot) {

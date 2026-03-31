@@ -60,6 +60,7 @@ export default function RosterEditor() {
   const [editingNumber, setEditingNumber] = useState<string | null>(null)
   const [numberValue, setNumberValue] = useState('')
   const [editingPosition, setEditingPosition] = useState<string | null>(null)
+  const [localOverrides, setLocalOverrides] = useState<Record<string, { position?: MemberPosition[]; number?: number }>>({})
   const [uploadingPicture, setUploadingPicture] = useState(false)
   const [inviteModalOpen, setInviteModalOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -143,22 +144,24 @@ export default function RosterEditor() {
 
   async function saveNumber(memberId: string) {
     const num = numberValue ? parseInt(numberValue, 10) : 0
+    setLocalOverrides((prev) => ({ ...prev, [memberId]: { ...prev[memberId], number: num } }))
+    setEditingNumber(null)
     try {
       await updateRecord('members', memberId, { number: num })
       logActivity('update', 'members', memberId, { number: num })
-      refetch()
     } catch {
+      setLocalOverrides((prev) => { const next = { ...prev }; delete next[memberId]?.number; return next })
       toast.error(t('common:errorSaving'))
     }
-    setEditingNumber(null)
   }
 
   async function savePosition(memberId: string, positions: MemberPosition[]) {
+    setLocalOverrides((prev) => ({ ...prev, [memberId]: { ...prev[memberId], position: positions } }))
     try {
       await updateRecord('members', memberId, { position: positions })
       logActivity('update', 'members', memberId, { position: positions })
-      refetch()
     } catch {
+      setLocalOverrides((prev) => { const next = { ...prev }; delete next[memberId]?.position; return next })
       toast.error(t('common:errorSaving'))
     }
   }
@@ -277,7 +280,9 @@ export default function RosterEditor() {
               if (!member) return null
               const initials = `${member.first_name?.[0] ?? ''}${member.last_name?.[0] ?? ''}`.toUpperCase()
               const isCaptain = team ? relId(team.captain) === String(member.id) : false
-              const memberPositions = coercePositions(member.position)
+              const overrides = localOverrides[String(member.id)]
+              const memberPositions = coercePositions(overrides?.position ?? member.position)
+              const memberNumber = overrides?.number ?? member.number
               const nonPlaying = isNonPlayingStaff(member.id, team, memberPositions)
               const selectablePositions = getSelectablePositions(team?.sport, memberPositions)
               return (
@@ -316,11 +321,11 @@ export default function RosterEditor() {
                     />
                   ) : (
                     <button
-                      onClick={() => { setEditingNumber(member.id); setNumberValue(String(member.number || '')) }}
+                      onClick={() => { setEditingNumber(member.id); setNumberValue(String(memberNumber || '')) }}
                       className="flex h-7 w-10 items-center justify-center rounded-md border border-gray-200 text-sm font-medium text-gray-500 transition-colors hover:border-brand-400 hover:text-brand-600 dark:border-gray-600 dark:text-gray-400 dark:hover:border-brand-500 dark:hover:text-brand-400"
                       title={t('numberCol')}
                     >
-                      {member.number || '—'}
+                      {memberNumber || '—'}
                     </button>
                   )}
 

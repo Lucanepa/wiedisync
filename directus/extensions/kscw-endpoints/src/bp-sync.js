@@ -8,6 +8,13 @@
 const BP_BASE = 'https://www.basketplan.ch'
 const BP_CLUB_ID = 166
 
+/** Normalize season string to short format: "2025/2026" → "2025/26" */
+function normalizeSeason(s) {
+  if (!s) return s
+  const m = s.match(/^(\d{4})\/(\d{4})$/)
+  return m ? `${m[1]}/${m[2].slice(2)}` : s
+}
+
 const HALL_MAP = {
   'Kantonsschule Wiedikon 2fach': 'KWI A',
   'Kantonsschule Wiedikon 1fach': 'KWI C',
@@ -77,7 +84,7 @@ function parseGames(teamXml, teamIdSet) {
       homeTeam: homeTeamName, homeTeamId,
       guestTeam: guestTeamName, guestTeamId,
       location: locName, locationCity: locCity, locationAddress: locAddr,
-      league: (leagueName || '').trim(), season: seasonName,
+      league: (leagueName || '').trim(), season: normalizeSeason(seasonName),
       status,
       scoreHome: scoreHome !== '' ? parseInt(scoreHome, 10) : 0,
       scoreGuest: scoreGuest !== '' ? parseInt(scoreGuest, 10) : 0,
@@ -122,7 +129,7 @@ function parseRankings(rankingXml) {
     rankings.push({
       bpTeamId: getAttr(teamBlock, ' id'),
       teamName: getAttr(teamBlock, ' name'),
-      league: leagueName, season,
+      league: leagueName, season: normalizeSeason(season),
       rank: parseInt(getAttr(rd, 'currentRanking'), 10) || 0,
       played: parseInt(getAttr(rd, 'gamesPlayed'), 10) || 0,
       won: parseInt(getAttr(rd, 'victories'), 10) || 0,

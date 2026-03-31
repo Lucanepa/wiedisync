@@ -40,12 +40,12 @@ const CLOSURE_PATTERN = /geschlossen|gesperrt|closed/i
 /** Sport+type color scheme for hallenplan slots */
 const SLOT_COLORS: Record<string, Record<string, { bg: string; text: string; border: string }>> = {
   volleyball: {
-    training: { bg: '#FFC832', text: '#1a1a1a', border: '#e6b400' },  // KSCW gold
+    training: { bg: '#4A55A2', text: '#ffffff', border: '#3b4589' },  // KSCW blue
     game:     { bg: '#FFC832', text: '#1a1a1a', border: '#e6b400' },  // KSCW gold
   },
   basketball: {
-    training: { bg: '#f97316', text: '#1a1a1a', border: '#ea580c' },  // orange-500
-    game:     { bg: '#f97316', text: '#1a1a1a', border: '#ea580c' },  // orange-500
+    training: { bg: '#f97316', text: '#ffffff', border: '#ea580c' },  // orange-500
+    game:     { bg: '#FFC832', text: '#1a1a1a', border: '#e6b400' },  // KSCW gold
   },
 }
 

@@ -48,10 +48,23 @@ SELECT
   -- Guest count
   COUNT(DISTINCT mt.member)
     FILTER (WHERE mt.guest_level > 0)     AS guest_count,
-  -- Members with scorer licence
+  -- VB licences
   COUNT(DISTINCT mt.member)
     FILTER (WHERE mt.guest_level = 0
-      AND m.licences::jsonb @> '"scorer_vb"') AS members_with_scorer_licence,
+      AND m.licences::jsonb @> '"scorer_vb"') AS lic_scorer_vb,
+  COUNT(DISTINCT mt.member)
+    FILTER (WHERE mt.guest_level = 0
+      AND m.licences::jsonb @> '"referee_vb"') AS lic_referee_vb,
+  -- BB licences
+  COUNT(DISTINCT mt.member)
+    FILTER (WHERE mt.guest_level = 0
+      AND m.licences::jsonb @> '"otr1_bb"') AS lic_otr1_bb,
+  COUNT(DISTINCT mt.member)
+    FILTER (WHERE mt.guest_level = 0
+      AND m.licences::jsonb @> '"otr2_bb"') AS lic_otr2_bb,
+  COUNT(DISTINCT mt.member)
+    FILTER (WHERE mt.guest_level = 0
+      AND m.licences::jsonb @> '"referee_bb"') AS lic_referee_bb,
   -- Leadership
   (SELECT COUNT(*) FROM teams_coach tc WHERE tc.teams_id = t.id)              AS coach_count,
   (SELECT COUNT(*) FROM teams_captain tc WHERE tc.teams_id = t.id)            AS captain_count,

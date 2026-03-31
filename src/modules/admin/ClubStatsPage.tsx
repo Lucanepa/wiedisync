@@ -42,7 +42,11 @@ interface TeamRoster {
   league: string
   roster_size: string
   guest_count: string
-  members_with_scorer_licence: string
+  lic_scorer_vb: string
+  lic_referee_vb: string
+  lic_otr1_bb: string
+  lic_otr2_bb: string
+  lic_referee_bb: string
   coach_count: string
   captain_count: string
   team_responsible_count: string
@@ -141,14 +145,6 @@ function StatCard({ label, value, sub }: { label: string; value: string | number
   )
 }
 
-function ProgressBar({ value, max, color = 'bg-primary' }: { value: number; max: number; color?: string }) {
-  const w = max > 0 ? Math.min((value / max) * 100, 100) : 0
-  return (
-    <div className="h-2 rounded-full bg-muted overflow-hidden">
-      <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${w}%` }} />
-    </div>
-  )
-}
 
 function SportHeading({ sport }: { sport: string }) {
   return (
@@ -278,65 +274,100 @@ export default function ClubStatsPage() {
 
       {/* Team Roster */}
       <DashboardSection id="stats-roster" title={t('clubStatsRoster')} icon="📋">
-        <div className="overflow-x-auto -mx-4 px-4">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border text-left text-muted-foreground">
-                <th className="py-2 pr-3 font-medium">{t('clubStatsTeam')}</th>
-                <th className="py-2 pr-3 font-medium text-center">{t('clubStatsRosterSize')}</th>
-                <th className="py-2 pr-3 font-medium text-center">{t('clubStatsScorerLic')}</th>
-                <th className="py-2 pr-3 font-medium text-center">{t('clubStatsCoach')}</th>
-                <th className="py-2 font-medium text-center">{t('clubStatsCaptain')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {groupBySport(filtered.roster).map(group => (
-                <>
-                  <SportHeading key={`h-${group.sport}`} sport={group.sport} />
+        {groupBySport(filtered.roster).map(group => (
+          <div key={group.sport} className="mb-4 last:mb-0">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+              {group.sport === 'volleyball' ? '🏐 Volleyball' : '🏀 Basketball'}
+            </p>
+            <div className="overflow-x-auto -mx-4 px-4">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-muted-foreground">
+                    <th className="py-2 pr-3 font-medium">{t('clubStatsTeam')}</th>
+                    <th className="py-2 pr-3 font-medium text-center">{t('clubStatsRosterSize')}</th>
+                    {group.sport === 'volleyball' ? (
+                      <>
+                        <th className="py-2 pr-3 font-medium text-center">{t('clubStatsScorerVB')}</th>
+                        <th className="py-2 pr-3 font-medium text-center">{t('clubStatsRefereeVB')}</th>
+                      </>
+                    ) : (
+                      <>
+                        <th className="py-2 pr-3 font-medium text-center">OTR1</th>
+                        <th className="py-2 pr-3 font-medium text-center">OTR2</th>
+                        <th className="py-2 pr-3 font-medium text-center">{t('clubStatsRefereeBB')}</th>
+                      </>
+                    )}
+                    <th className="py-2 pr-3 font-medium text-center">{t('clubStatsCoach')}</th>
+                    <th className="py-2 font-medium text-center">{t('clubStatsCaptain')}</th>
+                  </tr>
+                </thead>
+                <tbody>
                   {group.items.map(r => (
                     <tr key={r.team_id} className="border-b border-border/50 hover:bg-muted/30">
-                      <td className="py-2 pr-3">
-                        <TeamChip team={r.team_name} size="sm" />
-                      </td>
+                      <td className="py-2 pr-3"><TeamChip team={r.team_name} size="sm" /></td>
                       <td className="py-2 pr-3 text-center tabular-nums">{n(r.roster_size)}{n(r.guest_count) > 0 && <span className="text-muted-foreground"> +{n(r.guest_count)}</span>}</td>
-                      <td className="py-2 pr-3 text-center tabular-nums">{n(r.members_with_scorer_licence)}</td>
+                      {group.sport === 'volleyball' ? (
+                        <>
+                          <td className="py-2 pr-3 text-center tabular-nums">{n(r.lic_scorer_vb)}</td>
+                          <td className="py-2 pr-3 text-center tabular-nums">{n(r.lic_referee_vb)}</td>
+                        </>
+                      ) : (
+                        <>
+                          <td className="py-2 pr-3 text-center tabular-nums">{n(r.lic_otr1_bb)}</td>
+                          <td className="py-2 pr-3 text-center tabular-nums">{n(r.lic_otr2_bb)}</td>
+                          <td className="py-2 pr-3 text-center tabular-nums">{n(r.lic_referee_bb)}</td>
+                        </>
+                      )}
                       <td className="py-2 pr-3 text-center tabular-nums">{n(r.coach_count)}</td>
                       <td className="py-2 text-center tabular-nums">{n(r.captain_count)}</td>
                     </tr>
                   ))}
-                </>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ))}
       </DashboardSection>
 
       {/* Schreiber Coverage */}
       <DashboardSection id="stats-schreiber" title={t('clubStatsSchreiberCoverage')} icon="✍️">
-        <div className="space-y-4">
-          {groupBySport(filtered.schreiber.filter(s => n(s.total_home_games) > 0)).map(group => (
-            <div key={group.sport}>
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-                {group.sport === 'volleyball' ? '🏐 Volleyball' : '🏀 Basketball'}
-              </p>
-              <div className="space-y-3">
-                {group.items.map(s => {
-                  const assigned = s.sport === 'volleyball' ? n(s.vb_any_duty_assigned) : n(s.bb_any_duty_assigned)
-                  const total = n(s.total_home_games)
-                  return (
-                    <div key={s.team_id}>
-                      <div className="flex items-center justify-between mb-1">
-                        <TeamChip team={s.team_name} size="sm" />
-                        <span className="text-sm tabular-nums text-muted-foreground">{assigned}/{total} ({pct(assigned, total)})</span>
-                      </div>
-                      <ProgressBar value={assigned} max={total} color={assigned === total ? 'bg-green-500' : assigned > 0 ? 'bg-amber-500' : 'bg-destructive'} />
-                    </div>
-                  )
-                })}
-              </div>
+        {groupBySport(filtered.schreiber.filter(s => n(s.total_home_games) > 0)).map(group => (
+          <div key={group.sport} className="mb-4 last:mb-0">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+              {group.sport === 'volleyball' ? '🏐 Volleyball' : '🏀 Basketball'}
+            </p>
+            <div className="overflow-x-auto -mx-4 px-4">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-muted-foreground">
+                    <th className="py-2 pr-3 font-medium">{t('clubStatsTeam')}</th>
+                    <th className="py-2 pr-3 font-medium text-center">{t('clubStatsHomeGamesShort')}</th>
+                    <th className="py-2 pr-3 font-medium text-center">{t('clubStatsAssigned')}</th>
+                    <th className="py-2 pr-3 font-medium text-center">{t('clubStatsMissing')}</th>
+                    <th className="py-2 font-medium text-center">%</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {group.items.map(s => {
+                    const assigned = s.sport === 'volleyball' ? n(s.vb_any_duty_assigned) : n(s.bb_any_duty_assigned)
+                    const missing = s.sport === 'volleyball' ? n(s.vb_no_duty_assigned) : n(s.bb_no_duty_assigned)
+                    const total = n(s.total_home_games)
+                    const full = assigned === total && total > 0
+                    return (
+                      <tr key={s.team_id} className="border-b border-border/50 hover:bg-muted/30">
+                        <td className="py-2 pr-3"><TeamChip team={s.team_name} size="sm" /></td>
+                        <td className="py-2 pr-3 text-center tabular-nums">{total}</td>
+                        <td className="py-2 pr-3 text-center tabular-nums text-green-600 dark:text-green-400">{assigned}</td>
+                        <td className={`py-2 pr-3 text-center tabular-nums ${missing > 0 ? 'text-red-600 dark:text-red-400 font-medium' : ''}`}>{missing}</td>
+                        <td className={`py-2 text-center tabular-nums ${full ? 'text-green-600 dark:text-green-400' : ''}`}>{pct(assigned, total)}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </DashboardSection>
 
       {/* Missing Schreiber (upcoming) */}

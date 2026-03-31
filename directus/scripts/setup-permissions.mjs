@@ -315,6 +315,21 @@ async function main() {
     await setPermRead(PUBLIC_POLICY, 'teams_members_5')  // captain junction
     await setPermRead(PUBLIC_POLICY, 'members', null, ['id', 'first_name', 'last_name', 'photo'])
 
+    // Calendar: hall slots, closures, hall events, halls
+    await setPermRead(PUBLIC_POLICY, 'hall_slots')
+    await setPermRead(PUBLIC_POLICY, 'hall_slots_teams')  // M2M junction
+    await setPermRead(PUBLIC_POLICY, 'hall_closures')
+    await setPermRead(PUBLIC_POLICY, 'hall_events')
+    await setPermRead(PUBLIC_POLICY, 'hall_events_halls_1')  // M2M junction
+    await setPermRead(PUBLIC_POLICY, 'halls')
+
+    // Events (club-wide public events on home/calendar)
+    await setPermRead(PUBLIC_POLICY, 'events')
+    await setPermRead(PUBLIC_POLICY, 'events_teams_1')  // M2M junction
+
+    // Participations (game/training RSVP counts visible publicly)
+    await setPermRead(PUBLIC_POLICY, 'participations')
+
     // Feedback — public create (kscw-website form, validated by Turnstile hook)
     await setPerm(PUBLIC_POLICY, 'feedback', 'create', null,
       ['type', 'title', 'description', 'source', 'source_url', 'status', 'name', 'email', 'screenshot'])

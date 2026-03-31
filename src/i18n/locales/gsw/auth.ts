@@ -104,6 +104,8 @@ export default {
   birthdateVisibilityHidden: 'Verstecke',
   hidden: 'Versteckt',
   yearOnly: 'Nur Jahrgang',
+  websiteVisible: 'Website-Sichtbarkeit',
+  websiteVisibleInfo: 'Wenn aktiviert, wird dis Foti uf de Vereinswebsite im Teamkader aazeigt.',
 
   // Privacy consent
   privacyConsent: 'Mit de Registrierig akzeptiersch du üsi',
@@ -157,6 +159,15 @@ export default {
   joinAdditionalTeams: 'Wiitere Teams biitrete',
   noTeamsForSport: 'Kei Teams für die Sportart verfüegbar',
   additionalTeamsNote: 'Zuesätzlichi Teams bruuched d Genehmigung vom Trainer',
+
+  // Team requests
+  addTeam: 'Team dezuetue',
+  addTeamTitle: 'Team biitrete',
+  addTeamDescription: 'Wähl es Team, wo du wotsch biitrete. De Trainer muess d Aafrag bestätige.',
+  noTeamsAvailable: 'Kei wiiteri Teams verfüägbar.',
+  sendRequest: 'Aafrag schicke',
+  teamRequestError: 'Bim Schicke vo de Aafrag isch öppis schief gange',
+  teamRequestSent: 'Aafrag gschickt',
 
   // Danger Zone
   dangerZone: 'Gfahrezone',

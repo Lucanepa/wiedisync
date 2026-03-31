@@ -323,6 +323,10 @@ async function main() {
     await setPermRead(PUBLIC_POLICY, 'hall_events_halls_1')  // M2M junction
     await setPermRead(PUBLIC_POLICY, 'halls')
 
+    // Trainings (calendar view)
+    await setPermRead(PUBLIC_POLICY, 'trainings')
+    await setPermRead(PUBLIC_POLICY, 'slot_claims')  // hall slot claims (read-only)
+
     // Events (club-wide public events on home/calendar)
     await setPermRead(PUBLIC_POLICY, 'events')
     await setPermRead(PUBLIC_POLICY, 'events_teams_1')  // M2M junction

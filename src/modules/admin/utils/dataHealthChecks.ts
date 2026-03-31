@@ -1,6 +1,8 @@
-import { fetchAllItems, updateRecord } from '../../../lib/api'
+import { fetchAllItems, updateRecord, deleteRecord } from '../../../lib/api'
 
 export type IssueSeverity = 'error' | 'warning'
+
+export type FixAction = 'update' | 'delete'
 
 export interface DataIssue {
   id: string
@@ -11,6 +13,7 @@ export interface DataIssue {
   detail: string
   autoFixable: boolean
   fixValue?: string
+  fixAction?: FixAction
 }
 
 export interface CollectionHealth {
@@ -51,7 +54,7 @@ async function checkGames(): Promise<CollectionHealth> {
     const awayTeam = g['away_team'] as string
     const label = gameLabel(g)
 
-    // Missing date
+    // Missing date → delete the game (unscheduled placeholder)
     if (!date) {
       issues.push({
         id: String(g['id']),
@@ -60,12 +63,13 @@ async function checkGames(): Promise<CollectionHealth> {
         severity: 'error',
         label: `Missing date`,
         detail: `${label} (${gameId})`,
-        autoFixable: false,
+        autoFixable: true,
+        fixAction: 'delete',
       })
     }
 
-    // Missing away team
-    if (!awayTeam || !awayTeam.trim()) {
+    // Missing away team → set "Opponent TBD"
+    if (!awayTeam || !awayTeam.trim() || awayTeam.trim() === '?') {
       issues.push({
         id: String(g['id']),
         collection: 'games',
@@ -73,11 +77,12 @@ async function checkGames(): Promise<CollectionHealth> {
         severity: 'error',
         label: `Missing away team`,
         detail: `home: ${g['home_team'] || '?'} (${gameId})`,
-        autoFixable: false,
+        autoFixable: true,
+        fixValue: 'Opponent TBD',
       })
     }
 
-    // Missing time (when date exists)
+    // Missing time (when date exists) → set 00:00
     if (date && (!time || !time.trim())) {
       issues.push({
         id: String(g['id']),
@@ -86,7 +91,8 @@ async function checkGames(): Promise<CollectionHealth> {
         severity: 'warning',
         label: `Missing time`,
         detail: `${date} | ${label}`,
-        autoFixable: false,
+        autoFixable: true,
+        fixValue: '00:00',
       })
     }
 
@@ -156,7 +162,12 @@ export async function runAllChecks(): Promise<CollectionHealth[]> {
 }
 
 export async function autoFix(issue: DataIssue): Promise<void> {
-  if (!issue.autoFixable || issue.fixValue === undefined) return
+  if (!issue.autoFixable) return
+  if (issue.fixAction === 'delete') {
+    await deleteRecord(issue.collection, issue.id)
+    return
+  }
+  if (issue.fixValue === undefined) return
   await updateRecord(issue.collection, issue.id, {
     [issue.field]: issue.fixValue,
   })

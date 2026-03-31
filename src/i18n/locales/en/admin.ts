@@ -107,6 +107,7 @@ export default {
   dhAutoFixable: 'auto-fixable',
   dhFixAll: 'Fix all',
   dhFix: 'Fix',
+  dhDelete: 'Delete',
   dhFixing: 'Fixing...',
   dhFixed: 'Fixed',
   dhFixFailed: 'Fix failed',

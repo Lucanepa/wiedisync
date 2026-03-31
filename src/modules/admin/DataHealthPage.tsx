@@ -169,9 +169,13 @@ function CollectionCard({
                       <button
                         onClick={() => handleFixOne(issue)}
                         disabled={fixingId === issue.id}
-                        className="shrink-0 rounded-md border border-gray-200 px-2 py-1 text-[10px] font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                        className={`shrink-0 rounded-md border px-2 py-1 text-[10px] font-medium disabled:opacity-50 ${
+                          issue.fixAction === 'delete'
+                            ? 'border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/30'
+                            : 'border-gray-200 text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700'
+                        }`}
                       >
-                        {fixingId === issue.id ? '...' : t('dhFix')}
+                        {fixingId === issue.id ? '...' : issue.fixAction === 'delete' ? t('dhDelete') : t('dhFix')}
                       </button>
                     )}
                   </div>

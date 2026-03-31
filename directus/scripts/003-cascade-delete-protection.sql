@@ -55,10 +55,10 @@ ALTER TABLE poll_votes DROP CONSTRAINT IF EXISTS poll_votes_member_foreign;
 ALTER TABLE poll_votes ADD CONSTRAINT poll_votes_member_foreign
   FOREIGN KEY (member) REFERENCES members(id) ON DELETE CASCADE;
 
--- slot_claims: hall slot claims belong to the member
-ALTER TABLE slot_claims DROP CONSTRAINT IF EXISTS slot_claims_member_foreign;
-ALTER TABLE slot_claims ADD CONSTRAINT slot_claims_member_foreign
-  FOREIGN KEY (member) REFERENCES members(id) ON DELETE CASCADE;
+-- slot_claims: hall slot claims belong to the member (column is claimed_by_member)
+ALTER TABLE slot_claims DROP CONSTRAINT IF EXISTS slot_claims_claimed_by_member_foreign;
+ALTER TABLE slot_claims ADD CONSTRAINT slot_claims_claimed_by_member_foreign
+  FOREIGN KEY (claimed_by_member) REFERENCES members(id) ON DELETE CASCADE;
 
 -- carpool_passengers: passenger records belong to the member
 DO $$ BEGIN
@@ -88,7 +88,10 @@ END $$;
 -- team_invites: keep SET NULL — invite record should persist
 -- teams_members_3/4/5 (coach/TR/captain): already CASCADE
 
--- push_subscriptions: already CASCADE from 002 script
+-- push_subscriptions: ensure CASCADE (may have been SET NULL from Directus sync)
+ALTER TABLE push_subscriptions DROP CONSTRAINT IF EXISTS push_subscriptions_member_foreign;
+ALTER TABLE push_subscriptions ADD CONSTRAINT push_subscriptions_member_foreign
+  FOREIGN KEY (member) REFERENCES members(id) ON DELETE CASCADE;
 
 -- ══════════════════════════════════════════════════════════════════
 -- 2. DELETE PROTECTION — prevent accidental deletion of core entities

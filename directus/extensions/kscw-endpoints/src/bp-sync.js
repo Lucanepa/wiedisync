@@ -206,7 +206,8 @@ export async function syncBpGames(db, log) {
     const kscwBpId = g.isHome ? g.homeTeamId : g.guestTeamId
     const pbTeam = bpToPb[kscwBpId]
     if (!pbTeam) { errors++; continue }
-    if (!g.guestTeam?.trim()) { errors++; continue }
+    if (!g.date?.trim()) { log.warn(`[BP Sync] Game ${gameId}: missing date, skipping`); errors++; continue }
+    const awayTeam = (!g.guestTeam?.trim() || g.guestTeam.trim() === '?') ? 'Opponent TBD' : g.guestTeam
 
     let hallId = null, awayHallJson = null
     if (g.isHome && g.location) {
@@ -220,8 +221,8 @@ export async function syncBpGames(db, log) {
     const data = {
       game_id: gameId, source: 'basketplan',
       kscw_team: pbTeam.id,
-      home_team: g.homeTeam, away_team: g.guestTeam,
-      date: g.date, time: g.time || '',
+      home_team: g.homeTeam, away_team: awayTeam,
+      date: g.date, time: g.time || '00:00',
       type: g.isHome ? 'home' : 'away',
       status: STATUS_MAP[g.status] || 'scheduled',
       home_score: g.scoreHome, away_score: g.scoreGuest,

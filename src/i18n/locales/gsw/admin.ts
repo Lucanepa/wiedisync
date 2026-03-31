@@ -107,6 +107,7 @@ export default {
   dhAutoFixable: 'automatisch behebbar',
   dhFixAll: 'Alli behebe',
   dhFix: 'Behebe',
+  dhDelete: 'Lösche',
   dhFixing: 'Behebe...',
   dhFixed: 'Behobe',
   dhFixFailed: 'Behebig fählgschlage',

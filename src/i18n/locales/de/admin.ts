@@ -107,6 +107,7 @@ export default {
   dhAutoFixable: 'automatisch behebbar',
   dhFixAll: 'Alle beheben',
   dhFix: 'Beheben',
+  dhDelete: 'Löschen',
   dhFixing: 'Behebe...',
   dhFixed: 'Behoben',
   dhFixFailed: 'Behebung fehlgeschlagen',

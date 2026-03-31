@@ -267,8 +267,10 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
       let skipCount = 0
       for (const date of previewDates) {
         if (existingSet.has(date)) { skipCount++; continue }
+        const teamId = slot.team?.[0]
+        if (!teamId) continue
         const rec = await createRecord<{id: string}>('trainings', {
-          team: slot.team,
+          team: teamId,
           hall_slot: slot.id,
           date,
           start_time: slot.start_time,
@@ -282,7 +284,7 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
           require_note_if_absent: requireNoteIfAbsent,
           auto_cancel_on_min: autoCancelOnMin,
         })
-        logActivity('create', 'trainings', rec.id, { team: slot.team, date, hall: effectiveHallId })
+        logActivity('create', 'trainings', rec.id, { team: teamId, date, hall: effectiveHallId })
         count++
       }
       setGenerated(count)
@@ -290,7 +292,8 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
       setDone(true)
       onGenerated()
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err)
+      const msg = err instanceof Error ? err.message
+        : (err as { errors?: { message?: string }[] })?.errors?.[0]?.message ?? JSON.stringify(err)
       setError(`${tc('errorSaving')}: ${msg}`)
     } finally {
       setLoading(false)

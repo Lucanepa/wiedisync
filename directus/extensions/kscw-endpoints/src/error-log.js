@@ -45,6 +45,7 @@ export function writeErrorLog(entry) {
 export function logErrorToFile(endpoint, err, req) {
   writeErrorLog({
     level: (err.status && err.status < 500) ? 'warn' : 'error',
+    project: 'wiedisync',
     event: 'api_error',
     endpoint,
     userId: req?.accountability?.user || null,
@@ -65,6 +66,7 @@ export function logErrorToFile(endpoint, err, req) {
 export function logAuthDenial(endpoint, req, reason) {
   writeErrorLog({
     level: 'warn',
+    project: 'wiedisync',
     event: 'auth_denied',
     endpoint,
     reason,
@@ -80,6 +82,7 @@ export function logAuthDenial(endpoint, req, reason) {
 export function logCronError(cronName, err, extra) {
   writeErrorLog({
     level: 'error',
+    project: 'wiedisync',
     event: 'cron_error',
     cron: cronName,
     error: err.message,
@@ -94,6 +97,7 @@ export function logCronError(cronName, err, extra) {
 export function logWarning(event, message, extra) {
   writeErrorLog({
     level: 'warn',
+    project: 'wiedisync',
     event,
     message,
     ...extra,

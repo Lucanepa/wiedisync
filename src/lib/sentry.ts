@@ -54,6 +54,7 @@ export function initSentry() {
         const ex = event.exception?.values?.[0]
         sendToErrorLog({
           source: 'frontend',
+          project: 'wiedisync',
           event: 'unhandled_error',
           error: ex?.value || 'Unknown error',
           type: ex?.type || 'Error',
@@ -196,6 +197,7 @@ export function captureApiError(
   // Forward to backend JSONL log
   sendToErrorLog({
     source: 'frontend',
+    project: 'wiedisync',
     event: 'api_error',
     operation: context.operation,
     collection: context.collection,
@@ -239,6 +241,7 @@ export function captureAuthError(
   // Forward to backend JSONL log
   sendToErrorLog({
     source: 'frontend',
+    project: 'wiedisync',
     event: 'auth_error',
     action: context.action,
     method: context.method,

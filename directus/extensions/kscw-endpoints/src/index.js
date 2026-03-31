@@ -157,10 +157,11 @@ export default {
         const body = req.body
         if (!body || typeof body !== 'object') return res.status(400).end()
 
-        // Write to JSONL — add userId from auth if available
+        // Write to JSONL — add userId from auth if available, project tag for multi-app support
         writeErrorLog({
           level: 'error',
           source: 'frontend',
+          project: body.project || 'wiedisync',
           event: body.event || 'client_error',
           userId: req.accountability?.user || null,
           operation: body.operation || null,
@@ -1062,6 +1063,7 @@ export default {
         const endpointFilter = req.query.endpoint || null
         const userIdFilter = req.query.userId || null
         const eventFilter = req.query.event || null
+        const projectFilter = req.query.project || null
         const searchFilter = req.query.search || null
 
         const logPath = path.join(ERROR_LOG_DIR, `errors-${date}.jsonl`)
@@ -1082,6 +1084,7 @@ export default {
         if (endpointFilter) entries = entries.filter(e => e.endpoint?.includes(endpointFilter))
         if (userIdFilter) entries = entries.filter(e => e.userId === userIdFilter)
         if (eventFilter) entries = entries.filter(e => e.event === eventFilter)
+        if (projectFilter) entries = entries.filter(e => (e.project || 'wiedisync') === projectFilter)
         if (searchFilter) {
           const q = searchFilter.toLowerCase()
           entries = entries.filter(e => JSON.stringify(e).toLowerCase().includes(q))

@@ -266,6 +266,7 @@ export default function HallenplanPage() {
               day={weekDays[selectedDayIndex]}
               dayIndex={selectedDayIndex}
               halls={halls}
+              teams={teams}
               selectedHallIds={selectedHallIds}
               isAdmin={effectiveIsAdmin}
               isCoach={isCoach}
@@ -301,6 +302,7 @@ export default function HallenplanPage() {
               closures={closures}
               weekDays={weekDays}
               halls={halls}
+              teams={teams}
               selectedHallIds={selectedHallIds}
               isAdmin={effectiveIsAdmin}
               isCoach={isCoach}

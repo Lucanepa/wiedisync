@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { HallSlot, HallClosure, Hall } from '../../../types'
+import type { HallSlot, HallClosure, Hall, Team } from '../../../types'
 import { toISODate, minutesToTime, timeToMinutes } from '../../../utils/dateHelpers'
 import { positionSlotsMultiHall, generateTimeLabels, SLOT_HEIGHT, topToMinutes, SLOT_MINUTES, getDayRange, getSmartStartHour, getSmartEndHour } from '../utils/timeGrid'
 import { buildConflictSet } from '../utils/conflictDetection'
@@ -13,6 +13,7 @@ interface DaySlotViewProps {
   day: Date
   dayIndex: number
   halls: Hall[]
+  teams: Team[]
   selectedHallIds: string[]
   isAdmin: boolean
   isCoach?: boolean
@@ -27,6 +28,7 @@ export default function DaySlotView({
   day,
   dayIndex,
   halls,
+  teams,
   selectedHallIds,
   isAdmin,
   isCoach = false,
@@ -171,16 +173,24 @@ export default function DaySlotView({
     onEmptyCellClick(dayIndex, time, hallId)
   }
 
+  const teamMap = useMemo(() => {
+    const m = new Map<string, Team>()
+    for (const t of teams) m.set(String(t.id), t)
+    return m
+  }, [teams])
+
   function getTeamName(slot: HallSlot): string {
     const first = slot.team?.[0]
-    if (first != null && typeof first === 'object') return (first as { name: string }).name ?? ''
-    return ''
+    if (first == null) return ''
+    if (typeof first === 'object') return (first as { name: string }).name ?? ''
+    return teamMap.get(String(first))?.name ?? ''
   }
 
   function getTeamSport(slot: HallSlot): 'volleyball' | 'basketball' | undefined {
     const first = slot.team?.[0]
-    if (first != null && typeof first === 'object') return (first as { sport?: string }).sport as 'volleyball' | 'basketball' | undefined
-    return undefined
+    if (first == null) return undefined
+    if (typeof first === 'object') return (first as { sport?: string }).sport as 'volleyball' | 'basketball' | undefined
+    return teamMap.get(String(first))?.sport as 'volleyball' | 'basketball' | undefined
   }
 
   const { startMin, endMin } = getDayRange(dayIndex)

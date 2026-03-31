@@ -256,6 +256,7 @@ export default function HallenplanView() {
               day={weekDays[selectedDayIndex]}
               dayIndex={selectedDayIndex}
               halls={halls}
+              teams={teams}
               selectedHallIds={selectedHallIds}
               isAdmin={isAdmin}
               isCoach={isCoach}
@@ -290,6 +291,7 @@ export default function HallenplanView() {
               closures={closures}
               weekDays={weekDays}
               halls={halls}
+              teams={teams}
               selectedHallIds={selectedHallIds}
               isAdmin={isAdmin}
               isCoach={isCoach}

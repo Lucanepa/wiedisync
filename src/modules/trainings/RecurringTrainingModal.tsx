@@ -38,6 +38,27 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
 
   const { hasAdminAccessToTeam, coachTeamIds } = useAuth()
   const { effectiveIsAdmin } = useAdminMode()
+
+  // Local team picker state — used when no selectedTeamId is provided and user has 2+ teams
+  const [localTeamId, setLocalTeamId] = useState<string | null>(null)
+  const activeTeamId = selectedTeamId ?? localTeamId
+
+  // Fetch teams the user can manage (for the team picker)
+  const { data: teamsRaw } = useCollection<Team>('teams', {
+    filter: { active: { _eq: true } },
+    sort: ['name'],
+    limit: 50,
+  })
+  const managedTeams = useMemo(() => {
+    if (!teamsRaw) return []
+    return teamsRaw.filter(t =>
+      (effectiveIsAdmin && hasAdminAccessToTeam(t.id)) || coachTeamIds.includes(t.id),
+    )
+  }, [teamsRaw, effectiveIsAdmin, hasAdminAccessToTeam, coachTeamIds])
+
+  // Show team picker when no external team is selected and user manages 2+ teams
+  const needsTeamPicker = !selectedTeamId && managedTeams.length >= 2
+
   const { data: allSlotsRaw } = useCollection<SlotExpanded>('hall_slots', {
     filter: { slot_type: { _eq: 'training' } },
     sort: ['day_of_week', 'start_time'],
@@ -49,8 +70,8 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
   // Filter by selected team, or fall back to coach's teams (non-admin)
   // Sort: current/past slots first (by valid_from asc), then future slots (by valid_from asc)
   const slots = useMemo(() => {
-    const filtered = selectedTeamId
-      ? allSlots.filter((s) => s.team?.includes(selectedTeamId))
+    const filtered = activeTeamId
+      ? allSlots.filter((s) => s.team?.includes(activeTeamId))
       : allSlots.filter((s) => s.team?.some(t => (effectiveIsAdmin && hasAdminAccessToTeam(t)) || coachTeamIds.includes(t)))
     const today = new Date().toISOString().slice(0, 10)
     return [...filtered].sort((a, b) => {
@@ -61,7 +82,7 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
       if (aFuture !== bFuture) return aFuture - bFuture
       return (a.valid_from || '').localeCompare(b.valid_from || '')
     })
-  }, [selectedTeamId, allSlots, effectiveIsAdmin, hasAdminAccessToTeam, coachTeamIds])
+  }, [activeTeamId, allSlots, effectiveIsAdmin, hasAdminAccessToTeam, coachTeamIds])
 
   const { data: hallsRaw } = useCollection<Hall>('halls', { sort: ['name'], limit: 50 })
   const halls = hallsRaw ?? []
@@ -87,21 +108,21 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
   const [existingDates, setExistingDates] = useState<Set<string>>(new Set())
   const [done, setDone] = useState(false)
 
-  // Track whether defaults have been applied for the current open session
-  const defaultsApplied = useRef(false)
+  // Track which team's defaults have been applied (stores teamId or empty string)
+  const defaultsAppliedFor = useRef('')
 
-  // Pre-fill from team defaults when the modal opens
+  // Pre-fill from team defaults when a team is selected (via prop or local picker)
   useEffect(() => {
     if (!open) {
-      defaultsApplied.current = false
+      defaultsAppliedFor.current = ''
       return
     }
-    if (defaultsApplied.current) return
-    const teamId = selectedTeamId
-    if (!teamId) return
+    if (!activeTeamId) return
+    // Re-apply when team changes
+    if (defaultsAppliedFor.current === activeTeamId) return
 
-    defaultsApplied.current = true
-    fetchItem<{ features_enabled: TeamSettings }>('teams', teamId, { fields: ['features_enabled'] })
+    defaultsAppliedFor.current = activeTeamId
+    fetchItem<{ features_enabled: TeamSettings }>('teams', activeTeamId, { fields: ['features_enabled'] })
       .then((team) => {
         const s = team.features_enabled ?? {}
         if (s.training_respond_by_days !== undefined) {
@@ -119,9 +140,10 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
         }
       })
       .catch(() => { /* silently ignore — defaults stay empty */ })
-  }, [open, selectedTeamId])
+  }, [open, activeTeamId])
 
   function resetModalState() {
+    setLocalTeamId(null)
     setSelectedSlot('')
     setStartDate('')
     setEndDate('')
@@ -313,10 +335,33 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
   return (
     <Modal open={open} onClose={handleClose} title={t('recurringTitle')} size="md">
       <div className="space-y-4">
+        {needsTeamPicker && (
+          <div>
+            <label className={labelCls}>{tc('team')}</label>
+            <select
+              value={localTeamId ?? ''}
+              onChange={(e) => {
+                setLocalTeamId(e.target.value || null)
+                setSelectedSlot('')
+                setHallId('')
+                setStartDate('')
+                setEndDate('')
+              }}
+              className={inputCls}
+            >
+              <option value="">{tc('select')}</option>
+              {managedTeams.map((team) => (
+                <option key={team.id} value={team.id}>{team.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div>
           <label className={labelCls}>{t('selectSlot')}</label>
           <select
             value={selectedSlot}
+            disabled={needsTeamPicker && !localTeamId}
             onChange={(e) => {
               const id = e.target.value
               setSelectedSlot(id)

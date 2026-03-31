@@ -19,7 +19,7 @@ import { getCurrentSeason } from '../../utils/dateHelpers'
 import type { Team, Member, MemberPosition, MemberTeam, TeamSettings } from '../../types'
 import { Button } from '../../components/ui/button'
 import { fetchItems, updateRecord } from '../../lib/api'
-import { asObj, relId, flattenMemberIds } from '../../utils/relations'
+import { asObj, relId } from '../../utils/relations'
 
 type LeadershipRole = 'coach' | 'captain' | 'team_responsible'
 
@@ -68,7 +68,7 @@ export default function RosterEditor() {
 
   useEffect(() => {
     if (!teamSlug) return
-    fetchItems<Team>('teams', { filter: { name: { _eq: teamSlug } }, limit: 1, fields: ['*', 'captain.members_id'] })
+    fetchItems<Team>('teams', { filter: { name: { _eq: teamSlug } }, limit: 1 })
       .then((items) => setTeam(items[0] ?? null))
       .catch(() => setTeam(null))
   }, [teamSlug])
@@ -128,18 +128,14 @@ export default function RosterEditor() {
 
   const toggleRole = useCallback(async (memberId: string, role: LeadershipRole) => {
     if (!team) return
-    const current = flattenMemberIds(team[role])
-    const has = current.includes(memberId)
-    const nextIds = has
-      ? current.filter((id) => id !== memberId)
-      : [...current, memberId]
-    // Directus M2M expects junction objects with members_id
-    const junctionPayload = nextIds.map((id) => ({ members_id: id }))
+    const currentId = relId(team[role])
+    const isCurrent = currentId === memberId
+    // captain is M2O (single FK) — set to member ID or null
+    const nextValue = isCurrent ? null : memberId
     try {
-      await updateRecord('teams', team.id, { [role]: junctionPayload })
-      logActivity('update', 'teams', team.id, { [role]: nextIds })
-      // Store expanded format so flattenMemberIds works on next toggle without re-fetch
-      setTeam((prev) => prev ? { ...prev, [role]: junctionPayload } : prev)
+      await updateRecord('teams', team.id, { [role]: nextValue })
+      logActivity('update', 'teams', team.id, { [role]: nextValue })
+      setTeam((prev) => prev ? { ...prev, [role]: nextValue } : prev)
     } catch {
       toast.error(t('common:errorSaving'))
     }
@@ -288,7 +284,7 @@ export default function RosterEditor() {
               const member = asObj<Member>(mt.member)
               if (!member) return null
               const initials = `${member.first_name?.[0] ?? ''}${member.last_name?.[0] ?? ''}`.toUpperCase()
-              const isCaptain = team ? flattenMemberIds(team.captain).includes(member.id) : false
+              const isCaptain = team ? relId(team.captain) === member.id : false
               const memberPositions = coercePositions(member.position)
               const nonPlaying = isNonPlayingStaff(member.id, team, memberPositions)
               const selectablePositions = getSelectablePositions(team?.sport, memberPositions)

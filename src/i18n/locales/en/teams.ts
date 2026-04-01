@@ -130,6 +130,8 @@ export default {
   settingsWebsite: 'Website',
   featureOpenForPlayers: 'Open for new players',
   featureOpenForPlayersHint: 'Show a contact button on the team page so new players can reach the coach',
+  instagramUrl: 'Instagram Link',
+  instagramUrlHint: 'Team Instagram profile (shown on the website)',
   settingsFeatures: 'Features',
   settingsGameDefaults: 'Game Defaults',
   settingsTrainingDefaults: 'Training Defaults',

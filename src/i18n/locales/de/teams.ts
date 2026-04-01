@@ -130,6 +130,8 @@ export default {
   settingsWebsite: 'Website',
   featureOpenForPlayers: 'Offen für neue Spieler',
   featureOpenForPlayersHint: 'Zeigt einen Kontakt-Button auf der Teamseite, damit neue Spieler den Trainer erreichen können',
+  instagramUrl: 'Instagram-Link',
+  instagramUrlHint: 'Instagram-Profil des Teams (wird auf der Website angezeigt)',
   settingsFeatures: 'Features',
   settingsGameDefaults: 'Spiel-Standards',
   settingsTrainingDefaults: 'Training-Standards',

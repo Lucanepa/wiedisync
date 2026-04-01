@@ -619,6 +619,8 @@ function TeamSettingsSection({ team, onUpdate }: { team: Team; onUpdate: (s: Tea
   const { update } = useMutation<Team>('teams')
   const settings: TeamSettings = (team.features_enabled as TeamSettings) ?? {}
   const [openForPlayers, setOpenForPlayers] = useState(team.open_for_players ?? false)
+  const [socialUrl, setSocialUrl] = useState(team.social_url ?? '')
+  const socialUrlTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const save = async (patch: Partial<TeamSettings>) => {
     const next = { ...settings, ...patch }
@@ -640,6 +642,15 @@ function TeamSettingsSection({ team, onUpdate }: { team: Team; onUpdate: (s: Tea
     setOpenForPlayers(next)
   }
 
+  const handleSocialUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = e.target.value
+    setSocialUrl(v)
+    if (socialUrlTimer.current) clearTimeout(socialUrlTimer.current)
+    socialUrlTimer.current = setTimeout(() => {
+      update(team.id, { social_url: v })
+    }, 500)
+  }
+
   return (
     <div className="mt-8">
       <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('teamSettings')}</h2>
@@ -650,6 +661,16 @@ function TeamSettingsSection({ team, onUpdate }: { team: Team; onUpdate: (s: Tea
         <SettingsGroup title={t('settingsWebsite')} defaultOpen>
           <SettingRow label={t('featureOpenForPlayers')} hint={t('featureOpenForPlayersHint')}>
             <SwitchToggle checked={openForPlayers} onChange={toggleOpenForPlayers} />
+          </SettingRow>
+          <SettingRow label={t('instagramUrl')} hint={t('instagramUrlHint')}>
+            <input
+              type="url"
+              value={socialUrl}
+              onChange={handleSocialUrlChange}
+              placeholder="https://instagram.com/..."
+              className="w-48 rounded-md border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+              style={{ minHeight: 44 }}
+            />
           </SettingRow>
         </SettingsGroup>
 

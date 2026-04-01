@@ -116,6 +116,8 @@ export default {
   settingsWebsite: 'Site web',
   featureOpenForPlayers: 'Ouvert aux nouveaux joueurs',
   featureOpenForPlayersHint: 'Affiche un bouton de contact sur la page d\'équipe pour que les nouveaux joueurs puissent contacter l\'entraîneur',
+  instagramUrl: 'Lien Instagram',
+  instagramUrlHint: 'Profil Instagram de l\'équipe (affiché sur le site web)',
   settingsFeatures: 'Fonctionnalités',
   settingsGameDefaults: 'Paramètres de match par défaut',
   settingsTrainingDefaults: 'Paramètres d\'entraînement par défaut',

@@ -462,7 +462,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
             JOIN teams t ON t.id = a.team_id
             WHERE a.aid = participations.activity_id
               AND a.respond_by::date <= CURRENT_DATE
-              AND t.auto_decline_tentative = true
+              AND (t.features_enabled->>'auto_decline_tentative')::boolean = true
           )
       `)
 
@@ -503,7 +503,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
         INSERT INTO notifications (member, type, title, body, activity_type, activity_id, team, read)
         SELECT mt.member, 'upcoming_activity',
                COALESCE(g.home_team, '') || ' vs ' || COALESCE(g.away_team, ''),
-               COALESCE(g.time, ''),
+               COALESCE(g.time::text, ''),
                'game', g.id::text, g.kscw_team, false
         FROM games g
         JOIN member_teams mt ON mt.team = g.kscw_team

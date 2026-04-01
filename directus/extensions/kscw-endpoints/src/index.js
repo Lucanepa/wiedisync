@@ -348,8 +348,8 @@ export default {
             : Promise.resolve([]),
           // Sponsors: only sponsors explicitly linked to this team via junction table
           database('sponsors')
-            .join('teams_sponsors', 'sponsors.id', 'teams_sponsors.sponsors_id')
-            .where('teams_sponsors.teams_id', team.id)
+            .join('teams_sponsors_1', 'sponsors.id', 'teams_sponsors_1.sponsors_id')
+            .where('teams_sponsors_1.teams_id', team.id)
             .where('sponsors.active', true)
             .orderBy('sponsors.sort_order')
             .select('sponsors.*'),

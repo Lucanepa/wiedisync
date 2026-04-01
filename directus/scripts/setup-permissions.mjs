@@ -448,6 +448,8 @@ async function main() {
 
   // Members — read all fields (coaches need email, phone for their team)
   await setPermRead(LEADER_POLICY, 'members')
+  // Members — update position + number (coaches assign these in RosterEditor)
+  await setPerm(LEADER_POLICY, 'members', 'update', null, ['position', 'number'])
 
   // Teams — update (own coached/TR teams — filter enforced at API, frontend does team-scope)
   await setPerm(LEADER_POLICY, 'teams', 'update')

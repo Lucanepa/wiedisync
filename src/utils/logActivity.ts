@@ -15,7 +15,7 @@ export function logActivity(
   createRecord('user_logs', {
     action,
     collection_name: collectionName,
-    record_id: recordId ?? '',
+    record_id: recordId ? Number(recordId) : null,
     data: data ?? null,
   }).catch(() => {})
 }

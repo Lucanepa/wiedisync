@@ -40,6 +40,7 @@ export interface Team extends BaseRecord {
   sponsors: string[]
   sponsors_logos: string[]
   bb_source_id: string
+  open_for_players: boolean
   features_enabled: TeamSettings
 
 }

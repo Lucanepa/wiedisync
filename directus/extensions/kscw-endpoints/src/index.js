@@ -318,7 +318,7 @@ export default {
 
         const today = new Date().toISOString().split('T')[0]
 
-        const [roster, coaches, upcomingGames, completedGames, trainings, rankings, teamSponsors] = await Promise.all([
+        const [roster, coaches, upcomingGames, completedGames, trainings, rankings, sponsors] = await Promise.all([
           database('member_teams')
             .join('members', 'members.id', 'member_teams.member')
             .where('member_teams.team', team.id)
@@ -329,7 +329,7 @@ export default {
           database('teams_members_3')
             .join('members', 'members.id', 'teams_members_3.members_id')
             .where('teams_members_3.teams_id', team.id)
-            .select('members.id', 'members.first_name', 'members.last_name', 'members.photo'),
+            .select('members.id', 'members.first_name', 'members.last_name', 'members.photo', 'members.email'),
           database('games')
             .where('kscw_team', team.id).where('date', '>=', today)
             .where('status', '!=', 'cancelled')
@@ -346,16 +346,14 @@ export default {
                 .where('league', team.league).where('season', team.season)
                 .orderBy('rank')
             : Promise.resolve([]),
-          // Sponsors: global sponsors + team-specific sponsors
-          database('sponsors').where('active', true).orderBy('sort_order'),
+          // Sponsors: only sponsors explicitly linked to this team via junction table
+          database('sponsors')
+            .join('teams_sponsors', 'sponsors.id', 'teams_sponsors.sponsors_id')
+            .where('teams_sponsors.teams_id', team.id)
+            .where('sponsors.active', true)
+            .orderBy('sponsors.sort_order')
+            .select('sponsors.*'),
         ])
-
-        // Filter sponsors: show global sponsors (team_page_only=false) + sponsors linked to this team
-        const sponsors = teamSponsors.filter(sp => {
-          if (!sp.team_page_only) return true
-          // Check if sponsor is linked to this team via M2M
-          return sp.teams && Array.isArray(sp.teams) && sp.teams.includes(team.id)
-        })
 
         res.json({
           data: {

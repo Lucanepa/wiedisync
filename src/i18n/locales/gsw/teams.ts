@@ -127,6 +127,9 @@ export default {
   // Team-Iistellige
   teamSettings: 'Team-Iistellige',
   teamSettingsDescription: 'Features und Standardiistellige für das Team konfiguriere.',
+  settingsWebsite: 'Website',
+  featureOpenForPlayers: 'Offe für neui Spieler',
+  featureOpenForPlayersHint: 'Zeigt en Kontakt-Chnopf uf de Teamsiite, demit neui Spieler de Trainer erriiche chönd',
   settingsFeatures: 'Features',
   settingsGameDefaults: 'Spiel-Standards',
   settingsTrainingDefaults: 'Training-Standards',

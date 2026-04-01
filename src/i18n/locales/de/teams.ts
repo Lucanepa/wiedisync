@@ -127,6 +127,9 @@ export default {
   // Team-Einstellungen
   teamSettings: 'Team-Einstellungen',
   teamSettingsDescription: 'Features und Standardeinstellungen für dieses Team konfigurieren.',
+  settingsWebsite: 'Website',
+  featureOpenForPlayers: 'Offen für neue Spieler',
+  featureOpenForPlayersHint: 'Zeigt einen Kontakt-Button auf der Teamseite, damit neue Spieler den Trainer erreichen können',
   settingsFeatures: 'Features',
   settingsGameDefaults: 'Spiel-Standards',
   settingsTrainingDefaults: 'Training-Standards',

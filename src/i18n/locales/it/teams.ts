@@ -113,6 +113,9 @@ export default {
   // Impostazioni squadra
   teamSettings: 'Impostazioni squadra',
   teamSettingsDescription: 'Configura le funzionalità e le impostazioni predefinite per questa squadra.',
+  settingsWebsite: 'Sito web',
+  featureOpenForPlayers: 'Aperto a nuovi giocatori',
+  featureOpenForPlayersHint: 'Mostra un pulsante di contatto sulla pagina della squadra per permettere ai nuovi giocatori di contattare l\'allenatore',
   settingsFeatures: 'Funzionalità',
   settingsGameDefaults: 'Impostazioni partita predefinite',
   settingsTrainingDefaults: 'Impostazioni allenamento predefinite',

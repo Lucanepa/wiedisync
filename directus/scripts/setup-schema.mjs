@@ -184,6 +184,7 @@ const COLLECTIONS = [
       string('team_picture_pos'),
       string('social_url'),
       string('bb_source_id'),
+      boolean('open_for_players', { default: false }),
       json('features_enabled'),
     ],
   },

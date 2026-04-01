@@ -113,6 +113,9 @@ export default {
   // Paramètres d'équipe
   teamSettings: 'Paramètres d\'équipe',
   teamSettingsDescription: 'Configurer les fonctionnalités et les paramètres par défaut de cette équipe.',
+  settingsWebsite: 'Site web',
+  featureOpenForPlayers: 'Ouvert aux nouveaux joueurs',
+  featureOpenForPlayersHint: 'Affiche un bouton de contact sur la page d\'équipe pour que les nouveaux joueurs puissent contacter l\'entraîneur',
   settingsFeatures: 'Fonctionnalités',
   settingsGameDefaults: 'Paramètres de match par défaut',
   settingsTrainingDefaults: 'Paramètres d\'entraînement par défaut',

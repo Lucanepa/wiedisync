@@ -127,6 +127,9 @@ export default {
   // Team Settings
   teamSettings: 'Team Settings',
   teamSettingsDescription: 'Configure features and default settings for this team.',
+  settingsWebsite: 'Website',
+  featureOpenForPlayers: 'Open for new players',
+  featureOpenForPlayersHint: 'Show a contact button on the team page so new players can reach the coach',
   settingsFeatures: 'Features',
   settingsGameDefaults: 'Game Defaults',
   settingsTrainingDefaults: 'Training Defaults',

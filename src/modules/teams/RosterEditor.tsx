@@ -618,6 +618,7 @@ function TeamSettingsSection({ team, onUpdate }: { team: Team; onUpdate: (s: Tea
   const { t } = useTranslation('teams')
   const { update } = useMutation<Team>('teams')
   const settings: TeamSettings = (team.features_enabled as TeamSettings) ?? {}
+  const [openForPlayers, setOpenForPlayers] = useState(team.open_for_players ?? false)
 
   const save = async (patch: Partial<TeamSettings>) => {
     const next = { ...settings, ...patch }
@@ -633,12 +634,25 @@ function TeamSettingsSection({ team, onUpdate }: { team: Team; onUpdate: (s: Tea
     save({ [key]: v })
   }
 
+  const toggleOpenForPlayers = async () => {
+    const next = !openForPlayers
+    await update(team.id, { open_for_players: next })
+    setOpenForPlayers(next)
+  }
+
   return (
     <div className="mt-8">
       <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('teamSettings')}</h2>
       <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('teamSettingsDescription')}</p>
 
       <div className="mt-3 space-y-3">
+        {/* Website */}
+        <SettingsGroup title={t('settingsWebsite')} defaultOpen>
+          <SettingRow label={t('featureOpenForPlayers')} hint={t('featureOpenForPlayersHint')}>
+            <SwitchToggle checked={openForPlayers} onChange={toggleOpenForPlayers} />
+          </SettingRow>
+        </SettingsGroup>
+
         {/* Features */}
         <SettingsGroup title={t('settingsFeatures')} defaultOpen>
           <SettingRow label={t('featureTasks')} hint={t('featureTasksHint')}>

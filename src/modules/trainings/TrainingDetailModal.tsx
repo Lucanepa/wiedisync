@@ -8,6 +8,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useParticipation } from '../../hooks/useParticipation'
 import { formatDate, formatWeekday, formatTime, getDeadlineDate } from '../../utils/dateHelpers'
 import TasksSection from '../tasks/TasksSection'
+import { sanitizeUrl } from '../../utils/sanitizeUrl'
 import { isFeatureEnabled } from '../../utils/featureToggles'
 import type { Training, Team, Hall, Member } from '../../types'
 import { asObj, relId, flattenMemberIds } from '../../utils/relations'
@@ -66,9 +67,9 @@ export default function TrainingDetailModal({ training, onClose }: TrainingDetai
             {(hall || training.hall_name) && (
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400" />
-                {hall?.maps_url ? (
+                {hall?.maps_url && sanitizeUrl(hall.maps_url) ? (
                   <a
-                    href={hall.maps_url}
+                    href={sanitizeUrl(hall.maps_url)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-brand-600 hover:underline dark:text-brand-400"

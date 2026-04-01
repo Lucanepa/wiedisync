@@ -10,7 +10,7 @@ export default function RichText({
 }) {
   const clean = DOMPurify.sanitize(html, {
     ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 's', 'a', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'blockquote', 'span'],
-    ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'style'],
+    ALLOWED_ATTR: ['href', 'target', 'rel', 'class'],
   })
 
   return (

@@ -28,7 +28,7 @@ export function registerStats(router, { database, getSchema, services, logger })
 
       // Check app-level roles in members table
       const member = await database('members')
-        .where({ user_id: req.accountability.user })
+        .where({ user: req.accountability.user })
         .first()
 
       const memberRoles = member?.role ? (typeof member.role === 'string' ? JSON.parse(member.role) : member.role) : []

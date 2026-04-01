@@ -126,7 +126,7 @@ async function verifyTurnstile(token) {
   const resp = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: `secret=${TURNSTILE_SECRET}&response=${token}`,
+    body: new URLSearchParams({ secret: TURNSTILE_SECRET, response: token }).toString(),
   })
   const data = await resp.json()
   return data.success === true
@@ -653,7 +653,8 @@ export default ({ action, filter, init, schedule }, { services, database, logger
 
     const currentUser = context.accountability?.user || null
 
-    for (const item of payload) {
+    const items = Array.isArray(payload) ? payload : [payload]
+    for (const item of items) {
       if (!item) continue
 
       // Skip filtering for the member's own record
@@ -673,7 +674,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       }
     }
 
-    return payload
+    return Array.isArray(payload) ? items : items[0]
   })
 
   // ── 12. Cron: Error Log Cleanup (03:30 UTC) ─────────────────────

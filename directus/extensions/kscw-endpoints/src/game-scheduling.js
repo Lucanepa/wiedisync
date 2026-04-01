@@ -29,7 +29,7 @@ export function registerGameScheduling(router, { database, logger, services, get
       if (!team_name || !contact_name || !contact_email || !kscw_team) {
         return res.status(400).json({ error: 'team_name, contact_name, contact_email, kscw_team required' })
       }
-      if (turnstile_token && !(await verifyTurnstile(turnstile_token))) {
+      if (!turnstile_token || !(await verifyTurnstile(turnstile_token))) {
         return res.status(400).json({ error: 'Captcha verification failed' })
       }
 

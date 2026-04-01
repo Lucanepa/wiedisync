@@ -5,6 +5,7 @@
  */
 
 import { buildEmailLayout, buildInfoCard, formatDateCH } from './email-template.js'
+import crypto from 'crypto'
 
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET || ''
 
@@ -23,7 +24,7 @@ async function verifyTurnstile(token) {
 function generateRefNumber() {
   const now = new Date()
   const y = now.getFullYear()
-  const rand = String(Math.floor(Math.random() * 9000) + 1000)
+  const rand = String(1000 + (crypto.randomBytes(2).readUInt16BE(0) % 9000))
   return `REG-${y}-${rand}`
 }
 
@@ -182,7 +183,7 @@ export function registerRegistration(router, { database, logger, services, getSc
         return res.status(400).json({ error: 'Invalid membership_type' })
       }
 
-      if (body.turnstile_token && !(await verifyTurnstile(body.turnstile_token))) {
+      if (!body.turnstile_token || !(await verifyTurnstile(body.turnstile_token))) {
         return res.status(400).json({ error: 'Captcha verification failed' })
       }
 
@@ -275,15 +276,18 @@ export function registerRegistration(router, { database, logger, services, getSc
       const { ItemsService, FilesService } = services
       const itemsService = new ItemsService('registrations', { schema, knex: database })
 
-      // Verify registration exists and is pending
+      // Verify registration exists, is pending, and email matches
       let reg
       try {
         reg = await itemsService.readOne(id)
       } catch {
         return res.status(404).json({ error: 'Registration not found' })
       }
-      if (reg.status !== 'pending') {
-        return res.status(400).json({ error: 'Registration is not pending' })
+      if (!reg || reg.status !== 'pending') {
+        return res.status(404).json({ error: 'Registration not found' })
+      }
+      if (!req.body.email || req.body.email.toLowerCase() !== reg.email.toLowerCase()) {
+        return res.status(403).json({ error: 'Email mismatch' })
       }
 
       // Files come as multipart — Directus's Express instance has multer available

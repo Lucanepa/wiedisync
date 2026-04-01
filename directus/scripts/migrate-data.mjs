@@ -38,7 +38,8 @@ if (!PB_PASSWORD) {
 
 const DIRECTUS_URL = process.env.DIRECTUS_URL || 'http://localhost:8055'
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@kscw.ch'
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'REDACTED_ADMIN_PASSWORD'
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD
+if (!ADMIN_PASSWORD) { console.error('Missing ADMIN_PASSWORD env var'); process.exit(1) }
 
 // PB ID → Directus integer ID mapping, per collection
 const idMap = {} // { collectionName: { pbId: directusId } }

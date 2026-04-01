@@ -13,7 +13,7 @@
  * fetch all records that have a `game_id` or similar PB-origin identifier,
  * build a pbId → directusId map, then bulk-update the affected records.
  *
- * Run: DIRECTUS_URL=https://directus-dev.kscw.ch ADMIN_PASSWORD=REDACTED_ADMIN_PASSWORD node directus/scripts/remap-activity-ids.mjs
+ * Run: DIRECTUS_URL=https://directus-dev.kscw.ch ADMIN_PASSWORD=<password> node directus/scripts/remap-activity-ids.mjs
  */
 
 const DIRECTUS_URL = process.env.DIRECTUS_URL || 'https://directus-dev.kscw.ch'

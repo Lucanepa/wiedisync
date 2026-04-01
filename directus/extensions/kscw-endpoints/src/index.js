@@ -252,14 +252,32 @@ export default {
     })
 
     // ── Public: Check Email ─────────────────────────────────────
+    const checkEmailIpAttempts = new Map() // ip → [timestamps]
+
     router.post('/check-email', async (req, res) => {
       try {
+        // Rate limit: max 10 requests per minute per IP
+        const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown'
+        const now = Date.now()
+        const attempts = checkEmailIpAttempts.get(ip) || []
+        const recentAttempts = attempts.filter(t => now - t < 60000)
+        if (recentAttempts.length >= 10) {
+          return res.status(429).json({ error: 'Too many requests' })
+        }
+        recentAttempts.push(now)
+        checkEmailIpAttempts.set(ip, recentAttempts)
+        if (checkEmailIpAttempts.size > 1000) {
+          for (const [k, v] of checkEmailIpAttempts) {
+            if (v.every(t => now - t >= 60000)) checkEmailIpAttempts.delete(k)
+          }
+        }
+
         const { email, turnstile_token } = req.body
         if (!email) return res.status(400).json({ error: 'Email required' })
 
         // Turnstile validation (public endpoint — belt-and-suspenders with filter hook)
         const captchaToken = turnstile_token || req.headers['x-turnstile-token']
-        if (captchaToken && !(await verifyTurnstile(captchaToken))) {
+        if (!captchaToken || !(await verifyTurnstile(captchaToken))) {
           return res.status(400).json({ error: 'Captcha verification failed' })
         }
 
@@ -1121,6 +1139,9 @@ export default {
         requireAdmin(req, log)
 
         const date = req.query.date || new Date().toISOString().slice(0, 10)
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+          return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' })
+        }
         const limit = Math.min(parseInt(req.query.limit) || 200, 1000)
         const levelFilter = req.query.level || null
         const endpointFilter = req.query.endpoint || null
@@ -1246,20 +1267,27 @@ export default {
         }
 
         const userId = req.accountability?.user || null
-        const values = error_hashes.map(h => `(${database.raw('?, ?, ?, ?, ?, ?', [h, error_date, status || 'solved', note || null, resolved_commit || null, userId]).toString()})`)
+        const now = new Date().toISOString()
+        const rows = error_hashes.map(h => ({
+          error_hash: h,
+          error_date: error_date,
+          status: status || 'solved',
+          note: note || null,
+          resolved_commit: resolved_commit || null,
+          user_created: userId,
+          date_created: now,
+          date_updated: now,
+        }))
+        await database('error_annotations')
+          .insert(rows)
+          .onConflict('error_hash')
+          .merge(['status', 'note', 'resolved_commit', 'date_updated'])
 
-        const result = await database.raw(`
-          INSERT INTO error_annotations (error_hash, error_date, status, note, resolved_commit, user_created)
-          VALUES ${values.join(', ')}
-          ON CONFLICT (error_hash) DO UPDATE SET
-            status = COALESCE(EXCLUDED.status, error_annotations.status),
-            note = COALESCE(EXCLUDED.note, error_annotations.note),
-            resolved_commit = COALESCE(EXCLUDED.resolved_commit, error_annotations.resolved_commit),
-            date_updated = NOW()
-          RETURNING *
-        `)
+        const result = await database('error_annotations')
+          .whereIn('error_hash', error_hashes)
+          .select('*')
 
-        res.json({ data: result.rows, count: result.rows.length })
+        res.json({ data: result, count: result.length })
       } catch (err) {
         logEndpointError(log, 'admin/error-logs/annotate-bulk', err, req)
         res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal error' })

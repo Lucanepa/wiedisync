@@ -36,7 +36,7 @@ export function registerContactForm(router, { database, logger, services, getSch
         return res.status(400).json({ error: 'Invalid email format' })
       }
 
-      if (turnstile_token && !(await verifyTurnstile(turnstile_token))) {
+      if (!turnstile_token || !(await verifyTurnstile(turnstile_token))) {
         return res.status(400).json({ error: 'Captcha verification failed' })
       }
 

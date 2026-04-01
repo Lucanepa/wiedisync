@@ -63,11 +63,14 @@ CREATE TRIGGER trg_members_coach_approval_guard
 CREATE OR REPLACE FUNCTION trg_participations_guest_block()
 RETURNS trigger AS $$
 BEGIN
+  -- Block guests from confirming game participation (on insert or status update to confirmed)
   IF NEW.activity_type = 'game' AND NEW.status = 'confirmed' AND NEW.member IS NOT NULL THEN
-    IF EXISTS (
-      SELECT 1 FROM member_teams WHERE member = NEW.member AND guest_level > 0 LIMIT 1
-    ) THEN
-      RAISE EXCEPTION 'Guests cannot directly confirm game participation';
+    IF TG_OP = 'INSERT' OR (TG_OP = 'UPDATE' AND OLD.status IS DISTINCT FROM NEW.status) THEN
+      IF EXISTS (
+        SELECT 1 FROM member_teams WHERE member = NEW.member AND guest_level > 0 LIMIT 1
+      ) THEN
+        RAISE EXCEPTION 'Guests cannot directly confirm game participation';
+      END IF;
     END IF;
   END IF;
   RETURN NEW;
@@ -76,7 +79,7 @@ $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS trg_participations_guest_block ON participations;
 CREATE TRIGGER trg_participations_guest_block
-  BEFORE INSERT ON participations
+  BEFORE INSERT OR UPDATE ON participations
   FOR EACH ROW EXECUTE FUNCTION trg_participations_guest_block();
 
 -- 5. Auto-revoke slot claims when training uncancelled

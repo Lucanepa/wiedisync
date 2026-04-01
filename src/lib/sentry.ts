@@ -167,7 +167,7 @@ export function captureApiError(
       endpoint: context.endpoint ?? null,
       method: context.method ?? null,
       status: context.status ?? null,
-      responseBody: context.responseBody?.slice(0, 2000) ?? null,
+      responseBody: context.responseBody ? scrubResponseBody(context.responseBody).slice(0, 2000) : null,
       payload: safePayload ?? null,
       page: window.location.pathname,
     })
@@ -309,6 +309,21 @@ function scrubPii(obj: Record<string, unknown>): Record<string, unknown> {
     }
   }
   return result
+}
+
+/**
+ * Scrub PII from response body strings before sending to Sentry.
+ * Handles both JSON and plain-text responses safely.
+ */
+function scrubResponseBody(body: string): string {
+  try {
+    const parsed = JSON.parse(body)
+    if (parsed && typeof parsed === 'object') {
+      return JSON.stringify(scrubPii(parsed as Record<string, unknown>))
+    }
+  } catch { /* not JSON — fall through to regex scrub */ }
+  // Plain-text fallback: redact email-like strings
+  return body.replace(/[\w.+-]+@[\w.-]+\.\w+/g, '[REDACTED]')
 }
 
 // ── Forward client errors to backend JSONL log ──────────────────

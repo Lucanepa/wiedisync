@@ -10,6 +10,7 @@ import { Input } from '../../components/ui/input'
 import { Textarea } from '../../components/ui/textarea'
 import { Badge } from '../../components/ui/badge'
 import { createRecord } from '../../lib/api'
+import { sanitizeUrl } from '../../utils/sanitizeUrl'
 
 type FeedbackType = 'bug' | 'feature' | 'feedback'
 
@@ -379,8 +380,8 @@ export default function FeedbackPage() {
                       <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[item.status] || ''}`}>
                         {t(`status${item.status.charAt(0).toUpperCase() + item.status.slice(1)}`)}
                       </span>
-                      {item.github_issue && (
-                        <a href={item.github_issue} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-brand-600">
+                      {item.github_issue && sanitizeUrl(item.github_issue) && (
+                        <a href={sanitizeUrl(item.github_issue)} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-brand-600">
                           <ExternalLink className="h-4 w-4" />
                         </a>
                       )}
@@ -449,7 +450,7 @@ function IssueRow({ issue, formatDate, closed }: { issue: GitHubIssue; formatDat
             </p>
           )}
           <a
-            href={issue.url}
+            href={sanitizeUrl(issue.url)}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-xs font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"

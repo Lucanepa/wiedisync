@@ -10,14 +10,16 @@
  * Roles: Administrator, Superuser (admin_access), Sport Admin, Vorstand, Team Responsible, Member, Public
  *
  * Usage:
- *   DIRECTUS_URL=https://directus-dev.kscw.ch ADMIN_EMAIL=admin@kscw.ch ADMIN_PASSWORD=REDACTED_ADMIN_PASSWORD node directus/scripts/setup-permissions.mjs
+ *   DIRECTUS_URL=https://directus-dev.kscw.ch ADMIN_EMAIL=admin@kscw.ch ADMIN_PASSWORD=<password> node directus/scripts/setup-permissions.mjs
  *   # Or with static token:
  *   DIRECTUS_URL=https://directus-dev.kscw.ch DIRECTUS_TOKEN=<token> node directus/scripts/setup-permissions.mjs
  */
 
 const DIRECTUS_URL = process.env.DIRECTUS_URL || 'http://localhost:8055'
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@kscw.ch'
-const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || 'REDACTED_ADMIN_PASSWORD').replace(/\\!/g, '!')
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD
+if (!ADMIN_PASSWORD) { console.error('Missing ADMIN_PASSWORD env var'); process.exit(1) }
+const ADMIN_PASSWORD_CLEAN = ADMIN_PASSWORD.replace(/\\!/g, '!')
 const STATIC_TOKEN = process.env.DIRECTUS_TOKEN || ''
 
 let token = null
@@ -36,7 +38,7 @@ async function auth() {
   const res = await fetch(`${DIRECTUS_URL}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD }),
+    body: JSON.stringify({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD_CLEAN }),
   })
   if (!res.ok) {
     throw new Error(`Auth failed: ${res.status} — check ADMIN_EMAIL and ADMIN_PASSWORD`)

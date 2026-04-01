@@ -18,9 +18,12 @@ const { Client } = pg
 
 const DB_HOST = process.env.DB_HOST || '127.0.0.1'
 const DB_PORT = process.env.DB_PORT || '5432'
-const DB_NAME = process.env.DB_NAME || 'directus_kscw_dev'
-const DB_USER = process.env.DB_USER || 'directus'
-const DB_PASS = process.env.DB_PASS || 'REDACTED_DB_PASSWORD'
+const DB_NAME = process.env.DB_NAME
+if (!DB_NAME) { console.error('Missing DB_NAME env var'); process.exit(1) }
+const DB_USER = process.env.DB_USER
+if (!DB_USER) { console.error('Missing DB_USER env var'); process.exit(1) }
+const DB_PASS = process.env.DB_PASS
+if (!DB_PASS) { console.error('Missing DB_PASS env var'); process.exit(1) }
 
 async function main() {
   const file = process.argv[2]

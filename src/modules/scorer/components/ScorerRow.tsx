@@ -9,6 +9,7 @@ import { downloadICal } from '../../../utils/icalGenerator'
 import type { CalendarEntry } from '../../../types/calendar'
 import { formatTime } from '../../../utils/dateHelpers'
 import { Calendar, MapPin, Clock, AlertTriangle } from 'lucide-react'
+import { sanitizeUrl } from '../../../utils/sanitizeUrl'
 
 interface ScorerRowProps {
   game: Game
@@ -345,8 +346,8 @@ export default function ScorerRow({
         {hall && (
           <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
             <MapPin className="h-3 w-3" />
-            {hall.maps_url ? (
-              <a href={hall.maps_url} target="_blank" rel="noopener noreferrer" className="underline hover:text-brand-600 dark:hover:text-brand-400">
+            {hall.maps_url && sanitizeUrl(hall.maps_url) ? (
+              <a href={sanitizeUrl(hall.maps_url)} target="_blank" rel="noopener noreferrer" className="underline hover:text-brand-600 dark:hover:text-brand-400">
                 {hall.name}
               </a>
             ) : (

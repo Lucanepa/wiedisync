@@ -7,7 +7,8 @@
 
 const DIRECTUS_URL = process.env.DIRECTUS_URL || 'http://localhost:8055'
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@kscw.ch'
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'REDACTED_ADMIN_PASSWORD'
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD
+if (!ADMIN_PASSWORD) { console.error('Missing ADMIN_PASSWORD env var'); process.exit(1) }
 
 let token = null
 let passed = 0
@@ -236,7 +237,7 @@ async function testAuth() {
     const loginRes = await fetch(`${DIRECTUS_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: aMember[0].email, password: 'REDACTED_TEMP_PASSWORD' }),
+      body: JSON.stringify({ email: aMember[0].email, password: process.env.TEMP_PASSWORD || '' }),
     })
     test(`member login works (${aMember[0].email})`, loginRes.ok, `status: ${loginRes.status}`)
   }

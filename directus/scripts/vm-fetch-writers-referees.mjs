@@ -5,8 +5,12 @@
 import { writeFileSync } from 'fs';
 
 const VM_BASE = 'https://volleymanager.volleyball.ch';
-const VM_USERNAME = 'luca_canepa';
-const VM_PASSWORD = 'REDACTED_VM_PASSWORD';
+const VM_USERNAME = process.env.VM_USERNAME;
+const VM_PASSWORD = process.env.VM_PASSWORD;
+if (!VM_USERNAME || !VM_PASSWORD) {
+  console.error('Missing VM_USERNAME or VM_PASSWORD environment variables');
+  process.exit(1);
+}
 const UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36';
 
 class CookieJar {

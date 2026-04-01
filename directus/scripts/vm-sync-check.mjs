@@ -10,11 +10,19 @@
 
 // ─── Config ──────────────────────────────────────────────────────────
 const VM_BASE = 'https://volleymanager.volleyball.ch';
-const VM_USERNAME = process.env.VM_USERNAME || 'luca_canepa';
-const VM_PASSWORD = process.env.VM_PASSWORD || 'REDACTED_VM_PASSWORD';
+const VM_USERNAME = process.env.VM_USERNAME;
+const VM_PASSWORD = process.env.VM_PASSWORD;
+if (!VM_USERNAME || !VM_PASSWORD) {
+  console.error('Missing VM_USERNAME or VM_PASSWORD environment variables');
+  process.exit(1);
+}
 const DIRECTUS_URL = process.env.DIRECTUS_URL || 'https://directus-dev.kscw.ch';
 const DIRECTUS_EMAIL = process.env.ADMIN_EMAIL || 'admin@kscw.ch';
-const DIRECTUS_PASSWORD = process.env.ADMIN_PASSWORD || 'REDACTED_ADMIN_PASSWORD';
+const DIRECTUS_PASSWORD = process.env.ADMIN_PASSWORD;
+if (!DIRECTUS_PASSWORD) {
+  console.error('Missing ADMIN_PASSWORD environment variable');
+  process.exit(1);
+}
 const UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36';
 
 // ─── Cookie jar ──────────────────────────────────────────────────────

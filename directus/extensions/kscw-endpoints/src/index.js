@@ -20,6 +20,7 @@ import { registerWebPush, sendPushToMember } from './web-push.js'
 import { FRONTEND_URL } from './email-template.js'
 import { writeErrorLog, logErrorToFile, logAuthDenial, logWarning, cleanOldLogs, computeErrorHash } from './error-log.js'
 import { registerStats } from './stats.js'
+import { registerRegistration } from './registration.js'
 
 // ── Helpers ──────────────────────────────────────────────────────
 
@@ -1293,7 +1294,8 @@ export default {
     registerContactForm(router, ctx)
     registerWebPush(router, ctx)
     registerStats(router, ctx)
+    registerRegistration(router, ctx)
 
-    log.info('KSCW endpoints loaded: ~40 routes')
+    log.info('KSCW endpoints loaded: ~42 routes')
   },
 }

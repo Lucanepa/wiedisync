@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { fetchItem, fetchAllItems, updateRecord } from '../lib/api'
 import { coercePositions, normalizePositionsForSport } from '../utils/memberPositions'
 import type { Member, MemberTeam, Team } from '../types'
-import { asObj } from '../utils/relations'
+import { asObj, relId } from '../utils/relations'
 
 export type ExpandedMemberTeam = Omit<MemberTeam, 'member'> & { member: (Member & { id: string }) | string }
 
@@ -21,8 +21,11 @@ export function useTeamMembers(teamId: string | undefined, season?: string) {
     setIsLoading(true)
     setError(null)
     try {
-      const team = await fetchItem<Team>('teams', teamId, { fields: ['id', 'sport'] })
-      const filter: Record<string, unknown> = { team: { _eq: teamId } }
+      // Defensive: ensure we always pass a scalar ID, never an expanded object
+      const safeTeamId = relId(teamId)
+      if (!safeTeamId) { setMembers([]); setIsLoading(false); return }
+      const team = await fetchItem<Team>('teams', safeTeamId, { fields: ['id', 'sport'] })
+      const filter: Record<string, unknown> = { team: { _eq: safeTeamId } }
       if (season) filter.season = { _eq: season }
       const result = await fetchAllItems<ExpandedMemberTeam>('member_teams', {
         filter,
@@ -67,22 +70,24 @@ export function useMultiTeamMembers(teamIds: string[]) {
   const [members, setMembers] = useState<ExpandedMemberTeam[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
-  const key = teamIds.slice().sort().join(',')
+  // Defensive: ensure all IDs are scalars
+  const safeIds = teamIds.map(id => relId(id)).filter(Boolean)
+  const key = safeIds.slice().sort().join(',')
 
   const fetch = useCallback(async () => {
-    if (teamIds.length === 0) {
+    if (safeIds.length === 0) {
       setMembers([])
       setIsLoading(false)
       return
     }
 
     // Single team — delegate to simpler path
-    if (teamIds.length === 1) {
+    if (safeIds.length === 1) {
       setIsLoading(true)
       setError(null)
       try {
         const result = await fetchAllItems<ExpandedMemberTeam>('member_teams', {
-          filter: { team: { _eq: teamIds[0] } },
+          filter: { team: { _eq: safeIds[0] } },
           fields: ['*', 'member.*'],
           sort: ['member'],
         })
@@ -99,7 +104,7 @@ export function useMultiTeamMembers(teamIds: string[]) {
     setError(null)
     try {
       const result = await fetchAllItems<ExpandedMemberTeam>('member_teams', {
-        filter: { team: { _in: teamIds } },
+        filter: { team: { _in: safeIds } },
         fields: ['*', 'member.*'],
         sort: ['member'],
       })

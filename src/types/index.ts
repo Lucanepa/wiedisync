@@ -37,6 +37,9 @@ export interface Team extends BaseRecord {
   team_picture: string
   team_picture_pos: string
   social_url: string
+  facebook_url: string
+  tiktok_url: string
+  show_guests_on_website: boolean
   sponsors: string[]
   sponsors_logos: string[]
   bb_source_id: string

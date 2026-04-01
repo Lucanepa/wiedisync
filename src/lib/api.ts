@@ -56,7 +56,7 @@ export const client = createDirectus(API_URL)
   .with(realtime({
     authMode: 'handshake',
     heartbeat: false,
-    reconnect: { delay: 3000, retries: 5 },
+    reconnect: { delay: 5000, retries: 2 },
   }))
 
 // Catch unhandled WebSocket auth errors from the Directus SDK.

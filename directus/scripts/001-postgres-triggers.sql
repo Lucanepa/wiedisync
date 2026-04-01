@@ -229,7 +229,7 @@ BEGIN
 
   INSERT INTO notifications (member, type, title, body, activity_type, activity_id, team, read)
   SELECT DISTINCT mt.member, v_type, v_title, '', 'event', v_id::text, et.teams_id, false
-  FROM events_teams et
+  FROM events_teams_1 et
   JOIN member_teams mt ON mt.team = et.teams_id
   WHERE et.events_id = v_id;
 

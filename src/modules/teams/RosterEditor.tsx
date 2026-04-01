@@ -564,6 +564,25 @@ function SettingRow({ label, hint, children }: { label: string; hint: string; ch
   )
 }
 
+function SocialLinkRow({ label, hint, value, onChange, placeholder }: {
+  label: string; hint: string; value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; placeholder: string
+}) {
+  return (
+    <div className="px-4 py-3">
+      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{label}</div>
+      <div className="text-xs italic text-gray-500 dark:text-gray-400">{hint}</div>
+      <input
+        type="url"
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        className="mt-2 w-full rounded-md border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+        style={{ minHeight: 44 }}
+      />
+    </div>
+  )
+}
+
 /* ── Collapsible accordion group ── */
 function SettingsGroup({ title, defaultOpen = false, children }: { title: string; defaultOpen?: boolean; children: React.ReactNode }) {
   const [open, setOpen] = useState(defaultOpen)
@@ -619,8 +638,13 @@ function TeamSettingsSection({ team, onUpdate }: { team: Team; onUpdate: (s: Tea
   const { update } = useMutation<Team>('teams')
   const settings: TeamSettings = (team.features_enabled as TeamSettings) ?? {}
   const [openForPlayers, setOpenForPlayers] = useState(team.open_for_players ?? false)
+  const [showGuests, setShowGuests] = useState(team.show_guests_on_website ?? true)
   const [socialUrl, setSocialUrl] = useState(team.social_url ?? '')
+  const [facebookUrl, setFacebookUrl] = useState(team.facebook_url ?? '')
+  const [tiktokUrl, setTiktokUrl] = useState(team.tiktok_url ?? '')
   const socialUrlTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const facebookUrlTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const tiktokUrlTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const save = async (patch: Partial<TeamSettings>) => {
     const next = { ...settings, ...patch }
@@ -642,12 +666,22 @@ function TeamSettingsSection({ team, onUpdate }: { team: Team; onUpdate: (s: Tea
     setOpenForPlayers(next)
   }
 
-  const handleSocialUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const toggleShowGuests = async () => {
+    const next = !showGuests
+    await update(team.id, { show_guests_on_website: next })
+    setShowGuests(next)
+  }
+
+  const handleUrlChange = (
+    field: 'social_url' | 'facebook_url' | 'tiktok_url',
+    setter: (v: string) => void,
+    timer: React.MutableRefObject<ReturnType<typeof setTimeout> | null>,
+  ) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = e.target.value
-    setSocialUrl(v)
-    if (socialUrlTimer.current) clearTimeout(socialUrlTimer.current)
-    socialUrlTimer.current = setTimeout(() => {
-      update(team.id, { social_url: v })
+    setter(v)
+    if (timer.current) clearTimeout(timer.current)
+    timer.current = setTimeout(() => {
+      update(team.id, { [field]: v })
     }, 500)
   }
 
@@ -662,16 +696,30 @@ function TeamSettingsSection({ team, onUpdate }: { team: Team; onUpdate: (s: Tea
           <SettingRow label={t('featureOpenForPlayers')} hint={t('featureOpenForPlayersHint')}>
             <SwitchToggle checked={openForPlayers} onChange={toggleOpenForPlayers} />
           </SettingRow>
-          <SettingRow label={t('instagramUrl')} hint={t('instagramUrlHint')}>
-            <input
-              type="url"
-              value={socialUrl}
-              onChange={handleSocialUrlChange}
-              placeholder="https://instagram.com/..."
-              className="w-48 rounded-md border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-              style={{ minHeight: 44 }}
-            />
+          <SettingRow label={t('showGuestsOnWebsite')} hint={t('showGuestsOnWebsiteHint')}>
+            <SwitchToggle checked={showGuests} onChange={toggleShowGuests} />
           </SettingRow>
+          <SocialLinkRow
+            label={t('instagramUrl')}
+            hint={t('instagramUrlHint')}
+            value={socialUrl}
+            onChange={handleUrlChange('social_url', setSocialUrl, socialUrlTimer)}
+            placeholder="https://instagram.com/..."
+          />
+          <SocialLinkRow
+            label={t('facebookUrl')}
+            hint={t('facebookUrlHint')}
+            value={facebookUrl}
+            onChange={handleUrlChange('facebook_url', setFacebookUrl, facebookUrlTimer)}
+            placeholder="https://facebook.com/..."
+          />
+          <SocialLinkRow
+            label={t('tiktokUrl')}
+            hint={t('tiktokUrlHint')}
+            value={tiktokUrl}
+            onChange={handleUrlChange('tiktok_url', setTiktokUrl, tiktokUrlTimer)}
+            placeholder="https://tiktok.com/@..."
+          />
         </SettingsGroup>
 
         {/* Features */}

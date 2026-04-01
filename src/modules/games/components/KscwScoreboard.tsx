@@ -44,7 +44,7 @@ interface ScoreboardSection {
 export default function KscwScoreboard({ rankings }: KscwScoreboardProps) {
   const { t } = useTranslation('games')
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({})
-  const [mode, setMode] = useState<ScoreboardMode>('absolute')
+  const [mode, setMode] = useState<ScoreboardMode>('perGame')
 
   const sections = useMemo<ScoreboardSection[]>(() => {
     const out: ScoreboardSection[] = []

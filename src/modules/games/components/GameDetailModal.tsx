@@ -18,7 +18,7 @@ import RefereeExpenseSection from './RefereeExpenseSection'
 import TasksSection from '../../tasks/TasksSection'
 import CarpoolSection from '../../carpool/CarpoolSection'
 import { isFeatureEnabled } from '../../../utils/featureToggles'
-import { asObj, flattenMemberIds } from '../../../utils/relations'
+import { asObj, relId, flattenMemberIds } from '../../../utils/relations'
 
 const GAME_EXPAND = 'kscw_team,hall,scorer_member,scoreboard_member,scorer_scoreboard_member,scorer_duty_team,scoreboard_duty_team,scorer_scoreboard_duty_team,bb_scorer_member,bb_timekeeper_member,bb_24s_official,bb_duty_team,bb_scorer_duty_team,bb_timekeeper_duty_team,bb_24s_duty_team'
 
@@ -73,8 +73,8 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
   })
   const [fullGame, setFullGame] = useState<Game | null>(null)
   const { update: updateGame } = useMutation<Game>('games')
-  const canParticipate = !!user && !!game?.kscw_team && canParticipateIn(game.kscw_team)
-  const isStaffParticipant = !!game?.kscw_team && isStaffOnly(game.kscw_team)
+  const canParticipate = !!user && !!game?.kscw_team && canParticipateIn(relId(game.kscw_team))
+  const isStaffParticipant = !!game?.kscw_team && isStaffOnly(relId(game.kscw_team))
   const { effectiveStatus, hasAbsence, note: savedNote, setStatus, saveConfirmed, dismissConfirmed } = useParticipation(
     'game',
     game?.id ?? '',
@@ -159,13 +159,14 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
     : ''
   const hall = expandedHall ?? (awayHall ? { name: awayHall.name, address: awayHall.address, city: awayHall.city, maps_url: awayMapsUrl } : null)
   const kscwTeamObj = asObj<Team & BaseRecord>(expanded.kscw_team)
+  const kscwTeamId = relId(game?.kscw_team)
   const rawKscwTeam = kscwTeamObj?.name ?? ''
   const kscwSport = kscwTeamObj?.sport as 'volleyball' | 'basketball' | undefined
   const kscwTeam = rawKscwTeam && kscwSport ? teamNameToColorKey(rawKscwTeam, kscwSport) : rawKscwTeam
   const sets = parseSets(game.sets_json)
   const intlLocale = i18n.language === 'gsw' ? 'de-CH' : i18n.language
   const dateStr = game.date ? new Intl.DateTimeFormat(intlLocale, dateFormatOptions).format(new Date(game.date)) : ''
-  const showScorerContact = isCoachOf(game.kscw_team)
+  const showScorerContact = isCoachOf(kscwTeamId)
   const homeWon = Number(game.home_score) > Number(game.away_score)
   const awayWon = Number(game.away_score) > Number(game.home_score)
   const kscwWon = game.type === 'home' ? homeWon : awayWon
@@ -285,7 +286,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
 
         {/* Participation — only for own team's scheduled games */}
         {game.status === 'scheduled' && canParticipate && (
-          isGuestIn(game.kscw_team) ? (
+          isGuestIn(kscwTeamId) ? (
             <div className="border-t dark:border-gray-700 px-6 py-3">
               <p className="text-sm text-muted-foreground py-4 text-center">
                 {t('games:guestsCannotParticipate')}
@@ -439,8 +440,8 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
           <div className="border-t dark:border-gray-700 px-6 py-4">
             <RefereeExpenseSection
               gameId={game.id}
-              teamId={game.kscw_team}
-              canEdit={!readOnly && isCoachOf(game.kscw_team)}
+              teamId={kscwTeamId}
+              canEdit={!readOnly && isCoachOf(kscwTeamId)}
             />
           </div>
         )}
@@ -525,8 +526,8 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
             <TasksSection
               activityType="game"
               activityId={game.id}
-              teamId={game.kscw_team}
-              canManage={isCoachOf(game.kscw_team)}
+              teamId={kscwTeamId}
+              canManage={isCoachOf(kscwTeamId)}
             />
           </div>
         )}
@@ -544,7 +545,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
             {game.respond_by && !editingDeadline && (
               <DetailRow label={t('respondBy')} value={`${formatDate(game.respond_by.split(' ')[0])}${(() => { const { time } = parseRespondByTime(game.respond_by, game.time); return time ? `, ${time}` : '' })()}`} />
             )}
-            {!readOnly && isCoachOf(game.kscw_team) && (
+            {!readOnly && isCoachOf(kscwTeamId) && (
               editingDeadline ? (
                 <div className="flex items-center gap-2">
                   <DatePicker
@@ -605,7 +606,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
       activityType="game"
       activityId={game?.id ?? ''}
       activityDate={game?.date ?? ''}
-      teamIds={game?.kscw_team ? [game.kscw_team] : []}
+      teamIds={kscwTeamId ? [kscwTeamId] : []}
       title={t('participationRoster')}
       respondBy={game?.respond_by}
       activityStartTime={game?.time}

@@ -204,6 +204,8 @@ export default function SlotEditor({
       let savedSlotId = slot?.id ?? ''
 
       const m2mPayload = teamToM2M(payload)
+      // Postgres rejects empty string for date fields — send null instead
+      if (!m2mPayload.valid_until) m2mPayload.valid_until = null
       if (isCombo && kwiA && kwiB) {
         const hallIds = [kwiA.id, kwiB.id]
         if (slot) {

@@ -21,6 +21,7 @@ import chFlag from '../../assets/flags/ch.svg'
 
 const flagMap: Record<string, string> = { de: deFlag, gb: gbFlag, fr: frFlag, it: itFlag, ch: chFlag }
 import { CheckIcon } from 'lucide-react'
+import { toast } from 'sonner'
 import { logActivity } from '../../utils/logActivity'
 import type { MemberPosition } from '../../types'
 import { client, fetchAllItems, kscwApi, updateRecord } from '../../lib/api'
@@ -33,7 +34,7 @@ interface ProfileEditModalProps {
 }
 
 export default function ProfileEditModal({ open, onClose, onboarding }: ProfileEditModalProps) {
-  const { user, primarySport } = useAuth()
+  const { user, primarySport, memberTeamNames } = useAuth()
   const { t, i18n } = useTranslation('auth')
   const { t: tc } = useTranslation('common')
   const { t: tt } = useTranslation('teams')
@@ -58,6 +59,16 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
   const [resetSent, setResetSent] = useState(false)
   const [resetLoading, setResetLoading] = useState(false)
 
+  // ClubDesk fields
+  const [anrede, setAnrede] = useState('')
+  const [adresse, setAdresse] = useState('')
+  const [plz, setPlz] = useState('')
+  const [ort, setOrt] = useState('')
+  const [nationalitaet, setNationalitaet] = useState('')
+  const [geschlecht, setGeschlecht] = useState('')
+  const [ahvNummer, setAhvNummer] = useState('')
+  const [clubdeskOpen, setClubdeskOpen] = useState(false)
+
   useEffect(() => {
     if (user && open) {
       setFirstName(user.first_name ?? '')
@@ -77,6 +88,15 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
       setError('')
       setResetSent(false)
       setResetLoading(false)
+      // ClubDesk fields
+      setAnrede(user.anrede ?? '')
+      setAdresse(user.adresse ?? '')
+      setPlz(user.plz ?? '')
+      setOrt(user.ort ?? '')
+      setNationalitaet(user.nationalitaet ?? '')
+      setGeschlecht(user.geschlecht ?? '')
+      setAhvNummer(user.ahv_nummer ?? '')
+      setClubdeskOpen(false)
     }
   }, [user, open])
 
@@ -161,6 +181,29 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
         payload.birthdate = birthdate
       }
 
+      // Validate AHV format if provided
+      if (ahvNummer && !/^756\.\d{4}\.\d{4}\.\d{2}$/.test(ahvNummer)) {
+        setError(t('invalidAhvFormat'))
+        setLoading(false)
+        return
+      }
+
+      // Validate PLZ if provided
+      if (plz && (!/^\d{4}$/.test(plz) || parseInt(plz) < 1000)) {
+        setError(t('invalidPlz'))
+        setLoading(false)
+        return
+      }
+
+      // ClubDesk fields
+      payload.anrede = anrede
+      payload.adresse = adresse
+      payload.plz = plz
+      payload.ort = ort
+      payload.nationalitaet = nationalitaet
+      payload.geschlecht = geschlecht
+      payload.ahv_nummer = ahvNummer
+
       // Use FormData only when uploading a photo, otherwise plain object
       if (photoFile) {
         const formData = new FormData()
@@ -177,6 +220,43 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
         await updateRecord('members', user.id, payload)
       }
       logActivity('update', 'members', user.id, { first_name: firstName, last_name: lastName, phone, language, position: selectedPositions })
+      // Detect ClubDesk field changes and notify admin
+      const clubdeskFields = {
+        first_name: { old: user.first_name, new: firstName },
+        last_name: { old: user.last_name, new: lastName },
+        email: { old: user.email, new: email },
+        phone: { old: user.phone, new: phone },
+        birthdate: { old: user.birthdate?.slice(0, 10) || '', new: birthdate },
+        anrede: { old: user.anrede || '', new: anrede },
+        adresse: { old: user.adresse || '', new: adresse },
+        plz: { old: user.plz || '', new: plz },
+        ort: { old: user.ort || '', new: ort },
+        nationalitaet: { old: user.nationalitaet || '', new: nationalitaet },
+        geschlecht: { old: user.geschlecht || '', new: geschlecht },
+        ahv_nummer: { old: user.ahv_nummer || '', new: ahvNummer },
+      }
+      const changes = Object.entries(clubdeskFields)
+        .filter(([, v]) => v.old !== v.new)
+        .map(([field, v]) => ({ field, old_value: v.old, new_value: v.new }))
+
+      if (changes.length > 0) {
+        // Fire-and-forget — don't block modal close for the email
+        kscwApi('/clubdesk-update', {
+          method: 'POST',
+          body: {
+            member_id: user.id,
+            changes,
+            current_data: {
+              anrede, first_name: firstName, last_name: lastName,
+              email, phone, adresse, plz, ort,
+              birthdate, nationalitaet, geschlecht, ahv_nummer: ahvNummer,
+              beitragskategorie: user.beitragskategorie || '',
+            },
+          },
+        })
+          .then(() => toast.success(t('clubdeskUpdateSent')))
+          .catch(() => console.warn('ClubDesk update email failed'))
+      }
       // Persist language to localStorage
       localStorage.setItem('wiedisync-lang', backendLangToI18n(language))
       await client.refresh()
@@ -387,6 +467,113 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
           </div>
         </FormField>
 
+        {/* ClubDesk personal data — hidden in onboarding */}
+        {!onboarding && (
+          <div className="rounded-lg border border-gray-200 dark:border-gray-600">
+            <button
+              type="button"
+              onClick={() => setClubdeskOpen(!clubdeskOpen)}
+              className="flex w-full items-center justify-between px-4 py-3 text-sm font-semibold text-gray-900 dark:text-gray-100"
+              style={{ minHeight: 44 }}
+            >
+              <span>{t('personalDataClubdesk')}</span>
+              <svg className={`h-4 w-4 text-gray-400 transition-transform ${clubdeskOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {clubdeskOpen && (
+              <div className="space-y-4 border-t border-gray-200 px-4 py-4 dark:border-gray-600">
+                {/* Anrede + Geschlecht */}
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField label={t('anrede')}>
+                    <Select value={anrede} onValueChange={setAnrede}>
+                      <SelectTrigger className="min-h-[44px]">
+                        <SelectValue placeholder="—" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Herr">{t('mr')}</SelectItem>
+                        <SelectItem value="Frau">{t('mrs')}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormField>
+                  <FormField label={t('geschlecht')}>
+                    <Select value={geschlecht} onValueChange={setGeschlecht}>
+                      <SelectTrigger className="min-h-[44px]">
+                        <SelectValue placeholder="—" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Männlich">{t('male')}</SelectItem>
+                        <SelectItem value="Weiblich">{t('female')}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormField>
+                </div>
+
+                {/* Adresse */}
+                <FormInput
+                  label={t('adresse')}
+                  value={adresse}
+                  onChange={(e) => setAdresse(e.target.value)}
+                />
+
+                {/* PLZ + Ort */}
+                <div className="grid grid-cols-[120px_1fr] gap-4">
+                  <FormInput
+                    label={t('plz')}
+                    value={plz}
+                    onChange={(e) => setPlz(e.target.value)}
+                    inputMode="numeric"
+                    maxLength={4}
+                  />
+                  <FormInput
+                    label={t('ort')}
+                    value={ort}
+                    onChange={(e) => setOrt(e.target.value)}
+                  />
+                </div>
+
+                {/* Nationalität */}
+                <FormInput
+                  label={t('nationalitaet')}
+                  value={nationalitaet}
+                  onChange={(e) => setNationalitaet(e.target.value)}
+                />
+
+                {/* AHV Nummer */}
+                <FormInput
+                  label={t('ahvNummer')}
+                  value={ahvNummer}
+                  onChange={(e) => setAhvNummer(e.target.value)}
+                  placeholder="756.XXXX.XXXX.XX"
+                />
+
+                {/* Read-only admin fields */}
+                <div className="mt-2 space-y-2 rounded-md bg-gray-50 p-3 dark:bg-gray-800">
+                  <p className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    {t('managedByAdmin')}
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{t('beitragskategorie')}</span>
+                      <p className="text-gray-700 dark:text-gray-300">{user.beitragskategorie || '—'}</p>
+                    </div>
+                    <div>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{tc('team')}</span>
+                      <p className="text-gray-700 dark:text-gray-300">{memberTeamNames?.join(', ') || '—'}</p>
+                    </div>
+                    <div>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{t('status')}</span>
+                      <p className="text-gray-700 dark:text-gray-300">{user.kscw_membership_active ? t('active') : t('passive')}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Privacy — hidden in onboarding */}
         {!onboarding && (

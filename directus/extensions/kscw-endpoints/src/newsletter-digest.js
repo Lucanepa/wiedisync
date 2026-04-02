@@ -271,8 +271,8 @@ export function registerNewsletterDigest(router, { database, logger, services, g
       // Generate AI summaries (2 calls: DE + EN)
       const summaryData = {
         news: news.slice(0, 5).map(n => n.title),
-        results: results.slice(0, 5).map(r => `${r.home_team} ${r.home_score}:${r.away_score} ${r.away_team}`),
-        upcoming: upcoming.slice(0, 5).map(u => `${u.home_team} vs ${u.away_team} (${u.date})`),
+        results: results.slice(0, 5).map(r => `[${r._sport}] ${r.home_team} ${r.home_score}:${r.away_score} ${r.away_team}`),
+        upcoming: upcoming.slice(0, 5).map(u => `[${u._sport}] ${u.home_team} vs ${u.away_team} (${u.date})`),
         events: events.slice(0, 3).map(e => e.title),
       };
 
@@ -294,7 +294,7 @@ export function registerNewsletterDigest(router, { database, logger, services, g
             const transResp = await fetch('https://api-free.deepl.com/v2/translate', { method: 'POST', body: params });
             const transResult = await transResp.json();
             n._excerptEn = transResult.translations?.[0]?.text || n.excerpt;
-          } catch { n._excerptEn = n.excerpt; }
+          } catch (err) { console.error('DeepL translation failed:', err.message); n._excerptEn = n.excerpt; }
         }
       }
 

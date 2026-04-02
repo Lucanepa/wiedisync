@@ -11,8 +11,8 @@ const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET || ''
 
 const ADMIN_EMAIL = 'kontakt@kscw.ch'
 const OWNER_EMAIL = 'luca.canepa@gmail.com'
-const BB_ADMIN_EMAIL = 'basketball@kscw.ch'  // Basketball-specific admin
-const VB_ADMIN_EMAIL = 'volleyball@kscw.ch'  // Volleyball-specific admin
+const BB_ADMIN_EMAIL = 'kscwiedikonbasketball@gmail.com'
+const VB_ADMIN_EMAIL = 'thamayanth.kanagalingam@uzh.ch'
 
 async function verifyTurnstile(token) {
   if (!TURNSTILE_SECRET) return true

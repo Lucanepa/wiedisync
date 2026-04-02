@@ -694,6 +694,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
   // and email it to the owner (luca.canepa@gmail.com)
 
   const OWNER_EMAIL = 'luca.canepa@gmail.com'
+  const RADO_EMAIL = 'radomir.radovanovic.b@gmail.com'
 
   function csvEscapeHook(val) {
     const s = String(val ?? '')
@@ -775,7 +776,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
         const filename = `anmeldung_${reg.nachname}_${reg.vorname}_${reg.reference_number}.csv`
 
         await mail.send({
-          to: OWNER_EMAIL,
+          to: [OWNER_EMAIL, RADO_EMAIL],
           subject: `[KSCW] Anmeldung bestätigt: ${reg.vorname} ${reg.nachname} (${reg.membership_type})`,
           html: `<p>Die Anmeldung von <strong>${reg.vorname} ${reg.nachname}</strong> (${reg.membership_type}) wurde bestätigt.</p><p>Die CSV-Datei für den ClubDesk-Import ist im Anhang.</p><p>Referenz: ${reg.reference_number}</p>`,
           attachments: [{

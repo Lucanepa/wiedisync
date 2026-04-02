@@ -9,15 +9,27 @@
 import { buildEmailLayout, formatDateCH, FRONTEND_URL } from './email-template.js';
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
+const DEEPL_API_KEY = process.env.DEEPL_API_KEY || '';
 const WEBSITE_URL = process.env.KSCW_WEBSITE_URL || 'https://kscw-website.pages.dev';
 
 async function generateSummary(locale, data, monthLabel, year) {
   if (!ANTHROPIC_API_KEY) return null;
   try {
     const baseUrl = WEBSITE_URL;
+    const l = locale === 'de' ? 'de' : 'en';
+
+    const rules = [
+      `Use FULL absolute HTML links with base URL ${baseUrl}/${l}/. Example: <a href="${baseUrl}/${l}/volleyball/">Volleyball</a>.`,
+      `When mentioning a team, ALWAYS specify the sport in parentheses, e.g. "Damen 1 (Volleyball)" or "Lions D1 (Basketball)".`,
+      `Structure the summary in 3 short sections using bold headers: <b>News</b>, <b>${locale === 'de' ? 'Resultate' : 'Results'}</b>, <b>${locale === 'de' ? 'Ausblick' : 'Outlook'}</b>. Each section 1-2 sentences.`,
+      `This newsletter covers ${monthLabel} ${year} ONLY. Do NOT mention any other month. Do NOT say "as we head into [next month]" or reference the future.`,
+      `No markdown, no # headers. Only HTML (<b>, <a>, <br>). No <p> tags.`,
+      `Write enthusiastically but factually.`,
+    ].join(' ');
+
     const prompt = locale === 'de'
-      ? `Schreibe eine 3-4 Sätze lange Einleitung für den KSCW Newsletter für ${monthLabel} ${year} auf Deutsch. Verwende VOLLSTÄNDIGE inline HTML-Links (<a href="https://...">) mit der Basis-URL ${baseUrl}. Beispiele: <a href="${baseUrl}/de/volleyball/">Volleyball</a>, <a href="${baseUrl}/de/basketball/">Basketball</a>, <a href="${baseUrl}/de/weiteres/kalender">Kalender</a>, <a href="${baseUrl}/de/news/">News</a>, <a href="${baseUrl}/de/volleyball/d1">Damen 1</a>. Schreibe enthusiastisch aber sachlich. Sage NICHT "April" oder den aktuellen Monat — es geht um ${monthLabel} ${year}. Kein Markdown, nur HTML. Hier sind die Highlights: ${JSON.stringify(data)}`
-      : `Write a 3-4 sentence intro for the KSCW newsletter covering ${monthLabel} ${year} in English. Use FULL inline HTML links (<a href="https://...">) with base URL ${baseUrl}. Examples: <a href="${baseUrl}/en/volleyball/">volleyball</a>, <a href="${baseUrl}/en/basketball/">basketball</a>, <a href="${baseUrl}/en/weiteres/kalender">calendar</a>, <a href="${baseUrl}/en/news/">news</a>, <a href="${baseUrl}/en/volleyball/d1">Damen 1</a>. Write enthusiastically but factually. Do NOT mention the current month — this covers ${monthLabel} ${year}. No markdown, only HTML. Here are the highlights: ${JSON.stringify(data)}`;
+      ? `Schreibe eine strukturierte Zusammenfassung für den KSCW Newsletter ${monthLabel} ${year} auf Deutsch. ${rules} Hier sind die Daten: ${JSON.stringify(data)}`
+      : `Write a structured summary for the KSCW newsletter for ${monthLabel} ${year} in English. ${rules} Here is the data: ${JSON.stringify(data)}`;
 
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -28,7 +40,7 @@ async function generateSummary(locale, data, monthLabel, year) {
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 300,
+        max_tokens: 500,
         messages: [{ role: 'user', content: prompt }],
       }),
     });
@@ -108,7 +120,7 @@ function buildDigestHtml(locale, summary, news, results, upcoming, events, unsub
 
   // AI Summary
   if (summary) {
-    body += `<div style="font-size:15px;color:#e2e8f0;line-height:1.6;margin-bottom:20px;padding:16px;background:#0f172a;border-radius:8px;border-left:3px solid #FFC832">${summary}</div>`;
+    body += `<div style="font-size:14px;color:#e2e8f0;line-height:1.7;margin-bottom:20px;padding:16px;background:#0f172a;border-radius:8px;border-left:3px solid #FFC832;text-align:left">${summary}</div>`;
   }
 
   // News section
@@ -118,8 +130,8 @@ function buildDigestHtml(locale, summary, news, results, upcoming, events, unsub
       const link = `${WEBSITE_URL}/${locale}/news/?article=${n.slug}`;
       const title = (locale === 'en' && n.title_en) ? n.title_en : n.title;
       body += `<div style="padding:8px 0;border-bottom:1px solid #334155"><a href="${link}" style="color:#60a5fa;text-decoration:none;font-weight:600;font-size:14px">${title}</a>`;
-      // Only show excerpt for DE (no English excerpt available)
-      if (locale === 'de' && n.excerpt) body += `<div style="color:#94a3b8;font-size:13px;margin-top:2px">${n.excerpt}</div>`;
+      const excerpt = (locale === 'en' && n._excerptEn) ? n._excerptEn : n.excerpt;
+      if (excerpt) body += `<div style="color:#94a3b8;font-size:13px;margin-top:2px;text-align:left">${excerpt}</div>`;
       body += '</div>';
     }
   }
@@ -271,6 +283,20 @@ export function registerNewsletterDigest(router, { database, logger, services, g
 
       const summaryDE = await generateSummary('de', summaryData, monthNamesDE[prevMonth], prevYear);
       const summaryEN = await generateSummary('en', summaryData, monthNamesEN[prevMonth], prevYear);
+
+      // Translate excerpts to EN via DeepL
+      const hasEnSubscribers = subscribers.some(s => s.locale === 'en');
+      if (hasEnSubscribers && DEEPL_API_KEY) {
+        for (const n of news) {
+          if (!n.excerpt) continue;
+          try {
+            const params = new URLSearchParams({ auth_key: DEEPL_API_KEY, text: n.excerpt, source_lang: 'DE', target_lang: 'EN' });
+            const transResp = await fetch('https://api-free.deepl.com/v2/translate', { method: 'POST', body: params });
+            const transResult = await transResp.json();
+            n._excerptEn = transResult.translations?.[0]?.text || n.excerpt;
+          } catch { n._excerptEn = n.excerpt; }
+        }
+      }
 
       // Send emails
       const schema = await getSchema();

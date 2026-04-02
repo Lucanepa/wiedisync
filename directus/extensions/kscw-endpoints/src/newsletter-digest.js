@@ -9,7 +9,7 @@
 import { buildEmailLayout, formatDateCH, FRONTEND_URL } from './email-template.js';
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
-const WEBSITE_URL = process.env.KSCW_WEBSITE_URL || 'https://kscw.ch';
+const WEBSITE_URL = process.env.KSCW_WEBSITE_URL || 'https://kscw-website.pages.dev';
 
 async function generateSummary(locale, data) {
   if (!ANTHROPIC_API_KEY) return null;
@@ -32,8 +32,13 @@ async function generateSummary(locale, data) {
       }),
     });
     const result = await resp.json();
+    if (result.error) {
+      console.error('Claude API error:', result.error.message || JSON.stringify(result.error));
+      return null;
+    }
     return result.content?.[0]?.text || null;
-  } catch {
+  } catch (err) {
+    console.error('Claude API call failed:', err.message);
     return null;
   }
 }
@@ -107,7 +112,7 @@ function buildDigestHtml(locale, summary, news, results, upcoming, events, unsub
 
   // News section
   if (news.length > 0) {
-    body += `<div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;font-weight:700;margin:20px 0 8px">${t('Neuigkeiten', 'News')}</div>`;
+    body += `<div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;font-weight:700;margin:20px 0 8px">News</div>`;
     for (const n of news) {
       const link = `${WEBSITE_URL}/${locale}/news/?article=${n.slug}`;
       const title = (locale === 'en' && n.title_en) ? n.title_en : n.title;

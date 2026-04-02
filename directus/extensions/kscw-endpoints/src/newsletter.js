@@ -8,7 +8,7 @@
 import crypto from 'crypto';
 
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET || '';
-const WEBSITE_URL = process.env.KSCW_WEBSITE_URL || 'https://kscw.ch';
+const WEBSITE_URL = process.env.KSCW_WEBSITE_URL || 'https://kscw-website.pages.dev';
 
 async function verifyTurnstile(token) {
   if (!TURNSTILE_SECRET) return true;

@@ -83,6 +83,7 @@ export default function GameCard({ game, onClick, variant = 'card', participatio
   const kscwTeamObj = asObj<Team & BaseRecord>(expanded.kscw_team)
   const rawTeamName = kscwTeamObj?.name ?? ''
   const teamSport = kscwTeamObj?.sport as 'volleyball' | 'basketball' | undefined
+  const isBB = teamSport === 'basketball' || game.source === 'basketplan'
   const kscwTeamName = rawTeamName && teamSport ? teamNameToColorKey(rawTeamName, teamSport) : rawTeamName
 
   if (variant === 'compact') {
@@ -106,7 +107,7 @@ export default function GameCard({ game, onClick, variant = 'card', participatio
               <div>{short}</div>
               {game.time && <div>{formatTime(game.time)}</div>}
             </div>
-            {kscwTeamObj?.sport === 'basketball'
+            {isBB
               ? <BasketballIcon className="h-5 w-5 shrink-0" filled />
               : <VolleyballIcon className="h-5 w-5 shrink-0" filled />}
             <div className="min-w-0 flex-1">
@@ -140,7 +141,7 @@ export default function GameCard({ game, onClick, variant = 'card', participatio
 
           {/* Col 2: Sport icon */}
           <div>
-            {kscwTeamObj?.sport === 'basketball'
+            {isBB
               ? <BasketballIcon className="h-5 w-5" filled />
               : <VolleyballIcon className="h-5 w-5" filled />}
           </div>
@@ -276,7 +277,7 @@ export default function GameCard({ game, onClick, variant = 'card', participatio
           <div className="whitespace-pre-line">{leagueShort(game.league)}</div>
           {kscwTeamName && (
             <div className="flex items-center gap-1 pt-0.5">
-              {kscwTeamObj?.sport === 'basketball'
+              {isBB
                 ? <BasketballIcon className="h-3.5 w-3.5" filled />
                 : <VolleyballIcon className="h-3.5 w-3.5" filled />}
               <TeamChip team={kscwTeamName} size="xs" />

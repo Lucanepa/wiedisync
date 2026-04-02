@@ -572,7 +572,7 @@ function CompactGameRow({ game, showScore, onClick, participationStatus }: { gam
         </div>
 
         {/* Sport icon */}
-        {asObj<Team & BaseRecord>(game.kscw_team)?.sport === 'basketball'
+        {asObj<Team & BaseRecord>(game.kscw_team)?.sport === 'basketball' || game.source === 'basketplan'
           ? <BasketballIcon className="h-5 w-5 shrink-0" filled />
           : <VolleyballIcon className="h-5 w-5 shrink-0" filled />}
 

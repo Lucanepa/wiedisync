@@ -672,6 +672,9 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       if (item.hide_phone === true) {
         item.phone = null
       }
+
+      // AHV number — only visible to self and admins
+      item.ahv_nummer = null
     }
 
     return Array.isArray(payload) ? items : items[0]

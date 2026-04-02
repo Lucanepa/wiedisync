@@ -695,6 +695,19 @@ export default ({ action, filter, init, schedule }, { services, database, logger
 
   const OWNER_EMAIL = 'luca.canepa@gmail.com'
   const RADO_EMAIL = 'radomir.radovanovic.b@gmail.com'
+  const VB_ADMIN_EMAIL = 'thamayanth.kanagalingam@uzh.ch'
+  const BB_ADMIN_EMAIL = 'kscwiedikonbasketball@gmail.com'
+
+  function getApprovalRecipients(membershipType) {
+    switch (membershipType) {
+      case 'basketball':
+        return { to: [BB_ADMIN_EMAIL], cc: [OWNER_EMAIL] }
+      case 'volleyball':
+        return { to: [VB_ADMIN_EMAIL, RADO_EMAIL], cc: [OWNER_EMAIL] }
+      default: // passive, unknown
+        return { to: [OWNER_EMAIL], cc: [] }
+    }
+  }
 
   function csvEscapeHook(val) {
     const s = String(val ?? '')
@@ -775,8 +788,11 @@ export default ({ action, filter, init, schedule }, { services, database, logger
         const csvBuffer = Buffer.from(csv, 'utf-8')
         const filename = `anmeldung_${reg.nachname}_${reg.vorname}_${reg.reference_number}.csv`
 
+        // 1. CSV email to sport-specific admins
+        const recipients = getApprovalRecipients(reg.membership_type)
         await mail.send({
-          to: [OWNER_EMAIL, RADO_EMAIL],
+          to: recipients.to,
+          ...(recipients.cc.length ? { cc: recipients.cc } : {}),
           subject: `[KSCW] Anmeldung bestätigt: ${reg.vorname} ${reg.nachname} (${reg.membership_type})`,
           html: `<p>Die Anmeldung von <strong>${reg.vorname} ${reg.nachname}</strong> (${reg.membership_type}) wurde bestätigt.</p><p>Die CSV-Datei für den ClubDesk-Import ist im Anhang.</p><p>Referenz: ${reg.reference_number}</p>`,
           attachments: [{
@@ -787,6 +803,56 @@ export default ({ action, filter, init, schedule }, { services, database, logger
         })
 
         log.info({ msg: 'Approval CSV sent', id, ref: reg.reference_number })
+
+        // 2. Lightweight notification to coach + team responsible of selected team(s)
+        if (reg.team && reg.membership_type !== 'passive') {
+          try {
+            // team field may contain comma-separated team names (multi-select)
+            const teamNames = reg.team.split(',').map(t => t.trim()).filter(Boolean)
+            const teamRows = await database('teams')
+              .whereIn('name', teamNames)
+              .andWhere('active', true)
+              .select('id', 'name')
+
+            if (teamRows.length) {
+              const teamIds = teamRows.map(r => r.id)
+              // Coach junction: teams_members_3, TR junction: teams_members_4
+              const coachRows = await database('teams_members_3')
+                .whereIn('teams_id', teamIds)
+                .join('members', 'teams_members_3.members_id', 'members.id')
+                .join('directus_users', 'members.user', 'directus_users.id')
+                .whereNotNull('directus_users.email')
+                .select('directus_users.email')
+              const trRows = await database('teams_members_4')
+                .whereIn('teams_id', teamIds)
+                .join('members', 'teams_members_4.members_id', 'members.id')
+                .join('directus_users', 'members.user', 'directus_users.id')
+                .whereNotNull('directus_users.email')
+                .select('directus_users.email')
+
+              const coachTrEmails = [...new Set([...coachRows, ...trRows].map(r => r.email.toLowerCase()))]
+              // Remove any emails already in the main recipients to avoid duplicates
+              const mainRecipientEmails = [...recipients.to, ...recipients.cc].map(e => e.toLowerCase())
+              const extraEmails = coachTrEmails.filter(e => !mainRecipientEmails.includes(e))
+
+              if (extraEmails.length) {
+                await mail.send({
+                  to: extraEmails,
+                  subject: `[KSCW] Neues Mitglied bestätigt: ${reg.vorname} ${reg.nachname}`,
+                  html: `<p>Ein neues Mitglied wurde für dein Team bestätigt:</p>
+<ul>
+  <li><strong>Name:</strong> ${reg.vorname} ${reg.nachname}</li>
+  <li><strong>Team:</strong> ${reg.team}</li>
+  <li><strong>E-Mail:</strong> ${reg.email}</li>
+</ul>`,
+                })
+                log.info({ msg: 'Coach/TR notification sent', id, emails: extraEmails.length })
+              }
+            }
+          } catch (teamErr) {
+            log.warn({ msg: `Coach/TR notification failed: ${teamErr.message}`, id })
+          }
+        }
       }
     } catch (err) {
       log.error({ msg: `Registration approval email: ${err.message}`, event: 'registration.approve', stack: err.stack })

@@ -9,10 +9,36 @@ import crypto from 'crypto'
 
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET || ''
 
-const ADMIN_EMAIL = 'kontakt@kscw.ch'
 const OWNER_EMAIL = 'luca.canepa@gmail.com'
-const BB_ADMIN_EMAIL = 'kscwiedikonbasketball@gmail.com'
-const VB_ADMIN_EMAIL = 'thamayanth.kanagalingam@uzh.ch'
+
+/**
+ * Look up sport admin emails from the members table.
+ * VB registration → members with role containing 'vb_admin'
+ * BB registration → members with role containing 'bb_admin'
+ * Passive / fallback → OWNER_EMAIL
+ * Global admins (admin/superuser) are always included.
+ */
+async function getSportAdminEmails(database, membershipType) {
+  const adminRole = membershipType === 'volleyball' ? 'vb_admin'
+    : membershipType === 'basketball' ? 'bb_admin'
+    : null
+
+  // Get global admins (admin or superuser role) + sport-specific admins
+  const rows = await database('members')
+    .join('directus_users', 'members.user', 'directus_users.id')
+    .whereNotNull('directus_users.email')
+    .andWhere(function () {
+      this.whereRaw("members.role::jsonb @> '\"admin\"'")
+        .orWhereRaw("members.role::jsonb @> '\"superuser\"'")
+      if (adminRole) {
+        this.orWhereRaw(`members.role::jsonb @> '"${adminRole}"'`)
+      }
+    })
+    .select('directus_users.email')
+
+  const emails = [...new Set(rows.map(r => r.email.toLowerCase()))]
+  return emails.length ? emails : [OWNER_EMAIL]
+}
 
 async function verifyTurnstile(token) {
   if (!TURNSTILE_SECRET) return true
@@ -186,7 +212,7 @@ function buildAdminNotificationEmail(reg) {
     title: 'Neue Anmeldung',
     subtitle: `${reg.vorname} ${reg.nachname} — ${reg.membership_type}`,
     sport,
-    ctaUrl: 'https://kscw.ch/admin',
+    ctaUrl: 'https://directus.kscw.ch/admin/content/registrations',
     ctaLabel: 'Im Admin prüfen',
   })
 }
@@ -239,7 +265,7 @@ export function registerRegistration(router, { database, logger, services, getSc
         nationalitaet: body.nationalitaet || null,
         geschlecht: body.geschlecht || null,
         ahv_nummer: body.ahv_nummer || null,
-        team: body.team || null,
+        team: Array.isArray(body.team) ? body.team.join(', ') : (body.team || null),
         beitragskategorie: body.beitragskategorie || null,
         kantonsschule: body.kantonsschule || null,
         rolle: body.rolle || null,
@@ -274,13 +300,14 @@ export function registerRegistration(router, { database, logger, services, getSc
           html: emailHtml,
         })
 
-        // Notify sport-specific admin + CC owner
-        const adminTo = body.membership_type === 'basketball' ? BB_ADMIN_EMAIL
-          : body.membership_type === 'volleyball' ? VB_ADMIN_EMAIL
-          : ADMIN_EMAIL
+        // Notify sport admins (from DB) + always CC owner
+        const adminEmails = await getSportAdminEmails(database, body.membership_type)
+        // Ensure owner is always included (as CC if not already in TO)
+        const adminTo = adminEmails.filter(e => e !== OWNER_EMAIL.toLowerCase())
+        const ccList = adminTo.length ? [OWNER_EMAIL] : []
         await mail.send({
-          to: adminTo,
-          cc: OWNER_EMAIL,
+          to: adminTo.length ? adminTo : [OWNER_EMAIL],
+          cc: ccList,
           subject: `[KSCW] Neue Anmeldung: ${reg.vorname} ${reg.nachname} (${reg.membership_type})`,
           html: buildAdminNotificationEmail(reg),
         })

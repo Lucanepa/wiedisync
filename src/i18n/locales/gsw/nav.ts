@@ -36,4 +36,5 @@ export default {
   whatsNew: 'Was isch neu',
   refereeExpenses: 'Schiedsrichterchöschte',
   clubStats: 'Vereinsstatistik',
+  anmeldungen: 'Amäldigä',
 } as const

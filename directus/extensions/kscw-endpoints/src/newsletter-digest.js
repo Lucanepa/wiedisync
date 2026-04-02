@@ -38,6 +38,64 @@ async function generateSummary(locale, data) {
   }
 }
 
+function buildGameCard(g, showScore) {
+  const time = g.time ? g.time.slice(0, 5) : '';
+  const dateStr = formatDateCH(g.date);
+  const isVB = g.league && !/liga.*basket|sbl|lnb|proball/i.test(g.league);
+  const sportColor = isVB ? '#FFC832' : '#F97316';
+
+  // Determine winner for color highlighting
+  const homeScore = g.home_score ?? null;
+  const awayScore = g.away_score ?? null;
+  const homeWon = homeScore !== null && awayScore !== null && homeScore > awayScore;
+  const awayWon = homeScore !== null && awayScore !== null && awayScore > homeScore;
+  const winColor = '#22c55e';
+  const loseColor = '#ef4444';
+
+  // KSCW team is bold
+  const isKscwHome = g.type === 'home';
+  const homeBold = isKscwHome ? 'font-weight:700;color:#ffffff' : 'color:#94a3b8';
+  const awayBold = !isKscwHome ? 'font-weight:700;color:#ffffff' : 'color:#94a3b8';
+
+  // Score colors
+  const homeScoreStyle = showScore && homeWon ? `color:${winColor};font-weight:800` : showScore && awayWon ? `color:${loseColor};font-weight:700` : 'color:#e2e8f0;font-weight:700';
+  const awayScoreStyle = showScore && awayWon ? `color:${winColor};font-weight:800` : showScore && homeWon ? `color:${loseColor};font-weight:700` : 'color:#e2e8f0;font-weight:700';
+
+  // League badge
+  const leagueShort = g.league ? g.league.replace(/Gruppe?\s*/i, '').slice(0, 12) : '';
+
+  let card = `<table width="100%" cellpadding="0" cellspacing="0" style="border-bottom:1px solid #334155;margin-bottom:2px"><tr>`;
+
+  // Left: date + time
+  card += `<td style="vertical-align:top;padding:10px 8px 10px 0;width:70px"><div style="font-size:12px;color:#64748b">${dateStr}</div>`;
+  if (time) card += `<div style="font-size:11px;color:#475569">${time}</div>`;
+  card += `</td>`;
+
+  // Sport dot
+  card += `<td style="vertical-align:top;padding:12px 8px 10px 0;width:10px"><div style="width:8px;height:8px;border-radius:50%;background:${sportColor}"></div></td>`;
+
+  // Scores + team names
+  card += `<td style="vertical-align:top;padding:8px 0">`;
+  if (showScore) {
+    // Home line
+    card += `<div style="font-size:13px;line-height:1.5"><span style="${homeScoreStyle};display:inline-block;width:24px;text-align:right;margin-right:8px">${homeScore ?? '-'}</span><span style="${homeBold}">${g.home_team}</span></div>`;
+    // Away line
+    card += `<div style="font-size:13px;line-height:1.5"><span style="${awayScoreStyle};display:inline-block;width:24px;text-align:right;margin-right:8px">${awayScore ?? '-'}</span><span style="${awayBold}">${g.away_team}</span></div>`;
+  } else {
+    card += `<div style="font-size:13px;line-height:1.5;${homeBold}">${g.home_team}</div>`;
+    card += `<div style="font-size:13px;line-height:1.5;${awayBold}">${g.away_team}</div>`;
+  }
+  card += `</td>`;
+
+  // League badge
+  if (leagueShort) {
+    card += `<td style="vertical-align:top;padding:12px 0 10px;width:70px;text-align:right"><span style="font-size:10px;color:#64748b;border:1px solid #334155;border-radius:4px;padding:2px 6px;white-space:nowrap">${leagueShort}</span></td>`;
+  }
+
+  card += `</tr></table>`;
+  return card;
+}
+
 function buildDigestHtml(locale, summary, news, results, upcoming, events, unsubUrl) {
   const t = (de, en) => locale === 'de' ? de : en;
   let body = '';
@@ -59,21 +117,19 @@ function buildDigestHtml(locale, summary, news, results, upcoming, events, unsub
     }
   }
 
-  // Results section
+  // Results section — Wiedisync-style game cards
   if (results.length > 0) {
-    body += `<div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;font-weight:700;margin:20px 0 8px">${t('Resultate', 'Results')}</div>`;
+    body += `<div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;font-weight:700;margin:20px 0 12px">${t('Resultate', 'Results')}</div>`;
     for (const g of results) {
-      const score = `${g.home_score ?? '-'}:${g.away_score ?? '-'}`;
-      body += `<div style="padding:6px 0;border-bottom:1px solid #334155;font-size:13px;color:#e2e8f0"><span style="color:#94a3b8">${formatDateCH(g.date)}</span> &nbsp; ${g.home_team} <strong>${score}</strong> ${g.away_team}</div>`;
+      body += buildGameCard(g, true);
     }
   }
 
-  // Upcoming games
+  // Upcoming games — same card style without scores
   if (upcoming.length > 0) {
-    body += `<div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;font-weight:700;margin:20px 0 8px">${t('Kommende Spiele', 'Upcoming Games')}</div>`;
+    body += `<div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;font-weight:700;margin:20px 0 12px">${t('Kommende Spiele', 'Upcoming Games')}</div>`;
     for (const g of upcoming) {
-      const time = g.time ? g.time.slice(0, 5) : '';
-      body += `<div style="padding:6px 0;border-bottom:1px solid #334155;font-size:13px;color:#e2e8f0"><span style="color:#94a3b8">${formatDateCH(g.date)}${time ? ' ' + time : ''}</span> &nbsp; ${g.home_team} vs ${g.away_team}</div>`;
+      body += buildGameCard(g, false);
     }
   }
 
@@ -129,14 +185,14 @@ export function registerNewsletterDigest(router, { database, logger, services, g
         .orderBy('published_at', 'desc')
         .select('title', 'title_en', 'slug', 'excerpt', 'category');
 
-      // Fetch recent results
+      // Fetch recent results (with league, type, sets)
       const results = await database('games')
         .where('date', '>=', agoISO)
         .where('date', '<=', nowISO)
         .whereNotNull('home_score')
         .orderBy('date', 'desc')
         .limit(20)
-        .select('date', 'home_team', 'away_team', 'home_score', 'away_score', 'kscw_team');
+        .select('date', 'time', 'home_team', 'away_team', 'home_score', 'away_score', 'kscw_team', 'type', 'league', 'sets_json');
 
       // Fetch upcoming games
       const upcoming = await database('games')
@@ -144,7 +200,7 @@ export function registerNewsletterDigest(router, { database, logger, services, g
         .where('date', '<=', futureISO)
         .orderBy('date', 'asc')
         .limit(20)
-        .select('date', 'time', 'home_team', 'away_team', 'kscw_team');
+        .select('date', 'time', 'home_team', 'away_team', 'kscw_team', 'type', 'league');
 
       // Fetch events
       const events = await database('events')

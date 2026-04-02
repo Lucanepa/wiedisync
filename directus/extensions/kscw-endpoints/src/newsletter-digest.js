@@ -71,20 +71,20 @@ function buildGameCard(g, showScore) {
   if (time) card += `<div style="font-size:11px;color:#475569">${time}</div>`;
   card += `</td>`;
 
-  // Sport dot
-  card += `<td style="vertical-align:top;padding:12px 8px 10px 0;width:10px"><div style="width:8px;height:8px;border-radius:50%;background:${sportColor}"></div></td>`;
+  // (sport dot removed — games grouped by sport section instead)
 
-  // Scores + team names
-  card += `<td style="vertical-align:top;padding:8px 0">`;
+  // Score column (separate from team names)
   if (showScore) {
-    // Home line
-    card += `<div style="font-size:13px;line-height:1.5"><span style="${homeScoreStyle};display:inline-block;width:24px;text-align:right;margin-right:8px">${homeScore ?? '-'}</span><span style="${homeBold}">${g.home_team}</span></div>`;
-    // Away line
-    card += `<div style="font-size:13px;line-height:1.5"><span style="${awayScoreStyle};display:inline-block;width:24px;text-align:right;margin-right:8px">${awayScore ?? '-'}</span><span style="${awayBold}">${g.away_team}</span></div>`;
-  } else {
-    card += `<div style="font-size:13px;line-height:1.5;${homeBold}">${g.home_team}</div>`;
-    card += `<div style="font-size:13px;line-height:1.5;${awayBold}">${g.away_team}</div>`;
+    card += `<td style="vertical-align:top;padding:8px 6px 8px 0;width:28px;text-align:right">`;
+    card += `<div style="font-size:13px;line-height:1.5;${homeScoreStyle}">${homeScore ?? '-'}</div>`;
+    card += `<div style="font-size:13px;line-height:1.5;${awayScoreStyle}">${awayScore ?? '-'}</div>`;
+    card += `</td>`;
   }
+
+  // Team names column
+  card += `<td style="vertical-align:top;padding:8px 0">`;
+  card += `<div style="font-size:13px;line-height:1.5;${homeBold}">${g.home_team}</div>`;
+  card += `<div style="font-size:13px;line-height:1.5;${awayBold}">${g.away_team}</div>`;
   card += `</td>`;
 
   // League badge
@@ -117,19 +117,33 @@ function buildDigestHtml(locale, summary, news, results, upcoming, events, unsub
     }
   }
 
-  // Results section — Wiedisync-style game cards
+  // Results section — grouped by sport
   if (results.length > 0) {
     body += `<div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;font-weight:700;margin:20px 0 12px">${t('Resultate', 'Results')}</div>`;
-    for (const g of results) {
-      body += buildGameCard(g, true);
+    const vbResults = results.filter(g => !g._sport || g._sport === 'volleyball');
+    const bbResults = results.filter(g => g._sport === 'basketball');
+    if (vbResults.length > 0) {
+      body += `<div style="font-size:12px;font-weight:700;color:#FFC832;margin:12px 0 6px;text-transform:uppercase;letter-spacing:0.3px">🏐 Volleyball</div>`;
+      for (const g of vbResults) body += buildGameCard(g, true);
+    }
+    if (bbResults.length > 0) {
+      body += `<div style="font-size:12px;font-weight:700;color:#F97316;margin:12px 0 6px;text-transform:uppercase;letter-spacing:0.3px">🏀 Basketball</div>`;
+      for (const g of bbResults) body += buildGameCard(g, true);
     }
   }
 
-  // Upcoming games — same card style without scores
+  // Upcoming games — grouped by sport
   if (upcoming.length > 0) {
     body += `<div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;font-weight:700;margin:20px 0 12px">${t('Kommende Spiele', 'Upcoming Games')}</div>`;
-    for (const g of upcoming) {
-      body += buildGameCard(g, false);
+    const vbUpcoming = upcoming.filter(g => !g._sport || g._sport === 'volleyball');
+    const bbUpcoming = upcoming.filter(g => g._sport === 'basketball');
+    if (vbUpcoming.length > 0) {
+      body += `<div style="font-size:12px;font-weight:700;color:#FFC832;margin:12px 0 6px;text-transform:uppercase;letter-spacing:0.3px">🏐 Volleyball</div>`;
+      for (const g of vbUpcoming) body += buildGameCard(g, false);
+    }
+    if (bbUpcoming.length > 0) {
+      body += `<div style="font-size:12px;font-weight:700;color:#F97316;margin:12px 0 6px;text-transform:uppercase;letter-spacing:0.3px">🏀 Basketball</div>`;
+      for (const g of bbUpcoming) body += buildGameCard(g, false);
     }
   }
 
@@ -230,6 +244,10 @@ export function registerNewsletterDigest(router, { database, logger, services, g
         const teams = await database('teams').whereIn('id', teamIds).select('id', 'sport');
         for (const t of teams) teamSports[t.id] = t.sport;
       }
+
+      // Attach sport to each game for grouping in email template
+      for (const g of results) g._sport = teamSports[g.kscw_team] || 'volleyball';
+      for (const g of upcoming) g._sport = teamSports[g.kscw_team] || 'volleyball';
 
       // Generate AI summaries (2 calls: DE + EN)
       const summaryData = {

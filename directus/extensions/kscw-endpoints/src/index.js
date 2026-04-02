@@ -23,6 +23,7 @@ import { registerStats } from './stats.js'
 import { registerRegistration } from './registration.js'
 import { registerNewsletter } from './newsletter.js'
 import { registerNewsletterDigest } from './newsletter-digest.js'
+import { registerClubdeskUpdate } from './clubdesk-update.js'
 
 // ── Helpers ──────────────────────────────────────────────────────
 
@@ -1327,7 +1328,8 @@ export default {
     registerRegistration(router, ctx)
     registerNewsletter(router, ctx)
     registerNewsletterDigest(router, ctx)
+    registerClubdeskUpdate(router, ctx)
 
-    log.info('KSCW endpoints loaded: ~42 routes')
+    log.info('KSCW endpoints loaded: ~43 routes')
   },
 }

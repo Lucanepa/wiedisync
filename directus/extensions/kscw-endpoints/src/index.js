@@ -21,6 +21,7 @@ import { FRONTEND_URL } from './email-template.js'
 import { writeErrorLog, logErrorToFile, logAuthDenial, logWarning, cleanOldLogs, computeErrorHash } from './error-log.js'
 import { registerStats } from './stats.js'
 import { registerRegistration } from './registration.js'
+import { registerNewsletter } from './newsletter.js'
 
 // ── Helpers ──────────────────────────────────────────────────────
 
@@ -1323,6 +1324,7 @@ export default {
     registerWebPush(router, ctx)
     registerStats(router, ctx)
     registerRegistration(router, ctx)
+    registerNewsletter(router, ctx)
 
     log.info('KSCW endpoints loaded: ~42 routes')
   },

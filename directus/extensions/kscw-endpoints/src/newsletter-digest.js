@@ -18,13 +18,22 @@ async function generateSummary(locale, data, monthLabel, year) {
     const baseUrl = WEBSITE_URL;
     const l = locale === 'de' ? 'de' : 'en';
 
+    const vbLabel = locale === 'de' ? 'Volleyball' : 'Volleyball';
+    const bbLabel = locale === 'de' ? 'Basketball' : 'Basketball';
+    const newsLabel = 'News';
+    const outlookLabel = locale === 'de' ? 'Ausblick' : 'Outlook';
+
     const rules = [
       `Use FULL absolute HTML links with base URL ${baseUrl}/${l}/. Example: <a href="${baseUrl}/${l}/volleyball/">Volleyball</a>.`,
-      `When mentioning a team, ALWAYS specify the sport in parentheses, e.g. "Damen 1 (Volleyball)" or "Lions D1 (Basketball)".`,
-      `Structure the summary in 3 short sections using bold headers: <b>News</b>, <b>${locale === 'de' ? 'Resultate' : 'Results'}</b>, <b>${locale === 'de' ? 'Ausblick' : 'Outlook'}</b>. Each section 1-2 sentences.`,
-      `This newsletter covers ${monthLabel} ${year} ONLY. Do NOT mention any other month. Do NOT say "as we head into [next month]" or reference the future.`,
-      `No markdown, no # headers. Only HTML (<b>, <a>, <br>). No <p> tags.`,
-      `Write enthusiastically but factually.`,
+      `Structure the summary in these sections using bold headers separated by <br><br>:`,
+      `1. <b>${newsLabel}</b> — 1-2 sentences about news articles.`,
+      `2. <b>🏐 ${vbLabel}</b> — 1-2 sentences about volleyball results/highlights ONLY. Only mention volleyball teams here.`,
+      `3. <b>🏀 ${bbLabel}</b> — 1-2 sentences about basketball results/highlights ONLY. Only mention basketball teams here.`,
+      `4. <b>${outlookLabel}</b> — 1-2 sentences about upcoming games, split by sport.`,
+      `The data has [volleyball] or [basketball] tags — use them to assign teams to the correct sport section. NEVER put a basketball team in the volleyball section or vice versa.`,
+      `This newsletter covers ${monthLabel} ${year} ONLY. Do NOT mention any other month or the future.`,
+      `No markdown. Only HTML (<b>, <a>, <br>). No <p> tags, no # headers.`,
+      `Write enthusiastically but factually. Keep each section concise.`,
     ].join(' ');
 
     const prompt = locale === 'de'
@@ -120,7 +129,7 @@ function buildDigestHtml(locale, summary, news, results, upcoming, events, unsub
 
   // AI Summary
   if (summary) {
-    body += `<div style="font-size:14px;color:#e2e8f0;line-height:1.7;margin-bottom:20px;padding:16px;background:#0f172a;border-radius:8px;border-left:3px solid #FFC832;text-align:left">${summary}</div>`;
+    body += `<div style="font-size:14px;color:#e2e8f0;line-height:1.7;margin-bottom:20px;padding:16px;background:#0f172a;border-radius:8px;border-left:3px solid #FFC832;text-align:justify">${summary}</div>`;
   }
 
   // News section
@@ -131,7 +140,7 @@ function buildDigestHtml(locale, summary, news, results, upcoming, events, unsub
       const title = (locale === 'en' && n.title_en) ? n.title_en : n.title;
       body += `<div style="padding:8px 0;border-bottom:1px solid #334155"><a href="${link}" style="color:#60a5fa;text-decoration:none;font-weight:600;font-size:14px">${title}</a>`;
       const excerpt = (locale === 'en' && n._excerptEn) ? n._excerptEn : n.excerpt;
-      if (excerpt) body += `<div style="color:#94a3b8;font-size:13px;margin-top:2px;text-align:left">${excerpt}</div>`;
+      if (excerpt) body += `<div style="color:#94a3b8;font-size:13px;margin-top:2px;text-align:justify">${excerpt}</div>`;
       body += '</div>';
     }
   }

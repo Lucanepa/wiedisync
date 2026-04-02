@@ -22,6 +22,7 @@ import { writeErrorLog, logErrorToFile, logAuthDenial, logWarning, cleanOldLogs,
 import { registerStats } from './stats.js'
 import { registerRegistration } from './registration.js'
 import { registerNewsletter } from './newsletter.js'
+import { registerNewsletterDigest } from './newsletter-digest.js'
 
 // ── Helpers ──────────────────────────────────────────────────────
 
@@ -1325,6 +1326,7 @@ export default {
     registerStats(router, ctx)
     registerRegistration(router, ctx)
     registerNewsletter(router, ctx)
+    registerNewsletterDigest(router, ctx)
 
     log.info('KSCW endpoints loaded: ~42 routes')
   },

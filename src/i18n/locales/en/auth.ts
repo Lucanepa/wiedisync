@@ -177,4 +177,28 @@ export default {
   deleteAccountEmailPrompt: 'Type your email address to confirm:',
   deleteAccountEmailPlaceholder: 'Email to confirm',
   deleteAccountError: 'Could not delete account. Please try again.',
+
+  // Member status
+  status: 'Status',
+  active: 'Active member',
+  passive: 'Passive member',
+
+  // ClubDesk data sync
+  personalDataClubdesk: 'Personal Data (ClubDesk)',
+  anrede: 'Salutation',
+  adresse: 'Address',
+  plz: 'Postal Code',
+  ort: 'City',
+  nationalitaet: 'Nationality',
+  geschlecht: 'Gender',
+  ahvNummer: 'AHV Number',
+  beitragskategorie: 'Fee Category',
+  managedByAdmin: 'Managed by admin',
+  male: 'Male',
+  female: 'Female',
+  mr: 'Mr',
+  mrs: 'Mrs',
+  clubdeskUpdateSent: 'Data update sent to admin',
+  invalidAhvFormat: 'AHV number must follow format 756.XXXX.XXXX.XX',
+  invalidPlz: 'PLZ must be a 4-digit Swiss postal code',
 } as const

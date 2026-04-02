@@ -175,4 +175,28 @@ export default {
   deleteAccountEmailPrompt: 'Saisissez votre adresse email pour confirmer :',
   deleteAccountEmailPlaceholder: 'Email de confirmation',
   deleteAccountError: 'Impossible de supprimer le compte. Veuillez reessayer.',
+
+  // Member status
+  status: 'Status',
+  active: 'Aktivmitglied',
+  passive: 'Passivmitglied',
+
+  // ClubDesk data sync
+  personalDataClubdesk: 'Persönliche Daten (ClubDesk)',
+  anrede: 'Anrede',
+  adresse: 'Adresse',
+  plz: 'PLZ',
+  ort: 'Ort',
+  nationalitaet: 'Nationalität',
+  geschlecht: 'Geschlecht',
+  ahvNummer: 'AHV-Nummer',
+  beitragskategorie: 'Beitragskategorie',
+  managedByAdmin: 'Wird vom Admin verwaltet',
+  male: 'Männlich',
+  female: 'Weiblich',
+  mr: 'Herr',
+  mrs: 'Frau',
+  clubdeskUpdateSent: 'Datenanpassung an Admin gesendet',
+  invalidAhvFormat: 'AHV-Nummer muss das Format 756.XXXX.XXXX.XX haben',
+  invalidPlz: 'PLZ muss eine 4-stellige Schweizer Postleitzahl sein',
 } as const

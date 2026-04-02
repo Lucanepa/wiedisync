@@ -11,12 +11,13 @@ import { buildEmailLayout, formatDateCH, FRONTEND_URL } from './email-template.j
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
 const WEBSITE_URL = process.env.KSCW_WEBSITE_URL || 'https://kscw-website.pages.dev';
 
-async function generateSummary(locale, data) {
+async function generateSummary(locale, data, monthLabel, year) {
   if (!ANTHROPIC_API_KEY) return null;
   try {
+    const baseUrl = WEBSITE_URL;
     const prompt = locale === 'de'
-      ? `Schreibe eine 3-4 Sätze lange Einleitung für den monatlichen KSCW Newsletter auf Deutsch. Verwende inline HTML-Links (<a href="...">) zu den relevanten Seiten auf kscw.ch. Sportseiten: /de/volleyball/, /de/basketball/. Kalender: /de/weiteres/kalender. News: /de/news/. Teamseiten z.B.: /de/volleyball/d1, /de/basketball/lions. Schreibe enthusiastisch aber sachlich. Hier sind die Highlights: ${JSON.stringify(data)}`
-      : `Write a 3-4 sentence intro for the monthly KSCW newsletter in English. Use inline HTML links (<a href="...">) to relevant pages on kscw.ch. Sport pages: /en/volleyball/, /en/basketball/. Calendar: /en/weiteres/kalender. News: /en/news/. Team pages e.g.: /en/volleyball/d1, /en/basketball/lions. Write enthusiastically but factually. Here are the highlights: ${JSON.stringify(data)}`;
+      ? `Schreibe eine 3-4 Sätze lange Einleitung für den KSCW Newsletter für ${monthLabel} ${year} auf Deutsch. Verwende VOLLSTÄNDIGE inline HTML-Links (<a href="https://...">) mit der Basis-URL ${baseUrl}. Beispiele: <a href="${baseUrl}/de/volleyball/">Volleyball</a>, <a href="${baseUrl}/de/basketball/">Basketball</a>, <a href="${baseUrl}/de/weiteres/kalender">Kalender</a>, <a href="${baseUrl}/de/news/">News</a>, <a href="${baseUrl}/de/volleyball/d1">Damen 1</a>. Schreibe enthusiastisch aber sachlich. Sage NICHT "April" oder den aktuellen Monat — es geht um ${monthLabel} ${year}. Kein Markdown, nur HTML. Hier sind die Highlights: ${JSON.stringify(data)}`
+      : `Write a 3-4 sentence intro for the KSCW newsletter covering ${monthLabel} ${year} in English. Use FULL inline HTML links (<a href="https://...">) with base URL ${baseUrl}. Examples: <a href="${baseUrl}/en/volleyball/">volleyball</a>, <a href="${baseUrl}/en/basketball/">basketball</a>, <a href="${baseUrl}/en/weiteres/kalender">calendar</a>, <a href="${baseUrl}/en/news/">news</a>, <a href="${baseUrl}/en/volleyball/d1">Damen 1</a>. Write enthusiastically but factually. Do NOT mention the current month — this covers ${monthLabel} ${year}. No markdown, only HTML. Here are the highlights: ${JSON.stringify(data)}`;
 
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -117,7 +118,8 @@ function buildDigestHtml(locale, summary, news, results, upcoming, events, unsub
       const link = `${WEBSITE_URL}/${locale}/news/?article=${n.slug}`;
       const title = (locale === 'en' && n.title_en) ? n.title_en : n.title;
       body += `<div style="padding:8px 0;border-bottom:1px solid #334155"><a href="${link}" style="color:#60a5fa;text-decoration:none;font-weight:600;font-size:14px">${title}</a>`;
-      if (n.excerpt) body += `<div style="color:#94a3b8;font-size:13px;margin-top:2px">${n.excerpt}</div>`;
+      // Only show excerpt for DE (no English excerpt available)
+      if (locale === 'de' && n.excerpt) body += `<div style="color:#94a3b8;font-size:13px;margin-top:2px">${n.excerpt}</div>`;
       body += '</div>';
     }
   }
@@ -262,8 +264,13 @@ export function registerNewsletterDigest(router, { database, logger, services, g
         events: events.slice(0, 3).map(e => e.title),
       };
 
-      const summaryDE = await generateSummary('de', summaryData);
-      const summaryEN = await generateSummary('en', summaryData);
+      const monthNamesDE = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+      const monthNamesEN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      const prevMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+      const prevYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+
+      const summaryDE = await generateSummary('de', summaryData, monthNamesDE[prevMonth], prevYear);
+      const summaryEN = await generateSummary('en', summaryData, monthNamesEN[prevMonth], prevYear);
 
       // Send emails
       const schema = await getSchema();

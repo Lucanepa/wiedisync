@@ -107,9 +107,12 @@ export default function GameCard({ game, onClick, variant = 'card', participatio
               <div>{short}</div>
               {game.time && <div>{formatTime(game.time)}</div>}
             </div>
-            {isBB
-              ? <BasketballIcon className="h-5 w-5 shrink-0" filled />
-              : <VolleyballIcon className="h-5 w-5 shrink-0" filled />}
+            <div className="flex shrink-0 items-center gap-1">
+              {isBB
+                ? <BasketballIcon className="h-5 w-5" filled />
+                : <VolleyballIcon className="h-5 w-5" filled />}
+              {kscwTeamName && <TeamChip team={kscwTeamName} size="xs" />}
+            </div>
             <div className="min-w-0 flex-1">
               <p className={`truncate text-sm text-gray-900 dark:text-gray-100 ${game.type === 'home' ? 'font-bold' : ''}`}>
                 {game.home_team}

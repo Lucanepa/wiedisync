@@ -278,20 +278,21 @@ export function registerNewsletterDigest(router, { database, logger, services, g
       for (const g of upcoming) g._sport = teamSports[g.kscw_team] || 'volleyball';
 
       // Generate AI summaries (2 calls: DE + EN)
-      const summaryData = {
-        news: news.slice(0, 5).map(n => n.title),
+      const baseSummary = {
         results: results.slice(0, 5).map(r => `[${r._sport}] ${r.home_team} ${r.home_score}:${r.away_score} ${r.away_team}`),
         upcoming: upcoming.slice(0, 5).map(u => `[${u._sport}] ${u.home_team} vs ${u.away_team} (${u.date})`),
         events: events.slice(0, 3).map(e => e.title),
       };
+      const summaryDataDE = { ...baseSummary, news: news.slice(0, 5).map(n => n.title) };
+      const summaryDataEN = { ...baseSummary, news: news.slice(0, 5).map(n => n.title_en || n.title) };
 
       const monthNamesDE = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
       const monthNamesEN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
       const prevMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
       const prevYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
 
-      const summaryDE = await generateSummary('de', summaryData, monthNamesDE[prevMonth], prevYear);
-      const summaryEN = await generateSummary('en', summaryData, monthNamesEN[prevMonth], prevYear);
+      const summaryDE = await generateSummary('de', summaryDataDE, monthNamesDE[prevMonth], prevYear);
+      const summaryEN = await generateSummary('en', summaryDataEN, monthNamesEN[prevMonth], prevYear);
 
       // Translate excerpts to EN via DeepL
       const hasEnSubscribers = subscribers.some(s => s.locale === 'en');
@@ -299,8 +300,11 @@ export function registerNewsletterDigest(router, { database, logger, services, g
         for (const n of news) {
           if (!n.excerpt) continue;
           try {
-            const params = new URLSearchParams({ auth_key: DEEPL_API_KEY, text: n.excerpt, source_lang: 'DE', target_lang: 'EN' });
-            const transResp = await fetch('https://api-free.deepl.com/v2/translate', { method: 'POST', body: params });
+            const transResp = await fetch('https://api-free.deepl.com/v2/translate', {
+              method: 'POST',
+              headers: { 'Authorization': `DeepL-Auth-Key ${DEEPL_API_KEY}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ text: [n.excerpt], source_lang: 'DE', target_lang: 'EN' }),
+            });
             const transResult = await transResp.json();
             n._excerptEn = transResult.translations?.[0]?.text || n.excerpt;
           } catch (err) { console.error('DeepL translation failed:', err.message); n._excerptEn = n.excerpt; }

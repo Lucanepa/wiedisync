@@ -10,6 +10,9 @@ import crypto from 'crypto'
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET || ''
 
 const ADMIN_EMAIL = 'kontakt@kscw.ch'
+const OWNER_EMAIL = 'luca.canepa@gmail.com'
+const BB_ADMIN_EMAIL = 'basketball@kscw.ch'  // Basketball-specific admin
+const VB_ADMIN_EMAIL = 'volleyball@kscw.ch'  // Volleyball-specific admin
 
 async function verifyTurnstile(token) {
   if (!TURNSTILE_SECRET) return true
@@ -39,6 +42,12 @@ function buildVolleyballEmail(reg) {
     { label: 'Beitragskategorie', value: reg.beitragskategorie || '-', halfWidth: true },
     { label: 'Geburtsdatum', value: dob, halfWidth: true },
     { label: 'E-Mail', value: reg.email },
+    { label: 'Telefon', value: reg.telefon_mobil || '-' },
+    { label: 'Adresse', value: `${reg.adresse || ''}, ${reg.plz || ''} ${reg.ort || ''}` },
+    { label: 'Nationalität', value: reg.nationalitaet || '-', halfWidth: true },
+    { label: 'Geschlecht', value: reg.geschlecht || '-', halfWidth: true },
+    ...(reg.lizenz ? [{ label: 'Lizenz', value: reg.lizenz }] : []),
+    ...(reg.schiedsrichter_stufe ? [{ label: 'Schiedsrichter-Stufe', value: reg.schiedsrichter_stufe }] : []),
     { label: 'Referenz', value: reg.reference_number },
   ])
 
@@ -82,6 +91,11 @@ function buildBasketballEmail(reg) {
     { label: 'Beitragskategorie', value: reg.beitragskategorie || '-', halfWidth: true },
     { label: 'Geburtsdatum', value: dob, halfWidth: true },
     { label: 'E-Mail', value: reg.email },
+    { label: 'Telefon', value: reg.telefon_mobil || '-' },
+    { label: 'Adresse', value: `${reg.adresse || ''}, ${reg.plz || ''} ${reg.ort || ''}` },
+    { label: 'Nationalität', value: reg.nationalitaet || '-', halfWidth: true },
+    { label: 'Geschlecht', value: reg.geschlecht || '-', halfWidth: true },
+    ...(reg.lizenz ? [{ label: 'Lizenz', value: reg.lizenz }] : []),
     { label: 'Referenz', value: reg.reference_number },
   ])
 
@@ -110,6 +124,9 @@ function buildPassiveEmail(reg) {
   const summary = buildInfoCard([
     { label: 'Name', value: `${reg.vorname} ${reg.nachname}` },
     { label: 'E-Mail', value: reg.email },
+    { label: 'Telefon', value: reg.telefon_mobil || '-' },
+    ...(reg.lizenz ? [{ label: 'Lizenz', value: reg.lizenz }] : []),
+    ...(reg.schiedsrichter_stufe ? [{ label: 'Schiedsrichter-Stufe', value: reg.schiedsrichter_stufe }] : []),
     { label: 'Referenz', value: reg.reference_number },
   ])
 
@@ -146,10 +163,24 @@ function buildAdminNotificationEmail(reg) {
     { label: 'Nationalität', value: reg.nationalitaet || '-', halfWidth: true },
     { label: 'AHV', value: reg.ahv_nummer || '-', halfWidth: true },
     { label: 'Kantonsschule', value: reg.kantonsschule || '-', halfWidth: true },
+    ...(reg.lizenz ? [{ label: 'Lizenz', value: reg.lizenz }] : []),
+    ...(reg.schiedsrichter_stufe ? [{ label: 'Schiedsrichter-Stufe', value: reg.schiedsrichter_stufe }] : []),
     { label: 'Referenz', value: reg.reference_number },
   ])
 
-  const body = summary + (reg.bemerkungen ? `<div style="font-size:13px;color:#94a3b8;margin-top:12px"><strong style="color:#e2e8f0">Bemerkungen:</strong><br>${reg.bemerkungen}</div>` : '')
+  const instructions = `
+<div style="font-size:13px;color:#94a3b8;line-height:1.7;margin-top:12px">
+  <p><strong style="color:#e2e8f0">Nächste Schritte:</strong></p>
+  <ol style="padding-left:20px;margin:8px 0">
+    <li>Daten im Admin-Bereich prüfen und ggf. bearbeiten</li>
+    <li>Anmeldung bestätigen oder ablehnen</li>
+    <li>Nach Bestätigung wird automatisch eine CSV-Datei generiert</li>
+  </ol>
+</div>`
+
+  const body = summary +
+    (reg.bemerkungen ? `<div style="font-size:13px;color:#94a3b8;margin-top:12px"><strong style="color:#e2e8f0">Bemerkungen:</strong><br>${reg.bemerkungen}</div>` : '') +
+    instructions
 
   return buildEmailLayout(body, {
     title: 'Neue Anmeldung',
@@ -212,6 +243,8 @@ export function registerRegistration(router, { database, logger, services, getSc
         beitragskategorie: body.beitragskategorie || null,
         kantonsschule: body.kantonsschule || null,
         rolle: body.rolle || null,
+        lizenz: body.lizenz || null,
+        schiedsrichter_stufe: body.schiedsrichter_stufe || null,
         bemerkungen: body.bemerkungen || null,
         reference_number,
         submitted_at: new Date().toISOString(),
@@ -241,9 +274,13 @@ export function registerRegistration(router, { database, logger, services, getSc
           html: emailHtml,
         })
 
-        // Notify admin
+        // Notify sport-specific admin + CC owner
+        const adminTo = body.membership_type === 'basketball' ? BB_ADMIN_EMAIL
+          : body.membership_type === 'volleyball' ? VB_ADMIN_EMAIL
+          : ADMIN_EMAIL
         await mail.send({
-          to: ADMIN_EMAIL,
+          to: adminTo,
+          cc: OWNER_EMAIL,
           subject: `[KSCW] Neue Anmeldung: ${reg.vorname} ${reg.nachname} (${reg.membership_type})`,
           html: buildAdminNotificationEmail(reg),
         })

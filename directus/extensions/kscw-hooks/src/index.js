@@ -689,5 +689,108 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     }
   })
 
-  log.info('KSCW hooks loaded: role-sync (5 actions, 2 filters), Turnstile, member privacy, 10 crons (validations+notifications in Postgres)')
+  // ── 13. Registration Approval → CSV email ─────────────────────
+  // When a registration status changes to 'approved', generate a CSV
+  // and email it to the owner (luca.canepa@gmail.com)
+
+  const OWNER_EMAIL = 'luca.canepa@gmail.com'
+
+  function csvEscapeHook(val) {
+    const s = String(val ?? '')
+    if (s.includes(';') || s.includes('"') || s.includes('\n')) return '"' + s.replace(/"/g, '""') + '"'
+    return s
+  }
+
+  function buildRegistrationCSV(item) {
+    const headers = [
+      'Nachname', 'Vorname', 'Firma', 'Adresse', 'PLZ', 'Ort',
+      'Telefon Privat', 'Telefon Mobil', '[Gruppen]', 'Sektion', 'Gruppe', 'Gruppen',
+      'Anrede', 'Titel', 'Briefanrede', 'Benutzer-Id', 'Adress-Zusatz', 'Land',
+      'Nationalität', 'Telefon Geschäft', 'Fax', 'E-Mail', 'E-Mail Alternativ',
+      'Status', '[Rolle]', 'Eintritt', 'Mitgliedsjahre', 'Austritt', 'Zivilstand',
+      'Geschlecht', 'Geburtsdatum', 'Jahrgang', 'Alter', 'Bemerkungen',
+      'Firmen-Webseite', 'Rechnungsversand', 'Nie mahnen', 'IBAN', 'BIC', 'Kontoinhaber',
+      'Lizenznummer', 'Lizenzart', 'Lizenz bestellt', 'Beitragskategorie',
+      'Betrag Bezahlt', 'Clubnummer', 'Mittelschule ZH', 'Offiziellen Lizenz',
+      'Mitgliederbeitrag', 'AHV Nummer', 'Passivmitglied', 'Offiziellen 100er',
+      'Funktion', 'Rolle'
+    ]
+
+    let dob = ''
+    let jahrgang = ''
+    if (item.geburtsdatum) {
+      const parts = String(item.geburtsdatum).substring(0, 10).split('-')
+      dob = parts[2] + '.' + parts[1] + '.' + parts[0]
+      jahrgang = parts[0]
+    }
+
+    const now = new Date()
+    const todayStr = String(now.getDate()).padStart(2, '0') + '.' +
+      String(now.getMonth() + 1).padStart(2, '0') + '.' + now.getFullYear()
+
+    const sektion = item.membership_type === 'volleyball' ? 'Volleyball'
+      : item.membership_type === 'basketball' ? 'Basketball' : 'KSCW'
+    const status = item.membership_type === 'passive' ? 'Passivmitglied' : 'Aktivmitglied'
+    const isPassive = item.membership_type === 'passive' ? 'ja' : ''
+
+    const row = [
+      item.nachname || '', item.vorname || '', '',
+      item.adresse || '', item.plz || '', item.ort || '',
+      '', item.telefon_mobil || '',
+      item.team || '', sektion, '', '',
+      item.anrede || '', '', '', '', '', 'Schweiz',
+      item.nationalitaet || '', '', '',
+      item.email || '', '',
+      status, '', todayStr, '', '', '',
+      item.geschlecht || '', dob, jahrgang, '',
+      item.bemerkungen || '',
+      '', 'E-Mail', 'Nein', '', '', '',
+      '', '', '',
+      item.beitragskategorie || '',
+      '', '',
+      item.kantonsschule || '',
+      item.lizenz || '',
+      '',
+      item.ahv_nummer || '',
+      isPassive, '',
+      item.rolle || '', '',
+    ].map(csvEscapeHook)
+
+    return '\uFEFF' + headers.join(';') + '\n' + row.join(';')
+  }
+
+  action('items.update', async ({ collection, keys, payload }, { schema }) => {
+    if (collection !== 'registrations') return
+    if (payload.status !== 'approved') return
+
+    try {
+      const { ItemsService, MailService } = services
+      const itemsService = new ItemsService('registrations', { schema, knex: database })
+      const mail = new MailService({ schema, knex: database })
+
+      for (const id of keys) {
+        const reg = await itemsService.readOne(id)
+        const csv = buildRegistrationCSV(reg)
+        const csvBuffer = Buffer.from(csv, 'utf-8')
+        const filename = `anmeldung_${reg.nachname}_${reg.vorname}_${reg.reference_number}.csv`
+
+        await mail.send({
+          to: OWNER_EMAIL,
+          subject: `[KSCW] Anmeldung bestätigt: ${reg.vorname} ${reg.nachname} (${reg.membership_type})`,
+          html: `<p>Die Anmeldung von <strong>${reg.vorname} ${reg.nachname}</strong> (${reg.membership_type}) wurde bestätigt.</p><p>Die CSV-Datei für den ClubDesk-Import ist im Anhang.</p><p>Referenz: ${reg.reference_number}</p>`,
+          attachments: [{
+            filename,
+            content: csvBuffer,
+            contentType: 'text/csv; charset=utf-8',
+          }],
+        })
+
+        log.info({ msg: 'Approval CSV sent', id, ref: reg.reference_number })
+      }
+    } catch (err) {
+      log.error({ msg: `Registration approval email: ${err.message}`, event: 'registration.approve', stack: err.stack })
+    }
+  })
+
+  log.info('KSCW hooks loaded: role-sync (5 actions, 2 filters), Turnstile, member privacy, registration approval, 10 crons (validations+notifications in Postgres)')
 }

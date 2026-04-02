@@ -100,6 +100,15 @@ export interface Member extends BaseRecord {
   shell: boolean
   shell_expires: string
   shell_reminder_sent: boolean
+  // ClubDesk sync fields
+  adresse: string
+  plz: string
+  ort: string
+  nationalitaet: string
+  anrede: string
+  geschlecht: string
+  ahv_nummer: string
+  beitragskategorie: string
 
 }
 

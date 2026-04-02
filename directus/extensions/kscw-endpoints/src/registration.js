@@ -350,9 +350,6 @@ export function registerRegistration(router, { database, logger, services, getSc
       if (!reg || reg.status !== 'pending') {
         return res.status(404).json({ error: 'Registration not found' })
       }
-      if (!req.body.email || req.body.email.toLowerCase() !== reg.email.toLowerCase()) {
-        return res.status(403).json({ error: 'Email mismatch' })
-      }
 
       // Files come as multipart — Directus's Express instance has multer available
       // but for custom endpoints we need to handle it manually
@@ -360,10 +357,13 @@ export function registerRegistration(router, { database, logger, services, getSc
       // This endpoint is a convenience wrapper
 
       // For now, accept JSON with file IDs (frontend uploads to /files first)
-      const { id_upload_front, id_upload_back } = req.body
+      const { id_upload_front, id_upload_back, bb_doc_lizenz, bb_doc_selfdecl, bb_doc_natdecl } = req.body
       const update = {}
       if (id_upload_front) update.id_upload_front = id_upload_front
       if (id_upload_back) update.id_upload_back = id_upload_back
+      if (bb_doc_lizenz) update.bb_doc_lizenz = bb_doc_lizenz
+      if (bb_doc_selfdecl) update.bb_doc_selfdecl = bb_doc_selfdecl
+      if (bb_doc_natdecl) update.bb_doc_natdecl = bb_doc_natdecl
 
       if (Object.keys(update).length) {
         await itemsService.updateOne(id, update)

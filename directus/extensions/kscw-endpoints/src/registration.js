@@ -265,7 +265,7 @@ function buildAdminNotificationEmail(reg) {
     title: 'Neue Anmeldung',
     subtitle: `${reg.vorname} ${reg.nachname} — ${reg.membership_type}`,
     sport,
-    ctaUrl: 'https://kscw.ch/admin',
+    ctaUrl: 'https://wiedisync.kscw.ch/admin/anmeldungen',
     ctaLabel: 'Im Admin prüfen',
   })
 }

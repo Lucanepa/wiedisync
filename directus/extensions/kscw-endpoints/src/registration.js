@@ -325,6 +325,7 @@ export function registerRegistration(router, { database, logger, services, getSc
         lizenz: body.lizenz || null,
         schiedsrichter_stufe: body.schiedsrichter_stufe || null,
         bemerkungen: body.bemerkungen || null,
+        locale: body.locale === 'en' ? 'en' : 'de',
         reference_number,
         submitted_at: new Date().toISOString(),
       })

@@ -21,6 +21,7 @@
 
 import { logCronError, logWarning, logAuthDenial, cleanOldLogs, writeErrorLog } from '../../kscw-endpoints/src/error-log.js'
 import { initSentry } from '../../kscw-endpoints/src/sentry.js'
+import { buildEmailLayout, buildInfoCard } from '../../kscw-endpoints/src/email-template.js'
 
 // Frontend URL — env var or auto-detect from Directus PUBLIC_URL
 const FRONTEND_URL = process.env.FRONTEND_URL
@@ -778,9 +779,52 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     return '\uFEFF' + headers.join(';') + '\n' + row.join(';')
   }
 
+  // ── i18n for registration status emails ───────────────────────
+  const REG_T = {
+    de: {
+      approvedTitle: 'Anmeldung bestätigt',
+      approvedSubtitle: 'Willkommen beim KSC Wiedikon!',
+      approvedSubject: 'Anmeldung bestätigt — KSC Wiedikon',
+      approvedGreeting: name => `Hallo ${name},`,
+      approvedBody: `<p style="text-align:justify">Deine Anmeldung wurde geprüft und bestätigt. Willkommen beim KSC Wiedikon!</p>
+        <p style="text-align:justify">Du erhältst in den nächsten Tagen weitere Informationen zu deinem Team und den nächsten Schritten.</p>
+        <p style="text-align:justify">Bei Fragen erreichst du uns unter <a href="mailto:kontakt@kscw.ch" style="color:#4A55A2">kontakt@kscw.ch</a>.</p>`,
+      approvedFooter: 'Sportliche Grüsse — KSC Wiedikon',
+      rejectedTitle: 'Anmeldung abgelehnt',
+      rejectedSubtitle: 'KSC Wiedikon',
+      rejectedSubject: 'Anmeldung abgelehnt — KSC Wiedikon',
+      rejectedGreeting: name => `Hallo ${name},`,
+      rejectedReasonLabel: 'Begründung',
+      rejectedBody: `<p style="text-align:justify">Leider wurde deine Anmeldung abgelehnt.</p>`,
+      rejectedContact: `<p style="text-align:justify">Falls du Fragen hast, melde dich bei <a href="mailto:kontakt@kscw.ch" style="color:#4A55A2">kontakt@kscw.ch</a>.</p>`,
+      rejectedFooter: 'KSC Wiedikon',
+      name: 'Name', team: 'Team', sport: 'Sportart', ref: 'Referenz',
+    },
+    en: {
+      approvedTitle: 'Registration Approved',
+      approvedSubtitle: 'Welcome to KSC Wiedikon!',
+      approvedSubject: 'Registration Approved — KSC Wiedikon',
+      approvedGreeting: name => `Hello ${name},`,
+      approvedBody: `<p style="text-align:justify">Your registration has been reviewed and approved. Welcome to KSC Wiedikon!</p>
+        <p style="text-align:justify">You will receive more information about your team and next steps in the coming days.</p>
+        <p style="text-align:justify">For questions, reach us at <a href="mailto:kontakt@kscw.ch" style="color:#4A55A2">kontakt@kscw.ch</a>.</p>`,
+      approvedFooter: 'Best regards — KSC Wiedikon',
+      rejectedTitle: 'Registration Rejected',
+      rejectedSubtitle: 'KSC Wiedikon',
+      rejectedSubject: 'Registration Rejected — KSC Wiedikon',
+      rejectedGreeting: name => `Hello ${name},`,
+      rejectedReasonLabel: 'Reason',
+      rejectedBody: `<p style="text-align:justify">Unfortunately, your registration has been rejected.</p>`,
+      rejectedContact: `<p style="text-align:justify">If you have any questions, contact us at <a href="mailto:kontakt@kscw.ch" style="color:#4A55A2">kontakt@kscw.ch</a>.</p>`,
+      rejectedFooter: 'KSC Wiedikon',
+      name: 'Name', team: 'Team', sport: 'Sport', ref: 'Reference',
+    },
+  }
+  function regT(locale) { return REG_T[locale] || REG_T.de }
+
   action('items.update', async ({ collection, keys, payload }, { schema }) => {
     if (collection !== 'registrations') return
-    if (payload.status !== 'approved') return
+    if (payload.status !== 'approved' && payload.status !== 'rejected') return
 
     try {
       const { ItemsService, MailService } = services
@@ -789,78 +833,92 @@ export default ({ action, filter, init, schedule }, { services, database, logger
 
       for (const id of keys) {
         const reg = await itemsService.readOne(id)
-        const csv = buildRegistrationCSV(reg)
-        const csvBuffer = Buffer.from(csv, 'utf-8')
-        const filename = `anmeldung_${reg.nachname}_${reg.vorname}_${reg.reference_number}.csv`
+        const locale = reg.locale || 'de'
+        const l = regT(locale)
+        const sport = reg.membership_type === 'volleyball' ? 'volleyball'
+          : reg.membership_type === 'basketball' ? 'basketball' : null
 
-        // 1. CSV email to sport-specific admins
-        const recipients = getApprovalRecipients(reg.membership_type)
-        await mail.send({
-          to: recipients.to,
-          ...(recipients.cc.length ? { cc: recipients.cc } : {}),
-          subject: `[KSCW] Anmeldung bestätigt: ${reg.vorname} ${reg.nachname} (${reg.membership_type})`,
-          html: `<p>Die Anmeldung von <strong>${reg.vorname} ${reg.nachname}</strong> (${reg.membership_type}) wurde bestätigt.</p><p>Die CSV-Datei für den ClubDesk-Import ist im Anhang.</p><p>Referenz: ${reg.reference_number}</p>`,
-          attachments: [{
-            filename,
-            content: csvBuffer,
-            contentType: 'text/csv; charset=utf-8',
-          }],
-        })
+        const summaryCard = buildInfoCard([
+          { label: l.name, value: `${reg.vorname} ${reg.nachname}`, halfWidth: true },
+          { label: l.sport, value: reg.membership_type, halfWidth: true },
+          { label: l.team, value: reg.team || '-', halfWidth: true },
+          { label: l.ref, value: reg.reference_number, halfWidth: true },
+        ])
 
-        log.info({ msg: 'Approval CSV sent', id, ref: reg.reference_number })
+        if (payload.status === 'approved') {
+          // ── 1. Confirmation email to user ──
+          const approvalHtml = buildEmailLayout(
+            summaryCard + `<div style="font-size:13px;color:#94a3b8;line-height:1.7;margin-top:12px">${l.approvedBody}</div>`,
+            { title: l.approvedTitle, subtitle: l.approvedSubtitle, sport, greeting: l.approvedGreeting(reg.vorname), footerExtra: l.approvedFooter }
+          )
+          await mail.send({ to: reg.email, subject: l.approvedSubject, html: approvalHtml })
+          log.info({ msg: 'Approval confirmation sent to user', id, email: reg.email })
 
-        // 2. Lightweight notification to coach + team responsible of selected team(s)
-        if (reg.team && reg.membership_type !== 'passive') {
-          try {
-            // team field may contain comma-separated team names (multi-select)
-            const teamNames = reg.team.split(',').map(t => t.trim()).filter(Boolean)
-            const teamRows = await database('teams')
-              .whereIn('name', teamNames)
-              .andWhere('active', true)
-              .select('id', 'name')
+          // ── 2. CSV email to sport-specific admins ──
+          const csv = buildRegistrationCSV(reg)
+          const csvBuffer = Buffer.from(csv, 'utf-8')
+          const filename = `anmeldung_${reg.nachname}_${reg.vorname}_${reg.reference_number}.csv`
+          const recipients = getApprovalRecipients(reg.membership_type)
+          await mail.send({
+            to: recipients.to,
+            ...(recipients.cc.length ? { cc: recipients.cc } : {}),
+            subject: `[KSCW] Anmeldung bestätigt: ${reg.vorname} ${reg.nachname} (${reg.membership_type})`,
+            html: `<p>Die Anmeldung von <strong>${reg.vorname} ${reg.nachname}</strong> (${reg.membership_type}) wurde bestätigt.</p><p>Die CSV-Datei für den ClubDesk-Import ist im Anhang.</p><p>Referenz: ${reg.reference_number}</p>`,
+            attachments: [{ filename, content: csvBuffer, contentType: 'text/csv; charset=utf-8' }],
+          })
+          log.info({ msg: 'Approval CSV sent', id, ref: reg.reference_number })
 
-            if (teamRows.length) {
-              const teamIds = teamRows.map(r => r.id)
-              // Coach junction: teams_members_3, TR junction: teams_members_4
-              const coachRows = await database('teams_members_3')
-                .whereIn('teams_id', teamIds)
-                .join('members', 'teams_members_3.members_id', 'members.id')
-                .join('directus_users', 'members.user', 'directus_users.id')
-                .whereNotNull('directus_users.email')
-                .select('directus_users.email')
-              const trRows = await database('teams_members_4')
-                .whereIn('teams_id', teamIds)
-                .join('members', 'teams_members_4.members_id', 'members.id')
-                .join('directus_users', 'members.user', 'directus_users.id')
-                .whereNotNull('directus_users.email')
-                .select('directus_users.email')
-
-              const coachTrEmails = [...new Set([...coachRows, ...trRows].map(r => r.email.toLowerCase()))]
-              // Remove any emails already in the main recipients to avoid duplicates
-              const mainRecipientEmails = [...recipients.to, ...recipients.cc].map(e => e.toLowerCase())
-              const extraEmails = coachTrEmails.filter(e => !mainRecipientEmails.includes(e))
-
-              if (extraEmails.length) {
-                await mail.send({
-                  to: extraEmails,
-                  subject: `[KSCW] Neues Mitglied bestätigt: ${reg.vorname} ${reg.nachname}`,
-                  html: `<p>Ein neues Mitglied wurde für dein Team bestätigt:</p>
-<ul>
-  <li><strong>Name:</strong> ${reg.vorname} ${reg.nachname}</li>
-  <li><strong>Team:</strong> ${reg.team}</li>
-  <li><strong>E-Mail:</strong> ${reg.email}</li>
-</ul>`,
-                })
-                log.info({ msg: 'Coach/TR notification sent', id, emails: extraEmails.length })
+          // ── 3. Lightweight notification to coach + TR ──
+          if (reg.team && reg.membership_type !== 'passive') {
+            try {
+              const teamNames = reg.team.split(',').map(t => t.trim()).filter(Boolean)
+              const teamRows = await database('teams')
+                .whereIn('name', teamNames).andWhere('active', true).select('id', 'name')
+              if (teamRows.length) {
+                const teamIds = teamRows.map(r => r.id)
+                const coachRows = await database('teams_members_3')
+                  .whereIn('teams_id', teamIds)
+                  .join('members', 'teams_members_3.members_id', 'members.id')
+                  .join('directus_users', 'members.user', 'directus_users.id')
+                  .whereNotNull('directus_users.email').select('directus_users.email')
+                const trRows = await database('teams_members_4')
+                  .whereIn('teams_id', teamIds)
+                  .join('members', 'teams_members_4.members_id', 'members.id')
+                  .join('directus_users', 'members.user', 'directus_users.id')
+                  .whereNotNull('directus_users.email').select('directus_users.email')
+                const coachTrEmails = [...new Set([...coachRows, ...trRows].map(r => r.email.toLowerCase()))]
+                const mainRecipientEmails = [...recipients.to, ...recipients.cc].map(e => e.toLowerCase())
+                const extraEmails = coachTrEmails.filter(e => !mainRecipientEmails.includes(e))
+                if (extraEmails.length) {
+                  await mail.send({
+                    to: extraEmails,
+                    subject: `[KSCW] Neues Mitglied bestätigt: ${reg.vorname} ${reg.nachname}`,
+                    html: `<p>Ein neues Mitglied wurde für dein Team bestätigt:</p><ul><li><strong>Name:</strong> ${reg.vorname} ${reg.nachname}</li><li><strong>Team:</strong> ${reg.team}</li><li><strong>E-Mail:</strong> ${reg.email}</li></ul>`,
+                  })
+                  log.info({ msg: 'Coach/TR notification sent', id, emails: extraEmails.length })
+                }
               }
+            } catch (teamErr) {
+              log.warn({ msg: `Coach/TR notification failed: ${teamErr.message}`, id })
             }
-          } catch (teamErr) {
-            log.warn({ msg: `Coach/TR notification failed: ${teamErr.message}`, id })
           }
+
+        } else if (payload.status === 'rejected') {
+          // ── Rejection email to user ──
+          const reason = payload.rejection_reason || reg.rejection_reason || ''
+          const reasonBlock = reason
+            ? `<div style="background:#450a0a;border:1px solid #7f1d1d;border-radius:8px;padding:12px 16px;margin:12px 0"><div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#f87171;font-weight:700;margin-bottom:4px">${l.rejectedReasonLabel}</div><div style="font-size:13px;color:#fca5a5">${reason}</div></div>`
+            : ''
+          const rejectionHtml = buildEmailLayout(
+            summaryCard + `<div style="font-size:13px;color:#94a3b8;line-height:1.7;margin-top:12px">${l.rejectedBody}</div>` + reasonBlock + `<div style="font-size:13px;color:#94a3b8;line-height:1.7;margin-top:12px">${l.rejectedContact}</div>`,
+            { title: l.rejectedTitle, subtitle: l.rejectedSubtitle, greeting: l.rejectedGreeting(reg.vorname), footerExtra: l.rejectedFooter }
+          )
+          await mail.send({ to: reg.email, subject: l.rejectedSubject, html: rejectionHtml })
+          log.info({ msg: 'Rejection email sent to user', id, email: reg.email })
         }
       }
     } catch (err) {
-      log.error({ msg: `Registration approval email: ${err.message}`, event: 'registration.approve', stack: err.stack })
+      log.error({ msg: `Registration status email: ${err.message}`, event: 'registration.status', stack: err.stack })
     }
   })
 

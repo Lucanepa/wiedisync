@@ -469,40 +469,24 @@ export default function AnmeldungenPage() {
 
 // ── File preview component ─────────────────────────────────────
 function FilePreview({ url }: { url: string }) {
-  // Detect type from Directus asset URL — try rendering as image first,
-  // fall back to iframe (PDF), with download link as final fallback
+  // Try to render as image — if it fails (PDF/other), show a download prompt
   const [isImage, setIsImage] = useState(true)
 
-  if (isImage) {
-    return (
-      <div className="flex flex-col items-center gap-3">
+  return (
+    <div className="flex flex-col items-center gap-3">
+      {isImage ? (
         <img
           src={url}
           alt="Document"
           className="max-h-[70vh] w-auto rounded-md border border-gray-200 dark:border-gray-700"
           onError={() => setIsImage(false)}
         />
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400"
-        >
-          <ExternalLink className="h-3.5 w-3.5" />
-          In neuem Tab öffnen
-        </a>
-      </div>
-    )
-  }
-
-  // PDF or other — use iframe
-  return (
-    <div className="flex flex-col items-center gap-3">
-      <iframe
-        src={url}
-        className="h-[70vh] w-full rounded-md border border-gray-200 dark:border-gray-700"
-        title="Document preview"
-      />
+      ) : (
+        <div className="flex flex-col items-center gap-3 py-8 text-gray-500 dark:text-gray-400">
+          <FileText className="h-12 w-12" />
+          <p className="text-sm">PDF — im neuen Tab öffnen</p>
+        </div>
+      )}
       <a
         href={url}
         target="_blank"

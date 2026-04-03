@@ -382,36 +382,14 @@ export default function AnmeldungenPage() {
                             </div>
                           </div>
 
-                          {/* Action buttons */}
-                          <div className="flex shrink-0 items-center gap-1.5">
-                            {reg.status === 'pending' && (
-                              <>
-                                <button
-                                  onClick={() => handleApprove(reg)}
-                                  disabled={isUpdating}
-                                  className="rounded-md bg-green-600 p-2 text-white hover:bg-green-700 disabled:opacity-40"
-                                  title={t('anmeldungenApprove')}
-                                >
-                                  <Check className="h-4 w-4" />
-                                </button>
-                                <button
-                                  onClick={() => openRejectModal(reg)}
-                                  disabled={isUpdating}
-                                  className="rounded-md bg-red-600 p-2 text-white hover:bg-red-700 disabled:opacity-40"
-                                  title={t('anmeldungenReject')}
-                                >
-                                  <X className="h-4 w-4" />
-                                </button>
-                              </>
-                            )}
-                            <button
-                              onClick={() => setExpandedId(isExpanded ? null : reg.id)}
-                              className="rounded-md p-2 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-                              title={t('anmeldungenDetails')}
-                            >
-                              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                            </button>
-                          </div>
+                          {/* Expand toggle */}
+                          <button
+                            onClick={() => setExpandedId(isExpanded ? null : reg.id)}
+                            className="shrink-0 rounded-md p-2 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            title={t('anmeldungenDetails')}
+                          >
+                            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                          </button>
                         </div>
 
                         {/* Expanded details */}

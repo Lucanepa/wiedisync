@@ -59,28 +59,105 @@ function generateRefNumber() {
 
 // ── Confirmation emails ─────────────────────────────────────────
 
-function buildVolleyballEmail(reg) {
-  const dob = reg.geburtsdatum ? formatDateCH(reg.geburtsdatum) : '-'
+// ── i18n strings for emails ────────────────────────────────────
+const T = {
+  de: {
+    greeting: name => `Hallo ${name},`,
+    vbTitle: 'Willkommen beim KSC Wiedikon!',
+    vbSubtitle: 'Deine Volleyball-Anmeldung ist eingegangen',
+    vbSubject: 'Willkommen beim KSC Wiedikon — Volleyball',
+    vbFooter: 'Sportliche Grüsse — KSC Wiedikon Volleyball',
+    vbFeeHeader: 'Mitgliederbeiträge',
+    vbBody: `<p>Bitte beachte, dass der Lizenzierungsprozess ab Zahlung des Mitgliederbeitrags mind. eine Woche dauert.</p>
+      <p>Du erhältst in den nächsten Tagen (oder im August, der Hauptrechnungsperiode) eine Rechnung von uns. Deine Lizenz wird erst bestellt, wenn der Beitrag beim KSCW eingetroffen ist — also einfach möglichst bald einzahlen.</p>
+      <p>Neu musst du dir unter <a href="https://volleymanager.volleyball.ch/login" style="color:#FFC832">volleymanager.volleyball.ch</a> ein Login erstellen, falls du noch keines besitzt.</p>
+      <p>Bei Fragen zum Club, deinem Team oder dem Lizenzierungsprozess kann dir dein Coach oder auch wir gerne Auskunft geben.</p>`,
+    bbTitle: 'Anmeldung eingegangen',
+    bbSubtitle: 'KSC Wiedikon Basketball',
+    bbSubject: 'Anmeldung eingegangen — KSC Wiedikon Basketball',
+    bbFooter: 'KSC Wiedikon Basketball',
+    bbBody: `<p>Deine Anmeldung wird von unserem Admin-Team geprüft. Du wirst benachrichtigt, sobald sie genehmigt wurde.</p>
+      <p><strong style="color:#e2e8f0">Nächste Schritte:</strong></p>
+      <ul style="padding-left:20px;margin:8px 0">
+        <li>Stelle sicher, dass du deine ID-Kopie (Vorder- und Rückseite) hochgeladen hast</li>
+        <li>Der Lizenzantrag wird vom Admin vorbereitet</li>
+        <li>Die Bearbeitung dauert in der Regel einige Werktage</li>
+      </ul>
+      <p>Bei Fragen wende dich an deinen Coach oder an <a href="mailto:kontakt@kscw.ch" style="color:#F97316">kontakt@kscw.ch</a>.</p>`,
+    passiveTitle: 'Passivmitgliedschaft',
+    passiveSubtitle: 'Anmeldung eingegangen',
+    passiveSubject: 'Passivmitgliedschaft — KSC Wiedikon',
+    passiveBody: `<p>Deine Anmeldung als Passivmitglied ist eingegangen und wird geprüft.</p>
+      <p>Du erhältst in den nächsten Tagen eine Rechnung für den Passivmitgliederbeitrag (CHF 50.–).</p>
+      <p>Bei Fragen erreichst du uns unter <a href="mailto:kontakt@kscw.ch" style="color:#4A55A2">kontakt@kscw.ch</a>.</p>`,
+    name: 'Name', team: 'Team', fee: 'Beitragskategorie', dob: 'Geburtsdatum',
+    email: 'E-Mail', phone: 'Telefon', address: 'Adresse', nationality: 'Nationalität',
+    gender: 'Geschlecht', licence: 'Lizenz', refLevel: 'Schiedsrichter-Stufe', ref: 'Referenz',
+  },
+  en: {
+    greeting: name => `Hello ${name},`,
+    vbTitle: 'Welcome to KSC Wiedikon!',
+    vbSubtitle: 'Your volleyball registration has been received',
+    vbSubject: 'Welcome to KSC Wiedikon — Volleyball',
+    vbFooter: 'Best regards — KSC Wiedikon Volleyball',
+    vbFeeHeader: 'Membership Fees',
+    vbBody: `<p>Please note that the licensing process takes at least one week after payment of the membership fee.</p>
+      <p>You will receive an invoice from us in the next few days (or in August, the main billing period). Your licence will only be ordered once the fee has been received by KSCW — so please pay as soon as possible.</p>
+      <p>You also need to create a login at <a href="https://volleymanager.volleyball.ch/login" style="color:#FFC832">volleymanager.volleyball.ch</a> if you don't have one yet.</p>
+      <p>For questions about the club, your team or the licensing process, your coach or we are happy to help.</p>`,
+    bbTitle: 'Registration received',
+    bbSubtitle: 'KSC Wiedikon Basketball',
+    bbSubject: 'Registration received — KSC Wiedikon Basketball',
+    bbFooter: 'KSC Wiedikon Basketball',
+    bbBody: `<p>Your registration will be reviewed by our admin team. You will be notified once it has been approved.</p>
+      <p><strong style="color:#e2e8f0">Next steps:</strong></p>
+      <ul style="padding-left:20px;margin:8px 0">
+        <li>Make sure you have uploaded your ID copy (front and back)</li>
+        <li>The licence application will be prepared by the admin</li>
+        <li>Processing usually takes a few business days</li>
+      </ul>
+      <p>For questions, contact your coach or <a href="mailto:kontakt@kscw.ch" style="color:#F97316">kontakt@kscw.ch</a>.</p>`,
+    passiveTitle: 'Passive Membership',
+    passiveSubtitle: 'Registration received',
+    passiveSubject: 'Passive Membership — KSC Wiedikon',
+    passiveBody: `<p>Your registration as a passive member has been received and will be reviewed.</p>
+      <p>You will receive an invoice for the passive membership fee (CHF 50.–) in the next few days.</p>
+      <p>For questions, reach us at <a href="mailto:kontakt@kscw.ch" style="color:#4A55A2">kontakt@kscw.ch</a>.</p>`,
+    name: 'Name', team: 'Team', fee: 'Fee Category', dob: 'Date of Birth',
+    email: 'Email', phone: 'Phone', address: 'Address', nationality: 'Nationality',
+    gender: 'Sex', licence: 'Licence', refLevel: 'Referee Level', ref: 'Reference',
+  },
+}
 
-  const summary = buildInfoCard([
-    { label: 'Name', value: `${reg.vorname} ${reg.nachname}`, halfWidth: true },
-    { label: 'Team', value: reg.team || '-', halfWidth: true },
-    { label: 'Beitragskategorie', value: reg.beitragskategorie || '-', halfWidth: true },
-    { label: 'Geburtsdatum', value: dob, halfWidth: true },
-    { label: 'E-Mail', value: reg.email },
-    { label: 'Telefon', value: reg.telefon_mobil || '-' },
-    { label: 'Adresse', value: `${reg.adresse || ''}, ${reg.plz || ''} ${reg.ort || ''}` },
-    { label: 'Nationalität', value: reg.nationalitaet || '-', halfWidth: true },
-    { label: 'Geschlecht', value: reg.geschlecht || '-', halfWidth: true },
-    ...(reg.lizenz ? [{ label: 'Lizenz', value: reg.lizenz }] : []),
-    ...(reg.schiedsrichter_stufe ? [{ label: 'Schiedsrichter-Stufe', value: reg.schiedsrichter_stufe }] : []),
-    { label: 'Referenz', value: reg.reference_number },
+function t(locale) { return T[locale] || T.de }
+
+function buildSummaryCard(reg, locale) {
+  const l = t(locale)
+  const dob = reg.geburtsdatum ? formatDateCH(reg.geburtsdatum) : '-'
+  return buildInfoCard([
+    { label: l.name, value: `${reg.vorname} ${reg.nachname}`, halfWidth: true },
+    { label: l.team, value: reg.team || '-', halfWidth: true },
+    { label: l.fee, value: reg.beitragskategorie || '-', halfWidth: true },
+    { label: l.dob, value: dob, halfWidth: true },
+    { label: l.email, value: reg.email },
+    { label: l.phone, value: reg.telefon_mobil || '-' },
+    { label: l.address, value: `${reg.adresse || ''}, ${reg.plz || ''} ${reg.ort || ''}` },
+    { label: l.nationality, value: reg.nationalitaet || '-', halfWidth: true },
+    { label: l.gender, value: reg.geschlecht || '-', halfWidth: true },
+    ...(reg.lizenz ? [{ label: l.licence, value: reg.lizenz }] : []),
+    ...(reg.schiedsrichter_stufe ? [{ label: l.refLevel, value: reg.schiedsrichter_stufe }] : []),
+    { label: l.ref, value: reg.reference_number },
   ])
+}
+
+function buildVolleyballEmail(reg, locale) {
+  const l = t(locale)
+  const summary = buildSummaryCard(reg, locale)
 
   const feeTable = `
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#0f172a;border:1px solid #334155;border-radius:8px;overflow:hidden;margin:12px 0">
   <tr><td style="padding:16px 20px">
-    <div style="font-size:11px;text-transform:uppercase;color:#64748b;letter-spacing:0.5px;margin-bottom:8px;font-weight:700">Mitgliederbeiträge</div>
+    <div style="font-size:11px;text-transform:uppercase;color:#64748b;letter-spacing:0.5px;margin-bottom:8px;font-weight:700">${l.vbFeeHeader}</div>
     <div style="font-size:13px;color:#e2e8f0;line-height:1.8">
       Erwerbstätige: CHF 440.–<br>
       Studenten/Studentinnen / Lernende: CHF 380.–<br>
@@ -92,81 +169,57 @@ function buildVolleyballEmail(reg) {
 </table>`
 
   const body = summary + feeTable + `
-<div style="font-size:13px;color:#94a3b8;line-height:1.7;margin-top:12px">
-  <p>Bitte beachte, dass der Lizenzierungsprozess ab Zahlung des Mitgliederbeitrags mind. eine Woche dauert.</p>
-  <p>Du erhältst in den nächsten Tagen (oder im August, der Hauptrechnungsperiode) eine Rechnung von uns. Deine Lizenz wird erst bestellt, wenn der Beitrag beim KSCW eingetroffen ist — also einfach möglichst bald einzahlen.</p>
-  <p>Neu musst du dir unter <a href="https://volleymanager.volleyball.ch/login" style="color:#FFC832">volleymanager.volleyball.ch</a> ein Login erstellen, falls du noch keines besitzt.</p>
-  <p>Bei Fragen zum Club, deinem Team oder dem Lizenzierungsprozess kann dir dein Coach oder auch wir gerne Auskunft geben.</p>
+<div style="font-size:13px;color:#94a3b8;line-height:1.7;margin-top:12px;text-align:justify">
+  ${l.vbBody}
 </div>`
 
   return buildEmailLayout(body, {
-    title: 'Willkommen beim KSC Wiedikon!',
-    subtitle: 'Deine Volleyball-Anmeldung ist eingegangen',
+    title: l.vbTitle,
+    subtitle: l.vbSubtitle,
     sport: 'volleyball',
-    greeting: `Hallo ${reg.vorname},`,
-    footerExtra: 'Sportliche Grüsse — KSC Wiedikon Volleyball',
+    greeting: l.greeting(reg.vorname),
+    footerExtra: l.vbFooter,
   })
 }
 
-function buildBasketballEmail(reg) {
-  const dob = reg.geburtsdatum ? formatDateCH(reg.geburtsdatum) : '-'
-
-  const summary = buildInfoCard([
-    { label: 'Name', value: `${reg.vorname} ${reg.nachname}`, halfWidth: true },
-    { label: 'Team', value: reg.team || '-', halfWidth: true },
-    { label: 'Beitragskategorie', value: reg.beitragskategorie || '-', halfWidth: true },
-    { label: 'Geburtsdatum', value: dob, halfWidth: true },
-    { label: 'E-Mail', value: reg.email },
-    { label: 'Telefon', value: reg.telefon_mobil || '-' },
-    { label: 'Adresse', value: `${reg.adresse || ''}, ${reg.plz || ''} ${reg.ort || ''}` },
-    { label: 'Nationalität', value: reg.nationalitaet || '-', halfWidth: true },
-    { label: 'Geschlecht', value: reg.geschlecht || '-', halfWidth: true },
-    ...(reg.lizenz ? [{ label: 'Lizenz', value: reg.lizenz }] : []),
-    { label: 'Referenz', value: reg.reference_number },
-  ])
+function buildBasketballEmail(reg, locale) {
+  const l = t(locale)
+  const summary = buildSummaryCard(reg, locale)
 
   const body = summary + `
-<div style="font-size:13px;color:#94a3b8;line-height:1.7;margin-top:12px">
-  <p>Deine Anmeldung wird von unserem Admin-Team geprüft. Du wirst benachrichtigt, sobald sie genehmigt wurde.</p>
-  <p><strong style="color:#e2e8f0">Nächste Schritte:</strong></p>
-  <ul style="padding-left:20px;margin:8px 0">
-    <li>Stelle sicher, dass du deine ID-Kopie (Vorder- und Rückseite) hochgeladen hast</li>
-    <li>Der Lizenzantrag wird vom Admin vorbereitet</li>
-    <li>Die Bearbeitung dauert in der Regel einige Werktage</li>
-  </ul>
-  <p>Bei Fragen wende dich an deinen Coach oder an <a href="mailto:kontakt@kscw.ch" style="color:#F97316">kontakt@kscw.ch</a>.</p>
+<div style="font-size:13px;color:#94a3b8;line-height:1.7;margin-top:12px;text-align:justify">
+  ${l.bbBody}
 </div>`
 
   return buildEmailLayout(body, {
-    title: 'Anmeldung eingegangen',
-    subtitle: 'KSC Wiedikon Basketball',
+    title: l.bbTitle,
+    subtitle: l.bbSubtitle,
     sport: 'basketball',
-    greeting: `Hallo ${reg.vorname},`,
-    footerExtra: 'KSC Wiedikon Basketball',
+    greeting: l.greeting(reg.vorname),
+    footerExtra: l.bbFooter,
   })
 }
 
-function buildPassiveEmail(reg) {
+function buildPassiveEmail(reg, locale) {
+  const l = t(locale)
   const summary = buildInfoCard([
-    { label: 'Name', value: `${reg.vorname} ${reg.nachname}` },
-    { label: 'E-Mail', value: reg.email },
-    { label: 'Telefon', value: reg.telefon_mobil || '-' },
-    ...(reg.lizenz ? [{ label: 'Lizenz', value: reg.lizenz }] : []),
-    ...(reg.schiedsrichter_stufe ? [{ label: 'Schiedsrichter-Stufe', value: reg.schiedsrichter_stufe }] : []),
-    { label: 'Referenz', value: reg.reference_number },
+    { label: l.name, value: `${reg.vorname} ${reg.nachname}` },
+    { label: l.email, value: reg.email },
+    { label: l.phone, value: reg.telefon_mobil || '-' },
+    ...(reg.lizenz ? [{ label: l.licence, value: reg.lizenz }] : []),
+    ...(reg.schiedsrichter_stufe ? [{ label: l.refLevel, value: reg.schiedsrichter_stufe }] : []),
+    { label: l.ref, value: reg.reference_number },
   ])
 
   const body = summary + `
-<div style="font-size:13px;color:#94a3b8;line-height:1.7;margin-top:12px">
-  <p>Deine Anmeldung als Passivmitglied ist eingegangen und wird geprüft.</p>
-  <p>Du erhältst in den nächsten Tagen eine Rechnung für den Passivmitgliederbeitrag (CHF 50.–).</p>
-  <p>Bei Fragen erreichst du uns unter <a href="mailto:kontakt@kscw.ch" style="color:#4A55A2">kontakt@kscw.ch</a>.</p>
+<div style="font-size:13px;color:#94a3b8;line-height:1.7;margin-top:12px;text-align:justify">
+  ${l.passiveBody}
 </div>`
 
   return buildEmailLayout(body, {
-    title: 'Passivmitgliedschaft',
-    subtitle: 'Anmeldung eingegangen',
-    greeting: `Hallo ${reg.vorname},`,
+    title: l.passiveTitle,
+    subtitle: l.passiveSubtitle,
+    greeting: l.greeting(reg.vorname),
     footerExtra: 'KSC Wiedikon',
   })
 }
@@ -212,7 +265,7 @@ function buildAdminNotificationEmail(reg) {
     title: 'Neue Anmeldung',
     subtitle: `${reg.vorname} ${reg.nachname} — ${reg.membership_type}`,
     sport,
-    ctaUrl: 'https://directus.kscw.ch/admin/content/registrations',
+    ctaUrl: 'https://kscw.ch/admin',
     ctaLabel: 'Im Admin prüfen',
   })
 }
@@ -278,20 +331,22 @@ export function registerRegistration(router, { database, logger, services, getSc
 
       const reg = await itemsService.readOne(id)
 
-      // Send confirmation email to user
+      // Send confirmation email to user (in the locale they used)
+      const locale = body.locale === 'en' ? 'en' : 'de'
+      const l = t(locale)
       const mail = new MailService({ schema, knex: database })
       try {
         let emailHtml
         let emailSubject
         if (body.membership_type === 'volleyball') {
-          emailHtml = buildVolleyballEmail(reg)
-          emailSubject = 'Willkommen beim KSC Wiedikon — Volleyball'
+          emailHtml = buildVolleyballEmail(reg, locale)
+          emailSubject = l.vbSubject
         } else if (body.membership_type === 'basketball') {
-          emailHtml = buildBasketballEmail(reg)
-          emailSubject = 'Anmeldung eingegangen — KSC Wiedikon Basketball'
+          emailHtml = buildBasketballEmail(reg, locale)
+          emailSubject = l.bbSubject
         } else {
-          emailHtml = buildPassiveEmail(reg)
-          emailSubject = 'Passivmitgliedschaft — KSC Wiedikon'
+          emailHtml = buildPassiveEmail(reg, locale)
+          emailSubject = l.passiveSubject
         }
 
         await mail.send({

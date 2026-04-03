@@ -289,6 +289,12 @@ export default {
   anmeldungenSchool: 'Kantonsschule',
   anmeldungenNotes: 'Bemerkungen',
   anmeldungenRef: 'Referenz',
-  anmeldungenUpdated: 'Status aktualisiert',
+  anmeldungenFirstName: 'Vorname',
+  anmeldungenLastName: 'Nachname',
+  anmeldungenEmail: 'E-Mail',
+  anmeldungenCity: 'Ort',
+  anmeldungenTeam: 'Team',
+  anmeldungenFunction: 'Funktion',
+  anmeldungenUpdated: 'Anmeldung aktualisiert',
   anmeldungenUpdateError: 'Fehler beim Aktualisieren',
 } as const

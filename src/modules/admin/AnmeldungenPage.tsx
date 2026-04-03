@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Check, X, ChevronDown, ChevronUp } from 'lucide-react'
+import { Check, X, ChevronDown, ChevronUp, Save } from 'lucide-react'
 import { useCollection, useUpdate } from '../../lib/query'
 import { useAuth } from '../../hooks/useAuth'
 import TeamChip from '../../components/TeamChip'
@@ -26,6 +26,7 @@ interface Registration extends BaseRecord {
   bemerkungen: string | null
   reference_number: string
   submitted_at: string
+  rolle: string | null
   lizenz: string | null
   schiedsrichter_stufe: string | null
   ahv_nummer: string | null
@@ -244,24 +245,9 @@ export default function AnmeldungenPage() {
                   </div>
                 </div>
 
-                {/* Expanded details */}
+                {/* Expanded details (editable) */}
                 {isExpanded && (
-                  <div className="border-t border-gray-200 px-4 py-3 dark:border-gray-700">
-                    <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
-                      {reg.telefon_mobil && <DetailRow label={t('anmeldungenPhone')} value={reg.telefon_mobil} />}
-                      {reg.adresse && <DetailRow label={t('anmeldungenAddress')} value={`${reg.adresse}, ${reg.plz || ''} ${reg.ort || ''}`} />}
-                      {reg.geburtsdatum && <DetailRow label={t('anmeldungenDob')} value={formatDate(reg.geburtsdatum)} />}
-                      {reg.nationalitaet && <DetailRow label={t('anmeldungenNationality')} value={reg.nationalitaet} />}
-                      {reg.geschlecht && <DetailRow label={t('anmeldungenGender')} value={reg.geschlecht} />}
-                      {reg.beitragskategorie && <DetailRow label={t('anmeldungenFeeCategory')} value={reg.beitragskategorie} />}
-                      {reg.lizenz && <DetailRow label={t('anmeldungenLicence')} value={reg.lizenz} />}
-                      {reg.schiedsrichter_stufe && <DetailRow label={t('anmeldungenRefLevel')} value={reg.schiedsrichter_stufe} />}
-                      {reg.kantonsschule && <DetailRow label={t('anmeldungenSchool')} value={reg.kantonsschule} />}
-                      {reg.ahv_nummer && <DetailRow label="AHV" value={reg.ahv_nummer} />}
-                      {reg.bemerkungen && <DetailRow label={t('anmeldungenNotes')} value={reg.bemerkungen} />}
-                      <DetailRow label={t('anmeldungenRef')} value={reg.reference_number} />
-                    </dl>
-                  </div>
+                  <ExpandedDetails reg={reg} t={t} onSave={(data) => updateReg({ id: reg.id, data })} isUpdating={isUpdating} />
                 )}
               </div>
             )
@@ -272,11 +258,89 @@ export default function AnmeldungenPage() {
   )
 }
 
-function DetailRow({ label, value }: { label: string; value: string }) {
+function ExpandedDetails({
+  reg,
+  t,
+  onSave,
+  isUpdating,
+}: {
+  reg: Registration
+  t: (key: string) => string
+  onSave: (data: Partial<Registration>) => void
+  isUpdating: boolean
+}) {
+  const [edits, setEdits] = useState<Record<string, string>>({})
+  const hasChanges = Object.keys(edits).length > 0
+
+  const field = (key: keyof Registration, label: string, opts?: { type?: string; full?: boolean }) => {
+    const original = (reg[key] as string) ?? ''
+    const value = edits[key] ?? original
+    return (
+      <div className={opts?.full ? 'sm:col-span-2' : ''}>
+        <label className="mb-0.5 block text-xs font-medium text-gray-500 dark:text-gray-400">{label}</label>
+        <input
+          type={opts?.type ?? 'text'}
+          value={value}
+          onChange={(e) => {
+            const v = e.target.value
+            if (v === original) {
+              const next = { ...edits }
+              delete next[key]
+              setEdits(next)
+            } else {
+              setEdits({ ...edits, [key]: v })
+            }
+          }}
+          className="w-full rounded-md border border-gray-200 bg-transparent px-2.5 py-1.5 text-sm text-gray-900 dark:border-gray-600 dark:text-gray-100"
+        />
+      </div>
+    )
+  }
+
+  const handleSave = () => {
+    if (!hasChanges) return
+    onSave(edits as Partial<Registration>)
+    setEdits({})
+  }
+
   return (
-    <div>
-      <dt className="text-xs font-medium text-gray-500 dark:text-gray-400">{label}</dt>
-      <dd className="text-gray-900 dark:text-gray-100">{value}</dd>
+    <div className="border-t border-gray-200 px-4 py-3 dark:border-gray-700">
+      <div className="grid grid-cols-1 gap-x-6 gap-y-2.5 text-sm sm:grid-cols-2">
+        {field('vorname', t('anmeldungenFirstName'))}
+        {field('nachname', t('anmeldungenLastName'))}
+        {field('email', t('anmeldungenEmail'), { type: 'email' })}
+        {field('telefon_mobil', t('anmeldungenPhone'))}
+        {field('adresse', t('anmeldungenAddress'), { full: true })}
+        {field('plz', 'PLZ')}
+        {field('ort', t('anmeldungenCity'))}
+        {field('geburtsdatum', t('anmeldungenDob'), { type: 'date' })}
+        {field('nationalitaet', t('anmeldungenNationality'))}
+        {field('geschlecht', t('anmeldungenGender'))}
+        {field('rolle', t('anmeldungenFunction'))}
+        {field('team', t('anmeldungenTeam'))}
+        {field('beitragskategorie', t('anmeldungenFeeCategory'))}
+        {field('lizenz', t('anmeldungenLicence'))}
+        {field('schiedsrichter_stufe', t('anmeldungenRefLevel'))}
+        {field('kantonsschule', t('anmeldungenSchool'))}
+        {field('ahv_nummer', 'AHV')}
+        {field('bemerkungen', t('anmeldungenNotes'), { full: true })}
+        <div>
+          <label className="mb-0.5 block text-xs font-medium text-gray-500 dark:text-gray-400">{t('anmeldungenRef')}</label>
+          <div className="px-2.5 py-1.5 text-sm text-gray-500 dark:text-gray-400">{reg.reference_number}</div>
+        </div>
+      </div>
+      {hasChanges && (
+        <div className="mt-3 flex justify-end">
+          <button
+            onClick={handleSave}
+            disabled={isUpdating}
+            className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-40"
+          >
+            <Save className="h-3.5 w-3.5" />
+            {t('save')}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

@@ -296,6 +296,8 @@ export default {
   anmeldungenTeam: 'Team',
   anmeldungenFunction: 'Funktion',
   anmeldungenUpdated: 'Anmeldung aktualisiert',
+  anmeldungenApprovedToast: 'Anmeldung bestätigt',
+  anmeldungenRejectedToast: 'Anmeldung abgelehnt',
   anmeldungenUpdateError: 'Fehler beim Aktualisieren',
   anmeldungenSelected: 'ausgewählt',
   anmeldungenSelectAll: 'Alle auswählen',

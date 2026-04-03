@@ -296,6 +296,8 @@ export default {
   anmeldungenTeam: 'Team',
   anmeldungenFunction: 'Function',
   anmeldungenUpdated: 'Registration updated',
+  anmeldungenApprovedToast: 'Registration confirmed',
+  anmeldungenRejectedToast: 'Registration rejected',
   anmeldungenUpdateError: 'Error updating registration',
   anmeldungenSelected: 'selected',
   anmeldungenSelectAll: 'Select all',

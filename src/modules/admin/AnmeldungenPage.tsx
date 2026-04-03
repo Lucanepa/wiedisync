@@ -193,12 +193,13 @@ export default function AnmeldungenPage() {
   }, [teams])
 
   const { mutate: updateReg, isPending: isUpdating } = useUpdate<Registration>('registrations', {
-    onSuccess: () => toast.success(t('anmeldungenUpdated')),
     onError: () => toast.error(t('anmeldungenUpdateError')),
   })
 
   const handleApprove = (reg: Registration) => {
-    updateReg({ id: reg.id, data: { status: 'approved' } })
+    updateReg({ id: reg.id, data: { status: 'approved' } }, {
+      onSuccess: () => toast.success(t('anmeldungenApprovedToast')),
+    })
   }
 
   const openRejectModal = (reg: Registration) => {
@@ -208,7 +209,9 @@ export default function AnmeldungenPage() {
 
   const confirmReject = () => {
     if (!rejectTarget || !rejectReason.trim()) return
-    updateReg({ id: rejectTarget.id, data: { status: 'rejected', rejection_reason: rejectReason.trim() } })
+    updateReg({ id: rejectTarget.id, data: { status: 'rejected', rejection_reason: rejectReason.trim() } }, {
+      onSuccess: () => toast.success(t('anmeldungenRejectedToast')),
+    })
     setRejectTarget(null)
     setRejectReason('')
   }
@@ -397,7 +400,7 @@ export default function AnmeldungenPage() {
                           <ExpandedDetails
                             reg={reg}
                             t={t}
-                            onSave={(data) => updateReg({ id: reg.id, data })}
+                            onSave={(data) => updateReg({ id: reg.id, data }, { onSuccess: () => toast.success(t('anmeldungenUpdated')) })}
                             onApprove={() => handleApprove(reg)}
                             onReject={() => openRejectModal(reg)}
                             onPreviewFile={setPreviewFile}

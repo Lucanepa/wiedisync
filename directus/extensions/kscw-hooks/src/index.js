@@ -534,7 +534,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
                '',
                'event', e.id::text, et.teams_id, false
         FROM events e
-        JOIN events_teams et ON et.events_id = e.id
+        JOIN events_teams_1 et ON et.events_id = e.id
         JOIN member_teams mt ON mt.team = et.teams_id
         WHERE e.start_date = ?::date
       `, [tomorrowStr])

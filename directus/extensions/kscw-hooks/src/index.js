@@ -822,6 +822,142 @@ export default ({ action, filter, init, schedule }, { services, database, logger
   }
   function regT(locale) { return REG_T[locale] || REG_T.de }
 
+  // ── Helper: season string (e.g. "2025/26") ─────────────────────
+  function getCurrentSeason() {
+    const now = new Date()
+    const y = now.getFullYear()
+    const m = now.getMonth()
+    return m < 8 ? `${y - 1}/${String(y).slice(2)}` : `${y}/${String(y + 1).slice(2)}`
+  }
+
+  // ── Map registration licence strings to member licence codes ───
+  function mapLicences(lizenzStr, membershipType) {
+    if (!lizenzStr) return []
+    const parts = lizenzStr.split(',').map(s => s.trim().toLowerCase())
+    const mapped = []
+    for (const p of parts) {
+      if (membershipType === 'volleyball') {
+        if (p.includes('schreiber') || p === 'scorer') mapped.push('scorer_vb')
+        if (p.includes('schiedsrichter') || p === 'referee') mapped.push('referee_vb')
+      } else if (membershipType === 'basketball') {
+        if (p.includes('otr 1') || p === 'otr1') mapped.push('otr1_bb')
+        if (p.includes('otr 2') || p === 'otr2') mapped.push('otr2_bb')
+        if (p.includes('otn')) mapped.push('otn_bb')
+        if (p.includes('schiedsrichter') || p === 'referee') mapped.push('referee_bb')
+      }
+    }
+    return [...new Set(mapped)]
+  }
+
+  // ── Create or link member from approved registration ───────────
+  async function createMemberFromRegistration(db, reg, log) {
+    const email = reg.email.toLowerCase().trim()
+    const rolle = (reg.rolle || '').toLowerCase()
+
+    // 1. Check if member already exists
+    const existingMember = await db('members').where('email', email).first()
+
+    let memberId
+    if (existingMember) {
+      memberId = existingMember.id
+      log.info({ msg: 'Member already exists, linking registration', memberId, email })
+      // Update fields that might be missing
+      const updates = {}
+      if (!existingMember.phone && reg.telefon_mobil) updates.phone = reg.telefon_mobil
+      if (!existingMember.adresse && reg.adresse) updates.adresse = reg.adresse
+      if (!existingMember.plz && reg.plz) updates.plz = reg.plz
+      if (!existingMember.ort && reg.ort) updates.ort = reg.ort
+      if (!existingMember.nationalitaet && reg.nationalitaet) updates.nationalitaet = reg.nationalitaet
+      if (!existingMember.geschlecht && reg.geschlecht) updates.geschlecht = reg.geschlecht
+      if (!existingMember.ahv_nummer && reg.ahv_nummer) updates.ahv_nummer = reg.ahv_nummer
+      if (!existingMember.beitragskategorie && reg.beitragskategorie) updates.beitragskategorie = reg.beitragskategorie
+      // Merge licences
+      const existingLicences = existingMember.licences || []
+      const newLicences = mapLicences(reg.lizenz, reg.membership_type)
+      const mergedLicences = [...new Set([...existingLicences, ...newLicences])]
+      if (mergedLicences.length > existingLicences.length) {
+        updates.licences = JSON.stringify(mergedLicences)
+      }
+      if (Object.keys(updates).length) {
+        await db('members').where('id', memberId).update(updates)
+      }
+    } else {
+      // 2. Create new shell member
+      const shellExpires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+      const licences = mapLicences(reg.lizenz, reg.membership_type)
+      const lang = reg.locale === 'en' ? 'english' : 'german'
+
+      const [member] = await db('members').insert({
+        first_name: reg.vorname,
+        last_name: reg.nachname,
+        email,
+        phone: reg.telefon_mobil || null,
+        adresse: reg.adresse || null,
+        plz: reg.plz || null,
+        ort: reg.ort || null,
+        birthdate: reg.geburtsdatum || null,
+        nationalitaet: reg.nationalitaet || null,
+        geschlecht: reg.geschlecht || null,
+        ahv_nummer: reg.ahv_nummer || null,
+        beitragskategorie: reg.beitragskategorie || null,
+        licences: JSON.stringify(licences),
+        shell: true,
+        shell_expires: shellExpires,
+        shell_reminder_sent: false,
+        wiedisync_active: false,
+        coach_approved_team: true,
+        kscw_membership_active: true,
+        birthdate_visibility: 'hidden',
+        language: lang,
+        role: JSON.stringify(['user']),
+      }).returning('id')
+
+      memberId = member.id || member
+      log.info({ msg: 'Shell member created from registration', memberId, email })
+    }
+
+    // 3. Link to team(s) based on rolle
+    if (reg.team && reg.membership_type !== 'passive') {
+      const teamNames = reg.team.split(',').map(t => t.trim()).filter(Boolean)
+      const teamRows = await db('teams')
+        .whereIn('name', teamNames).andWhere('active', true).select('id', 'name')
+
+      const season = getCurrentSeason()
+
+      for (const team of teamRows) {
+        if (rolle.includes('trainer') || rolle.includes('coach')) {
+          // Coach → teams_members_3
+          const exists = await db('teams_members_3')
+            .where({ teams_id: team.id, members_id: memberId }).first()
+          if (!exists) {
+            await db('teams_members_3').insert({ teams_id: team.id, members_id: memberId })
+            log.info({ msg: 'Added as coach', memberId, team: team.name })
+          }
+        } else if (rolle.includes('teamverantwortlich') || rolle.includes('team responsible')) {
+          // Team Responsible → teams_members_4
+          const exists = await db('teams_members_4')
+            .where({ teams_id: team.id, members_id: memberId }).first()
+          if (!exists) {
+            await db('teams_members_4').insert({ teams_id: team.id, members_id: memberId })
+            log.info({ msg: 'Added as team responsible', memberId, team: team.name })
+          }
+        } else if (rolle.includes('spieler') || rolle.includes('player') || !rolle || rolle.includes('andere') || rolle.includes('other')) {
+          // Player → member_teams
+          const exists = await db('member_teams')
+            .where({ member: memberId, team: team.id, season }).first()
+          if (!exists) {
+            await db('member_teams').insert({
+              member: memberId, team: team.id, season, guest_level: 0,
+            })
+            log.info({ msg: 'Added to team roster', memberId, team: team.name, season })
+          }
+        }
+      }
+    }
+
+    return memberId
+  }
+
   action('items.update', async ({ collection, keys, payload }, { schema }) => {
     if (collection !== 'registrations') return
     if (payload.status !== 'approved' && payload.status !== 'rejected') return
@@ -854,7 +990,15 @@ export default ({ action, filter, init, schedule }, { services, database, logger
           await mail.send({ to: reg.email, subject: l.approvedSubject, html: approvalHtml })
           log.info({ msg: 'Approval confirmation sent to user', id, email: reg.email })
 
-          // ── 2. CSV email to sport-specific admins ──
+          // ── 2. Create or link member in Directus ──
+          try {
+            await createMemberFromRegistration(database, reg, log)
+          } catch (memberErr) {
+            log.error({ msg: `Member creation failed: ${memberErr.message}`, id, stack: memberErr.stack })
+            // Don't block the rest of the approval flow
+          }
+
+          // ── 3. CSV email to sport-specific admins ──
           const csv = buildRegistrationCSV(reg)
           const csvBuffer = Buffer.from(csv, 'utf-8')
           const filename = `anmeldung_${reg.nachname}_${reg.vorname}_${reg.reference_number}.csv`

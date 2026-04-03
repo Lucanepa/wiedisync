@@ -859,11 +859,25 @@ export default ({ action, filter, init, schedule }, { services, database, logger
           const csvBuffer = Buffer.from(csv, 'utf-8')
           const filename = `anmeldung_${reg.nachname}_${reg.vorname}_${reg.reference_number}.csv`
           const recipients = getApprovalRecipients(reg.membership_type)
+          const adminCsvBody = buildInfoCard([
+            { label: 'Name', value: `${reg.vorname} ${reg.nachname}`, halfWidth: true },
+            { label: 'Typ', value: reg.membership_type, halfWidth: true },
+            { label: 'Team', value: reg.team || '-', halfWidth: true },
+            { label: 'E-Mail', value: reg.email, halfWidth: true },
+            { label: 'Referenz', value: reg.reference_number },
+          ]) + `<div style="font-size:13px;color:#94a3b8;line-height:1.7;margin-top:12px;text-align:justify"><p>Die Anmeldung wurde bestätigt. Die CSV-Datei für den ClubDesk-Import ist im Anhang.</p></div>`
+          const adminCsvHtml = buildEmailLayout(adminCsvBody, {
+            title: 'Anmeldung bestätigt',
+            subtitle: `${reg.vorname} ${reg.nachname} — ${reg.membership_type}`,
+            sport,
+            ctaUrl: 'https://wiedisync.kscw.ch/admin/anmeldungen',
+            ctaLabel: 'Im Admin öffnen',
+          })
           await mail.send({
             to: recipients.to,
             ...(recipients.cc.length ? { cc: recipients.cc } : {}),
             subject: `[KSCW] Anmeldung bestätigt: ${reg.vorname} ${reg.nachname} (${reg.membership_type})`,
-            html: `<p>Die Anmeldung von <strong>${reg.vorname} ${reg.nachname}</strong> (${reg.membership_type}) wurde bestätigt.</p><p>Die CSV-Datei für den ClubDesk-Import ist im Anhang.</p><p>Referenz: ${reg.reference_number}</p>`,
+            html: adminCsvHtml,
             attachments: [{ filename, content: csvBuffer, contentType: 'text/csv; charset=utf-8' }],
           })
           log.info({ msg: 'Approval CSV sent', id, ref: reg.reference_number })
@@ -890,10 +904,20 @@ export default ({ action, filter, init, schedule }, { services, database, logger
                 const mainRecipientEmails = [...recipients.to, ...recipients.cc].map(e => e.toLowerCase())
                 const extraEmails = coachTrEmails.filter(e => !mainRecipientEmails.includes(e))
                 if (extraEmails.length) {
+                  const coachBody = buildInfoCard([
+                    { label: 'Name', value: `${reg.vorname} ${reg.nachname}`, halfWidth: true },
+                    { label: 'Team', value: reg.team, halfWidth: true },
+                    { label: 'E-Mail', value: reg.email },
+                  ]) + `<div style="font-size:13px;color:#94a3b8;line-height:1.7;margin-top:12px"><p>Ein neues Mitglied wurde für dein Team bestätigt.</p></div>`
+                  const coachHtml = buildEmailLayout(coachBody, {
+                    title: 'Neues Mitglied',
+                    subtitle: `${reg.vorname} ${reg.nachname}`,
+                    sport,
+                  })
                   await mail.send({
                     to: extraEmails,
                     subject: `[KSCW] Neues Mitglied bestätigt: ${reg.vorname} ${reg.nachname}`,
-                    html: `<p>Ein neues Mitglied wurde für dein Team bestätigt:</p><ul><li><strong>Name:</strong> ${reg.vorname} ${reg.nachname}</li><li><strong>Team:</strong> ${reg.team}</li><li><strong>E-Mail:</strong> ${reg.email}</li></ul>`,
+                    html: coachHtml,
                   })
                   log.info({ msg: 'Coach/TR notification sent', id, emails: extraEmails.length })
                 }

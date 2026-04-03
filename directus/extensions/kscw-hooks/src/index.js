@@ -787,8 +787,9 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       approvedSubject: 'Anmeldung bestätigt — KSC Wiedikon',
       approvedGreeting: name => `Hallo ${name},`,
       approvedBody: `<p style="text-align:justify">Deine Anmeldung wurde geprüft und bestätigt. Willkommen beim KSC Wiedikon!</p>
-        <p style="text-align:justify">Du erhältst in den nächsten Tagen weitere Informationen zu deinem Team und den nächsten Schritten.</p>
+        <p style="text-align:justify"><strong style="color:#e2e8f0">Nächster Schritt:</strong> Erstelle dein Konto auf unserer Vereinsplattform WiediSync, um Spielpläne, Trainings und Teaminfos zu sehen.</p>
         <p style="text-align:justify">Bei Fragen erreichst du uns unter <a href="mailto:kontakt@kscw.ch" style="color:#4A55A2">kontakt@kscw.ch</a>.</p>`,
+      approvedCtaLabel: 'Konto erstellen',
       approvedFooter: 'Sportliche Grüsse — KSC Wiedikon',
       rejectedTitle: 'Anmeldung abgelehnt',
       rejectedSubtitle: 'KSC Wiedikon',
@@ -806,8 +807,9 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       approvedSubject: 'Registration Approved — KSC Wiedikon',
       approvedGreeting: name => `Hello ${name},`,
       approvedBody: `<p style="text-align:justify">Your registration has been reviewed and approved. Welcome to KSC Wiedikon!</p>
-        <p style="text-align:justify">You will receive more information about your team and next steps in the coming days.</p>
+        <p style="text-align:justify"><strong style="color:#e2e8f0">Next step:</strong> Create your account on our club platform WiediSync to see schedules, trainings, and team info.</p>
         <p style="text-align:justify">For questions, reach us at <a href="mailto:kontakt@kscw.ch" style="color:#4A55A2">kontakt@kscw.ch</a>.</p>`,
+      approvedCtaLabel: 'Create account',
       approvedFooter: 'Best regards — KSC Wiedikon',
       rejectedTitle: 'Registration Rejected',
       rejectedSubtitle: 'KSC Wiedikon',
@@ -985,7 +987,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
           // ── 1. Confirmation email to user ──
           const approvalHtml = buildEmailLayout(
             summaryCard + `<div style="font-size:13px;color:#94a3b8;line-height:1.7;margin-top:12px">${l.approvedBody}</div>`,
-            { title: l.approvedTitle, subtitle: l.approvedSubtitle, sport, greeting: l.approvedGreeting(reg.vorname), footerExtra: l.approvedFooter }
+            { title: l.approvedTitle, subtitle: l.approvedSubtitle, sport, greeting: l.approvedGreeting(reg.vorname), footerExtra: l.approvedFooter, ctaUrl: `${FRONTEND_URL}/signup`, ctaLabel: l.approvedCtaLabel }
           )
           await mail.send({ to: reg.email, subject: l.approvedSubject, html: approvalHtml })
           log.info({ msg: 'Approval confirmation sent to user', id, email: reg.email })

@@ -1024,7 +1024,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
             ...(recipients.cc.length ? { cc: recipients.cc } : {}),
             subject: `[KSCW] Anmeldung bestätigt: ${reg.vorname} ${reg.nachname} (${reg.membership_type})`,
             html: adminCsvHtml,
-            attachments: [{ filename, content: csvBuffer, contentType: 'text/csv; charset=utf-8' }],
+            attachments: [{ filename, content: csvBuffer, contentType: 'application/vnd.ms-excel' }],
           })
           log.info({ msg: 'Approval CSV sent', id, ref: reg.reference_number })
 

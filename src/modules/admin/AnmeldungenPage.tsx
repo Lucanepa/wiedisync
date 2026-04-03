@@ -266,7 +266,7 @@ export default function AnmeldungenPage() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-          className="rounded-md border border-gray-200 bg-transparent px-3 py-2 text-sm dark:border-gray-600 dark:text-gray-100"
+          className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
         >
           <option value="all">{t('anmeldungenAllStatuses')}</option>
           <option value="pending">{t('anmeldungenPending')}</option>

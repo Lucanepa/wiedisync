@@ -978,29 +978,60 @@ export default ({ action, filter, init, schedule }, { services, database, logger
 
         const summaryCard = buildInfoCard([
           { label: l.name, value: `${reg.vorname} ${reg.nachname}`, halfWidth: true },
-          { label: l.sport, value: reg.membership_type, halfWidth: true },
+          { label: l.sport, value: reg.membership_type.charAt(0).toUpperCase() + reg.membership_type.slice(1), halfWidth: true },
           { label: l.team, value: reg.team || '-', halfWidth: true },
           { label: l.ref, value: reg.reference_number, halfWidth: true },
         ])
 
         if (payload.status === 'approved') {
-          // ── 1. Confirmation email to user ──
+          // ── 1. Gather coach/TR emails for CC ──
+          let coachTrCc = []
+          if (reg.team && reg.membership_type !== 'passive') {
+            try {
+              const teamNames = reg.team.split(',').map(t => t.trim()).filter(Boolean)
+              const teamRows = await database('teams')
+                .whereIn('name', teamNames).andWhere('active', true).select('id')
+              if (teamRows.length) {
+                const teamIds = teamRows.map(r => r.id)
+                const coachRows = await database('teams_members_3')
+                  .whereIn('teams_id', teamIds)
+                  .join('members', 'teams_members_3.members_id', 'members.id')
+                  .join('directus_users', 'members.user', 'directus_users.id')
+                  .whereNotNull('directus_users.email').select('directus_users.email')
+                const trRows = await database('teams_members_4')
+                  .whereIn('teams_id', teamIds)
+                  .join('members', 'teams_members_4.members_id', 'members.id')
+                  .join('directus_users', 'members.user', 'directus_users.id')
+                  .whereNotNull('directus_users.email').select('directus_users.email')
+                coachTrCc = [...new Set([...coachRows, ...trRows].map(r => r.email.toLowerCase()))]
+                  .filter(e => e !== reg.email.toLowerCase())
+              }
+            } catch (teamErr) {
+              log.warn({ msg: `Coach/TR lookup failed: ${teamErr.message}`, id })
+            }
+          }
+
+          // ── 2. Confirmation email to user (CC coach/TR) ──
           const approvalHtml = buildEmailLayout(
             summaryCard + `<div style="font-size:13px;color:#94a3b8;line-height:1.7;margin-top:12px">${l.approvedBody}</div>`,
             { title: l.approvedTitle, subtitle: l.approvedSubtitle, sport, greeting: l.approvedGreeting(reg.vorname), footerExtra: l.approvedFooter, ctaUrl: `${FRONTEND_URL}/signup`, ctaLabel: l.approvedCtaLabel }
           )
-          await mail.send({ to: reg.email, subject: l.approvedSubject, html: approvalHtml })
-          log.info({ msg: 'Approval confirmation sent to user', id, email: reg.email })
+          await mail.send({
+            to: reg.email,
+            ...(coachTrCc.length ? { cc: coachTrCc } : {}),
+            subject: l.approvedSubject,
+            html: approvalHtml,
+          })
+          log.info({ msg: 'Approval confirmation sent', id, email: reg.email, cc: coachTrCc.length })
 
-          // ── 2. Create or link member in Directus ──
+          // ── 3. Create or link member in Directus ──
           try {
             await createMemberFromRegistration(database, reg, log)
           } catch (memberErr) {
             log.error({ msg: `Member creation failed: ${memberErr.message}`, id, stack: memberErr.stack })
-            // Don't block the rest of the approval flow
           }
 
-          // ── 3. CSV email to sport-specific admins ──
+          // ── 4. CSV email to sport-specific admins ──
           const csv = buildRegistrationCSV(reg)
           const csvBuffer = Buffer.from(csv, 'utf-8')
           const filename = `anmeldung_${reg.nachname}_${reg.vorname}_${reg.reference_number}.csv`
@@ -1027,51 +1058,6 @@ export default ({ action, filter, init, schedule }, { services, database, logger
             attachments: [{ filename, content: csvBuffer, contentType: 'application/vnd.ms-excel' }],
           })
           log.info({ msg: 'Approval CSV sent', id, ref: reg.reference_number })
-
-          // ── 3. Lightweight notification to coach + TR ──
-          if (reg.team && reg.membership_type !== 'passive') {
-            try {
-              const teamNames = reg.team.split(',').map(t => t.trim()).filter(Boolean)
-              const teamRows = await database('teams')
-                .whereIn('name', teamNames).andWhere('active', true).select('id', 'name')
-              if (teamRows.length) {
-                const teamIds = teamRows.map(r => r.id)
-                const coachRows = await database('teams_members_3')
-                  .whereIn('teams_id', teamIds)
-                  .join('members', 'teams_members_3.members_id', 'members.id')
-                  .join('directus_users', 'members.user', 'directus_users.id')
-                  .whereNotNull('directus_users.email').select('directus_users.email')
-                const trRows = await database('teams_members_4')
-                  .whereIn('teams_id', teamIds)
-                  .join('members', 'teams_members_4.members_id', 'members.id')
-                  .join('directus_users', 'members.user', 'directus_users.id')
-                  .whereNotNull('directus_users.email').select('directus_users.email')
-                const coachTrEmails = [...new Set([...coachRows, ...trRows].map(r => r.email.toLowerCase()))]
-                const mainRecipientEmails = [...recipients.to, ...recipients.cc].map(e => e.toLowerCase())
-                const extraEmails = coachTrEmails.filter(e => !mainRecipientEmails.includes(e))
-                if (extraEmails.length) {
-                  const coachBody = buildInfoCard([
-                    { label: 'Name', value: `${reg.vorname} ${reg.nachname}`, halfWidth: true },
-                    { label: 'Team', value: reg.team, halfWidth: true },
-                    { label: 'E-Mail', value: reg.email },
-                  ]) + `<div style="font-size:13px;color:#94a3b8;line-height:1.7;margin-top:12px"><p>Ein neues Mitglied wurde für dein Team bestätigt.</p></div>`
-                  const coachHtml = buildEmailLayout(coachBody, {
-                    title: 'Neues Mitglied',
-                    subtitle: `${reg.vorname} ${reg.nachname}`,
-                    sport,
-                  })
-                  await mail.send({
-                    to: extraEmails,
-                    subject: `[KSCW] Neues Mitglied bestätigt: ${reg.vorname} ${reg.nachname}`,
-                    html: coachHtml,
-                  })
-                  log.info({ msg: 'Coach/TR notification sent', id, emails: extraEmails.length })
-                }
-              }
-            } catch (teamErr) {
-              log.warn({ msg: `Coach/TR notification failed: ${teamErr.message}`, id })
-            }
-          }
 
         } else if (payload.status === 'rejected') {
           // ── Rejection email to user ──

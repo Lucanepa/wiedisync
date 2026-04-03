@@ -20,6 +20,7 @@
  */
 
 import { logCronError, logWarning, logAuthDenial, cleanOldLogs, writeErrorLog } from '../../kscw-endpoints/src/error-log.js'
+import { initSentry } from '../../kscw-endpoints/src/sentry.js'
 
 // Frontend URL — env var or auto-detect from Directus PUBLIC_URL
 const FRONTEND_URL = process.env.FRONTEND_URL
@@ -133,6 +134,7 @@ async function verifyTurnstile(token) {
 }
 
 export default ({ action, filter, init, schedule }, { services, database, logger, getSchema }) => {
+  initSentry().catch(() => {})
   const log = logger.child({ extension: 'kscw-hooks' })
 
   // ── 0. Turnstile Middleware + Filter Hooks ─────────────────────

@@ -14,6 +14,14 @@ import fs from 'fs'
 import path from 'path'
 import crypto from 'crypto'
 
+let sentryPromise = null
+function getSentry() {
+  if (!sentryPromise) {
+    sentryPromise = import('./sentry.js').catch(() => null)
+  }
+  return sentryPromise
+}
+
 const LOG_DIR = process.env.ERROR_LOG_DIR || '/directus/logs'
 const MAX_AGE_DAYS = 30
 
@@ -44,6 +52,7 @@ export function writeErrorLog(entry) {
  * Drop-in companion to logEndpointError() — writes to file in addition to Directus logger.
  */
 export function logErrorToFile(endpoint, err, req) {
+  const status = err.status || 500
   writeErrorLog({
     level: (err.status && err.status < 500) ? 'warn' : 'error',
     project: 'wiedisync',
@@ -52,13 +61,22 @@ export function logErrorToFile(endpoint, err, req) {
     userId: req?.accountability?.user || null,
     isAdmin: req?.accountability?.admin || false,
     method: req?.method || null,
-    status: err.status || 500,
+    status,
     body: req?.body ? scrubPii(req.body) : undefined,
     params: req?.params || undefined,
     query: req?.query || undefined,
     error: err.message,
     stack: err.stack,
   })
+
+  if (status >= 500) {
+    getSentry().then(s => s?.captureException(err, {
+      endpoint,
+      userId: req?.accountability?.user,
+      method: req?.method,
+      status,
+    })).catch(() => {})
+  }
 }
 
 /**
@@ -90,6 +108,11 @@ export function logCronError(cronName, err, extra) {
     stack: err.stack,
     ...extra,
   })
+
+  getSentry().then(s => s?.captureException(err, {
+    cronName,
+    extra,
+  })).catch(() => {})
 }
 
 /**
@@ -103,6 +126,11 @@ export function logWarning(event, message, extra) {
     message,
     ...extra,
   })
+
+  getSentry().then(s => s?.captureMessage(message, 'warning', {
+    event,
+    extra,
+  })).catch(() => {})
 }
 
 /**

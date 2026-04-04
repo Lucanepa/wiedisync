@@ -32,7 +32,8 @@ export function useTeamAbsences(teamIds: string[], startDate: string, endDate: s
       const memberIdSet = new Set(memberTeams.map((mt) => mt.member))
 
       // Also include coaches and team_responsibles (they may not have member_teams records)
-      for (const teamId of teamIds) {
+      const validTeamIds = teamIds.filter((id) => id != null && id !== '' && id !== 'null' && id !== 'undefined')
+      for (const teamId of validTeamIds) {
         try {
           const team = await fetchItem<Record<string, unknown>>('teams', teamId)
           const coachIds = flattenMemberIds(team.coach)

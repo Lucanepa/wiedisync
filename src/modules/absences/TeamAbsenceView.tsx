@@ -146,15 +146,10 @@ export default function TeamAbsenceView({ teamIds }: TeamAbsenceViewProps) {
                     )}
                   </div>
                   <StatusBadge status={a.reason} />
-                  <div className="text-sm leading-tight text-gray-600 dark:text-gray-400">
-                    <div>{formatDate(a.start_date)}</div>
-                    {isMultiDay && (
-                      <>
-                        <div className="text-xs text-gray-400 dark:text-gray-500">{t('to', { defaultValue: 'to' })}</div>
-                        <div>{formatDate(a.end_date)}</div>
-                      </>
-                    )}
-                  </div>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    {formatDate(a.start_date)}
+                    {isMultiDay && ` – ${formatDate(a.end_date)}`}
+                  </span>
                   <span className="truncate text-sm text-gray-400">
                     {a.reason_detail || '—'}
                   </span>

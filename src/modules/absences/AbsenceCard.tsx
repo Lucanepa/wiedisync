@@ -24,20 +24,14 @@ export default function AbsenceCard({ absence, onEdit, onDelete, canEdit }: Abse
   const isMultiDay = absence.indefinite || absence.start_date !== absence.end_date
 
   const dateBlock = (
-    <div className="text-sm leading-tight text-gray-700 dark:text-gray-300">
-      <div>{formatDate(absence.start_date)}</div>
-      {absence.indefinite ? (
-        <>
-          <div className="text-xs text-gray-400 dark:text-gray-500">{t('to', { defaultValue: 'to' })}</div>
-          <div>{t('indefinite')}</div>
-        </>
-      ) : isMultiDay ? (
-        <>
-          <div className="text-xs text-gray-400 dark:text-gray-500">{t('to', { defaultValue: 'to' })}</div>
-          <div>{formatDate(absence.end_date)}</div>
-        </>
-      ) : null}
-    </div>
+    <span className="text-sm text-gray-700 dark:text-gray-300">
+      {formatDate(absence.start_date)}
+      {absence.indefinite
+        ? ` – ${t('indefinite')}`
+        : isMultiDay
+          ? ` – ${formatDate(absence.end_date)}`
+          : null}
+    </span>
   )
 
   return (
@@ -81,14 +75,9 @@ export default function AbsenceCard({ absence, onEdit, onDelete, canEdit }: Abse
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 sm:hidden">{absence.reason_detail}</p>
       )}
       {/* Mobile: dates as full-width bottom row */}
-      <div className="mt-2 flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 sm:hidden">
-        <span>{formatDate(absence.start_date)}</span>
-        {isMultiDay && (
-          <>
-            <span className="text-xs text-gray-400 dark:text-gray-500">→</span>
-            <span>{absence.indefinite ? t('indefinite') : formatDate(absence.end_date)}</span>
-          </>
-        )}
+      <div className="mt-2 text-sm text-gray-700 dark:text-gray-300 sm:hidden">
+        {formatDate(absence.start_date)}
+        {isMultiDay && ` – ${absence.indefinite ? t('indefinite') : formatDate(absence.end_date)}`}
       </div>
     </div>
   )

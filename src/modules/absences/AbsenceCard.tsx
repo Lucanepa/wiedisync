@@ -5,13 +5,14 @@ import type { Absence } from '../../types'
 
 interface AbsenceCardProps {
   absence: Absence
-  onEdit: (absence: Absence) => void
-  onDelete: (absenceId: string) => void
-  showMemberName?: boolean
-  canEdit: boolean
+  onEdit?: (absence: Absence) => void
+  onDelete?: (absenceId: string) => void
+  /** Show member name (for team view) */
+  memberName?: string
+  canEdit?: boolean
 }
 
-export default function AbsenceCard({ absence, onEdit, onDelete, canEdit }: AbsenceCardProps) {
+export default function AbsenceCard({ absence, onEdit, onDelete, memberName, canEdit }: AbsenceCardProps) {
   const { t } = useTranslation('absences')
 
   const affectsLabels: Record<string, string> = {
@@ -23,24 +24,14 @@ export default function AbsenceCard({ absence, onEdit, onDelete, canEdit }: Abse
 
   const isMultiDay = absence.indefinite || absence.start_date !== absence.end_date
 
-  const dateBlock = (
-    <span className="text-sm text-gray-700 dark:text-gray-300">
-      {formatDate(absence.start_date)}
-      {absence.indefinite
-        ? ` – ${t('indefinite')}`
-        : isMultiDay
-          ? ` – ${formatDate(absence.end_date)}`
-          : null}
-    </span>
-  )
-
   return (
     <div className="rounded-lg border dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3">
-      {/* Top row: badge, affects, detail, actions */}
+      {/* Top row: name (if team view), badge, affects, detail, actions */}
       <div className="flex items-start gap-3">
+        {memberName && (
+          <span className="text-[0.8rem] font-medium text-gray-900 dark:text-gray-100">{memberName}</span>
+        )}
         <StatusBadge status={absence.reason} />
-        {/* Desktop: dates inline */}
-        <div className="hidden sm:block">{dateBlock}</div>
         {absence.affects && absence.affects.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {absence.affects.map((a) => (
@@ -53,7 +44,7 @@ export default function AbsenceCard({ absence, onEdit, onDelete, canEdit }: Abse
         {absence.reason_detail && (
           <span className="hidden text-sm text-gray-500 dark:text-gray-400 sm:inline">{absence.reason_detail}</span>
         )}
-        {canEdit && (
+        {canEdit && onEdit && onDelete && (
           <div className="ml-auto flex items-start gap-2">
             <button
               onClick={() => onEdit(absence)}
@@ -74,10 +65,14 @@ export default function AbsenceCard({ absence, onEdit, onDelete, canEdit }: Abse
       {absence.reason_detail && (
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 sm:hidden">{absence.reason_detail}</p>
       )}
-      {/* Mobile: dates as full-width bottom row */}
-      <div className="mt-2 text-sm text-gray-700 dark:text-gray-300 sm:hidden">
+      {/* Date row — full width at bottom */}
+      <div className="mt-1 text-sm text-gray-600 dark:text-gray-400">
         {formatDate(absence.start_date)}
-        {isMultiDay && ` – ${absence.indefinite ? t('indefinite') : formatDate(absence.end_date)}`}
+        {absence.indefinite
+          ? ` – ${t('indefinite')}`
+          : isMultiDay
+            ? ` – ${formatDate(absence.end_date)}`
+            : null}
       </div>
     </div>
   )

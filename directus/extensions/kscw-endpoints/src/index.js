@@ -1187,7 +1187,82 @@ export default {
           entries = entries.filter(e => e._annotation?.status !== 'solved')
         }
 
-        // Apply filters
+        // ── Enrich with human-readable context ──────────────────
+        // Batch-lookup userIds → member name, role, teams/sports
+        const uniqueUserIds = [...new Set(entries.map(e => e.userId).filter(Boolean))]
+        const userMap = {}
+        if (uniqueUserIds.length) {
+          const members = await database('members')
+            .select('members.id as member_id', 'members.first_name', 'members.last_name', 'members.role', 'members.user')
+            .whereIn('members.user', uniqueUserIds)
+          const memberIds = members.map(m => m.member_id)
+          let teamsByMember = {}
+          if (memberIds.length) {
+            const mt = await database('member_teams')
+              .join('teams', 'member_teams.team', 'teams.id')
+              .select('member_teams.member', 'teams.name as team_name', 'teams.sport')
+              .whereIn('member_teams.member', memberIds)
+            for (const row of mt) {
+              if (!teamsByMember[row.member]) teamsByMember[row.member] = []
+              teamsByMember[row.member].push({ team: row.team_name, sport: row.sport })
+            }
+          }
+          for (const m of members) {
+            userMap[m.user] = {
+              name: `${m.first_name} ${m.last_name}`,
+              role: m.role,
+              teams: teamsByMember[m.member_id] || [],
+            }
+          }
+        }
+
+        // Batch-lookup recordIds for known collections
+        const recordGroups = {}
+        for (const e of entries) {
+          if (e.recordId && e.recordId !== 'null' && e.collection) {
+            if (!recordGroups[e.collection]) recordGroups[e.collection] = new Set()
+            recordGroups[e.collection].add(e.recordId)
+          }
+        }
+        const recordMap = {}
+        const LABEL_QUERIES = {
+          teams:   { fields: ['name', 'sport'] },
+          members: { fields: ['first_name', 'last_name'] },
+          games:   { fields: ['home_team', 'away_team', 'date'] },
+        }
+        for (const [col, ids] of Object.entries(recordGroups)) {
+          const cfg = LABEL_QUERIES[col]
+          if (!cfg) continue
+          try {
+            const rows = await database(col).select('id', ...cfg.fields).whereIn('id', [...ids])
+            for (const r of rows) {
+              let label, sport
+              if (col === 'teams') {
+                label = r.name; sport = r.sport
+              } else if (col === 'members') {
+                label = `${r.first_name} ${r.last_name}`
+              } else if (col === 'games') {
+                label = `${r.home_team || '?'} vs ${r.away_team || '?'}`
+              }
+              recordMap[`${col}:${r.id}`] = { label, ...(sport ? { sport } : {}) }
+            }
+          } catch { /* collection might not exist or have different schema */ }
+        }
+
+        // Attach _context to each entry
+        entries = entries.map(e => {
+          const ctx = {}
+          if (e.userId && userMap[e.userId]) {
+            ctx.user = userMap[e.userId]
+          }
+          const rk = e.recordId && e.recordId !== 'null' && e.collection ? `${e.collection}:${e.recordId}` : null
+          if (rk && recordMap[rk]) {
+            ctx.record = recordMap[rk]
+          }
+          return Object.keys(ctx).length ? { ...e, _context: ctx } : e
+        })
+
+        // Apply filters (after enrichment so search covers _context fields)
         if (levelFilter) entries = entries.filter(e => e.level === levelFilter)
         if (endpointFilter) entries = entries.filter(e => e.endpoint?.includes(endpointFilter))
         if (userIdFilter) entries = entries.filter(e => e.userId === userIdFilter)

@@ -138,7 +138,7 @@ export default function TableBrowser({ collections, loadingCollections }: TableB
           try {
             const res = await fetchItems<Record<string, unknown>>(colName, {
               filter: { id: { _in: batch } },
-              fields: ['id', 'name', 'first_name', 'last_name', 'full_name', 'title', 'email'],
+              fields: ['*'],
               limit: 50,
             })
             for (const rec of res) {

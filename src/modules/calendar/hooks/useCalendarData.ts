@@ -278,7 +278,7 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
   })
   const teamMemberLinks = teamMemberLinksRaw ?? []
 
-  const { data: absencesRaw, isLoading: absencesLoading } = useCollection<Absence & { member?: { first_name: string; last_name: string; name: string } | string }>('absences', {
+  const { data: absencesRaw, isLoading: absencesLoading } = useCollection<Absence & { member?: { first_name: string; last_name: string } | string }>('absences', {
     enabled: fetchAbsences,
     filter: fetchAbsences
       ? { _and: [{ end_date: { _gte: fetchRange.start } }, { start_date: { _lte: fetchRange.end } }] }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import Modal from '@/components/Modal'
 import { useAuth } from '../../hooks/useAuth'
@@ -11,8 +11,8 @@ import DatePicker from '@/components/ui/DatePicker'
 import SearchableSelect from '@/components/ui/SearchableSelect'
 import { Checkbox } from '@/components/ui/checkbox'
 import AffectsMultiSelect from '@/components/AffectsMultiSelect'
-import type { Absence, Member, MemberTeam } from '../../types'
-import { asObj, memberName } from '../../utils/relations'
+import type { Absence, Member } from '../../types'
+import { memberName } from '../../utils/relations'
 
 interface AbsenceFormProps {
   open: boolean
@@ -23,43 +23,18 @@ interface AbsenceFormProps {
 
 export default function AbsenceForm({ open, absence, onSave, onCancel }: AbsenceFormProps) {
   const { t } = useTranslation('absences')
-  const { user, coachTeamIds } = useAuth()
-  const { effectiveIsCoach, effectiveIsAdmin } = useAdminMode()
+  const { user } = useAuth()
+  const { effectiveIsAdmin } = useAdminMode()
   const { create, update, isLoading } = useMutation<Absence>('absences')
-  // Admins: fetch all active members directly
+  // Admins: fetch all active members so they can create absences on behalf of others
   const { data: allMembersRaw } = useCollection<Member>('members', {
     filter: { kscw_membership_active: { _eq: true } },
     sort: ['last_name'],
     all: true,
-    fields: ['id', 'first_name', 'last_name', 'name'],
+    fields: ['id', 'first_name', 'last_name'],
     enabled: effectiveIsAdmin,
   })
-  const allMembers = allMembersRaw ?? []
-
-  // Coaches: fetch team members via member_teams with expanded member data
-  const { data: memberTeamsRaw, error: memberTeamsError } = useCollection<MemberTeam>('member_teams', {
-    filter: coachTeamIds.length > 0 ? { team: { _in: coachTeamIds } } : { id: { _eq: -1 } },
-    all: true,
-    fields: ['*', 'member.*'],
-    enabled: effectiveIsCoach && !effectiveIsAdmin && coachTeamIds.length > 0,
-  })
-  const memberTeams = memberTeamsRaw ?? []
-
-  // Build visible members: admins see all, coaches see their team members
-  const visibleMembers = useMemo(() => {
-    if (effectiveIsAdmin) return allMembers
-    // Deduplicate members (same member on multiple teams)
-    const seen = new Set<string>()
-    const members: Member[] = []
-    for (const mt of memberTeams) {
-      const m = asObj<Member>(mt.member)
-      if (m && !seen.has(m.id)) {
-        seen.add(m.id)
-        members.push(m)
-      }
-    }
-    return members.sort((a, b) => (a.last_name ?? '').localeCompare(b.last_name ?? ''))
-  }, [allMembers, memberTeams, effectiveIsAdmin])
+  const visibleMembers = allMembersRaw ?? []
 
   const [memberId, setMemberId] = useState('')
   const [startDate, setStartDate] = useState('')
@@ -95,7 +70,7 @@ export default function AbsenceForm({ open, absence, onSave, onCancel }: Absence
     e.preventDefault()
     setValidationError('')
 
-    if (effectiveIsCoach && !memberId) {
+    if (effectiveIsAdmin && !memberId) {
       setValidationError(t('memberRequired'))
       return
     }
@@ -143,14 +118,13 @@ export default function AbsenceForm({ open, absence, onSave, onCancel }: Absence
       size="md"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        {effectiveIsCoach && (
+        {effectiveIsAdmin && (
           <SearchableSelect
             label={t('member')}
             placeholder={t('common:select')}
             value={memberId}
             onChange={setMemberId}
             options={visibleMembers.map((m) => ({ value: m.id, label: memberName(m) || '—' }))}
-            error={memberTeamsError ? t('common:errorLoading') : undefined}
           />
         )}
 

@@ -49,10 +49,10 @@ export default function TemplateParamForm({ params, onRun, isRunning }: Template
 
     uniqueCollections.forEach(async (collection) => {
       try {
-        const records = await fetchAllItems(collection, { sort: ['name'], fields: ['id', 'name'] })
+        const records = await fetchAllItems(collection, { fields: ['*'] })
         const options: RelationOption[] = records.map((r) => ({
           id: String(r['id']),
-          name: String(r['name'] ?? r['id']),
+          name: String(r['name'] ?? ([r['last_name'], r['first_name']].filter(Boolean).join(' ') || r['title'] || r['id'])),
         }))
         setRelationOptions((prev) => ({ ...prev, [collection]: options }))
       } catch {

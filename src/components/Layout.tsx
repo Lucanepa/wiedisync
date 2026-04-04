@@ -6,6 +6,7 @@ import { useTheme } from '../hooks/useTheme'
 import { useIsDesktop } from '../hooks/useMediaQuery'
 import { useNotifications } from '../hooks/useNotifications'
 import { getFileUrl } from '../utils/fileUrl'
+import { isAuthenticated } from '../lib/api'
 import AdminToggle from './AdminToggle'
 import { useAdminMode } from '../hooks/useAdminMode'
 import BottomTabBar from './BottomTabBar'
@@ -17,6 +18,7 @@ import SwitchToggle from '@/components/SwitchToggle'
 import LanguageDropdown from '@/components/LanguageDropdown'
 import TeamChip from './TeamChip'
 import { useCollection } from '../lib/query'
+import LoadingSpinner from './LoadingSpinner'
 import ProfileEditModal from '../modules/auth/ProfileEditModal'
 import type { MemberTeam, Team } from '../types'
 import { asObj } from '../utils/relations'
@@ -147,7 +149,7 @@ export default function Layout() {
   const [moreOpen, setMoreOpen] = useState(false)
   const [notifPanelOpen, setNotifPanelOpen] = useState(false)
   const sidebarExpanded = sidebarView !== 'closed'
-  const { user, isAdmin, isApproved, isProfileComplete, isSuperAdmin, logout } = useAuth()
+  const { user, isAdmin, isApproved, isProfileComplete, isSuperAdmin, isLoading, logout } = useAuth()
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications()
   const { theme, toggleTheme } = useTheme()
   const { t } = useTranslation('nav')
@@ -169,6 +171,12 @@ export default function Layout() {
     enabled: !!user,
   })
   const memberTeams = memberTeamsRaw ?? []
+
+  // Block rendering until auth initialization completes (prevents unauthenticated
+  // flash and API requests firing before token refresh finishes)
+  if (isLoading && isAuthenticated()) {
+    return <LoadingSpinner />
+  }
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">

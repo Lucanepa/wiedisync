@@ -1,0 +1,189 @@
+name: Security & Privacy Audit
+
+on:
+  push:
+    branches: [prod]
+  pull_request:
+    branches: [prod]
+
+jobs:
+  security-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for hardcoded secrets
+        run: |
+          echo "::group::Scanning for hardcoded secrets..."
+          FOUND=0
+
+          # API keys, tokens, passwords in source code (not test files, not lockfiles, not i18n)
+          if grep -rn --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --include='*.sql' --include='*.astro' \
+            -E "(password|secret|token|api_key|apikey|auth_token|access_token|private_key)\s*[:=]\s*['\"][A-Za-z0-9_\-\.\/\+]{16,}" \
+            --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git --exclude-dir='src/i18n' \
+            --exclude='*.test.*' --exclude='*.spec.*' --exclude='security-audit.yml' . ; then
+            echo "::warning::Possible hardcoded secrets found above"
+            FOUND=1
+          fi
+
+          # Bearer tokens in source (not in template/example strings)
+          if grep -rn --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' \
+            -E "Bearer [A-Za-z0-9_\-\.]{20,}" \
+            --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git \
+            --exclude='*.test.*' --exclude='*.spec.*' --exclude='security-audit.yml' . ; then
+            echo "::warning::Hardcoded Bearer token found"
+            FOUND=1
+          fi
+
+          # Private keys
+          if grep -rn -l "PRIVATE KEY" --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git . ; then
+            echo "::error::Private key file found in repository"
+            FOUND=1
+          fi
+
+          # .env files committed
+          if find . -name '.env' -not -path './node_modules/*' -not -path './.git/*' | grep -q .; then
+            echo "::error::.env file found in repository"
+            FOUND=1
+          fi
+
+          if [ "$FOUND" -eq 0 ]; then
+            echo "✓ No hardcoded secrets detected"
+          fi
+          echo "::endgroup::"
+
+      - name: Check for PII exposure
+        run: |
+          echo "::group::Scanning for PII in logs and error messages..."
+          FOUND=0
+
+          # Email addresses in error messages, console.log, Sentry context
+          if grep -rn --include='*.ts' --include='*.tsx' --include='*.js' \
+            -E "(console\.(log|error|warn|info)|captureException|captureMessage|setUser)\(.*\b(email|mail)\b" \
+            --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git \
+            --exclude='*.test.*' --exclude='*.spec.*' --exclude='security-audit.yml' . ; then
+            echo "::warning::Possible PII (email) in logging/error reporting — verify it's not sent to external services"
+            FOUND=1
+          fi
+
+          # User names in log/error strings
+          if grep -rn --include='*.ts' --include='*.tsx' --include='*.js' \
+            -E "(console\.(log|error|warn)|captureException)\(.*\b(first_name|last_name|full_name|username)\b" \
+            --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git \
+            --exclude='*.test.*' --exclude='*.spec.*' . ; then
+            echo "::warning::Possible PII (name) in logging — verify it's anonymized"
+            FOUND=1
+          fi
+
+          if [ "$FOUND" -eq 0 ]; then
+            echo "✓ No PII exposure detected in logging"
+          fi
+          echo "::endgroup::"
+
+      - name: Check for insecure patterns
+        run: |
+          echo "::group::Scanning for insecure code patterns..."
+          FOUND=0
+
+          # dangerouslySetInnerHTML without DOMPurify
+          while IFS= read -r file; do
+            if [ -n "$file" ] && ! grep -q 'DOMPurify\|dompurify\|sanitize' "$file"; then
+              echo "::warning file=$file::dangerouslySetInnerHTML used without DOMPurify sanitization"
+              FOUND=1
+            fi
+          done < <(grep -rln 'dangerouslySetInnerHTML' --include='*.tsx' --include='*.jsx' \
+            --exclude-dir=node_modules --exclude-dir=dist . 2>/dev/null)
+
+          # eval() usage
+          if grep -rn --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' \
+            -E '\beval\s*\(' \
+            --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git \
+            --exclude='*.test.*' --exclude='*.spec.*' . ; then
+            echo "::error::eval() usage found — potential code injection"
+            FOUND=1
+          fi
+
+          # innerHTML assignment (not React's dangerouslySetInnerHTML)
+          if grep -rn --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' \
+            -E '\.innerHTML\s*=' \
+            --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git \
+            --exclude='*.test.*' --exclude='*.spec.*' . ; then
+            echo "::warning::Direct innerHTML assignment found — verify input is sanitized"
+            FOUND=1
+          fi
+
+          # SQL injection: string concatenation in queries
+          if grep -rn --include='*.ts' --include='*.tsx' --include='*.js' \
+            -E "(query|execute|sql)\s*\(\s*['\`].*\\\$\{|\.query\s*\(\s*['\"].*\+\s*" \
+            --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git \
+            --exclude='*.test.*' --exclude='*.spec.*' . ; then
+            echo "::warning::Possible SQL injection via string concatenation — use parameterized queries"
+            FOUND=1
+          fi
+
+          if [ "$FOUND" -eq 0 ]; then
+            echo "✓ No insecure patterns detected"
+          fi
+          echo "::endgroup::"
+
+      - name: Check for missing auth on endpoints
+        run: |
+          echo "::group::Scanning for potentially unprotected endpoints..."
+          FOUND=0
+
+          # Directus endpoints without accountability/auth check
+          for f in directus/extensions/kscw-endpoints/src/*.js; do
+            [ -f "$f" ] || continue
+            basename=$(basename "$f")
+            # Skip index.js (just registers routes)
+            [ "$basename" = "index.js" ] && continue
+
+            if ! grep -q 'accountability\|getSchema\|req\.accountability' "$f"; then
+              echo "::warning file=$f::Endpoint file may lack authentication checks (no accountability reference)"
+              FOUND=1
+            fi
+          done
+
+          if [ "$FOUND" -eq 0 ]; then
+            echo "✓ All endpoint files reference accountability"
+          fi
+          echo "::endgroup::"
+
+      - name: Check for sensitive data in error responses
+        run: |
+          echo "::group::Scanning for sensitive data in error responses..."
+          FOUND=0
+
+          # Stack traces or detailed errors sent to client
+          if grep -rn --include='*.ts' --include='*.tsx' --include='*.js' \
+            -E "res\.(json|send|status)\(.*\b(stack|stackTrace|err\.message)\b" \
+            --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git \
+            --exclude='*.test.*' --exclude='*.spec.*' . ; then
+            echo "::warning::Error details (stack/message) may be exposed in API responses — use generic messages"
+            FOUND=1
+          fi
+
+          if [ "$FOUND" -eq 0 ]; then
+            echo "✓ No sensitive error exposure detected"
+          fi
+          echo "::endgroup::"
+
+      - name: Dependency vulnerability check
+        run: npm audit --omit=dev --audit-level=high 2>&1 || true
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Security & Privacy Audit Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Checks performed:" >> $GITHUB_STEP_SUMMARY
+          echo "- Hardcoded secrets (tokens, passwords, API keys, private keys)" >> $GITHUB_STEP_SUMMARY
+          echo "- PII exposure in logging and error reporting" >> $GITHUB_STEP_SUMMARY
+          echo "- Insecure patterns (XSS, eval, SQL injection)" >> $GITHUB_STEP_SUMMARY
+          echo "- Authentication on Directus endpoints" >> $GITHUB_STEP_SUMMARY
+          echo "- Sensitive data in error responses" >> $GITHUB_STEP_SUMMARY
+          echo "- Dependency vulnerabilities (npm audit)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Review any warnings above before merging to production." >> $GITHUB_STEP_SUMMARY

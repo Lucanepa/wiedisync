@@ -1,11 +1,11 @@
 export default {
   // Privacy Policy page
   privacyTitle: 'Politique de confidentialite',
-  lastUpdated: 'Derniere mise a jour : 15 mars 2026',
+  lastUpdated: 'Derniere mise a jour : 4 avril 2026',
 
   controllerTitle: '1. Responsable du traitement',
   controllerText:
-    'Luca Canepa\nZurich, Suisse\nEmail : luca.canepa@gmail.com',
+    'KSC Wiedikon\nSchrennengasse 7\n8003 Zürich\nEmail : kscw@kscw.ch',
 
   dataCollectedTitle: '2. Donnees collectees',
   dataAccountTitle: 'Donnees de compte (lors de l\'inscription)',
@@ -43,6 +43,10 @@ export default {
     'Basketplan (basketball.ch) — Nous recuperons des donnees de matchs et classements accessibles au public. Aucune donnee personnelle n\'est transmise a Basketplan.',
   thirdPartyMigadu:
     'Migadu (migadu.com) — Envoi d\'emails pour les notifications et rappels | Suisse | DPA',
+  thirdPartyHetzner:
+    'Hetzner Online GmbH — Hebergement backend (Directus) | Allemagne (centre de donnees de Nuremberg) | DPA, conforme au RGPD',
+  thirdPartySentry:
+    'Sentry (sentry.io) — Suivi des erreurs et monitoring de performance | UE (de.sentry.io, Allemagne) | DPA, conforme au RGPD. Aucune donnee personnelle (nom, email) n\'est transmise a Sentry.',
   thirdPartyCloudflareWorkers:
     'Cloudflare Workers — Traitement des notifications push | Mondial (siege aux USA) | DPA, Clauses contractuelles types, Swiss-US Data Privacy Framework',
 
@@ -52,7 +56,7 @@ export default {
 
   storageTitle: '6. Stockage des donnees',
   storageServer:
-    'Les donnees sont stockees sur un serveur auto-heberge en Suisse (Directus). Le frontend est servi via Cloudflare Pages.',
+    'Les donnees sont stockees sur un serveur de Hetzner Online GmbH en Allemagne (centre de donnees de Nuremberg) avec Directus. Le frontend est servi via Cloudflare Pages.',
   storageLocal:
     'Les preferences non personnelles suivantes sont stockees dans votre navigateur : schema de couleurs (clair/sombre) et parametre de langue. Pour les utilisateurs connectes, un jeton de session est stocke dans le navigateur.',
   storageNoCookies:
@@ -67,7 +71,7 @@ export default {
   rightsPortability: 'Droit a la portabilite — Vous pouvez recevoir vos donnees dans un format couramment utilise.',
   rightsObject: 'Droit d\'opposition — Vous pouvez vous opposer au traitement de vos donnees a tout moment.',
   rightsContact:
-    'Pour toute demande concernant vos droits, veuillez contacter : luca.canepa@gmail.com',
+    'Pour toute demande concernant vos droits, veuillez contacter : kscw@kscw.ch',
   rightsFDPIC:
     'Vous avez egalement le droit de deposer une plainte aupres du Prepose federal a la protection des donnees et a la transparence (PFPDT) : www.edoeb.admin.ch',
 
@@ -83,9 +87,17 @@ export default {
   impressumTitle: 'Mentions legales',
   impressumClubName: 'KSC Wiedikon',
   impressumAddress: 'Schrennengasse 7\n8003 Zurich',
-  impressumContact: 'Email : vorstand@kscw.ch',
+  impressumFullName: 'Kultur- und Sportclub Wiedikon',
+  impressumContact: 'Email : kscw@kscw.ch',
+  impressumWebsite: 'Site web : kscw.ch',
   impressumBoard: 'Responsable : Comite du KSC Wiedikon',
-  impressumHosting: 'Hebergement : Cloudflare Pages (frontend), serveur auto-heberge en Suisse (backend)',
+  impressumHosting: 'Hebergement : Cloudflare Pages (frontend), Hetzner Online GmbH, Allemagne (backend)',
+  impressumLinks: 'Responsabilite pour les liens',
+  impressumLinksText:
+    'Notre site contient des liens vers des sites web externes de tiers sur le contenu desquels nous n\'avons aucune influence. Le fournisseur respectif est toujours responsable du contenu des pages liees. En cas de connaissance de violations legales, nous supprimerons immediatement ces liens.',
+  impressumCopyright: 'Droit d\'auteur',
+  impressumCopyrightText:
+    'Les contenus et oeuvres crees par le KSC Wiedikon sur ce site web sont soumis au droit d\'auteur suisse. La reproduction, le traitement ou la diffusion en dehors des limites du droit d\'auteur necessite le consentement ecrit du club.',
   impressumSocial: 'Reseaux sociaux',
   impressumFacebook: 'Facebook : KSC Wiedikon',
   impressumInstagram: 'Instagram : @ksc_wiedikon',

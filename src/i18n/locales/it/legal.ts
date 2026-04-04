@@ -1,11 +1,11 @@
 export default {
   // Privacy Policy page
   privacyTitle: 'Informativa sulla privacy',
-  lastUpdated: 'Ultimo aggiornamento: 15 marzo 2026',
+  lastUpdated: 'Ultimo aggiornamento: 4 aprile 2026',
 
   controllerTitle: '1. Titolare del trattamento',
   controllerText:
-    'Luca Canepa\nZurigo, Svizzera\nEmail: luca.canepa@gmail.com',
+    'KSC Wiedikon\nSchrennengasse 7\n8003 Zürich\nEmail: kscw@kscw.ch',
 
   dataCollectedTitle: '2. Dati raccolti',
   dataAccountTitle: 'Dati dell\'account (alla registrazione)',
@@ -43,6 +43,10 @@ export default {
     'Basketplan (basketball.ch) — Recuperiamo dati di partite e classifiche disponibili pubblicamente. Nessun dato personale viene trasmesso a Basketplan.',
   thirdPartyMigadu:
     'Migadu (migadu.com) — Invio email per notifiche e promemoria | Svizzera | DPA',
+  thirdPartyHetzner:
+    'Hetzner Online GmbH — Hosting backend (Directus) | Germania (datacenter di Norimberga) | DPA, conforme al GDPR',
+  thirdPartySentry:
+    'Sentry (sentry.io) — Tracciamento errori e monitoraggio prestazioni | UE (de.sentry.io, Germania) | DPA, conforme al GDPR. Nessun dato personale (nome, email) viene trasmesso a Sentry.',
   thirdPartyCloudflareWorkers:
     'Cloudflare Workers — Elaborazione delle notifiche push | Globale (sede USA) | DPA, Clausole contrattuali standard, Swiss-US Data Privacy Framework',
 
@@ -52,7 +56,7 @@ export default {
 
   storageTitle: '6. Archiviazione dei dati',
   storageServer:
-    'I dati sono archiviati su un server self-hosted in Svizzera (Directus). Il frontend è servito tramite Cloudflare Pages.',
+    'I dati sono archiviati su un server di Hetzner Online GmbH in Germania (datacenter di Norimberga) con Directus. Il frontend è servito tramite Cloudflare Pages.',
   storageLocal:
     'Le seguenti preferenze non personali sono memorizzate nel tuo browser: schema colori (chiaro/scuro) e impostazione della lingua. Per gli utenti con accesso, un token di sessione è memorizzato nel browser.',
   storageNoCookies:
@@ -67,7 +71,7 @@ export default {
   rightsPortability: 'Diritto alla portabilità dei dati — Puoi ricevere i tuoi dati in un formato di uso comune.',
   rightsObject: 'Diritto di opposizione — Puoi opporti al trattamento dei tuoi dati in qualsiasi momento.',
   rightsContact:
-    'Per richieste relative ai tuoi diritti, contatta: luca.canepa@gmail.com',
+    'Per richieste relative ai tuoi diritti, contatta: kscw@kscw.ch',
   rightsFDPIC:
     'Hai inoltre il diritto di presentare un reclamo all\'Incaricato federale della protezione dei dati e della trasparenza (IFPDT): www.edoeb.admin.ch',
 
@@ -83,9 +87,17 @@ export default {
   impressumTitle: 'Impressum',
   impressumClubName: 'KSC Wiedikon',
   impressumAddress: 'Schrennengasse 7\n8003 Zürich',
-  impressumContact: 'Email: vorstand@kscw.ch',
+  impressumFullName: 'Kultur- und Sportclub Wiedikon',
+  impressumContact: 'Email: kscw@kscw.ch',
+  impressumWebsite: 'Sito web: kscw.ch',
   impressumBoard: 'Responsabile: Comitato del KSC Wiedikon',
-  impressumHosting: 'Hosting: Cloudflare Pages (frontend), server self-hosted in Svizzera (backend)',
+  impressumHosting: 'Hosting: Cloudflare Pages (frontend), Hetzner Online GmbH, Germania (backend)',
+  impressumLinks: 'Responsabilità per i link',
+  impressumLinksText:
+    'Il nostro sito contiene link a siti web esterni di terze parti sui cui contenuti non abbiamo alcuna influenza. Il rispettivo fornitore è sempre responsabile del contenuto delle pagine collegate. In caso di violazioni legali, rimuoveremo immediatamente tali link.',
+  impressumCopyright: 'Diritto d\'autore',
+  impressumCopyrightText:
+    'I contenuti e le opere creati dal KSC Wiedikon su questo sito web sono soggetti al diritto d\'autore svizzero. La riproduzione, l\'elaborazione o la diffusione al di fuori dei limiti del diritto d\'autore richiede il consenso scritto del club.',
   impressumSocial: 'Social Media',
   impressumFacebook: 'Facebook: KSC Wiedikon',
   impressumInstagram: 'Instagram: @ksc_wiedikon',

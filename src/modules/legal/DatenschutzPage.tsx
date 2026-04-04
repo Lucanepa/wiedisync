@@ -55,6 +55,8 @@ export default function DatenschutzPage() {
           <li>{t('thirdPartyBasketplan')}</li>
           <li>{t('thirdPartyGCal')}</li>
           <li>{t('thirdPartyMigadu')}</li>
+          <li>{t('thirdPartyHetzner')}</li>
+          <li>{t('thirdPartySentry')}</li>
           <li>{t('thirdPartyCloudflareWorkers')}</li>
         </ul>
       </Section>

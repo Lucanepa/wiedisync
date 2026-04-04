@@ -1,11 +1,11 @@
 export default {
   // Datenschutz page
   privacyTitle: 'Datenschutzerklärung',
-  lastUpdated: 'Stand: 15. März 2026',
+  lastUpdated: 'Stand: 4. April 2026',
 
   controllerTitle: '1. Verantwortliche Stelle',
   controllerText:
-    'Luca Canepa\nZürich, Schweiz\nE-Mail: luca.canepa@gmail.com',
+    'KSC Wiedikon\nSchrennengasse 7\n8003 Zürich\nE-Mail: kscw@kscw.ch',
 
   dataCollectedTitle: '2. Welche Daten wir erheben',
   dataAccountTitle: 'Kontodaten (bei Registrierung)',
@@ -43,6 +43,10 @@ export default {
     'Basketplan (basketball.ch) — Wir rufen öffentlich verfügbare Spieldaten und Ranglisten ab. Es werden keine personenbezogenen Daten an Basketplan übermittelt.',
   thirdPartyMigadu:
     'Migadu (migadu.com) — E-Mail-Versand für Benachrichtigungen und Erinnerungen | Schweiz | DPA',
+  thirdPartyHetzner:
+    'Hetzner Online GmbH — Backend-Hosting (Directus) | Deutschland (Rechenzentrum Nürnberg) | DPA, DSGVO-konform',
+  thirdPartySentry:
+    'Sentry (sentry.io) — Fehlererfassung und Performance-Monitoring | EU (de.sentry.io, Deutschland) | DPA, DSGVO-konform. Es werden keine personenbezogenen Daten (Name, E-Mail) an Sentry übermittelt.',
   thirdPartyCloudflareWorkers:
     'Cloudflare Workers — Verarbeitung von Push-Benachrichtigungen | Global (USA) | DPA, EU-Standardvertragsklauseln, Swiss-US Data Privacy Framework',
 
@@ -52,7 +56,7 @@ export default {
 
   storageTitle: '6. Datenspeicherung',
   storageServer:
-    'Die Daten werden auf einem selbst betriebenen Server in der Schweiz gespeichert (Directus). Das Frontend wird über Cloudflare Pages bereitgestellt.',
+    'Die Daten werden auf einem Server der Hetzner Online GmbH in Deutschland (Rechenzentrum Nürnberg) gespeichert (Directus). Das Frontend wird über Cloudflare Pages bereitgestellt.',
   storageLocal:
     'Im Browser werden folgende nicht-personenbezogene Einstellungen gespeichert: Farbschema (hell/dunkel) und Spracheinstellung. Für eingeloggte Nutzer wird ein Sitzungs-Token im Browser gespeichert.',
   storageNoCookies:
@@ -67,7 +71,7 @@ export default {
   rightsPortability: 'Recht auf Datenherausgabe — Sie können Ihre Daten in einem gängigen Format erhalten.',
   rightsObject: 'Widerspruchsrecht — Sie können der Verarbeitung Ihrer Daten jederzeit widersprechen.',
   rightsContact:
-    'Für Anfragen zu Ihren Rechten wenden Sie sich bitte an: luca.canepa@gmail.com',
+    'Für Anfragen zu Ihren Rechten wenden Sie sich bitte an: kscw@kscw.ch',
   rightsFDPIC:
     'Sie haben zudem das Recht, eine Beschwerde beim Eidgenössischen Datenschutz- und Öffentlichkeitsbeauftragten (EDÖB) einzureichen: www.edoeb.admin.ch',
 
@@ -83,9 +87,17 @@ export default {
   impressumTitle: 'Impressum',
   impressumClubName: 'KSC Wiedikon',
   impressumAddress: 'Schrennengasse 7\n8003 Zürich',
-  impressumContact: 'E-Mail: vorstand@kscw.ch',
+  impressumFullName: 'Kultur- und Sportclub Wiedikon',
+  impressumContact: 'E-Mail: kscw@kscw.ch',
+  impressumWebsite: 'Website: kscw.ch',
   impressumBoard: 'Verantwortlich: Vorstand KSC Wiedikon',
-  impressumHosting: 'Hosting: Cloudflare Pages (Frontend), selbst gehosteter Server in der Schweiz (Backend)',
+  impressumHosting: 'Hosting: Cloudflare Pages (Frontend), Hetzner Online GmbH, Deutschland (Backend)',
+  impressumLinks: 'Haftung für Links',
+  impressumLinksText:
+    'Unser Angebot enthält Links zu externen Websites Dritter, auf deren Inhalte wir keinen Einfluss haben. Für die Inhalte der verlinkten Seiten ist stets der jeweilige Anbieter verantwortlich. Bei Bekanntwerden von Rechtsverletzungen werden wir derartige Links umgehend entfernen.',
+  impressumCopyright: 'Urheberrecht',
+  impressumCopyrightText:
+    'Die durch den KSC Wiedikon erstellten Inhalte und Werke auf dieser Website unterliegen dem schweizerischen Urheberrecht. Die Vervielfältigung, Bearbeitung oder Verbreitung ausserhalb der Grenzen des Urheberrechts bedarf der schriftlichen Zustimmung des Vereins.',
   impressumSocial: 'Social Media',
   impressumFacebook: 'Facebook: KSC Wiedikon',
   impressumInstagram: 'Instagram: @ksc_wiedikon',

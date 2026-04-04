@@ -13,8 +13,21 @@ export default function ImpressumPage() {
         <p className="text-lg font-semibold text-gray-900 dark:text-white">
           {t('impressumClubName')}
         </p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          {t('impressumFullName')}
+        </p>
         <Whitespace text={t('impressumAddress')} />
         <p className="mt-2">{t('impressumContact')}</p>
+        <p>
+          <a
+            href="https://kscw.ch"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-brand-600 hover:underline dark:text-brand-400"
+          >
+            {t('impressumWebsite')}
+          </a>
+        </p>
         <p className="mt-2">{t('impressumBoard')}</p>
       </Section>
 
@@ -49,6 +62,14 @@ export default function ImpressumPage() {
 
       <Section title={t('impressumDisclaimer')}>
         <p>{t('impressumDisclaimerText')}</p>
+      </Section>
+
+      <Section title={t('impressumLinks')}>
+        <p>{t('impressumLinksText')}</p>
+      </Section>
+
+      <Section title={t('impressumCopyright')}>
+        <p>{t('impressumCopyrightText')}</p>
       </Section>
     </div>
   )

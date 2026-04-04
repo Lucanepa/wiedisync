@@ -1,11 +1,11 @@
 export default {
   // Dateschutz page
   privacyTitle: 'Dateschutzerkläärig',
-  lastUpdated: 'Stand: 15. März 2026',
+  lastUpdated: 'Stand: 4. April 2026',
 
   controllerTitle: '1. Verantwortlichi Stell',
   controllerText:
-    'Luca Canepa\nZüri, Schwiiz\nE-Mail: luca.canepa@gmail.com',
+    'KSC Wiedikon\nSchrennegass 7\n8003 Züri\nE-Mail: kscw@kscw.ch',
 
   dataCollectedTitle: '2. Weli Date mir erhebed',
   dataAccountTitle: 'Kontodate (bi de Registrierig)',
@@ -43,6 +43,10 @@ export default {
     'Basketplan (basketball.ch) — Mir rüefed öffentlich verfüegbari Spieldate und Ranglischte ab. Es werded käni personebezogeni Date a Basketplan übermittlet.',
   thirdPartyMigadu:
     'Migadu (migadu.com) — E-Mail-Versand für Benachrichtigunge und Erinnerige | Schwiiz | DPA',
+  thirdPartyHetzner:
+    'Hetzner Online GmbH — Backend-Hosting (Directus) | Dütschland (Rächemzäntrum Nürnberg) | DPA, DSGVO-konform',
+  thirdPartySentry:
+    'Sentry (sentry.io) — Fählererfassig und Performance-Monitoring | EU (de.sentry.io, Dütschland) | DPA, DSGVO-konform. Es werded käni personebezogeni Date (Name, E-Mail) a Sentry übermittlet.',
   thirdPartyCloudflareWorkers:
     'Cloudflare Workers — Verarbeitig vo Push-Benachrichtigunge | Global (USA) | DPA, EU-Standardvertragsklausle, Swiss-US Data Privacy Framework',
 
@@ -52,7 +56,7 @@ export default {
 
   storageTitle: '6. Datespeicherig',
   storageServer:
-    'D Date werded uf emne selber betribne Server i de Schwiiz gspeicheret (Directus). S Frontend wird über Cloudflare Pages breitstellt.',
+    'D Date werded uf emne Server vo de Hetzner Online GmbH i Dütschland (Rächemzäntrum Nürnberg) gspeicheret (Directus). S Frontend wird über Cloudflare Pages breitstellt.',
   storageLocal:
     'Im Browser werded folgendi nöd-personebezogeni Iistellige gspeicheret: Farbschema (hell/dunkel) und Spraachiistellig. Für iigloggte Nutzer wird es Sitzigstoken im Browser gspeicheret.',
   storageNoCookies:
@@ -67,7 +71,7 @@ export default {
   rightsPortability: 'Rächt uf Dateusgab — Sie chönd Ihri Date in emne gängige Format becho.',
   rightsObject: 'Widerspruchsrächt — Sie chönd de Verarbeitig vo Ihri Date jederziit widerspräche.',
   rightsContact:
-    'Für Aafrage zu Ihre Rächt wänded Sie sich bitte a: luca.canepa@gmail.com',
+    'Für Aafrage zu Ihre Rächt wänded Sie sich bitte a: kscw@kscw.ch',
   rightsFDPIC:
     'Sie händ zudem s Rächt, e Bschwärde bim Eidgenössische Dateschutz- und Öffentlichkeitsbuftragete (EDÖB) iizriche: www.edoeb.admin.ch',
 
@@ -83,9 +87,17 @@ export default {
   impressumTitle: 'Impressum',
   impressumClubName: 'KSC Wiedikon',
   impressumAddress: 'Schrennegass 7\n8003 Züri',
-  impressumContact: 'E-Mail: vorstand@kscw.ch',
+  impressumFullName: 'Kultur- und Sportclub Wiedikon',
+  impressumContact: 'E-Mail: kscw@kscw.ch',
+  impressumWebsite: 'Website: kscw.ch',
   impressumBoard: 'Verantwortlich: Vorstand KSC Wiedikon',
-  impressumHosting: 'Hosting: Cloudflare Pages (Frontend), selber ghostete Server i de Schwiiz (Backend)',
+  impressumHosting: 'Hosting: Cloudflare Pages (Frontend), Hetzner Online GmbH, Dütschland (Backend)',
+  impressumLinks: 'Haftig für Links',
+  impressumLinksText:
+    'Euses Aagebott enthalted Links zu externe Websites vo Dritte, uf dere Inhalt mir käne Iifluss händ. Für d Inhalt vo de verlinkete Sitte isch immer de jewiligi Abieter verantwortlich. Bi Bekantwerde vo Rächtsverletzige werded mir sötigi Links umgehend entferne.',
+  impressumCopyright: 'Urheberrächt',
+  impressumCopyrightText:
+    'D Inhalt und Werch wo vom KSC Wiedikon uf dere Website erstellt werded, underliged em schwiizerischi Urheberrächt. D Vervielfältigung, Bearbeitig oder Verbreitig usserhalb vo de Grenze vom Urheberrächt bruucht d schriftlichi Zuestimmig vom Verein.',
   impressumSocial: 'Social Media',
   impressumFacebook: 'Facebook: KSC Wiedikon',
   impressumInstagram: 'Instagram: @ksc_wiedikon',

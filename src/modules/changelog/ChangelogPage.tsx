@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.2.0'
+const APP_VERSION = '3.3.0'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,18 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.3.0',
+    date: '2026-04-04',
+    sections: [
+      {
+        title: 'Admin',
+        items: [
+          'Error-Log-Kontext: Fehlereinträge werden automatisch mit lesbaren Daten angereichert — Benutzername, Rolle, Teams (mit Sportart) und Datensatz-Labels (Teamname, Spielpaarung). Suche funktioniert auch über Namen und Teams.',
+        ],
+      },
+    ],
+  },
   {
     version: '3.2.0',
     date: '2026-04-04',

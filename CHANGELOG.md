@@ -2,6 +2,12 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.3.0] — 2026-04-04
+
+### Features
+
+- **Error log context enrichment** — `GET /kscw/admin/error-logs` now enriches each entry with a `_context` object containing human-readable data from the database. User IDs resolve to member name, role, and team memberships (with sport). Record IDs resolve to team names, member names, or game matchups for `teams`, `members`, and `games` collections. The `?search=` parameter also searches inside `_context`, so you can find errors by member name or team name.
+
 ## [3.2.0] — 2026-04-04
 
 ### Security

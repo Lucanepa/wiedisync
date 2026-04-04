@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../hooks/useAuth'
-import { Home, Calendar, Trophy, Users, Menu } from 'lucide-react'
+import { Home, Calendar, Trophy, Menu } from 'lucide-react'
 
 interface TabItem {
   to: string
@@ -24,7 +24,6 @@ const primaryTabs: TabItem[] = [
       <path d="M9.194 6.57a5 2.5 0 0 0 5.61 0" />
     </svg>
   ) },
-  { to: '/teams', labelKey: 'teams', requiresAuth: true, icon: <Users className={iconClass} /> },
 ]
 
 interface BottomTabBarProps {
@@ -35,8 +34,7 @@ interface BottomTabBarProps {
 
 export default function BottomTabBar({ onMoreTap, moreActive, unreadNotifications = 0 }: BottomTabBarProps) {
   const { t } = useTranslation('nav')
-  const { user, isApproved, isAdmin, isVorstand, memberTeamIds } = useAuth()
-  const showTeamsPlural = isAdmin || isVorstand || memberTeamIds.length !== 1
+  const { user, isApproved } = useAuth()
   const visibleTabs = primaryTabs.filter((tab) => !tab.requiresAuth || (user && isApproved))
   return (
     <nav className="pb-safe fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
@@ -55,7 +53,7 @@ export default function BottomTabBar({ onMoreTap, moreActive, unreadNotification
             }
           >
             {tab.icon}
-            {t(tab.labelKey === 'teams' && !showTeamsPlural ? 'team' : tab.labelKey)}
+            {t(tab.labelKey)}
           </NavLink>
         ))}
 

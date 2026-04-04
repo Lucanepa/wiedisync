@@ -9,7 +9,7 @@ import LanguageDropdown from '@/components/LanguageDropdown'
 import { getFileUrl } from '../utils/fileUrl'
 import AdminToggle from './AdminToggle'
 import { useAdminMode } from '../hooks/useAdminMode'
-import { Bell, UserX, PenSquare, CalendarDays, ClipboardList, Building2, CalendarClock, Database, HeartPulse, LogIn, User, Settings, ChevronDown, ScrollText, MessageSquare, Banknote, BarChart3, UserPlus } from 'lucide-react'
+import { Bell, UserX, PenSquare, CalendarDays, ClipboardList, Building2, CalendarClock, Database, HeartPulse, LogIn, User, Users, Settings, ChevronDown, ScrollText, MessageSquare, Banknote, BarChart3, UserPlus } from 'lucide-react'
 import type { MemberTeam, Team } from '../types'
 import { asObj } from '../utils/relations'
 
@@ -30,6 +30,7 @@ function useAnimatedClose(onClose: () => void) {
 const iconClass = 'h-5 w-5'
 
 const secondaryItems = [
+  { to: '/teams', labelKey: 'teams', icon: <Users className={iconClass} /> },
   { to: '/absences', labelKey: 'absences', icon: <UserX className={iconClass} /> },
   { to: '/scorer', labelKey: 'scorer', icon: <PenSquare className={iconClass} /> },
   { to: '/events', labelKey: 'events', icon: <CalendarDays className={iconClass} /> },

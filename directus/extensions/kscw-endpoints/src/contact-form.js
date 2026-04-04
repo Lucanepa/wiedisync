@@ -6,10 +6,10 @@
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET || ''
 
 const SPORT_EMAILS = {
-  volleyball: 'volleyball@kscw.ch',
-  basketball: 'anja.jimenez@kscw.ch',
+  volleyball: process.env.CONTACT_EMAIL_VB || 'volleyball@kscw.ch',
+  basketball: process.env.CONTACT_EMAIL_BB || 'basketball@kscw.ch',
 }
-const GENERAL_EMAIL = 'kontakt@kscw.ch'
+const GENERAL_EMAIL = process.env.CONTACT_EMAIL_GENERAL || 'kontakt@kscw.ch'
 
 async function verifyTurnstile(token) {
   if (!TURNSTILE_SECRET) return true
@@ -26,11 +26,17 @@ export function registerContactForm(router, { database, logger, services, getSch
 
   router.post('/contact', async (req, res) => {
     try {
-      const { name, email, subject, message, team_id, sport, turnstile_token } = req.body
-      if (!name || !email || !message) {
+      const { name: rawName, email, subject: rawSubject, message, team_id, sport, turnstile_token } = req.body
+      if (!rawName || !email || !message) {
         return res.status(400).json({ error: 'name, email, message required' })
       }
-      // Validate email format
+      // Strip control characters to prevent email header injection
+      const name = String(rawName).replace(/[\r\n\t]/g, '')
+      const subject = rawSubject ? String(rawSubject).replace(/[\r\n\t]/g, '') : ''
+      // Validate email format (reject control characters)
+      if (/[\r\n\t]/.test(email)) {
+        return res.status(400).json({ error: 'Invalid email format' })
+      }
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
       if (!emailRegex.test(email)) {
         return res.status(400).json({ error: 'Invalid email format' })

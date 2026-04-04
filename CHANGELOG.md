@@ -2,6 +2,24 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.2.0] — 2026-04-04
+
+### Security
+
+- **SQL injection fix** — Parameterized `whereRaw` binding in registration endpoint (`registration.js:34`).
+- **Email header injection** — Strip `\r\n\t` from user-supplied name/subject in contact form to prevent SMTP header injection.
+- **HTML escaping in email templates** — All interpolated values (title, subtitle, greeting, CTA, footer, info card rows, alert boxes) now escaped via `escHtml()`.
+- **Coach emails removed from public endpoint** — `GET /kscw/public/team/:id` no longer returns email addresses. Contact form still routes to coaches server-side.
+- **Password reset rate limiting** — Max 3 requests per hour per IP.
+- **Sentry tunnel CORS** — Restricted from any `*.pages.dev` to only `wiedisync.pages.dev` and its subdomains.
+- **iCal feed validation** — Source parameter whitelisted, team IDs validated as numeric.
+- **Postgres role constraint** — CHECK constraint prevents privilege escalation via direct SQL (`members_role_values_valid`).
+- **Slot claims unique index** — Partial unique index on `(hall_slot, date) WHERE status = 'active'` prevents race-condition double claims.
+- **Hardcoded emails → env vars** — `OWNER_EMAIL`, `CONTACT_EMAIL_BB` moved to environment variables.
+- **Notification subject PII** — Member names removed from join-request email subjects (kept in body only).
+- **SQL history** — Admin SQL editor history moved from `localStorage` to `sessionStorage`.
+- **npm audit** — Fixed all known dependency vulnerabilities (0 remaining).
+
 ## [3.1.0] — 2026-03-31
 
 ### Features

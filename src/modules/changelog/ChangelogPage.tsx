@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.1.0'
+const APP_VERSION = '3.2.0'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,23 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.2.0',
+    date: '2026-04-04',
+    sections: [
+      {
+        title: 'Sicherheit',
+        items: [
+          'SQL-Injection-Fix in der Registrierung, E-Mail-Header-Injection-Schutz im Kontaktformular, HTML-Escaping in allen E-Mail-Templates.',
+          'Coach-E-Mails werden nicht mehr öffentlich angezeigt. Kontaktformular leitet weiterhin serverseitig weiter.',
+          'Rate-Limiting für Passwort-Zurücksetzen, Sentry-Tunnel CORS eingeschränkt, iCal-Feed-Parameter validiert.',
+          'Postgres-Constraints: Rollenvalidierung und Unique-Index für Hallenbelegung.',
+          'Hardcodierte E-Mail-Adressen in Umgebungsvariablen verschoben.',
+          'npm-Schwachstellen behoben, SQL-History auf sessionStorage umgestellt.',
+        ],
+      },
+    ],
+  },
   {
     version: '3.1.0',
     date: '2026-03-31',

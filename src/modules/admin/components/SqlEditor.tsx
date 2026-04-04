@@ -26,7 +26,7 @@ const MAX_HISTORY = 20
 
 function loadHistory(): string[] {
   try {
-    return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]')
+    return JSON.parse(sessionStorage.getItem(HISTORY_KEY) || '[]')
   } catch {
     return []
   }
@@ -61,7 +61,7 @@ body: { query: q },
       if (res.success) {
         const newHistory = [q, ...history.filter((h) => h !== q)].slice(0, MAX_HISTORY)
         setHistory(newHistory)
-        localStorage.setItem(HISTORY_KEY, JSON.stringify(newHistory))
+        sessionStorage.setItem(HISTORY_KEY, JSON.stringify(newHistory))
       }
     } catch (err) {
       setExecTimeMs(Math.round(performance.now() - start))

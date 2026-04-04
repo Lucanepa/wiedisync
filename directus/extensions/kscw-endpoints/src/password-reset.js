@@ -96,10 +96,26 @@ function buildHtml(t, url) {
 export function registerPasswordReset(router, { database, logger, services, getSchema }) {
   const log = logger.child({ endpoint: 'password-request' })
 
+  // Rate limit: max 3 password reset requests per hour per IP
+  const pwResetIp = new Map()
+
   router.post('/password-request', async (req, res) => {
     try {
       const { email } = req.body
       if (!email) return res.status(400).json({ error: 'Email required' })
+
+      const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown'
+      const now = Date.now()
+      const ipEntry = pwResetIp.get(ip)
+      if (ipEntry && now < ipEntry.resetAt) {
+        if (ipEntry.count >= 3) return res.status(204).end()
+        ipEntry.count++
+      } else {
+        pwResetIp.set(ip, { count: 1, resetAt: now + 3600000 })
+      }
+      if (pwResetIp.size > 500) {
+        for (const [k, v] of pwResetIp) { if (now > v.resetAt) pwResetIp.delete(k) }
+      }
 
       const normalizedEmail = email.toLowerCase().trim()
 

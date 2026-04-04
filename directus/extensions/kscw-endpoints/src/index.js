@@ -351,7 +351,7 @@ export default {
           database('teams_members_3')
             .join('members', 'members.id', 'teams_members_3.members_id')
             .where('teams_members_3.teams_id', team.id)
-            .select('members.id', 'members.first_name', 'members.last_name', 'members.photo', 'members.email'),
+            .select('members.id', 'members.first_name', 'members.last_name', 'members.photo'),
           database('games')
             .where('kscw_team', team.id).where('date', '>=', today)
             .where('status', '!=', 'cancelled')
@@ -950,8 +950,8 @@ export default {
               if (!coach.email) continue
               const isGerman = !coach.language || coach.language === 'german' || coach.language === 'swiss_german'
               const subject = isGerman
-                ? `WiediSync — Neue Beitrittsanfrage: ${first_name} ${last_name}`
-                : `WiediSync — New join request: ${first_name} ${last_name}`
+                ? `WiediSync — Neue Beitrittsanfrage für ${teamName}`
+                : `WiediSync — New join request for ${teamName}`
               const bodyHtml =
                 `<div style="font-size:14px;color:#e2e8f0;margin-bottom:16px">${isGerman
                   ? `<strong>${first_name} ${last_name}</strong> möchte dem Team <strong>${teamName}</strong> beitreten.`

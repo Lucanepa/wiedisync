@@ -70,7 +70,7 @@ export default {
 }
 
 function corsHeaders(origin: string, allowed: string): Record<string, string> {
-  const isAllowed = origin === allowed || origin.endsWith('.pages.dev')
+  const isAllowed = origin === allowed || origin === 'https://wiedisync.pages.dev' || origin.endsWith('.wiedisync.pages.dev')
   return {
     'Access-Control-Allow-Origin': isAllowed ? origin : allowed,
     'Access-Control-Allow-Methods': 'POST, OPTIONS',

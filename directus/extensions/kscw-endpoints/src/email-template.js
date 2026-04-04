@@ -5,6 +5,11 @@
 
 const ACCENT = { vb: '#FFC832', bb: '#F97316', neutral: '#4A55A2' }
 
+/** Escape HTML special characters to prevent injection in email templates */
+function escHtml(str) {
+  return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
 /** Frontend URL — env var or auto-detect from Directus PUBLIC_URL */
 export const FRONTEND_URL = process.env.FRONTEND_URL
   || (process.env.PUBLIC_URL?.includes('directus-dev') ? 'https://wiedisync.pages.dev' : 'https://wiedisync.kscw.ch')
@@ -54,10 +59,10 @@ export function buildInfoCard(rows) {
     const next = i + 1 < rows.length ? rows[i + 1] : null
 
     if (row.halfWidth && next?.halfWidth) {
-      html += `<tr><td style="width:50%;vertical-align:top;padding:0 8px 10px 0"><div style="font-size:11px;text-transform:uppercase;color:#64748b;letter-spacing:0.5px;margin-bottom:2px">${row.label}</div><div style="font-size:14px;font-weight:600;color:#e2e8f0">${row.value}</div></td><td style="width:50%;vertical-align:top;padding:0 0 10px 8px"><div style="font-size:11px;text-transform:uppercase;color:#64748b;letter-spacing:0.5px;margin-bottom:2px">${next.label}</div><div style="font-size:14px;font-weight:600;color:#e2e8f0">${next.value}</div></td></tr>`
+      html += `<tr><td style="width:50%;vertical-align:top;padding:0 8px 10px 0"><div style="font-size:11px;text-transform:uppercase;color:#64748b;letter-spacing:0.5px;margin-bottom:2px">${escHtml(row.label)}</div><div style="font-size:14px;font-weight:600;color:#e2e8f0">${escHtml(row.value)}</div></td><td style="width:50%;vertical-align:top;padding:0 0 10px 8px"><div style="font-size:11px;text-transform:uppercase;color:#64748b;letter-spacing:0.5px;margin-bottom:2px">${escHtml(next.label)}</div><div style="font-size:14px;font-weight:600;color:#e2e8f0">${escHtml(next.value)}</div></td></tr>`
       i += 2
     } else {
-      html += `<tr><td colspan="2" style="padding:0 0 10px"><div style="font-size:11px;text-transform:uppercase;color:#64748b;letter-spacing:0.5px;margin-bottom:2px">${row.label}</div><div style="font-size:14px;font-weight:600;color:#e2e8f0">${row.value}</div></td></tr>`
+      html += `<tr><td colspan="2" style="padding:0 0 10px"><div style="font-size:11px;text-transform:uppercase;color:#64748b;letter-spacing:0.5px;margin-bottom:2px">${escHtml(row.label)}</div><div style="font-size:14px;font-weight:600;color:#e2e8f0">${escHtml(row.value)}</div></td></tr>`
       i++
     }
   }
@@ -85,13 +90,13 @@ export function buildEmailLayout(bodyHtml, opts = {}) {
 
   // Header
   html += `<tr><td style="background:#1e293b;padding:28px 28px 20px;text-align:center">${logoBlock}`
-  if (opts.title) html += `<div style="font-size:22px;font-weight:700;color:#ffffff;margin-top:8px">${opts.title}</div>`
-  if (opts.subtitle) html += `<div style="font-size:14px;color:#94a3b8;margin-top:4px">${opts.subtitle}</div>`
+  if (opts.title) html += `<div style="font-size:22px;font-weight:700;color:#ffffff;margin-top:8px">${escHtml(opts.title)}</div>`
+  if (opts.subtitle) html += `<div style="font-size:14px;color:#94a3b8;margin-top:4px">${escHtml(opts.subtitle)}</div>`
   html += '</td></tr>'
 
   // Greeting
   if (opts.greeting) {
-    html += `<tr><td style="padding:4px 28px 12px"><div style="font-size:15px;color:#e2e8f0">${opts.greeting}</div></td></tr>`
+    html += `<tr><td style="padding:4px 28px 12px"><div style="font-size:15px;color:#e2e8f0">${escHtml(opts.greeting)}</div></td></tr>`
   }
 
   // Body
@@ -101,12 +106,12 @@ export function buildEmailLayout(bodyHtml, opts = {}) {
   if (opts.ctaUrl && opts.ctaLabel) {
     const btnColor = opts.ctaColor || accent
     const txtColor = opts.ctaTextColor || '#000000'
-    html += `<tr><td style="padding:0 28px 20px"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 8px"><a href="${opts.ctaUrl}" style="display:inline-block;background:${btnColor};color:${txtColor};font-size:14px;font-weight:600;padding:12px 28px;border-radius:8px;text-decoration:none;letter-spacing:0.2px">${opts.ctaLabel}</a></td></tr></table></td></tr>`
+    html += `<tr><td style="padding:0 28px 20px"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:4px 0 8px"><a href="${escHtml(opts.ctaUrl)}" style="display:inline-block;background:${btnColor};color:${txtColor};font-size:14px;font-weight:600;padding:12px 28px;border-radius:8px;text-decoration:none;letter-spacing:0.2px">${escHtml(opts.ctaLabel)}</a></td></tr></table></td></tr>`
   }
 
   // Footer extra
   if (opts.footerExtra) {
-    html += `<tr><td style="padding:0 28px 20px;text-align:center"><div style="font-size:13px;color:#94a3b8">${opts.footerExtra}</div></td></tr>`
+    html += `<tr><td style="padding:0 28px 20px;text-align:center"><div style="font-size:13px;color:#94a3b8">${escHtml(opts.footerExtra)}</div></td></tr>`
   }
 
   // Bottom bar
@@ -128,7 +133,7 @@ export function buildAlertBox(type, title, text) {
     info: { bg: '#172554', border: '#1e3a5f', title: '#60a5fa', text: '#93c5fd' },
   }
   const s = styles[type] || styles.info
-  return `<table width="100%" cellpadding="0" cellspacing="0" style="background:${s.bg};border:1px solid ${s.border};border-radius:8px;margin-bottom:12px"><tr><td style="padding:12px 16px"><div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:${s.title};font-weight:700;margin-bottom:4px">${title}</div><div style="font-size:13px;color:${s.text}">${text}</div></td></tr></table>`
+  return `<table width="100%" cellpadding="0" cellspacing="0" style="background:${s.bg};border:1px solid ${s.border};border-radius:8px;margin-bottom:12px"><tr><td style="padding:12px 16px"><div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:${s.title};font-weight:700;margin-bottom:4px">${escHtml(title)}</div><div style="font-size:13px;color:${s.text}">${escHtml(text)}</div></td></tr></table>`
 }
 
 /** Format date as DD.MM.YYYY (Swiss) */

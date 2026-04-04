@@ -28,8 +28,11 @@ export function registerICalFeed(router, { database, logger }) {
       const sourceParam = req.query.source || ''
       const teamParam = req.query.team || ''
 
-      const sources = sourceParam ? Object.fromEntries(sourceParam.split(',').map(s => [s.trim(), true])) : { 'games-home': true, 'games-away': true }
-      let teamIds = teamParam ? teamParam.split(',').map(s => s.trim()).filter(Boolean) : []
+      const VALID_SOURCES = new Set(['games-home', 'games-away', 'trainings', 'events', 'closures', 'hall'])
+      const sources = sourceParam
+        ? Object.fromEntries(sourceParam.split(',').map(s => s.trim()).filter(s => VALID_SOURCES.has(s)).map(s => [s, true]))
+        : { 'games-home': true, 'games-away': true }
+      let teamIds = teamParam ? teamParam.split(',').map(s => s.trim()).filter(s => /^\d+$/.test(s)) : []
 
       // Sport filter
       if (sportFilter) {

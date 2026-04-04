@@ -9,7 +9,7 @@ import crypto from 'crypto'
 
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET || ''
 
-const OWNER_EMAIL = 'luca.canepa@gmail.com'
+const OWNER_EMAIL = process.env.OWNER_EMAIL || 'kontakt@kscw.ch'
 
 /**
  * Look up sport admin emails from the members table.
@@ -31,7 +31,7 @@ async function getSportAdminEmails(database, membershipType) {
       this.whereRaw("members.role::jsonb @> '\"admin\"'")
         .orWhereRaw("members.role::jsonb @> '\"superuser\"'")
       if (adminRole) {
-        this.orWhereRaw(`members.role::jsonb @> '"${adminRole}"'`)
+        this.orWhereRaw("members.role::jsonb @> ?", [JSON.stringify(adminRole)])
       }
     })
     .select('directus_users.email')

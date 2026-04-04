@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { FormTextarea } from '@/components/FormField'
 import DatePicker from '@/components/ui/DatePicker'
 import SearchableSelect from '@/components/ui/SearchableSelect'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import AffectsMultiSelect from '@/components/AffectsMultiSelect'
 import type { Absence, Member } from '../../types'
@@ -155,18 +156,21 @@ export default function AbsenceForm({ open, absence, onSave, onCancel }: Absence
           <span className="text-gray-400 dark:text-gray-500">({t('indefiniteHint')})</span>
         </label>
 
-        <SearchableSelect
-          label={t('reason')}
-          value={reason}
-          onChange={(v) => setReason(v as Absence['reason'])}
-          options={[
-            { value: 'injury', label: t('reasonInjury') },
-            { value: 'vacation', label: t('reasonVacation') },
-            { value: 'work', label: t('reasonWork') },
-            { value: 'personal', label: t('reasonPersonal') },
-            { value: 'other', label: t('reasonOther') },
-          ]}
-        />
+        <div>
+          <label className="mb-1.5 block text-sm font-medium">{t('reason')}</label>
+          <Select value={reason} onValueChange={(v) => setReason(v as Absence['reason'])}>
+            <SelectTrigger className="min-h-[44px] w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="injury">{t('reasonInjury')}</SelectItem>
+              <SelectItem value="vacation">{t('reasonVacation')}</SelectItem>
+              <SelectItem value="work">{t('reasonWork')}</SelectItem>
+              <SelectItem value="personal">{t('reasonPersonal')}</SelectItem>
+              <SelectItem value="other">{t('reasonOther')}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
         <FormTextarea
           label={t('detailsOptional')}

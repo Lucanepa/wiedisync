@@ -42,9 +42,11 @@ export default function AbsenceCard({ absence, onEdit, onDelete, canEdit }: Abse
 
   return (
     <div className="rounded-lg border dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3">
+      {/* Top row: badge, affects, detail, actions */}
       <div className="flex items-start gap-3">
         <StatusBadge status={absence.reason} />
-        {dateBlock}
+        {/* Desktop: dates inline */}
+        <div className="hidden sm:block">{dateBlock}</div>
         {absence.affects && absence.affects.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {absence.affects.map((a) => (
@@ -55,7 +57,7 @@ export default function AbsenceCard({ absence, onEdit, onDelete, canEdit }: Abse
           </div>
         )}
         {absence.reason_detail && (
-          <span className="text-sm text-gray-500 dark:text-gray-400">{absence.reason_detail}</span>
+          <span className="hidden text-sm text-gray-500 dark:text-gray-400 sm:inline">{absence.reason_detail}</span>
         )}
         {canEdit && (
           <div className="ml-auto flex items-start gap-2">
@@ -72,6 +74,20 @@ export default function AbsenceCard({ absence, onEdit, onDelete, canEdit }: Abse
               {t('common:delete')}
             </button>
           </div>
+        )}
+      </div>
+      {/* Mobile: reason detail below */}
+      {absence.reason_detail && (
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 sm:hidden">{absence.reason_detail}</p>
+      )}
+      {/* Mobile: dates as full-width bottom row */}
+      <div className="mt-2 flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 sm:hidden">
+        <span>{formatDate(absence.start_date)}</span>
+        {isMultiDay && (
+          <>
+            <span className="text-xs text-gray-400 dark:text-gray-500">→</span>
+            <span>{absence.indefinite ? t('indefinite') : formatDate(absence.end_date)}</span>
+          </>
         )}
       </div>
     </div>

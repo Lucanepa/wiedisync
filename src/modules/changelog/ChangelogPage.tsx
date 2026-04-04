@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.3.0'
+const APP_VERSION = '3.4.0'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,18 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.4.0',
+    date: '2026-04-04',
+    sections: [
+      {
+        title: 'Infrastruktur',
+        items: [
+          'Server-Migration auf Hetzner VPS mit Supabase Postgres — bessere Performance und mehr Speicher. Uptime-Monitoring mit 6 Monitoren und E-Mail-Benachrichtigungen eingerichtet.',
+        ],
+      },
+    ],
+  },
   {
     version: '3.3.0',
     date: '2026-04-04',

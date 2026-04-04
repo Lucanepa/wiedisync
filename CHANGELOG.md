@@ -2,6 +2,12 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.4.0] — 2026-04-04
+
+### Infrastructure
+
+- **Hetzner VPS migration** — Migrated all backend infrastructure from Infomaniak VPS (2 vCPU, 3.8GB RAM) to Hetzner CPX32 (4 vCPU, 8GB RAM). Directus prod+dev now run on Supabase Postgres with 150GB disk. All DNS records (directus.kscw.ch, directus-dev.kscw.ch, status.kscw.ch, coolify.kscw.ch) repointed to Hetzner tunnel. Uptime Kuma monitoring restored with 6 monitors and email alerts. Sentry tunnel CF Worker deployed. Old Infomaniak VPS decommissioned.
+
 ## [3.3.0] — 2026-04-04
 
 ### Features

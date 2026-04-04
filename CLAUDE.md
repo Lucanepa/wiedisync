@@ -6,8 +6,8 @@ All infrastructure details (IPs, URLs, ports, credentials, deploy commands) are 
 ## Tech Stack
 - Frontend: React 19 + TypeScript + Vite + TailwindCSS v4 + shadcn/ui
 - UI Components: shadcn/ui primitives in `src/components/ui/` (lowercase), KSCW wrappers in `src/components/` (PascalCase)
-- Backend: Directus (Postgres, REST API, Realtime, Auth) on Infomaniak VPS
-- Hosting: Cloudflare Pages (frontend), Infomaniak VPS + Cloudflare Tunnel (backend)
+- Backend: Directus (Supabase Postgres, REST API, Realtime, Auth) on Hetzner VPS
+- Hosting: Cloudflare Pages (frontend), Hetzner VPS + Cloudflare Tunnel (backend)
 - Language: German UI (Swiss German context), code in English
 
 ## Data Format: TOON
@@ -66,11 +66,11 @@ positions[3]{ticker,shares,costBasis}:
 
 ## SSH to VPS (Directus host)
 
-- **Use `ssh vps`** (alias in `~/.ssh/config`) to reach the Infomaniak VPS
-- Directus runs as Docker containers: `directus-kscw-prod` (port 8096), `directus-kscw-dev` (port 8095)
-- Restart: `ssh vps "sudo docker restart directus-kscw-prod"`
-- Logs: `ssh vps "sudo docker logs --tail 30 directus-kscw-prod"`
-- See `INFRA.md → Directus Management` for more commands
+- **Use `ssh hetzner`** (alias in `~/.ssh/config`) to reach the Hetzner VPS
+- Directus runs as Docker containers: `directus-kscw` (port 8055), `directus-kscw-dev` (port 8056)
+- Restart: `ssh hetzner "sudo docker restart directus-kscw"`
+- Logs: `ssh hetzner "sudo docker logs --tail 30 directus-kscw"`
+- See `INFRA.md → Hetzner VPS Management` for more commands
 
 ## Domains & Hosting
 

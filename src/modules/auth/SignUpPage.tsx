@@ -224,7 +224,6 @@ export default function SignUpPage() {
         const updateData: Record<string, string> = {
           first_name: firstName,
           last_name: lastName,
-          name: `${firstName} ${lastName}`,
         }
         if (additionalTeamIds.length > 0) {
           updateData.requested_team = additionalTeamIds[0]

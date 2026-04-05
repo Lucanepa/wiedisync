@@ -477,10 +477,11 @@ async function main() {
   await setPermRead(LEADER_POLICY, 'participations')
   await setPerm(LEADER_POLICY, 'participations', 'update') // Override member's own-only
 
-  // Member teams — read all + CU
+  // Member teams — read all + CRUD
   await setPermRead(LEADER_POLICY, 'member_teams')
   await setPerm(LEADER_POLICY, 'member_teams', 'create')
   await setPerm(LEADER_POLICY, 'member_teams', 'update')
+  await setPerm(LEADER_POLICY, 'member_teams', 'delete')
 
   // Hall slots — CU
   await setPerm(LEADER_POLICY, 'hall_slots', 'create')

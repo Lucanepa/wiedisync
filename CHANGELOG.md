@@ -2,6 +2,21 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.6.0] — 2026-04-05
+
+### Features
+
+- **SV licence card on profile** — Swiss Volley section now shows licence category badge, licence number, LAS/Foreigner/FdO badges, regional federation, and activated/validated status — all read directly from `sv_vm_check` (single source of truth). Licence fields no longer synced to `members`.
+- **Absence card layout** — Absence cards on profile now show badge+detail on top row, dates spanning full width on a separate bottom row.
+
+### Security
+
+- **sv_vm_check field restriction** — Member-level read permission restricted to 11 safe fields (excludes email, birthday, name, phone PII). Previously exposed all fields including personal data of all Swiss Volley players.
+
+### Refactoring
+
+- **Licence data from sv_vm_check** — `licence_category`, `licence_activated`, `licence_validated` no longer synced from VM to `members` table. Frontend reads them directly from `sv_vm_check` by `association_id`. `vm_email`, `geschlecht`, and `licences` still sync to members (needed for auth flows).
+
 ## [3.5.0] — 2026-04-05
 
 ### Features

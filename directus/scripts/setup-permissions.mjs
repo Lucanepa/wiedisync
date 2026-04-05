@@ -361,6 +361,8 @@ async function main() {
     'hall_slots', 'hall_closures', 'hall_events', 'hall_events_halls', 'halls', 'hall_slots_teams',
     'slot_claims', 'news', 'app_settings',
     'referee_expenses', 'carpools', 'carpool_passengers', 'polls',
+    // Swiss Volley VM data (public licence info)
+    'sv_vm_check',
     // Junctions
     'teams_coaches', 'teams_captains', 'teams_responsibles', 'teams_sponsors', 'events_teams', 'hall_events_halls',
     // Files

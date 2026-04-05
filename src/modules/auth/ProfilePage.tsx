@@ -70,10 +70,10 @@ export default function ProfilePage() {
   }
 
   // Fetch extra VM data from sv_vm_check (LAS, foreigner, federation, FdO, dates)
-  interface VmCheck { id: string; is_locally_educated: boolean | null; is_foreigner: boolean | null; federation: string | null; nationality_code: string | null; licence_activation_date: string | null; licence_validation_date: string | null }
+  interface VmCheck { id: string; licence_category: string | null; licence_activated: boolean | null; licence_validated: boolean | null; is_locally_educated: boolean | null; is_foreigner: boolean | null; federation: string | null; nationality_code: string | null; licence_activation_date: string | null; licence_validation_date: string | null }
   const { data: vmCheckRaw } = useCollection<VmCheck>('sv_vm_check', {
     filter: user?.license_nr ? { association_id: { _eq: user.license_nr } } : undefined,
-    fields: ['id', 'is_locally_educated', 'is_foreigner', 'federation', 'nationality_code', 'licence_activation_date', 'licence_validation_date'],
+    fields: ['id', 'licence_category', 'licence_activated', 'licence_validated', 'is_locally_educated', 'is_foreigner', 'federation', 'nationality_code', 'licence_activation_date', 'licence_validation_date'],
     limit: 1,
     enabled: !!user?.license_nr,
   })
@@ -283,9 +283,9 @@ export default function ProfilePage() {
               <div className="rounded-lg border bg-white dark:border-gray-700 dark:bg-gray-800">
                 {/* Top row: badge + licence nr + status checks */}
                 <div className="flex flex-wrap items-center gap-2 px-4 py-3">
-                  {user.licence_category && (
+                  {vmCheck?.licence_category && (
                     <span className="inline-flex rounded-full bg-gold-100 px-2.5 py-0.5 text-xs font-medium text-gold-900 dark:bg-gold-400/20 dark:text-gold-300">
-                      {user.licence_category}
+                      {vmCheck.licence_category}
                     </span>
                   )}
                   <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -313,17 +313,17 @@ export default function ProfilePage() {
                     )}
                     <div className="flex items-center gap-1">
                       <span className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('activated')}</span>
-                      {user.licence_activated == null
+                      {vmCheck?.licence_activated == null
                         ? <span className="text-sm text-gray-400">—</span>
-                        : user.licence_activated
+                        : vmCheck.licence_activated
                           ? <span className="text-sm text-green-600 dark:text-green-400">&#10003;</span>
                           : <span className="text-sm text-red-500 dark:text-red-400">&#10007;</span>}
                     </div>
                     <div className="flex items-center gap-1">
                       <span className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('validated')}</span>
-                      {user.licence_validated == null
+                      {vmCheck?.licence_validated == null
                         ? <span className="text-sm text-gray-400">—</span>
-                        : user.licence_validated
+                        : vmCheck.licence_validated
                           ? <span className="text-sm text-green-600 dark:text-green-400">&#10003;</span>
                           : <span className="text-sm text-red-500 dark:text-red-400">&#10007;</span>}
                     </div>

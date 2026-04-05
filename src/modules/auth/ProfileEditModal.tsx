@@ -34,7 +34,7 @@ interface ProfileEditModalProps {
 }
 
 export default function ProfileEditModal({ open, onClose, onboarding }: ProfileEditModalProps) {
-  const { user, primarySport, memberSports, memberTeamNames } = useAuth()
+  const { user, primarySport, memberTeamNames } = useAuth()
   const { t, i18n } = useTranslation('auth')
   const { t: tc } = useTranslation('common')
   const { t: tt } = useTranslation('teams')
@@ -635,17 +635,8 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
             <p className="mb-2 text-xs font-medium text-gray-500 dark:text-gray-400">
               {t('managedByCoach')}
             </p>
-            <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 dark:text-gray-400">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
               <span>{t('licenseNr')}: {user.license_nr}</span>
-              {(memberSports.has('volleyball')) && user.licence_category && (
-                <span>{t('licenceCategory')}: {user.licence_category}</span>
-              )}
-              {(memberSports.has('volleyball')) && (
-                <>
-                  <span>{t('licenceActivated')}: {user.licence_activated == null ? '—' : user.licence_activated ? '✓' : '✗'}</span>
-                  <span>{t('licenceValidated')}: {user.licence_validated == null ? '—' : user.licence_validated ? '✓' : '✗'}</span>
-                </>
-              )}
             </div>
           </div>
         )}

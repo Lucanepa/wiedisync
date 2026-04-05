@@ -514,19 +514,7 @@ async function syncToMembers(rows) {
       changed = true;
     }
 
-    // Licence fields
-    if (row.licence_category !== undefined && row.licence_category !== null) {
-      payload.licence_category = row.licence_category;
-      changed = true;
-    }
-    if (row.licence_activated !== undefined && row.licence_activated !== null) {
-      payload.licence_activated = row.licence_activated;
-      changed = true;
-    }
-    if (row.licence_validated !== undefined && row.licence_validated !== null) {
-      payload.licence_validated = row.licence_validated;
-      changed = true;
-    }
+    // Licence fields — read from sv_vm_check at query time, no longer synced to members
 
     // VM email — store the email from Volleymanager
     if (row.email && row.email !== member.vm_email) {

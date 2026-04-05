@@ -110,6 +110,8 @@ export interface Member extends BaseRecord {
   licence_category: string
   licence_activated: boolean
   licence_validated: boolean
+  licence_activation_date: string | null
+  licence_validation_date: string | null
   vm_email: string
   ahv_nummer: string
   beitragskategorie: string

@@ -245,10 +245,6 @@ export default function ProfilePage() {
             </p>
           </div>
           <div className="rounded-lg border bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-            <p className="text-sm text-gray-500 dark:text-gray-400">{t('licenseNr')}</p>
-            <p className="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">{user.license_nr || '—'}</p>
-          </div>
-          <div className="rounded-lg border bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
             <p className="text-sm text-gray-500 dark:text-gray-400">{t('licences')}</p>
             {user.licences?.length > 0 ? (
               <div className="mt-1 flex flex-wrap gap-1.5">
@@ -272,32 +268,53 @@ export default function ProfilePage() {
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{t('svSyncInfo')}</p>
           <div className="mt-3">
             <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('licence')}</span>
-            <div className="grid grid-cols-3 gap-2.5">
-              {user.licence_category && (
-                <div className="rounded-lg border bg-white px-3 py-2.5 dark:border-gray-700 dark:bg-gray-800">
-                  <p className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('type')}</p>
-                  <p className="mt-0.5 text-sm font-bold text-gray-900 dark:text-gray-100">{user.licence_category}</p>
+            <div className="space-y-2.5">
+              {/* Licence card — absence-card style */}
+              <div className="rounded-lg border bg-white dark:border-gray-700 dark:bg-gray-800">
+                <div className="flex items-center gap-3 px-4 py-3">
+                  {user.licence_category && (
+                    <span className="inline-flex rounded-full bg-gold-100 px-2.5 py-0.5 text-xs font-medium text-gold-900 dark:bg-gold-400/20 dark:text-gold-300">
+                      {user.licence_category}
+                    </span>
+                  )}
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    {t('licenseNr')}: {user.license_nr}
+                  </span>
+                  <div className="ml-auto flex items-center gap-3">
+                    <div className="flex items-center gap-1">
+                      <span className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('activated')}</span>
+                      {user.licence_activated == null
+                        ? <span className="text-sm text-gray-400">—</span>
+                        : user.licence_activated
+                          ? <span className="text-sm text-green-600 dark:text-green-400">&#10003;</span>
+                          : <span className="text-sm text-red-500 dark:text-red-400">&#10007;</span>}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('validated')}</span>
+                      {user.licence_validated == null
+                        ? <span className="text-sm text-gray-400">—</span>
+                        : user.licence_validated
+                          ? <span className="text-sm text-green-600 dark:text-green-400">&#10003;</span>
+                          : <span className="text-sm text-red-500 dark:text-red-400">&#10007;</span>}
+                    </div>
+                  </div>
                 </div>
-              )}
-              <div className="rounded-lg border bg-white px-3 py-2.5 dark:border-gray-700 dark:bg-gray-800">
-                <p className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('activated')}</p>
-                <p className="mt-0.5 text-sm font-bold">
-                  {user.licence_activated == null
-                    ? <span className="text-gray-400">—</span>
-                    : user.licence_activated
-                      ? <span className="text-green-600 dark:text-green-400">&#10003;</span>
-                      : <span className="text-red-500 dark:text-red-400">&#10007;</span>}
-                </p>
-              </div>
-              <div className="rounded-lg border bg-white px-3 py-2.5 dark:border-gray-700 dark:bg-gray-800">
-                <p className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('validated')}</p>
-                <p className="mt-0.5 text-sm font-bold">
-                  {user.licence_validated == null
-                    ? <span className="text-gray-400">—</span>
-                    : user.licence_validated
-                      ? <span className="text-green-600 dark:text-green-400">&#10003;</span>
-                      : <span className="text-red-500 dark:text-red-400">&#10007;</span>}
-                </p>
+                {/* Date row — full width bottom */}
+                {(user.licence_activation_date || user.licence_validation_date) && (
+                  <div className="border-t border-gray-100 px-4 py-2 dark:border-gray-700">
+                    <div className="flex items-center gap-4 text-sm text-gray-700 dark:text-gray-300">
+                      {user.licence_activation_date && (
+                        <span>{t('activated')}: {formatDate(user.licence_activation_date)}</span>
+                      )}
+                      {user.licence_activation_date && user.licence_validation_date && (
+                        <span className="text-gray-400">—</span>
+                      )}
+                      {user.licence_validation_date && (
+                        <span>{t('validated')}: {formatDate(user.licence_validation_date)}</span>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

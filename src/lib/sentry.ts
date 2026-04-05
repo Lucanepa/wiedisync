@@ -39,6 +39,10 @@ export function initSentry() {
     // forward all errors to backend JSONL log
     beforeSend(event) {
       if (host === 'localhost' || host === '127.0.0.1') return null
+      // Suppress harmless Directus SDK WebSocket auth errors (no token on /login)
+      const errMsg = event.exception?.values?.[0]?.value ?? ''
+      if (errMsg.includes('No token for authenticating the websocket') ||
+          errMsg.includes('No token for re-authenticating the websocket')) return null
       // Strip email-like strings from breadcrumb messages
       if (event.breadcrumbs) {
         for (const bc of event.breadcrumbs) {

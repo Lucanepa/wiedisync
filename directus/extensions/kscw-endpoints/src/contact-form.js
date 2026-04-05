@@ -12,7 +12,10 @@ const SPORT_EMAILS = {
 const GENERAL_EMAIL = process.env.CONTACT_EMAIL_GENERAL || 'kontakt@kscw.ch'
 
 async function verifyTurnstile(token) {
-  if (!TURNSTILE_SECRET) return true
+  if (!TURNSTILE_SECRET) {
+    console.error('[contact-form] TURNSTILE_SECRET not configured — rejecting request')
+    return false
+  }
   const resp = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },

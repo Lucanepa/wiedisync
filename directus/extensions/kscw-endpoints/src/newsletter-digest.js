@@ -204,10 +204,16 @@ export function registerNewsletterDigest(router, { database, logger, services, g
 
   router.post('/newsletter/digest', async (req, res) => {
     try {
-      // Require auth (Directus Flow sends with admin token)
+      // Require auth — validate bearer token against Directus admin token
       const authHeader = req.headers.authorization;
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return res.status(401).json({ error: 'Unauthorized' });
+      }
+      const token = authHeader.slice(7);
+      const adminToken = process.env.DIRECTUS_ADMIN_TOKEN || process.env.ADMIN_ACCESS_TOKEN;
+      if (!adminToken || token !== adminToken) {
+        log.warn('newsletter-digest: invalid bearer token attempt');
+        return res.status(403).json({ error: 'Forbidden' });
       }
 
       const now = new Date();

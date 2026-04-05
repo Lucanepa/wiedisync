@@ -62,19 +62,19 @@ ALTER TABLE slot_claims ADD CONSTRAINT slot_claims_claimed_by_member_foreign
 
 -- carpool_passengers: passenger records belong to the member
 DO $$ BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'carpool_passengers') THEN
-    ALTER TABLE carpool_passengers DROP CONSTRAINT IF EXISTS carpool_passengers_member_foreign;
-    ALTER TABLE carpool_passengers ADD CONSTRAINT carpool_passengers_member_foreign
-      FOREIGN KEY (member) REFERENCES members(id) ON DELETE CASCADE;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'carpool_passengers' AND column_name = 'passenger') THEN
+    ALTER TABLE carpool_passengers DROP CONSTRAINT IF EXISTS carpool_passengers_passenger_foreign;
+    ALTER TABLE carpool_passengers ADD CONSTRAINT carpool_passengers_passenger_foreign
+      FOREIGN KEY (passenger) REFERENCES members(id) ON DELETE CASCADE;
   END IF;
 END $$;
 
--- carpools: carpool offers belong to the member
+-- carpools: carpool offers belong to the driver
 DO $$ BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'carpools') THEN
-    ALTER TABLE carpools DROP CONSTRAINT IF EXISTS carpools_member_foreign;
-    ALTER TABLE carpools ADD CONSTRAINT carpools_member_foreign
-      FOREIGN KEY (member) REFERENCES members(id) ON DELETE CASCADE;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'carpools' AND column_name = 'driver') THEN
+    ALTER TABLE carpools DROP CONSTRAINT IF EXISTS carpools_driver_foreign;
+    ALTER TABLE carpools ADD CONSTRAINT carpools_driver_foreign
+      FOREIGN KEY (driver) REFERENCES members(id) ON DELETE CASCADE;
   END IF;
 END $$;
 

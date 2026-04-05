@@ -110,6 +110,7 @@ export default function InfraHealthPage() {
   const [crons, setCrons] = useState<HealthCheck[]>([])
   const [stats, setStats] = useState<HealthCheck[]>([])
   const [vps, setVps] = useState<HealthCheck[]>([])
+  const [slowQueries, setSlowQueries] = useState<{ avg_ms: number; max_ms: number; calls: number; total_ms: number; rows: number; query: string }[]>([])
   const [lastCheck, setLastCheck] = useState<string>('')
   const [loading, setLoading] = useState(false)
 
@@ -376,6 +377,25 @@ export default function InfraHealthPage() {
     } catch { /* skip VPS metrics on error */ }
     setVps(vpsResults)
 
+    // ── Slow Queries ──
+    try {
+      const token = getAccessToken()
+      const sqRes = await fetch(`${PROD_URL}/kscw/admin/slow-queries?limit=10`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+      if (sqRes.ok) {
+        const sqData = await sqRes.json()
+        setSlowQueries((sqData.data || []).map((q: Record<string, string>) => ({
+          avg_ms: parseFloat(q.avg_ms),
+          max_ms: parseFloat(q.max_ms),
+          calls: parseInt(q.calls),
+          total_ms: parseFloat(q.total_ms),
+          rows: parseInt(q.rows),
+          query: q.query,
+        })))
+      }
+    } catch { /* skip slow queries on error */ }
+
     setLastCheck(new Date().toLocaleTimeString())
     setLoading(false)
   }, [t])
@@ -423,6 +443,42 @@ export default function InfraHealthPage() {
       <Section title={t('infraDataSyncs')} checks={syncs} />
       <Section title={t('infraCronJobs')} checks={crons} />
       {stats.length > 0 && <Section title={t('infraStats')} checks={stats} />}
+
+      {slowQueries.length > 0 && (
+        <div className="mb-6">
+          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            {t('infraSlowQueries')}
+          </h3>
+          <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800/50">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-gray-700">
+                  <th className="px-3 py-2 text-left font-semibold text-gray-500 dark:text-gray-400">{t('infraQueryAvg')}</th>
+                  <th className="px-3 py-2 text-left font-semibold text-gray-500 dark:text-gray-400">{t('infraQueryMax')}</th>
+                  <th className="px-3 py-2 text-left font-semibold text-gray-500 dark:text-gray-400">{t('infraQueryCalls')}</th>
+                  <th className="px-3 py-2 text-left font-semibold text-gray-500 dark:text-gray-400">{t('infraQueryTotal')}</th>
+                  <th className="px-3 py-2 text-left font-semibold text-gray-500 dark:text-gray-400">Query</th>
+                </tr>
+              </thead>
+              <tbody>
+                {slowQueries.map((q, i) => (
+                  <tr key={i} className="border-b border-gray-100 last:border-0 dark:border-gray-700/50">
+                    <td className={`px-3 py-2 font-mono tabular-nums ${q.avg_ms > 100 ? 'font-bold text-red-600 dark:text-red-400' : q.avg_ms > 20 ? 'text-amber-600 dark:text-amber-400' : 'text-gray-700 dark:text-gray-300'}`}>
+                      {q.avg_ms}ms
+                    </td>
+                    <td className="px-3 py-2 font-mono tabular-nums text-gray-600 dark:text-gray-400">{q.max_ms}ms</td>
+                    <td className="px-3 py-2 font-mono tabular-nums text-gray-600 dark:text-gray-400">{q.calls.toLocaleString('de-CH')}</td>
+                    <td className="px-3 py-2 font-mono tabular-nums text-gray-600 dark:text-gray-400">{q.total_ms > 1000 ? `${(q.total_ms / 1000).toFixed(1)}s` : `${q.total_ms}ms`}</td>
+                    <td className="max-w-xs truncate px-3 py-2 font-mono text-gray-500 dark:text-gray-400" title={q.query}>
+                      {q.query}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

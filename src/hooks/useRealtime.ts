@@ -18,6 +18,8 @@ export function useRealtime<T = Record<string, unknown>>(
   collection: string,
   callback: (data: RealtimeEvent<T>) => void,
   actions?: RealtimeAction[],
+  /** Skip subscription (e.g. while auth is still loading) */
+  disabled?: boolean,
 ) {
   const callbackRef = useRef(callback)
   callbackRef.current = callback
@@ -26,8 +28,8 @@ export function useRealtime<T = Record<string, unknown>>(
   actionsRef.current = actions
 
   useEffect(() => {
-    // Skip if not authenticated — WebSocket requires a token
-    if (!isAuthenticated()) return
+    // Skip if not authenticated or explicitly disabled (auth still loading)
+    if (disabled || !isAuthenticated()) return
 
     let cleanup: (() => void) | undefined
     let cancelled = false
@@ -74,5 +76,5 @@ export function useRealtime<T = Record<string, unknown>>(
       cancelled = true
       try { cleanup?.() } catch {}
     }
-  }, [collection])
+  }, [collection, disabled])
 }

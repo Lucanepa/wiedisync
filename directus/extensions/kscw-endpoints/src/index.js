@@ -30,7 +30,10 @@ import { registerClubdeskUpdate } from './clubdesk-update.js'
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET || ''
 
 async function verifyTurnstile(token) {
-  if (!TURNSTILE_SECRET) return true // skip in dev
+  if (!TURNSTILE_SECRET) {
+    console.warn('[kscw-endpoints] TURNSTILE_SECRET not configured — CAPTCHA disabled')
+    return true
+  }
   const resp = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -297,16 +300,14 @@ export default {
           shell: member?.shell || false,
         }
 
-        // For unclaimed members: include name + existing teams for profile pre-fill
+        // For unclaimed members: include only team names/sport for pre-fill (no PII, no internal IDs)
         if (member && !member.wiedisync_active) {
-          result.first_name = member.first_name || ''
-          result.last_name = member.last_name || ''
           const season = getCurrentSeason()
           const memberTeams = await database('member_teams')
             .join('teams', 'teams.id', 'member_teams.team')
             .where('member_teams.member', member.id)
             .where('member_teams.season', season)
-            .select('teams.id', 'teams.name', 'teams.league', 'teams.sport', 'member_teams.guest_level')
+            .select('teams.name', 'teams.sport')
           result.existing_teams = memberTeams
         }
 
@@ -345,9 +346,8 @@ export default {
             .join('members', 'members.id', 'member_teams.member')
             .where('member_teams.team', team.id)
             .where('members.kscw_membership_active', true)
-            .select('members.id', 'members.first_name', 'members.last_name',
-              'members.number', 'members.position', 'members.photo',
-              'member_teams.guest_level'),
+            .select('members.first_name', 'members.last_name',
+              'members.number', 'members.position', 'members.photo'),
           database('teams_coaches')
             .join('members', 'members.id', 'teams_coaches.members_id')
             .where('teams_coaches.teams_id', team.id)
@@ -1060,7 +1060,7 @@ export default {
 
         // Verify caller is the delegation recipient
         const callerMember = await database('members').where('user', req.accountability.user).select('id').first()
-        if (!callerMember || callerMember.id !== d.to_member) {
+        if (!callerMember || String(callerMember.id) !== String(d.to_member)) {
           return res.status(403).json({ error: 'Not authorized — only the recipient can accept' })
         }
 
@@ -1106,7 +1106,7 @@ export default {
 
         // Verify caller is the delegation recipient
         const callerMember = await database('members').where('user', req.accountability.user).select('id').first()
-        if (!callerMember || callerMember.id !== d.to_member) {
+        if (!callerMember || String(callerMember.id) !== String(d.to_member)) {
           return res.status(403).json({ error: 'Not authorized — only the recipient can decline' })
         }
 
@@ -1183,6 +1183,28 @@ export default {
       } catch (err) {
         logEndpointError(log, 'admin/vps-metrics', err, req)
         res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal error' })
+      }
+    })
+
+    // ── Admin: Slow Queries ────────────────────────────────────────
+    // GET /kscw/admin/slow-queries — top queries by avg execution time
+
+    router.get('/admin/slow-queries', async (req, res) => {
+      try {
+        requireAdmin(req, log)
+      } catch (err) {
+        return res.status(err.status || 403).json({ error: err.message })
+      }
+      try {
+        const limit = Math.min(parseInt(req.query.limit) || 20, 50)
+        const result = await database.raw(
+          'SELECT round(s.total_exec_time::numeric, 1) AS total_ms, s.calls, round(s.mean_exec_time::numeric, 1) AS avg_ms, round(s.max_exec_time::numeric, 1) AS max_ms, s.rows, left(s.query, 200) AS query FROM extensions.pg_stat_statements s WHERE s.dbid = (SELECT oid FROM pg_database WHERE datname = current_database()) AND s.calls > 0 ORDER BY s.mean_exec_time DESC LIMIT ?',
+          [limit]
+        )
+        return res.json({ data: result.rows ?? result })
+      } catch (err) {
+        log.error({ msg: 'slow-queries error', error: err.message })
+        return res.status(500).json({ error: err.message })
       }
     })
 

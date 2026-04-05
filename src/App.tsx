@@ -109,7 +109,7 @@ export default function App() {
             <Route path="admin/referee-expenses" element={<AdminRoute><RefereeExpensesPage /></AdminRoute>} />
             <Route path="admin/club-stats" element={<AdminRoute><ClubStatsPage /></AdminRoute>} />
             <Route path="admin/anmeldungen" element={<AdminRoute><AnmeldungenPage /></AdminRoute>} />
-            <Route path="admin/database" element={<AdminRoute><DatabasePage /></AdminRoute>} />
+            <Route path="admin/database" element={<SuperAdminRoute><DatabasePage /></SuperAdminRoute>} />
             <Route path="admin/infra" element={<SuperAdminRoute><InfraHealthPage /></SuperAdminRoute>} />
             <Route path="admin/data-health" element={<SuperAdminRoute><DataHealthPage /></SuperAdminRoute>} />
             <Route path="admin/audit-log" element={<SuperAdminRoute><AuditLogPage /></SuperAdminRoute>} />

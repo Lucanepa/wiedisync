@@ -90,8 +90,7 @@ export default function SignUpPage() {
     try {
       const res = await kscwApi<{
         exists: boolean; claimed: boolean;
-        first_name?: string; last_name?: string;
-        existing_teams?: { id: number; name: string; league?: string; sport?: string }[];
+        existing_teams?: { name: string; sport?: string }[];
       }>('/check-email', {
         method: 'POST',
         body: { email: email.trim().toLowerCase(), turnstile_token: turnstileToken },
@@ -102,10 +101,8 @@ export default function SignUpPage() {
         navigate('/login', { state: { email: email.trim().toLowerCase(), accountExists: true } })
         return
       } else if (res.exists) {
-        // Account exists but not claimed — pre-fill data and send OTP
-        if (res.first_name) setFirstName(res.first_name)
-        if (res.last_name) setLastName(res.last_name)
-        if (res.existing_teams) setExistingTeams(res.existing_teams.map(t => ({ ...t, id: String(t.id) })))
+        // Account exists but not claimed — show existing teams and send OTP
+        if (res.existing_teams) setExistingTeams(res.existing_teams.map((t, i) => ({ ...t, id: String(i) })))
         await kscwApi('/verify-email', { method: 'POST', body: { email: email.trim().toLowerCase(), lang: selectedLanguage } })
         setStep('otp-claim')
       } else {

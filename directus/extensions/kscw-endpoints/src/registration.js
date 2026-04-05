@@ -41,7 +41,10 @@ async function getSportAdminEmails(database, membershipType) {
 }
 
 async function verifyTurnstile(token) {
-  if (!TURNSTILE_SECRET) return true
+  if (!TURNSTILE_SECRET) {
+    console.error('[registration] TURNSTILE_SECRET not configured — rejecting request')
+    return false
+  }
   const resp = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -396,7 +399,12 @@ export function registerRegistration(router, { database, logger, services, getSc
       const { ItemsService, FilesService } = services
       const itemsService = new ItemsService('registrations', { schema, knex: database })
 
-      // Verify registration exists, is pending, and email matches
+      // Verify registration exists, is pending, and caller knows the reference number
+      const { reference_number, id_upload_front, id_upload_back, bb_doc_lizenz, bb_doc_selfdecl, bb_doc_natdecl } = req.body
+      if (!reference_number) {
+        return res.status(400).json({ error: 'reference_number required' })
+      }
+
       let reg
       try {
         reg = await itemsService.readOne(id)
@@ -406,14 +414,9 @@ export function registerRegistration(router, { database, logger, services, getSc
       if (!reg || reg.status !== 'pending') {
         return res.status(404).json({ error: 'Registration not found' })
       }
-
-      // Files come as multipart — Directus's Express instance has multer available
-      // but for custom endpoints we need to handle it manually
-      // The frontend will upload files to /files API directly and then PATCH the registration
-      // This endpoint is a convenience wrapper
-
-      // For now, accept JSON with file IDs (frontend uploads to /files first)
-      const { id_upload_front, id_upload_back, bb_doc_lizenz, bb_doc_selfdecl, bb_doc_natdecl } = req.body
+      if (reg.reference_number !== reference_number) {
+        return res.status(403).json({ error: 'Invalid reference number' })
+      }
       const update = {}
       if (id_upload_front) update.id_upload_front = id_upload_front
       if (id_upload_back) update.id_upload_back = id_upload_back

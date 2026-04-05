@@ -37,9 +37,32 @@ export default {
     }
 
     try {
-      const body = await request.text()
+      // Session Replay may send gzip-compressed envelopes
+      const contentEncoding = request.headers.get('Content-Encoding') || ''
+      let bodyText: string
+      let rawBody: ArrayBuffer | string
+
+      if (contentEncoding.includes('gzip')) {
+        const decompressed = new DecompressionStream('gzip')
+        const reader = request.body!.pipeThrough(decompressed).getReader()
+        const chunks: Uint8Array[] = []
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          chunks.push(value)
+        }
+        const merged = new Uint8Array(chunks.reduce((a, c) => a + c.length, 0))
+        let offset = 0
+        for (const c of chunks) { merged.set(c, offset); offset += c.length }
+        bodyText = new TextDecoder().decode(merged)
+        rawBody = bodyText
+      } else {
+        bodyText = await request.text()
+        rawBody = bodyText
+      }
+
       // Sentry envelope: first line is JSON header with dsn
-      const header = body.split('\n')[0]
+      const header = bodyText.split('\n')[0]
       const { dsn } = JSON.parse(header)
       const dsnUrl = new URL(dsn)
 
@@ -53,7 +76,7 @@ export default {
       const resp = await fetch(sentryUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-sentry-envelope' },
-        body,
+        body: rawBody,
       })
 
       return new Response(resp.body, {
@@ -70,7 +93,8 @@ export default {
 }
 
 function corsHeaders(origin: string, allowed: string): Record<string, string> {
-  const isAllowed = origin === allowed || origin === 'https://wiedisync.pages.dev' || origin.endsWith('.wiedisync.pages.dev')
+  // Only allow exact prod domain, main preview, and Cloudflare Pages preview deploys (commit-hash.wiedisync.pages.dev)
+  const isAllowed = origin === allowed || origin === 'https://wiedisync.pages.dev' || /^https:\/\/[a-f0-9]+\.wiedisync\.pages\.dev$/.test(origin)
   return {
     'Access-Control-Allow-Origin': isAllowed ? origin : allowed,
     'Access-Control-Allow-Methods': 'POST, OPTIONS',

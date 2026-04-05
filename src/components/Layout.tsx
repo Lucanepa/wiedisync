@@ -168,7 +168,7 @@ export default function Layout() {
     filter: user ? { member: { _eq: user.id } } : undefined,
     fields: ['*', 'team.*'],
     limit: 10,
-    enabled: !!user,
+    enabled: !!user && !isLoading,
   })
   const memberTeams = memberTeamsRaw ?? []
 

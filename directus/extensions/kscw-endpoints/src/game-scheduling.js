@@ -10,7 +10,10 @@ import { FRONTEND_URL } from './email-template.js'
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET || ''
 
 async function verifyTurnstile(token) {
-  if (!TURNSTILE_SECRET) return true
+  if (!TURNSTILE_SECRET) {
+    console.error('[game-scheduling] TURNSTILE_SECRET not configured — rejecting request')
+    return false
+  }
   const resp = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -62,27 +65,32 @@ export function registerGameScheduling(router, { database, logger, services, get
     }
   })
 
-  // In-memory rate limiter for token lookups (per IP)
+  // In-memory rate limiter for token lookups and writes (per IP)
   const tokenAttempts = new Map() // ip → { count, resetAt }
+  const writeAttempts = new Map() // ip → { count, resetAt }
+
+  function rateLimit(map, req, maxAttempts, windowMs) {
+    const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown'
+    const now = Date.now()
+    const attempt = map.get(ip)
+    if (attempt && now < attempt.resetAt) {
+      if (attempt.count >= maxAttempts) return false
+      attempt.count++
+    } else {
+      map.set(ip, { count: 1, resetAt: now + windowMs })
+    }
+    if (map.size > 1000) {
+      for (const [k, v] of map) { if (now > v.resetAt) map.delete(k) }
+    }
+    return true
+  }
 
   // GET /kscw/terminplanung/slots/:token — view available slots
   router.get('/terminplanung/slots/:token', async (req, res) => {
     try {
       // Rate limit: max 10 token lookups per 15 min per IP
-      const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown'
-      const now = Date.now()
-      const attempt = tokenAttempts.get(ip)
-      if (attempt && now < attempt.resetAt) {
-        if (attempt.count >= 10) {
-          return res.status(429).json({ error: 'Too many requests. Try again later.' })
-        }
-        attempt.count++
-      } else {
-        tokenAttempts.set(ip, { count: 1, resetAt: now + 15 * 60 * 1000 })
-      }
-      // Clean stale entries periodically
-      if (tokenAttempts.size > 1000) {
-        for (const [k, v] of tokenAttempts) { if (now > v.resetAt) tokenAttempts.delete(k) }
+      if (!rateLimit(tokenAttempts, req, 10, 15 * 60 * 1000)) {
+        return res.status(429).json({ error: 'Too many requests. Try again later.' })
       }
 
       const opponent = await database('game_scheduling_opponents')
@@ -118,6 +126,11 @@ export function registerGameScheduling(router, { database, logger, services, get
   // POST /kscw/terminplanung/book-home/:token — book a home slot
   router.post('/terminplanung/book-home/:token', async (req, res) => {
     try {
+      // Rate limit: max 10 booking attempts per 15 min per IP
+      if (!rateLimit(writeAttempts, req, 10, 15 * 60 * 1000)) {
+        return res.status(429).json({ error: 'Too many requests. Try again later.' })
+      }
+
       const opponent = await database('game_scheduling_opponents')
         .where('token', req.params.token).where('status', 'active').first()
       if (!opponent) return res.status(404).json({ error: 'Invalid link' })
@@ -149,6 +162,11 @@ export function registerGameScheduling(router, { database, logger, services, get
   // POST /kscw/terminplanung/propose-away/:token — propose 3 away dates
   router.post('/terminplanung/propose-away/:token', async (req, res) => {
     try {
+      // Rate limit: max 10 proposal attempts per 15 min per IP
+      if (!rateLimit(writeAttempts, req, 10, 15 * 60 * 1000)) {
+        return res.status(429).json({ error: 'Too many requests. Try again later.' })
+      }
+
       const opponent = await database('game_scheduling_opponents')
         .where('token', req.params.token).where('status', 'active').first()
       if (!opponent) return res.status(404).json({ error: 'Invalid link' })

@@ -13,9 +13,9 @@
 
 import { FRONTEND_URL } from './email-template.js'
 
-const VAPID_PUBLIC_KEY = 'BKJqU0d09bzpCWv6Goq-_24NxBLHHwGkjrUrRQsyIDoECVIE5nBBFw8g3j_hjBRhOlJL2YU72b_5R_SxFedMBQs'
+const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || 'BKJqU0d09bzpCWv6Goq-_24NxBLHHwGkjrUrRQsyIDoECVIE5nBBFw8g3j_hjBRhOlJL2YU72b_5R_SxFedMBQs'
 const PUSH_WORKER_URL = process.env.PUSH_WORKER_URL || 'https://kscw-push.lucanepa.workers.dev'
-const PUSH_AUTH_SECRET = process.env.PUSH_AUTH_SECRET || ''
+const PUSH_AUTH_SECRET = process.env.PUSH_AUTH_SECRET
 
 // ── Helper: send push to a single member ────────────────────────────
 
@@ -54,6 +54,11 @@ async function _sendPush(db, subscriptions, title, body, url, tag, log) {
   }))
 
   const result = { sent: 0, failed: 0, cleaned: 0 }
+
+  if (!PUSH_AUTH_SECRET) {
+    log?.error?.('[push] PUSH_AUTH_SECRET not configured — skipping push')
+    return result
+  }
 
   try {
     const resp = await fetch(`${PUSH_WORKER_URL}/push`, {

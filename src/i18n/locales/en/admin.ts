@@ -89,6 +89,11 @@ export default {
   infraActiveMembers: 'Active Members',
   infraActiveTeams: 'Active Teams',
   infraTotalGames: 'Total Games',
+  infraSlowQueries: 'Database Performance',
+  infraQueryAvg: 'Avg',
+  infraQueryMax: 'Max',
+  infraQueryCalls: 'Calls',
+  infraQueryTotal: 'Total',
 
   // Data Health
   dhTitle: 'Data Health',

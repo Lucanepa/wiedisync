@@ -5,7 +5,7 @@ import { useRealtime } from './useRealtime'
 import type { Notification } from '../types'
 
 export function useNotifications() {
-  const { user } = useAuth()
+  const { user, isLoading: authLoading } = useAuth()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
@@ -13,7 +13,7 @@ export function useNotifications() {
   userIdRef.current = user?.id
 
   const fetchNotifications = useCallback(async () => {
-    if (!user?.id) {
+    if (authLoading || !user?.id) {
       setNotifications([])
       setUnreadCount(0)
       setIsLoading(false)
@@ -32,13 +32,13 @@ export function useNotifications() {
     } finally {
       setIsLoading(false)
     }
-  }, [user?.id])
+  }, [authLoading, user?.id])
 
   useEffect(() => {
     fetchNotifications()
   }, [fetchNotifications])
 
-  // Listen for new notifications in realtime
+  // Listen for new notifications in realtime — skip if auth still loading
   useRealtime<Notification>('notifications', (e) => {
     if (e.record.member !== userIdRef.current) return
     if (e.action === 'create') {
@@ -55,7 +55,7 @@ export function useNotifications() {
       setNotifications((prev) => prev.filter((n) => n.id !== e.record.id))
       setUnreadCount((c) => Math.max(0, c - 1))
     }
-  })
+  }, undefined, authLoading || !user?.id)
 
   const markAsRead = useCallback(async (id: string) => {
     try {

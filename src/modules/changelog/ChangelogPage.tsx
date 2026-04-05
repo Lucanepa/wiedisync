@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.5.0'
+const APP_VERSION = '3.6.0'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,26 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.6.0',
+    date: '2026-04-05',
+    sections: [
+      {
+        title: 'Profil',
+        items: [
+          'Swiss-Volley-Lizenzkarte: Lizenzkategorie, Nummer, LAS-Status, Ausländer-Badge, Federation of Origin (FdO), Verband und Aktiviert/Validiert — alles direkt aus sv_vm_check geladen.',
+          'Lizenzdaten (Kategorie, Aktiviert, Validiert) werden nicht mehr nach members kopiert — sv_vm_check ist die einzige Quelle.',
+          'Absenzkarten zeigen Typ und Detail oben, Datum in einer eigenen Zeile unten.',
+        ],
+      },
+      {
+        title: 'Sicherheit',
+        items: [
+          'sv_vm_check-Berechtigungen: Nur 11 sichere Felder sichtbar für Mitglieder (keine E-Mail, Geburtsdatum, Name).',
+        ],
+      },
+    ],
+  },
   {
     version: '3.5.0',
     date: '2026-04-05',

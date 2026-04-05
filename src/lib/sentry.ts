@@ -43,6 +43,9 @@ export function initSentry() {
       const errMsg = event.exception?.values?.[0]?.value ?? ''
       if (errMsg.includes('No token for authenticating the websocket') ||
           errMsg.includes('No token for re-authenticating the websocket')) return null
+      // Suppress browser-extension DOM manipulation errors (Google Translate, Grammarly, etc.)
+      if (errMsg.includes("removeChild' on 'Node'") ||
+          errMsg.includes("insertBefore' on 'Node'")) return null
       // Strip email-like strings from breadcrumb messages
       if (event.breadcrumbs) {
         for (const bc of event.breadcrumbs) {

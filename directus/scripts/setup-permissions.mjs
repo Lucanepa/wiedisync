@@ -361,8 +361,6 @@ async function main() {
     'hall_slots', 'hall_closures', 'hall_events', 'hall_events_halls', 'halls', 'hall_slots_teams',
     'slot_claims', 'news', 'app_settings',
     'referee_expenses', 'carpools', 'carpool_passengers', 'polls',
-    // Swiss Volley VM data (public licence info)
-    'sv_vm_check',
     // Junctions
     'teams_coaches', 'teams_captains', 'teams_responsibles', 'teams_sponsors', 'events_teams', 'hall_events_halls',
     // Files
@@ -371,6 +369,14 @@ async function main() {
   for (const col of MEMBER_READ_ALL) {
     await setPermRead(MEMBER_POLICY, col)
   }
+
+  // sv_vm_check — own record only, restricted fields (no PII: email, birthday, name, phone)
+  const VM_CHECK_FIELDS = [
+    'id', 'association_id', 'licence_category', 'licence_activated', 'licence_validated',
+    'is_locally_educated', 'is_foreigner', 'federation', 'nationality_code',
+    'licence_activation_date', 'licence_validation_date',
+  ]
+  await setPermRead(MEMBER_POLICY, 'sv_vm_check', null, VM_CHECK_FIELDS)
 
   // Members — limited fields for other members
   await setPermRead(MEMBER_POLICY, 'members', null, MEMBER_VISIBLE_FIELDS)

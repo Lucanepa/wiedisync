@@ -69,6 +69,16 @@ export default function ProfilePage() {
     }
   }
 
+  // Fetch extra VM data from sv_vm_check (LAS, foreigner, federation, FdO, dates)
+  interface VmCheck { id: string; is_locally_educated: boolean | null; is_foreigner: boolean | null; federation: string | null; nationality_code: string | null; licence_activation_date: string | null; licence_validation_date: string | null }
+  const { data: vmCheckRaw } = useCollection<VmCheck>('sv_vm_check', {
+    filter: user?.license_nr ? { association_id: { _eq: user.license_nr } } : undefined,
+    fields: ['id', 'is_locally_educated', 'is_foreigner', 'federation', 'nationality_code', 'licence_activation_date', 'licence_validation_date'],
+    limit: 1,
+    enabled: !!user?.license_nr,
+  })
+  const vmCheck = vmCheckRaw?.[0] ?? null
+
   const today = toISODate(new Date())
 
   const { data: activeAbsencesRaw } = useCollection<Absence>('absences', {
@@ -271,7 +281,8 @@ export default function ProfilePage() {
             <div className="space-y-2.5">
               {/* Licence card — absence-card style */}
               <div className="rounded-lg border bg-white dark:border-gray-700 dark:bg-gray-800">
-                <div className="flex items-center gap-3 px-4 py-3">
+                {/* Top row: badge + licence nr + status checks */}
+                <div className="flex flex-wrap items-center gap-2 px-4 py-3">
                   {user.licence_category && (
                     <span className="inline-flex rounded-full bg-gold-100 px-2.5 py-0.5 text-xs font-medium text-gold-900 dark:bg-gold-400/20 dark:text-gold-300">
                       {user.licence_category}
@@ -280,7 +291,26 @@ export default function ProfilePage() {
                   <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                     {t('licenseNr')}: {user.license_nr}
                   </span>
+                  {/* LAS / Foreigner / FdO badges */}
+                  {vmCheck?.is_locally_educated && (
+                    <span className="inline-flex rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-medium text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                      {t('svLas')}
+                    </span>
+                  )}
+                  {vmCheck?.is_foreigner && (
+                    <span className="inline-flex rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-medium text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">
+                      {t('svForeigner')}
+                    </span>
+                  )}
+                  {vmCheck?.nationality_code && vmCheck.nationality_code !== 'SUI' && (
+                    <span className="inline-flex rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                      FdO: {vmCheck.nationality_code}
+                    </span>
+                  )}
                   <div className="ml-auto flex items-center gap-3">
+                    {vmCheck?.federation && (
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{vmCheck.federation}</span>
+                    )}
                     <div className="flex items-center gap-1">
                       <span className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('activated')}</span>
                       {user.licence_activated == null
@@ -300,17 +330,17 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 {/* Date row — full width bottom */}
-                {(user.licence_activation_date || user.licence_validation_date) && (
+                {(vmCheck?.licence_activation_date || vmCheck?.licence_validation_date) && (
                   <div className="border-t border-gray-100 px-4 py-2 dark:border-gray-700">
                     <div className="flex items-center gap-4 text-sm text-gray-700 dark:text-gray-300">
-                      {user.licence_activation_date && (
-                        <span>{t('activated')}: {formatDate(user.licence_activation_date)}</span>
+                      {vmCheck.licence_activation_date && (
+                        <span>{t('activated')}: {formatDate(vmCheck.licence_activation_date)}</span>
                       )}
-                      {user.licence_activation_date && user.licence_validation_date && (
+                      {vmCheck.licence_activation_date && vmCheck.licence_validation_date && (
                         <span className="text-gray-400">—</span>
                       )}
-                      {user.licence_validation_date && (
-                        <span>{t('validated')}: {formatDate(user.licence_validation_date)}</span>
+                      {vmCheck.licence_validation_date && (
+                        <span>{t('validated')}: {formatDate(vmCheck.licence_validation_date)}</span>
                       )}
                     </div>
                   </div>

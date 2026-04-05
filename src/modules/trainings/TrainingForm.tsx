@@ -16,7 +16,7 @@ import { Switch } from '@/components/ui/switch'
 import type { Training, Team, Hall, HallSlot, SlotClaim, TeamSettings } from '../../types'
 import type { RecurringEditScope } from './RecurringEditDialog'
 import { fetchAllItems, fetchItem, updateRecord, flattenM2MTeams } from '../../lib/api'
-import { asObj } from '../../utils/relations'
+import { asObj, relId } from '../../utils/relations'
 
 // day_of_week in DB: 0=Mon, 1=Tue, ..., 6=Sun
 const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
@@ -211,11 +211,11 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
 
   useEffect(() => {
     if (training) {
-      setTeamId(training.team)
+      setTeamId(relId(training.team))
       setDate(training.date.split(' ')[0])
       setStartTime(training.start_time)
       setEndTime(training.end_time)
-      setHallId(training.hall_name ? '__other__' : (training.hall ?? ''))
+      setHallId(training.hall_name ? '__other__' : relId(training.hall))
       setHallName(training.hall_name ?? '')
       setNotes(training.notes ?? '')
       setCancelled(training.cancelled)

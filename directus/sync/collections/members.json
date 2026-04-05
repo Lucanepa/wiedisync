@@ -1376,6 +1376,138 @@
         "foreign_key_table": null,
         "foreign_key_column": null
       }
+    },
+    {
+      "collection": "members",
+      "field": "licence_category",
+      "type": "string",
+      "meta": {
+        "collection": "members",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "licence_category",
+        "group": null,
+        "hidden": false,
+        "interface": "input",
+        "note": "Swiss Volley licence category (RLL, ALL, JLL, etc.) — synced from Volleymanager",
+        "options": null,
+        "readonly": true,
+        "required": false,
+        "searchable": true,
+        "sort": 30,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "licence_category",
+        "table": "members",
+        "data_type": "character varying",
+        "default_value": null,
+        "max_length": 50,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "members",
+      "field": "licence_activated",
+      "type": "boolean",
+      "meta": {
+        "collection": "members",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "licence_activated",
+        "group": null,
+        "hidden": false,
+        "interface": "boolean",
+        "note": "Swiss Volley licence activated for current season — synced from Volleymanager",
+        "options": null,
+        "readonly": true,
+        "required": false,
+        "searchable": true,
+        "sort": 31,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "licence_activated",
+        "table": "members",
+        "data_type": "boolean",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "members",
+      "field": "licence_validated",
+      "type": "boolean",
+      "meta": {
+        "collection": "members",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "licence_validated",
+        "group": null,
+        "hidden": false,
+        "interface": "boolean",
+        "note": "Swiss Volley licence validated for current season — synced from Volleymanager",
+        "options": null,
+        "readonly": true,
+        "required": false,
+        "searchable": true,
+        "sort": 32,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "licence_validated",
+        "table": "members",
+        "data_type": "boolean",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
     }
   ],
   "relations": [
@@ -1401,7 +1533,7 @@
         "foreign_key_column": "id",
         "constraint_name": "absences_member_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
+        "on_delete": "CASCADE"
       }
     },
     {
@@ -1426,7 +1558,7 @@
         "foreign_key_column": "id",
         "constraint_name": "carpool_passengers_passenger_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
+        "on_delete": "CASCADE"
       }
     },
     {
@@ -1451,7 +1583,7 @@
         "foreign_key_column": "id",
         "constraint_name": "carpools_driver_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
+        "on_delete": "CASCADE"
       }
     },
     {
@@ -1651,7 +1783,7 @@
         "foreign_key_column": "id",
         "constraint_name": "member_teams_member_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
+        "on_delete": "CASCADE"
       }
     },
     {
@@ -1726,7 +1858,7 @@
         "foreign_key_column": "id",
         "constraint_name": "notifications_member_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
+        "on_delete": "CASCADE"
       }
     },
     {
@@ -1751,7 +1883,7 @@
         "foreign_key_column": "id",
         "constraint_name": "participations_member_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
+        "on_delete": "CASCADE"
       }
     },
     {
@@ -1776,7 +1908,7 @@
         "foreign_key_column": "id",
         "constraint_name": "poll_votes_member_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
+        "on_delete": "CASCADE"
       }
     },
     {
@@ -1826,7 +1958,7 @@
         "foreign_key_column": "id",
         "constraint_name": "push_subscriptions_member_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
+        "on_delete": "CASCADE"
       }
     },
     {
@@ -1901,7 +2033,7 @@
         "foreign_key_column": "id",
         "constraint_name": "scorer_delegations_from_member_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
+        "on_delete": "CASCADE"
       }
     },
     {
@@ -1926,7 +2058,7 @@
         "foreign_key_column": "id",
         "constraint_name": "scorer_delegations_to_member_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
+        "on_delete": "CASCADE"
       }
     },
     {
@@ -1951,7 +2083,7 @@
         "foreign_key_column": "id",
         "constraint_name": "slot_claims_claimed_by_member_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
+        "on_delete": "CASCADE"
       }
     },
     {
@@ -2201,7 +2333,7 @@
         "foreign_key_column": "id",
         "constraint_name": "user_logs_user_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
+        "on_delete": "CASCADE"
       }
     }
   ]

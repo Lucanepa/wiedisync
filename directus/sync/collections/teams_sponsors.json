@@ -291,7 +291,7 @@
         "one_collection": "sponsors",
         "one_collection_field": null,
         "one_deselect_action": "nullify",
-        "one_field": null,
+        "one_field": "teams",
         "sort_field": null
       },
       "schema": {

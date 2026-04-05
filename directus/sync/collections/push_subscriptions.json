@@ -366,7 +366,7 @@
         "foreign_key_column": "id",
         "constraint_name": "push_subscriptions_member_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
+        "on_delete": "CASCADE"
       }
     }
   ]

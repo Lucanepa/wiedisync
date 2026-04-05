@@ -17,10 +17,11 @@ if (!VM_USERNAME || !VM_PASSWORD) {
   process.exit(1);
 }
 const DIRECTUS_URL = process.env.DIRECTUS_URL || 'https://directus-dev.kscw.ch';
+const DIRECTUS_TOKEN = process.env.DIRECTUS_TOKEN || process.env.DIRECTUS_ADMIN_TOKEN;
 const DIRECTUS_EMAIL = process.env.ADMIN_EMAIL || 'admin@kscw.ch';
 const DIRECTUS_PASSWORD = process.env.ADMIN_PASSWORD;
-if (!DIRECTUS_PASSWORD) {
-  console.error('Missing ADMIN_PASSWORD environment variable');
+if (!DIRECTUS_TOKEN && !DIRECTUS_PASSWORD) {
+  console.error('Set DIRECTUS_TOKEN or ADMIN_PASSWORD environment variable');
   process.exit(1);
 }
 const UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36';
@@ -83,9 +84,9 @@ async function vmLogin() {
   // 3. Dashboard (sets session permissions)
   await follow(`${VM_BASE}/`, jar);
 
-  // 4. Extract CSRF from an index page
+  // 4. Extract CSRF from the writer index page (player index requires elevated permissions)
   const { body: idx } = await follow(
-    `${VM_BASE}/sportmanager.indoorvolleyball/indoorplayer/index`,
+    `${VM_BASE}/sportmanager.indoorvolleyball/indoorwriter/index`,
     jar,
     { headers: { Accept: 'text/html', Referer: `${VM_BASE}/` } },
   );
@@ -99,7 +100,7 @@ async function vmLogin() {
 // ─── Generic paginated search ────────────────────────────────────────
 async function vmSearch(jar, csrf, wuid, resourcePath, properties, {
   batchSize = 200,
-  referer = '/sportmanager.indoorvolleyball/indoorplayer/index',
+  referer = '/sportmanager.indoorvolleyball/indoorwriter/index',
 } = {}) {
   const base = `${VM_BASE}${resourcePath}/search`;
   const headers = {
@@ -305,6 +306,7 @@ function buildCheckTable(players, writers, teamMembers, teams) {
 // ─── Directus upsert ─────────────────────────────────────────────────
 
 async function getDirectusToken() {
+  if (DIRECTUS_TOKEN) return DIRECTUS_TOKEN;
   const res = await fetch(`${DIRECTUS_URL}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -412,6 +414,110 @@ async function upsertToDirectus(rows) {
   console.log(`  Created: ${created}, Updated: ${updated}, Errors: ${errors}`);
 }
 
+// ─── Sync to members ────────────────────────────────────────────────
+
+async function syncToMembers(rows) {
+  console.log('\nSyncing VM data to members...');
+  const token = await getDirectusToken();
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  };
+
+  // Build lookup: association_id (string) → row
+  const rowByAssocId = new Map();
+  for (const row of rows) {
+    if (row.association_id) rowByAssocId.set(String(row.association_id), row);
+  }
+
+  // Fetch all members with a license_nr (paginated)
+  const members = [];
+  let page = 1;
+  while (true) {
+    const url = `${DIRECTUS_URL}/items/members?fields=id,license_nr,geschlecht,licences&filter[license_nr][_nnull]=true&limit=250&page=${page}`;
+    const res = await fetch(url, { headers });
+    if (!res.ok) throw new Error(`Directus members list failed: ${res.status}`);
+    const { data } = await res.json();
+    if (!data || data.length === 0) break;
+    members.push(...data);
+    page++;
+  }
+  console.log(`  Members with license_nr: ${members.length}`);
+
+  // Build update payloads
+  const GENDER_MAP = { male: 'm', female: 'f' };
+  const updates = [];
+  let matched = 0;
+
+  for (const member of members) {
+    const row = rowByAssocId.get(String(member.license_nr));
+    if (!row) continue;
+    matched++;
+
+    const payload = { id: member.id };
+    let changed = false;
+
+    // Gender
+    const normalizedGender = GENDER_MAP[row.gender];
+    if (normalizedGender && normalizedGender !== member.geschlecht) {
+      payload.geschlecht = normalizedGender;
+      changed = true;
+    }
+
+    // Licence fields
+    if (row.licence_category !== undefined && row.licence_category !== null) {
+      payload.licence_category = row.licence_category;
+      changed = true;
+    }
+    if (row.licence_activated !== undefined && row.licence_activated !== null) {
+      payload.licence_activated = row.licence_activated;
+      changed = true;
+    }
+    if (row.licence_validated !== undefined && row.licence_validated !== null) {
+      payload.licence_validated = row.licence_validated;
+      changed = true;
+    }
+
+    // Licences array — ensure scorer_vb presence matches is_writer
+    const currentLicences = Array.isArray(member.licences) ? [...member.licences] : [];
+    const hasScorer = currentLicences.includes('scorer_vb');
+    if (row.is_writer && !hasScorer) {
+      currentLicences.push('scorer_vb');
+      payload.licences = currentLicences;
+      changed = true;
+    } else if (!row.is_writer && hasScorer) {
+      payload.licences = currentLicences.filter(l => l !== 'scorer_vb');
+      changed = true;
+    }
+
+    if (changed) updates.push(payload);
+  }
+
+  console.log(`  Matched: ${matched}, To update: ${updates.length}`);
+
+  // Batch PATCH in groups of 50
+  let updated = 0, errors = 0;
+  const BATCH = 50;
+  for (let i = 0; i < updates.length; i += BATCH) {
+    const batch = updates.slice(i, i + BATCH);
+    const res = await fetch(`${DIRECTUS_URL}/items/members`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify(batch),
+    });
+    if (res.ok) {
+      updated += batch.length;
+    } else {
+      const text = await res.text();
+      console.error(`  Members update batch error: ${res.status} ${text.slice(0, 200)}`);
+      errors += batch.length;
+    }
+  }
+
+  console.log(`  Updated: ${updated}, Errors: ${errors}`);
+  return { matched, updated, errors };
+}
+
 // ─── Main ────────────────────────────────────────────────────────────
 
 async function main() {
@@ -433,6 +539,9 @@ async function main() {
   // Upsert to Directus
   await upsertToDirectus(rows);
 
+  // Sync VM data to members
+  const memberSync = await syncToMembers(rows);
+
   // Summary
   const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
   console.log(`\n========== SUMMARY (${elapsed}s) ==========`);
@@ -441,6 +550,7 @@ async function main() {
   console.log(`  ├ Writers:    ${rows.filter(r => r.is_writer).length}`);
   console.log(`  └ With team:  ${rows.filter(r => r.team_names).length}`);
   console.log(`Team members:   ${teamMembers.length} assignments`);
+  console.log(`Members synced: ${memberSync.matched} matched, ${memberSync.updated} updated, ${memberSync.errors} errors`);
 }
 
 main().catch(e => { console.error('✗ Fatal:', e.message); process.exit(1); });

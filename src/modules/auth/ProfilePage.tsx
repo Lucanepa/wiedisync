@@ -30,7 +30,7 @@ const LICENCE_LABELS: Record<LicenceType, string> = {
 type ExpandedMemberTeam = MemberTeam & { team: Team | string }
 
 export default function ProfilePage() {
-  const { user, coachTeamIds } = useAuth()
+  const { user, coachTeamIds, primarySport } = useAuth()
   const { t } = useTranslation('auth')
   const { t: tt } = useTranslation('teams')
   const [editOpen, setEditOpen] = useState(false)
@@ -256,6 +256,42 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* Swiss Volley Licence Info — volleyball members only */}
+      {(primarySport === 'volleyball' || primarySport === 'both') && user.license_nr && (
+        <div className="mt-8">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Swiss Volley</h2>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{t('svSyncInfo')}</p>
+          <div className="mt-3 grid gap-4 sm:grid-cols-2">
+            {user.licence_category && (
+              <div className="rounded-lg border bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+                <p className="text-sm text-gray-500 dark:text-gray-400">{t('licenceCategory')}</p>
+                <p className="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">{user.licence_category}</p>
+              </div>
+            )}
+            <div className="rounded-lg border bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('licenceActivated')}</p>
+              <p className="mt-1 text-sm font-medium">
+                {user.licence_activated == null
+                  ? <span className="text-gray-400">—</span>
+                  : user.licence_activated
+                    ? <span className="text-green-600 dark:text-green-400">&#10003;</span>
+                    : <span className="text-red-500 dark:text-red-400">&#10007;</span>}
+              </p>
+            </div>
+            <div className="rounded-lg border bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('licenceValidated')}</p>
+              <p className="mt-1 text-sm font-medium">
+                {user.licence_validated == null
+                  ? <span className="text-gray-400">—</span>
+                  : user.licence_validated
+                    ? <span className="text-green-600 dark:text-green-400">&#10003;</span>
+                    : <span className="text-red-500 dark:text-red-400">&#10007;</span>}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Active Absences */}
       <div className="mt-8">

@@ -781,7 +781,7 @@
         "foreign_key_column": "id",
         "constraint_name": "slot_claims_claimed_by_member_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
+        "on_delete": "CASCADE"
       }
     }
   ]

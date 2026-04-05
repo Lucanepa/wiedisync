@@ -621,7 +621,7 @@
         "foreign_key_column": "id",
         "constraint_name": "scorer_delegations_from_member_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
+        "on_delete": "CASCADE"
       }
     },
     {
@@ -646,7 +646,7 @@
         "foreign_key_column": "id",
         "constraint_name": "scorer_delegations_to_member_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
+        "on_delete": "CASCADE"
       }
     },
     {

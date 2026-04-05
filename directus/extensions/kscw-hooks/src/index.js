@@ -646,6 +646,39 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     }
   })
 
+  // ── 10b. Cron: Volleymanager Sync (1st of each month, 04:00 UTC) ──
+  // Calls the vm-sync-check script via the admin endpoint
+
+  schedule('0 4 1 * *', async () => {
+    const token = process.env.DIRECTUS_ADMIN_TOKEN
+    if (!token) { log.warn('VM sync skipped: DIRECTUS_ADMIN_TOKEN not set'); return }
+    if (!process.env.VM_USERNAME || !process.env.VM_PASSWORD) {
+      log.warn('VM sync skipped: VM_USERNAME or VM_PASSWORD not set')
+      return
+    }
+    try {
+      const { execSync } = await import('node:child_process')
+      // Only pass required env vars to child process (avoid leaking secrets in crash dumps)
+      const env = {
+        HOME: process.env.HOME,
+        PATH: process.env.PATH,
+        VM_USERNAME: process.env.VM_USERNAME,
+        VM_PASSWORD: process.env.VM_PASSWORD,
+        DIRECTUS_URL: 'http://127.0.0.1:8055',
+        DIRECTUS_TOKEN: token,
+      }
+      const output = execSync('node /directus/scripts/vm-sync-check.mjs', {
+        env,
+        timeout: 120_000,
+        encoding: 'utf-8',
+      })
+      log.info(`VM sync cron: ${output.split('\n').slice(-6).join(' | ')}`)
+    } catch (err) {
+      log.error({ msg: `VM sync cron: ${err.message}`, exitCode: err.status, event: 'cron.vm_sync' })
+      logCronError('vm_sync', new Error(err.message))
+    }
+  })
+
   // ── 11. Filter: Member Privacy (birthdate_visibility, hide_phone) ──
   // Enforces privacy settings at the API level so even direct API access respects them.
   // Admins and the member's own record are exempt.

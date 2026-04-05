@@ -17,7 +17,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SET search_path = public;
 
 DROP TRIGGER IF EXISTS trg_slot_claims_validate ON slot_claims;
 CREATE TRIGGER trg_slot_claims_validate
@@ -34,7 +34,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SET search_path = public;
 
 DROP TRIGGER IF EXISTS trg_members_shell_convert ON members;
 CREATE TRIGGER trg_members_shell_convert
@@ -52,7 +52,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SET search_path = public;
 
 DROP TRIGGER IF EXISTS trg_members_coach_approval_guard ON members;
 CREATE TRIGGER trg_members_coach_approval_guard
@@ -75,7 +75,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SET search_path = public;
 
 DROP TRIGGER IF EXISTS trg_participations_guest_block ON participations;
 CREATE TRIGGER trg_participations_guest_block
@@ -93,7 +93,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SET search_path = public;
 
 DROP TRIGGER IF EXISTS trg_trainings_revoke_claims ON trainings;
 CREATE TRIGGER trg_trainings_revoke_claims
@@ -151,7 +151,7 @@ BEGIN
 
   IF TG_OP = 'DELETE' THEN RETURN OLD; ELSE RETURN NEW; END IF;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SET search_path = public;
 
 DROP TRIGGER IF EXISTS trg_games_notify ON games;
 CREATE TRIGGER trg_games_notify
@@ -199,7 +199,7 @@ BEGIN
 
   IF TG_OP = 'DELETE' THEN RETURN OLD; ELSE RETURN NEW; END IF;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SET search_path = public;
 
 DROP TRIGGER IF EXISTS trg_trainings_notify ON trainings;
 CREATE TRIGGER trg_trainings_notify
@@ -232,13 +232,13 @@ BEGIN
 
   INSERT INTO notifications (member, type, title, body, activity_type, activity_id, team, read)
   SELECT DISTINCT mt.member, v_type, v_title, '', 'event', v_id::text, et.teams_id, false
-  FROM events_teams_1 et
+  FROM events_teams et
   JOIN member_teams mt ON mt.team = et.teams_id
   WHERE et.events_id = v_id;
 
   IF TG_OP = 'DELETE' THEN RETURN OLD; ELSE RETURN NEW; END IF;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SET search_path = public;
 
 DROP TRIGGER IF EXISTS trg_events_notify ON events;
 CREATE TRIGGER trg_events_notify
@@ -257,7 +257,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SET search_path = public;
 
 DROP TRIGGER IF EXISTS trg_scorer_delegation_validate ON scorer_delegations;
 CREATE TRIGGER trg_scorer_delegation_validate

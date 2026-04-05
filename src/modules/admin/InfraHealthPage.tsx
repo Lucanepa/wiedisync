@@ -109,6 +109,7 @@ export default function InfraHealthPage() {
   const [syncs, setSyncs] = useState<HealthCheck[]>([])
   const [crons, setCrons] = useState<HealthCheck[]>([])
   const [stats, setStats] = useState<HealthCheck[]>([])
+  const [vps, setVps] = useState<HealthCheck[]>([])
   const [lastCheck, setLastCheck] = useState<string>('')
   const [loading, setLoading] = useState(false)
 
@@ -355,6 +356,26 @@ export default function InfraHealthPage() {
     } catch { /* skip stats on error */ }
 
     setStats(statResults)
+
+    // ── VPS Metrics ──
+    const vpsResults: HealthCheck[] = []
+    try {
+      const token = getAccessToken()
+      const vpsRes = await fetch(`${PROD_URL}/kscw/admin/vps-metrics`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+      if (vpsRes.ok) {
+        const v = await vpsRes.json()
+        vpsResults.push(
+          { name: 'Uptime', status: 'healthy', detail: v.uptime, value: null },
+          { name: 'CPU Load', status: parseFloat(v.loadavg) > v.cpu_count * 0.8 ? 'stale' : 'healthy', detail: `${v.loadavg} (${v.cpu_count} cores)`, value: null },
+          { name: 'Memory', status: v.memory.percent > 90 ? 'down' : v.memory.percent > 75 ? 'stale' : 'healthy', detail: `${v.memory.used} / ${v.memory.total}`, value: `${v.memory.percent}%` },
+          { name: 'Disk', status: v.disk.percent > 90 ? 'down' : v.disk.percent > 75 ? 'stale' : 'healthy', detail: `${v.disk.used} / ${v.disk.total}`, value: `${v.disk.percent}%` },
+        )
+      }
+    } catch { /* skip VPS metrics on error */ }
+    setVps(vpsResults)
+
     setLastCheck(new Date().toLocaleTimeString())
     setLoading(false)
   }, [t])
@@ -397,6 +418,7 @@ export default function InfraHealthPage() {
         </div>
       </div>
 
+      {vps.length > 0 && <Section title="VPS Resources" checks={vps} />}
       <Section title={t('infraServices')} checks={services} />
       <Section title={t('infraDataSyncs')} checks={syncs} />
       <Section title={t('infraCronJobs')} checks={crons} />

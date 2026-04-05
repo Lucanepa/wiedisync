@@ -86,7 +86,7 @@ END $$;
 -- referee_expenses: keep SET NULL — financial records should persist
 -- tasks.assigned_to: keep SET NULL — task record should persist
 -- team_invites: keep SET NULL — invite record should persist
--- teams_members_3/4/5 (coach/TR/captain): already CASCADE
+-- teams_coaches/teams_responsibles/teams_captains (coach/TR/captain): already CASCADE
 
 -- push_subscriptions: ensure CASCADE (may have been SET NULL from Directus sync)
 ALTER TABLE push_subscriptions DROP CONSTRAINT IF EXISTS push_subscriptions_member_foreign;
@@ -110,7 +110,7 @@ BEGIN
   END IF;
   RETURN OLD;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SET search_path = public;
 
 DROP TRIGGER IF EXISTS trg_teams_protect_delete ON teams;
 CREATE TRIGGER trg_teams_protect_delete
@@ -129,7 +129,7 @@ BEGIN
   END IF;
   RETURN OLD;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SET search_path = public;
 
 DROP TRIGGER IF EXISTS trg_halls_protect_delete ON halls;
 CREATE TRIGGER trg_halls_protect_delete

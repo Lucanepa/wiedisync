@@ -13,7 +13,7 @@ Internal platform for **KSC Wiedikon** — managing teams, games, trainings, and
 | Backend | [Directus](https://directus.io) (Postgres REST API + Realtime) |
 | Auth | Google OAuth via Directus |
 | Testing | Playwright (E2E), Vitest (unit) |
-| Hosting | Cloudflare Pages (frontend), Infomaniak VPS (backend) |
+| Hosting | Cloudflare Pages (frontend), Hetzner VPS (backend) |
 | i18n | i18next (German/English) |
 
 ## Features

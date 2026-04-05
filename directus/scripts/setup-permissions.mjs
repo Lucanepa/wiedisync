@@ -312,9 +312,9 @@ async function main() {
     await setPermRead(PUBLIC_POLICY, 'sponsors', { active: { _eq: true } })
 
     // Junction tables for deep queries (website needs coach names, sponsor logos)
-    await setPermRead(PUBLIC_POLICY, 'teams_sponsors_1')
-    await setPermRead(PUBLIC_POLICY, 'teams_members_3')  // coach junction
-    await setPermRead(PUBLIC_POLICY, 'teams_members_5')  // captain junction
+    await setPermRead(PUBLIC_POLICY, 'teams_sponsors')
+    await setPermRead(PUBLIC_POLICY, 'teams_coaches')  // coach junction
+    await setPermRead(PUBLIC_POLICY, 'teams_captains')  // captain junction
     await setPermRead(PUBLIC_POLICY, 'members', null, ['id', 'first_name', 'last_name', 'photo'])
 
     // Calendar: hall slots, closures, hall events, halls
@@ -322,7 +322,7 @@ async function main() {
     await setPermRead(PUBLIC_POLICY, 'hall_slots_teams')  // M2M junction
     await setPermRead(PUBLIC_POLICY, 'hall_closures')
     await setPermRead(PUBLIC_POLICY, 'hall_events')
-    await setPermRead(PUBLIC_POLICY, 'hall_events_halls_1')  // M2M junction
+    await setPermRead(PUBLIC_POLICY, 'hall_events_halls')  // M2M junction
     await setPermRead(PUBLIC_POLICY, 'halls')
 
     // Trainings (calendar view)
@@ -331,7 +331,7 @@ async function main() {
 
     // Events (club-wide public events on home/calendar)
     await setPermRead(PUBLIC_POLICY, 'events')
-    await setPermRead(PUBLIC_POLICY, 'events_teams_1')  // M2M junction
+    await setPermRead(PUBLIC_POLICY, 'events_teams')  // M2M junction
 
     // Participations (game/training RSVP counts visible publicly)
     await setPermRead(PUBLIC_POLICY, 'participations')
@@ -356,12 +356,12 @@ async function main() {
   // Read: teams, games, rankings, sponsors (no filter needed — public-level + more)
   const MEMBER_READ_ALL = [
     'teams', 'games', 'rankings', 'sponsors',
-    'trainings', 'events', 'event_sessions', 'events_teams_1',
-    'hall_slots', 'hall_closures', 'hall_events', 'hall_events_halls_1', 'halls', 'hall_slots_teams',
+    'trainings', 'events', 'event_sessions', 'events_teams',
+    'hall_slots', 'hall_closures', 'hall_events', 'hall_events_halls', 'halls', 'hall_slots_teams',
     'slot_claims', 'news', 'app_settings',
     'referee_expenses', 'carpools', 'carpool_passengers', 'polls',
     // Junctions
-    'teams_members_3', 'teams_members_5', 'teams_members_4', 'teams_sponsors_1', 'events_teams_1', 'hall_events_halls_1',
+    'teams_coaches', 'teams_captains', 'teams_responsibles', 'teams_sponsors', 'events_teams', 'hall_events_halls',
     // Files
     'directus_files',
   ]
@@ -468,9 +468,9 @@ async function main() {
   await setPerm(LEADER_POLICY, 'events', 'update')
   await setPerm(LEADER_POLICY, 'event_sessions', 'create')
   await setPerm(LEADER_POLICY, 'event_sessions', 'update')
-  await setPerm(LEADER_POLICY, 'events_teams_1', 'create')
-  await setPerm(LEADER_POLICY, 'events_teams_1', 'update')
-  await setPerm(LEADER_POLICY, 'events_teams_1', 'delete')
+  await setPerm(LEADER_POLICY, 'events_teams', 'create')
+  await setPerm(LEADER_POLICY, 'events_teams', 'update')
+  await setPerm(LEADER_POLICY, 'events_teams', 'delete')
 
   // Participations — full read + CRU (coach manages team roster)
   await setPermRead(LEADER_POLICY, 'participations')
@@ -562,14 +562,14 @@ async function main() {
   console.log('\n9. Sport Admin permissions...')
 
   const ALL_COLLECTIONS = [
-    'teams', 'games', 'trainings', 'events', 'event_sessions', 'events_teams_1',
+    'teams', 'games', 'trainings', 'events', 'event_sessions', 'events_teams',
     'members', 'member_teams', 'participations', 'absences',
-    'rankings', 'sponsors', 'teams_sponsors_1',
-    'hall_slots', 'hall_closures', 'hall_events', 'hall_events_halls_1', 'halls', 'hall_slots_teams',
+    'rankings', 'sponsors', 'teams_sponsors',
+    'hall_slots', 'hall_closures', 'hall_events', 'hall_events_halls', 'halls', 'hall_slots_teams',
     'slot_claims', 'notifications', 'feedback', 'scorer_delegations', 'referee_expenses',
     'team_invites', 'news', 'app_settings', 'user_logs',
     'push_subscriptions', 'email_verifications',
-    'teams_members_3', 'teams_members_5', 'teams_members_4',
+    'teams_coaches', 'teams_captains', 'teams_responsibles',
     'tasks', 'task_templates', 'carpools', 'carpool_passengers',
     'polls', 'poll_votes', 'team_requests',
     'game_scheduling_seasons', 'game_scheduling_slots',

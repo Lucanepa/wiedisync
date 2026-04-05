@@ -348,9 +348,9 @@ export default {
             .select('members.id', 'members.first_name', 'members.last_name',
               'members.number', 'members.position', 'members.photo',
               'member_teams.guest_level'),
-          database('teams_members_3')
-            .join('members', 'members.id', 'teams_members_3.members_id')
-            .where('teams_members_3.teams_id', team.id)
+          database('teams_coaches')
+            .join('members', 'members.id', 'teams_coaches.members_id')
+            .where('teams_coaches.teams_id', team.id)
             .select('members.id', 'members.first_name', 'members.last_name', 'members.photo'),
           database('games')
             .where('kscw_team', team.id).where('date', '>=', today)
@@ -370,8 +370,8 @@ export default {
             : Promise.resolve([]),
           // Sponsors: only sponsors explicitly linked to this team via junction table
           database('sponsors')
-            .join('teams_sponsors_1', 'sponsors.id', 'teams_sponsors_1.sponsors_id')
-            .where('teams_sponsors_1.teams_id', team.id)
+            .join('teams_sponsors', 'sponsors.id', 'teams_sponsors.sponsors_id')
+            .where('teams_sponsors.teams_id', team.id)
             .where('sponsors.active', true)
             .orderBy('sponsors.sort_order')
             .select('sponsors.*'),
@@ -471,11 +471,11 @@ export default {
         const userId = req.accountability.user
         const isAdmin = req.accountability.admin
         if (!isAdmin) {
-          const isCoach = await database('teams_members_3')
+          const isCoach = await database('teams_coaches')
             .where('teams_id', teamId).where('members_id', function () {
               this.select('id').from('members').where('user', userId)
             }).first()
-          const isTR = await database('teams_members_4')
+          const isTR = await database('teams_responsibles')
             .where('teams_id', teamId).where('members_id', function () {
               this.select('id').from('members').where('user', userId)
             }).first()
@@ -578,11 +578,11 @@ export default {
           const memberTeam = await database('member_teams').where('member', member_id).select('team').first()
           if (!memberTeam) return res.status(403).json({ error: 'Not authorized' })
           const teamId = memberTeam.team
-          const isCoach = await database('teams_members_3')
+          const isCoach = await database('teams_coaches')
             .where('teams_id', teamId).where('members_id', function () {
               this.select('id').from('members').where('user', userId)
             }).first()
-          const isTR = await database('teams_members_4')
+          const isTR = await database('teams_responsibles')
             .where('teams_id', teamId).where('members_id', function () {
               this.select('id').from('members').where('user', userId)
             }).first()
@@ -916,10 +916,10 @@ export default {
           const teamRow = await database('teams').where('id', team).select('name', 'slug').first()
           const teamName = teamRow?.name || `Team ${team}`
           const teamSlug = teamRow?.slug || ''
-          const coaches = await database('teams_members_3')
+          const coaches = await database('teams_coaches')
             .where('teams_id', team)
             .select('members_id')
-          const trMembers = await database('teams_members_4')
+          const trMembers = await database('teams_responsibles')
             .where('teams_id', team)
             .select('members_id')
           const recipientIds = [...new Set([...coaches, ...trMembers].map(r => r.members_id))]
@@ -1126,6 +1126,62 @@ export default {
         res.json({ success: true })
       } catch (err) {
         logEndpointError(log, 'scorer-delegation/decline', err, req)
+        res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal error' })
+      }
+    })
+
+    // ── Admin: VPS Metrics ────────────────────────────────────────
+    // GET /kscw/admin/vps-metrics — live VPS resource usage
+
+    router.get('/admin/vps-metrics', async (req, res) => {
+      try {
+        requireAdmin(req, log)
+        const { execSync } = await import('child_process')
+        const run = (cmd) => execSync(cmd, { timeout: 5000 }).toString().trim()
+
+        // Uptime
+        const uptimeRaw = run('cat /proc/uptime').split(' ')[0]
+        const uptimeSecs = Math.floor(parseFloat(uptimeRaw))
+        const days = Math.floor(uptimeSecs / 86400)
+        const hours = Math.floor((uptimeSecs % 86400) / 3600)
+        const uptime = days > 0 ? `${days}d ${hours}h` : `${hours}h`
+
+        // Load average
+        const loadavg = run('cat /proc/loadavg').split(' ').slice(0, 3).join(' / ')
+
+        // Memory (from /proc/meminfo for container-safe parsing)
+        const memLines = run('cat /proc/meminfo')
+        const mem = (key) => parseInt(memLines.match(new RegExp(`${key}:\\s+(\\d+)`))?.[1] || '0') * 1024
+        const totalMem = mem('MemTotal')
+        const freeMem = mem('MemFree')
+        const buffers = mem('Buffers')
+        const cached = mem('Cached')
+        const usedMem = totalMem - freeMem - buffers - cached
+        const memPercent = Math.round((usedMem / totalMem) * 100)
+
+        // Disk
+        const dfLine = run('df -B1 / | tail -1').split(/\s+/)
+        const diskTotal = parseInt(dfLine[1])
+        const diskUsed = parseInt(dfLine[2])
+        const diskPercent = Math.round((diskUsed / diskTotal) * 100)
+
+        // CPU count
+        const cpuCount = parseInt(run('nproc'))
+
+        const fmt = (bytes) => {
+          if (bytes >= 1073741824) return `${(bytes / 1073741824).toFixed(1)} GB`
+          return `${Math.round(bytes / 1048576)} MB`
+        }
+
+        res.json({
+          uptime,
+          loadavg,
+          cpu_count: cpuCount,
+          memory: { used: fmt(usedMem), total: fmt(totalMem), percent: memPercent },
+          disk: { used: fmt(diskUsed), total: fmt(diskTotal), percent: diskPercent },
+        })
+      } catch (err) {
+        logEndpointError(log, 'admin/vps-metrics', err, req)
         res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal error' })
       }
     })

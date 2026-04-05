@@ -83,11 +83,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadTeamContext = useCallback(async (memberId: string | number) => {
     try {
       const [coachRows, trRows, memberTeams, allTeams] = await Promise.all([
-        client.request(readItems('teams_members_3', {
+        client.request(readItems('teams_coaches', {
           filter: { members_id: { _eq: memberId } },
           fields: ['teams_id'], limit: -1,
         } as never)) as Promise<{ teams_id: number }[]>,
-        client.request(readItems('teams_members_4', {
+        client.request(readItems('teams_responsibles', {
           filter: { members_id: { _eq: memberId } },
           fields: ['teams_id'], limit: -1,
         } as never)) as Promise<{ teams_id: number }[]>,

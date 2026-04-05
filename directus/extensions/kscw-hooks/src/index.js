@@ -96,8 +96,8 @@ async function resolveDirectusRole(db, memberId) {
   }
 
   // Check coach/TR junctions
-  const isCoach = await db('teams_members_3').where('members_id', memberId).first()
-  const isTR = await db('teams_members_4').where('members_id', memberId).first()
+  const isCoach = await db('teams_coaches').where('members_id', memberId).first()
+  const isTR = await db('teams_responsibles').where('members_id', memberId).first()
   const isTeamResponsible = !!(isCoach || isTR)
 
   // Vorstand who is also a coach → Team Responsible (higher write access)
@@ -277,10 +277,10 @@ export default ({ action, filter, init, schedule }, { services, database, logger
   })
 
   // Sync when coach/TR junctions change (create)
-  action('teams_members_3.items.create', async ({ payload }) => {
+  action('teams_coaches.items.create', async ({ payload }) => {
     if (payload?.members_id) await syncMemberRole(payload.members_id)
   })
-  action('teams_members_4.items.create', async ({ payload }) => {
+  action('teams_responsibles.items.create', async ({ payload }) => {
     if (payload?.members_id) await syncMemberRole(payload.members_id)
   })
 
@@ -288,23 +288,23 @@ export default ({ action, filter, init, schedule }, { services, database, logger
   // Capture member IDs before deletion via filter, then sync in action
   const pendingJunctionDeletes = new Map()
 
-  filter('teams_members_3.items.delete', async (keys) => {
+  filter('teams_coaches.items.delete', async (keys) => {
     try {
-      const rows = await database('teams_members_3').whereIn('id', keys).select('members_id')
+      const rows = await database('teams_coaches').whereIn('id', keys).select('members_id')
       for (const r of rows) pendingJunctionDeletes.set(`coach-${r.members_id}`, r.members_id)
     } catch (e) { /* ignore */ }
     return keys
   })
 
-  filter('teams_members_4.items.delete', async (keys) => {
+  filter('teams_responsibles.items.delete', async (keys) => {
     try {
-      const rows = await database('teams_members_4').whereIn('id', keys).select('members_id')
+      const rows = await database('teams_responsibles').whereIn('id', keys).select('members_id')
       for (const r of rows) pendingJunctionDeletes.set(`tr-${r.members_id}`, r.members_id)
     } catch (e) { /* ignore */ }
     return keys
   })
 
-  action('teams_members_3.items.delete', async () => {
+  action('teams_coaches.items.delete', async () => {
     for (const [key, memberId] of pendingJunctionDeletes) {
       if (key.startsWith('coach-')) {
         await syncMemberRole(memberId)
@@ -313,7 +313,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     }
   })
 
-  action('teams_members_4.items.delete', async () => {
+  action('teams_responsibles.items.delete', async () => {
     for (const [key, memberId] of pendingJunctionDeletes) {
       if (key.startsWith('tr-')) {
         await syncMemberRole(memberId)
@@ -534,7 +534,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
                '',
                'event', e.id::text, et.teams_id, false
         FROM events e
-        JOIN events_teams_1 et ON et.events_id = e.id
+        JOIN events_teams et ON et.events_id = e.id
         JOIN member_teams mt ON mt.team = et.teams_id
         WHERE e.start_date = ?::date
       `, [tomorrowStr])
@@ -928,19 +928,19 @@ export default ({ action, filter, init, schedule }, { services, database, logger
 
       for (const team of teamRows) {
         if (rolle.includes('trainer') || rolle.includes('coach')) {
-          // Coach → teams_members_3
-          const exists = await db('teams_members_3')
+          // Coach → teams_coaches
+          const exists = await db('teams_coaches')
             .where({ teams_id: team.id, members_id: memberId }).first()
           if (!exists) {
-            await db('teams_members_3').insert({ teams_id: team.id, members_id: memberId })
+            await db('teams_coaches').insert({ teams_id: team.id, members_id: memberId })
             log.info({ msg: 'Added as coach', memberId, team: team.name })
           }
         } else if (rolle.includes('teamverantwortlich') || rolle.includes('team responsible')) {
-          // Team Responsible → teams_members_4
-          const exists = await db('teams_members_4')
+          // Team Responsible → teams_responsibles
+          const exists = await db('teams_responsibles')
             .where({ teams_id: team.id, members_id: memberId }).first()
           if (!exists) {
-            await db('teams_members_4').insert({ teams_id: team.id, members_id: memberId })
+            await db('teams_responsibles').insert({ teams_id: team.id, members_id: memberId })
             log.info({ msg: 'Added as team responsible', memberId, team: team.name })
           }
         } else if (rolle.includes('spieler') || rolle.includes('player') || !rolle || rolle.includes('andere') || rolle.includes('other')) {
@@ -993,14 +993,14 @@ export default ({ action, filter, init, schedule }, { services, database, logger
                 .whereIn('name', teamNames).andWhere('active', true).select('id')
               if (teamRows.length) {
                 const teamIds = teamRows.map(r => r.id)
-                const coachRows = await database('teams_members_3')
+                const coachRows = await database('teams_coaches')
                   .whereIn('teams_id', teamIds)
-                  .join('members', 'teams_members_3.members_id', 'members.id')
+                  .join('members', 'teams_coaches.members_id', 'members.id')
                   .join('directus_users', 'members.user', 'directus_users.id')
                   .whereNotNull('directus_users.email').select('directus_users.email')
-                const trRows = await database('teams_members_4')
+                const trRows = await database('teams_responsibles')
                   .whereIn('teams_id', teamIds)
-                  .join('members', 'teams_members_4.members_id', 'members.id')
+                  .join('members', 'teams_responsibles.members_id', 'members.id')
                   .join('directus_users', 'members.user', 'directus_users.id')
                   .whereNotNull('directus_users.email').select('directus_users.email')
                 coachTrCc = [...new Set([...coachRows, ...trRows].map(r => r.email.toLowerCase()))]

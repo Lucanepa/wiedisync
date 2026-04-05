@@ -70,10 +70,10 @@ export default function ProfilePage() {
   }
 
   // Fetch extra VM data from sv_vm_check (LAS, foreigner, federation, FdO, dates)
-  interface VmCheck { id: string; licence_category: string | null; licence_activated: boolean | null; licence_validated: boolean | null; is_locally_educated: boolean | null; is_foreigner: boolean | null; federation: string | null; nationality_code: string | null; licence_activation_date: string | null; licence_validation_date: string | null }
+  interface VmCheck { id: string; licence_category: string | null; licence_activated: boolean | null; licence_validated: boolean | null; is_locally_educated: boolean | null; is_foreigner: boolean | null; federation: string | null; nationality_code: string | null }
   const { data: vmCheckRaw } = useCollection<VmCheck>('sv_vm_check', {
     filter: user?.license_nr ? { association_id: { _eq: user.license_nr } } : undefined,
-    fields: ['id', 'licence_category', 'licence_activated', 'licence_validated', 'is_locally_educated', 'is_foreigner', 'federation', 'nationality_code', 'licence_activation_date', 'licence_validation_date'],
+    fields: ['id', 'licence_category', 'licence_activated', 'licence_validated', 'is_locally_educated', 'is_foreigner', 'federation', 'nationality_code'],
     limit: 1,
     enabled: !!user?.license_nr,
   })
@@ -329,22 +329,6 @@ export default function ProfilePage() {
                     </div>
                   </div>
                 </div>
-                {/* Date row — full width bottom */}
-                {(vmCheck?.licence_activation_date || vmCheck?.licence_validation_date) && (
-                  <div className="border-t border-gray-100 px-4 py-2 dark:border-gray-700">
-                    <div className="flex items-center gap-4 text-sm text-gray-700 dark:text-gray-300">
-                      {vmCheck.licence_activation_date && (
-                        <span>{t('activated')}: {formatDate(vmCheck.licence_activation_date)}</span>
-                      )}
-                      {vmCheck.licence_activation_date && vmCheck.licence_validation_date && (
-                        <span className="text-gray-400">—</span>
-                      )}
-                      {vmCheck.licence_validation_date && (
-                        <span>{t('validated')}: {formatDate(vmCheck.licence_validation_date)}</span>
-                      )}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -365,15 +349,19 @@ export default function ProfilePage() {
         {activeAbsences.length > 0 ? (
           <div className="mt-3 space-y-2">
             {activeAbsences.slice(0, 5).map((a) => (
-              <div key={a.id} className="flex items-center gap-3 rounded-lg border bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800">
-                <StatusBadge status={a.reason} />
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  {formatDate(a.start_date)}
-                  {a.start_date !== a.end_date && ` — ${formatDate(a.end_date)}`}
-                </span>
-                {a.reason_detail && (
-                  <span className="text-sm text-gray-500 dark:text-gray-400">{a.reason_detail}</span>
-                )}
+              <div key={a.id} className="rounded-lg border bg-white dark:border-gray-700 dark:bg-gray-800">
+                <div className="flex items-center gap-3 px-4 py-3">
+                  <StatusBadge status={a.reason} />
+                  {a.reason_detail && (
+                    <span className="text-sm text-gray-500 dark:text-gray-400">{a.reason_detail}</span>
+                  )}
+                </div>
+                <div className="border-t border-gray-100 px-4 py-2 dark:border-gray-700">
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                    {formatDate(a.start_date)}
+                    {a.start_date !== a.end_date && ` — ${formatDate(a.end_date)}`}
+                  </span>
+                </div>
               </div>
             ))}
           </div>

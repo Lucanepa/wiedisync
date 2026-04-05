@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.4.0'
+const APP_VERSION = '3.5.0'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,20 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.5.0',
+    date: '2026-04-05',
+    sections: [
+      {
+        title: 'Volleymanager-Sync',
+        items: [
+          'Erweiterte Swiss-Volley-Synchronisierung: Nationalität, LAS-Status (lokal ausgebildet), Ausländerstatus, Verband, Doppellizenz-Informationen, Aktivierungs-/Validierungsdaten.',
+          'Filter geändert: alle Spieler werden synchronisiert (nicht nur aktivierte Lizenzen).',
+          'VM-E-Mail-Abgleich: Mitglieder erhalten automatisch ihre Volleymanager-E-Mail-Adresse. Bei der Registrierung wird geprüft, ob die E-Mail bereits bekannt ist.',
+        ],
+      },
+    ],
+  },
   {
     version: '3.4.0',
     date: '2026-04-04',

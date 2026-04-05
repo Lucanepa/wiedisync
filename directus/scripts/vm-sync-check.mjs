@@ -101,6 +101,7 @@ async function vmLogin() {
 async function vmSearch(jar, csrf, wuid, resourcePath, properties, {
   batchSize = 200,
   referer = '/sportmanager.indoorvolleyball/indoorwriter/index',
+  propertyFilters = [],
 } = {}) {
   const base = `${VM_BASE}${resourcePath}/search`;
   const headers = {
@@ -119,6 +120,14 @@ async function vmSearch(jar, csrf, wuid, resourcePath, properties, {
 
   while (offset < total) {
     const params = new URLSearchParams();
+    // Property filters (e.g. deceased=false, isAnonymized=false)
+    propertyFilters.forEach((f, i) => {
+      params.set(`searchConfiguration[propertyFilters][${i}][propertyName]`, f.propertyName);
+      if (f.boolean !== undefined) params.set(`searchConfiguration[propertyFilters][${i}][boolean]`, String(f.boolean));
+      if (f.value !== undefined) params.set(`searchConfiguration[propertyFilters][${i}][value]`, String(f.value));
+    });
+    params.set('searchConfiguration[customFilters]', '');
+    params.set('searchConfiguration[propertyOrderings]', '');
     params.set('searchConfiguration[offset]', String(offset));
     params.set('searchConfiguration[limit]', String(batchSize));
     params.set('searchConfiguration[textSearchOperator]', 'AND');
@@ -178,8 +187,12 @@ async function fetchPlayers(jar, csrf, wuid) {
       'person.associationId',
       'person.lastName',
       'person.firstName',
+      'person.birthday',
       'person.gender',
       'person.nationality.countryName',
+      'nationality.iocCodeOrIsoAlpha3',
+      'isClassifiedAsLocallyEducated',
+      'isForeignerRegardingGamePlay',
       'person.correspondenceLanguage',
       'person.primaryEmailAddress.emailAddress',
       'person.primaryPhoneNumber.normalizedLocalNumber',
@@ -187,9 +200,26 @@ async function fetchPlayers(jar, csrf, wuid) {
       'currentLicense.licenseCategory.name',
       'currentLicense.club.identifier',
       'currentLicense.club.name',
+      'currentLicense.club.regionalAssociation.shortName',
+      'currentLicense.doubleLicenseClub.identifier',
+      'currentLicense.doubleLicenseClub.name',
+      'currentLicense.doubleLicenseClub.regionalAssociation.shortName',
+      'currentLicense.doubleLicenseTeam.staticTeamIdentifier',
+      'currentLicense.doubleLicenseTeam.name',
       'currentLicense.activatedInCurrentSeason',
+      'currentLicense.activationDate',
       'currentLicense.validatedInCurrentSeason',
+      'currentLicense.validationDate',
+      'licenses',
     ],
+    {
+      // No validated-only filter — fetch ALL players (including inactive licences)
+      // Only exclude deceased and anonymized persons
+      propertyFilters: [
+        { propertyName: 'person.deceased', boolean: false },
+        { propertyName: 'person.isAnonymized', boolean: false },
+      ],
+    },
   );
   console.log(`  → ${items.length} players`);
   return items;
@@ -284,15 +314,35 @@ function buildCheckTable(players, writers, teamMembers, teams) {
       || person.emailAddresses?.[0]?.emailAddress
       || null;
 
+    // Double licence info
+    const dlClub = license.doubleLicenseClub || {};
+    const dlTeam = license.doubleLicenseTeam || {};
+
     rows.push({
       association_id: assocId,
       first_name: person.firstName || null,
       last_name: person.lastName || null,
+      birthday: person.birthday || null,
       gender: person.gender || null,
+      nationality: person.nationality?.countryName || null,
+      nationality_code: p.nationality?.iocCodeOrIsoAlpha3 || null,
+      is_locally_educated: p.isClassifiedAsLocallyEducated ?? null,
+      is_foreigner: p.isForeignerRegardingGamePlay ?? null,
       email,
+      federation: license.club?.regionalAssociation?.shortName || null,
       licence_category: license.licenseCategory?.shortName || license.licenseCategory?.name || null,
+      licence_club_id: license.club?.identifier || null,
+      licence_club_name: license.club?.name || null,
+      licence_club_assoc: license.club?.regionalAssociation?.shortName || null,
+      double_licence_club_id: dlClub.identifier || null,
+      double_licence_club_name: dlClub.name || null,
+      double_licence_club_assoc: dlClub.regionalAssociation?.shortName || null,
+      double_licence_team_id: dlTeam.staticTeamIdentifier || null,
+      double_licence_team_name: dlTeam.name || null,
       licence_activated: license.activatedInCurrentSeason ?? null,
+      licence_activation_date: license.activationDate || null,
       licence_validated: license.validatedInCurrentSeason ?? null,
+      licence_validation_date: license.validationDate || null,
       is_writer: writerIds.has(assocId),
       team_names: teamNames.length > 0 ? teamNames.join(', ') : null,
       team_ids: teamIds.length > 0 ? teamIds.join(', ') : null,
@@ -434,7 +484,7 @@ async function syncToMembers(rows) {
   const members = [];
   let page = 1;
   while (true) {
-    const url = `${DIRECTUS_URL}/items/members?fields=id,license_nr,geschlecht,licences&filter[license_nr][_nnull]=true&limit=250&page=${page}`;
+    const url = `${DIRECTUS_URL}/items/members?fields=id,license_nr,geschlecht,licences,vm_email&filter[license_nr][_nnull]=true&limit=250&page=${page}`;
     const res = await fetch(url, { headers });
     if (!res.ok) throw new Error(`Directus members list failed: ${res.status}`);
     const { data } = await res.json();
@@ -475,6 +525,12 @@ async function syncToMembers(rows) {
     }
     if (row.licence_validated !== undefined && row.licence_validated !== null) {
       payload.licence_validated = row.licence_validated;
+      changed = true;
+    }
+
+    // VM email — store the email from Volleymanager
+    if (row.email && row.email !== member.vm_email) {
+      payload.vm_email = row.email;
       changed = true;
     }
 

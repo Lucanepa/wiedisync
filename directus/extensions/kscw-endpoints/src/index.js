@@ -821,7 +821,16 @@ export default {
             return res.status(400).json({ error: 'Invalid or expired request' })
           }
 
-          const member = await database('members').where('email', email).first()
+          let member = await database('members').where('email', email).first()
+          // Fallback: check if email matches a VM-synced email (Volleymanager claim)
+          if (!member) {
+            member = await database('members').where('vm_email', email).whereNull('user').first()
+            if (member) {
+              // Update the member's email to the verified one for future logins
+              await database('members').where('id', member.id).update({ email })
+              log.info(`VM email claim (set-password): member ${member.id} claimed via vm_email=${email}`)
+            }
+          }
           if (!member) return res.status(400).json({ error: 'Invalid or expired request' })
           memberId = member.id
 
@@ -894,18 +903,39 @@ export default {
           role: memberRole.id,
         })
 
-        // Create member record linked to user
-        const [member] = await database('members').insert({
-          user: userId,
-          first_name, last_name, email,
-          role: JSON.stringify(['user']),
-          kscw_membership_active: true,
-          coach_approved_team: false,
-          requested_team: team,
-          wiedisync_active: true,
-          language: language || 'german',
-          birthdate_visibility: 'hidden',
-        }).returning('id')
+        // Check if signup email matches an existing member's vm_email (Volleymanager claim)
+        const vmMatch = await database('members')
+          .where('vm_email', email)
+          .whereNull('user')
+          .first()
+
+        let member
+        if (vmMatch) {
+          // Claim: link existing VM-matched member to new Directus user
+          await database('members').where('id', vmMatch.id).update({
+            user: userId,
+            email,
+            wiedisync_active: true,
+            language: language || vmMatch.language || 'german',
+            requested_team: vmMatch.coach_approved_team ? null : team,
+          })
+          member = vmMatch
+          log.info(`VM email claim: member ${vmMatch.id} (${vmMatch.first_name} ${vmMatch.last_name}) claimed via vm_email=${email}`)
+        } else {
+          // Create new member record linked to user
+          const [newMember] = await database('members').insert({
+            user: userId,
+            first_name, last_name, email,
+            role: JSON.stringify(['user']),
+            kscw_membership_active: true,
+            coach_approved_team: false,
+            requested_team: team,
+            wiedisync_active: true,
+            language: language || 'german',
+            birthdate_visibility: 'hidden',
+          }).returning('id')
+          member = newMember
+        }
 
         // Clean up verification
         await database('email_verifications').where('email', email).delete()

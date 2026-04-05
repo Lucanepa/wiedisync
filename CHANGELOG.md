@@ -2,6 +2,14 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.5.0] — 2026-04-05
+
+### Features
+
+- **Expanded Volleymanager sync** — `sv_vm_check` now includes 16 new columns: birthday, nationality (name + IOC code), LAS status (`is_locally_educated`), abroad player status (`is_foreigner`), federation (club regional association), main club name/ID, double licence club/team info, activation/validation dates. Filter changed from "validated only" to all non-deceased/non-anonymized players (260 total).
+- **VM email sync to members** — Monthly cron syncs each member's Volleymanager email (`vm_email` field) from their `sv_vm_check` record, matched by `license_nr` ↔ `association_id`.
+- **VM email claim on signup** — When a new user registers with an email matching an existing member's `vm_email`, the registration auto-claims that member record instead of creating a duplicate. Works in both `/kscw/register` (new signup) and `/kscw/set-password` (OTP shell claim) flows.
+
 ## [3.4.0] — 2026-04-04
 
 ### Infrastructure

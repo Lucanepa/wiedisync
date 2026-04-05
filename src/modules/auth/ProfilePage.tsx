@@ -129,6 +129,7 @@ export default function ProfilePage() {
           <div className="mt-3 border-t border-gray-100 pt-3 dark:border-gray-700">
             {memberTeams.length > 0 && (
               <div className="flex flex-col">
+                <span className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('teams')}</span>
                 {memberTeams.map((mt, i) => {
                   const team = asObj<Team>(mt.team)
                   const teamRoles: string[] = [tt('rolePlayer')]
@@ -192,12 +193,19 @@ export default function ProfilePage() {
             </button>
 
             {user.role.length > 0 && (
-              <div className={`flex flex-wrap items-center gap-1.5 ${memberTeams.length > 0 ? 'mt-2 border-t border-gray-100 pt-2 dark:border-gray-700' : ''}`}>
-                <span className="shrink-0 text-xs leading-none text-gray-500 dark:text-gray-400">{t('roles')}</span>
-                {[...user.role].sort((a, b) => {
-                  const order = ['user', 'coach', 'team_responsible', 'vb_admin', 'bb_admin', 'vorstand', 'admin', 'superuser', 'superadmin']
-                  return (order.indexOf(a) === -1 ? 99 : order.indexOf(a)) - (order.indexOf(b) === -1 ? 99 : order.indexOf(b))
-                }).map((r) => <StatusBadge key={r} status={r} />)}
+              <div className={memberTeams.length > 0 ? 'mt-2 border-t border-gray-100 pt-2 dark:border-gray-700' : ''}>
+                <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('roles')}</span>
+                <div className="flex flex-col border-l-2 border-gray-300 pl-3 dark:border-gray-600">
+                  {[...user.role].sort((a, b) => {
+                    const order = ['user', 'coach', 'team_responsible', 'vb_admin', 'bb_admin', 'vorstand', 'admin', 'superuser', 'superadmin']
+                    return (order.indexOf(a) === -1 ? 99 : order.indexOf(a)) - (order.indexOf(b) === -1 ? 99 : order.indexOf(b))
+                  }).map((r) => (
+                    <div key={r} className="flex items-center gap-2.5 py-1">
+                      <div className="w-4 border-t border-gray-300 dark:border-gray-600" />
+                      <StatusBadge status={r} />
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -262,32 +270,35 @@ export default function ProfilePage() {
         <div className="mt-8">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Swiss Volley</h2>
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{t('svSyncInfo')}</p>
-          <div className="mt-3 grid gap-4 sm:grid-cols-2">
-            {user.licence_category && (
-              <div className="rounded-lg border bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-                <p className="text-sm text-gray-500 dark:text-gray-400">{t('licenceCategory')}</p>
-                <p className="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">{user.licence_category}</p>
+          <div className="mt-3">
+            <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('licence')}</span>
+            <div className="grid grid-cols-3 gap-2.5">
+              {user.licence_category && (
+                <div className="rounded-lg border bg-white px-3 py-2.5 dark:border-gray-700 dark:bg-gray-800">
+                  <p className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('type')}</p>
+                  <p className="mt-0.5 text-sm font-bold text-gray-900 dark:text-gray-100">{user.licence_category}</p>
+                </div>
+              )}
+              <div className="rounded-lg border bg-white px-3 py-2.5 dark:border-gray-700 dark:bg-gray-800">
+                <p className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('activated')}</p>
+                <p className="mt-0.5 text-sm font-bold">
+                  {user.licence_activated == null
+                    ? <span className="text-gray-400">—</span>
+                    : user.licence_activated
+                      ? <span className="text-green-600 dark:text-green-400">&#10003;</span>
+                      : <span className="text-red-500 dark:text-red-400">&#10007;</span>}
+                </p>
               </div>
-            )}
-            <div className="rounded-lg border bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-              <p className="text-sm text-gray-500 dark:text-gray-400">{t('licenceActivated')}</p>
-              <p className="mt-1 text-sm font-medium">
-                {user.licence_activated == null
-                  ? <span className="text-gray-400">—</span>
-                  : user.licence_activated
-                    ? <span className="text-green-600 dark:text-green-400">&#10003;</span>
-                    : <span className="text-red-500 dark:text-red-400">&#10007;</span>}
-              </p>
-            </div>
-            <div className="rounded-lg border bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-              <p className="text-sm text-gray-500 dark:text-gray-400">{t('licenceValidated')}</p>
-              <p className="mt-1 text-sm font-medium">
-                {user.licence_validated == null
-                  ? <span className="text-gray-400">—</span>
-                  : user.licence_validated
-                    ? <span className="text-green-600 dark:text-green-400">&#10003;</span>
-                    : <span className="text-red-500 dark:text-red-400">&#10007;</span>}
-              </p>
+              <div className="rounded-lg border bg-white px-3 py-2.5 dark:border-gray-700 dark:bg-gray-800">
+                <p className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('validated')}</p>
+                <p className="mt-0.5 text-sm font-bold">
+                  {user.licence_validated == null
+                    ? <span className="text-gray-400">—</span>
+                    : user.licence_validated
+                      ? <span className="text-green-600 dark:text-green-400">&#10003;</span>
+                      : <span className="text-red-500 dark:text-red-400">&#10007;</span>}
+                </p>
+              </div>
             </div>
           </div>
         </div>

@@ -1,0 +1,462 @@
+import { useState, useMemo, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
+import {
+  RefreshCcw, ChevronDown, ChevronRight, Bug,
+  ExternalLink, Check, Loader2, XCircle, RotateCcw,
+} from 'lucide-react'
+import {
+  useBugfixIssues,
+  useBugfixStatus,
+  useTriggerFix,
+  useDeployFix,
+  useDismissFix,
+  type BugfixIssue,
+} from '../../hooks/useBugfixes'
+import { useQueryClient } from '@tanstack/react-query'
+
+// ── Helpers ──────────────────────────────────────────────────────────
+
+const RTF = new Intl.RelativeTimeFormat('de-CH', { numeric: 'auto' })
+
+function relativeTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime()
+  const seconds = Math.round(diff / 1000)
+  if (seconds < 60) return RTF.format(-seconds, 'second')
+  const minutes = Math.round(seconds / 60)
+  if (minutes < 60) return RTF.format(-minutes, 'minute')
+  const hours = Math.round(minutes / 60)
+  if (hours < 24) return RTF.format(-hours, 'hour')
+  const days = Math.round(hours / 24)
+  return RTF.format(-days, 'day')
+}
+
+function absoluteTime(iso: string): string {
+  return new Date(iso).toLocaleString('de-CH', {
+    day: '2-digit', month: '2-digit', year: '2-digit',
+    hour: '2-digit', minute: '2-digit',
+  })
+}
+
+function parseUserAgent(ua: string): string {
+  if (!ua) return '—'
+  const browser = ua.match(/(Chrome|Firefox|Safari|Edge|Opera)\/[\d.]+/)?.[0]
+    ?? ua.match(/(MSIE|Trident)[\s/][\d.]+/)?.[0]
+    ?? 'Unknown browser'
+  const os = ua.match(/(Windows NT [\d.]+|Mac OS X [\d._]+|Linux|Android [\d.]+|iOS [\d._]+)/)?.[0]
+    ?? 'Unknown OS'
+  return `${browser} / ${os}`
+}
+
+function parseFileLine(stack: string): string | null {
+  if (!stack) return null
+  const m = stack.match(/at\s+.*?[(/]([\w./:-]+:\d+:\d+)/)
+  return m?.[1] ?? null
+}
+
+// ── Status badge ─────────────────────────────────────────────────────
+
+const STATUS_COLORS: Record<string, string> = {
+  new: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
+  fixing: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 animate-pulse',
+  pr_ready: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+  deployed_dev: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300',
+  deployed_prod: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
+  failed: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+  reverted: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
+  dismissed: 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400',
+}
+
+function StatusBadge({ status, t }: { status: string; t: (k: string) => string }) {
+  const labels: Record<string, string> = {
+    new: t('statusNew'),
+    fixing: t('statusFixing'),
+    pr_ready: t('statusPrReady'),
+    deployed_dev: t('statusDeployedDev'),
+    deployed_prod: t('statusDeployedProd'),
+    failed: t('statusFailed'),
+    reverted: t('statusReverted'),
+    dismissed: t('statusDismissed'),
+  }
+  return (
+    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${STATUS_COLORS[status] ?? STATUS_COLORS.new}`}>
+      {labels[status] ?? status}
+    </span>
+  )
+}
+
+// ── Polling component for fixing rows ────────────────────────────────
+
+function FixingStatusPoller({ hash, startedAt }: { hash: string; startedAt: string }) {
+  const qc = useQueryClient()
+  const { data } = useBugfixStatus(hash, startedAt)
+  const status = (data as { status?: string })?.status
+  // When status changes from 'fixing', invalidate the issues list
+  useEffect(() => {
+    if (status && status !== 'fixing') {
+      qc.invalidateQueries({ queryKey: ['bugfixes', 'issues'] })
+    }
+  }, [status, qc])
+  const elapsed = Math.round((Date.now() - new Date(startedAt).getTime()) / 1000)
+  const mins = Math.floor(elapsed / 60)
+  const secs = elapsed % 60
+  return (
+    <span className="text-[10px] text-amber-600 dark:text-amber-400 font-mono">
+      {mins}:{secs.toString().padStart(2, '0')}
+    </span>
+  )
+}
+
+// ── Issue row ────────────────────────────────────────────────────────
+
+function IssueRow({ issue, t }: { issue: BugfixIssue; t: (k: string, opts?: Record<string, unknown>) => string }) {
+  const [expanded, setExpanded] = useState(false)
+  const triggerFix = useTriggerFix()
+  const deployFix = useDeployFix()
+  const dismissFix = useDismissFix()
+
+  const status = issue.annotation?.status === 'solved'
+    ? 'dismissed'
+    : issue.fix_status ?? 'new'
+
+  function handleFix() {
+    if (!window.confirm(t('confirmFix'))) return
+    triggerFix.mutate(issue.hash, {
+      onError: (err) => toast.error(String(err)),
+    })
+  }
+  function handleDeployDev() {
+    if (!window.confirm(t('confirmDeployDev'))) return
+    deployFix.mutate({ hash: issue.hash, target: 'dev' }, {
+      onError: (err) => toast.error(String(err)),
+    })
+  }
+  function handleDeployProd() {
+    if (!window.confirm(t('confirmDeployProd'))) return
+    deployFix.mutate({ hash: issue.hash, target: 'prod' }, {
+      onError: (err) => toast.error(String(err)),
+    })
+  }
+  function handleDismiss() {
+    if (!window.confirm(t('confirmDismiss'))) return
+    dismissFix.mutate(issue.hash, {
+      onError: (err) => toast.error(String(err)),
+    })
+  }
+  function handleReopen() {
+    if (!window.confirm(t('confirmReopen'))) return
+    dismissFix.mutate(issue.hash, {
+      onError: (err) => toast.error(String(err)),
+    })
+  }
+
+  const fileLine = parseFileLine(issue.expanded?.stack ?? '')
+
+  return (
+    <div className="border-b border-gray-100 dark:border-gray-700/50">
+      {/* Collapsed row */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50"
+      >
+        {expanded
+          ? <ChevronDown className="h-3 w-3 shrink-0 text-gray-400" />
+          : <ChevronRight className="h-3 w-3 shrink-0 text-gray-400" />
+        }
+
+        <StatusBadge status={status} t={t} />
+
+        <span className="min-w-0 truncate text-gray-900 dark:text-gray-100" title={issue.message}>
+          {issue.message.length > 80 ? issue.message.slice(0, 80) + '...' : issue.message}
+        </span>
+
+        <span className={`hidden sm:inline-block shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ${
+          issue.source === 'frontend'
+            ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
+            : 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400'
+        }`}>
+          {issue.source === 'frontend' ? 'FE' : 'BE'}
+        </span>
+
+        <span className="hidden sm:inline-block shrink-0 text-gray-400 font-mono">{issue.count}x</span>
+        <span className="hidden sm:inline-block shrink-0 text-gray-400" title={absoluteTime(issue.first_seen)}>
+          {relativeTime(issue.first_seen)}
+        </span>
+        <span className="shrink-0 ml-auto text-gray-400" title={absoluteTime(issue.last_seen)}>
+          {relativeTime(issue.last_seen)}
+        </span>
+      </button>
+
+      {/* Action buttons row */}
+      <div className="flex items-center gap-1.5 px-3 pb-2">
+        <div className="w-3 shrink-0" /> {/* align with chevron */}
+
+        {status === 'new' && (
+          <>
+            <button onClick={handleFix} className="rounded bg-brand-600 px-2 py-0.5 text-[10px] font-medium text-white hover:bg-brand-700">
+              {t('fix')}
+            </button>
+            <button onClick={handleDismiss} className="rounded border border-gray-200 px-2 py-0.5 text-[10px] text-gray-500 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700">
+              {t('dismiss')}
+            </button>
+          </>
+        )}
+
+        {status === 'fixing' && (
+          <span className="flex items-center gap-1.5 text-[10px] text-amber-600 dark:text-amber-400">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            {t('claudeWorking')}
+            <FixingStatusPoller hash={issue.hash} startedAt={issue.fix_started_at ?? issue.first_seen} />
+          </span>
+        )}
+
+        {status === 'pr_ready' && (
+          <>
+            {issue.pr_url && (
+              <a href={issue.pr_url} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-1 rounded bg-blue-600 px-2 py-0.5 text-[10px] font-medium text-white hover:bg-blue-700">
+                <ExternalLink className="h-2.5 w-2.5" /> {t('viewPr')}
+              </a>
+            )}
+            <button onClick={handleDeployDev} className="rounded bg-cyan-600 px-2 py-0.5 text-[10px] font-medium text-white hover:bg-cyan-700">
+              {t('deployDev')}
+            </button>
+            <button onClick={handleDismiss} className="rounded border border-gray-200 px-2 py-0.5 text-[10px] text-gray-500 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700">
+              {t('dismiss')}
+            </button>
+          </>
+        )}
+
+        {status === 'deployed_dev' && (
+          <>
+            <button onClick={handleDeployProd} className="rounded bg-green-600 px-2 py-0.5 text-[10px] font-medium text-white hover:bg-green-700">
+              {t('deployProd')}
+            </button>
+            <button onClick={handleDismiss} className="rounded border border-gray-200 px-2 py-0.5 text-[10px] text-gray-500 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700">
+              {t('revert')}
+            </button>
+          </>
+        )}
+
+        {status === 'deployed_prod' && (
+          <span className="flex items-center gap-1 text-[10px] text-green-600 dark:text-green-400">
+            <Check className="h-3 w-3" /> Deployed
+          </span>
+        )}
+
+        {status === 'failed' && (
+          <>
+            <span className="flex items-center gap-1 text-[10px] text-red-500">
+              <XCircle className="h-3 w-3" /> {t('statusFailed')}
+            </span>
+            <button onClick={handleFix} className="flex items-center gap-1 rounded bg-brand-600 px-2 py-0.5 text-[10px] font-medium text-white hover:bg-brand-700">
+              <RotateCcw className="h-2.5 w-2.5" /> {t('retry')}
+            </button>
+            <button onClick={handleDismiss} className="rounded border border-gray-200 px-2 py-0.5 text-[10px] text-gray-500 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700">
+              {t('dismiss')}
+            </button>
+          </>
+        )}
+
+        {status === 'reverted' && (
+          <>
+            <button onClick={handleFix} className="flex items-center gap-1 rounded bg-brand-600 px-2 py-0.5 text-[10px] font-medium text-white hover:bg-brand-700">
+              <RotateCcw className="h-2.5 w-2.5" /> {t('retry')}
+            </button>
+            <button onClick={handleDismiss} className="rounded border border-gray-200 px-2 py-0.5 text-[10px] text-gray-500 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700">
+              {t('dismiss')}
+            </button>
+          </>
+        )}
+
+        {status === 'dismissed' && (
+          <button onClick={handleReopen} className="rounded border border-gray-200 px-2 py-0.5 text-[10px] text-gray-500 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700">
+            {t('reopen')}
+          </button>
+        )}
+      </div>
+
+      {/* Expanded detail */}
+      {expanded && (
+        <div className="border-t border-gray-50 bg-gray-50/50 px-8 py-3 space-y-3 dark:border-gray-700/30 dark:bg-gray-900/30">
+          {/* When */}
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-0.5">{t('when')}</p>
+            <p className="text-xs text-gray-700 dark:text-gray-300">
+              {t('firstSeen')}: {relativeTime(issue.first_seen)} ({absoluteTime(issue.first_seen)})
+              <br />
+              {t('lastSeen')}: {relativeTime(issue.last_seen)} ({absoluteTime(issue.last_seen)})
+            </p>
+          </div>
+
+          {/* Where */}
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-0.5">{t('where')}</p>
+            <p className="text-xs text-gray-700 dark:text-gray-300">
+              {issue.expanded?.page || '—'}
+              {fileLine && <span className="ml-2 font-mono text-[10px] text-gray-400">{fileLine}</span>}
+            </p>
+          </div>
+
+          {/* Who */}
+          {issue.expanded?.user && (
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-0.5">{t('who')}</p>
+              <p className="text-xs text-gray-700 dark:text-gray-300">
+                Role: {issue.expanded.user.role} | Sport: {issue.expanded.user.sport}
+              </p>
+            </div>
+          )}
+
+          {/* What tried (breadcrumbs) */}
+          {issue.expanded?.breadcrumbs?.length > 0 && (
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-0.5">{t('whatTried')}</p>
+              <ol className="list-decimal list-inside text-xs text-gray-700 dark:text-gray-300 space-y-0.5">
+                {issue.expanded.breadcrumbs.map((b, i) => <li key={i}>{b}</li>)}
+              </ol>
+            </div>
+          )}
+
+          {/* What went wrong */}
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-0.5">{t('whatFailed')}</p>
+            {issue.expanded?.status && (
+              <p className="text-xs text-gray-500 mb-1">HTTP {issue.expanded.status} {issue.expanded.collection && `on ${issue.expanded.collection}`}</p>
+            )}
+            <pre className="text-xs font-mono max-h-48 overflow-auto bg-muted p-2 rounded">
+              {issue.expanded?.stack || issue.message}
+            </pre>
+          </div>
+
+          {/* Device */}
+          {issue.expanded?.userAgent && (
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-0.5">{t('device')}</p>
+              <p className="text-xs text-gray-700 dark:text-gray-300">{parseUserAgent(issue.expanded.userAgent)}</p>
+            </div>
+          )}
+
+          {/* Fix history */}
+          {issue.fix_status && (
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-0.5">{t('fixHistory')}</p>
+              <p className="text-xs text-gray-700 dark:text-gray-300">
+                Status: <StatusBadge status={issue.fix_status} t={t} />
+                {issue.pr_url && (
+                  <a href={issue.pr_url} target="_blank" rel="noopener noreferrer"
+                    className="ml-2 text-blue-600 hover:underline dark:text-blue-400">
+                    PR <ExternalLink className="inline h-2.5 w-2.5" />
+                  </a>
+                )}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Tabs ─────────────────────────────────────────────────────────────
+
+type Tab = 'active' | 'deployed' | 'dismissed'
+
+// ── Page ─────────────────────────────────────────────────────────────
+
+export default function BugfixDashboardPage() {
+  const { t } = useTranslation('bugfixes')
+  const { data: issues, isLoading, refetch } = useBugfixIssues()
+  const [tab, setTab] = useState<Tab>('active')
+
+  const filtered = useMemo(() => {
+    if (!issues) return []
+    switch (tab) {
+      case 'active':
+        return issues.filter(i =>
+          i.annotation?.status !== 'solved' &&
+          (i.fix_status === null || i.fix_status === 'fixing' || i.fix_status === 'pr_ready' || i.fix_status === 'failed' || i.fix_status === 'reverted')
+        )
+      case 'deployed':
+        return issues.filter(i =>
+          i.fix_status === 'deployed_dev' || i.fix_status === 'deployed_prod'
+        )
+      case 'dismissed':
+        return issues.filter(i => i.annotation?.status === 'solved')
+      default:
+        return issues
+    }
+  }, [issues, tab])
+
+  const tabs: { key: Tab; label: string }[] = [
+    { key: 'active', label: t('tabActive') },
+    { key: 'deployed', label: t('tabDeployed') },
+    { key: 'dismissed', label: t('tabDismissed') },
+  ]
+
+  return (
+    <div className="mx-auto max-w-5xl space-y-4 p-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
+            <Bug className="h-5 w-5" />
+            {t('title')}
+          </h1>
+        </div>
+        <button
+          onClick={() => refetch()}
+          disabled={isLoading}
+          className="flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+        >
+          <RefreshCcw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+          Refresh
+        </button>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 border-b border-gray-200 dark:border-gray-700">
+        {tabs.map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => setTab(key)}
+            className={`px-3 py-1.5 text-xs font-medium border-b-2 transition-colors ${
+              tab === key
+                ? 'border-brand-600 text-brand-600 dark:text-brand-400'
+                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+            }`}
+          >
+            {label}
+            {issues && (
+              <span className="ml-1.5 rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] dark:bg-gray-700">
+                {tab === key ? filtered.length : ''}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Table */}
+      <div className="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800/50">
+        {isLoading && !issues && (
+          <div className="p-8 text-center text-sm text-gray-400">
+            <Loader2 className="mx-auto h-5 w-5 animate-spin mb-2" />
+            Loading...
+          </div>
+        )}
+
+        {issues && filtered.length === 0 && (
+          <div className="p-8 text-center text-sm text-gray-400">{t('noIssues')}</div>
+        )}
+
+        {filtered.length > 0 && (
+          <div className="max-h-[calc(100vh-280px)] overflow-y-auto">
+            {filtered.map(issue => (
+              <IssueRow key={issue.hash} issue={issue} t={t} />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

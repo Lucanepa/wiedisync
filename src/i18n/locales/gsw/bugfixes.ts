@@ -38,6 +38,7 @@ export default {
   confirmDeployDev: 'De Fix uf Dev deploye?',
   confirmDeployProd: 'Das wird uf Produktion deployed. Witerfahre?',
   confirmDismiss: 'De Fähler verwerfe?',
+  confirmReopen: 'De Fähler wieder ufmache?',
   fixTimedOut: 'Fix-Timeout',
   statusTitle: 'Status',
   recentFixes: 'Letzti Fählerbehebige',

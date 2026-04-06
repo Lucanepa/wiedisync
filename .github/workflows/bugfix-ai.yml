@@ -1,0 +1,62 @@
+name: AI Bugfix
+on:
+  workflow_dispatch:
+    inputs:
+      error_hash:
+        description: 'Error hash from error-logs'
+        required: true
+        type: string
+      error_context:
+        description: 'Sanitized JSON with error details'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: bugfix-${{ github.event.inputs.error_hash }}
+  cancel-in-progress: false
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Run Claude Code
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          model: claude-opus-4-5-20250514
+          allowed_tools: "Read,Write,Edit,Bash,Glob,Grep"
+          prompt: |
+            You are fixing a bug in the wiedisync KSCW platform.
+            Read CLAUDE.md for full project context.
+
+            Error details:
+            ${{ github.event.inputs.error_context }}
+
+            Instructions:
+            1. Investigate the root cause by reading the relevant files
+            2. Fix the bug
+            3. Run `tsc -b && vite build` to verify the fix compiles
+            4. Create a new branch: bugfix/${{ github.event.inputs.error_hash }}
+            5. Commit with a clear message explaining the fix
+            6. Push and open a draft PR targeting dev
+            7. In the PR body, include on separate lines:
+               fix_summary: <technical description of what you fixed>
+               public_summary: <user-facing one-liner in German>
+            8. Output the PR URL as the last line

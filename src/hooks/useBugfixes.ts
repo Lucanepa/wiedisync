@@ -12,6 +12,7 @@ export interface BugfixIssue {
   level: string
   source: 'frontend' | 'backend'
   fix_status: string | null
+  fix_started_at: string | null
   pr_url: string | null
   annotation: { status: string; note: string | null } | null
   expanded: {
@@ -28,7 +29,7 @@ export interface BugfixIssue {
 
 export interface BugfixJob {
   error_hash: string
-  status: 'fixing' | 'pr_ready' | 'deployed_dev' | 'deployed_prod' | 'failed' | 'reverted'
+  status: 'fixing' | 'pr_ready' | 'deployed_dev' | 'deployed_prod' | 'failed' | 'reverted' | 'dismissed'
   pr_url: string | null
   pr_branch: string | null
   fix_summary: string | null
@@ -42,14 +43,69 @@ export interface PublicStatus {
   status: string
 }
 
+// ── Raw API response shape ────────────────────────────────────────
+
+interface RawBugfixIssue {
+  hash: string
+  count: number
+  latest_ts: string
+  date: string
+  level: string
+  event: string
+  endpoint: string | null
+  error: string | null
+  stack: string | null
+  breadcrumbs: string[] | null
+  page: string | null
+  userAgent: string | null
+  status: number | null
+  collection: string | null
+  responseBody: string | null
+  job: {
+    status: string
+    pr_number: number | null
+    pr_url: string | null
+    fix_summary: string | null
+    public_summary: string | null
+    date_created: string
+  } | null
+  annotation: { status: string; note: string | null; resolved_commit: string | null } | null
+}
+
+function mapIssue(raw: RawBugfixIssue): BugfixIssue {
+  return {
+    hash: raw.hash,
+    message: raw.error || raw.event || 'Unknown error',
+    count: raw.count,
+    first_seen: raw.date, // date of the JSONL log file
+    last_seen: raw.latest_ts,
+    level: raw.level,
+    source: raw.endpoint ? 'backend' : 'frontend',
+    fix_status: raw.job?.status ?? null,
+    fix_started_at: raw.job?.date_created ?? null,
+    pr_url: raw.job?.pr_url ?? null,
+    annotation: raw.annotation ? { status: raw.annotation.status, note: raw.annotation.note } : null,
+    expanded: {
+      stack: raw.stack ?? '',
+      breadcrumbs: raw.breadcrumbs ?? [],
+      page: raw.page ?? '',
+      userAgent: raw.userAgent ?? '',
+      user: undefined,
+      status: raw.status ?? undefined,
+      collection: raw.collection ?? undefined,
+      responseBody: raw.responseBody ?? undefined,
+    },
+  }
+}
+
 // ── Hooks ──────────────────────────────────────────────────────────
 
 export function useBugfixIssues() {
   return useQuery({
     queryKey: ['bugfixes', 'issues'],
     queryFn: async () => {
-      const res = await kscwApi<{ data: BugfixIssue[] }>('/bugfixes/issues')
-      return res.data
+      const res = await kscwApi<{ data: RawBugfixIssue[] }>('/bugfixes/issues')
+      return res.data.map(mapIssue)
     },
   })
 }
@@ -57,7 +113,10 @@ export function useBugfixIssues() {
 export function useBugfixStatus(hash: string | null, startedAt: string | null) {
   return useQuery({
     queryKey: ['bugfixes', 'status', hash],
-    queryFn: () => kscwApi<BugfixJob>(`/bugfixes/status/${hash}`),
+    queryFn: async () => {
+      const res = await kscwApi<{ data: BugfixJob }>(`/bugfixes/status/${hash}`)
+      return res.data
+    },
     enabled: !!hash,
     refetchInterval: () => {
       if (!startedAt) return false
@@ -100,5 +159,6 @@ export function usePublicStatus() {
   return useQuery({
     queryKey: ['bugfixes', 'public'],
     queryFn: () => kscwApi<{ data: PublicStatus[] }>('/bugfixes/public'),
+    staleTime: 5 * 60_000,
   })
 }

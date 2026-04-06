@@ -38,6 +38,7 @@ export default {
   confirmDeployDev: 'Déployer ce correctif sur Dev ?',
   confirmDeployProd: 'Ceci sera déployé en production. Continuer ?',
   confirmDismiss: 'Rejeter cette erreur ?',
+  confirmReopen: 'Rouvrir cette erreur ?',
   fixTimedOut: 'Correction expirée',
   statusTitle: 'Statut',
   recentFixes: 'Correctifs récents',

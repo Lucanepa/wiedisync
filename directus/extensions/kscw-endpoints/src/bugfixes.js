@@ -44,6 +44,18 @@ function sanitizeString(str) {
   return result
 }
 
+const SENSITIVE_KEYS = /^(password|token|secret|auth|bearer|cookie|session|otp|refresh_token|access_token|api_key|apikey|credential)$/i
+
+function scrubSensitiveKeys(obj) {
+  if (!obj || typeof obj !== 'object') return obj
+  if (Array.isArray(obj)) return obj.map(scrubSensitiveKeys)
+  const safe = {}
+  for (const [k, v] of Object.entries(obj)) {
+    safe[k] = SENSITIVE_KEYS.test(k) ? '[REDACTED]' : scrubSensitiveKeys(v)
+  }
+  return safe
+}
+
 function sanitizeObject(obj) {
   if (!obj || typeof obj !== 'object') return sanitizeString(obj)
   if (Array.isArray(obj)) return obj.map(sanitizeObject)
@@ -224,31 +236,7 @@ export function registerBugfixes(router, ctx) {
         return res.status(500).json({ error: 'GITHUB_PAT not configured' })
       }
 
-      // Check concurrent fix limit
-      const activeJobs = await database('bugfix_jobs')
-        .where('status', 'fixing')
-        .count('* as count')
-        .first()
-      if (activeJobs && parseInt(activeJobs.count) >= MAX_CONCURRENT_FIXES) {
-        return res.status(429).json({
-          error: `Maximum ${MAX_CONCURRENT_FIXES} concurrent fixes allowed`,
-        })
-      }
-
-      // Check if already being fixed
-      const existingJob = await database('bugfix_jobs')
-        .where('error_hash', error_hash)
-        .whereIn('status', ['fixing', 'pr_ready'])
-        .first()
-      if (existingJob) {
-        return res.status(409).json({
-          error: 'Fix already in progress or ready',
-          status: existingJob.status,
-          pr_url: existingJob.pr_url,
-        })
-      }
-
-      // Find error details from JSONL logs
+      // Find error details from JSONL logs (before transaction, read-only)
       let errorEntry = null
       let errorDate = null
       for (let i = 0; i < 7; i++) {
@@ -270,7 +258,64 @@ export function registerBugfixes(router, ctx) {
         return res.status(404).json({ error: 'Error not found in recent logs' })
       }
 
-      // Build sanitized context
+      // Atomic check-and-insert inside a transaction to prevent TOCTOU race
+      const txResult = await database.transaction(async (trx) => {
+        // Check concurrent fix limit
+        const activeJobs = await trx('bugfix_jobs')
+          .whereIn('status', ['fixing', 'pr_ready'])
+          .count('* as count')
+          .first()
+        if (activeJobs && parseInt(activeJobs.count) >= MAX_CONCURRENT_FIXES) {
+          return { error: 'rate_limit' }
+        }
+
+        // Check if already being fixed
+        const existingJob = await trx('bugfix_jobs')
+          .where('error_hash', error_hash)
+          .whereIn('status', ['fixing', 'pr_ready'])
+          .first()
+        if (existingJob) {
+          return { error: 'conflict', status: existingJob.status, pr_url: existingJob.pr_url }
+        }
+
+        // Insert job row
+        const now = new Date().toISOString()
+        await trx('bugfix_jobs').insert({
+          error_hash,
+          error_date: errorDate,
+          status: 'fixing',
+          triggered_by: req.accountability.user,
+          date_created: now,
+          date_updated: now,
+        }).onConflict('error_hash').merge({
+          status: 'fixing',
+          error_date: errorDate,
+          triggered_by: req.accountability.user,
+          date_updated: now,
+          pr_number: null,
+          pr_url: null,
+          fix_summary: null,
+          public_summary: null,
+          merge_sha: null,
+        })
+
+        return { ok: true }
+      })
+
+      if (txResult.error === 'rate_limit') {
+        return res.status(429).json({
+          error: `Maximum ${MAX_CONCURRENT_FIXES} concurrent fixes allowed`,
+        })
+      }
+      if (txResult.error === 'conflict') {
+        return res.status(409).json({
+          error: 'Fix already in progress or ready',
+          status: txResult.status,
+          pr_url: txResult.pr_url,
+        })
+      }
+
+      // Build sanitized context — scrub both values (regex) and keys (name-based)
       let context = sanitizeObject({
         error: errorEntry.error,
         stack: errorEntry.stack,
@@ -284,8 +329,8 @@ export function registerBugfixes(router, ctx) {
         breadcrumbs: errorEntry.breadcrumbs,
         responseBody: errorEntry.responseBody,
         method: errorEntry.method,
-        body: errorEntry.body,
-        params: errorEntry.params,
+        body: scrubSensitiveKeys(errorEntry.body),
+        params: scrubSensitiveKeys(errorEntry.params),
       })
 
       // Truncate breadcrumbs beyond 20
@@ -316,27 +361,6 @@ export function registerBugfixes(router, ctx) {
       if (contextStr.length > MAX_CONTEXT_BYTES) {
         contextStr = contextStr.slice(0, MAX_CONTEXT_BYTES)
       }
-
-      // Insert bugfix_jobs row
-      const now = new Date().toISOString()
-      await database('bugfix_jobs').insert({
-        error_hash: error_hash,
-        error_date: errorDate,
-        status: 'fixing',
-        triggered_by: req.accountability.user,
-        date_created: now,
-        date_updated: now,
-      }).onConflict('error_hash').merge({
-        status: 'fixing',
-        error_date: errorDate,
-        triggered_by: req.accountability.user,
-        date_updated: now,
-        pr_number: null,
-        pr_url: null,
-        fix_summary: null,
-        public_summary: null,
-        merge_sha: null,
-      })
 
       // Trigger GitHub Actions workflow
       const resp = await githubApi(
@@ -647,7 +671,7 @@ export function registerBugfixes(router, ctx) {
       const rows = await database('bugfix_jobs')
         .where('is_public', true)
         .whereIn('status', ['pr_ready', 'deployed_dev', 'deployed_prod'])
-        .select('date_created', 'public_summary', 'status')
+        .select({ date: 'date_created' }, 'public_summary', 'status')
         .orderBy('date_created', 'desc')
         .limit(50)
 

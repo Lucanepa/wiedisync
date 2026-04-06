@@ -38,6 +38,7 @@ export default {
   confirmDeployDev: 'Deploy this fix to dev?',
   confirmDeployProd: 'This deploys to production. Continue?',
   confirmDismiss: 'Dismiss this error?',
+  confirmReopen: 'Reopen this error?',
   fixTimedOut: 'Fix timed out',
   statusTitle: 'Status',
   recentFixes: 'Recent Fixes',

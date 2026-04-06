@@ -25,6 +25,7 @@ import feedback from './locales/en/feedback'
 import tasks from './locales/en/tasks'
 import carpool from './locales/en/carpool'
 import polls from './locales/en/polls'
+import bugfixes from './locales/en/bugfixes'
 
 import deCommon from './locales/de/common'
 import deNav from './locales/de/nav'
@@ -50,6 +51,7 @@ import deFeedback from './locales/de/feedback'
 import deTasks from './locales/de/tasks'
 import deCarpool from './locales/de/carpool'
 import dePolls from './locales/de/polls'
+import deBugfixes from './locales/de/bugfixes'
 
 import frCommon from './locales/fr/common'
 import frNav from './locales/fr/nav'
@@ -74,6 +76,7 @@ import frFeedback from './locales/fr/feedback'
 import frTasks from './locales/fr/tasks'
 import frCarpool from './locales/fr/carpool'
 import frPolls from './locales/fr/polls'
+import frBugfixes from './locales/fr/bugfixes'
 
 import itCommon from './locales/it/common'
 import itNav from './locales/it/nav'
@@ -98,6 +101,7 @@ import itFeedback from './locales/it/feedback'
 import itTasks from './locales/it/tasks'
 import itCarpool from './locales/it/carpool'
 import itPolls from './locales/it/polls'
+import itBugfixes from './locales/it/bugfixes'
 
 import gswCommon from './locales/gsw/common'
 import gswNav from './locales/gsw/nav'
@@ -123,6 +127,7 @@ import gswTasks from './locales/gsw/tasks'
 import gswJoin from './locales/gsw/join'
 import gswCarpool from './locales/gsw/carpool'
 import gswPolls from './locales/gsw/polls'
+import gswBugfixes from './locales/gsw/bugfixes'
 
 function getInitialLanguage(): string {
   if (typeof window === 'undefined') return 'de'
@@ -167,6 +172,7 @@ i18n.use(initReactI18next).init({
     'tasks',
     'carpool',
     'polls',
+    'bugfixes',
   ],
   defaultNS: 'common',
   resources: {
@@ -195,6 +201,7 @@ i18n.use(initReactI18next).init({
       tasks,
       carpool,
       polls,
+      bugfixes,
     },
     de: {
       common: deCommon,
@@ -221,6 +228,7 @@ i18n.use(initReactI18next).init({
       tasks: deTasks,
       carpool: deCarpool,
       polls: dePolls,
+      bugfixes: deBugfixes,
     },
     fr: {
       common: frCommon,
@@ -246,6 +254,7 @@ i18n.use(initReactI18next).init({
       tasks: frTasks,
       carpool: frCarpool,
       polls: frPolls,
+      bugfixes: frBugfixes,
     },
     it: {
       common: itCommon,
@@ -271,6 +280,7 @@ i18n.use(initReactI18next).init({
       tasks: itTasks,
       carpool: itCarpool,
       polls: itPolls,
+      bugfixes: itBugfixes,
     },
     gsw: {
       common: gswCommon,
@@ -297,6 +307,7 @@ i18n.use(initReactI18next).init({
       tasks: gswTasks,
       carpool: gswCarpool,
       polls: gswPolls,
+      bugfixes: gswBugfixes,
     },
   },
   interpolation: {

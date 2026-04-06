@@ -2,7 +2,6 @@
  * Web Push Notification Endpoints
  *
  * Manages push subscriptions and sends push via Cloudflare Worker.
- * Migrated from PocketBase hooks: push_subscriptions.pb.js + push_lib.js
  *
  * Endpoints:
  *   GET  /kscw/web-push/vapid-public-key  — public VAPID key

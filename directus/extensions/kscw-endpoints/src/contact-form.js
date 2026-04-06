@@ -1,5 +1,5 @@
 /**
- * Contact Form — ported from contact_form_api.pb.js + contact_form_lib.js
+ * Contact Form
  * POST /kscw/contact — public, Turnstile protected
  */
 

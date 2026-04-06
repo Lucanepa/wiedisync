@@ -1,5 +1,5 @@
 // KSCW Web Push Worker
-// Receives push requests from PocketBase hooks and delivers via Web Push API.
+// Receives push requests from Directus hooks and delivers via Web Push API.
 // Uses Web Crypto API for VAPID JWT signing (no npm dependencies needed).
 
 interface Env {
@@ -54,7 +54,7 @@ export default {
       })
     }
 
-    // Auth check — simple shared secret from PB hooks
+    // Auth check — simple shared secret from Directus hooks
     const authHeader = request.headers.get('Authorization')
     if (!authHeader || authHeader !== `Bearer ${env.AUTH_SECRET}`) {
       return json({ error: 'unauthorized' }, 401, env.ALLOWED_ORIGIN)

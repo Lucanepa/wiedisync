@@ -1,5 +1,5 @@
 /**
- * Game Scheduling (Terminplanung) — ported from game_scheduling_api.pb.js
+ * Game Scheduling (Terminplanung)
  * Public: register, view slots, book home, propose away
  * Admin: generate slots, confirm away, block slot
  */

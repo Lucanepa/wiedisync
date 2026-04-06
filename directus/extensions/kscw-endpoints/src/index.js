@@ -1,7 +1,6 @@
 /**
  * KSCW Custom API Endpoints
  *
- * Migrated from PocketBase routerAdd hooks.
  * All endpoints prefixed with /kscw/ (e.g., /kscw/check-email)
  */
 
@@ -24,6 +23,7 @@ import { registerRegistration } from './registration.js'
 import { registerNewsletter } from './newsletter.js'
 import { registerNewsletterDigest } from './newsletter-digest.js'
 import { registerClubdeskUpdate } from './clubdesk-update.js'
+import { registerBugfixes } from './bugfixes.js'
 
 // ── Helpers ──────────────────────────────────────────────────────
 
@@ -1512,7 +1512,8 @@ export default {
     registerNewsletter(router, ctx)
     registerNewsletterDigest(router, ctx)
     registerClubdeskUpdate(router, ctx)
+    registerBugfixes(router, ctx)
 
-    log.info('KSCW endpoints loaded: ~43 routes')
+    log.info('KSCW endpoints loaded: ~49 routes')
   },
 }

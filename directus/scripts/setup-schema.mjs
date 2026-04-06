@@ -1,7 +1,7 @@
 /**
  * KSCW Directus Schema Setup
  *
- * Creates all collections and fields matching the PocketBase schema.
+ * Creates all collections and fields for the KSCW platform.
  * Run with: node scripts/setup-schema.mjs
  *
  * Requires Directus running at http://localhost:8055

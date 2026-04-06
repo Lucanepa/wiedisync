@@ -38,6 +38,8 @@ import AuthRoute from './components/AuthRoute'
 import ScorerAssignPage from './modules/scorer/ScorerAssignPage'
 import AdminSetupPage from './modules/gameScheduling/pages/AdminSetupPage'
 import AdminDashboardPage from './modules/gameScheduling/pages/AdminDashboardPage'
+import BugfixDashboardPage from './modules/admin/BugfixDashboardPage'
+import StatusPage from './modules/admin/StatusPage'
 
 import JoinPage from './modules/auth/JoinPage'
 import SetPasswordPage from './modules/auth/SetPasswordPage'
@@ -113,6 +115,8 @@ export default function App() {
             <Route path="admin/infra" element={<SuperAdminRoute><InfraHealthPage /></SuperAdminRoute>} />
             <Route path="admin/data-health" element={<SuperAdminRoute><DataHealthPage /></SuperAdminRoute>} />
             <Route path="admin/audit-log" element={<SuperAdminRoute><AuditLogPage /></SuperAdminRoute>} />
+            <Route path="bugfixes" element={<SuperAdminRoute><BugfixDashboardPage /></SuperAdminRoute>} />
+            <Route path="status" element={<AuthRoute><StatusPage /></AuthRoute>} />
           </Route>
         </Routes>
       </BrowserRouter>

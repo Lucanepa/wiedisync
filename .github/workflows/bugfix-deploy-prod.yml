@@ -1,0 +1,65 @@
+name: Deploy Bugfix to Prod
+on:
+  workflow_dispatch:
+    inputs:
+      merge_sha:
+        description: 'Merge commit SHA from dev'
+        required: true
+        type: string
+      error_hash:
+        description: 'Error hash for branch naming'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: bugfix-prod-${{ github.event.inputs.error_hash }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: prod
+          fetch-depth: 0
+
+      - name: Cherry-pick bugfix to prod
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MERGE_SHA: ${{ github.event.inputs.merge_sha }}
+          ERROR_HASH: ${{ github.event.inputs.error_hash }}
+        run: |
+          # Validate inputs
+          if ! [[ "$MERGE_SHA" =~ ^[0-9a-f]{7,40}$ ]]; then
+            echo "::error::Invalid merge SHA format" && exit 1
+          fi
+          if ! [[ "$ERROR_HASH" =~ ^[a-zA-Z0-9_-]{1,64}$ ]]; then
+            echo "::error::Invalid error hash format" && exit 1
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin dev
+
+          # Verify SHA is reachable from dev
+          if ! git merge-base --is-ancestor "$MERGE_SHA" origin/dev; then
+            echo "::error::SHA is not reachable from dev — aborting" && exit 1
+          fi
+
+          # Always create a PR instead of pushing directly to prod
+          git checkout -b "release/bugfix-${ERROR_HASH}"
+          git cherry-pick "$MERGE_SHA" --no-edit || {
+            git cherry-pick --abort
+            git cherry-pick "$MERGE_SHA" || true
+            git add -A && git commit --allow-empty -m "chore: bugfix cherry-pick with conflicts"
+          }
+          git push origin "release/bugfix-${ERROR_HASH}"
+          gh pr create --base prod --head "release/bugfix-${ERROR_HASH}" \
+            --title "fix: bugfix ${ERROR_HASH}" \
+            --body "Automated cherry-pick from dev. SHA: ${MERGE_SHA}"

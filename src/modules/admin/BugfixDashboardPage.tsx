@@ -18,18 +18,21 @@ import { useQueryClient } from '@tanstack/react-query'
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
-const RTF = new Intl.RelativeTimeFormat('de-CH', { numeric: 'auto' })
+function makeRTF(lang: string) {
+  return new Intl.RelativeTimeFormat(lang, { numeric: 'auto' })
+}
 
-function relativeTime(iso: string): string {
+function relativeTime(iso: string, lang = 'en'): string {
+  const rtf = makeRTF(lang)
   const diff = Date.now() - new Date(iso).getTime()
   const seconds = Math.round(diff / 1000)
-  if (seconds < 60) return RTF.format(-seconds, 'second')
+  if (seconds < 60) return rtf.format(-seconds, 'second')
   const minutes = Math.round(seconds / 60)
-  if (minutes < 60) return RTF.format(-minutes, 'minute')
+  if (minutes < 60) return rtf.format(-minutes, 'minute')
   const hours = Math.round(minutes / 60)
-  if (hours < 24) return RTF.format(-hours, 'hour')
+  if (hours < 24) return rtf.format(-hours, 'hour')
   const days = Math.round(hours / 24)
-  return RTF.format(-days, 'day')
+  return rtf.format(-days, 'day')
 }
 
 function absoluteTime(iso: string): string {
@@ -110,7 +113,7 @@ function FixingStatusPoller({ hash, startedAt }: { hash: string; startedAt: stri
 
 // ── Issue row ────────────────────────────────────────────────────────
 
-function IssueRow({ issue, t }: { issue: BugfixIssue; t: (k: string, opts?: Record<string, unknown>) => string }) {
+function IssueRow({ issue, t, lang }: { issue: BugfixIssue; t: (k: string, opts?: Record<string, unknown>) => string; lang: string }) {
   const [expanded, setExpanded] = useState(false)
   const triggerFix = useTriggerFix()
   const deployFix = useDeployFix()
@@ -182,10 +185,10 @@ function IssueRow({ issue, t }: { issue: BugfixIssue; t: (k: string, opts?: Reco
 
         <span className="hidden sm:inline-block shrink-0 text-gray-400 font-mono">{issue.count}x</span>
         <span className="hidden sm:inline-block shrink-0 text-gray-400" title={absoluteTime(issue.first_seen)}>
-          {relativeTime(issue.first_seen)}
+          {relativeTime(issue.first_seen, lang)}
         </span>
         <span className="shrink-0 ml-auto text-gray-400" title={absoluteTime(issue.last_seen)}>
-          {relativeTime(issue.last_seen)}
+          {relativeTime(issue.last_seen, lang)}
         </span>
       </button>
 
@@ -285,9 +288,9 @@ function IssueRow({ issue, t }: { issue: BugfixIssue; t: (k: string, opts?: Reco
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-0.5">{t('when')}</p>
             <p className="text-xs text-gray-700 dark:text-gray-300">
-              {t('firstSeen')}: {relativeTime(issue.first_seen)} ({absoluteTime(issue.first_seen)})
+              {t('firstSeen')}: {relativeTime(issue.first_seen, lang)} ({absoluteTime(issue.first_seen)})
               <br />
-              {t('lastSeen')}: {relativeTime(issue.last_seen)} ({absoluteTime(issue.last_seen)})
+              {t('lastSeen')}: {relativeTime(issue.last_seen, lang)} ({absoluteTime(issue.last_seen)})
             </p>
           </div>
 
@@ -367,13 +370,13 @@ type Tab = 'active' | 'deployed' | 'dismissed'
 // ── Page ─────────────────────────────────────────────────────────────
 
 export default function BugfixDashboardPage() {
-  const { t } = useTranslation('bugfixes')
+  const { t, i18n } = useTranslation('bugfixes')
+  const lang = i18n.language
   const { data: issues, isLoading, refetch } = useBugfixIssues()
   const [tab, setTab] = useState<Tab>('active')
 
-  const filtered = useMemo(() => {
-    if (!issues) return []
-    switch (tab) {
+  const filterByTab = (issues: BugfixIssue[], t: Tab) => {
+    switch (t) {
       case 'active':
         return issues.filter(i =>
           i.annotation?.status !== 'solved' &&
@@ -388,7 +391,18 @@ export default function BugfixDashboardPage() {
       default:
         return issues
     }
-  }, [issues, tab])
+  }
+
+  const filtered = useMemo(() => issues ? filterByTab(issues, tab) : [], [issues, tab])
+
+  const tabCounts = useMemo(() => {
+    if (!issues) return { active: 0, deployed: 0, dismissed: 0 }
+    return {
+      active: filterByTab(issues, 'active').length,
+      deployed: filterByTab(issues, 'deployed').length,
+      dismissed: filterByTab(issues, 'dismissed').length,
+    }
+  }, [issues])
 
   const tabs: { key: Tab; label: string }[] = [
     { key: 'active', label: t('tabActive') },
@@ -431,7 +445,7 @@ export default function BugfixDashboardPage() {
             {label}
             {issues && (
               <span className="ml-1.5 rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] dark:bg-gray-700">
-                {tab === key ? filtered.length : ''}
+                {tabCounts[key]}
               </span>
             )}
           </button>
@@ -454,7 +468,7 @@ export default function BugfixDashboardPage() {
         {filtered.length > 0 && (
           <div className="max-h-[calc(100vh-280px)] overflow-y-auto">
             {filtered.map(issue => (
-              <IssueRow key={issue.hash} issue={issue} t={t} />
+              <IssueRow key={issue.hash} issue={issue} t={t} lang={lang} />
             ))}
           </div>
         )}

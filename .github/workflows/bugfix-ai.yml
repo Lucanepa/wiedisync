@@ -48,8 +48,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          model: claude-opus-4-6
-          allowed_tools: "Read,Write,Edit,Glob,Grep"
+          claude_args: "--model claude-sonnet-4-20250514"
           prompt: |
             You are fixing a bug in the wiedisync KSCW platform.
             Read CLAUDE.md for full project context.
@@ -73,3 +72,11 @@ jobs:
                fix_summary: <technical description of what you fixed>
                public_summary: <user-facing one-liner in German>
             9. Output the PR URL as the last line
+
+      - name: Report failure
+        if: failure()
+        run: |
+          curl -sf -X POST "https://directus.kscw.ch/kscw/bugfixes/webhook/${{ github.event.inputs.error_hash }}" \
+            -H "Authorization: Bearer ${{ secrets.DIRECTUS_ADMIN_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"status":"failed"}'

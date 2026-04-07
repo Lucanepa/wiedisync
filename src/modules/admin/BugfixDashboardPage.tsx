@@ -105,13 +105,22 @@ function FixingStatusPoller({ hash, startedAt }: { hash: string; startedAt: stri
   const qc = useQueryClient()
   const { data } = useBugfixStatus(hash, startedAt)
   const status = (data as { status?: string })?.status
+  const [elapsed, setElapsed] = useState(() => Math.round((Date.now() - new Date(startedAt).getTime()) / 1000))
+
+  // Tick every second
+  useEffect(() => {
+    const id = setInterval(() => {
+      setElapsed(Math.round((Date.now() - new Date(startedAt).getTime()) / 1000))
+    }, 1000)
+    return () => clearInterval(id)
+  }, [startedAt])
+
   // When status changes from 'fixing', invalidate the issues list
   useEffect(() => {
     if (status && status !== 'fixing') {
       qc.invalidateQueries({ queryKey: ['bugfixes', 'issues'] })
     }
   }, [status, qc])
-  const elapsed = Math.round((Date.now() - new Date(startedAt).getTime()) / 1000)
   const mins = Math.floor(elapsed / 60)
   const secs = elapsed % 60
   return (

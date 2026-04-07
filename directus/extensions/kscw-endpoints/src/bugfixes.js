@@ -462,10 +462,9 @@ export function registerBugfixes(router, ctx) {
             }
           }
 
-          // Check if workflow might have failed (no PR after checking)
-          // We check if the job was created more than 30 minutes ago
+          // Check if workflow might have failed (no PR after 2 min)
           const ageMs = Date.now() - new Date(job.date_created).getTime()
-          if (ageMs > 30 * 60 * 1000) {
+          if (ageMs > 2 * 60 * 1000) {
             // Check workflow runs for failure
             const runsResp = await githubApi(
               `/actions/workflows/bugfix-ai.yml/runs?per_page=5`,
@@ -713,6 +712,43 @@ export function registerBugfixes(router, ctx) {
     } catch (err) {
       log.error({ msg: 'bugfixes/reopen error', error: err.message })
       res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal error' })
+    }
+  })
+
+  // ── POST /bugfixes/webhook/:hash ─────────────────────────────
+  // Called by GitHub Actions on job completion (success or failure).
+  // Authenticated via GITHUB_PAT in Authorization header.
+
+  router.post('/bugfixes/webhook/:hash', async (req, res) => {
+    try {
+      const { hash } = req.params
+      if (!HASH_REGEX.test(hash)) {
+        return res.status(400).json({ error: 'Invalid hash' })
+      }
+
+      // Authenticate via Bearer token matching GITHUB_PAT or DIRECTUS_ADMIN_TOKEN
+      const authHeader = req.headers.authorization || ''
+      const token = authHeader.replace(/^Bearer\s+/i, '')
+      const adminToken = process.env.DIRECTUS_ADMIN_TOKEN
+      if ((!GITHUB_PAT || token !== GITHUB_PAT) && (!adminToken || token !== adminToken)) {
+        return res.status(401).json({ error: 'Unauthorized' })
+      }
+
+      const { status } = req.body // 'failed' or 'pr_ready'
+      if (!['failed', 'pr_ready'].includes(status)) {
+        return res.status(400).json({ error: 'Invalid status' })
+      }
+
+      await database('bugfix_jobs')
+        .where('error_hash', hash)
+        .where('status', 'fixing')
+        .update({ status, date_updated: new Date().toISOString() })
+
+      log.info({ msg: 'Bugfix webhook received', hash, status })
+      res.json({ success: true })
+    } catch (err) {
+      log.error({ msg: 'bugfixes/webhook error', error: err.message })
+      res.status(500).json({ error: 'Internal error' })
     }
   })
 

@@ -20,7 +20,8 @@ import { computeErrorHash } from './error-log.js'
 const ERROR_LOG_DIR = process.env.ERROR_LOG_DIR || '/directus/logs'
 const GITHUB_PAT = process.env.GITHUB_PAT
 const REPO_OWNER = 'Lucanepa'
-const REPO_NAME = 'wiedisync'
+const ALLOWED_REPOS = ['wiedisync', 'kscw-website']
+const DEFAULT_REPO = 'wiedisync'
 const MAX_CONCURRENT_FIXES = 3
 const HASH_REGEX = /^[a-zA-Z0-9_-]{1,64}$/
 const MAX_CONTEXT_BYTES = 50 * 1024 // 50 KB
@@ -81,10 +82,10 @@ function readErrorLogForDate(date) {
 
 // ── GitHub API helper ────────────────────────────────────────────
 
-async function githubApi(endpoint, options = {}) {
+async function githubApi(endpoint, options = {}, repo = DEFAULT_REPO) {
   const url = endpoint.startsWith('https://')
     ? endpoint
-    : `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}${endpoint}`
+    : `https://api.github.com/repos/${REPO_OWNER}/${repo}${endpoint}`
   const resp = await fetch(url, {
     ...options,
     headers: {
@@ -227,9 +228,13 @@ export function registerBugfixes(router, ctx) {
     try {
       await requireSuperuser(req)
 
-      const { error_hash } = req.body
+      const { error_hash, repo: reqRepo } = req.body
+      const repo = reqRepo || DEFAULT_REPO
       if (!error_hash || !HASH_REGEX.test(error_hash)) {
         return res.status(400).json({ error: 'Invalid error_hash' })
+      }
+      if (!ALLOWED_REPOS.includes(repo)) {
+        return res.status(400).json({ error: `Invalid repo. Allowed: ${ALLOWED_REPOS.join(', ')}` })
       }
 
       if (!GITHUB_PAT) {
@@ -282,6 +287,7 @@ export function registerBugfixes(router, ctx) {
         const now = new Date().toISOString()
         await trx('bugfix_jobs').insert({
           error_hash,
+          repo,
           error_date: errorDate,
           status: 'fixing',
           triggered_by: req.accountability.user,
@@ -289,6 +295,7 @@ export function registerBugfixes(router, ctx) {
           date_updated: now,
         }).onConflict('error_hash').merge({
           status: 'fixing',
+          repo,
           error_date: errorDate,
           triggered_by: req.accountability.user,
           date_updated: now,
@@ -362,16 +369,18 @@ export function registerBugfixes(router, ctx) {
         contextStr = contextStr.slice(0, MAX_CONTEXT_BYTES)
       }
 
-      // Trigger GitHub Actions workflow
+      // Trigger GitHub Actions workflow on the target repo
+      const defaultBranch = repo === 'kscw-website' ? 'dev' : 'dev'
       const resp = await githubApi(
         '/actions/workflows/bugfix-ai.yml/dispatches',
         {
           method: 'POST',
           body: JSON.stringify({
-            ref: 'dev',
+            ref: defaultBranch,
             inputs: { error_hash, error_context: contextStr },
           }),
-        }
+        },
+        repo
       )
 
       if (resp.status !== 204) {
@@ -410,10 +419,13 @@ export function registerBugfixes(router, ctx) {
       }
 
       // If currently fixing, check for PR
+      const jobRepo = job.repo || DEFAULT_REPO
       if (job.status === 'fixing' && GITHUB_PAT) {
         try {
           const prResp = await githubApi(
-            `/pulls?head=${REPO_OWNER}:bugfix/${hash}&state=open`
+            `/pulls?head=${REPO_OWNER}:bugfix/${hash}&state=open`,
+            {},
+            jobRepo
           )
           if (prResp.ok) {
             const prs = await prResp.json()
@@ -454,7 +466,9 @@ export function registerBugfixes(router, ctx) {
           if (ageMs > 30 * 60 * 1000) {
             // Check workflow runs for failure
             const runsResp = await githubApi(
-              `/actions/workflows/bugfix-ai.yml/runs?per_page=5`
+              `/actions/workflows/bugfix-ai.yml/runs?per_page=5`,
+              {},
+              jobRepo
             )
             if (runsResp.ok) {
               const runs = await runsResp.json()
@@ -509,6 +523,8 @@ export function registerBugfixes(router, ctx) {
         return res.status(404).json({ error: 'No bugfix job found' })
       }
 
+      const jobRepo = job.repo || DEFAULT_REPO
+
       if (target === 'dev') {
         // Merge PR to dev
         if (!job.pr_number) {
@@ -526,7 +542,8 @@ export function registerBugfixes(router, ctx) {
               merge_method: 'squash',
               commit_title: `fix: AI bugfix for ${hash.slice(0, 8)}`,
             }),
-          }
+          },
+          jobRepo
         )
 
         if (!mergeResp.ok) {
@@ -569,7 +586,8 @@ export function registerBugfixes(router, ctx) {
                 error_hash: hash,
               },
             }),
-          }
+          },
+          jobRepo
         )
 
         if (dispatchResp.status !== 204) {

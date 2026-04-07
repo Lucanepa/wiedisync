@@ -4,6 +4,7 @@
 CREATE TABLE IF NOT EXISTS bugfix_jobs (
   id SERIAL PRIMARY KEY,
   error_hash TEXT NOT NULL,
+  repo TEXT NOT NULL DEFAULT 'wiedisync',
   error_date TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'fixing'
     CHECK (status IN ('fixing', 'pr_ready', 'deployed_dev', 'deployed_prod', 'failed', 'reverted', 'dismissed')),

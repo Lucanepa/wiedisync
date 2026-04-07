@@ -155,6 +155,15 @@ export function useDismissFix() {
   })
 }
 
+export function useReopenFix() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (hash: string) =>
+      kscwApi(`/bugfixes/reopen/${hash}`, { method: 'POST' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['bugfixes'] }),
+  })
+}
+
 export function usePublicStatus() {
   return useQuery({
     queryKey: ['bugfixes', 'public'],

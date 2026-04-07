@@ -56,8 +56,8 @@ jobs:
           git checkout -b "release/bugfix-${ERROR_HASH}"
           git cherry-pick "$MERGE_SHA" --no-edit || {
             git cherry-pick --abort
-            git cherry-pick "$MERGE_SHA" || true
-            git add -A && git commit --allow-empty -m "chore: bugfix cherry-pick with conflicts"
+            echo "::error::Cherry-pick conflict — manual resolution required"
+            exit 1
           }
           git push origin "release/bugfix-${ERROR_HASH}"
           gh pr create --base prod --head "release/bugfix-${ERROR_HASH}" \

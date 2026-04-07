@@ -370,13 +370,12 @@ export function registerBugfixes(router, ctx) {
       }
 
       // Trigger GitHub Actions workflow on the target repo
-      const defaultBranch = repo === 'kscw-website' ? 'dev' : 'dev'
       const resp = await githubApi(
         '/actions/workflows/bugfix-ai.yml/dispatches',
         {
           method: 'POST',
           body: JSON.stringify({
-            ref: defaultBranch,
+            ref: 'dev',
             inputs: { error_hash, error_context: contextStr },
           }),
         },
@@ -420,6 +419,9 @@ export function registerBugfixes(router, ctx) {
 
       // If currently fixing, check for PR
       const jobRepo = job.repo || DEFAULT_REPO
+      if (!ALLOWED_REPOS.includes(jobRepo)) {
+        return res.status(500).json({ error: 'Invalid repo in job record' })
+      }
       if (job.status === 'fixing' && GITHUB_PAT) {
         try {
           const prResp = await githubApi(
@@ -524,6 +526,9 @@ export function registerBugfixes(router, ctx) {
       }
 
       const jobRepo = job.repo || DEFAULT_REPO
+      if (!ALLOWED_REPOS.includes(jobRepo)) {
+        return res.status(500).json({ error: 'Invalid repo in job record' })
+      }
 
       if (target === 'dev') {
         // Merge PR to dev
@@ -650,7 +655,7 @@ export function registerBugfixes(router, ctx) {
       }
 
       if (!errorDate) {
-        errorDate = new Date().toISOString().slice(0, 10)
+        return res.status(404).json({ error: 'Error not found in recent logs or bugfix jobs' })
       }
 
       // Upsert annotation
@@ -675,6 +680,38 @@ export function registerBugfixes(router, ctx) {
       res.json({ success: true, hash, status: 'solved' })
     } catch (err) {
       log.error({ msg: 'bugfixes/dismiss error', error: err.message })
+      res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal error' })
+    }
+  })
+
+  // ── POST /bugfixes/reopen/:hash ───────────────────────────────
+  // Reopen a dismissed error (remove solved annotation).
+
+  router.post('/bugfixes/reopen/:hash', async (req, res) => {
+    try {
+      await requireSuperuser(req)
+
+      const { hash } = req.params
+      if (!HASH_REGEX.test(hash)) {
+        return res.status(400).json({ error: 'Invalid hash' })
+      }
+
+      // Remove solved annotation
+      await database('error_annotations')
+        .where('error_hash', hash)
+        .where('status', 'solved')
+        .del()
+
+      // Reset bugfix_jobs status if it was dismissed
+      await database('bugfix_jobs')
+        .where('error_hash', hash)
+        .where('status', 'dismissed')
+        .update({ status: 'failed', date_updated: new Date().toISOString() })
+
+      log.info({ msg: 'Error reopened', hash })
+      res.json({ success: true, hash })
+    } catch (err) {
+      log.error({ msg: 'bugfixes/reopen error', error: err.message })
       res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal error' })
     }
   })

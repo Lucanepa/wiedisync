@@ -11,6 +11,7 @@ import {
   useTriggerFix,
   useDeployFix,
   useDismissFix,
+  useReopenFix,
   type BugfixIssue,
 } from '../../hooks/useBugfixes'
 import { useQueryClient } from '@tanstack/react-query'
@@ -114,6 +115,7 @@ function IssueRow({ issue, t }: { issue: BugfixIssue; t: (k: string, opts?: Reco
   const triggerFix = useTriggerFix()
   const deployFix = useDeployFix()
   const dismissFix = useDismissFix()
+  const reopenFix = useReopenFix()
 
   const status = issue.annotation?.status === 'solved'
     ? 'dismissed'
@@ -145,7 +147,7 @@ function IssueRow({ issue, t }: { issue: BugfixIssue; t: (k: string, opts?: Reco
   }
   function handleReopen() {
     if (!window.confirm(t('confirmReopen'))) return
-    dismissFix.mutate(issue.hash, {
+    reopenFix.mutate(issue.hash, {
       onError: (err) => toast.error(String(err)),
     })
   }

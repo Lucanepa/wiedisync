@@ -15,6 +15,16 @@ import {
   type BugfixIssue,
 } from '../../hooks/useBugfixes'
 import { useQueryClient } from '@tanstack/react-query'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../../components/ui/alert-dialog'
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -115,6 +125,7 @@ function FixingStatusPoller({ hash, startedAt }: { hash: string; startedAt: stri
 
 function IssueRow({ issue, t, lang }: { issue: BugfixIssue; t: (k: string, opts?: Record<string, unknown>) => string; lang: string }) {
   const [expanded, setExpanded] = useState(false)
+  const [confirmAction, setConfirmAction] = useState<{ message: string; onConfirm: () => void } | null>(null)
   const triggerFix = useTriggerFix()
   const deployFix = useDeployFix()
   const dismissFix = useDismissFix()
@@ -125,33 +136,33 @@ function IssueRow({ issue, t, lang }: { issue: BugfixIssue; t: (k: string, opts?
     : issue.fix_status ?? 'new'
 
   function handleFix() {
-    if (!window.confirm(t('confirmFix'))) return
-    triggerFix.mutate(issue.hash, {
-      onError: (err) => toast.error(String(err)),
+    setConfirmAction({
+      message: t('confirmFix'),
+      onConfirm: () => triggerFix.mutate(issue.hash, { onError: (err) => toast.error(String(err)) }),
     })
   }
   function handleDeployDev() {
-    if (!window.confirm(t('confirmDeployDev'))) return
-    deployFix.mutate({ hash: issue.hash, target: 'dev' }, {
-      onError: (err) => toast.error(String(err)),
+    setConfirmAction({
+      message: t('confirmDeployDev'),
+      onConfirm: () => deployFix.mutate({ hash: issue.hash, target: 'dev' }, { onError: (err) => toast.error(String(err)) }),
     })
   }
   function handleDeployProd() {
-    if (!window.confirm(t('confirmDeployProd'))) return
-    deployFix.mutate({ hash: issue.hash, target: 'prod' }, {
-      onError: (err) => toast.error(String(err)),
+    setConfirmAction({
+      message: t('confirmDeployProd'),
+      onConfirm: () => deployFix.mutate({ hash: issue.hash, target: 'prod' }, { onError: (err) => toast.error(String(err)) }),
     })
   }
   function handleDismiss() {
-    if (!window.confirm(t('confirmDismiss'))) return
-    dismissFix.mutate(issue.hash, {
-      onError: (err) => toast.error(String(err)),
+    setConfirmAction({
+      message: t('confirmDismiss'),
+      onConfirm: () => dismissFix.mutate(issue.hash, { onError: (err) => toast.error(String(err)) }),
     })
   }
   function handleReopen() {
-    if (!window.confirm(t('confirmReopen'))) return
-    reopenFix.mutate(issue.hash, {
-      onError: (err) => toast.error(String(err)),
+    setConfirmAction({
+      message: t('confirmReopen'),
+      onConfirm: () => reopenFix.mutate(issue.hash, { onError: (err) => toast.error(String(err)) }),
     })
   }
 
@@ -359,6 +370,22 @@ function IssueRow({ issue, t, lang }: { issue: BugfixIssue; t: (k: string, opts?
           )}
         </div>
       )}
+
+      {/* Inline confirm dialog */}
+      <AlertDialog open={!!confirmAction} onOpenChange={(open) => { if (!open) setConfirmAction(null) }}>
+        <AlertDialogContent className="max-w-sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-sm">{t('statusTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>{confirmAction?.message}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="text-xs h-8">{t('common:cancel')}</AlertDialogCancel>
+            <AlertDialogAction className="text-xs h-8" onClick={() => { confirmAction?.onConfirm(); setConfirmAction(null) }}>
+              OK
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

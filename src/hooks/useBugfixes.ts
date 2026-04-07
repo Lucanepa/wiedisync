@@ -82,7 +82,7 @@ function mapIssue(raw: RawBugfixIssue): BugfixIssue {
     level: raw.level,
     source: raw.endpoint ? 'backend' : 'frontend',
     fix_status: raw.job?.status ?? null,
-    fix_started_at: raw.job?.date_created ?? null,
+    fix_started_at: raw.job?.date_updated ?? raw.job?.date_created ?? null,
     pr_url: raw.job?.pr_url ?? null,
     annotation: raw.annotation ? { status: raw.annotation.status, note: raw.annotation.note } : null,
     expanded: {

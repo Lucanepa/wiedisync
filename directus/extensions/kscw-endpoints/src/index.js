@@ -1259,7 +1259,7 @@ export default {
         const userIdFilter = req.query.userId || null
         const eventFilter = req.query.event || null
         const projectFilter = req.query.project || null
-        const searchFilter = req.query.search || null
+        const searchFilter = req.query.search ? String(Array.isArray(req.query.search) ? req.query.search.join(' ') : req.query.search) : null
         const showSolved = req.query.show_solved === 'true'
 
         const logPath = path.join(ERROR_LOG_DIR, `errors-${date}.jsonl`)

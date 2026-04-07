@@ -9,7 +9,7 @@ import LanguageDropdown from '@/components/LanguageDropdown'
 import { getFileUrl } from '../utils/fileUrl'
 import AdminToggle from './AdminToggle'
 import { useAdminMode } from '../hooks/useAdminMode'
-import { Bell, UserX, PenSquare, CalendarDays, ClipboardList, Building2, CalendarClock, Database, HeartPulse, LogIn, User, Users, Settings, ChevronDown, ScrollText, MessageSquare, Banknote, BarChart3, UserPlus } from 'lucide-react'
+import { Bell, UserX, PenSquare, CalendarDays, ClipboardList, Building2, CalendarClock, Database, HeartPulse, LogIn, User, Users, Settings, ChevronDown, ScrollText, MessageSquare, Banknote, BarChart3, UserPlus, Bug, Activity } from 'lucide-react'
 import type { MemberTeam, Team } from '../types'
 import { asObj } from '../utils/relations'
 
@@ -109,6 +109,21 @@ function OptionsAccordion({ theme, toggleTheme, onClose }: { theme: string; togg
             >
               <MessageSquare className="h-4 w-4" />
               <span className="text-base font-medium">{t('feedback')}</span>
+            </NavLink>
+            {/* Status page row */}
+            <NavLink
+              to="/status"
+              onClick={onClose}
+              className={({ isActive }) =>
+                `flex min-h-[48px] items-center gap-3 rounded-lg px-4 py-3 transition-colors ${
+                  isActive
+                    ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/50 dark:text-gold-400'
+                    : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+                }`
+              }
+            >
+              <Activity className="h-4 w-4" />
+              <span className="text-base font-medium">{t('status', 'Status')}</span>
             </NavLink>
             {/* Version / Changelog row */}
             <NavLink
@@ -266,6 +281,20 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
               >
                 <ScrollText className={iconClass} />
                 {t('auditLog')}
+              </NavLink>
+              <NavLink
+                to="/bugfixes"
+                onClick={startClose}
+                className={({ isActive }) =>
+                  `flex min-h-[48px] items-center gap-4 rounded-lg px-4 py-3 text-base font-medium transition-colors ${
+                    isActive
+                      ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/50 dark:text-gold-400'
+                      : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+                  }`
+                }
+              >
+                <Bug className={iconClass} />
+                {t('bugfixes')}
               </NavLink>
             </>
           )}

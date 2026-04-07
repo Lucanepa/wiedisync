@@ -27,6 +27,8 @@ export default {
   infraHealth: 'Infrastructure',
   dataHealth: 'Qualite des donnees',
   auditLog: 'Audit Log',
+  bugfixes: 'Bugfixes',
+  status: 'Statut',
   adminMode: 'Mode admin',
   memberMode: 'Mode membre',
   notifications: 'Notifications',

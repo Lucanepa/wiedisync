@@ -25,7 +25,7 @@ import { asObj } from '../utils/relations'
 import {
   Home, Calendar, Trophy, UserX, PenSquare, PartyPopper, Users,
   ClipboardList, Building2, CalendarClock, Database, Activity,
-  HeartPulse, Settings, ChevronDown, MessageSquare, Banknote, BarChart3, UserPlus,
+  HeartPulse, Settings, ChevronDown, MessageSquare, Banknote, BarChart3, UserPlus, Bug,
 } from 'lucide-react'
 
 type ExpandedMemberTeam = MemberTeam & { team: Team | string }
@@ -72,6 +72,7 @@ function useNavItems(isLoggedIn: boolean, isApproved: boolean) {
     superadminItems: [
       { to: '/admin/infra', label: t('infraHealth'), icon: <Activity className={iconClass} /> },
       { to: '/admin/data-health', label: t('dataHealth'), icon: <HeartPulse className={iconClass} /> },
+      { to: '/bugfixes', label: t('bugfixes'), icon: <Bug className={iconClass} /> },
     ],
   }
 }

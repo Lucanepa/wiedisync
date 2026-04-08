@@ -148,8 +148,8 @@ export function registerStats(router, { database, getSchema, services, logger })
       ])
       res.json({ data: { overview, members, roster, schreiber, missing, participation, results, delegations } })
     } catch (err) {
-      logger.error('Stats all error:', err.message)
-      res.status(500).json({ error: err.message })
+      logger.error('Stats all error:', err.message || err)
+      res.status(500).json({ error: err.message || 'Internal error' })
     }
   })
 }

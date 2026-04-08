@@ -66,9 +66,9 @@ SELECT
     FILTER (WHERE mt.guest_level = 0
       AND m.licences::jsonb @> '"referee_bb"') AS lic_referee_bb,
   -- Leadership
-  (SELECT COUNT(*) FROM teams_coach tc WHERE tc.teams_id = t.id)              AS coach_count,
-  (SELECT COUNT(*) FROM teams_captain tc WHERE tc.teams_id = t.id)            AS captain_count,
-  (SELECT COUNT(*) FROM teams_team_responsible tc WHERE tc.teams_id = t.id)   AS team_responsible_count
+  (SELECT COUNT(*) FROM teams_coaches tc WHERE tc.teams_id = t.id)              AS coach_count,
+  (SELECT COUNT(*) FROM teams_captains tc WHERE tc.teams_id = t.id)            AS captain_count,
+  (SELECT COUNT(*) FROM teams_responsibles tc WHERE tc.teams_id = t.id)        AS team_responsible_count
 FROM teams t
 LEFT JOIN member_teams mt ON mt.team = t.id
 LEFT JOIN members m ON m.id = mt.member

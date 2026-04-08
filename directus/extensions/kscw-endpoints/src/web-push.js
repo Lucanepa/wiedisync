@@ -23,7 +23,7 @@ export async function sendPushToMember(db, memberId, title, body, url, tag, log)
 
   const subscriptions = await db('push_subscriptions')
     .where('member', memberId)
-    .select('id', 'endpoint', 'p256dh', 'auth')
+    .select('id', 'endpoint', 'keys_p256dh', 'keys_auth')
 
   if (subscriptions.length === 0) return { sent: 0, failed: 0, cleaned: 0 }
 
@@ -37,7 +37,7 @@ export async function sendPushToMembers(db, memberIds, title, body, url, tag, lo
 
   const subscriptions = await db('push_subscriptions')
     .whereIn('member', memberIds)
-    .select('id', 'endpoint', 'p256dh', 'auth')
+    .select('id', 'endpoint', 'keys_p256dh', 'keys_auth')
 
   if (subscriptions.length === 0) return { sent: 0, failed: 0, cleaned: 0 }
 
@@ -49,7 +49,7 @@ export async function sendPushToMembers(db, memberIds, title, body, url, tag, lo
 async function _sendPush(db, subscriptions, title, body, url, tag, log) {
   const subs = subscriptions.map(s => ({
     endpoint: s.endpoint,
-    keys: { p256dh: s.p256dh, auth: s.auth },
+    keys: { p256dh: s.keys_p256dh, auth: s.keys_auth },
   }))
 
   const result = { sent: 0, failed: 0, cleaned: 0 }
@@ -123,7 +123,7 @@ export function registerWebPush(router, ctx) {
       const member = await database('members').where('user', userId).select('id').first()
       if (!member) return res.status(400).json({ error: 'Member not found' })
 
-      const { endpoint, keys_p256dh, keys_auth, user_agent } = req.body
+      const { endpoint, keys_p256dh, keys_auth } = req.body
       if (!endpoint || !keys_p256dh || !keys_auth) {
         return res.status(400).json({ error: 'endpoint, keys_p256dh, and keys_auth are required' })
       }
@@ -136,9 +136,8 @@ export function registerWebPush(router, ctx) {
 
       if (existing) {
         await database('push_subscriptions').where('id', existing.id).update({
-          p256dh: keys_p256dh,
-          auth: keys_auth,
-          user_agent: user_agent || '',
+          keys_p256dh,
+          keys_auth,
         })
         log.info(`Updated push subscription for member ${member.id}`)
         return res.json({ success: true, updated: true })
@@ -147,9 +146,8 @@ export function registerWebPush(router, ctx) {
       await database('push_subscriptions').insert({
         member: member.id,
         endpoint,
-        p256dh: keys_p256dh,
-        auth: keys_auth,
-        user_agent: user_agent || '',
+        keys_p256dh,
+        keys_auth,
       })
 
       log.info(`New push subscription for member ${member.id}`)

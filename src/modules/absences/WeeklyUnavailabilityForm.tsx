@@ -12,7 +12,7 @@ import SearchableSelect from '@/components/ui/SearchableSelect'
 import { Checkbox } from '@/components/ui/checkbox'
 import AffectsMultiSelect from '@/components/AffectsMultiSelect'
 import type { Absence, Member } from '../../types'
-import { memberName } from '../../utils/relations'
+import { memberName, relId } from '../../utils/relations'
 
 const DAY_KEYS = ['dayMon', 'dayTue', 'dayWed', 'dayThu', 'dayFri', 'daySat', 'daySun'] as const
 
@@ -50,7 +50,7 @@ export default function WeeklyUnavailabilityForm({ open, absence, onSave, onCanc
 
   useEffect(() => {
     if (absence) {
-      setMemberId(absence.member)
+      setMemberId(relId(absence.member))
       setDaysOfWeek(absence.days_of_week ?? [])
       setAffects(absence.affects ?? ['all'])
       setStartDate(absence.start_date.split(' ')[0])

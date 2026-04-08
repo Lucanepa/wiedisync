@@ -35,7 +35,7 @@ async function sendPushToMembers(db, memberIds, title, body, url, tag, log) {
   try {
     const subscriptions = await db('push_subscriptions')
       .whereIn('member', memberIds)
-      .select('endpoint', 'p256dh', 'auth')
+      .select('endpoint', 'keys_p256dh', 'keys_auth')
     if (subscriptions.length === 0) return
 
     const resp = await fetch(`${PUSH_WORKER_URL}/push`, {
@@ -47,7 +47,7 @@ async function sendPushToMembers(db, memberIds, title, body, url, tag, log) {
       body: JSON.stringify({
         subscriptions: subscriptions.map(s => ({
           endpoint: s.endpoint,
-          keys: { p256dh: s.p256dh, auth: s.auth },
+          keys: { p256dh: s.keys_p256dh, auth: s.keys_auth },
         })),
         title: title || 'KSC Wiedikon',
         body: body || '',

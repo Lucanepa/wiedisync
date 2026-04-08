@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import AffectsMultiSelect from '@/components/AffectsMultiSelect'
 import type { Absence, Member } from '../../types'
-import { memberName } from '../../utils/relations'
+import { memberName, relId } from '../../utils/relations'
 
 interface AbsenceFormProps {
   open: boolean
@@ -48,7 +48,7 @@ export default function AbsenceForm({ open, absence, onSave, onCancel }: Absence
 
   useEffect(() => {
     if (absence) {
-      setMemberId(absence.member)
+      setMemberId(relId(absence.member))
       setStartDate(absence.start_date.split(' ')[0])
       setEndDate(absence.indefinite ? '' : absence.end_date.split(' ')[0])
       setReason(absence.reason)

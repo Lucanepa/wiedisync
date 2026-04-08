@@ -70,6 +70,7 @@ export function useSpielplanungData({
     error: gamesError,
   } = useCollection<Game>('games', {
     filter: gameFilter,
+    fields: ['*', 'kscw_team.*', 'hall.*'],
     sort: ['date', 'time'],
     all: true,
   })

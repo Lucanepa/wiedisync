@@ -18,7 +18,6 @@ import TeamsPage from './modules/teams/TeamsPage'
 import TeamDetail from './modules/teams/TeamDetail'
 import PlayerProfile from './modules/teams/PlayerProfile'
 import RosterEditor from './modules/teams/RosterEditor'
-import DatabasePage from './modules/admin/DatabasePage'
 import InfraHealthPage from './modules/admin/InfraHealthPage'
 import DataHealthPage from './modules/admin/DataHealthPage'
 import AuditLogPage from './modules/admin/AuditLogPage'
@@ -111,7 +110,6 @@ export default function App() {
             <Route path="admin/referee-expenses" element={<AdminRoute><RefereeExpensesPage /></AdminRoute>} />
             <Route path="admin/club-stats" element={<AdminRoute><ClubStatsPage /></AdminRoute>} />
             <Route path="admin/anmeldungen" element={<AdminRoute><AnmeldungenPage /></AdminRoute>} />
-            <Route path="admin/database" element={<SuperAdminRoute><DatabasePage /></SuperAdminRoute>} />
             <Route path="admin/infra" element={<SuperAdminRoute><InfraHealthPage /></SuperAdminRoute>} />
             <Route path="admin/data-health" element={<SuperAdminRoute><DataHealthPage /></SuperAdminRoute>} />
             <Route path="admin/audit-log" element={<SuperAdminRoute><AuditLogPage /></SuperAdminRoute>} />

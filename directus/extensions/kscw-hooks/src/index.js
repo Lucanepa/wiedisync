@@ -505,11 +505,17 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       await database.raw(`
         INSERT INTO notifications (member, type, title, body, activity_type, activity_id, team, read)
         SELECT mt.member, 'upcoming_activity',
-               COALESCE(g.home_team, '') || ' vs ' || COALESCE(g.away_team, ''),
-               COALESCE(g.time::text, ''),
+               'upcoming_game',
+               json_build_object(
+                 'home_team', COALESCE(g.home_team, ''),
+                 'away_team', COALESCE(g.away_team, ''),
+                 'time', COALESCE(to_char(g.time, 'HH24:MI'), ''),
+                 'hall', COALESCE(h.name, '')
+               )::text,
                'game', g.id::text, g.kscw_team, false
         FROM games g
         JOIN member_teams mt ON mt.team = g.kscw_team
+        LEFT JOIN halls h ON h.id = g.hall
         WHERE g.date = ?::date AND g.kscw_team IS NOT NULL
           AND COALESCE(g.status, '') NOT IN ('completed', 'postponed', 'cancelled')
       `, [tomorrowStr])
@@ -518,11 +524,15 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       await database.raw(`
         INSERT INTO notifications (member, type, title, body, activity_type, activity_id, team, read)
         SELECT mt.member, 'upcoming_activity',
-               'Training ' || COALESCE(t.start_time::text, ''),
-               '',
+               'upcoming_training',
+               json_build_object(
+                 'time', COALESCE(to_char(t.start_time, 'HH24:MI'), ''),
+                 'hall', COALESCE(h.name, '')
+               )::text,
                'training', t.id::text, t.team, false
         FROM trainings t
         JOIN member_teams mt ON mt.team = t.team
+        LEFT JOIN halls h ON h.id = t.hall
         WHERE t.date = ?::date AND t.team IS NOT NULL AND t.cancelled = false
       `, [tomorrowStr])
 

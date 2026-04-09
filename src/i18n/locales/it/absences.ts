@@ -50,6 +50,8 @@ export default {
   // Empty states
   noAbsences: 'Nessuna assenza',
   noAbsencesDescription: 'Nessuna assenza trovata.',
+  noUpcomingAbsences: 'Nessuna assenza attuale.',
+  showOlderAbsences: 'Mostra assenze passate ({{count}})',
   noTeamAbsences: 'Nessuna assenza',
   noTeamAbsencesDescription: 'Nessuna assenza segnalata in questo periodo.',
 

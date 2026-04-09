@@ -113,7 +113,7 @@ export default function NotificationPanel({
   function renderMessage(n: Notification): string {
     try {
       const data = n.body ? JSON.parse(n.body) : {}
-      return String(t(n.title, data))
+      return String(t(n.title, data)).replace(/\s*\(\)\s*$/, '')
     } catch {
       return n.title
     }

@@ -509,6 +509,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
                json_build_object(
                  'home_team', COALESCE(g.home_team, ''),
                  'away_team', COALESCE(g.away_team, ''),
+                 'date', COALESCE(to_char(g.date, 'DD.MM.YY'), ''),
                  'time', COALESCE(to_char(g.time, 'HH24:MI'), ''),
                  'hall', COALESCE(h.name, '')
                )::text,
@@ -526,6 +527,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
         SELECT mt.member, 'upcoming_activity',
                'upcoming_training',
                json_build_object(
+                 'date', COALESCE(to_char(t.date, 'DD.MM.YY'), ''),
                  'time', COALESCE(to_char(t.start_time, 'HH24:MI'), ''),
                  'hall', COALESCE(h.name, '')
                )::text,
@@ -540,13 +542,19 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       await database.raw(`
         INSERT INTO notifications (member, type, title, body, activity_type, activity_id, team, read)
         SELECT DISTINCT mt.member, 'upcoming_activity',
-               COALESCE(e.title, 'Event'),
-               '',
+               'upcoming_event',
+               json_build_object(
+                 'title', COALESCE(e.title, 'Event'),
+                 'date', COALESCE(to_char(e.start_date, 'DD.MM.YY'), ''),
+                 'time', COALESCE(to_char(e.start_date, 'HH24:MI'), ''),
+                 'location', COALESCE(NULLIF(h.name, ''), e.location, '')
+               )::text,
                'event', e.id::text, et.teams_id, false
         FROM events e
         JOIN events_teams et ON et.events_id = e.id
         JOIN member_teams mt ON mt.team = et.teams_id
-        WHERE e.start_date = ?::date
+        LEFT JOIN halls h ON h.id = e.hall
+        WHERE e.start_date::date = ?::date
       `, [tomorrowStr])
 
       log.info('Daily notification reminders sent')

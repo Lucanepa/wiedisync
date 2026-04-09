@@ -113,7 +113,9 @@ export default function NotificationPanel({
   function renderMessage(n: Notification): string {
     try {
       const data = n.body ? JSON.parse(n.body) : {}
-      return String(t(n.title, data)).replace(/\s*\(\)\s*$/, '')
+      const noLocation = (!data.hall && !data.location) || (data.hall === '' && data.location == null) || (data.location === '' && data.hall == null)
+      const key = noLocation && t(`${n.title}_no_hall`, { defaultValue: '' }) ? `${n.title}_no_hall` : n.title
+      return String(t(key, data))
     } catch {
       return n.title
     }

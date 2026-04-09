@@ -322,6 +322,243 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     }
   })
 
+  // ── Absence Auto-Decline ────────────────────────────────────────
+  // When an absence is created or updated, auto-decline all overlapping
+  // future trainings/games/events for that member. Skips activities where
+  // the member already has a participation record (so manual overrides stick).
+  // Also handles weekly absences (day-of-week matching).
+
+  /**
+   * Auto-decline future activities that overlap with the given absence.
+   * Uses a single INSERT...SELECT per activity type (no per-row loop).
+   */
+  async function autoDeclineForAbsence(absenceId) {
+    try {
+      const absence = await database('absences').where('id', absenceId).first()
+      if (!absence) return
+
+      const memberId = absence.member
+      const startDate = absence.start_date?.split?.('T')[0] || absence.start_date
+      const endDate = absence.end_date?.split?.('T')[0] || absence.end_date
+      const today = new Date().toISOString().split('T')[0]
+      const effectiveStart = startDate > today ? startDate : today
+
+      // Parse affects — JSON array like ["all"] or ["trainings","games"]
+      let affects = absence.affects
+      if (typeof affects === 'string') {
+        try { affects = JSON.parse(affects) } catch { affects = ['all'] }
+      }
+      if (!Array.isArray(affects) || affects.length === 0) affects = ['all']
+      const allTypes = affects.includes('all')
+
+      const isWeekly = absence.type === 'weekly'
+      let daysOfWeek = absence.days_of_week
+      if (isWeekly) {
+        if (typeof daysOfWeek === 'string') {
+          try { daysOfWeek = JSON.parse(daysOfWeek) } catch { daysOfWeek = [] }
+        }
+        if (!Array.isArray(daysOfWeek) || daysOfWeek.length === 0) return
+      }
+
+      // Day-of-week filter for weekly absences (Postgres: 0=Sun,1=Mon..6=Sat; our format: 0=Mon..6=Sun)
+      // Convert our Mon=0..Sun=6 to Postgres EXTRACT(DOW): Sun=0,Mon=1..Sat=6
+      const pgDowClause = isWeekly
+        ? `AND EXTRACT(DOW FROM d.date) IN (${daysOfWeek.map(d => (d + 1) % 7).join(',')})`
+        : ''
+
+      let declined = 0
+
+      // Trainings
+      if (allTypes || affects.includes('trainings')) {
+        const res = await database.raw(`
+          INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff)
+          SELECT ?::integer, 'training', t.id::text, 'declined', ?, 0, false
+          FROM trainings t
+          WHERE t.date >= ?::date AND t.date <= ?::date
+            AND t.cancelled = false
+            ${pgDowClause}
+            AND EXISTS (SELECT 1 FROM member_teams mt WHERE mt.team = t.team AND mt.member = ?::integer)
+            AND NOT EXISTS (
+              SELECT 1 FROM participations p
+              WHERE p.activity_type = 'training' AND p.activity_id = t.id::text AND p.member = ?::integer
+            )
+        `, [memberId, absence.reason || '', effectiveStart, endDate, memberId, memberId])
+        declined += res?.rowCount || 0
+      }
+
+      // Games
+      if (allTypes || affects.includes('games')) {
+        const res = await database.raw(`
+          INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff)
+          SELECT ?::integer, 'game', g.id::text, 'declined', ?, 0, false
+          FROM games g
+          WHERE g.date >= ?::date AND g.date <= ?::date
+            AND g.kscw_team IS NOT NULL
+            AND COALESCE(g.status, '') NOT IN ('completed', 'postponed', 'cancelled')
+            ${pgDowClause.replace(/d\.date/g, 'g.date')}
+            AND EXISTS (SELECT 1 FROM member_teams mt WHERE mt.team = g.kscw_team AND mt.member = ?::integer)
+            AND NOT EXISTS (
+              SELECT 1 FROM participations p
+              WHERE p.activity_type = 'game' AND p.activity_id = g.id::text AND p.member = ?::integer
+            )
+        `, [memberId, absence.reason || '', effectiveStart, endDate, memberId, memberId])
+        declined += res?.rowCount || 0
+      }
+
+      // Events
+      if (allTypes || affects.includes('events')) {
+        const res = await database.raw(`
+          INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff)
+          SELECT ?::integer, 'event', e.id::text, 'declined', ?, 0, false
+          FROM events e
+          JOIN events_teams et ON et.events_id = e.id
+          WHERE e.start_date::date >= ?::date AND e.start_date::date <= ?::date
+            ${pgDowClause.replace(/d\.date/g, 'e.start_date::date')}
+            AND EXISTS (SELECT 1 FROM member_teams mt WHERE mt.team = et.teams_id AND mt.member = ?::integer)
+            AND NOT EXISTS (
+              SELECT 1 FROM participations p
+              WHERE p.activity_type = 'event' AND p.activity_id = e.id::text AND p.member = ?::integer
+            )
+        `, [memberId, absence.reason || '', effectiveStart, endDate, memberId, memberId])
+        declined += res?.rowCount || 0
+      }
+
+      if (declined > 0) log.info(`[absence-auto-decline] Absence ${absenceId}: ${declined} activities declined for member ${memberId}`)
+    } catch (err) {
+      log.error({ msg: `[absence-auto-decline] ${err.message}`, event: 'absence_auto_decline', absenceId, stack: err.stack })
+      logCronError('absence_auto_decline', err)
+    }
+  }
+
+  action('absences.items.create', async ({ key }) => { await autoDeclineForAbsence(key) })
+  action('absences.items.update', async ({ keys }) => { for (const k of keys) await autoDeclineForAbsence(k) })
+
+  // When a training/game is created, auto-decline for members with overlapping absences
+  action('trainings.items.create', async ({ key }) => {
+    try {
+      const training = await database('trainings').where('id', key).first()
+      if (!training || training.cancelled || !training.team || !training.date) return
+      const dateStr = training.date.toISOString?.().split('T')[0] || String(training.date).split('T')[0]
+      // Postgres DOW for this date
+      const pgDow = `EXTRACT(DOW FROM DATE '${dateStr}')`
+
+      const res = await database.raw(`
+        INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff)
+        SELECT mt.member, 'training', ?::text, 'declined', COALESCE(a.reason, ''), 0, false
+        FROM member_teams mt
+        JOIN absences a ON a.member = mt.member
+        WHERE mt.team = ?::integer
+          AND a.start_date::date <= ?::date AND a.end_date::date >= ?::date
+          AND (a.affects::jsonb @> '"all"' OR a.affects::jsonb @> '"trainings"')
+          AND (a.type != 'weekly' OR (a.days_of_week::jsonb @> to_jsonb((${pgDow}::int + 6) % 7)))
+          AND NOT EXISTS (
+            SELECT 1 FROM participations p
+            WHERE p.activity_type = 'training' AND p.activity_id = ?::text AND p.member = mt.member
+          )
+      `, [String(key), training.team, dateStr, dateStr, String(key)])
+      if (res?.rowCount > 0) log.info(`[absence-auto-decline] Training ${key}: ${res.rowCount} members auto-declined`)
+    } catch (err) {
+      log.error({ msg: `[absence-auto-decline] Training create: ${err.message}`, event: 'absence_auto_decline_training', key, stack: err.stack })
+    }
+  })
+
+  action('games.items.create', async ({ key }) => {
+    try {
+      const game = await database('games').where('id', key).first()
+      if (!game || !game.kscw_team || !game.date) return
+      const dateStr = game.date.toISOString?.().split('T')[0] || String(game.date).split('T')[0]
+      const pgDow = `EXTRACT(DOW FROM DATE '${dateStr}')`
+
+      const res = await database.raw(`
+        INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff)
+        SELECT mt.member, 'game', ?::text, 'declined', COALESCE(a.reason, ''), 0, false
+        FROM member_teams mt
+        JOIN absences a ON a.member = mt.member
+        WHERE mt.team = ?::integer
+          AND a.start_date::date <= ?::date AND a.end_date::date >= ?::date
+          AND (a.affects::jsonb @> '"all"' OR a.affects::jsonb @> '"games"')
+          AND (a.type != 'weekly' OR (a.days_of_week::jsonb @> to_jsonb((${pgDow}::int + 6) % 7)))
+          AND NOT EXISTS (
+            SELECT 1 FROM participations p
+            WHERE p.activity_type = 'game' AND p.activity_id = ?::text AND p.member = mt.member
+          )
+      `, [String(key), game.kscw_team, dateStr, dateStr, String(key)])
+      if (res?.rowCount > 0) log.info(`[absence-auto-decline] Game ${key}: ${res.rowCount} members auto-declined`)
+    } catch (err) {
+      log.error({ msg: `[absence-auto-decline] Game create: ${err.message}`, event: 'absence_auto_decline_game', key, stack: err.stack })
+    }
+  })
+
+  // ── Cron: Absence Auto-Decline Sweep (01:30 UTC) ────────────────
+  // Catches gaps: existing absences + newly generated recurring trainings,
+  // or any edge case missed by the create/update hooks above.
+  schedule('30 1 * * *', async () => {
+    try {
+      let total = 0
+
+      // Trainings: decline for absent members who have no participation yet
+      const t1 = await database.raw(`
+        INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff)
+        SELECT mt.member, 'training', t.id::text, 'declined', COALESCE(a.reason, ''), 0, false
+        FROM trainings t
+        JOIN member_teams mt ON mt.team = t.team
+        JOIN absences a ON a.member = mt.member
+        WHERE t.date >= CURRENT_DATE AND t.cancelled = false
+          AND a.start_date::date <= t.date AND a.end_date::date >= t.date
+          AND (a.affects::jsonb @> '"all"' OR a.affects::jsonb @> '"trainings"')
+          AND (a.type != 'weekly' OR (a.days_of_week::jsonb @> to_jsonb(((EXTRACT(DOW FROM t.date)::int + 6) % 7))))
+          AND NOT EXISTS (
+            SELECT 1 FROM participations p
+            WHERE p.activity_type = 'training' AND p.activity_id = t.id::text AND p.member = mt.member
+          )
+      `)
+      total += t1?.rowCount || 0
+
+      // Games
+      const t2 = await database.raw(`
+        INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff)
+        SELECT mt.member, 'game', g.id::text, 'declined', COALESCE(a.reason, ''), 0, false
+        FROM games g
+        JOIN member_teams mt ON mt.team = g.kscw_team
+        JOIN absences a ON a.member = mt.member
+        WHERE g.date >= CURRENT_DATE AND g.kscw_team IS NOT NULL
+          AND COALESCE(g.status, '') NOT IN ('completed', 'postponed', 'cancelled')
+          AND a.start_date::date <= g.date AND a.end_date::date >= g.date
+          AND (a.affects::jsonb @> '"all"' OR a.affects::jsonb @> '"games"')
+          AND (a.type != 'weekly' OR (a.days_of_week::jsonb @> to_jsonb(((EXTRACT(DOW FROM g.date)::int + 6) % 7))))
+          AND NOT EXISTS (
+            SELECT 1 FROM participations p
+            WHERE p.activity_type = 'game' AND p.activity_id = g.id::text AND p.member = mt.member
+          )
+      `)
+      total += t2?.rowCount || 0
+
+      // Events
+      const t3 = await database.raw(`
+        INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff)
+        SELECT DISTINCT mt.member, 'event', e.id::text, 'declined', COALESCE(a.reason, ''), 0, false
+        FROM events e
+        JOIN events_teams et ON et.events_id = e.id
+        JOIN member_teams mt ON mt.team = et.teams_id
+        JOIN absences a ON a.member = mt.member
+        WHERE e.start_date::date >= CURRENT_DATE
+          AND a.start_date::date <= e.start_date::date AND a.end_date::date >= e.start_date::date
+          AND (a.affects::jsonb @> '"all"' OR a.affects::jsonb @> '"events"')
+          AND (a.type != 'weekly' OR (a.days_of_week::jsonb @> to_jsonb(((EXTRACT(DOW FROM e.start_date::date)::int + 6) % 7))))
+          AND NOT EXISTS (
+            SELECT 1 FROM participations p
+            WHERE p.activity_type = 'event' AND p.activity_id = e.id::text AND p.member = mt.member
+          )
+      `)
+      total += t3?.rowCount || 0
+
+      if (total > 0) log.info(`[absence-sweep] Auto-declined ${total} participations`)
+    } catch (err) {
+      log.error({ msg: `[absence-sweep] ${err.message}`, event: 'cron.absence_sweep', stack: err.stack })
+      logCronError('absence_sweep', err)
+    }
+  })
+
   // ── 2. Cron: Shell Account Expiry (02:00 UTC) ──────────────────
   // Batch UPDATE — no loop needed
 

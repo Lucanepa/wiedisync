@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ClipboardList, Upload, CalendarClock } from 'lucide-react'
+import { ClipboardList, Upload, CalendarClock, ChevronDown, ChevronRight } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import { useCollection } from '../../lib/query'
@@ -32,6 +32,7 @@ export default function AbsencesPage() {
   const [importOpen, setImportOpen] = useState(false)
   const [weeklyFormOpen, setWeeklyFormOpen] = useState(false)
   const [editingWeekly, setEditingWeekly] = useState<Absence | null>(null)
+  const [showOlder, setShowOlder] = useState(false)
 
   // Fetch all active teams (needed to resolve "Alle" selection to actual IDs)
   const { data: allTeamsRaw } = useCollection<Team>('teams', { filter: { active: { _eq: true } }, sort: ['name'], limit: 50 })
@@ -59,6 +60,9 @@ export default function AbsencesPage() {
     fields: ['*', 'member.*'],
   })
   const myAbsences = myAbsencesRaw ?? []
+  const today = new Date().toISOString().slice(0, 10)
+  const upcomingAbsences = myAbsences.filter((a) => (a.end_date ?? '9999-12-31') >= today)
+  const pastAbsences = myAbsences.filter((a) => a.end_date && a.end_date < today)
 
   // Weekly unavailabilities
   const { data: myWeeklyRaw, refetch: refetchWeekly } = useCollection<Absence>('absences', {
@@ -171,7 +175,7 @@ export default function AbsencesPage() {
             />
           ) : (
             <div className="space-y-3">
-              {myAbsences.map((a) => (
+              {upcomingAbsences.map((a) => (
                 <AbsenceCard
                   key={a.id}
                   absence={a}
@@ -180,6 +184,34 @@ export default function AbsencesPage() {
                   canEdit={relId(a.member) === String(user?.id) || isCoach || effectiveIsCoach}
                 />
               ))}
+              {upcomingAbsences.length === 0 && pastAbsences.length > 0 && (
+                <p className="text-sm text-muted-foreground">{t('noUpcomingAbsences')}</p>
+              )}
+              {pastAbsences.length > 0 && (
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setShowOlder(!showOlder)}
+                    className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
+                  >
+                    {showOlder ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                    {t('showOlderAbsences', { count: pastAbsences.length })}
+                  </button>
+                  {showOlder && (
+                    <div className="space-y-3 mt-2">
+                      {pastAbsences.map((a) => (
+                        <AbsenceCard
+                          key={a.id}
+                          absence={a}
+                          onEdit={handleEdit}
+                          onDelete={setDeletingId}
+                          canEdit={relId(a.member) === String(user?.id) || isCoach || effectiveIsCoach}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -50,6 +50,8 @@ export default {
   // Empty states
   noAbsences: 'Käni Absänze',
   noAbsencesDescription: 'Käni Absänze gfunde.',
+  noUpcomingAbsences: 'Käni aktuelli Absänze.',
+  showOlderAbsences: 'Älteri Absänze aazeige ({{count}})',
   noTeamAbsences: 'Käni Absänze',
   noTeamAbsencesDescription: 'Käni gmeldete Absänze i dem Zitraum.',
 

@@ -4,7 +4,9 @@ import Modal from '@/components/Modal'
 import { Button } from '@/components/ui/button'
 import { FormInput, FormTextarea, FormField } from '@/components/FormField'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Checkbox } from '@/components/ui/checkbox'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
+import { ChevronsUpDown, Check } from 'lucide-react'
 import DatePicker from '@/components/ui/DatePicker'
 import { Switch } from '@/components/ui/switch'
 import { logActivity } from '../../../utils/logActivity'
@@ -288,21 +290,48 @@ export default function SlotEditor({
             </Select>
           </FormField>
           <FormField label={t('team')}>
-            <div className="mt-1 flex flex-wrap gap-2">
-              {visibleTeams.map((tm) => (
-                <label key={tm.id} className="flex items-center gap-1.5 text-sm cursor-pointer">
-                  <Checkbox
-                    checked={form.team.includes(tm.id)}
-                    onCheckedChange={(checked) => {
-                      update('team', checked
-                        ? [...form.team, tm.id]
-                        : form.team.filter((t: string) => t !== tm.id))
-                    }}
-                  />
-                  <span>{tm.name}</span>
-                </label>
-              ))}
-            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" role="combobox" className="min-h-[44px] w-full justify-between font-normal">
+                  <span className="truncate">
+                    {form.team.length === 0
+                      ? t('selectPlaceholder')
+                      : form.team.map(id => visibleTeams.find(tm => tm.id === id)?.name).filter(Boolean).join(', ')}
+                  </span>
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                <Command>
+                  <CommandInput placeholder={t('searchTeam') ?? 'Search...'} />
+                  <CommandList>
+                    <CommandEmpty>No team found.</CommandEmpty>
+                    {(['volleyball', 'basketball'] as const).map(sport => {
+                      const sportTeams = visibleTeams.filter(tm => tm.sport === sport)
+                      if (sportTeams.length === 0) return null
+                      return (
+                        <CommandGroup key={sport} heading={sport === 'volleyball' ? 'Volleyball' : 'Basketball'}>
+                          {sportTeams.map(tm => (
+                            <CommandItem
+                              key={tm.id}
+                              value={tm.name}
+                              onSelect={() => {
+                                update('team', form.team.includes(tm.id)
+                                  ? form.team.filter((id: string) => id !== tm.id)
+                                  : [...form.team, tm.id])
+                              }}
+                            >
+                              <Check className={`mr-2 h-4 w-4 ${form.team.includes(tm.id) ? 'opacity-100' : 'opacity-0'}`} />
+                              {tm.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      )
+                    })}
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </FormField>
         </div>
 

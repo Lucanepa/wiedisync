@@ -6,6 +6,7 @@ export default {
   // Slot form
   hall: 'Halle',
   team: 'Team',
+  searchTeam: 'Team suchen…',
   dayOfWeek: 'Wochentag',
   slotType: 'Typ',
   startTime: 'Startzeit',

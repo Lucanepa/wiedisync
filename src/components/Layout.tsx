@@ -24,7 +24,7 @@ import type { MemberTeam, Team } from '../types'
 import { asObj } from '../utils/relations'
 import {
   Home, Calendar, Trophy, UserX, PenSquare, PartyPopper, Users,
-  ClipboardList, Building2, CalendarClock, Database, Activity,
+  ClipboardList, Building2, CalendarClock, Activity,
   HeartPulse, Settings, ChevronDown, MessageSquare, Banknote, BarChart3, UserPlus, Bug,
 } from 'lucide-react'
 
@@ -67,7 +67,6 @@ function useNavItems(isLoggedIn: boolean, isApproved: boolean) {
       { to: '/admin/referee-expenses', label: t('refereeExpenses'), icon: <Banknote className={iconClass} /> },
       { to: '/admin/anmeldungen', label: t('anmeldungen'), icon: <UserPlus className={iconClass} /> },
       { to: '/admin/club-stats', label: t('clubStats'), icon: <BarChart3 className={iconClass} /> },
-      { to: '/admin/database', label: t('manageDb'), icon: <Database className={iconClass} /> },
     ],
     superadminItems: [
       { to: '/admin/infra', label: t('infraHealth'), icon: <Activity className={iconClass} /> },

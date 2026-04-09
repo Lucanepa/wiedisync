@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useCollection } from '../lib/query'
 import { useMutation } from './useMutation'
 import { useAuth } from './useAuth'
@@ -57,41 +57,8 @@ export function useParticipation(
   const matchingAbsence = absencesRaw.find((a) => activityDate ? absenceCoversActivity(a, activityType, activityDate) : false)
   const hasAbsence = !!matchingAbsence
 
-  // Auto-decline when absent and no participation exists yet (or existing is not declined)
-  const autoDeclineRef = useRef(false)
-  useEffect(() => {
-    if (!hasAbsence || !matchingAbsence || !user || !activityId) return
-    if (autoDeclineRef.current) return // already attempted
-
-    const absenceNote = matchingAbsence.reason ?? ''
-
-    // If no participation record, or existing is not declined → auto-decline
-    if (!participation) {
-      autoDeclineRef.current = true
-      create({
-        member: user.id,
-        activity_type: activityType,
-        activity_id: activityId,
-        status: 'declined',
-        note: absenceNote,
-        guest_count: 0,
-        is_staff: isStaff ?? false,
-        ...(sessionId ? { session_id: sessionId } : {}),
-      }).then(() => refetch()).catch(() => {
-        // Record may already exist (race with another hook instance) — refetch to pick it up
-        refetch()
-      })
-    } else if (participation.status !== 'declined') {
-      autoDeclineRef.current = true
-      update(participation.id, { status: 'declined', note: absenceNote, guest_count: 0 })
-        .then(() => refetch()).catch(() => {})
-    }
-  }, [hasAbsence, matchingAbsence, user, activityId, participation, activityType, isStaff, sessionId, create, update, refetch])
-
-  // Reset auto-decline flag when activity changes
-  useEffect(() => {
-    autoDeclineRef.current = false
-  }, [activityId])
+  // Auto-decline is handled by the backend (Directus hooks) when absences
+  // or activities are created. The frontend only displays the absence state.
 
   const setStatus = useCallback(async (status: Participation['status'], note = '', guestCount = 0) => {
     if (!user) return

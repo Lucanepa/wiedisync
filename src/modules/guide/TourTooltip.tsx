@@ -13,7 +13,7 @@ export function TourTooltip({
   index,
   size,
   isLastStep,
-}: TooltipRenderProps & { index: number; size: number; isLastStep: boolean }) {
+}: TooltipRenderProps) {
   const { t } = useTranslation('guide')
   const progress = ((index + 1) / size) * 100
 

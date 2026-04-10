@@ -7,7 +7,14 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import Joyride, { ACTIONS, EVENTS, STATUS, type CallBackProps } from 'react-joyride'
+import {
+  Joyride,
+  ACTIONS,
+  EVENTS,
+  STATUS,
+  type EventData,
+  type Controls,
+} from 'react-joyride'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
@@ -226,14 +233,14 @@ export function TourProvider({ children }: Props) {
       target: step.target,
       title: step.titleKey,   // Will be translated in TourTooltip via t()
       content: step.bodyKey,  // Will be translated in TourTooltip via t()
-      placement: step.placement ?? 'auto',
-      disableBeacon: true,
-      spotlightClicks: step.spotlightClicks ?? false,
+      placement: step.placement ?? ('auto' as const),
+      skipBeacon: true,
+      blockTargetInteraction: !(step.spotlightClicks ?? false),
     }))
   }, [currentTour])
 
-  const handleJoyrideCallback = useCallback(
-    (data: CallBackProps) => {
+  const handleJoyrideEvent = useCallback(
+    (data: EventData, _controls: Controls) => {
       const { action, index, status, type } = data
 
       if (type === EVENTS.STEP_AFTER || type === EVENTS.TARGET_NOT_FOUND) {
@@ -287,18 +294,13 @@ export function TourProvider({ children }: Props) {
           stepIndex={stepIndex}
           continuous
           scrollToFirstStep
-          showSkipButton
-          disableOverlayClose
           tooltipComponent={TourTooltip}
-          callback={handleJoyrideCallback}
-          styles={{
-            options: {
-              zIndex: 10000,
-              overlayColor: 'rgba(0,0,0,0.5)',
-            },
-          }}
-          floaterProps={{
-            disableAnimation: true,
+          onEvent={handleJoyrideEvent}
+          options={{
+            buttons: ['back', 'close', 'primary', 'skip'],
+            overlayClickAction: false,
+            overlayColor: 'rgba(0,0,0,0.5)',
+            zIndex: 10000,
           }}
         />
       )}

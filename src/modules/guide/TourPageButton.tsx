@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { CircleHelp } from 'lucide-react'
 import { Button } from '../../components/ui/button'
 import {
@@ -15,6 +16,7 @@ import { useTour } from './useTour'
  */
 export function TourPageButton() {
   const { availableTours, startTour } = useTour()
+  const { t: tRaw } = useTranslation()
   const location = useLocation()
   const [open, setOpen] = useState(false)
 
@@ -62,7 +64,7 @@ export function TourPageButton() {
             className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
           >
             <tour.icon className="h-4 w-4 shrink-0 text-gray-500" />
-            <span className="truncate">{tour.titleKey}</span>
+            <span className="truncate">{tRaw(tour.titleKey)}</span>
           </button>
         ))}
       </PopoverContent>

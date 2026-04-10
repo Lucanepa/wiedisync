@@ -173,7 +173,7 @@ export default function ScorerAssignPage() {
         </div>
 
         <Button
-          data-tour="run-algorithm"
+          data-tour="auto-assign"
           size="sm"
           onClick={handleRunAlgorithm}
           loading={running}
@@ -213,7 +213,7 @@ export default function ScorerAssignPage() {
 
       {/* Results table */}
       {assignments.length > 0 && (
-        <div className="mt-6 overflow-x-auto">
+        <div data-tour="manual-assign" className="mt-6 overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-gray-200 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:border-gray-700 dark:text-gray-400">

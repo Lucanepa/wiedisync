@@ -160,6 +160,7 @@ export function TourProvider({ children }: Props) {
       }
 
       if (location.pathname !== tour.route) {
+        startRouteRef.current = tour.route
         navigate(tour.route)
         // Give the page time to mount after navigation
         requestAnimationFrame(() => {
@@ -213,17 +214,14 @@ export function TourProvider({ children }: Props) {
         duration: 8000,
       })
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.pathname, auth.isCoach, auth.isAdmin, tourState.firstVisitDone])
+  }, [location.pathname, auth.isCoach, auth.isAdmin, tourState.firstVisitDone, run, currentTour, tourState.completed, tourState.dismissed, t, startTour])
 
   const resetAllTours = useCallback(() => {
     setRun(false)
     setCurrentTour(null)
     setStepIndex(0)
     startRouteRef.current = null
-    const fresh = { ...DEFAULT_TOUR_STATE }
-    setTourState(fresh)
-    saveState(fresh)
+    setTourState({ ...DEFAULT_TOUR_STATE })
   }, [])
 
   // Build Joyride steps from current tour, translating title/body keys
@@ -297,8 +295,6 @@ export function TourProvider({ children }: Props) {
           tooltipComponent={TourTooltip}
           onEvent={handleJoyrideEvent}
           options={{
-            buttons: ['back', 'close', 'primary', 'skip'],
-            overlayClickAction: false,
             overlayColor: 'rgba(0,0,0,0.5)',
             zIndex: 10000,
           }}

@@ -68,7 +68,7 @@ export default function TrainingCard({ training, participations, myParticipation
             <ParticipationWarningBadge warnings={warnings} namespace="participation" />
           )}
           {!training.cancelled && participations && participations.length > 0 && (
-            <InlineParticipationSummary participations={participations} />
+            <span data-tour="participation-dots"><InlineParticipationSummary participations={participations} /></span>
           )}
           {training.cancelled && (
             <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
@@ -114,6 +114,7 @@ export default function TrainingCard({ training, participations, myParticipation
             )}
             {onEdit && (
               <button
+                data-tour="edit-training"
                 onClick={() => onEdit(training)}
                 className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-600 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
                 title={t('editTraining')}
@@ -125,6 +126,7 @@ export default function TrainingCard({ training, participations, myParticipation
             )}
             {onDelete && (
               <button
+                data-tour="delete-training"
                 onClick={() => onDelete(training.id)}
                 className="rounded-lg p-2 text-gray-500 hover:bg-red-50 hover:text-red-600 dark:text-gray-400 dark:hover:bg-red-900/20 dark:hover:text-red-400"
                 title={t('deleteTraining')}
@@ -185,7 +187,7 @@ function InlineParticipationSummary({ participations }: { participations: Partic
         </span>
       )}
       {staffConfirmed > 0 && (
-        <span className="inline-flex items-center gap-1 text-brand-600 dark:text-brand-400" title={t('staffPresent')}>
+        <span data-tour="coach-present" className="inline-flex items-center gap-1 text-brand-600 dark:text-brand-400" title={t('staffPresent')}>
           {staffConfirmed}
           <Award className="h-3.5 w-3.5" />
         </span>
@@ -288,7 +290,7 @@ function TrainingParticipation({ training, existingParticipation, onSaved }: { t
 
   return (
     <div className="space-y-1.5">
-      <div className="relative flex flex-wrap items-center gap-1.5">
+      <div data-tour="rsvp-buttons" className="relative flex flex-wrap items-center gap-1.5">
         <button
           onClick={() => !isLocked && setStatus('confirmed')}
           disabled={isLocked}
@@ -368,7 +370,7 @@ function TrainingParticipation({ training, existingParticipation, onSaved }: { t
         </p>
       )}
       {training.respond_by && !isLocked && !deadlinePassed && (
-        <p className="text-[10px] leading-tight text-gray-400 dark:text-gray-500">
+        <p data-tour="rsvp-deadline" className="text-[10px] leading-tight text-gray-400 dark:text-gray-500">
           {tTrainings('respondBy')}: {formatDate(training.respond_by.split(' ')[0])}, {(() => {
             const [, rbTime] = training.respond_by.split(' ')
             const time = rbTime && rbTime !== '00:00:00' ? rbTime.slice(0, 5) : training.start_time
@@ -379,7 +381,7 @@ function TrainingParticipation({ training, existingParticipation, onSaved }: { t
 
       {/* Note input */}
       {displayStatus && (
-        <div className="relative flex items-center gap-1.5">
+        <div data-tour="training-note" className="relative flex items-center gap-1.5">
           <MessageSquare className="h-3.5 w-3.5 shrink-0 text-gray-400" />
           <input
             type="text"

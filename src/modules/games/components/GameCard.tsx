@@ -247,6 +247,7 @@ export default function GameCard({ game, onClick, variant = 'card', participatio
 
   return (
     <div
+      data-tour="game-card"
       onClick={() => onClick?.(game)}
       className={`flex items-stretch overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-card transition-shadow ${onClick ? 'cursor-pointer hover:shadow-card-hover' : ''}`}
     >
@@ -346,7 +347,7 @@ function GameCardParticipation({ game, existingParticipation, onSaved }: { game:
   }, [user, existingParticipation, game.id, isStaff, create, update, onSaved])
 
   return (
-    <div className="flex items-center gap-1.5">
+    <div data-tour="game-rsvp" className="flex items-center gap-1.5">
       <button
         onClick={(e) => { e.stopPropagation(); setStatus('confirmed') }}
         className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${

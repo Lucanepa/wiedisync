@@ -60,7 +60,7 @@ function GameRow({ game, teams, showTeam }: { game: Game; teams: Team[]; showTea
   const hallName = getHallName(game)
 
   return (
-    <div className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700">
+    <div data-tour="spielplanung-game-card" className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700">
       {/* Time */}
       <div className="w-14 shrink-0 text-sm font-medium text-gray-700 dark:text-gray-300">
         {game.time ? formatTime(game.time) : '–'}

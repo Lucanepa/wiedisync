@@ -20,7 +20,7 @@ export function TourTooltip({
   return (
     <div
       {...tooltipProps}
-      className="w-[340px] max-w-[calc(100vw-32px)] rounded-lg bg-background text-foreground shadow-xl overflow-hidden"
+      className="relative w-[340px] max-w-[calc(100vw-32px)] rounded-lg bg-background text-foreground shadow-xl overflow-hidden"
     >
       {/* Progress bar */}
       <div className="h-[3px] w-full bg-muted">

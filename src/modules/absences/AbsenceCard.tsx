@@ -45,7 +45,7 @@ export default function AbsenceCard({ absence, onEdit, onDelete, memberName, can
           <span className="hidden text-sm text-gray-500 dark:text-gray-400 sm:inline">{absence.reason_detail}</span>
         )}
         {canEdit && onEdit && onDelete && (
-          <div className="ml-auto flex items-start gap-2">
+          <div data-tour="edit-absence" className="ml-auto flex items-start gap-2">
             <button
               onClick={() => onEdit(absence)}
               className="min-h-[44px] rounded px-3 py-2 text-sm text-brand-600 hover:bg-brand-50 hover:text-brand-700 sm:min-h-0 sm:py-1"

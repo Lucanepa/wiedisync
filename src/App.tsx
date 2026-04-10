@@ -23,6 +23,7 @@ import DataHealthPage from './modules/admin/DataHealthPage'
 import AuditLogPage from './modules/admin/AuditLogPage'
 import RefereeExpensesPage from './modules/admin/RefereeExpensesPage'
 import ClubStatsPage from './modules/admin/ClubStatsPage'
+import VolleyFeedbackPage from './modules/admin/VolleyFeedbackPage'
 import AnmeldungenPage from './modules/admin/AnmeldungenPage'
 import HallenplanPage from './modules/hallenplan/HallenplanPage'
 import EmbedGamesPage from './modules/games/EmbedGamesPage'
@@ -109,6 +110,7 @@ export default function App() {
             <Route path="admin/scorer-assign" element={<AdminRoute><ScorerAssignPage /></AdminRoute>} />
             <Route path="admin/referee-expenses" element={<AdminRoute><RefereeExpensesPage /></AdminRoute>} />
             <Route path="admin/club-stats" element={<AdminRoute><ClubStatsPage /></AdminRoute>} />
+            <Route path="admin/volley-feedback" element={<AdminRoute><VolleyFeedbackPage /></AdminRoute>} />
             <Route path="admin/anmeldungen" element={<AdminRoute><AnmeldungenPage /></AdminRoute>} />
             <Route path="admin/infra" element={<SuperAdminRoute><InfraHealthPage /></SuperAdminRoute>} />
             <Route path="admin/data-health" element={<SuperAdminRoute><DataHealthPage /></SuperAdminRoute>} />

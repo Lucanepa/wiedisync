@@ -38,5 +38,6 @@ export default {
   whatsNew: "What's New",
   refereeExpenses: 'Referee expenses',
   clubStats: 'Club Stats',
+  volleyFeedback: 'Volley Feedback',
   anmeldungen: 'Registrations',
 } as const

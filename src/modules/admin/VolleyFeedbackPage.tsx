@@ -1,0 +1,318 @@
+import { useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useCollection } from '../../lib/query'
+import DashboardSection from './components/DashboardSection'
+
+// ── Types ────────────────────────────────────────────────────────
+
+interface VolleyFeedback {
+  id: string
+  date_created: string
+  season: string
+  is_anonymous: boolean
+  name: string | null
+  functions: string[] | null
+  teams: string[] | null
+  other_function: string | null
+  other_team: string | null
+  rating_verein: number | null
+  rating_vorstand: number | null
+  rating_tk_leitung: number | null
+  rating_training: number | null
+  rating_kommunikation: number | null
+  feedback_text: string | null
+  ideas_text: string | null
+  other_text: string | null
+  locale: string | null
+}
+
+const RATING_KEYS = [
+  'rating_verein',
+  'rating_vorstand',
+  'rating_tk_leitung',
+  'rating_training',
+  'rating_kommunikation',
+] as const
+
+const RATING_LABELS: Record<string, { de: string; en: string }> = {
+  rating_verein: { de: 'Verein', en: 'Club' },
+  rating_vorstand: { de: 'Vorstand', en: 'Board' },
+  rating_tk_leitung: { de: 'TK Ltg.', en: 'TK Lead' },
+  rating_training: { de: 'Training', en: 'Training' },
+  rating_kommunikation: { de: 'Komm.', en: 'Comm.' },
+}
+
+const TEAM_COLORS: Record<string, { bg: string; text: string }> = {
+  H1: { bg: '#1e40af', text: '#fff' },
+  H2: { bg: '#2563eb', text: '#fff' },
+  H3: { bg: '#3b82f6', text: '#fff' },
+  Legends: { bg: '#1e3a5f', text: '#fff' },
+  D1: { bg: '#be123c', text: '#fff' },
+  D2: { bg: '#e11d48', text: '#fff' },
+  D3: { bg: '#f43f5e', text: '#1a1a2e' },
+  D4: { bg: '#fb7185', text: '#1a1a2e' },
+  'DU23-1': { bg: '#fda4af', text: '#881337' },
+  'DU23-2': { bg: '#fda4af', text: '#881337' },
+  HU23: { bg: '#60a5fa', text: '#1e3a8a' },
+  HU20: { bg: '#93c5fd', text: '#1e3a8a' },
+}
+
+// ── Helpers ──────────────────────────────────────────────────────
+
+function computeAverages(items: VolleyFeedback[]) {
+  const avgs: Record<string, number> = {}
+  for (const key of RATING_KEYS) {
+    const vals = items.map(i => i[key]).filter((v): v is number => v != null)
+    avgs[key] = vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 0
+  }
+  return avgs
+}
+
+function formatDate(d: string) {
+  const date = new Date(d)
+  return date.toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit' })
+}
+
+function TeamChips({ teams }: { teams: string[] | null }) {
+  if (!teams || teams.length === 0) return <span className="text-muted-foreground">—</span>
+  return (
+    <div className="flex flex-wrap gap-1">
+      {teams.map(t => {
+        const c = TEAM_COLORS[t] || { bg: '#e2e8f0', text: '#333' }
+        return (
+          <span
+            key={t}
+            className="inline-block rounded-full px-2 py-0.5 text-[0.7rem] font-medium"
+            style={{ backgroundColor: c.bg, color: c.text }}
+          >
+            {t}
+          </span>
+        )
+      })}
+    </div>
+  )
+}
+
+// ── Component ───────────────────────────────────────────────────
+
+export default function VolleyFeedbackPage() {
+  const { t, i18n } = useTranslation('admin')
+  const lang = i18n.language === 'en' ? 'en' : 'de'
+  const [teamFilter, setTeamFilter] = useState('')
+  const [selectedItem, setSelectedItem] = useState<VolleyFeedback | null>(null)
+
+  const { data: items = [], isLoading, error, refetch } = useCollection<VolleyFeedback>(
+    'volley_feedback',
+    { sort: ['-date_created'], all: true },
+  )
+
+  const averages = useMemo(() => computeAverages(items), [items])
+  const anonCount = useMemo(() => items.filter(i => i.is_anonymous).length, [items])
+
+  const allTeams = useMemo(() => {
+    const set = new Set<string>()
+    items.forEach(i => i.teams?.forEach(t => set.add(t)))
+    return [...set].sort()
+  }, [items])
+
+  const filtered = useMemo(
+    () => teamFilter ? items.filter(i => i.teams?.includes(teamFilter)) : items,
+    [items, teamFilter],
+  )
+
+  const maxBarHeight = 140
+
+  function exportCSV() {
+    const headers = ['Datum', 'Name', 'Anonym', 'Funktionen', 'Teams', 'Verein', 'Vorstand', 'TK Leitung', 'Training', 'Kommunikation', 'Feedback', 'Ideen', 'Weiteres']
+    const rows = filtered.map(i => [
+      i.date_created ? new Date(i.date_created).toLocaleDateString('de-CH') : '',
+      i.is_anonymous ? 'Anonym' : (i.name || ''),
+      i.is_anonymous ? 'Ja' : 'Nein',
+      i.functions?.join(', ') || '',
+      i.teams?.join(', ') || '',
+      i.rating_verein ?? '', i.rating_vorstand ?? '', i.rating_tk_leitung ?? '',
+      i.rating_training ?? '', i.rating_kommunikation ?? '',
+      (i.feedback_text || '').replace(/[\r\n]+/g, ' '),
+      (i.ideas_text || '').replace(/[\r\n]+/g, ' '),
+      (i.other_text || '').replace(/[\r\n]+/g, ' '),
+    ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(';'))
+
+    const csv = '\uFEFF' + headers.join(';') + '\n' + rows.join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'kscw-volley-feedback-2025-2026.csv'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  return (
+    <div className="mx-auto max-w-4xl space-y-4 p-4">
+      <h1 className="text-xl font-bold">Volley Feedback</h1>
+
+      {/* Summary cards */}
+      <DashboardSection id="vf-summary" title={lang === 'de' ? 'Übersicht' : 'Overview'} icon="📊" isLoading={isLoading} error={error?.message}>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="rounded-lg bg-primary/5 p-3 text-center">
+            <div className="text-2xl font-bold text-primary">{items.length}</div>
+            <div className="text-xs text-muted-foreground">{lang === 'de' ? 'Antworten' : 'Responses'}</div>
+          </div>
+          <div className="rounded-lg bg-primary/5 p-3 text-center">
+            <div className="text-2xl font-bold text-primary">{anonCount}</div>
+            <div className="text-xs text-muted-foreground">{lang === 'de' ? 'Anonym' : 'Anonymous'}</div>
+          </div>
+          <div className="rounded-lg bg-primary/5 p-3 text-center">
+            <div className="text-2xl font-bold text-primary">{averages.rating_verein ? averages.rating_verein.toFixed(1) : '–'}</div>
+            <div className="text-xs text-muted-foreground">⌀ {lang === 'de' ? 'Verein' : 'Club'}</div>
+          </div>
+          <div className="rounded-lg bg-primary/5 p-3 text-center">
+            <div className="text-2xl font-bold text-primary">{averages.rating_training ? averages.rating_training.toFixed(1) : '–'}</div>
+            <div className="text-xs text-muted-foreground">⌀ Training</div>
+          </div>
+        </div>
+      </DashboardSection>
+
+      {/* Vertical bar chart */}
+      <DashboardSection id="vf-chart" title={lang === 'de' ? 'Durchschnittliche Bewertungen' : 'Average Ratings'} icon="📈" isLoading={isLoading}>
+        <div className="flex items-end justify-around gap-2" style={{ height: maxBarHeight + 40 }}>
+          {RATING_KEYS.map(key => {
+            const avg = averages[key] || 0
+            const height = Math.round((avg / 5) * maxBarHeight)
+            return (
+              <div key={key} className="flex flex-col items-center gap-1">
+                <span className="text-xs font-bold text-primary">{avg ? avg.toFixed(1) : '–'}</span>
+                <div
+                  className="w-10 rounded-t-md sm:w-12"
+                  style={{
+                    height,
+                    minHeight: 4,
+                    background: 'linear-gradient(to top, hsl(var(--primary)), hsl(var(--primary) / 0.7))',
+                  }}
+                />
+                <span className="text-[0.65rem] text-muted-foreground text-center leading-tight">
+                  {RATING_LABELS[key][lang]}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      </DashboardSection>
+
+      {/* Response table */}
+      <DashboardSection id="vf-responses" title={lang === 'de' ? 'Einzelne Antworten' : 'Individual Responses'} icon="💬" isLoading={isLoading} isEmpty={items.length === 0} emptyMessage={lang === 'de' ? 'Noch keine Antworten' : 'No responses yet'}>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <select
+            value={teamFilter}
+            onChange={e => setTeamFilter(e.target.value)}
+            className="rounded-md border border-input bg-background px-2 py-1 text-sm"
+          >
+            <option value="">{lang === 'de' ? 'Alle Teams' : 'All Teams'}</option>
+            {allTeams.map(t => <option key={t} value={t}>{t}</option>)}
+          </select>
+          <button
+            onClick={exportCSV}
+            className="rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            CSV Export
+          </button>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b text-left text-xs text-muted-foreground">
+                <th className="p-2">{lang === 'de' ? 'Datum' : 'Date'}</th>
+                <th className="p-2">Name</th>
+                <th className="p-2">Team</th>
+                {RATING_KEYS.map(k => (
+                  <th key={k} className="p-2 text-center">{RATING_LABELS[k][lang]}</th>
+                ))}
+                <th className="p-2 text-center">Text</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(item => {
+                const hasText = item.feedback_text || item.ideas_text || item.other_text
+                return (
+                  <tr
+                    key={item.id}
+                    className={`border-b ${item.is_anonymous ? 'bg-secondary/10' : ''}`}
+                  >
+                    <td className="p-2 whitespace-nowrap">{formatDate(item.date_created)}</td>
+                    <td className="p-2">
+                      {item.is_anonymous
+                        ? <em className="text-muted-foreground">Anonym</em>
+                        : (item.name || '—')}
+                    </td>
+                    <td className="p-2">{item.is_anonymous ? '—' : <TeamChips teams={item.teams} />}</td>
+                    {RATING_KEYS.map(k => (
+                      <td key={k} className="p-2 text-center">{item[k] ?? '—'}</td>
+                    ))}
+                    <td className="p-2 text-center">
+                      {hasText ? (
+                        <button
+                          onClick={() => setSelectedItem(item)}
+                          className="cursor-pointer hover:opacity-70"
+                          title={lang === 'de' ? 'Text lesen' : 'Read text'}
+                        >
+                          💬
+                        </button>
+                      ) : '—'}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      </DashboardSection>
+
+      {/* Text detail modal */}
+      {selectedItem && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setSelectedItem(null)}
+        >
+          <div
+            className="max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-lg bg-card p-6 shadow-lg"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Feedback Details</h3>
+              <button
+                onClick={() => setSelectedItem(null)}
+                className="text-2xl leading-none text-muted-foreground hover:text-foreground"
+              >
+                &times;
+              </button>
+            </div>
+            {selectedItem.name && !selectedItem.is_anonymous && (
+              <p className="mb-3 text-sm text-muted-foreground">
+                {selectedItem.name} — {selectedItem.teams?.join(', ') || ''} — {selectedItem.functions?.join(', ') || ''}
+              </p>
+            )}
+            {selectedItem.feedback_text && (
+              <div className="mb-4">
+                <p className="mb-1 text-sm font-semibold">{lang === 'de' ? 'Feedback:' : 'Feedback:'}</p>
+                <p className="whitespace-pre-wrap text-sm">{selectedItem.feedback_text}</p>
+              </div>
+            )}
+            {selectedItem.ideas_text && (
+              <div className="mb-4">
+                <p className="mb-1 text-sm font-semibold">{lang === 'de' ? 'Ideen / Vorschläge:' : 'Ideas / Suggestions:'}</p>
+                <p className="whitespace-pre-wrap text-sm">{selectedItem.ideas_text}</p>
+              </div>
+            )}
+            {selectedItem.other_text && (
+              <div>
+                <p className="mb-1 text-sm font-semibold">{lang === 'de' ? 'Weiteres:' : 'Other:'}</p>
+                <p className="whitespace-pre-wrap text-sm">{selectedItem.other_text}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

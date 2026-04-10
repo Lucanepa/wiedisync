@@ -43,6 +43,7 @@ const adminItems = [
   { to: '/admin/referee-expenses', labelKey: 'refereeExpenses', icon: <Banknote className={iconClass} /> },
   { to: '/admin/anmeldungen', labelKey: 'anmeldungen', icon: <UserPlus className={iconClass} /> },
   { to: '/admin/club-stats', labelKey: 'clubStats', icon: <BarChart3 className={iconClass} /> },
+  { to: '/admin/volley-feedback', labelKey: 'volleyFeedback', icon: <MessageSquare className={iconClass} /> },
 ]
 
 function OptionsAccordion({ theme, toggleTheme, onClose }: { theme: string; toggleTheme: () => void; onClose?: () => void }) {

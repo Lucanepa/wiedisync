@@ -38,5 +38,6 @@ export default {
   whatsNew: 'Was ist neu',
   refereeExpenses: 'Schiedsrichterkosten',
   clubStats: 'Vereinsstatistik',
+  volleyFeedback: 'Volley Feedback',
   anmeldungen: 'Anmeldungen',
 } as const

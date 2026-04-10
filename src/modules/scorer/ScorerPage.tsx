@@ -21,6 +21,7 @@ import DelegationRequestBanner from './components/DelegationRequestBanner'
 import { useScorerDelegations } from './hooks/useScorerDelegations'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import { Bell, BellOff, ChevronDown, ChevronUp, Filter, Info, Clock, AlertTriangle, ClipboardList, Lightbulb } from 'lucide-react'
+import { TourPageButton } from '../guide/TourPageButton'
 import { updateRecord } from '../../lib/api'
 
 type Tab = 'games' | 'overview'
@@ -398,7 +399,10 @@ export default function ScorerPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 sm:text-2xl">{t('title')}</h1>
+      <div className="flex items-center gap-2">
+        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 sm:text-2xl">{t('title')}</h1>
+        <TourPageButton />
+      </div>
       <p className="mt-1 text-gray-600 dark:text-gray-400">{t('subtitle')}</p>
 
       {/* Expandable info panel (volleyball only) */}
@@ -512,7 +516,7 @@ export default function ScorerPage() {
           )}
 
           {/* Filters */}
-          <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
+          <div data-tour="scorer-filters" className="mt-4 rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
             <button
               onClick={() => setFiltersOpen(!filtersOpen)}
               className="flex w-full items-center justify-between px-4 py-3.5 text-sm font-medium text-gray-700 dark:text-gray-300"
@@ -593,7 +597,7 @@ export default function ScorerPage() {
           </div>
 
           {/* Upcoming games */}
-          <div className="mt-6">
+          <div className="mt-6" data-tour="assignment-list">
             {gamesLoading && <LoadingSpinner />}
             {!gamesLoading && filteredGames.length === 0 && !showPast && (
               <div className="py-12 text-center text-gray-500 dark:text-gray-400">
@@ -638,7 +642,7 @@ export default function ScorerPage() {
       )}
 
       {tab === 'overview' && (
-        <TeamOverview games={upcomingGames} members={members} sport={sportTab} />
+        <div data-tour="open-slots"><TeamOverview games={upcomingGames} members={members} sport={sportTab} /></div>
       )}
 
     </div>

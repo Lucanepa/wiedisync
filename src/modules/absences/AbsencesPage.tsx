@@ -19,6 +19,7 @@ import WeeklyUnavailabilityForm from './WeeklyUnavailabilityForm'
 import { Button } from '@/components/ui/button'
 import TabBar from '../../components/TabBar'
 import type { Absence, Team } from '../../types'
+import { TourPageButton } from '../guide/TourPageButton'
 
 export default function AbsencesPage() {
   const { t } = useTranslation('absences')
@@ -117,12 +118,15 @@ export default function AbsencesPage() {
     <div>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-gray-100">{t('title')}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-gray-100">{t('title')}</h1>
+            <TourPageButton />
+          </div>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('subtitle')}</p>
         </div>
         <div className="flex gap-2">
           {activeTab !== 'weekly' && (
-            <Button variant="outline" onClick={() => setImportOpen(true)}>
+            <Button data-tour="import-absences" variant="outline" onClick={() => setImportOpen(true)}>
               <Upload className="mr-2 h-4 w-4" />
               {t('importAbsences')}
             </Button>
@@ -138,6 +142,7 @@ export default function AbsencesPage() {
             </Button>
           ) : (
             <Button
+              data-tour="new-absence"
               onClick={() => {
                 setEditingAbsence(null)
                 setFormOpen(true)
@@ -166,7 +171,7 @@ export default function AbsencesPage() {
 
       {/* Content */}
       {showMineContent ? (
-        <div className="mt-6">
+        <div className="mt-6" data-tour="my-absences">
           {myAbsences.length === 0 ? (
             <EmptyState
               icon={<ClipboardList className="h-10 w-10" />}
@@ -216,14 +221,14 @@ export default function AbsencesPage() {
           )}
         </div>
       ) : activeTab === 'team' ? (
-        <div className="mt-6">
+        <div className="mt-6" data-tour="team-absences">
           <TeamFilter selected={selectedTeam} onChange={setSelectedTeam} limitToTeamIds={visibleTeamIds} />
           <div className="mt-4">
             <TeamAbsenceView teamIds={effectiveTeamIds} />
           </div>
         </div>
       ) : activeTab === 'weekly' ? (
-        <div className="mt-6">
+        <div className="mt-6" data-tour="weekly-unavailability">
           {myWeekly.length === 0 ? (
             <EmptyState
               icon={<CalendarClock className="h-10 w-10" />}

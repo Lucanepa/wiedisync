@@ -19,6 +19,7 @@ import ClaimDetailModal from './components/ClaimDetailModal'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import type { HallSlot, HallClosure, SlotClaim, Team, Hall, Training } from '../../types'
 import { fetchItem, fetchItems, flattenM2MTeams } from '../../lib/api'
+import { TourPageButton } from '../guide/TourPageButton'
 
 export type SportFilter = 'all' | 'vb' | 'bb'
 
@@ -225,7 +226,10 @@ export default function HallenplanPage() {
   return (
     <div>
       <div className="mb-4">
-        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 sm:text-2xl">{t('title')}</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 sm:text-2xl">{t('title')}</h1>
+          <TourPageButton />
+        </div>
         <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
           {isMobile
             ? t('subtitleDay')

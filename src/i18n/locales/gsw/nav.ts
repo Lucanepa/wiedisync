@@ -39,4 +39,5 @@ export default {
   refereeExpenses: 'Schiedsrichterchöschte',
   clubStats: 'Vereinsstatistik',
   anmeldungen: 'Amäldigä',
+  guide: 'Aleitig',
 } as const

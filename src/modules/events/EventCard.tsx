@@ -78,6 +78,7 @@ export default function EventCard({ event, onClick, onEdit, onDelete, onOpenRost
 
   return (
     <div
+      data-tour="event-card"
       className={`flex items-stretch overflow-hidden rounded-xl border border-gray-200 bg-white shadow-card dark:border-gray-700 dark:bg-gray-800${onClick ? ' cursor-pointer transition-shadow hover:shadow-card-hover' : ''}`}
       onClick={onClick}
       role={onClick ? 'button' : undefined}
@@ -171,7 +172,7 @@ export default function EventCard({ event, onClick, onEdit, onDelete, onOpenRost
 
       {/* Bottom row: RSVP + participation counter */}
       {canRSVP && (
-        <div className="mt-2.5 flex items-center justify-between gap-2" onClick={(e) => e.stopPropagation()}>
+        <div data-tour="event-rsvp" className="mt-2.5 flex items-center justify-between gap-2" onClick={(e) => e.stopPropagation()}>
           <ParticipationButton
             activityType="event"
             activityId={event.id}

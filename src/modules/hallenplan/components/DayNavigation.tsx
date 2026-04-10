@@ -70,7 +70,7 @@ export default function DayNavigation({
   return (
     <div className="mb-4 space-y-3 rounded-xl bg-white p-3 shadow-card dark:bg-gray-800">
       {/* Week navigation row */}
-      <div className="flex items-center justify-between">
+      <div data-tour="week-nav" className="flex items-center justify-between">
         <button
           onClick={onPrevWeek}
           className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
@@ -142,7 +142,7 @@ export default function DayNavigation({
           {t('summary')}
         </button>
 
-        <div className="flex overflow-hidden rounded-md border border-gray-300 dark:border-gray-600">
+        <div data-tour="sport-filter" className="flex overflow-hidden rounded-md border border-gray-300 dark:border-gray-600">
           {(['vb', 'bb', 'all'] as const).map((f) => (
             <button
               key={f}
@@ -160,6 +160,7 @@ export default function DayNavigation({
 
         {isAdmin && (
           <button
+            data-tour="closures"
             onClick={onOpenClosureManager}
             className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
           >

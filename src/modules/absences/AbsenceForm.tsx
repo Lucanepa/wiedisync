@@ -180,11 +180,13 @@ export default function AbsenceForm({ open, absence, onSave, onCancel }: Absence
           placeholder={t('detailsPlaceholder')}
         />
 
+        <div data-tour="affects-teams">
         <AffectsMultiSelect
           label={t('affects')}
           selected={affects}
           onChange={setAffects}
         />
+        </div>
 
         {validationError && (
           <p className="text-sm text-red-600">{validationError}</p>

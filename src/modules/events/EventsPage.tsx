@@ -17,6 +17,7 @@ import EventForm from './EventForm'
 import { Button } from '@/components/ui/button'
 import { isFeatureEnabled } from '../../utils/featureToggles'
 import type { Event, Team, Participation } from '../../types'
+import { TourPageButton } from '../guide/TourPageButton'
 
 function asTeams(teams: unknown[] | null | undefined): Team[] {
   if (!Array.isArray(teams) || teams.length === 0) return []
@@ -142,6 +143,7 @@ export default function EventsPage() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-3">
           <h1 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-gray-100">{t('title')}</h1>
+          <TourPageButton />
           <button
             onClick={() => setShowPast((v) => !v)}
             className={`min-h-[36px] rounded-full px-2.5 py-1.5 text-xs font-medium transition-colors ${
@@ -155,6 +157,7 @@ export default function EventsPage() {
         </div>
         {isCoach && (
           <Button
+            data-tour="new-event"
             onClick={() => {
               setEditingEvent(null)
               setFormOpen(true)
@@ -166,7 +169,7 @@ export default function EventsPage() {
       </div>
 
       {allUserTeamIds.length > 1 && (
-        <div className="mt-6">
+        <div className="mt-6" data-tour="event-team-filter">
           <TeamFilter selected={selectedTeam} onChange={setSelectedTeam} limitToTeamIds={isAdmin ? undefined : allUserTeamIds} groupBySport={isAdmin} />
         </div>
       )}
@@ -181,7 +184,7 @@ export default function EventsPage() {
             description={t('noEventsDescription')}
           />
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-3" data-tour="event-card">
             {events.map((event) => {
               // Coaches can only edit events linked to their teams (or club-wide with no teams)
               // Admins can edit all events

@@ -40,4 +40,5 @@ export default {
   clubStats: 'Vereinsstatistik',
   volleyFeedback: 'Volley Feedback',
   anmeldungen: 'Anmeldungen',
+  guide: 'Anleitung',
 } as const

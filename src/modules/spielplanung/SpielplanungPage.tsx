@@ -10,6 +10,7 @@ import { startOfMonth, getSeasonYear } from '../../utils/dateUtils'
 import { useIsMobile } from '../../hooks/useMediaQuery'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import type { ViewMode, SpielplanungFilterState } from '../../types/calendar'
+import { TourPageButton } from '../guide/TourPageButton'
 
 function getInitialMonth(): Date {
   const now = new Date()
@@ -49,12 +50,15 @@ export default function SpielplanungPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-gray-100">{t('title')}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-gray-100">{t('title')}</h1>
+            <TourPageButton />
+          </div>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             {t('subtitleSeason', { season: `${seasonYear}/${(seasonYear + 1).toString().slice(2)}` })}
           </p>
         </div>
-        <ViewToggle
+        <div data-tour="view-toggle"><ViewToggle
           options={[
             { value: 'calendar', label: t('viewCalendar') },
             { value: 'list-date', label: t('viewByDate') },
@@ -62,11 +66,13 @@ export default function SpielplanungPage() {
           ]}
           value={viewMode}
           onChange={(v) => setViewMode(v as ViewMode)}
-        />
+        /></div>
       </div>
 
       {/* Filters */}
-      <SpielplanungFilters filters={filters} onChange={setFilters} />
+      <div data-tour="spielplanung-filters">
+        <SpielplanungFilters filters={filters} onChange={setFilters} />
+      </div>
 
       {/* Loading / Error */}
       {isLoading && <LoadingSpinner />}

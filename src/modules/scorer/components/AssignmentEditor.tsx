@@ -141,6 +141,7 @@ export default function AssignmentEditor({
             )}
             {personValue && onDelegate && !disabled && (
               <button
+                data-tour="delegation"
                 onClick={onDelegate}
                 className="flex min-h-[44px] items-center justify-center rounded-lg px-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
                 title={t('delegate')}

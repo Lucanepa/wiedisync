@@ -33,7 +33,7 @@ export default function CoachDashboard({ teamId }: CoachDashboardProps) {
   }
 
   return (
-    <div>
+    <div data-tour="attendance-stats">
       <div className="mb-6 flex items-center gap-4">
         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('seasonLabel')}</label>
         <select

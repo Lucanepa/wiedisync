@@ -39,11 +39,11 @@ export default {
       steps: {
         nav: {
           title: 'Navigazione',
-          body: 'Qui trovi tutte le sezioni dell'app. Sul cellulare la navigazione è in basso.',
+          body: 'Qui trovi tutte le sezioni dell\'app. Sul cellulare la navigazione è in basso.',
         },
         home: {
           title: 'Home',
-          body: 'La tua dashboard personale: prossime partite, allenamenti e compiti in un colpo d'occhio.',
+          body: 'La tua dashboard personale: prossime partite, allenamenti e compiti in un colpo d\'occhio.',
         },
         profile: {
           title: 'Il mio profilo',
@@ -51,7 +51,7 @@ export default {
         },
         language: {
           title: 'Lingua',
-          body: 'La lingua dell'app può essere cambiata in qualsiasi momento nel menu delle impostazioni.',
+          body: 'La lingua dell\'app può essere cambiata in qualsiasi momento nel menu delle impostazioni.',
         },
         notifications: {
           title: 'Notifiche',
@@ -87,7 +87,7 @@ export default {
       steps: {
         overview: {
           title: 'Panoramica squadra',
-          body: 'Vedi a colpo d'occhio chi è presente, chi è assente e chi non ha ancora risposto.',
+          body: 'Vedi a colpo d\'occhio chi è presente, chi è assente e chi non ha ancora risposto.',
         },
         create: {
           title: 'Crea allenamento',
@@ -237,7 +237,7 @@ export default {
         },
         conflict: {
           title: 'Conflitti',
-          body: 'Gli slot sovrapposti sono evidenziati. Contatta l'admin per risolvere i conflitti.',
+          body: 'Gli slot sovrapposti sono evidenziati. Contatta l\'admin per risolvere i conflitti.',
         },
       },
     },

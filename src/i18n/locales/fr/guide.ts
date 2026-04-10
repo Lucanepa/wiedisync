@@ -39,11 +39,11 @@ export default {
       steps: {
         nav: {
           title: 'Navigation',
-          body: 'Toutes les sections de l'application se trouvent ici. Sur mobile, la navigation est en bas.',
+          body: 'Toutes les sections de l\'application se trouvent ici. Sur mobile, la navigation est en bas.',
         },
         home: {
           title: 'Accueil',
-          body: 'Votre tableau de bord personnel : prochains matchs, entraînements et tâches en un coup d'œil.',
+          body: 'Votre tableau de bord personnel : prochains matchs, entraînements et tâches en un coup d\'œil.',
         },
         profile: {
           title: 'Mon profil',
@@ -51,7 +51,7 @@ export default {
         },
         language: {
           title: 'Langue',
-          body: 'La langue de l'application peut être changée à tout moment dans le menu des paramètres.',
+          body: 'La langue de l\'application peut être changée à tout moment dans le menu des paramètres.',
         },
         notifications: {
           title: 'Notifications',
@@ -72,7 +72,7 @@ export default {
           body: 'Appuyez sur Oui, Peut-être ou Non. Votre coach peut voir les statistiques de présence.',
         },
         absence: {
-          title: 'Note d'absence',
+          title: 'Note d\'absence',
           body: 'Si vous ne pouvez pas participer, vous pouvez ajouter une courte explication.',
         },
         stats: {
@@ -86,8 +86,8 @@ export default {
       description: 'Comment gérer les entraînements en tant que coach',
       steps: {
         overview: {
-          title: 'Vue d'ensemble de l'équipe',
-          body: 'Voyez d'un coup d'œil qui est présent, qui est absent et qui n'a pas encore répondu.',
+          title: 'Vue d\'ensemble de l\'équipe',
+          body: 'Voyez d\'un coup d\'œil qui est présent, qui est absent et qui n\'a pas encore répondu.',
         },
         create: {
           title: 'Créer un entraînement',
@@ -99,7 +99,7 @@ export default {
         },
         notify: {
           title: 'Notifier les joueurs',
-          body: 'Envoyez une notification push à tous les joueurs qui n'ont pas encore répondu.',
+          body: 'Envoyez une notification push à tous les joueurs qui n\'ont pas encore répondu.',
         },
       },
     },
@@ -130,7 +130,7 @@ export default {
       description: 'Comment gérer les matchs en tant que coach',
       steps: {
         overview: {
-          title: 'Vue d'ensemble des matchs',
+          title: 'Vue d\'ensemble des matchs',
           body: 'Votre calendrier complet avec les comptages RSVP et le statut des résultats.',
         },
         lineup: {
@@ -149,18 +149,18 @@ export default {
     },
     events: {
       title: 'Événements',
-      description: 'Événements du club et activités d'équipe',
+      description: 'Événements du club et activités d\'équipe',
       steps: {
         list: {
           title: 'Liste des événements',
-          body: 'Les événements du club et les activités d'équipe sont affichés ici.',
+          body: 'Les événements du club et les activités d\'équipe sont affichés ici.',
         },
         rsvp: {
-          title: 'Inscription à l'événement',
+          title: 'Inscription à l\'événement',
           body: 'Inscrivez-vous aux événements, tournois et activités sociales.',
         },
         details: {
-          title: 'Détails de l'événement',
+          title: 'Détails de l\'événement',
           body: 'Lieu, heure, description et liste des participants inscrits.',
         },
       },
@@ -175,11 +175,11 @@ export default {
         },
         create: {
           title: 'Ajouter une absence',
-          body: 'Appuyez sur le bouton plus pour ajouter une période d'absence avec dates de début, fin et motif.',
+          body: 'Appuyez sur le bouton plus pour ajouter une période d\'absence avec dates de début, fin et motif.',
         },
         coachView: {
           title: 'Vue coach',
-          body: 'Les coaches voient toutes les absences de l'équipe superposées au calendrier pour anticiper.',
+          body: 'Les coaches voient toutes les absences de l\'équipe superposées au calendrier pour anticiper.',
         },
       },
     },
@@ -197,7 +197,7 @@ export default {
         },
         delegate: {
           title: 'Déléguer',
-          body: 'Si vous ne pouvez pas assurer le service, vous pouvez proposer un autre membre de l'équipe en remplacement.',
+          body: 'Si vous ne pouvez pas assurer le service, vous pouvez proposer un autre membre de l\'équipe en remplacement.',
         },
       },
     },
@@ -206,8 +206,8 @@ export default {
       description: 'Gérer les attributions de marqueur',
       steps: {
         overview: {
-          title: 'Vue d'ensemble',
-          body: 'Voyez tous les matchs nécessitant un marqueur et leur statut d'attribution.',
+          title: 'Vue d\'ensemble',
+          body: 'Voyez tous les matchs nécessitant un marqueur et leur statut d\'attribution.',
         },
         assign: {
           title: 'Attribuer un marqueur',
@@ -233,11 +233,11 @@ export default {
         },
         release: {
           title: 'Libérer un créneau',
-          body: 'Si vous n'avez plus besoin d'un créneau, libérez-le pour que d'autres équipes puissent l'utiliser.',
+          body: 'Si vous n\'avez plus besoin d\'un créneau, libérez-le pour que d\'autres équipes puissent l\'utiliser.',
         },
         conflict: {
           title: 'Conflits',
-          body: 'Les créneaux qui se chevauchent sont mis en évidence. Contactez l'admin pour résoudre les conflits.',
+          body: 'Les créneaux qui se chevauchent sont mis en évidence. Contactez l\'admin pour résoudre les conflits.',
         },
       },
     },

@@ -106,6 +106,7 @@ See `INFRA.md → Domains & Hosting Overview` for full domain map, future migrat
 
 ## Changelog
 <!-- Keep recent entries. Overwrite when stale. For full history see git log. -->
+- **2026-04-10** — Interactive guided tours (v3.8.0): 10 React Joyride v3 tours (trainings, games, events, absences, scorer, hallenplan) with custom KSCW-branded tooltip. Welcome modal for first-timers, role-based auto-offers, central Guide menu at `/guide`, per-page "?" buttons. 5 languages, 36 unit tests. `src/modules/guide/`.
 - **2026-04-06** — Bugfix dashboard (v3.7.0): AI-powered bugfix workflow. Admin `/bugfixes` page: view errors, trigger Claude Code fixes via GH Actions, deploy to dev/prod. Public `/status` page. 6 Directus endpoints, 2 GH Actions workflows, transaction-based rate limiting, shell injection prevention, key-based PII scrubbing.
 - **2026-04-05** — SV licence card + security hardening (v3.6.0): Profile shows licence badges (LAS/Foreigner/FdO), federation, activated/validated — all from `sv_vm_check`. Stopped syncing licence fields to members. `sv_vm_check` permissions restricted to 11 safe fields. Absence cards restyled.
 - **2026-04-05** — Expanded VM sync + email claim (v3.5.0): 16 new `sv_vm_check` columns (birthday, nationality, LAS, federation, double licence). Syncs all non-deceased players. `vm_email` on members for auto-linking during registration.

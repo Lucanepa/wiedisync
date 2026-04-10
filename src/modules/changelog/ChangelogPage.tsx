@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.6.0'
+const APP_VERSION = '3.8.0'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,23 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.8.0',
+    date: '2026-04-10',
+    sections: [
+      {
+        title: 'Interaktive Anleitungen',
+        items: [
+          'Neue geführte Touren: 10 Schritt-für-Schritt-Anleitungen für alle wichtigen Funktionen — Trainings, Spiele, Events, Abwesenheiten, Schreiber und Hallenplan.',
+          'Willkommens-Dialog für neue Mitglieder mit optionaler Einführungstour.',
+          'Anleitungs-Menü unter Mehr → Anleitung mit Fortschrittsanzeige.',
+          '"?" Button auf jeder Seite für schnellen Zugriff auf die passende Tour.',
+          'Rollenbasiert: Spieler, Coaches und Admins sehen nur relevante Touren.',
+          'Verfügbar in 5 Sprachen: Deutsch, English, Français, Italiano, Schwiizerdütsch.',
+        ],
+      },
+    ],
+  },
   {
     version: '3.6.0',
     date: '2026-04-05',

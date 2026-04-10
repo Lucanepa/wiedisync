@@ -2,6 +2,17 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.8.0] — 2026-04-10
+
+### Features
+
+- **Interactive guided tours** — In-app step-by-step walkthroughs using React Joyride v3. 10 role-aware tours covering: Getting Started, Trainings (player + coach), Games (player + coach), Events, Absences, Scorer (player + admin), and Hallenplan. Custom KSCW-branded tooltip with blue-to-gold progress bar.
+- **Central Guide menu** — MoreSheet → "Anleitung" at `/guide`. Lists all available tours filtered by user role, with completion checkmarks and step counts.
+- **Per-page tour buttons** — Small "?" icon next to page titles to start context-specific tours. Popover picker when multiple tours are available for the same page.
+- **Welcome modal for new users** — Auto-triggers on first login for approved users. "Ja, los geht's" starts the Getting Started tour, "Überspringen" dismisses permanently.
+- **Role-based auto-offers** — Coaches visiting `/trainings` and admins entering admin routes get a one-time toast offering relevant tours.
+- **Full i18n support** — All 10 tours translated in 5 languages (DE, EN, FR, IT, GSW).
+
 ## [3.6.0] — 2026-04-05
 
 ### Features

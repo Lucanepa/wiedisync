@@ -67,6 +67,7 @@ function useNavItems(isLoggedIn: boolean, isApproved: boolean) {
       { to: '/admin/referee-expenses', label: t('refereeExpenses'), icon: <Banknote className={iconClass} /> },
       { to: '/admin/anmeldungen', label: t('anmeldungen'), icon: <UserPlus className={iconClass} /> },
       { to: '/admin/club-stats', label: t('clubStats'), icon: <BarChart3 className={iconClass} /> },
+      { to: '/admin/volley-feedback', label: t('volleyFeedback'), icon: <MessageSquare className={iconClass} /> },
     ],
     superadminItems: [
       { to: '/admin/infra', label: t('infraHealth'), icon: <Activity className={iconClass} /> },

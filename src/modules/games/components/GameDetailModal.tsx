@@ -448,8 +448,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
 
         {/* Scorer duties — Volleyball */}
         {kscwSport !== 'basketball' &&
-        (game.scorer_member || game.scoreboard_member || game.scorer_scoreboard_member ||
-          game.scorer_person || game.scoreboard_person) && (
+        (game.scorer_member || game.scoreboard_member || game.scorer_scoreboard_member) && (
           <div className="space-y-3 border-t dark:border-gray-700 px-6 py-4">
             <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
               {t('scorerDuties')}
@@ -463,20 +462,18 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
               />
             ) : (
               <>
-                {(asObj<Member & BaseRecord>(expanded.scorer_member) || game.scorer_person) && (
+                {asObj<Member & BaseRecord>(expanded.scorer_member) && (
                   <DutyPersonRow
                     label={t('scorer')}
                     member={asObj<Member & BaseRecord>(expanded.scorer_member)}
-                    fallbackName={game.scorer_person}
                     dutyTeam={asObj<Team & BaseRecord>(expanded.scorer_duty_team)}
                     showContact={showScorerContact}
                   />
                 )}
-                {(asObj<Member & BaseRecord>(expanded.scoreboard_member) || game.scoreboard_person) && (
+                {asObj<Member & BaseRecord>(expanded.scoreboard_member) && (
                   <DutyPersonRow
                     label={t('scoreboard')}
                     member={asObj<Member & BaseRecord>(expanded.scoreboard_member)}
-                    fallbackName={game.scoreboard_person}
                     dutyTeam={asObj<Team & BaseRecord>(expanded.scoreboard_duty_team)}
                     showContact={showScorerContact}
                   />
@@ -625,16 +622,15 @@ function DetailRow({ label, value }: { label: string; value: string }) {
   )
 }
 
-function DutyPersonRow({ label, member, fallbackName, dutyTeam, showContact }: {
+function DutyPersonRow({ label, member, dutyTeam, showContact }: {
   label: string
   member?: (Member & BaseRecord) | null
-  fallbackName?: string
   dutyTeam?: (Team & BaseRecord) | null
   showContact: boolean
 }) {
   const name = member
     ? `${member.first_name} ${member.last_name}`
-    : fallbackName ?? ''
+    : ''
   const teamName = dutyTeam?.name
 
   return (

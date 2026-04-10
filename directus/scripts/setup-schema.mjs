@@ -288,10 +288,6 @@ const COLLECTIONS = [
       integer('home_score', { default: 0 }),
       integer('away_score', { default: 0 }),
       json('sets_json'),
-      string('scorer_team'),
-      string('scorer_person'),
-      string('scoreboard_team'),
-      string('scoreboard_person'),
       // VB + BB duty assignments are m2o relations, created later
       boolean('duty_confirmed'),
       json('referees_json'),

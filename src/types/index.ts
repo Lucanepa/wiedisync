@@ -249,11 +249,6 @@ export interface Game extends BaseRecord {
   home_score: number
   away_score: number
   sets_json: unknown
-  // Legacy text fields (from Swiss Volley sync)
-  scorer_team: string
-  scorer_person: string
-  scoreboard_team: string
-  scoreboard_person: string
   // Volleyball duty assignments
   scorer_member: string
   scoreboard_member: string

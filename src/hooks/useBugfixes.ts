@@ -68,6 +68,7 @@ interface RawBugfixIssue {
     fix_summary: string | null
     public_summary: string | null
     date_created: string
+    date_updated: string | null
   } | null
   annotation: { status: string; note: string | null; resolved_commit: string | null } | null
 }

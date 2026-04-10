@@ -1,9 +1,11 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { QueryProvider } from './lib/query'
 import { AuthProvider } from './hooks/useAuth'
 import { ThemeProvider } from './hooks/useTheme'
 import { AdminModeProvider } from './hooks/useAdminMode'
+import { TourProvider } from './modules/guide/TourProvider'
 import Layout from './components/Layout'
 import AdminRoute from './components/AdminRoute'
 import SuperAdminRoute from './components/SuperAdminRoute'
@@ -49,6 +51,8 @@ import FeedbackPage from './modules/feedback/FeedbackPage'
 import ChangelogPage from './modules/changelog/ChangelogPage'
 import { SentryErrorBoundary } from './lib/sentry'
 
+const GuidePage = lazy(() => import('./modules/guide/GuidePage'))
+
 function SentryFallback() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
@@ -74,6 +78,7 @@ export default function App() {
     <AuthProvider>
       <AdminModeProvider>
       <BrowserRouter>
+      <TourProvider>
         <Routes>
           {/* Standalone routes — no layout wrapper */}
           <Route path="embed/games" element={<EmbedGamesPage />} />
@@ -102,6 +107,7 @@ export default function App() {
             <Route path="impressum" element={<ImpressumPage />} />
             <Route path="feedback" element={<FeedbackPage />} />
             <Route path="changelog" element={<ChangelogPage />} />
+            <Route path="guide" element={<AuthRoute><Suspense fallback={null}><GuidePage /></Suspense></AuthRoute>} />
             <Route path="profile" element={<AuthRoute><ProfilePage /></AuthRoute>} />
             <Route path="admin/spielplanung" element={<AdminRoute><SpielplanungPage /></AdminRoute>} />
             <Route path="admin/hallenplan" element={<AdminRoute><HallenplanPage /></AdminRoute>} />
@@ -119,6 +125,7 @@ export default function App() {
             <Route path="status" element={<AuthRoute><StatusPage /></AuthRoute>} />
           </Route>
         </Routes>
+      </TourProvider>
       </BrowserRouter>
       <Toaster richColors position="top-center" />
       </AdminModeProvider>

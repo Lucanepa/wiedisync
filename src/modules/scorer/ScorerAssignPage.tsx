@@ -13,6 +13,7 @@ import TeamChip from '../../components/TeamChip'
 import { runAssignment, getTeamCounts, type GameAssignment } from './components/AssignmentAlgorithm'
 import { updateRecord } from '../../lib/api'
 import { asObj } from '../../utils/relations'
+import { TourPageButton } from '../guide/TourPageButton'
 
 export default function ScorerAssignPage() {
   const { t } = useTranslation('scorerAssign')
@@ -159,16 +160,20 @@ export default function ScorerAssignPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 sm:text-2xl">{t('title')}</h1>
+      <div className="flex items-center gap-2">
+        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 sm:text-2xl">{t('title')}</h1>
+        <TourPageButton />
+      </div>
       <p className="mt-1 text-gray-600 dark:text-gray-400">{t('subtitle')}</p>
 
       {/* Actions bar */}
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        <div className="rounded-lg bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+        <div data-tour="season-select" className="rounded-lg bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-300">
           {t('season')}: {season}
         </div>
 
         <Button
+          data-tour="run-algorithm"
           size="sm"
           onClick={handleRunAlgorithm}
           loading={running}
@@ -311,9 +316,9 @@ export default function ScorerAssignPage() {
         </div>
       )}
 
-      {/* Team summary — always shown once games are loaded */}
+      {/* Team summary -- always shown once games are loaded */}
       {teamCounts.size > 0 && (
-        <div className="mt-8">
+        <div className="mt-8" data-tour="team-summary">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('teamSummary')}</h2>
           <div className="mt-3 overflow-x-auto">
             <table className="w-fit text-left text-sm">

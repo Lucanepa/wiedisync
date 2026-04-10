@@ -20,6 +20,7 @@ import LoadingSpinner from '../../components/LoadingSpinner'
 import SharedEmptyState from '../../components/EmptyState'
 import { getGameWarnings, type Warning } from '../../utils/participationWarnings'
 import { Calendar, Trophy, BarChart3, LayoutGrid } from 'lucide-react'
+import { TourPageButton } from '../guide/TourPageButton'
 
 function buildTeamFilter(teamPbIds: string[]): Record<string, unknown> | null {
   if (teamPbIds.length === 0) return null
@@ -228,7 +229,10 @@ export default function GamesPage() {
 
   return (
     <div className="min-w-0">
-      <h1 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-gray-100">{t('title')}</h1>
+      <div className="flex items-center gap-2">
+        <h1 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-gray-100">{t('title')}</h1>
+        <TourPageButton />
+      </div>
 
       <div className="mt-6 space-y-4">
         {showSportToggle && (
@@ -236,8 +240,12 @@ export default function GamesPage() {
             <SportToggle value={sport} onChange={setSport} />
           </div>
         )}
-        <TeamFilterBar selected={selectedTeams} onChange={setSelectedTeams} sport={sport} limitToTeams={effectiveIsAdmin || !user ? undefined : allUserTeamNames} />
-        <GameTabs activeTab={activeTab} onChange={(tab) => { setActiveTab(tab); setShowAll(false) }} />
+        <div data-tour="team-filter">
+          <TeamFilterBar selected={selectedTeams} onChange={setSelectedTeams} sport={sport} limitToTeams={effectiveIsAdmin || !user ? undefined : allUserTeamNames} />
+        </div>
+        <div data-tour="game-tabs">
+          <GameTabs activeTab={activeTab} onChange={(tab) => { setActiveTab(tab); setShowAll(false) }} />
+        </div>
       </div>
 
       <div className="mt-6">
@@ -250,7 +258,7 @@ export default function GamesPage() {
               <EmptyState tab={activeTab} />
             ) : (
               <>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" data-tour="game-card">
                   {games.map((g) => (
                     <GameCard key={g.id} game={g} onClick={setSelectedGame} participations={participationsByGame.get(g.id)} myParticipation={myParticipationByGame.get(g.id)} warnings={warningsByGame.get(g.id)} onParticipationSaved={refetchParticipations} />
                   ))}
@@ -275,7 +283,7 @@ export default function GamesPage() {
               <EmptyState tab={activeTab} />
             ) : (
               <>
-                <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white md:mx-auto md:w-fit dark:bg-gray-800 md:grid md:grid-cols-[auto_auto_auto_auto_auto_auto_auto_1fr]">
+                <div data-tour="game-results" className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white md:mx-auto md:w-fit dark:bg-gray-800 md:grid md:grid-cols-[auto_auto_auto_auto_auto_auto_auto_1fr]">
                   {games.map((g) => (
                     <GameCard key={g.id} game={g} onClick={setSelectedGame} variant="compact" participations={participationsByGame.get(g.id)} myParticipation={myParticipationByGame.get(g.id)} warnings={warningsByGame.get(g.id)} />
                   ))}
@@ -299,7 +307,7 @@ export default function GamesPage() {
             {leagueGroups.size === 0 ? (
               <EmptyState tab="rankings" />
             ) : (
-              <div className="grid gap-6 lg:grid-cols-2">
+              <div className="grid gap-6 lg:grid-cols-2" data-tour="game-rankings">
                 {[...leagueGroups.entries()].map(([league, rows]) => (
                   <RankingsTable key={league} league={league} rankings={rows} />
                 ))}
@@ -310,7 +318,7 @@ export default function GamesPage() {
 
         {/* Scoreboard */}
         {activeTab === 'scoreboard' && !rankingsLoading && (
-          <KscwScoreboard rankings={allRankings} />
+          <div data-tour="game-scoreboard"><KscwScoreboard rankings={allRankings} /></div>
         )}
       </div>
 

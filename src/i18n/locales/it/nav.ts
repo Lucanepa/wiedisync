@@ -39,4 +39,5 @@ export default {
   refereeExpenses: 'Spese arbitrali',
   clubStats: 'Statistiche',
   anmeldungen: 'Iscrizioni',
+  guide: 'Guida',
 } as const

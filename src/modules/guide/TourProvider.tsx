@@ -9,8 +9,11 @@ import {
 } from 'react'
 import Joyride, { ACTIONS, EVENTS, STATUS, type CallBackProps } from 'react-joyride'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { toast } from 'sonner'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
 import { TourTooltip } from './TourTooltip'
+import { WelcomeModal } from './WelcomeModal'
 import { tourRegistry } from './tours'
 import {
   DEFAULT_TOUR_STATE,
@@ -62,10 +65,12 @@ export function TourProvider({ children }: Props) {
   const navigate = useNavigate()
   const location = useLocation()
 
+  const { t } = useTranslation('guide')
   const [tourState, setTourState] = useState<TourState>(loadState)
   const [currentTour, setCurrentTour] = useState<TourDefinition | null>(null)
   const [run, setRun] = useState(false)
   const [stepIndex, setStepIndex] = useState(0)
+  const [showWelcome, setShowWelcome] = useState(false)
   const startRouteRef = useRef<string | null>(null)
 
   // Persist state changes
@@ -160,6 +165,50 @@ export function TourProvider({ children }: Props) {
     [currentTour, location.pathname, navigate],
   )
 
+  // Show welcome modal on first visit for approved users
+  useEffect(() => {
+    if (auth.user && auth.isApproved && !tourState.firstVisitDone) {
+      setShowWelcome(true)
+    }
+  }, [auth.user, auth.isApproved, tourState.firstVisitDone])
+
+  const handleWelcomeStart = useCallback(() => {
+    setTourState((prev) => ({ ...prev, firstVisitDone: true }))
+    setShowWelcome(false)
+    startTour('getting-started')
+  }, [startTour])
+
+  const handleWelcomeSkip = useCallback(() => {
+    setTourState((prev) => ({ ...prev, firstVisitDone: true }))
+    setShowWelcome(false)
+  }, [])
+
+  // Role-based auto-offer toasts
+  useEffect(() => {
+    if (!auth.user || !auth.isApproved || !tourState.firstVisitDone) return
+    if (run || currentTour) return
+
+    if (location.pathname === '/trainings' && auth.isCoach &&
+        !tourState.completed.includes('training-coach') && !tourState.dismissed.includes('training-coach')) {
+      toast(t('offer.coachTools'), {
+        action: { label: t('offer.start'), onClick: () => startTour('training-coach') },
+        cancel: { label: t('offer.skip'), onClick: () => setTourState(s => ({ ...s, dismissed: [...new Set([...s.dismissed, 'training-coach'])] })) },
+        duration: 8000,
+      })
+    }
+
+    if (location.pathname.startsWith('/admin') && (auth.isAdmin || auth.isCoach) &&
+        !tourState.completed.includes('hallenplan-coach') && !tourState.dismissed.includes('hallenplan-coach') &&
+        !tourState.completed.includes('scorer-admin') && !tourState.dismissed.includes('scorer-admin')) {
+      toast(t('offer.adminTools'), {
+        action: { label: t('offer.start'), onClick: () => startTour('hallenplan-coach') },
+        cancel: { label: t('offer.skip'), onClick: () => setTourState(s => ({ ...s, dismissed: [...new Set([...s.dismissed, 'hallenplan-coach', 'scorer-admin'])] })) },
+        duration: 8000,
+      })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname, auth.isCoach, auth.isAdmin, tourState.firstVisitDone])
+
   const resetAllTours = useCallback(() => {
     setRun(false)
     setCurrentTour(null)
@@ -253,6 +302,11 @@ export function TourProvider({ children }: Props) {
           }}
         />
       )}
+      <WelcomeModal
+        open={showWelcome}
+        onStart={handleWelcomeStart}
+        onSkip={handleWelcomeSkip}
+      />
     </TourContext.Provider>
   )
 }

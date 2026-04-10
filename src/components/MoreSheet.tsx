@@ -9,7 +9,7 @@ import LanguageDropdown from '@/components/LanguageDropdown'
 import { getFileUrl } from '../utils/fileUrl'
 import AdminToggle from './AdminToggle'
 import { useAdminMode } from '../hooks/useAdminMode'
-import { Bell, UserX, PenSquare, CalendarDays, ClipboardList, Building2, CalendarClock, HeartPulse, LogIn, User, Users, Settings, ChevronDown, ScrollText, MessageSquare, Banknote, BarChart3, UserPlus, Bug, Activity } from 'lucide-react'
+import { Bell, UserX, PenSquare, CalendarDays, ClipboardList, Building2, CalendarClock, HeartPulse, LogIn, User, Users, Settings, ChevronDown, ScrollText, MessageSquare, Banknote, BarChart3, UserPlus, Bug, Activity, GraduationCap } from 'lucide-react'
 import type { MemberTeam, Team } from '../types'
 import { asObj } from '../utils/relations'
 
@@ -136,6 +136,18 @@ function OptionsAccordion({ theme, toggleTheme, onClose }: { theme: string; togg
                 {t('whatsNew', "What's New")}
               </span>
               <span className="text-xs font-mono text-gray-400 dark:text-gray-500">v1.0.0</span>
+            </NavLink>
+            {/* Guide row */}
+            <NavLink
+              to="/guide"
+              onClick={onClose}
+              className={({ isActive }) => `flex min-h-[48px] items-center gap-2 rounded-lg px-4 py-3 transition-colors ${
+                isActive ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/50 dark:text-gold-400' : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+              }`}
+              data-tour="nav-guide"
+            >
+              <GraduationCap className="h-4 w-4" />
+              <span className="text-base font-medium">{t('guide')}</span>
             </NavLink>
           </div>
         </div>

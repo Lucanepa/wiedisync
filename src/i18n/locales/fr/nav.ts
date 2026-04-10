@@ -39,4 +39,5 @@ export default {
   refereeExpenses: 'Frais d\'arbitrage',
   clubStats: 'Statistiques',
   anmeldungen: 'Inscriptions',
+  guide: 'Guide',
 } as const

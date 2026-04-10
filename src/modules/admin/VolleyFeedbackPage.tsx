@@ -123,7 +123,7 @@ export default function VolleyFeedbackPage() {
   const maxBarHeight = 140
 
   function exportCSV() {
-    const headers = ['Datum', 'Name', 'Anonym', 'Funktionen', 'Teams', 'Verein', 'Vorstand', 'TK Leitung', 'Training', 'Kommunikation', 'Feedback', 'Ideen', 'Weiteres']
+    const headers = ['Date', 'Name', 'Anonymous', 'Functions', 'Teams', 'Club', 'Board', 'TK Leadership', 'Training', 'Communication', 'Feedback', 'Ideas', 'Other']
     const rows = filtered.map(i => [
       i.date_created ? new Date(i.date_created).toLocaleDateString('de-CH') : '',
       i.is_anonymous ? 'Anonym' : (i.name || ''),

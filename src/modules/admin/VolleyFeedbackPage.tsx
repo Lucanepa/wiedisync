@@ -96,12 +96,12 @@ function TeamChips({ teams }: { teams: string[] | null }) {
 // ── Component ───────────────────────────────────────────────────
 
 export default function VolleyFeedbackPage() {
-  const { t, i18n } = useTranslation('admin')
+  const { i18n } = useTranslation('admin')
   const lang = i18n.language === 'en' ? 'en' : 'de'
   const [teamFilter, setTeamFilter] = useState('')
   const [selectedItem, setSelectedItem] = useState<VolleyFeedback | null>(null)
 
-  const { data: items = [], isLoading, error, refetch } = useCollection<VolleyFeedback>(
+  const { data: items = [], isLoading, error } = useCollection<VolleyFeedback>(
     'volley_feedback',
     { sort: ['-date_created'], all: true },
   )

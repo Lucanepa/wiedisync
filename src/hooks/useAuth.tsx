@@ -12,7 +12,7 @@ import type { Member, Team } from '../types'
 
 type MemberUser = Member & { id: string }
 
-interface AuthContextValue {
+export interface AuthContextValue {
   user: MemberUser | null
   isSuperAdmin: boolean
   isAdmin: boolean

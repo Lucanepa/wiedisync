@@ -10,6 +10,7 @@ import {
 import { format, isBefore, isAfter, isSameDay } from 'date-fns'
 import { formatTime } from '../../../utils/dateHelpers'
 import { asObj, relId, memberName } from '../../../utils/relations'
+import { isAuthenticated } from '../../../lib/api'
 
 interface UseCalendarDataOptions {
   filters: CalendarFilterState
@@ -269,7 +270,7 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
   // Fetch member_teams for selected teams (used to filter absences by team)
   const hasTeamFilter = filters.selectedTeamIds.length > 0
   const { data: teamMemberLinksRaw } = useCollection<MemberTeam>('member_teams', {
-    enabled: fetchAbsences && hasTeamFilter,
+    enabled: fetchAbsences && hasTeamFilter && isAuthenticated(),
     filter: hasTeamFilter
       ? { team: { _in: filters.selectedTeamIds } }
       : { id: { _eq: -1 } },
@@ -279,7 +280,7 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
   const teamMemberLinks = teamMemberLinksRaw ?? []
 
   const { data: absencesRaw, isLoading: absencesLoading } = useCollection<Absence & { member?: { first_name: string; last_name: string } | string }>('absences', {
-    enabled: fetchAbsences,
+    enabled: fetchAbsences && isAuthenticated(),
     filter: fetchAbsences
       ? { _and: [{ end_date: { _gte: fetchRange.start } }, { start_date: { _lte: fetchRange.end } }] }
       : { id: { _eq: -1 } },

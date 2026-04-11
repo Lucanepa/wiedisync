@@ -15,7 +15,12 @@ export function TourTooltip({
   isLastStep,
 }: TooltipRenderProps) {
   const { t } = useTranslation('guide')
+  const { t: tRaw } = useTranslation()
   const progress = ((index + 1) / size) * 100
+
+  // step.title and step.content are fully-qualified i18n keys (e.g. "guide:tours.*.steps.*.title")
+  const title = step.title ? tRaw(step.title as string) : ''
+  const body = step.content ? tRaw(step.content as string) : ''
 
   return (
     <div
@@ -47,17 +52,17 @@ export function TourTooltip({
           <span className="flex-shrink-0 flex items-center justify-center w-[22px] h-[22px] rounded-full bg-primary text-primary-foreground text-xs font-semibold">
             {index + 1}
           </span>
-          {step.title && (
+          {title && (
             <h3 className="text-base font-semibold leading-tight">
-              {step.title}
+              {title}
             </h3>
           )}
         </div>
 
         {/* Body */}
-        {step.content && (
+        {body && (
           <p className="text-sm text-muted-foreground mb-4 ml-[34px]">
-            {step.content}
+            {body}
           </p>
         )}
 

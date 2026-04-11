@@ -19,6 +19,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
+import { useIsMobile } from '../../hooks/useMediaQuery'
 import { TourTooltip } from './TourTooltip'
 import { WelcomeModal } from './WelcomeModal'
 import { tourRegistry } from './tours'
@@ -71,6 +72,7 @@ export function TourProvider({ children }: Props) {
   const auth = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const isMobile = useIsMobile()
 
   const { t } = useTranslation('guide')
   const [tourState, setTourState] = useState<TourState>(loadState)
@@ -291,11 +293,11 @@ export function TourProvider({ children }: Props) {
           run={run}
           stepIndex={stepIndex}
           continuous
-          scrollToFirstStep
+          scrollToFirstStep={!isMobile}
           tooltipComponent={TourTooltip}
           onEvent={handleJoyrideEvent}
           options={{
-            overlayColor: 'rgba(0,0,0,0.5)',
+            overlayColor: isMobile ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.5)',
             zIndex: 10000,
           }}
         />

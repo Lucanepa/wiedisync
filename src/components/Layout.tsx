@@ -25,7 +25,7 @@ import { asObj } from '../utils/relations'
 import {
   Home, Calendar, Trophy, UserX, PenSquare, PartyPopper, Users,
   ClipboardList, Building2, CalendarClock, Activity,
-  HeartPulse, Settings, ChevronDown, MessageSquare, Banknote, BarChart3, UserPlus, Bug,
+  HeartPulse, Settings, ChevronDown, MessageSquare, Banknote, BarChart3, UserPlus, Bug, GraduationCap,
 } from 'lucide-react'
 
 type ExpandedMemberTeam = MemberTeam & { team: Team | string }
@@ -361,6 +361,25 @@ export default function Layout() {
             <div className={`space-y-3 border-t p-4 ${
               theme === 'light' ? 'border-gray-200' : 'border-brand-800'
             }`}>
+              <NavLink
+                to="/guide"
+                data-tour="nav-guide"
+                onClick={() => setSidebarView('closed')}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                    theme === 'light'
+                      ? isActive
+                        ? 'bg-brand-50 text-brand-700'
+                        : 'text-gray-700 hover:bg-gray-100'
+                      : isActive
+                        ? 'bg-brand-800 text-gold-400'
+                        : 'text-gray-300 hover:bg-brand-800 hover:text-white'
+                  }`
+                }
+              >
+                <GraduationCap className="h-5 w-5" />
+                {t('guide')}
+              </NavLink>
               <div data-tour="nav-settings">
                 <SidebarOptions isAdmin={isAdmin} theme={theme} toggleTheme={toggleTheme} onClose={() => setSidebarView('closed')} />
               </div>

@@ -12,32 +12,20 @@ export const scorerPlayerTour: TourDefinition = {
   steps: [
     {
       target: '[data-tour="assignment-list"]',
-      titleKey: 'guide:tours.scorerPlayer.steps.assignmentList.title',
-      bodyKey: 'guide:tours.scorerPlayer.steps.assignmentList.body',
+      titleKey: 'guide:tours.scorerPlayer.steps.duty.title',
+      bodyKey: 'guide:tours.scorerPlayer.steps.duty.body',
       placement: 'bottom',
     },
     {
       target: '[data-tour="scorer-filters"]',
-      titleKey: 'guide:tours.scorerPlayer.steps.scorerFilters.title',
-      bodyKey: 'guide:tours.scorerPlayer.steps.scorerFilters.body',
+      titleKey: 'guide:tours.scorerPlayer.steps.confirm.title',
+      bodyKey: 'guide:tours.scorerPlayer.steps.confirm.body',
       placement: 'bottom',
     },
     {
       target: '[data-tour="delegation"]',
-      titleKey: 'guide:tours.scorerPlayer.steps.delegation.title',
-      bodyKey: 'guide:tours.scorerPlayer.steps.delegation.body',
-      placement: 'bottom',
-    },
-    {
-      target: '[data-tour="ical-export"]',
-      titleKey: 'guide:tours.scorerPlayer.steps.icalExport.title',
-      bodyKey: 'guide:tours.scorerPlayer.steps.icalExport.body',
-      placement: 'bottom',
-    },
-    {
-      target: '[data-tour="open-slots"]',
-      titleKey: 'guide:tours.scorerPlayer.steps.openSlots.title',
-      bodyKey: 'guide:tours.scorerPlayer.steps.openSlots.body',
+      titleKey: 'guide:tours.scorerPlayer.steps.delegate.title',
+      bodyKey: 'guide:tours.scorerPlayer.steps.delegate.body',
       placement: 'bottom',
     },
   ],

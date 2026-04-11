@@ -12,14 +12,8 @@ export const trainingPlayerTour: TourDefinition = {
   steps: [
     {
       target: '[data-tour="team-filter"]',
-      titleKey: 'guide:tours.trainingPlayer.steps.teamFilter.title',
-      bodyKey: 'guide:tours.trainingPlayer.steps.teamFilter.body',
-      placement: 'bottom',
-    },
-    {
-      target: '[data-tour="training-card"]',
-      titleKey: 'guide:tours.trainingPlayer.steps.trainingCard.title',
-      bodyKey: 'guide:tours.trainingPlayer.steps.trainingCard.body',
+      titleKey: 'guide:tours.trainingPlayer.steps.list.title',
+      bodyKey: 'guide:tours.trainingPlayer.steps.list.body',
       placement: 'bottom',
     },
     {
@@ -30,26 +24,14 @@ export const trainingPlayerTour: TourDefinition = {
     },
     {
       target: '[data-tour="training-note"]',
-      titleKey: 'guide:tours.trainingPlayer.steps.trainingNote.title',
-      bodyKey: 'guide:tours.trainingPlayer.steps.trainingNote.body',
+      titleKey: 'guide:tours.trainingPlayer.steps.absence.title',
+      bodyKey: 'guide:tours.trainingPlayer.steps.absence.body',
       placement: 'bottom',
-    },
-    {
-      target: '[data-tour="older-trainings"]',
-      titleKey: 'guide:tours.trainingPlayer.steps.olderTrainings.title',
-      bodyKey: 'guide:tours.trainingPlayer.steps.olderTrainings.body',
-      placement: 'top',
     },
     {
       target: '[data-tour="participation-dots"]',
-      titleKey: 'guide:tours.trainingPlayer.steps.participationDots.title',
-      bodyKey: 'guide:tours.trainingPlayer.steps.participationDots.body',
-      placement: 'bottom',
-    },
-    {
-      target: '[data-tour="coach-present"]',
-      titleKey: 'guide:tours.trainingPlayer.steps.coachPresent.title',
-      bodyKey: 'guide:tours.trainingPlayer.steps.coachPresent.body',
+      titleKey: 'guide:tours.trainingPlayer.steps.stats.title',
+      bodyKey: 'guide:tours.trainingPlayer.steps.stats.body',
       placement: 'bottom',
     },
   ],

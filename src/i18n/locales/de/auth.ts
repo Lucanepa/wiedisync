@@ -201,7 +201,7 @@ export default {
   plz: 'PLZ',
   ort: 'Ort',
   nationalitaet: 'Nationalität',
-  geschlecht: 'Geschlecht',
+  sex: 'Geschlecht',
   ahvNummer: 'AHV-Nummer',
   beitragskategorie: 'Beitragskategorie',
   managedByAdmin: 'Wird vom Admin verwaltet',

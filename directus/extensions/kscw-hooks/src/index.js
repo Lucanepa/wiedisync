@@ -1120,6 +1120,15 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     return m < 8 ? `${y - 1}/${String(y).slice(2)}` : `${y}/${String(y + 1).slice(2)}`
   }
 
+  // ── Normalize registration geschlecht to member sex (m/f) ───
+  function normalizeSex(val) {
+    if (!val) return null
+    const v = val.toLowerCase()
+    if (v === 'm' || v === 'männlich' || v === 'male') return 'm'
+    if (v === 'f' || v === 'weiblich' || v === 'female') return 'f'
+    return null
+  }
+
   // ── Map registration licence strings to member licence codes ───
   function mapLicences(lizenzStr, membershipType) {
     if (!lizenzStr) return []
@@ -1158,7 +1167,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       if (!existingMember.plz && reg.plz) updates.plz = reg.plz
       if (!existingMember.ort && reg.ort) updates.ort = reg.ort
       if (!existingMember.nationalitaet && reg.nationalitaet) updates.nationalitaet = reg.nationalitaet
-      if (!existingMember.geschlecht && reg.geschlecht) updates.geschlecht = reg.geschlecht
+      if (!existingMember.sex && reg.geschlecht) updates.sex = normalizeSex(reg.geschlecht)
       if (!existingMember.ahv_nummer && reg.ahv_nummer) updates.ahv_nummer = reg.ahv_nummer
       if (!existingMember.beitragskategorie && reg.beitragskategorie) updates.beitragskategorie = reg.beitragskategorie
       // Merge licences
@@ -1187,7 +1196,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
         ort: reg.ort || null,
         birthdate: reg.geburtsdatum || null,
         nationalitaet: reg.nationalitaet || null,
-        geschlecht: reg.geschlecht || null,
+        sex: normalizeSex(reg.geschlecht),
         ahv_nummer: reg.ahv_nummer || null,
         beitragskategorie: reg.beitragskategorie || null,
         licences: JSON.stringify(licences),

@@ -65,7 +65,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
   const [plz, setPlz] = useState('')
   const [ort, setOrt] = useState('')
   const [nationalitaet, setNationalitaet] = useState('')
-  const [geschlecht, setGeschlecht] = useState('')
+  const [sex, setSex] = useState('')
   const [ahvNummer, setAhvNummer] = useState('')
   const [clubdeskOpen, setClubdeskOpen] = useState(false)
 
@@ -94,7 +94,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
       setPlz(user.plz ?? '')
       setOrt(user.ort ?? '')
       setNationalitaet(user.nationalitaet ?? '')
-      setGeschlecht(user.geschlecht ?? '')
+      setSex(user.sex ?? '')
       setAhvNummer(user.ahv_nummer ?? '')
       setClubdeskOpen(false)
     }
@@ -201,7 +201,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
       payload.plz = plz
       payload.ort = ort
       payload.nationalitaet = nationalitaet
-      payload.geschlecht = geschlecht
+      payload.sex = sex
       payload.ahv_nummer = ahvNummer
 
       // Use FormData only when uploading a photo, otherwise plain object
@@ -232,7 +232,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
         plz: { old: user.plz || '', new: plz },
         ort: { old: user.ort || '', new: ort },
         nationalitaet: { old: user.nationalitaet || '', new: nationalitaet },
-        geschlecht: { old: user.geschlecht || '', new: geschlecht },
+        sex: { old: user.sex || '', new: sex },
         ahv_nummer: { old: user.ahv_nummer || '', new: ahvNummer },
       }
       const changes = Object.entries(clubdeskFields)
@@ -249,7 +249,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
             current_data: {
               anrede, first_name: firstName, last_name: lastName,
               email, phone, adresse, plz, ort,
-              birthdate, nationalitaet, geschlecht, ahv_nummer: ahvNummer,
+              birthdate, nationalitaet, sex, ahv_nummer: ahvNummer,
               beitragskategorie: user.beitragskategorie || '',
             },
           },
@@ -496,14 +496,14 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
                       </SelectContent>
                     </Select>
                   </FormField>
-                  <FormField label={t('geschlecht')}>
-                    <Select value={geschlecht} onValueChange={setGeschlecht}>
+                  <FormField label={t('sex')}>
+                    <Select value={sex} onValueChange={setSex}>
                       <SelectTrigger className="min-h-[44px]">
                         <SelectValue placeholder="—" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Männlich">{t('male')}</SelectItem>
-                        <SelectItem value="Weiblich">{t('female')}</SelectItem>
+                        <SelectItem value="m">{t('male')}</SelectItem>
+                        <SelectItem value="f">{t('female')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </FormField>

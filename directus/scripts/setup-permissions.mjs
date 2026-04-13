@@ -208,7 +208,7 @@ const MEMBER_VISIBLE_FIELDS = [
   'position', 'licences', 'user',
   'coach_approved_team', 'role', 'language', 'email',
   'requested_team', 'birthdate_visibility', 'hide_phone', 'phone',
-  'license_nr', 'geschlecht', 'licence_category', 'licence_activated', 'licence_validated',
+  'license_nr', 'sex', 'licence_category', 'licence_activated', 'licence_validated',
 ]
 
 /** Fields a member can update on their own profile */

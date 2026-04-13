@@ -15,6 +15,9 @@ import { relId, asObj } from '../../utils/relations'
 
 interface TeamAbsenceViewProps {
   teamIds: string[]
+  onEdit?: (absence: Absence) => void
+  onDelete?: (absenceId: string) => void
+  canEdit?: boolean
 }
 
 /** Convert team absences into CalendarEntry[] for MonthGrid */
@@ -43,14 +46,18 @@ function absencesToEntries(absences: Absence[], memberMap: Record<string, Member
   })
 }
 
-export default function TeamAbsenceView({ teamIds }: TeamAbsenceViewProps) {
+export default function TeamAbsenceView({ teamIds, onEdit, onDelete, canEdit }: TeamAbsenceViewProps) {
   const { t } = useTranslation('absences')
   const today = toISODate(new Date())
-  const fourWeeksLater = toISODate(new Date(Date.now() + 28 * 24 * 60 * 60 * 1000))
+  const oneYearLater = (() => {
+    const d = new Date()
+    d.setFullYear(d.getFullYear() + 1)
+    return toISODate(d)
+  })()
 
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list')
   const [startDate, setStartDate] = useState(today)
-  const [endDate, setEndDate] = useState(fourWeeksLater)
+  const [endDate, setEndDate] = useState(oneYearLater)
   const [month, setMonth] = useState<Date>(() => startOfMonth(new Date()))
   const [selectedEntry, setSelectedEntry] = useState<CalendarEntry | null>(null)
 
@@ -124,6 +131,9 @@ export default function TeamAbsenceView({ teamIds }: TeamAbsenceViewProps) {
                   key={a.id}
                   absence={a}
                   memberName={memberName}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                  canEdit={canEdit}
                 />
               )
             })}

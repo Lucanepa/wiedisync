@@ -20,20 +20,31 @@ interface AbsenceFormProps {
   absence?: Absence | null
   onSave: () => void
   onCancel: () => void
+  /** When true, coaches/responsibles can pick a team member */
+  forTeam?: boolean
+  /** Team IDs to scope the member picker */
+  teamIds?: string[]
 }
 
-export default function AbsenceForm({ open, absence, onSave, onCancel }: AbsenceFormProps) {
+export default function AbsenceForm({ open, absence, onSave, onCancel, forTeam, teamIds }: AbsenceFormProps) {
   const { t } = useTranslation('absences')
-  const { user } = useAuth()
-  const { effectiveIsAdmin } = useAdminMode()
+  const { user, coachTeamIds } = useAuth()
+  const { effectiveIsAdmin, effectiveIsCoach } = useAdminMode()
   const { create, update, isLoading } = useMutation<Absence>('absences')
-  // Admins: fetch all active members so they can create absences on behalf of others
+
+  // Show member picker for admins OR coaches/responsibles on team tab
+  const isCoachOrResponsible = coachTeamIds.length > 0 || effectiveIsCoach
+  const showMemberPicker = effectiveIsAdmin || (forTeam && isCoachOrResponsible)
+
+  // Admins: fetch all active members; coaches on team tab: fetch team members
   const { data: allMembersRaw } = useCollection<Member>('members', {
-    filter: { kscw_membership_active: { _eq: true } },
+    filter: effectiveIsAdmin
+      ? { kscw_membership_active: { _eq: true } }
+      : { _and: [{ kscw_membership_active: { _eq: true } }, { member_teams: { team: { _in: teamIds ?? [] } } }] },
     sort: ['last_name'],
     all: true,
     fields: ['id', 'first_name', 'last_name'],
-    enabled: effectiveIsAdmin,
+    enabled: showMemberPicker,
   })
   const visibleMembers = allMembersRaw ?? []
 
@@ -71,7 +82,7 @@ export default function AbsenceForm({ open, absence, onSave, onCancel }: Absence
     e.preventDefault()
     setValidationError('')
 
-    if (effectiveIsAdmin && !memberId) {
+    if (showMemberPicker && !memberId) {
       setValidationError(t('memberRequired'))
       return
     }
@@ -119,7 +130,7 @@ export default function AbsenceForm({ open, absence, onSave, onCancel }: Absence
       size="md"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        {effectiveIsAdmin && (
+        {showMemberPicker && (
           <SearchableSelect
             label={t('member')}
             placeholder={t('common:select')}

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { PartyPopper } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
+import { useAdminMode } from '../../hooks/useAdminMode'
 import { useCollection } from '../../lib/query'
 import { useMutation } from '../../hooks/useMutation'
 import { todayLocal } from '../../utils/dateHelpers'
@@ -36,7 +37,8 @@ function teamId(val: unknown): string {
 
 export default function EventsPage() {
   const { t } = useTranslation('events')
-  const { user, isCoach, isCoachOf, isAdmin, memberTeamIds, coachTeamIds, teamsLoading } = useAuth()
+  const { user, isCoach, isCoachOf, memberTeamIds, coachTeamIds, teamsLoading } = useAuth()
+  const { effectiveIsAdmin } = useAdminMode()
   // Merge member + coach teams for visibility
   const allUserTeamIds = useMemo(() => [...new Set([...memberTeamIds, ...coachTeamIds])], [memberTeamIds, coachTeamIds])
   const [formOpen, setFormOpen] = useState(false)
@@ -170,7 +172,7 @@ export default function EventsPage() {
 
       {allUserTeamIds.length > 1 && (
         <div className="mt-6" data-tour="event-team-filter">
-          <TeamFilter selected={selectedTeam} onChange={setSelectedTeam} limitToTeamIds={isAdmin ? undefined : allUserTeamIds} groupBySport={isAdmin} />
+          <TeamFilter selected={selectedTeam} onChange={setSelectedTeam} limitToTeamIds={effectiveIsAdmin ? undefined : allUserTeamIds} groupBySport={effectiveIsAdmin} />
         </div>
       )}
 
@@ -188,7 +190,7 @@ export default function EventsPage() {
             {events.map((event) => {
               // Coaches can only edit events linked to their teams (or club-wide with no teams)
               // Admins can edit all events
-              const canEdit = isAdmin || (isCoach && (
+              const canEdit = effectiveIsAdmin || (isCoach && (
                 event.teams.length === 0 ||
                 event.teams.some((tid) => isCoachOf(teamId(tid)))
               ))

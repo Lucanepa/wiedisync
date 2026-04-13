@@ -20,7 +20,7 @@ const FIELD_LABELS = {
   plz: 'PLZ',
   ort: 'Ort',
   nationalitaet: 'Nationalität',
-  geschlecht: 'Geschlecht',
+  sex: 'Geschlecht',
   ahv_nummer: 'AHV-Nummer',
 }
 
@@ -40,7 +40,7 @@ function buildCsv(data, teamNames) {
   const row = [
     data.anrede, data.first_name, data.last_name, data.email, data.phone,
     data.adresse, data.plz, data.ort, data.birthdate, data.nationalitaet,
-    data.geschlecht, data.ahv_nummer, teamNames, data.beitragskategorie,
+    data.sex, data.ahv_nummer, teamNames, data.beitragskategorie,
   ]
   return CSV_HEADERS.join(',') + '\n' + row.map(escCsv).join(',')
 }

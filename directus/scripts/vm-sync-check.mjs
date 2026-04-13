@@ -484,7 +484,7 @@ async function syncToMembers(rows) {
   const members = [];
   let page = 1;
   while (true) {
-    const url = `${DIRECTUS_URL}/items/members?fields=id,license_nr,geschlecht,licences,vm_email&filter[license_nr][_nnull]=true&limit=250&page=${page}`;
+    const url = `${DIRECTUS_URL}/items/members?fields=id,license_nr,sex,licences,vm_email&filter[license_nr][_nnull]=true&limit=250&page=${page}`;
     const res = await fetch(url, { headers });
     if (!res.ok) throw new Error(`Directus members list failed: ${res.status}`);
     const { data } = await res.json();
@@ -495,7 +495,7 @@ async function syncToMembers(rows) {
   console.log(`  Members with license_nr: ${members.length}`);
 
   // Build update payloads
-  const GENDER_MAP = { male: 'm', female: 'f' };
+  const GENDER_MAP = { male: 'm', female: 'f', m: 'm', f: 'f' };
   const updates = [];
   let matched = 0;
 
@@ -509,8 +509,8 @@ async function syncToMembers(rows) {
 
     // Gender
     const normalizedGender = GENDER_MAP[row.gender];
-    if (normalizedGender && normalizedGender !== member.geschlecht) {
-      payload.geschlecht = normalizedGender;
+    if (normalizedGender && normalizedGender !== member.sex) {
+      payload.sex = normalizedGender;
       changed = true;
     }
 

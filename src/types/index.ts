@@ -106,7 +106,7 @@ export interface Member extends BaseRecord {
   ort: string
   nationalitaet: string
   anrede: string
-  geschlecht: string
+  sex: string
   licence_category: string
   licence_activated: boolean
   licence_validated: boolean

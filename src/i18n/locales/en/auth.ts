@@ -201,7 +201,7 @@ export default {
   plz: 'Postal Code',
   ort: 'City',
   nationalitaet: 'Nationality',
-  geschlecht: 'Gender',
+  sex: 'Sex',
   ahvNummer: 'AHV Number',
   beitragskategorie: 'Fee Category',
   managedByAdmin: 'Managed by admin',

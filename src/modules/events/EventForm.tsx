@@ -251,7 +251,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
       description,
       teams: selectedTeams,
       created_by: user?.id,
-      respond_by: respondBy ? `${respondBy} ${respondByTime || '23:59'}:00` : null,
+      respond_by: respondBy ? `${respondBy.split('T')[0].split(' ')[0]} ${respondByTime || '23:59'}:00` : null,
       max_players: maxPlayers ? Number(maxPlayers) : null,
       min_participants: minParticipants ? Number(minParticipants) : null,
       require_note_if_absent: requireNoteIfAbsent,

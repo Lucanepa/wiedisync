@@ -73,9 +73,12 @@ export default function SidebarNotifications({
   function renderMessage(n: Notification): string {
     try {
       const data = n.body ? JSON.parse(n.body) : {}
-      return String(t(n.title, data))
+      const noLocation = (!data.hall && !data.location) || (data.hall === '' && data.location == null) || (data.location === '' && data.hall == null)
+      const key = noLocation && t(`${n.title}_no_hall`, { defaultValue: '' }) ? `${n.title}_no_hall` : n.title
+      // Strip :SS seconds from legacy times (e.g. "19:00:00" → "19:00")
+      return String(t(key, data)).replace(/(\d{2}:\d{2}):\d{2}/g, '$1')
     } catch {
-      return n.title
+      return String(n.title).replace(/(\d{2}:\d{2}):\d{2}/g, '$1')
     }
   }
 

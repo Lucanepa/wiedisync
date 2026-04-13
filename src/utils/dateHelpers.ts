@@ -24,10 +24,13 @@ export function formatWeekday(date: string): string {
 }
 
 export function formatTime(time: string): string {
-  // Handle full datetime strings like "2026-03-06 20:00:00"
-  const timePart = time.includes(' ') ? time.split(' ')[1] : time
-  // Parse H:mm or HH:mm (with optional seconds) and return HH:mm
-  const [h, m] = timePart.split(':')
+  // For ISO/datetime strings, use Date to correctly handle UTC→local conversion
+  if (time.includes('T') || (time.includes(' ') && time.includes('-'))) {
+    const d = new Date(time)
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+  }
+  // Plain time string (e.g. "20:00" or "20:00:00")
+  const [h, m] = time.split(':')
   return `${h.padStart(2, '0')}:${m}`
 }
 

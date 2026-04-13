@@ -510,9 +510,11 @@ function NewsRow({ notification, onMarkAsRead }: { notification: Notification; o
   const message = (() => {
     try {
       const data = notification.body ? JSON.parse(notification.body) : {}
-      return String(t(notification.title, data)).replace(/\s*@\s*$/, '')
+      const raw = String(t(notification.title, data))
+      // Strip trailing " @ " when hall is empty, and strip :SS seconds from legacy times
+      return raw.replace(/\s*@\s*$/, '').replace(/(\d{2}:\d{2}):\d{2}/g, '$1')
     } catch {
-      // Legacy notifications with plain text — strip seconds from times
+      // Legacy notifications with plain text body
       return notification.title.replace(/(\d{2}:\d{2}):\d{2}/g, '$1')
     }
   })()

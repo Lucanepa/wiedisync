@@ -660,11 +660,15 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       const trainingsInserted = await database.raw(`
         INSERT INTO notifications (member, type, title, body, activity_type, activity_id, team, read)
         SELECT mt.member, 'deadline_reminder',
-               'RSVP: Training ' || COALESCE(t.date::text, ''),
-               COALESCE(t.start_time::text, ''),
+               'deadline_training',
+               json_build_object(
+                 'date', COALESCE(to_char(t.date, 'DD.MM.YY'), ''),
+                 'hall', COALESCE(h.name, '')
+               )::text,
                'training', t.id::text, t.team, false
         FROM trainings t
         JOIN member_teams mt ON mt.team = t.team
+        LEFT JOIN halls h ON h.id = t.hall
         WHERE t.respond_by::date = ?::date
           AND t.team IS NOT NULL
           AND t.cancelled = false

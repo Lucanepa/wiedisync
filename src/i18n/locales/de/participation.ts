@@ -42,4 +42,5 @@ export default {
   warningNoCoach: 'Kein Coach anwesend',
   warningBelowMin: 'Weniger als {{min}} Teilnehmer ({{count}}/{{min}})',
   warnings: 'Warnungen',
+  all: 'Alle',
 } as const

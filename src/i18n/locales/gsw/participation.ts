@@ -42,4 +42,5 @@ export default {
   warningNoCoach: 'Kein Coach debi',
   warningBelowMin: 'Weniger als {{min}} Teilnehmer ({{count}}/{{min}})',
   warnings: 'Warnige',
+  all: 'Alli',
 } as const

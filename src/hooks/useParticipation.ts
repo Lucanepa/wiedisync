@@ -3,7 +3,7 @@ import { useCollection } from '../lib/query'
 import { useMutation } from './useMutation'
 import { useAuth } from './useAuth'
 import { useRealtime } from './useRealtime'
-import type { Participation, Absence } from '../types'
+import type { Participation, Absence, VolleyPosition } from '../types'
 import { absenceCoversActivity } from '../utils/absenceHelpers'
 
 export function useParticipation(
@@ -60,14 +60,24 @@ export function useParticipation(
   // Auto-decline is handled by the backend (Directus hooks) when absences
   // or activities are created. The frontend only displays the absence state.
 
-  const setStatus = useCallback(async (status: Participation['status'], note = '', guestCount = 0) => {
+  const setStatus = useCallback(async (
+    status: Participation['status'],
+    note = '',
+    guestCount = 0,
+    positions?: { position_1?: VolleyPosition | null; position_2?: VolleyPosition | null; position_3?: VolleyPosition | null },
+  ) => {
     if (!user) return
     // Optimistic update — show status immediately
     setOptimisticStatus(status)
     setSaveConfirmed(false)
+    const posFields = positions ? {
+      position_1: positions.position_1 || null,
+      position_2: positions.position_2 || null,
+      position_3: positions.position_3 || null,
+    } : {}
     try {
       if (participation) {
-        await update(participation.id, { status, note, guest_count: guestCount, is_staff: isStaff ?? false })
+        await update(participation.id, { status, note, guest_count: guestCount, is_staff: isStaff ?? false, ...posFields })
       } else {
         await create({
           member: user.id,
@@ -78,6 +88,7 @@ export function useParticipation(
           guest_count: guestCount,
           is_staff: isStaff ?? false,
           ...(sessionId ? { session_id: sessionId } : {}),
+          ...posFields,
         })
       }
       setSaveConfirmed(true)

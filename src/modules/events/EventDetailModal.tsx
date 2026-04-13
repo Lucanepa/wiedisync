@@ -16,7 +16,9 @@ import TasksSection from '../tasks/TasksSection'
 import { isFeatureEnabled } from '../../utils/featureToggles'
 import { Calendar, Clock, MapPin, Users, Check, MessageSquare, UserPlus } from 'lucide-react'
 import { flattenMemberIds } from '../../utils/relations'
-import type { Event, Team, EventSession, Participation } from '../../types'
+import type { Event, Team, EventSession, Participation, VolleyPosition } from '../../types'
+
+const VOLLEY_POSITIONS: VolleyPosition[] = ['Setter', 'Outside', 'Middle', 'Opposite', 'Libero', 'Universal']
 
 function asTeams(teams: unknown[] | null | undefined): Team[] {
   if (!Array.isArray(teams) || teams.length === 0) return []
@@ -224,6 +226,16 @@ function EventParticipation({ event, isStaff, isStaffParticipant }: { event: Eve
   const [guestCount, setGuestCount] = useState(0)
   const [noteRequiredError, setNoteRequiredError] = useState(false)
   const requireNote = !!event.require_note_if_absent
+  const showPositions = isFeatureEnabled(event.features_enabled, 'position_preferences')
+  const [pos1, setPos1] = useState<VolleyPosition | ''>(participation?.position_1 || '')
+  const [pos2, setPos2] = useState<VolleyPosition | ''>(participation?.position_2 || '')
+  const [pos3, setPos3] = useState<VolleyPosition | ''>(participation?.position_3 || '')
+
+  useEffect(() => {
+    setPos1(participation?.position_1 || '')
+    setPos2(participation?.position_2 || '')
+    setPos3(participation?.position_3 || '')
+  }, [participation?.position_1, participation?.position_2, participation?.position_3])
 
   useEffect(() => {
     setGuestCount(participation?.guest_count ?? 0)
@@ -246,9 +258,11 @@ function EventParticipation({ event, isStaff, isStaffParticipant }: { event: Eve
     return () => clearTimeout(timer)
   }, [noteSaved])
 
+  const positionsPayload = showPositions ? { position_1: pos1 || null, position_2: pos2 || null, position_3: pos3 || null } : undefined
+
   const saveNote = () => {
     if (noteText !== savedNote && effectiveStatus) {
-      setStatus(effectiveStatus as 'confirmed' | 'tentative' | 'declined', noteText, guestCount)
+      setStatus(effectiveStatus as 'confirmed' | 'tentative' | 'declined', noteText, guestCount, positionsPayload)
       setNoteSaved(true)
     }
   }
@@ -257,7 +271,18 @@ function EventParticipation({ event, isStaff, isStaffParticipant }: { event: Eve
     const newCount = Math.max(0, guestCount + delta)
     setGuestCount(newCount)
     if (effectiveStatus) {
-      await setStatus(effectiveStatus as 'confirmed' | 'tentative' | 'declined', noteText, newCount)
+      await setStatus(effectiveStatus as 'confirmed' | 'tentative' | 'declined', noteText, newCount, positionsPayload)
+    }
+  }
+
+  async function savePositions(p1: VolleyPosition | '', p2: VolleyPosition | '', p3: VolleyPosition | '') {
+    if (effectiveStatus) {
+      await setStatus(
+        effectiveStatus as 'confirmed' | 'tentative' | 'declined',
+        noteText,
+        guestCount,
+        { position_1: p1 || null, position_2: p2 || null, position_3: p3 || null },
+      )
     }
   }
 
@@ -292,7 +317,7 @@ function EventParticipation({ event, isStaff, isStaffParticipant }: { event: Eve
                     return
                   }
                   setNoteRequiredError(false)
-                  setStatus(status, noteText, guestCount)
+                  setStatus(status, noteText, guestCount, showPositions ? { position_1: pos1 || null, position_2: pos2 || null, position_3: pos3 || null } : undefined)
                 }}
                 className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${colors[status]}`}
               >
@@ -341,6 +366,41 @@ function EventParticipation({ event, isStaff, isStaffParticipant }: { event: Eve
               {t('noteSaved')}
             </span>
           )}
+        </div>
+      )}
+
+      {/* Position preferences — only when feature enabled and user confirmed */}
+      {showPositions && effectiveStatus === 'confirmed' && (
+        <div className="space-y-1.5">
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('positions', 'Position Preferences')}</span>
+          {([
+            { label: '1.', value: pos1, set: setPos1 },
+            { label: '2.', value: pos2, set: setPos2 },
+            { label: '3.', value: pos3, set: setPos3 },
+          ] as const).map(({ label, value, set }, i) => {
+            const others = [pos1, pos2, pos3].filter((_, j) => j !== i).filter(Boolean)
+            return (
+              <div key={label} className="flex items-center gap-2">
+                <span className="w-5 text-right text-xs font-medium text-gray-400">{label}</span>
+                <select
+                  value={value}
+                  onChange={(e) => {
+                    const v = e.target.value as VolleyPosition | ''
+                    set(v)
+                    const newPos = [pos1, pos2, pos3] as (VolleyPosition | '')[]
+                    newPos[i] = v
+                    savePositions(newPos[0], newPos[1], newPos[2])
+                  }}
+                  className="flex-1 rounded-md border border-gray-200 bg-transparent px-2.5 py-1 text-sm text-gray-700 focus:border-brand-400 focus:outline-none dark:border-gray-600 dark:text-gray-300 dark:focus:border-brand-500"
+                >
+                  <option value="">{i === 0 ? t('positionRequired', 'Select position...') : t('positionOptional', 'Optional')}</option>
+                  {VOLLEY_POSITIONS.map((pos) => (
+                    <option key={pos} value={pos} disabled={others.includes(pos)}>{pos}</option>
+                  ))}
+                </select>
+              </div>
+            )
+          })}
         </div>
       )}
 

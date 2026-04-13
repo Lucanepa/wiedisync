@@ -71,6 +71,12 @@ export default function ParticipationRosterModal({
   const [absences, setAbsences] = useState<Absence[]>([])
   const [staffMembers, setStaffMembers] = useState<Member[]>([])
   const [activeSessionTab, setActiveSessionTab] = useState<string | null>(null) // null = overall
+  const [statusFilter, setStatusFilter] = useState<string | null>(null) // null = "All"
+
+  // Reset filter when modal opens
+  useEffect(() => {
+    if (open) setStatusFilter(null)
+  }, [open])
 
   // Fetch team leadership roles (coach, captain, team_responsible)
   const { data: teamsRaw } = useCollection<Team>('teams', {
@@ -316,6 +322,19 @@ export default function ParticipationRosterModal({
     return p?.status ?? null
   }
 
+  const filteredMemberList = useMemo(() => {
+    if (statusFilter === null) return memberList
+    return memberList.filter((m) => {
+      const s = getMemberStatus(m.id)
+      if (statusFilter === 'confirmed') return s === 'confirmed'
+      if (statusFilter === 'tentative') return s === 'tentative'
+      if (statusFilter === 'declined') return s === 'declined' || (absentMemberIds.has(m.id) && !participations.some(p => p.member === m.id))
+      if (statusFilter === 'no_response') return s === null && !absentMemberIds.has(m.id)
+      return true
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter, memberList, participations, absences])
+
   const statusColors: Record<string, string> = {
     confirmed: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
     tentative: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
@@ -389,6 +408,31 @@ export default function ParticipationRosterModal({
         )}
       </div>
 
+      {/* Status filter chips */}
+      {memberList.length > 0 && (
+        <div className="mb-4 flex gap-1.5 overflow-x-auto">
+          {([
+            { key: null, label: t('all'), count: memberList.length, activeClass: 'bg-gray-600 text-white dark:bg-gray-400 dark:text-gray-900' },
+            { key: 'confirmed', label: t('confirmed'), count: confirmed, activeClass: 'bg-green-600 text-white dark:bg-green-500 dark:text-white' },
+            { key: 'tentative', label: t('tentative'), count: tentative, activeClass: 'bg-yellow-500 text-white dark:bg-yellow-500 dark:text-white' },
+            { key: 'declined', label: t('declined'), count: declined, activeClass: 'bg-red-600 text-white dark:bg-red-500 dark:text-white' },
+            { key: 'no_response', label: t('notResponded'), count: notResponded, activeClass: 'bg-gray-500 text-white dark:bg-gray-500 dark:text-white' },
+          ] as const).map((chip) => (
+            <button
+              key={chip.key ?? 'all'}
+              onClick={() => setStatusFilter(chip.key)}
+              className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                statusFilter === chip.key
+                  ? chip.activeClass
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
+              }`}
+            >
+              {chip.key === null ? chip.label : `${chip.label} (${chip.count})`}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Deadline banner */}
       {respondBy && (
         <div className={`mb-4 rounded-lg px-3 py-2 text-sm ${
@@ -426,7 +470,7 @@ export default function ParticipationRosterModal({
         <div className="py-8 text-center text-gray-500 dark:text-gray-400">{t('noResponses')}</div>
       ) : (
         <div className="max-h-[60vh] overflow-y-auto rounded-lg border dark:border-gray-700">
-          {memberList.map((member) => {
+          {filteredMemberList.map((member) => {
             const status = getMemberStatus(member.id)
             const participation = participations.find(p => p.member === member.id)
 

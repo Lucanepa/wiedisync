@@ -510,7 +510,7 @@ function NewsRow({ notification, onMarkAsRead }: { notification: Notification; o
   const message = (() => {
     try {
       const data = notification.body ? JSON.parse(notification.body) : {}
-      return String(t(notification.title, data))
+      return String(t(notification.title, data)).replace(/\s*@\s*$/, '')
     } catch {
       return notification.title
     }

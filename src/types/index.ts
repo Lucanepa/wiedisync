@@ -63,6 +63,7 @@ export interface FeatureToggles {
   carpool?: boolean
   polls?: boolean
   show_rsvp_time?: boolean
+  position_preferences?: boolean
 }
 
 export interface TeamSettings extends FeatureToggles {
@@ -380,6 +381,8 @@ export interface HallEvent extends BaseRecord {
   source: string
 }
 
+export type VolleyPosition = 'Setter' | 'Outside' | 'Middle' | 'Opposite' | 'Libero' | 'Universal'
+
 export interface Participation extends BaseRecord {
   member: string
   activity_type: 'training' | 'game' | 'event'
@@ -390,7 +393,9 @@ export interface Participation extends BaseRecord {
   guest_count: number
   is_staff: boolean
   waitlisted_at: string
-
+  position_1?: VolleyPosition | null
+  position_2?: VolleyPosition | null
+  position_3?: VolleyPosition | null
 }
 
 export interface UserLog extends BaseRecord {

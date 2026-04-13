@@ -112,6 +112,7 @@ export default function AbsencesPage() {
   }
 
   const hasTeams = memberTeamIds.length > 0 || coachTeamIds.length > 0 || effectiveIsAdmin
+  const isCoachOrResponsible = coachTeamIds.length > 0 || effectiveIsCoach
   const showMineContent = activeTab === 'mine' || !hasTeams
 
   return (
@@ -125,7 +126,7 @@ export default function AbsencesPage() {
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('subtitle')}</p>
         </div>
         <div className="flex gap-2">
-          {activeTab !== 'weekly' && (
+          {activeTab !== 'weekly' && (activeTab !== 'team' || isCoachOrResponsible) && (
             <Button data-tour="import-absences" variant="outline" onClick={() => setImportOpen(true)}>
               <Upload className="mr-2 h-4 w-4" />
               {t('importAbsences')}
@@ -140,7 +141,7 @@ export default function AbsencesPage() {
             >
               {t('newWeekly')}
             </Button>
-          ) : (
+          ) : activeTab === 'team' && !isCoachOrResponsible ? null : (
             <Button
               data-tour="new-absence"
               onClick={() => {
@@ -224,7 +225,12 @@ export default function AbsencesPage() {
         <div className="mt-6" data-tour="team-absences">
           <TeamFilter selected={selectedTeam} onChange={setSelectedTeam} limitToTeamIds={visibleTeamIds} />
           <div className="mt-4">
-            <TeamAbsenceView teamIds={effectiveTeamIds} />
+            <TeamAbsenceView
+              teamIds={effectiveTeamIds}
+              onEdit={handleEdit}
+              onDelete={setDeletingId}
+              canEdit
+            />
           </div>
         </div>
       ) : activeTab === 'weekly' ? (
@@ -259,6 +265,8 @@ export default function AbsencesPage() {
           setFormOpen(false)
           setEditingAbsence(null)
         }}
+        forTeam={activeTab === 'team'}
+        teamIds={effectiveTeamIds}
       />
 
       <WeeklyUnavailabilityForm
@@ -269,6 +277,8 @@ export default function AbsencesPage() {
           setWeeklyFormOpen(false)
           setEditingWeekly(null)
         }}
+        forTeam={activeTab === 'team'}
+        teamIds={effectiveTeamIds}
       />
 
       <AbsenceImportModal

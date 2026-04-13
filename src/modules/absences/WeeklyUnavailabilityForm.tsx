@@ -21,21 +21,27 @@ interface WeeklyUnavailabilityFormProps {
   absence?: Absence | null
   onSave: () => void
   onCancel: () => void
+  forTeam?: boolean
+  teamIds?: string[]
 }
 
-export default function WeeklyUnavailabilityForm({ open, absence, onSave, onCancel }: WeeklyUnavailabilityFormProps) {
+export default function WeeklyUnavailabilityForm({ open, absence, onSave, onCancel, forTeam, teamIds }: WeeklyUnavailabilityFormProps) {
   const { t } = useTranslation('absences')
-  const { user } = useAuth()
-  const { effectiveIsAdmin } = useAdminMode()
+  const { user, coachTeamIds } = useAuth()
+  const { effectiveIsAdmin, effectiveIsCoach } = useAdminMode()
   const { create, update, isLoading } = useMutation<Absence>('absences')
 
-  // Admins: fetch all active members so they can create absences on behalf of others
+  const isCoachOrResponsible = coachTeamIds.length > 0 || effectiveIsCoach
+  const showMemberPicker = effectiveIsAdmin || (forTeam && isCoachOrResponsible)
+
   const { data: allMembersRaw } = useCollection<Member>('members', {
-    filter: { kscw_membership_active: { _eq: true } },
+    filter: effectiveIsAdmin
+      ? { kscw_membership_active: { _eq: true } }
+      : { _and: [{ kscw_membership_active: { _eq: true } }, { member_teams: { team: { _in: teamIds ?? [] } } }] },
     sort: ['last_name'],
     all: true,
     fields: ['id', 'first_name', 'last_name'],
-    enabled: effectiveIsAdmin,
+    enabled: showMemberPicker,
   })
   const visibleMembers = allMembersRaw ?? []
 
@@ -79,7 +85,7 @@ export default function WeeklyUnavailabilityForm({ open, absence, onSave, onCanc
     e.preventDefault()
     setValidationError('')
 
-    if (effectiveIsAdmin && !memberId) {
+    if (showMemberPicker && !memberId) {
       setValidationError(t('memberRequired'))
       return
     }
@@ -132,7 +138,7 @@ export default function WeeklyUnavailabilityForm({ open, absence, onSave, onCanc
       size="md"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        {effectiveIsAdmin && (
+        {showMemberPicker && (
           <SearchableSelect
             label={t('member')}
             placeholder={t('common:select')}

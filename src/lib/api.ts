@@ -113,6 +113,12 @@ export function isAuthenticated(): boolean {
   return !!getAccessToken()
 }
 
+/** Detect Directus "no permission" errors (token refresh race). */
+function isPermissionError(err: unknown): boolean {
+  const msg = (err as { message?: string })?.message ?? ''
+  return msg.includes("don't have permission") || msg.includes('does not exist')
+}
+
 // ── Data helpers ────────────────────────────────────────────────────
 
 /**
@@ -202,6 +208,15 @@ export async function fetchItems<T = Record<string, unknown>>(
     const items = await client.request<T[]>(readItems(collection, q as never))
     return stringifyIds(items)
   } catch (err) {
+    // Token refresh race: SDK sent an expired token, Directus rejected as "root".
+    // Retry once after forcing a token refresh.
+    if (isPermissionError(err) && isAuthenticated()) {
+      try {
+        await refreshAuth()
+        const items = await client.request<T[]>(readItems(collection, q as never))
+        return stringifyIds(items)
+      } catch { /* fall through to original error */ }
+    }
     captureApiError(err, { operation: 'fetchItems', collection, payload: q as Record<string, unknown> })
     throw err
   }
@@ -235,6 +250,13 @@ export async function fetchItem<T = Record<string, unknown>>(
     const item = await client.request<T>(readItem(collection, id, query as never))
     return stringifyId(item)
   } catch (err) {
+    if (isPermissionError(err) && isAuthenticated()) {
+      try {
+        await refreshAuth()
+        const item = await client.request<T>(readItem(collection, id, query as never))
+        return stringifyId(item)
+      } catch { /* fall through */ }
+    }
     captureApiError(err, { operation: 'fetchItem', collection, recordId: id })
     throw err
   }

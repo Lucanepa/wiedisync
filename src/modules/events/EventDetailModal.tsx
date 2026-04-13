@@ -391,7 +391,7 @@ function EventParticipation({ event, isStaff, isStaffParticipant }: { event: Eve
                     newPos[i] = v
                     savePositions(newPos[0], newPos[1], newPos[2])
                   }}
-                  className="flex-1 rounded-md border border-gray-200 bg-transparent px-2.5 py-1 text-sm text-gray-700 focus:border-brand-400 focus:outline-none dark:border-gray-600 dark:text-gray-300 dark:focus:border-brand-500"
+                  className="flex-1 rounded-md border border-gray-200 bg-transparent px-2.5 py-1 text-sm text-gray-700 focus:border-brand-400 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:focus:border-brand-500"
                 >
                   <option value="">{i === 0 ? t('positionRequired', 'Select position...') : t('positionOptional', 'Optional')}</option>
                   {VOLLEY_POSITIONS.map((pos) => (

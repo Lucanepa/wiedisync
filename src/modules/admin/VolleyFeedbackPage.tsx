@@ -120,8 +120,6 @@ export default function VolleyFeedbackPage() {
     [items, teamFilter],
   )
 
-  const maxBarHeight = 140
-
   function exportCSV() {
     const headers = ['Date', 'Name', 'Anonymous', 'Functions', 'Teams', 'Club', 'Board', 'TK Leadership', 'Training', 'Communication', 'Feedback', 'Ideas', 'Other']
     const rows = filtered.map(i => [
@@ -151,7 +149,7 @@ export default function VolleyFeedbackPage() {
     <div className="mx-auto max-w-4xl space-y-4 p-4">
       <h1 className="text-xl font-bold">Volley Feedback</h1>
 
-      {/* Summary cards */}
+      {/* Summary + rating cards */}
       <DashboardSection id="vf-summary" title={lang === 'de' ? 'Übersicht' : 'Overview'} icon="📊" isLoading={isLoading} error={error?.message}>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div className="rounded-lg bg-primary/5 p-3 text-center">
@@ -162,37 +160,12 @@ export default function VolleyFeedbackPage() {
             <div className="text-2xl font-bold text-primary">{anonCount}</div>
             <div className="text-xs text-muted-foreground">{lang === 'de' ? 'Anonym' : 'Anonymous'}</div>
           </div>
-          <div className="rounded-lg bg-primary/5 p-3 text-center">
-            <div className="text-2xl font-bold text-primary">{averages.rating_verein ? averages.rating_verein.toFixed(1) : '–'}</div>
-            <div className="text-xs text-muted-foreground">⌀ {lang === 'de' ? 'Verein' : 'Club'}</div>
-          </div>
-          <div className="rounded-lg bg-primary/5 p-3 text-center">
-            <div className="text-2xl font-bold text-primary">{averages.rating_training ? averages.rating_training.toFixed(1) : '–'}</div>
-            <div className="text-xs text-muted-foreground">⌀ Training</div>
-          </div>
-        </div>
-      </DashboardSection>
-
-      {/* Vertical bar chart */}
-      <DashboardSection id="vf-chart" title={lang === 'de' ? 'Durchschnittliche Bewertungen' : 'Average Ratings'} icon="📈" isLoading={isLoading}>
-        <div className="flex items-end justify-around gap-2" style={{ height: maxBarHeight + 40 }}>
           {RATING_KEYS.map(key => {
             const avg = averages[key] || 0
-            const height = Math.round((avg / 5) * maxBarHeight)
             return (
-              <div key={key} className="flex flex-col items-center gap-1">
-                <span className="text-xs font-bold text-primary">{avg ? avg.toFixed(1) : '–'}</span>
-                <div
-                  className="w-10 rounded-t-md sm:w-12"
-                  style={{
-                    height,
-                    minHeight: 4,
-                    background: 'linear-gradient(to top, hsl(var(--primary)), hsl(var(--primary) / 0.7))',
-                  }}
-                />
-                <span className="text-[0.65rem] text-muted-foreground text-center leading-tight">
-                  {RATING_LABELS[key][lang]}
-                </span>
+              <div key={key} className="rounded-lg bg-primary/5 p-3 text-center">
+                <div className="text-2xl font-bold text-primary">{avg ? avg.toFixed(1) : '–'}</div>
+                <div className="text-xs text-muted-foreground">⌀ {RATING_LABELS[key][lang]}</div>
               </div>
             )
           })}

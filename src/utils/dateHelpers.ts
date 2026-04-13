@@ -182,7 +182,8 @@ export function getDayName(dayOfWeek: number): string {
  */
 export function parseRespondByTime(respondBy: string | undefined | null, fallbackTime?: string): { date: string; time: string } {
   if (!respondBy) return { date: '', time: '' }
-  const [date, rawTime] = respondBy.split(' ')
+  const normalized = respondBy.replace('T', ' ')
+  const [date, rawTime] = normalized.split(' ')
   const hasExplicitTime = rawTime && rawTime !== '00:00:00'
   const time = hasExplicitTime ? rawTime.slice(0, 5) : (fallbackTime || '')
   return { date: date || '', time }

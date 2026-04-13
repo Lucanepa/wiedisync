@@ -112,8 +112,12 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
     if (event) {
       setTitle(event.title)
       setEventType(event.event_type)
-      setStartDate(event.start_date?.split(' ')[0] ?? '')
-      setEndDate(event.end_date?.split(' ')[0] ?? '')
+      setStartDate(event.all_day
+        ? (event.start_date?.split('T')[0] ?? '')
+        : (event.start_date?.slice(0, 16) ?? ''))
+      setEndDate(event.all_day
+        ? (event.end_date?.split('T')[0] ?? '')
+        : (event.end_date?.slice(0, 16) ?? ''))
       setAllDay(event.all_day)
       setLocation(event.location ?? '')
       setDescription(event.description ?? '')
@@ -151,7 +155,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
     if (event && existingSessions.length > 0) {
       setSessions(existingSessions.map((s) => ({
         id: s.id,
-        date: s.date?.split(' ')[0] ?? '',
+        date: s.date?.split('T')[0] ?? '',
         start_time: s.start_time ?? '',
         end_time: s.end_time ?? '',
         label: s.label ?? '',

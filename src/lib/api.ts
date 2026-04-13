@@ -136,6 +136,8 @@ const KEEP_AS_NUMBER = new Set([
   'training_min_participants', 'training_respond_by_days',
   'guest_count', 'confirmed_proposal', 'seats_available',
   'respond_by_days', 'count',
+  'rating_verein', 'rating_vorstand', 'rating_tk_leitung',
+  'rating_training', 'rating_kommunikation',
 ])
 
 /** Coerce Directus integer IDs/FKs to strings for frontend compat. */

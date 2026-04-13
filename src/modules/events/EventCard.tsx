@@ -136,11 +136,11 @@ export default function EventCard({ event, onClick, onEdit, onDelete, onOpenRost
       {/* Details */}
       <p className="mt-1.5 text-sm text-gray-600 dark:text-gray-400">
         {formatDate(event.start_date)}
-        {!event.all_day && event.start_date?.includes(' ') && `, ${formatTime(event.start_date)}`}
-        {!event.all_day && event.end_date?.includes(' ') && event.start_date?.split(' ')[0] === event.end_date?.split(' ')[0]
+        {!event.all_day && `, ${formatTime(event.start_date)}`}
+        {!event.all_day && event.start_date?.split('T')[0] === event.end_date?.split('T')[0]
           ? `–${formatTime(event.end_date)}`
-          : event.start_date !== event.end_date && (
-            ` — ${formatDate(event.end_date)}${!event.all_day && event.end_date?.includes(' ') ? `, ${formatTime(event.end_date)}` : ''}`
+          : event.start_date?.split('T')[0] !== event.end_date?.split('T')[0] && (
+            ` — ${formatDate(event.end_date)}${!event.all_day ? `, ${formatTime(event.end_date)}` : ''}`
           )}
         {event.all_day && ` · ${t('allDay')}`}
       </p>
@@ -176,7 +176,7 @@ export default function EventCard({ event, onClick, onEdit, onDelete, onOpenRost
           <ParticipationButton
             activityType="event"
             activityId={event.id}
-            activityDate={event.start_date?.split(' ')[0]}
+            activityDate={event.start_date?.split('T')[0]}
             teamId={teamId(event.teams?.[0])}
             respondBy={event.respond_by}
             maxPlayers={event.max_players}

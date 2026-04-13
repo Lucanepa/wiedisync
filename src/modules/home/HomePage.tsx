@@ -512,7 +512,8 @@ function NewsRow({ notification, onMarkAsRead }: { notification: Notification; o
       const data = notification.body ? JSON.parse(notification.body) : {}
       return String(t(notification.title, data)).replace(/\s*@\s*$/, '')
     } catch {
-      return notification.title
+      // Legacy notifications with plain text — strip seconds from times
+      return notification.title.replace(/(\d{2}:\d{2}):\d{2}/g, '$1')
     }
   })()
 

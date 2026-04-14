@@ -1,6 +1,8 @@
 import { useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Download } from 'lucide-react'
 import { createRecord } from '../../../lib/api'
+import { toXlsx, downloadBlob } from '../../admin/utils/exportResults'
 
 interface ImportRow {
   Datum: string
@@ -16,6 +18,16 @@ export default function ExcelImportPanel() {
   const [preview, setPreview] = useState<ImportRow[]>([])
   const [importing, setImporting] = useState(false)
   const [result, setResult] = useState<string | null>(null)
+
+  async function handleDownloadTemplate() {
+    const columns = ['Datum', 'Heimteam', 'Gastteam', 'Liga', 'Runde']
+    const exampleRows = [
+      ['2026-10-05', 'KSCW H2', 'VBC Zürich H3', '3. Liga', 'Hinrunde'],
+      ['2026-10-12', 'KSCW D1', 'TV Uster D2', '2. Liga', 'Hinrunde'],
+    ]
+    const blob = await toXlsx(columns, exampleRows)
+    downloadBlob(blob, 'game_import_template.xlsx')
+  }
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -69,16 +81,26 @@ export default function ExcelImportPanel() {
       <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">{t('excelImport')}</h2>
 
       <p className="mb-3 text-sm text-gray-600 dark:text-gray-400">
-        Spalten: Datum, Heimteam, Gastteam, Liga, Runde
+        {t('importColumnsHint')}
       </p>
 
-      <input
-        ref={fileRef}
-        type="file"
-        accept=".xlsx,.xls"
-        onChange={handleFileChange}
-        className="mb-3 text-sm text-gray-700 dark:text-gray-300"
-      />
+      <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".xlsx,.xls"
+          onChange={handleFileChange}
+          className="text-sm text-gray-700 dark:text-gray-300 file:mr-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-gray-700 dark:file:bg-gray-700 dark:file:text-gray-300"
+        />
+        <button
+          type="button"
+          onClick={handleDownloadTemplate}
+          className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+        >
+          <Download className="h-3.5 w-3.5" />
+          {t('downloadTemplate')}
+        </button>
+      </div>
 
       {preview.length > 0 && (
         <>

@@ -67,6 +67,8 @@ export default {
   preview: 'Vorschau',
   importSuccess: '{{count}} Spiele importiert',
   downloadExcel: 'Excel herunterladen',
+  downloadTemplate: 'Vorlage herunterladen',
+  importColumnsHint: 'Spalten: Datum, Heimteam, Gastteam, Liga, Runde',
 
   // Public opponent flow
   publicTitle: 'Spieltermine KSCW',

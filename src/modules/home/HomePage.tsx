@@ -734,28 +734,42 @@ function AppointmentRow({ appointment, onClick, participationStatus }: {
 
   return (
     <div
-      className="grid cursor-pointer items-center border-b border-gray-100 last:border-b-0 hover:bg-gray-50 active:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-700/50 dark:active:bg-gray-700"
-      style={{ gridTemplateColumns: 'auto 4.5rem 1.25rem 1fr auto', columnGap: '5px' }}
+      className="cursor-pointer border-b border-gray-100 last:border-b-0 hover:bg-gray-50 active:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-700/50 dark:active:bg-gray-700"
       onClick={onClick}
     >
-      {/* Participation status vertical banner */}
-      {user && effectiveStatus ? (
-        <div className={`w-1 self-stretch ${statusBorderColor[effectiveStatus] ?? ''}`} />
-      ) : (
-        <div className="w-1" />
-      )}
+      <div className="flex items-stretch">
+        {/* Participation status vertical banner — spans full height including counter row */}
+        {user && effectiveStatus ? (
+          <div className={`w-1 shrink-0 ${statusBorderColor[effectiveStatus] ?? ''}`} />
+        ) : (
+          <div className="w-1 shrink-0" />
+        )}
 
-      <div className="py-2.5 pl-3 text-xs text-gray-500 dark:text-gray-400">
-        <div>{weekday}</div>
-        <div>{dateStr}</div>
-        {timeStr && <div>{timeStr}</div>}
-      </div>
-      <span className="text-gray-500 dark:text-gray-400">{typeIcon[appointment.type]}</span>
-      <p className="min-w-0 truncate px-2 text-sm text-gray-900 dark:text-gray-100">{label}</p>
+        <div className="min-w-0 flex-1">
+          {/* Main info row */}
+          <div
+            className="grid items-center"
+            style={{ gridTemplateColumns: '4.5rem 1.25rem 1fr auto', columnGap: '5px' }}
+          >
+            <div className="py-2.5 pl-3 text-xs text-gray-500 dark:text-gray-400">
+              <div>{weekday}</div>
+              <div>{dateStr}</div>
+              {timeStr && <div>{timeStr}</div>}
+            </div>
+            <span className="text-gray-500 dark:text-gray-400">{typeIcon[appointment.type]}</span>
+            <p className="min-w-0 truncate px-2 text-sm text-gray-900 dark:text-gray-100">{label}</p>
 
-      {/* Participation summary */}
-      <div className="shrink-0 pr-3">
-        <ParticipationSummary activityType={appointment.type} activityId={appointment.data.id} stacked />
+            {/* Desktop: participation counters stacked on the right */}
+            <div className="hidden shrink-0 pr-3 md:block">
+              <ParticipationSummary activityType={appointment.type} activityId={appointment.data.id} stacked />
+            </div>
+          </div>
+
+          {/* Mobile: participation counters as a row beneath event details */}
+          <div className="pb-2 pl-[calc(5.75rem+10px)] md:hidden">
+            <ParticipationSummary activityType={appointment.type} activityId={appointment.data.id} compact />
+          </div>
+        </div>
       </div>
     </div>
   )

@@ -583,7 +583,7 @@ async function main() {
     'teams_coaches', 'teams_responsibles', 'events_members',
     'volley_feedback',
     'tasks', 'task_templates', 'carpools', 'carpool_passengers',
-    'polls', 'poll_votes', 'team_requests',
+    'polls', 'poll_votes', 'team_requests', 'registrations',
     'game_scheduling_seasons', 'game_scheduling_slots',
     'game_scheduling_opponents', 'game_scheduling_bookings',
     'query_templates', 'sv_vm_check',

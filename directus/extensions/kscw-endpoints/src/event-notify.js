@@ -137,31 +137,40 @@ export function registerEventNotify(router, { services, database, getSchema, log
             ? `${weekday(event.start_date)}, ${formatDateCH(event.start_date)}`
             : ''
 
+          let emailsSent = 0
+          let emailsFailed = 0
           for (const member of members) {
-            const greeting = member.first_name ? `Hallo ${member.first_name}` : 'Hallo'
-            const body = buildInfoCard([
-              { label: 'Anlass', value: event.title },
-              ...(dateStr ? [{ label: 'Datum', value: dateStr, halfWidth: true }] : []),
-              ...(event.location ? [{ label: 'Ort', value: event.location, halfWidth: true }] : []),
-            ])
-            + (event.description ? `<div style="font-size:14px;color:#cbd5e1;margin-top:12px">${event.description}</div>` : '')
+            try {
+              const greeting = member.first_name ? `Hallo ${member.first_name}` : 'Hallo'
+              const body = buildInfoCard([
+                { label: 'Anlass', value: event.title },
+                ...(dateStr ? [{ label: 'Datum', value: dateStr, halfWidth: true }] : []),
+                ...(event.location ? [{ label: 'Ort', value: event.location, halfWidth: true }] : []),
+              ])
+              + (event.description ? `<div style="font-size:14px;color:#cbd5e1;margin-top:12px">${event.description}</div>` : '')
 
-            const html = buildEmailLayout(body, {
-              title: 'Einladung',
-              subtitle: event.title,
-              greeting,
-              ctaUrl: `${FRONTEND_URL}/events`,
-              ctaLabel: 'Antworten',
-            })
+              const html = buildEmailLayout(body, {
+                title: 'Einladung',
+                subtitle: event.title,
+                greeting,
+                ctaUrl: `${FRONTEND_URL}/events`,
+                ctaLabel: 'Antworten',
+              })
 
-            await mailService.send({
-              to: member.email,
-              subject: `Einladung: ${event.title}`,
-              html,
-            })
+              await mailService.send({
+                to: member.email,
+                subject: `Einladung: ${event.title}`,
+                html,
+              })
+              emailsSent++
+            } catch (perEmailErr) {
+              emailsFailed++
+              logger.warn(`Email to ${member.email} failed: ${perEmailErr.message}`)
+            }
           }
+          logger.info(`Event invite emails: ${emailsSent} sent, ${emailsFailed} failed out of ${members.length}`)
         } catch (emailErr) {
-          logger.warn('Email invite failed:', emailErr.message)
+          logger.warn('Email invite batch failed: ' + emailErr.message)
         }
       }
 

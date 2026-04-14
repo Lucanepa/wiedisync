@@ -41,7 +41,7 @@ export default function TrainingsPage() {
   const { user, isCoach, isCoachOf, memberTeamIds, coachTeamIds, teamsLoading } = useAuth()
   // Merge member + coach teams for visibility
   const allUserTeamIds = useMemo(() => [...new Set([...memberTeamIds, ...coachTeamIds])], [memberTeamIds, coachTeamIds])
-  const { effectiveIsAdmin } = useAdminMode()
+  const { effectiveIsAdmin, effectiveIsVorstand } = useAdminMode()
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null)
   const [autoSelected, setAutoSelected] = useState(false)
   const [showPast, setShowPast] = useState(false)
@@ -189,7 +189,7 @@ export default function TrainingsPage() {
       </div>
 
       <div className="mt-6" data-tour="team-filter">
-        <TeamFilter selected={selectedTeam} onChange={setSelectedTeam} limitToTeamIds={effectiveIsAdmin ? undefined : allUserTeamIds} groupBySport={effectiveIsAdmin} />
+        <TeamFilter selected={selectedTeam} onChange={setSelectedTeam} limitToTeamIds={(effectiveIsAdmin || effectiveIsVorstand) ? undefined : allUserTeamIds} groupBySport={effectiveIsAdmin || effectiveIsVorstand} />
       </div>
 
       {/* Tabs (coach view) */}

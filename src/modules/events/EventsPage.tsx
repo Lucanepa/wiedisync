@@ -38,7 +38,7 @@ function teamId(val: unknown): string {
 export default function EventsPage() {
   const { t } = useTranslation('events')
   const { user, isCoach, isCoachOf, memberTeamIds, coachTeamIds, teamsLoading, matchesRole } = useAuth()
-  const { effectiveIsAdmin } = useAdminMode()
+  const { effectiveIsAdmin, effectiveIsVorstand } = useAdminMode()
   // Merge member + coach teams for visibility
   const allUserTeamIds = useMemo(() => [...new Set([...memberTeamIds, ...coachTeamIds])], [memberTeamIds, coachTeamIds])
   const [formOpen, setFormOpen] = useState(false)
@@ -205,7 +205,7 @@ export default function EventsPage() {
 
       {allUserTeamIds.length > 1 && (
         <div className="mt-6" data-tour="event-team-filter">
-          <TeamFilter selected={selectedTeam} onChange={setSelectedTeam} limitToTeamIds={effectiveIsAdmin ? undefined : allUserTeamIds} groupBySport={effectiveIsAdmin} />
+          <TeamFilter selected={selectedTeam} onChange={setSelectedTeam} limitToTeamIds={(effectiveIsAdmin || effectiveIsVorstand) ? undefined : allUserTeamIds} groupBySport={effectiveIsAdmin || effectiveIsVorstand} />
         </div>
       )}
 

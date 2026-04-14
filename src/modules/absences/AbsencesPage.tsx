@@ -24,7 +24,7 @@ import { TourPageButton } from '../guide/TourPageButton'
 export default function AbsencesPage() {
   const { t } = useTranslation('absences')
   const { user, isCoach, memberTeamIds, coachTeamIds } = useAuth()
-  const { effectiveIsAdmin, effectiveIsCoach } = useAdminMode()
+  const { effectiveIsAdmin, effectiveIsCoach, effectiveIsVorstand } = useAdminMode()
   const [activeTab, setActiveTab] = useState<'mine' | 'team' | 'weekly'>('mine')
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null)
   const [formOpen, setFormOpen] = useState(false)
@@ -41,9 +41,9 @@ export default function AbsencesPage() {
 
   // Only show all teams when admin mode is active; otherwise scope to own teams
   const visibleTeamIds = useMemo(() => {
-    if (effectiveIsAdmin) return undefined // admins in admin mode see all teams
+    if (effectiveIsAdmin || effectiveIsVorstand) return undefined // admins/vorstand in admin mode see all teams
     return [...new Set([...memberTeamIds, ...coachTeamIds])]
-  }, [effectiveIsAdmin, memberTeamIds, coachTeamIds])
+  }, [effectiveIsAdmin, effectiveIsVorstand, memberTeamIds, coachTeamIds])
 
   // Resolve effective team IDs for TeamAbsenceView
   const effectiveTeamIds = useMemo(() => {

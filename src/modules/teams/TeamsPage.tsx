@@ -14,7 +14,7 @@ import { relId } from '../../utils/relations'
 export default function TeamsPage() {
   const { t } = useTranslation('teams')
   const { canViewTeam, memberTeamIds, coachTeamIds } = useAuth()
-  const { effectiveIsAdmin } = useAdminMode()
+  const { effectiveIsAdmin, effectiveIsVorstand } = useAdminMode()
   const { data: teamsRaw, isLoading } = useCollection<Team>('teams', {
     filter: { active: { _eq: true } },
     sort: ['name'],
@@ -28,9 +28,9 @@ export default function TeamsPage() {
   })
   const memberTeams = memberTeamsRaw ?? []
 
-  const hasElevatedAccess = effectiveIsAdmin
+  const hasElevatedAccess = effectiveIsAdmin || effectiveIsVorstand
   const effectiveCanViewTeam = (teamId: string) =>
-    effectiveIsAdmin ? canViewTeam(teamId) : (memberTeamIds.includes(teamId) || coachTeamIds.includes(teamId))
+    (effectiveIsAdmin || effectiveIsVorstand) ? canViewTeam(teamId) : (memberTeamIds.includes(teamId) || coachTeamIds.includes(teamId))
   const visibleTeams = teams.filter((team) => effectiveCanViewTeam(team.id))
 
   const countByTeam = memberTeams.reduce<Record<string, number>>((acc, mt) => {

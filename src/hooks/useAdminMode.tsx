@@ -7,6 +7,10 @@ interface AdminModeContextValue {
   setAdminMode: (mode: boolean) => void
   effectiveIsAdmin: boolean
   effectiveIsCoach: boolean
+  /** Vorstand cross-team read access (read-only, no edit powers) */
+  effectiveIsVorstand: boolean
+  /** True when user has any elevated role that the toggle can gate */
+  hasElevatedAccess: boolean
 }
 
 const STORAGE_KEY = 'wiedisync-admin-mode'
@@ -14,7 +18,7 @@ const STORAGE_KEY = 'wiedisync-admin-mode'
 const AdminModeContext = createContext<AdminModeContextValue | null>(null)
 
 export function AdminModeProvider({ children }: { children: ReactNode }) {
-  const { isAdmin, coachTeamIds } = useAuth()
+  const { isAdmin, isVorstand, coachTeamIds } = useAuth()
 
   const [rawMode, setRawMode] = useState<boolean>(() => {
     return localStorage.getItem(STORAGE_KEY) === 'true'
@@ -24,11 +28,15 @@ export function AdminModeProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, String(rawMode))
   }, [rawMode])
 
-  // Non-admins always get false regardless of localStorage
-  const isAdminMode = isAdmin && rawMode
+  // Anyone with elevated privileges can toggle the mode
+  const hasElevatedAccess = isAdmin || isVorstand
+  const isAdminMode = hasElevatedAccess && rawMode
 
   // effectiveIsAdmin is true only when admin AND mode ON
-  const effectiveIsAdmin = isAdminMode
+  const effectiveIsAdmin = isAdmin && rawMode
+
+  // Vorstand cross-team read access — only when mode ON
+  const effectiveIsVorstand = isVorstand && rawMode
 
   // When admin mode OFF: coachTeamIds only (no isAdmin grant)
   // When admin mode ON: coachTeamIds || isAdmin
@@ -46,8 +54,10 @@ export function AdminModeProvider({ children }: { children: ReactNode }) {
       setAdminMode,
       effectiveIsAdmin,
       effectiveIsCoach,
+      effectiveIsVorstand,
+      hasElevatedAccess,
     }),
-    [isAdminMode, toggleAdminMode, setAdminMode, effectiveIsAdmin, effectiveIsCoach],
+    [isAdminMode, toggleAdminMode, setAdminMode, effectiveIsAdmin, effectiveIsCoach, effectiveIsVorstand, hasElevatedAccess],
   )
 
   return (

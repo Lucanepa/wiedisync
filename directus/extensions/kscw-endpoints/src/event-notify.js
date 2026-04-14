@@ -94,7 +94,11 @@ export function registerEventNotify(router, { services, database, getSchema, log
       // Remove event creator from notifications
       if (event.created_by) memberIds.delete(String(event.created_by))
 
-      const memberIdArray = [...memberIds]
+      // Filter out invalid entries (String(null) → "null", String(undefined) → "undefined", empty strings)
+      memberIds.delete('null')
+      memberIds.delete('undefined')
+      memberIds.delete('')
+      const memberIdArray = [...memberIds].filter(id => id && !isNaN(Number(id)))
       if (memberIdArray.length === 0) return res.json({ notified: 0 })
 
       // Insert in-app notifications
@@ -105,7 +109,7 @@ export function registerEventNotify(router, { services, database, getSchema, log
         body: '',
         activity_type: 'event',
         activity_id: String(eventId),
-        team: teamIds[0] ?? null,
+        team: teamIds.length > 0 ? Number(teamIds[0]) || null : null,
         read: false,
       }))
 
@@ -163,8 +167,9 @@ export function registerEventNotify(router, { services, database, getSchema, log
 
       res.json({ notified: memberIdArray.length, emailed: sendEmail })
     } catch (err) {
-      logger.error('Event notify error:', err)
-      res.status(500).json({ error: 'Notification failed' })
+      logger.error('Event notify error: ' + (err?.message || err))
+      logger.error(err?.stack || '')
+      res.status(500).json({ error: 'Notification failed', message: err?.message })
     }
   })
 }

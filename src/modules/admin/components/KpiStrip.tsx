@@ -74,7 +74,7 @@ export default function KpiStrip({ infraHealth: infra }: { infraHealth: InfraHea
             countItems('teams'),
             countItems('teams', { sport: { _eq: 'volleyball' } }),
             countItems('teams', { sport: { _eq: 'basketball' } }),
-            countItems('members', { _and: [{ coach_approved_team: { _eq: false } }, { requested_team: { _nempty: true } }] }),
+            countItems('members', { _and: [{ coach_approved_team: { _eq: false } }, { requested_team: { _nnull: true } }] }),
           ])
 
         setData({

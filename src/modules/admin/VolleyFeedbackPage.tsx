@@ -265,24 +265,18 @@ export default function VolleyFeedbackPage() {
                 {selectedItem.name} — {selectedItem.teams?.join(', ') || ''} — {selectedItem.functions?.join(', ') || ''}
               </p>
             )}
-            {selectedItem.feedback_text && (
-              <div className="mb-4">
-                <p className="mb-1 text-sm font-semibold">{lang === 'de' ? 'Feedback:' : 'Feedback:'}</p>
-                <p className="whitespace-pre-wrap text-sm">{selectedItem.feedback_text}</p>
-              </div>
-            )}
-            {selectedItem.ideas_text && (
-              <div className="mb-4">
-                <p className="mb-1 text-sm font-semibold">{lang === 'de' ? 'Ideen / Vorschläge:' : 'Ideas / Suggestions:'}</p>
-                <p className="whitespace-pre-wrap text-sm">{selectedItem.ideas_text}</p>
-              </div>
-            )}
-            {selectedItem.other_text && (
-              <div>
-                <p className="mb-1 text-sm font-semibold">{lang === 'de' ? 'Weiteres:' : 'Other:'}</p>
-                <p className="whitespace-pre-wrap text-sm">{selectedItem.other_text}</p>
-              </div>
-            )}
+            <div className="mb-4">
+              <p className="mb-1 text-sm font-semibold">{lang === 'de' ? 'Feedback:' : 'Feedback:'}</p>
+              <p className="whitespace-pre-wrap text-sm">{selectedItem.feedback_text && selectedItem.feedback_text !== 'undefined' ? selectedItem.feedback_text : '-'}</p>
+            </div>
+            <div className="mb-4">
+              <p className="mb-1 text-sm font-semibold">{lang === 'de' ? 'Ideen / Vorschläge:' : 'Ideas / Suggestions:'}</p>
+              <p className="whitespace-pre-wrap text-sm">{selectedItem.ideas_text && selectedItem.ideas_text !== 'undefined' ? selectedItem.ideas_text : '-'}</p>
+            </div>
+            <div>
+              <p className="mb-1 text-sm font-semibold">{lang === 'de' ? 'Weiteres:' : 'Other:'}</p>
+              <p className="whitespace-pre-wrap text-sm">{selectedItem.other_text && selectedItem.other_text !== 'undefined' ? selectedItem.other_text : '-'}</p>
+            </div>
           </div>
         </div>
       )}

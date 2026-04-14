@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Check, X, HelpCircle, Hourglass, Award, MessageSquare } from 'lucide-react'
+import { Check, MessageSquare } from 'lucide-react'
 import TeamChip from '../../components/TeamChip'
+import ParticipationSummary from '../../components/ParticipationSummary'
 import { useAuth } from '../../hooks/useAuth'
 import { useMutation } from '../../hooks/useMutation'
 
@@ -67,9 +68,6 @@ export default function TrainingCard({ training, participations, myParticipation
           {!training.cancelled && warnings.length > 0 && (
             <ParticipationWarningBadge warnings={warnings} namespace="participation" />
           )}
-          {!training.cancelled && participations && participations.length > 0 && (
-            <span data-tour="participation-dots"><InlineParticipationSummary participations={participations} /></span>
-          )}
           {training.cancelled && (
             <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
               {t('cancelled')}
@@ -92,14 +90,19 @@ export default function TrainingCard({ training, participations, myParticipation
         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{training.notes}</p>
       )}
 
-      {/* Bottom row: participation + actions */}
+      {/* Bottom row: RSVP + bars + actions */}
       {!training.cancelled && (
-        <div className="mt-2.5 flex flex-wrap items-start justify-between gap-2">
-          <div className="min-w-0 flex-1">
+        <div className="mt-2.5 flex flex-wrap items-end justify-between gap-2">
+          <div className="min-w-0">
             {user && canParticipateIn(teamId) && (
               <TrainingParticipation training={training} existingParticipation={myParticipation} onSaved={onParticipationSaved} />
             )}
           </div>
+          {participations && participations.length > 0 && (
+            <div data-tour="participation-dots">
+              <ParticipationSummary activityType="training" activityId={training.id} bars participations={participations} />
+            </div>
+          )}
           <div className="flex shrink-0 items-center gap-1">
             {onOpenRoster && (
               <button
@@ -141,58 +144,6 @@ export default function TrainingCard({ training, participations, myParticipation
       )}
       </div>
     </div>
-  )
-}
-
-/** Inline participation summary using pre-fetched data (no API call) */
-function InlineParticipationSummary({ participations }: { participations: Participation[] }) {
-  const { t } = useTranslation('participation')
-  const playerData = participations.filter(p => !p.is_staff)
-  const confirmedParts = playerData.filter(p => p.status === 'confirmed')
-  const confirmed = confirmedParts.length
-  const confirmedGuests = confirmedParts.reduce((sum, p) => sum + (p.guest_count ?? 0), 0)
-  const tentativeParts = playerData.filter(p => p.status === 'tentative')
-  const tentative = tentativeParts.length
-  const tentativeGuests = tentativeParts.reduce((sum, p) => sum + (p.guest_count ?? 0), 0)
-  const declined = playerData.filter(p => p.status === 'declined').length
-  const waitlisted = playerData.filter(p => p.status === 'waitlisted').length
-  const staffConfirmed = participations.filter(p => p.is_staff && p.status === 'confirmed').length
-
-  if (participations.length === 0) return null
-
-  return (
-    <span className="inline-flex items-center gap-1.5 text-xs">
-      {confirmed > 0 && (
-        <span className="inline-flex items-center gap-1 text-green-600 dark:text-green-400">
-          {confirmed}{confirmedGuests > 0 && <span className="text-[10px] opacity-75">+{confirmedGuests}</span>}
-          <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-green-600 text-white dark:bg-green-500"><Check className="h-2.5 w-2.5" /></span>
-        </span>
-      )}
-      {tentative > 0 && (
-        <span className="inline-flex items-center gap-1 text-yellow-600 dark:text-yellow-400">
-          {tentative}{tentativeGuests > 0 && <span className="text-[10px] opacity-75">+{tentativeGuests}</span>}
-          <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-yellow-500 text-white"><HelpCircle className="h-2.5 w-2.5" /></span>
-        </span>
-      )}
-      {declined > 0 && (
-        <span className="inline-flex items-center gap-1 text-red-600 dark:text-red-400">
-          {declined}
-          <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-white dark:bg-red-500"><X className="h-2.5 w-2.5" /></span>
-        </span>
-      )}
-      {waitlisted > 0 && (
-        <span className="inline-flex items-center gap-1 text-orange-600 dark:text-orange-400">
-          {waitlisted}
-          <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-white"><Hourglass className="h-2.5 w-2.5" /></span>
-        </span>
-      )}
-      {staffConfirmed > 0 && (
-        <span data-tour="coach-present" className="inline-flex items-center gap-1 text-brand-600 dark:text-brand-400" title={t('staffPresent')}>
-          {staffConfirmed}
-          <Award className="h-3.5 w-3.5" />
-        </span>
-      )}
-    </span>
   )
 }
 

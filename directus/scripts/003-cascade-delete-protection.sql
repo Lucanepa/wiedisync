@@ -93,6 +93,21 @@ ALTER TABLE push_subscriptions DROP CONSTRAINT IF EXISTS push_subscriptions_memb
 ALTER TABLE push_subscriptions ADD CONSTRAINT push_subscriptions_member_foreign
   FOREIGN KEY (member) REFERENCES members(id) ON DELETE CASCADE;
 
+-- event_sessions: sessions are meaningless without their parent event
+ALTER TABLE event_sessions DROP CONSTRAINT IF EXISTS event_sessions_event_foreign;
+ALTER TABLE event_sessions ADD CONSTRAINT event_sessions_event_foreign
+  FOREIGN KEY (event) REFERENCES events(id) ON DELETE CASCADE;
+
+-- carpool_passengers: passenger records are meaningless without the carpool
+ALTER TABLE carpool_passengers DROP CONSTRAINT IF EXISTS carpool_passengers_carpool_foreign;
+ALTER TABLE carpool_passengers ADD CONSTRAINT carpool_passengers_carpool_foreign
+  FOREIGN KEY (carpool) REFERENCES carpools(id) ON DELETE CASCADE;
+
+-- poll_votes: votes are meaningless without the poll
+ALTER TABLE poll_votes DROP CONSTRAINT IF EXISTS poll_votes_poll_foreign;
+ALTER TABLE poll_votes ADD CONSTRAINT poll_votes_poll_foreign
+  FOREIGN KEY (poll) REFERENCES polls(id) ON DELETE CASCADE;
+
 -- ══════════════════════════════════════════════════════════════════
 -- 2. DELETE PROTECTION — prevent accidental deletion of core entities
 -- ══════════════════════════════════════════════════════════════════

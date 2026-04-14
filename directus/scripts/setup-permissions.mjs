@@ -216,6 +216,7 @@ const MEMBER_EDITABLE_FIELDS = [
   'first_name', 'last_name', 'phone', 'birthdate', 'email',
   'birthdate_visibility', 'hide_phone', 'photo', 'language',
   'position', 'number', 'licences', 'website_visible',
+  'requested_team',
 ]
 
 /** Public fields for teams */
@@ -315,7 +316,7 @@ async function main() {
     // Junction tables for deep queries (website needs coach names, sponsor logos)
     await setPermRead(PUBLIC_POLICY, 'teams_sponsors')
     await setPermRead(PUBLIC_POLICY, 'teams_coaches')  // coach junction
-    await setPermRead(PUBLIC_POLICY, 'teams_captains')  // captain junction
+    await setPermRead(PUBLIC_POLICY, 'teams_captain')  // captain junction
     await setPermRead(PUBLIC_POLICY, 'members', null, ['id', 'first_name', 'last_name', 'photo'])
 
     // Calendar: hall slots, closures, hall events, halls
@@ -362,7 +363,7 @@ async function main() {
     'slot_claims', 'news', 'app_settings',
     'referee_expenses', 'carpools', 'carpool_passengers', 'polls',
     // Junctions
-    'teams_coaches', 'teams_captains', 'teams_responsibles', 'teams_sponsors', 'events_teams', 'hall_events_halls',
+    'teams_coaches', 'teams_captain', 'teams_responsibles', 'teams_sponsors', 'events_teams', 'hall_events_halls',
     // Files
     'directus_files',
   ]
@@ -579,7 +580,7 @@ async function main() {
     'slot_claims', 'notifications', 'feedback', 'scorer_delegations', 'referee_expenses',
     'team_invites', 'news', 'app_settings', 'user_logs',
     'push_subscriptions', 'email_verifications',
-    'teams_coaches', 'teams_captains', 'teams_responsibles',
+    'teams_coaches', 'teams_captain', 'teams_responsibles',
     'tasks', 'task_templates', 'carpools', 'carpool_passengers',
     'polls', 'poll_votes', 'team_requests',
     'game_scheduling_seasons', 'game_scheduling_slots',

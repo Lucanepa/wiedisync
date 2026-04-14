@@ -64,7 +64,7 @@ positions[3]{ticker,shares,costBasis}:
 - **Postgres triggers**: Validation logic in `directus/scripts/001-postgres-triggers.sql`. Apply via `psql` on `coolify-db`.
 - **Deleting collections or records**: Must be confirmed with the user first
 - **M2M fields MUST be created via the Directus admin UI** — creating M2M relations via the REST API results in "The relationship hasn't been configured correctly" in the admin UI, even though the API works. Always: (1) nuke the junction table + PG table + field, (2) create the M2M field via Settings → Data Model → Add Field → Many to Many in the browser, (3) restore data via API after. **Note:** the UI auto-generates junction names (e.g. `teams_members_3`) — after creation, rename via SQL to a readable name and update Directus metadata. Check actual names via `/relations` API before referencing in code.
-- **Junction table names (prod)**: `hall_slots_teams`, `teams_coaches` (coach), `teams_responsibles` (team_responsible), `teams_captains` (captain), `teams_sponsors`, `events_teams`, `hall_events_halls` (check with `GET /relations` if unsure)
+- **Junction table names (prod)**: `hall_slots_teams`, `teams_coaches` (coach), `teams_responsibles` (team_responsible), `teams_captain` (captain), `teams_sponsors`, `events_teams`, `hall_events_halls` (check with `GET /relations` if unsure)
 
 ## SSH to VPS (Directus host)
 

@@ -204,10 +204,10 @@ WITH game_rsvp AS (
   SELECT
     g.kscw_team                                       AS team_id,
     COUNT(DISTINCT g.id)                              AS total_games,
-    COUNT(DISTINCT p.id)                              AS total_responses,
-    COUNT(DISTINCT p.id) FILTER (WHERE p.status = 'confirmed')   AS confirmed,
-    COUNT(DISTINCT p.id) FILTER (WHERE p.status = 'declined')    AS declined,
-    COUNT(DISTINCT p.id) FILTER (WHERE p.status = 'tentative')   AS tentative
+    COUNT(DISTINCT p.activity_id)                     AS total_responses,
+    COUNT(DISTINCT p.activity_id) FILTER (WHERE p.status = 'confirmed')   AS confirmed,
+    COUNT(DISTINCT p.activity_id) FILTER (WHERE p.status = 'declined')    AS declined,
+    COUNT(DISTINCT p.activity_id) FILTER (WHERE p.status = 'tentative')   AS tentative
   FROM games g
   LEFT JOIN participations p ON p.activity_type = 'game'
     AND p.activity_id = g.id::text
@@ -218,10 +218,10 @@ training_rsvp AS (
   SELECT
     tr.team                                           AS team_id,
     COUNT(DISTINCT tr.id)                             AS total_trainings,
-    COUNT(DISTINCT p.id)                              AS total_responses,
-    COUNT(DISTINCT p.id) FILTER (WHERE p.status = 'confirmed')   AS confirmed,
-    COUNT(DISTINCT p.id) FILTER (WHERE p.status = 'declined')    AS declined,
-    COUNT(DISTINCT p.id) FILTER (WHERE p.status = 'tentative')   AS tentative
+    COUNT(DISTINCT p.activity_id)                     AS total_responses,
+    COUNT(DISTINCT p.activity_id) FILTER (WHERE p.status = 'confirmed')   AS confirmed,
+    COUNT(DISTINCT p.activity_id) FILTER (WHERE p.status = 'declined')    AS declined,
+    COUNT(DISTINCT p.activity_id) FILTER (WHERE p.status = 'tentative')   AS tentative
   FROM trainings tr
   LEFT JOIN participations p ON p.activity_type = 'training'
     AND p.activity_id = tr.id::text

@@ -21,7 +21,6 @@ import { useBulkParticipationStatuses } from '../../hooks/useBulkParticipationSt
 import type { Game, Event, Team, Training, Hall, Member, MemberTeam, Notification, BaseRecord } from '../../types'
 import { ClipboardList, Clock, AlertTriangle, Trophy, Bell, Calendar, LayoutGrid, List } from 'lucide-react'
 import LoadingSpinner from '../../components/LoadingSpinner'
-import { TourPageButton } from '../guide/TourPageButton'
 
 type ExpandedGame = Game & {
   kscw_team?: Team & BaseRecord | string
@@ -285,9 +284,6 @@ export default function HomePage() {
           <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl dark:text-gray-100">
             KSC Wiedikon
           </h1>
-          <div className="absolute right-0 top-1/2 -translate-y-1/2">
-            <TourPageButton />
-          </div>
         </div>
         <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
           {t('subtitle')}

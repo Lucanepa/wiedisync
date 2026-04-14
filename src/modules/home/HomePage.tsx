@@ -575,43 +575,45 @@ function CompactGameRow({ game, showScore, onClick, participationStatus }: { gam
         <div className="w-1 shrink-0" />
       )}
 
-      <div className="flex min-w-0 flex-1 items-center gap-3 px-4 py-2">
-        {/* Date & time */}
-        <div className="w-14 shrink-0 text-xs text-gray-500 dark:text-gray-400">
-          <div>{dateStr}</div>
-          {game.time && <div>{formatTime(game.time)}</div>}
-        </div>
-
-        {/* Sport icon */}
-        {asObj<Team & BaseRecord>(game.kscw_team)?.sport === 'basketball' || game.source === 'basketplan'
-          ? <BasketballIcon className="h-5 w-5 shrink-0" filled />
-          : <VolleyballIcon className="h-5 w-5 shrink-0" filled />}
-
-        {/* Team names — stacked, Wiedikon team bold, wrap on small screens */}
-        <div className="min-w-0 flex-1">
-          <p className={`break-words text-sm leading-tight text-gray-900 dark:text-gray-100 ${game.type === 'home' ? 'font-bold' : ''}`}>
-            {game.home_team}
-          </p>
-          <p className={`break-words text-sm leading-tight text-gray-900 dark:text-gray-100 ${game.type === 'away' ? 'font-bold' : ''}`}>
-            {game.away_team}
-          </p>
-        </div>
-
-        {/* Vertical score: KSCW line colored, opponent neutral */}
-        {showScore && game.status === 'completed' && (
-          <div className="shrink-0 text-right font-mono text-sm leading-snug">
-            <div className={`${game.type === 'home' ? (kscwWon ? 'text-green-600 dark:text-green-400' : kscwLost ? 'text-red-500' : 'text-gray-500') : 'text-gray-500 dark:text-gray-400'} ${game.type === 'home' ? 'font-bold' : 'font-medium'}`}>
-              {game.home_score}
-            </div>
-            <div className={`${game.type === 'away' ? (kscwWon ? 'text-green-600 dark:text-green-400' : kscwLost ? 'text-red-500' : 'text-gray-500') : 'text-gray-500 dark:text-gray-400'} ${game.type === 'away' ? 'font-bold' : 'font-medium'}`}>
-              {game.away_score}
-            </div>
+      <div className="min-w-0 flex-1 px-4 py-2">
+        <div className="flex items-center gap-3">
+          {/* Date & time */}
+          <div className="w-14 shrink-0 text-xs text-gray-500 dark:text-gray-400">
+            <div>{dateStr}</div>
+            {game.time && <div>{formatTime(game.time)}</div>}
           </div>
-        )}
 
-        {/* Participation summary — right-aligned (scheduled games only) */}
+          {/* Sport icon */}
+          {asObj<Team & BaseRecord>(game.kscw_team)?.sport === 'basketball' || game.source === 'basketplan'
+            ? <BasketballIcon className="h-5 w-5 shrink-0" filled />
+            : <VolleyballIcon className="h-5 w-5 shrink-0" filled />}
+
+          {/* Team names — stacked, Wiedikon team bold, wrap on small screens */}
+          <div className="min-w-0 flex-1">
+            <p className={`break-words text-sm leading-tight text-gray-900 dark:text-gray-100 ${game.type === 'home' ? 'font-bold' : ''}`}>
+              {game.home_team}
+            </p>
+            <p className={`break-words text-sm leading-tight text-gray-900 dark:text-gray-100 ${game.type === 'away' ? 'font-bold' : ''}`}>
+              {game.away_team}
+            </p>
+          </div>
+
+          {/* Vertical score: KSCW line colored, opponent neutral */}
+          {showScore && game.status === 'completed' && (
+            <div className="shrink-0 text-right font-mono text-sm leading-snug">
+              <div className={`${game.type === 'home' ? (kscwWon ? 'text-green-600 dark:text-green-400' : kscwLost ? 'text-red-500' : 'text-gray-500') : 'text-gray-500 dark:text-gray-400'} ${game.type === 'home' ? 'font-bold' : 'font-medium'}`}>
+                {game.home_score}
+              </div>
+              <div className={`${game.type === 'away' ? (kscwWon ? 'text-green-600 dark:text-green-400' : kscwLost ? 'text-red-500' : 'text-gray-500') : 'text-gray-500 dark:text-gray-400'} ${game.type === 'away' ? 'font-bold' : 'font-medium'}`}>
+                {game.away_score}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Participation bars — own row beneath info */}
         {game.status === 'scheduled' && (
-          <div className="ml-auto shrink-0">
+          <div className="mt-1.5 pl-[calc(3.5rem+0.75rem)]">
             <ParticipationSummary activityType="game" activityId={game.id} bars />
           </div>
         )}
@@ -649,23 +651,25 @@ function CompactTrainingRow({ training, onClick, participationStatus }: { traini
         <div className="w-1 shrink-0" />
       )}
 
-      <div className="flex flex-1 items-center gap-3 px-4 py-3">
-        {/* Date & time */}
-        <div className="w-24 shrink-0 text-xs text-gray-500 dark:text-gray-400">
-          <div>{weekday}, {dateStr}</div>
-          <div>{formatTime(training.start_time)} – {formatTime(training.end_time)}</div>
-        </div>
+      <div className="min-w-0 flex-1 px-4 py-3">
+        <div className="flex items-center gap-3">
+          {/* Date & time */}
+          <div className="w-24 shrink-0 text-xs text-gray-500 dark:text-gray-400">
+            <div>{weekday}, {dateStr}</div>
+            <div>{formatTime(training.start_time)} – {formatTime(training.end_time)}</div>
+          </div>
 
-        {/* Info */}
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            {team && <TeamChip team={team.name} size="sm" />}
-            {hall && <span className="text-sm text-gray-700 dark:text-gray-300">{hall.name}</span>}
+          {/* Info */}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              {team && <TeamChip team={team.name} size="sm" />}
+              {hall && <span className="text-sm text-gray-700 dark:text-gray-300">{hall.name}</span>}
+            </div>
           </div>
         </div>
 
-        {/* Participation summary — right-aligned */}
-        <div className="ml-auto shrink-0">
+        {/* Participation bars — own row beneath info */}
+        <div className="mt-1.5 pl-[calc(6rem+0.75rem)]">
           <ParticipationSummary activityType="training" activityId={training.id} bars />
         </div>
       </div>
@@ -749,7 +753,7 @@ function AppointmentRow({ appointment, onClick, participationStatus }: {
           {/* Main info row */}
           <div
             className="grid items-center"
-            style={{ gridTemplateColumns: '4.5rem 1.25rem 1fr auto', columnGap: '5px' }}
+            style={{ gridTemplateColumns: '4.5rem 1.25rem 1fr', columnGap: '5px' }}
           >
             <div className="py-2.5 pl-3 text-xs text-gray-500 dark:text-gray-400">
               <div>{weekday}</div>
@@ -758,11 +762,11 @@ function AppointmentRow({ appointment, onClick, participationStatus }: {
             </div>
             <span className="text-gray-500 dark:text-gray-400">{typeIcon[appointment.type]}</span>
             <p className="min-w-0 truncate px-2 text-sm text-gray-900 dark:text-gray-100">{label}</p>
+          </div>
 
-            {/* Participation counters */}
-            <div className="shrink-0 pr-3">
-              <ParticipationSummary activityType={appointment.type} activityId={appointment.data.id} bars />
-            </div>
+          {/* Participation bars — own row beneath info */}
+          <div className="pb-2 pl-[calc(5.75rem+10px)]">
+            <ParticipationSummary activityType={appointment.type} activityId={appointment.data.id} bars />
           </div>
         </div>
       </div>

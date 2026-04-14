@@ -67,6 +67,8 @@ export default {
   preview: 'Anteprima',
   importSuccess: '{{count}} partite importate',
   downloadExcel: 'Scarica Excel',
+  downloadTemplate: 'Scarica modello',
+  importColumnsHint: 'Colonne: Datum, Heimteam, Gastteam, Liga, Runde',
 
   // Public opponent flow
   publicTitle: 'Pianificazione partite KSCW',

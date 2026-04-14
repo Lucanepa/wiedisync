@@ -67,6 +67,8 @@ export default {
   preview: 'Apercu',
   importSuccess: '{{count}} matchs importes',
   downloadExcel: 'Telecharger Excel',
+  downloadTemplate: 'Telecharger le modele',
+  importColumnsHint: 'Colonnes: Datum, Heimteam, Gastteam, Liga, Runde',
 
   // Public opponent flow
   publicTitle: 'Planification des matchs KSCW',

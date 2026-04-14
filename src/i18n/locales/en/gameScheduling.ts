@@ -67,6 +67,8 @@ export default {
   preview: 'Preview',
   importSuccess: '{{count}} games imported',
   downloadExcel: 'Download Excel',
+  downloadTemplate: 'Download Template',
+  importColumnsHint: 'Columns: Datum, Heimteam, Gastteam, Liga, Runde',
 
   // Public opponent flow
   publicTitle: 'Game Scheduling KSCW',

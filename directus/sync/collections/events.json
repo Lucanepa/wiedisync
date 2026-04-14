@@ -907,6 +907,126 @@
         "foreign_key_table": null,
         "foreign_key_column": null
       }
+    },
+    {
+      "collection": "events",
+      "field": "invited_roles",
+      "type": "json",
+      "meta": {
+        "collection": "events",
+        "conditions": null,
+        "display": "raw",
+        "display_options": null,
+        "field": "invited_roles",
+        "group": null,
+        "hidden": false,
+        "interface": "input-code",
+        "note": "JSON array of role keys for invitation targeting",
+        "options": {
+          "language": "json"
+        },
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 20,
+        "special": [
+          "cast-json"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "invited_roles",
+        "table": "events",
+        "data_type": "json",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "events",
+      "field": "send_email_invite",
+      "type": "boolean",
+      "meta": {
+        "collection": "events",
+        "conditions": null,
+        "display": "boolean",
+        "display_options": null,
+        "field": "send_email_invite",
+        "group": null,
+        "hidden": false,
+        "interface": "boolean",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 21,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "half"
+      },
+      "schema": {
+        "name": "send_email_invite",
+        "table": "events",
+        "data_type": "boolean",
+        "default_value": false,
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "events",
+      "field": "invited_members",
+      "type": "alias",
+      "meta": {
+        "collection": "events",
+        "conditions": null,
+        "display": "related-values",
+        "display_options": null,
+        "field": "invited_members",
+        "group": null,
+        "hidden": false,
+        "interface": "list-m2m",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": null,
+        "special": [
+          "m2m"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      }
     }
   ],
   "relations": [
@@ -983,6 +1103,47 @@
         "constraint_name": "events_created_by_foreign",
         "on_update": "NO ACTION",
         "on_delete": "SET NULL"
+      }
+    },
+    {
+      "collection": "events_members",
+      "field": "events_id",
+      "related_collection": "events",
+      "meta": {
+        "junction_field": "members_id",
+        "many_collection": "events_members",
+        "many_field": "events_id",
+        "one_allowed_collections": null,
+        "one_collection": "events",
+        "one_collection_field": null,
+        "one_deselect_action": "nullify",
+        "one_field": "invited_members",
+        "sort_field": null
+      },
+      "schema": {
+        "table": "events_members",
+        "column": "events_id",
+        "foreign_key_table": "events",
+        "foreign_key_column": "id",
+        "constraint_name": "events_members_events_id_fkey",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE"
+      }
+    },
+    {
+      "collection": "events_members",
+      "field": "events_id",
+      "related_collection": "events",
+      "meta": {
+        "junction_field": "members_id",
+        "many_collection": "events_members",
+        "many_field": "events_id",
+        "one_allowed_collections": null,
+        "one_collection": "events",
+        "one_collection_field": null,
+        "one_deselect_action": "nullify",
+        "one_field": "invited_members",
+        "sort_field": null
       }
     },
     {

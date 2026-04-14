@@ -316,7 +316,6 @@ async function main() {
     // Junction tables for deep queries (website needs coach names, sponsor logos)
     await setPermRead(PUBLIC_POLICY, 'teams_sponsors')
     await setPermRead(PUBLIC_POLICY, 'teams_coaches')  // coach junction
-    await setPermRead(PUBLIC_POLICY, 'teams_captain')  // captain junction
     await setPermRead(PUBLIC_POLICY, 'members', null, ['id', 'first_name', 'last_name', 'photo'])
 
     // Calendar: hall slots, closures, hall events, halls
@@ -363,7 +362,7 @@ async function main() {
     'slot_claims', 'news', 'app_settings',
     'referee_expenses', 'carpools', 'carpool_passengers', 'polls',
     // Junctions
-    'teams_coaches', 'teams_captain', 'teams_responsibles', 'teams_sponsors', 'events_teams', 'hall_events_halls',
+    'teams_coaches', 'teams_responsibles', 'teams_sponsors', 'events_teams', 'events_members', 'hall_events_halls',
     // Files
     'directus_files',
   ]
@@ -422,8 +421,9 @@ async function main() {
   await setPerm(MEMBER_POLICY, 'user_logs', 'create')
   await setPermRead(MEMBER_POLICY, 'user_logs', OWN_DU)
 
-  // Feedback — create only
+  // Feedback — create + read own
   await setPerm(MEMBER_POLICY, 'feedback', 'create')
+  await setPermRead(MEMBER_POLICY, 'feedback')
 
   // Tasks — read, update assigned
   await setPermRead(MEMBER_POLICY, 'tasks')
@@ -580,7 +580,8 @@ async function main() {
     'slot_claims', 'notifications', 'feedback', 'scorer_delegations', 'referee_expenses',
     'team_invites', 'news', 'app_settings', 'user_logs',
     'push_subscriptions', 'email_verifications',
-    'teams_coaches', 'teams_captain', 'teams_responsibles',
+    'teams_coaches', 'teams_responsibles', 'events_members',
+    'volley_feedback',
     'tasks', 'task_templates', 'carpools', 'carpool_passengers',
     'polls', 'poll_votes', 'team_requests',
     'game_scheduling_seasons', 'game_scheduling_slots',

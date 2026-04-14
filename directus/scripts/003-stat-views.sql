@@ -65,9 +65,9 @@ SELECT
   COUNT(DISTINCT mt.member)
     FILTER (WHERE mt.guest_level = 0
       AND m.licences::jsonb @> '"referee_bb"') AS lic_referee_bb,
-  -- Leadership
+  -- Leadership (prod table names — dev uses teams_coach, teams_captain, teams_team_responsible)
   (SELECT COUNT(*) FROM teams_coaches tc WHERE tc.teams_id = t.id)              AS coach_count,
-  (SELECT COUNT(*) FROM teams_captains tc WHERE tc.teams_id = t.id)            AS captain_count,
+  CASE WHEN t.captain IS NOT NULL THEN 1 ELSE 0 END                            AS captain_count,
   (SELECT COUNT(*) FROM teams_responsibles tc WHERE tc.teams_id = t.id)        AS team_responsible_count
 FROM teams t
 LEFT JOIN member_teams mt ON mt.team = t.id

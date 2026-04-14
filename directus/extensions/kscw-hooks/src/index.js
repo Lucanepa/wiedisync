@@ -215,6 +215,39 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     }
   })
 
+  // ── 0c. Cascade: Member deletion → delete linked Directus user ──
+  // When a member is deleted from the admin UI, also delete the linked directus_user.
+  // Without this, deleting a member orphans the user record.
+
+  const pendingMemberDeletes = new Map()
+
+  filter('members.items.delete', async (keys) => {
+    try {
+      const members = await database('members').whereIn('id', keys).select('id', 'user')
+      for (const m of members) {
+        if (m.user) pendingMemberDeletes.set(m.id, m.user)
+      }
+    } catch (e) {
+      log.warn({ msg: `member-delete cascade lookup failed: ${e.message}`, event: 'cascade_delete' })
+    }
+    return keys
+  })
+
+  action('members.items.delete', async ({ keys }) => {
+    for (const memberId of keys) {
+      const userId = pendingMemberDeletes.get(memberId)
+      if (!userId) continue
+      pendingMemberDeletes.delete(memberId)
+      try {
+        await database('directus_users').where('id', userId).delete()
+        log.info(`[cascade] Deleted user ${userId} (member ${memberId} deleted from admin)`)
+      } catch (err) {
+        log.error({ msg: `[cascade] User delete failed for ${userId}: ${err.message}`, event: 'cascade_delete', userId, memberId, stack: err.stack })
+        logCronError('cascade_delete', err, { userId, memberId })
+      }
+    }
+  })
+
   // ── 1. Wiedisync Active on Auth ─────────────────────────────────
   // Mark wiedisync_active=true on successful login
   // (Can't be a Postgres trigger because Directus auth doesn't write to members table)

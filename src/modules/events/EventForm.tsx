@@ -126,7 +126,12 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
       setAllDay(event.all_day)
       setLocation(event.location ?? '')
       setDescription(event.description ?? '')
-      setSelectedTeams(event.teams ?? [])
+      // teams from API are junction objects [{teams_id: {id, ...}}, ...] — extract team IDs
+      setSelectedTeams((event.teams ?? []).map((t: any) => {
+        if (typeof t === 'string' || typeof t === 'number') return String(t)
+        const tid = t?.teams_id
+        return String(typeof tid === 'object' ? tid?.id : tid ?? t?.id ?? t)
+      }))
       const rbParsed = parseRespondByTime(event.respond_by)
       setRespondBy(rbParsed.date)
       setRespondByTime(rbParsed.time)

@@ -97,6 +97,7 @@ export interface Member extends BaseRecord {
   hide_phone: boolean
   birthdate_visibility: 'full' | 'year_only' | 'hidden'
   website_visible: boolean
+  is_spielplaner: boolean
   wiedisync_active: boolean
   shell: boolean
   shell_expires: string
@@ -356,6 +357,9 @@ export interface Event extends BaseRecord {
   participation_mode: 'whole' | 'per_day' | 'per_session' | ''
   require_note_if_absent: boolean
   features_enabled: FeatureToggles
+  invited_roles: string[] | null
+  invited_members: string[]
+  send_email_invite: boolean
 
 }
 
@@ -491,7 +495,7 @@ export interface ScorerDelegation extends BaseRecord {
 
 export interface Notification extends BaseRecord {
   member: string
-  type: 'activity_change' | 'upcoming_activity' | 'deadline_reminder' | 'result_available' | 'duty_delegation_request' | 'member_join_request' | 'poll_created' | 'carpool_update' | 'task_assigned'
+  type: 'activity_change' | 'upcoming_activity' | 'deadline_reminder' | 'result_available' | 'duty_delegation_request' | 'member_join_request' | 'poll_created' | 'carpool_update' | 'task_assigned' | 'event_invite'
   title: string
   body: string
   activity_type: 'game' | 'training' | 'event' | 'scorer_duty' | 'team' | 'poll' | 'carpool' | 'task' | ''

@@ -31,6 +31,7 @@ export default {
   status: 'Statut',
   adminMode: 'Mode admin',
   memberMode: 'Mode membre',
+  vorstandMode: 'Mode comité',
   notifications: 'Notifications',
   feedback: 'Feedback',
   version: 'Version',

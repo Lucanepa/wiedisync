@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useAdminMode } from '../hooks/useAdminMode'
 import SwitchToggle from '@/components/SwitchToggle'
-import { Shield, ShieldCheck } from 'lucide-react'
+import { Eye, EyeOff, Shield, ShieldCheck } from 'lucide-react'
 
 interface AdminToggleProps {
   size?: 'sm' | 'md'
@@ -12,12 +12,12 @@ interface AdminToggleProps {
 
 export default function AdminToggle({ size = 'sm', onAfterToggle }: AdminToggleProps) {
   const { isAdmin } = useAuth()
-  const { isAdminMode, toggleAdminMode } = useAdminMode()
+  const { isAdminMode, toggleAdminMode, hasElevatedAccess } = useAdminMode()
   const { t } = useTranslation('nav')
   const location = useLocation()
   const navigate = useNavigate()
 
-  if (!isAdmin) return null
+  if (!hasElevatedAccess) return null
 
   const handleToggle = () => {
     // If turning off admin mode while on an admin-only route, navigate home
@@ -28,14 +28,18 @@ export default function AdminToggle({ size = 'sm', onAfterToggle }: AdminToggleP
     toggleAdminMode()
   }
 
+  const iconOff = isAdmin ? <Shield /> : <EyeOff />
+  const iconOn = isAdmin ? <ShieldCheck /> : <Eye />
+  const label = isAdminMode ? t('memberMode') : (isAdmin ? t('adminMode') : t('vorstandMode'))
+
   return (
     <SwitchToggle
       enabled={isAdminMode}
       onChange={handleToggle}
       size={size}
-      ariaLabel={isAdminMode ? t('memberMode') : t('adminMode')}
-      iconOff={<Shield />}
-      iconOn={<ShieldCheck />}
+      ariaLabel={label}
+      iconOff={iconOff}
+      iconOn={iconOn}
     />
   )
 }

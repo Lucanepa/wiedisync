@@ -91,7 +91,7 @@ function entryIconColor(entry: CalendarEntry): string {
 export default function CalendarPage() {
   const { t } = useTranslation('calendar')
   const { user, memberTeamIds, coachTeamIds, teamsLoading } = useAuth()
-  const { effectiveIsAdmin } = useAdminMode()
+  const { effectiveIsAdmin, effectiveIsVorstand } = useAdminMode()
   const isMobile = useIsMobile()
   const [viewMode, setViewMode] = useState<CalendarViewMode>('month')
   const allSources: SourceFilter[] = user
@@ -111,11 +111,11 @@ export default function CalendarPage() {
   // Auto-select user's teams on initial load (non-admin only)
   const [autoSelected, setAutoSelected] = useState(false)
   useEffect(() => {
-    if (!autoSelected && userTeamIds.length > 0 && !effectiveIsAdmin) {
+    if (!autoSelected && userTeamIds.length > 0 && !effectiveIsAdmin && !effectiveIsVorstand) {
       setFilters((f) => ({ ...f, selectedTeamIds: userTeamIds }))
       setAutoSelected(true)
     }
-  }, [userTeamIds, autoSelected, effectiveIsAdmin])
+  }, [userTeamIds, autoSelected, effectiveIsAdmin, effectiveIsVorstand])
   // Sync sources when auth state changes (e.g., user logs in → training/event/closure become available)
   const prevUserRef = useRef(user)
   useEffect(() => {
@@ -142,11 +142,11 @@ export default function CalendarPage() {
       return { sources: ['game-home', 'game-away', 'hall'], selectedTeamIds: [] }
     }
     // Non-admins: if no teams selected, scope to their own teams
-    if (!effectiveIsAdmin && filters.selectedTeamIds.length === 0 && userTeamIds.length > 0) {
+    if (!effectiveIsAdmin && !effectiveIsVorstand && filters.selectedTeamIds.length === 0 && userTeamIds.length > 0) {
       return { ...filters, selectedTeamIds: userTeamIds }
     }
     return filters
-  }, [filters, user, effectiveIsAdmin, userTeamIds])
+  }, [filters, user, effectiveIsAdmin, effectiveIsVorstand, userTeamIds])
 
   // Compute visible range based on view mode
   const { rangeStart, rangeEnd } = useMemo(() => {
@@ -171,7 +171,7 @@ export default function CalendarPage() {
 
   const needsData = viewMode === 'month' || viewMode === 'week'
   // Don't fetch until user teams are resolved (prevents flash of all-team data)
-  const teamsReady = !user || effectiveIsAdmin || !teamsLoading
+  const teamsReady = !user || effectiveIsAdmin || effectiveIsVorstand || !teamsLoading
   const { entries, closedDates, isLoading } = useCalendarData({
     filters: effectiveFilters,
     rangeStart,
@@ -259,7 +259,7 @@ export default function CalendarPage() {
           onChange={setFilters}
           allowedSources={allowedSources}
           userTeamIds={userTeamIds}
-          isAdmin={effectiveIsAdmin}
+          isAdmin={effectiveIsAdmin || effectiveIsVorstand}
         />
       )}
 

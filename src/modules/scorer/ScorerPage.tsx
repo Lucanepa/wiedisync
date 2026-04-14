@@ -35,7 +35,7 @@ const PAST_PAGE_SIZE = 5
 export default function ScorerPage() {
   const { t } = useTranslation('scorer')
   const { user, isSuperAdmin, hasAdminAccessToSport } = useAuth()
-  const { effectiveIsAdmin } = useAdminMode()
+  const { effectiveIsAdmin, effectiveIsVorstand } = useAdminMode()
 
   const [tab, setTab] = useState<Tab>('games')
   const [sportTab, setSportTab] = useState<SportTab>('volleyball')
@@ -177,7 +177,7 @@ export default function ScorerPage() {
       if (getGameSport(g) !== sportTab) return false
 
       // Non-admins: only show games where their team has duty or they are personally assigned
-      if (!effectiveIsAdmin && user) {
+      if (!effectiveIsAdmin && !effectiveIsVorstand && user) {
         const isPersonallyAssigned = sportTab === 'volleyball'
           ? [g.scorer_member, g.scoreboard_member, g.scorer_scoreboard_member].includes(user.id)
           : [g.bb_scorer_member, g.bb_timekeeper_member, g.bb_24s_official].includes(user.id)
@@ -285,11 +285,11 @@ export default function ScorerPage() {
       if (a.time !== b.time) return (a.time || '') < (b.time || '') ? -1 : 1
       return 0
     })
-  }, [upcomingGames, sportTab, effectiveIsAdmin, user, userTeamIds, dateFilter, dutyTeamFilter, dutyTypeFilter, unassignedFilter, searchAssignee, memberMap])
+  }, [upcomingGames, sportTab, effectiveIsAdmin, effectiveIsVorstand, user, userTeamIds, dateFilter, dutyTeamFilter, dutyTypeFilter, unassignedFilter, searchAssignee, memberMap])
 
   const filteredPastGames = useMemo(() => allPastGames.filter((g) => {
     if (getGameSport(g) !== sportTab) return false
-    if (!effectiveIsAdmin && user) {
+    if (!effectiveIsAdmin && !effectiveIsVorstand && user) {
       const isPersonallyAssigned = sportTab === 'volleyball'
         ? [g.scorer_member, g.scoreboard_member, g.scorer_scoreboard_member].includes(user.id)
         : [g.bb_scorer_member, g.bb_timekeeper_member, g.bb_24s_official].includes(user.id)
@@ -299,7 +299,7 @@ export default function ScorerPage() {
       if (!isPersonallyAssigned && !teamHasDuty) return false
     }
     return true
-  }), [allPastGames, sportTab, effectiveIsAdmin, user, userTeamIds])
+  }), [allPastGames, sportTab, effectiveIsAdmin, effectiveIsVorstand, user, userTeamIds])
   const visiblePastGames = useMemo(() => filteredPastGames.slice(0, pastVisible), [filteredPastGames, pastVisible])
 
   const hasActiveFilters = !!(dateFilter || dutyTeamFilter || dutyTypeFilter !== 'all' || unassignedFilter !== 'all' || searchAssignee)

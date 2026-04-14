@@ -43,7 +43,7 @@ export default function ICalModal({ open, mode, onClose, entries }: ICalModalPro
   const { t } = useTranslation('calendar')
   const { data: teams } = useTeams()
   const { memberTeamIds, coachTeamIds } = useAuth()
-  const { effectiveIsAdmin } = useAdminMode()
+  const { effectiveIsAdmin, effectiveIsVorstand } = useAdminMode()
 
   const [selectedCategories, setSelectedCategories] = useState<SourceCategory[]>([
     'trainings',
@@ -67,9 +67,9 @@ export default function ICalModal({ open, mode, onClose, entries }: ICalModalPro
   }, [memberTeamIds, coachTeamIds])
 
   const visibleTeams = useMemo(() => {
-    if (effectiveIsAdmin) return teams
+    if (effectiveIsAdmin || effectiveIsVorstand) return teams
     return teams.filter((t) => userTeamIds.includes(t.id))
-  }, [teams, effectiveIsAdmin, userTeamIds])
+  }, [teams, effectiveIsAdmin, effectiveIsVorstand, userTeamIds])
 
   function toggleCategory(cat: SourceCategory) {
     setSelectedCategories((prev) =>

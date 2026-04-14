@@ -32,8 +32,9 @@ type ExpandedMemberTeam = MemberTeam & { team: Team | string }
 
 function useNavItems(isLoggedIn: boolean, isApproved: boolean) {
   const { t } = useTranslation('nav')
-  const { memberTeamIds, isAdmin, isVorstand } = useAuth()
-  const showTeamsPlural = isAdmin || isVorstand || memberTeamIds.length > 1
+  const { memberTeamIds } = useAuth()
+  const { effectiveIsAdmin, effectiveIsVorstand } = useAdminMode()
+  const showTeamsPlural = effectiveIsAdmin || effectiveIsVorstand || memberTeamIds.length > 1
   const iconClass = 'h-5 w-5'
   const publicItems = [
     { to: '/', label: t('home'), icon: <Home className={iconClass} /> },

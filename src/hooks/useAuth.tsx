@@ -93,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loadTeamContext = useCallback(async (memberId: string | number) => {
     try {
-      const [coachRows, trRows, memberTeams, allTeams, captainRows] = await Promise.all([
+      const [coachRows, trRows, memberTeams, allTeams, captainTeams] = await Promise.all([
         client.request(readItems('teams_coaches', {
           filter: { members_id: { _eq: memberId } },
           fields: ['teams_id'], limit: -1,
@@ -110,10 +110,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           filter: { active: { _eq: true } },
           fields: ['id', 'name', 'sport'], limit: -1,
         } as never)) as Promise<Pick<Team, 'id' | 'name' | 'sport'>[]>,
-        client.request(readItems('teams_captain', {
-          filter: { members_id: { _eq: memberId } },
-          fields: ['teams_id'], limit: -1,
-        } as never)) as Promise<{ teams_id: number }[]>,
+        // Captain is M2O on teams — filter teams where captain = this member
+        client.request(readItems('teams', {
+          filter: { captain: { _eq: memberId }, active: { _eq: true } },
+          fields: ['id'], limit: -1,
+        } as never)) as Promise<{ id: number }[]>,
       ])
 
       const teamMap = new Map(allTeams.map(t => [String(t.id), t]))
@@ -122,7 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setCoachTeamIds([...coachIdSet])
       setCoachTeamNames([...coachIdSet].map(id => teamMap.get(id)?.name).filter((n): n is string => !!n))
       setTeamResponsibleIds(trRows.map(r => String(r.teams_id)))
-      setCaptainTeamIds(captainRows.map(r => String(r.teams_id)))
+      setCaptainTeamIds(captainTeams.map(t => String(t.id)))
       setMemberTeamIds(memberTeams.map(mt => String(mt.team)))
       setMemberTeamNames(memberTeams.map(mt => teamMap.get(String(mt.team))?.name).filter((n): n is string => !!n))
 
@@ -278,8 +279,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [coachTeamIds, memberTeamIds, teamsReady],
   )
   const canViewTeam = useCallback(
-    (teamId: string) => hasAdminAccessToTeam(teamId) || isVorstand || coachTeamIds.includes(teamId) || memberTeamIds.includes(teamId),
-    [hasAdminAccessToTeam, isVorstand, coachTeamIds, memberTeamIds],
+    (teamId: string) => hasAdminAccessToTeam(teamId) || coachTeamIds.includes(teamId) || memberTeamIds.includes(teamId),
+    [hasAdminAccessToTeam, coachTeamIds, memberTeamIds],
   )
   const getGuestLevel = useCallback((teamId: string) => guestLevelByTeam[teamId] ?? 0, [guestLevelByTeam])
   const isGuestIn = useCallback((teamId: string) => getGuestLevel(teamId) > 0, [getGuestLevel])

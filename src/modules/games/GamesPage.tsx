@@ -34,9 +34,9 @@ export default function GamesPage() {
   // Merge member + coach teams for visibility (coaches see teams they manage)
   const allUserTeamIds = useMemo(() => [...new Set([...memberTeamIds, ...coachTeamIds])], [memberTeamIds, coachTeamIds])
   const allUserTeamNames = useMemo(() => [...new Set([...memberTeamNames, ...coachTeamNames])], [memberTeamNames, coachTeamNames])
-  const { effectiveIsAdmin } = useAdminMode()
+  const { effectiveIsAdmin, effectiveIsVorstand } = useAdminMode()
   const { sport, setSport } = useSportPreference()
-  const showSportToggle = effectiveIsAdmin || !user || primarySport === 'both'
+  const showSportToggle = effectiveIsAdmin || effectiveIsVorstand || !user || primarySport === 'both'
   const [activeTab, setActiveTab] = useState<TabKey>('upcoming')
   const [selectedTeams, setSelectedTeams] = useState<string[]>([])
   const [selectedGame, setSelectedGame] = useState<Game | null>(null)
@@ -54,7 +54,7 @@ export default function GamesPage() {
   // Reset team selection when sport changes (old selections may not match new sport)
   useEffect(() => {
     // Non-admin users: reset to their own teams; admins: show all
-    setSelectedTeams(effectiveIsAdmin ? [] : allUserTeamNames)
+    setSelectedTeams((effectiveIsAdmin || effectiveIsVorstand) ? [] : allUserTeamNames)
   }, [sport]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const INITIAL_LIMIT = 20
@@ -72,7 +72,7 @@ export default function GamesPage() {
   // For non-admins, always scope to their teams (even if filter cleared)
   const effectiveTeams = selectedTeams.length > 0
     ? selectedTeams
-    : (!effectiveIsAdmin && allUserTeamNames.length > 0 ? allUserTeamNames : [])
+    : (!(effectiveIsAdmin || effectiveIsVorstand) && allUserTeamNames.length > 0 ? allUserTeamNames : [])
   // Convert name codes to record IDs for the kscw_team filter
   const effectiveTeamIds = effectiveTeams
     .map((name) => teamNameToId.get(name))
@@ -80,7 +80,7 @@ export default function GamesPage() {
   // For non-admins, also include their team IDs as fallback
   const filterTeamIds = effectiveTeamIds.length > 0
     ? effectiveTeamIds
-    : (!effectiveIsAdmin && allUserTeamIds.length > 0 ? allUserTeamIds : [])
+    : (!(effectiveIsAdmin || effectiveIsVorstand) && allUserTeamIds.length > 0 ? allUserTeamIds : [])
   const teamFilter = buildTeamFilter(filterTeamIds)
 
   // Sport filter clause for Directus queries
@@ -241,7 +241,7 @@ export default function GamesPage() {
           </div>
         )}
         <div data-tour="team-filter">
-          <TeamFilterBar selected={selectedTeams} onChange={setSelectedTeams} sport={sport} limitToTeams={effectiveIsAdmin || !user ? undefined : allUserTeamNames} />
+          <TeamFilterBar selected={selectedTeams} onChange={setSelectedTeams} sport={sport} limitToTeams={effectiveIsAdmin || effectiveIsVorstand || !user ? undefined : allUserTeamNames} />
         </div>
         <div data-tour="game-tabs">
           <GameTabs activeTab={activeTab} onChange={(tab) => { setActiveTab(tab); setShowAll(false) }} />

@@ -568,6 +568,11 @@ export default function ParticipationRosterModal({
                   {showRsvpTime && participation?.updated && (
                     <RsvpTimestamp datetime={participation.updated} locale={i18n.language} />
                   )}
+                  {participation?.position_1 && (
+                    <p className="truncate text-xs text-gray-400">
+                      {[participation.position_1, participation.position_2, participation.position_3].filter(Boolean).join(' > ')}
+                    </p>
+                  )}
                   {(() => {
                     const absenceReason = getMemberAbsenceReason(member.id)
                     const note = absenceReason || participation?.note

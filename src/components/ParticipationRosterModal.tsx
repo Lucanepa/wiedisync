@@ -110,49 +110,6 @@ export default function ParticipationRosterModal({
   const [savingMemberIds, setSavingMemberIds] = useState<Set<string>>(new Set())
   const { create, update, remove } = useMutation<Participation>('participations')
 
-  const handleStatusChange = useCallback(async (memberId: string, newStatus: string) => {
-    setEditingMemberId(null)
-    if (!activityId) return
-
-    const currentParticipation = participations.find(p => p.member === memberId)
-    const currentStatus = currentParticipation?.status ?? null
-
-    // No change — user selected same status or cleared when already no response
-    if (newStatus === (currentStatus ?? '')) return
-
-    setSavingMemberIds(prev => new Set(prev).add(memberId))
-    try {
-      if (newStatus === '') {
-        // Clear → delete participation record
-        if (currentParticipation) {
-          await remove(currentParticipation.id)
-        }
-      } else if (currentParticipation) {
-        // Update existing record
-        await update(currentParticipation.id, { status: newStatus })
-      } else {
-        // Create new record
-        await create({
-          member: memberId,
-          activity_type: activityType,
-          activity_id: activityId,
-          status: newStatus,
-          note: '',
-          guest_count: 0,
-          is_staff: false,
-        })
-      }
-    } catch {
-      // useMutation logs the error; UI reverts via refetch
-    } finally {
-      setSavingMemberIds(prev => {
-        const next = new Set(prev)
-        next.delete(memberId)
-        return next
-      })
-    }
-  }, [activityId, activityType, participations, create, update, remove])
-
   // For club-wide events (no team), fetch all participations and resolve members from them
   const [clubWideMembers, setClubWideMembers] = useState<Member[]>([])
   const [clubWideLoading, setClubWideLoading] = useState(false)
@@ -225,6 +182,49 @@ export default function ParticipationRosterModal({
       ? allLoading
       : regularLoading
   const isLoading = (isClubWide ? clubWideLoading || clubWidePartsLoading : membersLoading) || participationsLoading
+
+  const handleStatusChange = useCallback(async (memberId: string, newStatus: string) => {
+    setEditingMemberId(null)
+    if (!activityId) return
+
+    const currentParticipation = participations.find(p => p.member === memberId)
+    const currentStatus = currentParticipation?.status ?? null
+
+    // No change — user selected same status or cleared when already no response
+    if (newStatus === (currentStatus ?? '')) return
+
+    setSavingMemberIds(prev => new Set(prev).add(memberId))
+    try {
+      if (newStatus === '') {
+        // Clear → delete participation record
+        if (currentParticipation) {
+          await remove(currentParticipation.id)
+        }
+      } else if (currentParticipation) {
+        // Update existing record
+        await update(currentParticipation.id, { status: newStatus })
+      } else {
+        // Create new record
+        await create({
+          member: memberId,
+          activity_type: activityType,
+          activity_id: activityId,
+          status: newStatus,
+          note: '',
+          guest_count: 0,
+          is_staff: false,
+        })
+      }
+    } catch {
+      // useMutation logs the error; UI reverts via refetch
+    } finally {
+      setSavingMemberIds(prev => {
+        const next = new Set(prev)
+        next.delete(memberId)
+        return next
+      })
+    }
+  }, [activityId, activityType, participations, create, update, remove])
 
   // Fetch staff participations (coaches/team_responsible who aren't in member_teams)
   useEffect(() => {

@@ -177,10 +177,10 @@ export default function EventCard({ event, onClick, onEdit, onDelete, onOpenRost
         </span>
       )}
 
-      {/* Bottom row: RSVP + participation counter */}
+      {/* Bottom row: RSVP + participation bars */}
       {canRSVP && (
         <div data-tour="event-rsvp" className="mt-2.5 space-y-1.5" onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-wrap items-end justify-between gap-2">
             <EventCardParticipation
               event={event}
               existingParticipation={myParticipation}
@@ -190,7 +190,7 @@ export default function EventCard({ event, onClick, onEdit, onDelete, onOpenRost
               {warnings.length > 0 && (
                 <ParticipationWarningBadge warnings={warnings} namespace="participation" />
               )}
-              <ParticipationSummary activityType="event" activityId={event.id} compact hideExtras participations={participations} />
+              <ParticipationSummary activityType="event" activityId={event.id} bars hideExtras participations={participations} />
             </div>
           </div>
         </div>

@@ -609,10 +609,10 @@ function CompactGameRow({ game, showScore, onClick, participationStatus }: { gam
           </div>
         )}
 
-        {/* Participation summary — right-aligned, stacked vertically (scheduled games only) */}
+        {/* Participation summary — right-aligned (scheduled games only) */}
         {game.status === 'scheduled' && (
           <div className="ml-auto shrink-0">
-            <ParticipationSummary activityType="game" activityId={game.id} stacked />
+            <ParticipationSummary activityType="game" activityId={game.id} bars />
           </div>
         )}
       </div>
@@ -664,9 +664,9 @@ function CompactTrainingRow({ training, onClick, participationStatus }: { traini
           </div>
         </div>
 
-        {/* Participation summary — right-aligned, stacked vertically */}
+        {/* Participation summary — right-aligned */}
         <div className="ml-auto shrink-0">
-          <ParticipationSummary activityType="training" activityId={training.id} stacked />
+          <ParticipationSummary activityType="training" activityId={training.id} bars />
         </div>
       </div>
     </div>
@@ -759,15 +759,10 @@ function AppointmentRow({ appointment, onClick, participationStatus }: {
             <span className="text-gray-500 dark:text-gray-400">{typeIcon[appointment.type]}</span>
             <p className="min-w-0 truncate px-2 text-sm text-gray-900 dark:text-gray-100">{label}</p>
 
-            {/* Desktop: participation counters stacked on the right */}
-            <div className="hidden shrink-0 pr-3 md:block">
-              <ParticipationSummary activityType={appointment.type} activityId={appointment.data.id} stacked />
+            {/* Participation counters */}
+            <div className="shrink-0 pr-3">
+              <ParticipationSummary activityType={appointment.type} activityId={appointment.data.id} bars />
             </div>
-          </div>
-
-          {/* Mobile: participation counters as a row beneath event details */}
-          <div className="pb-2 pl-[calc(5.75rem+10px)] md:hidden">
-            <ParticipationSummary activityType={appointment.type} activityId={appointment.data.id} compact />
           </div>
         </div>
       </div>
@@ -930,7 +925,7 @@ function EventRow({ event, onClick, participationStatus }: { event: EventExpande
         <div className="mb-2 flex items-center justify-between gap-2">
           <StatusBadge status={event.event_type} />
           {effectiveStatus && (
-            <ParticipationSummary activityType="event" activityId={event.id} compact hideExtras />
+            <ParticipationSummary activityType="event" activityId={event.id} bars hideExtras />
           )}
         </div>
 

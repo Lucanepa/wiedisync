@@ -18,6 +18,6 @@ export function logActivity(
     collection_name: collectionName,
     record_id: recordId ? String(recordId) : null,
     data: data ?? null,
-    ...(memberId != null && { user: memberId }),
+    ...(memberId != null && { user: Number(memberId) }),
   }).catch(() => {})
 }

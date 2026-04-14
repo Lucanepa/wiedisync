@@ -24,6 +24,7 @@ import { registerNewsletter } from './newsletter.js'
 import { registerNewsletterDigest } from './newsletter-digest.js'
 import { registerClubdeskUpdate } from './clubdesk-update.js'
 import { registerBugfixes } from './bugfixes.js'
+import { registerEventNotify } from './event-notify.js'
 
 // ── Helpers ──────────────────────────────────────────────────────
 
@@ -1513,6 +1514,7 @@ export default {
     registerNewsletterDigest(router, ctx)
     registerClubdeskUpdate(router, ctx)
     registerBugfixes(router, ctx)
+    registerEventNotify(router, ctx)
 
     log.info('KSCW endpoints loaded: ~49 routes')
   },

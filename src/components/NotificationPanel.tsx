@@ -20,6 +20,7 @@ const typeIcons: Record<string, React.ReactNode> = {
   result_available: <Trophy className="h-4 w-4" />,
   duty_delegation_request: <ArrowRightLeft className="h-4 w-4" />,
   member_join_request: <UserPlus className="h-4 w-4" />,
+  event_invite: <Bell className="h-4 w-4" />,
 }
 
 const typeLabels: Record<string, string> = {
@@ -29,6 +30,7 @@ const typeLabels: Record<string, string> = {
   result_available: 'resultAvailable',
   duty_delegation_request: 'dutyDelegation',
   member_join_request: 'memberJoinRequest',
+  event_invite: 'eventInvite',
 }
 
 function timeAgo(dateStr: string, t: (key: string, opts?: Record<string, unknown>) => string): string {

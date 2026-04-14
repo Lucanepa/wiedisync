@@ -1552,6 +1552,105 @@
         "foreign_key_table": null,
         "foreign_key_column": null
       }
+    },
+    {
+      "collection": "members",
+      "field": "sex",
+      "type": "string",
+      "meta": {
+        "collection": "members",
+        "conditions": null,
+        "display": "labels",
+        "display_options": null,
+        "field": "sex",
+        "group": null,
+        "hidden": false,
+        "interface": "select-dropdown",
+        "note": null,
+        "options": {
+          "choices": [
+            {
+              "text": "Male",
+              "value": "m"
+            },
+            {
+              "text": "Female",
+              "value": "f"
+            }
+          ]
+        },
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 34,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "half"
+      },
+      "schema": {
+        "name": "sex",
+        "table": "members",
+        "data_type": "character varying",
+        "default_value": null,
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "members",
+      "field": "is_spielplaner",
+      "type": "boolean",
+      "meta": {
+        "collection": "members",
+        "conditions": null,
+        "display": "boolean",
+        "display_options": null,
+        "field": "is_spielplaner",
+        "group": null,
+        "hidden": false,
+        "interface": "boolean",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 35,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "half"
+      },
+      "schema": {
+        "name": "is_spielplaner",
+        "table": "members",
+        "data_type": "boolean",
+        "default_value": false,
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
     }
   ],
   "relations": [
@@ -1653,6 +1752,47 @@
         "constraint_name": "events_created_by_foreign",
         "on_update": "NO ACTION",
         "on_delete": "SET NULL"
+      }
+    },
+    {
+      "collection": "events_members",
+      "field": "members_id",
+      "related_collection": "members",
+      "meta": {
+        "junction_field": "events_id",
+        "many_collection": "events_members",
+        "many_field": "members_id",
+        "one_allowed_collections": null,
+        "one_collection": "members",
+        "one_collection_field": null,
+        "one_deselect_action": "nullify",
+        "one_field": null,
+        "sort_field": null
+      },
+      "schema": {
+        "table": "events_members",
+        "column": "members_id",
+        "foreign_key_table": "members",
+        "foreign_key_column": "id",
+        "constraint_name": "events_members_members_id_fkey",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE"
+      }
+    },
+    {
+      "collection": "events_members",
+      "field": "members_id",
+      "related_collection": "members",
+      "meta": {
+        "junction_field": "events_id",
+        "many_collection": "events_members",
+        "many_field": "members_id",
+        "one_allowed_collections": null,
+        "one_collection": "members",
+        "one_collection_field": null,
+        "one_deselect_action": "nullify",
+        "one_field": null,
+        "sort_field": null
       }
     },
     {

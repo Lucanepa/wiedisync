@@ -37,7 +37,7 @@ function teamId(val: unknown): string {
 
 export default function EventsPage() {
   const { t } = useTranslation('events')
-  const { user, isCoach, isCoachOf, memberTeamIds, coachTeamIds, teamsLoading } = useAuth()
+  const { user, isCoach, isCoachOf, memberTeamIds, coachTeamIds, teamsLoading, matchesRole } = useAuth()
   const { effectiveIsAdmin } = useAdminMode()
   // Merge member + coach teams for visibility
   const allUserTeamIds = useMemo(() => [...new Set([...memberTeamIds, ...coachTeamIds])], [memberTeamIds, coachTeamIds])
@@ -62,37 +62,70 @@ export default function EventsPage() {
         ],
       })
     }
-    if (selectedTeam) {
-      conditions.push({
-        _or: [{ teams: { _null: true } }, { teams: { teams_id: { _eq: selectedTeam } } }],
-      })
-    } else if (allUserTeamIds.length > 0) {
-      conditions.push({
-        _or: [
-          { teams: { _null: true } },
-          ...allUserTeamIds.map(id => ({ teams: { teams_id: { _eq: id } } })),
-        ],
-      })
+    // Admins fetch ALL events — no audience filtering needed at API level
+    if (!effectiveIsAdmin) {
+      const audienceConds: Record<string, unknown>[] = [
+        { teams: { _null: true } },  // Club-wide events
+      ]
+
+      // Team-based (existing logic)
+      const teamFilterIds = selectedTeam ? [selectedTeam] : allUserTeamIds
+      for (const id of teamFilterIds) {
+        audienceConds.push({ teams: { teams_id: { _eq: id } } })
+      }
+
+      // Role-targeted events (fetch all, filter client-side)
+      audienceConds.push({ invited_roles: { _nnull: true } })
+
+      // Directly invited
+      if (user) {
+        audienceConds.push({ invited_members: { members_id: { _eq: user.id } } })
+      }
+
+      conditions.push({ _or: audienceConds })
     }
     if (conditions.length === 0) return {}
     return conditions.length === 1 ? conditions[0] : { _and: conditions }
-  }, [allUserTeamIds, selectedTeam, showPast, today])
+  }, [allUserTeamIds, selectedTeam, showPast, today, effectiveIsAdmin, user])
 
   const { data: eventsRaw, isLoading, refetch } = useCollection<Event>('events', {
     filter: eventFilter,
     sort: ['start_date'],
     limit: 50,
-    fields: ['*', 'teams.teams_id.*'],
+    fields: ['*', 'teams.teams_id.*', 'invited_members.members_id', 'invited_roles', 'send_email_invite'],
     enabled: !teamsLoading,
   })
   const events = eventsRaw ?? []
+
+  const visibleEvents = useMemo(() => {
+    if (effectiveIsAdmin) return events  // Admins see everything
+    return events.filter(event => {
+      const evtTeamIds = (event.teams ?? []).map(t => teamId(t))
+      const hasTeams = evtTeamIds.length > 0
+      const hasRoles = (event.invited_roles ?? []).length > 0
+      const invitedMemberIds = (event.invited_members ?? []).map((m: any) =>
+        String(typeof m === 'object' ? (m.members_id?.id ?? m.members_id ?? m) : m)
+      )
+      const hasMembers = invitedMemberIds.length > 0
+
+      // No targeting = club-wide
+      if (!hasTeams && !hasRoles && !hasMembers) return true
+      // Team match
+      if (hasTeams && evtTeamIds.some(id => allUserTeamIds.includes(id))) return true
+      // Role match
+      if (hasRoles && event.invited_roles!.some(r => matchesRole(r))) return true
+      // Direct invite
+      if (hasMembers && user && invitedMemberIds.includes(user.id)) return true
+      return false
+    })
+  }, [events, allUserTeamIds, user, matchesRole, effectiveIsAdmin])
 
   const { remove } = useMutation<Event>('events')
 
   useRealtime('events', () => refetch())
 
   // Batch-fetch ALL participations for visible events in ONE request
-  const eventIds = useMemo(() => events.map((e) => e.id), [events])
+  const eventIds = useMemo(() => visibleEvents.map((e) => e.id), [visibleEvents])
   const participationFilter = useMemo((): Record<string, unknown> | string => {
     if (eventIds.length === 0) return ''
     return { _and: [{ activity_type: { _eq: 'event' } }, { activity_id: { _in: eventIds } }] }
@@ -179,7 +212,7 @@ export default function EventsPage() {
       <div className="mt-6">
         {isLoading ? (
           <LoadingSpinner />
-        ) : events.length === 0 ? (
+        ) : visibleEvents.length === 0 ? (
           <EmptyState
             icon={<PartyPopper className="h-10 w-10" />}
             title={t('noEvents')}
@@ -187,7 +220,7 @@ export default function EventsPage() {
           />
         ) : (
           <div className="space-y-3" data-tour="event-card">
-            {events.map((event) => {
+            {visibleEvents.map((event) => {
               // Coaches can only edit events linked to their teams (or club-wide with no teams)
               // Admins can edit all events
               const canEdit = effectiveIsAdmin || (isCoach && (

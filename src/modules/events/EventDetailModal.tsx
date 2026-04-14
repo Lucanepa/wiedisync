@@ -138,6 +138,24 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
             </div>
           )}
 
+          {/* Targeting indicators */}
+          {((event.invited_roles ?? []).length > 0 || (event.invited_members ?? []).length > 0) && (
+            <div className="mt-3 space-y-2">
+              {(event.invited_roles ?? []).length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground">{t('invitedRoles', { ns: 'invitations' })}</p>
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {event.invited_roles!.map(role => (
+                      <span key={role} className="rounded-full bg-purple-100 px-2 py-0.5 text-xs text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
+                        {t(`role_${role}`, { ns: 'invitations' })}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Tasks — enabled per-event by creator, or inherited from first team */}
           {user && event && isFeatureEnabled(event.features_enabled, 'tasks') && (
             <div className="border-t border-gray-200 pt-3 dark:border-gray-700">

@@ -16,7 +16,9 @@ import { teamNameToColorKey } from '../../utils/teamColors'
 import { formatDateLocale } from '../../utils/dateUtils'
 import { parseRespondByTime, toApiDatetime } from '../../utils/dateHelpers'
 import type { Event, EventSession, Team } from '../../types'
-import { createRecord, deleteRecord, updateRecord } from '../../lib/api'
+import RoleChipPicker from '@/components/RoleChipPicker'
+import MemberMultiSelect from '@/components/MemberMultiSelect'
+import { createRecord, deleteRecord, updateRecord, kscwApi } from '../../lib/api'
 
 interface SessionDraft {
   id?: string // existing record id (for edit mode)
@@ -97,6 +99,9 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
   const [enableTasks, setEnableTasks] = useState(false)
   const [participationMode, setParticipationMode] = useState<'whole' | 'per_day' | 'per_session'>('whole')
   const [sessions, setSessions] = useState<SessionDraft[]>([])
+  const [invitedRoles, setInvitedRoles] = useState<string[]>([])
+  const [invitedMembers, setInvitedMembers] = useState<string[]>([])
+  const [sendEmailInvite, setSendEmailInvite] = useState(false)
   const [error, setError] = useState('')
 
   // Fetch existing sessions when editing
@@ -130,6 +135,11 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
       setRequireNoteIfAbsent(!!event.require_note_if_absent)
       setParticipationMode((event.participation_mode as 'whole' | 'per_day' | 'per_session') || 'whole')
       setEnableTasks(event.features_enabled?.tasks === true)
+      setInvitedRoles(event.invited_roles ?? [])
+      setInvitedMembers(
+        (event.invited_members ?? []).map((m: any) => typeof m === 'object' ? String(m.members_id?.id ?? m.members_id ?? m) : String(m))
+      )
+      setSendEmailInvite(event.send_email_invite ?? false)
     } else {
       setTitle('')
       setEventType(effectiveIsAdmin ? 'verein' : 'social')
@@ -146,6 +156,9 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
       setRequireNoteIfAbsent(false)
       setParticipationMode('whole')
       setSessions([])
+      setInvitedRoles([])
+      setInvitedMembers([])
+      setSendEmailInvite(false)
     }
     setError('')
   }, [event, open])
@@ -257,6 +270,9 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
       require_note_if_absent: requireNoteIfAbsent,
       participation_mode: effectiveMode,
       features_enabled: { tasks: enableTasks },
+      invited_roles: invitedRoles.length > 0 ? invitedRoles : null,
+      invited_members: invitedMembers,
+      send_email_invite: sendEmailInvite,
     }
 
     try {
@@ -267,6 +283,18 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
       } else {
         const rec = await create(data)
         eventId = rec.id
+      }
+
+      // Send notifications for new events
+      if (!event) {
+        try {
+          await kscwApi(`/events/${eventId}/notify`, {
+            method: 'POST',
+            body: { send_email: sendEmailInvite },
+          })
+        } catch {
+          // Notification failure shouldn't block event creation
+        }
       }
 
       // Sync sessions
@@ -463,6 +491,25 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
             onChange={setSelectedTeams}
           />
         </FormField>
+
+        {/* Role targeting */}
+        <FormField label={t('inviteByRole', { ns: 'invitations' })}>
+          <RoleChipPicker selected={invitedRoles} onChange={setInvitedRoles} />
+        </FormField>
+
+        {/* Member targeting */}
+        <FormField label={t('inviteSpecificMembers', { ns: 'invitations' })}>
+          <MemberMultiSelect selected={invitedMembers} onChange={setInvitedMembers} />
+        </FormField>
+
+        {/* Email invite toggle */}
+        <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+          <Switch checked={sendEmailInvite} onCheckedChange={setSendEmailInvite} />
+          <div>
+            <span>{t('sendEmailInvite', { ns: 'invitations' })}</span>
+            <p className="text-xs text-muted-foreground">{t('sendEmailInviteHint', { ns: 'invitations' })}</p>
+          </div>
+        </div>
 
         {/* Participation mode selector — only for multi-day events */}
         {isMultiDay && (

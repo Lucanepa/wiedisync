@@ -11,6 +11,7 @@ export default {
   resultAvailable: 'Risultato',
   dutyDelegation: 'Servizio segnapunti',
   memberJoinRequest: 'Richiesta di adesione',
+  eventInvite: 'Invito a evento',
   member_join_request: '{{memberName}} vuole unirsi a {{teamName}}',
   // Delegation notification messages
   duty_delegation_request: '{{from}} vuole delegare il servizio {{role}} per {{game}} del {{date}} a te.',

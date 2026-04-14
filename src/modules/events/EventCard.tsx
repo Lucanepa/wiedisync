@@ -169,6 +169,11 @@ export default function EventCard({ event, onClick, onEdit, onDelete, onOpenRost
           ))}
         </div>
       )}
+      {((event.invited_roles ?? []).length > 0 || (event.invited_members ?? []).length > 0) && (
+        <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
+          {t('targetedEvent', { ns: 'invitations' })}
+        </span>
+      )}
 
       {/* Bottom row: RSVP + participation counter */}
       {canRSVP && (

@@ -2,6 +2,13 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.9.0] — 2026-04-14
+
+### Features
+
+- **Coach/TR participation editing** — Coaches and team responsibles can now change participation status for other team members directly in the roster modal (trainings and games). Pencil icon next to each member's status opens an inline dropdown to set Confirmed, Maybe, Declined, or clear back to No response. Also works on waitlisted members.
+- **Self-override for absences** — Members can now override their own absence-declined status by clicking the RSVP button and selecting a different status.
+
 ## [3.8.0] — 2026-04-10
 
 ### Features

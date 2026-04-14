@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.8.0'
+const APP_VERSION = '3.9.0'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,19 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.9.0',
+    date: '2026-04-14',
+    sections: [
+      {
+        title: 'Teilnahme-Verwaltung',
+        items: [
+          'Coaches und Teamverantwortliche können die Teilnahme anderer Mitglieder direkt im Aufgebot ändern (Trainings und Spiele). Stift-Symbol neben dem Status öffnet ein Dropdown.',
+          'Mitglieder können ihre eigene absenzbedingte Absage überschreiben.',
+        ],
+      },
+    ],
+  },
   {
     version: '3.8.0',
     date: '2026-04-10',

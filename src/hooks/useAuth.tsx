@@ -29,6 +29,10 @@ export interface AuthContextValue {
   isStaffOnly: (teamId: string) => boolean
   coachTeamIds: string[]
   coachTeamNames: string[]
+  teamResponsibleIds: string[]
+  captainTeamIds: string[]
+  is_spielplaner: boolean
+  matchesRole: (role: string) => boolean
   memberTeamIds: string[]
   memberTeamNames: string[]
   teamsLoading: boolean
@@ -59,6 +63,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [memberSports, setMemberSports] = useState<Set<'volleyball' | 'basketball'>>(new Set())
   const [teamSportById, setTeamSportById] = useState<Record<string, 'volleyball' | 'basketball'>>({})
   const [guestLevelByTeam, setGuestLevelByTeam] = useState<Record<string, number>>({})
+  const [teamResponsibleIds, setTeamResponsibleIds] = useState<string[]>([])
+  const [captainTeamIds, setCaptainTeamIds] = useState<string[]>([])
+  const [isSpielplaner, setIsSpielplaner] = useState(false)
   const [teamsReady, setTeamsReady] = useState(false)
   const teamsLoading = !!user && !teamsReady
 
@@ -82,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loadTeamContext = useCallback(async (memberId: string | number) => {
     try {
-      const [coachRows, trRows, memberTeams, allTeams] = await Promise.all([
+      const [coachRows, trRows, memberTeams, allTeams, captainRows] = await Promise.all([
         client.request(readItems('teams_coaches', {
           filter: { members_id: { _eq: memberId } },
           fields: ['teams_id'], limit: -1,
@@ -99,6 +106,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           filter: { active: { _eq: true } },
           fields: ['id', 'name', 'sport'], limit: -1,
         } as never)) as Promise<Pick<Team, 'id' | 'name' | 'sport'>[]>,
+        client.request(readItems('teams_captain', {
+          filter: { members_id: { _eq: memberId } },
+          fields: ['teams_id'], limit: -1,
+        } as never)) as Promise<{ teams_id: number }[]>,
       ])
 
       const teamMap = new Map(allTeams.map(t => [String(t.id), t]))
@@ -106,6 +117,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setCoachTeamIds([...coachIdSet])
       setCoachTeamNames([...coachIdSet].map(id => teamMap.get(id)?.name).filter((n): n is string => !!n))
+      setTeamResponsibleIds(trRows.map(r => String(r.teams_id)))
+      setCaptainTeamIds(captainRows.map(r => String(r.teams_id)))
       setMemberTeamIds(memberTeams.map(mt => String(mt.team)))
       setMemberTeamNames(memberTeams.map(mt => teamMap.get(String(mt.team))?.name).filter((n): n is string => !!n))
 
@@ -142,6 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const member = await fetchMember()
         if (member) {
           setUser(member)
+          setIsSpielplaner(!!member.is_spielplaner)
           setCurrentMemberId(member.id)
           addBreadcrumb('auth.init', { memberId: member.id })
           setSentryUser({ id: member.id })
@@ -195,6 +209,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const member = await fetchMember()
     if (member) {
       setUser(member)
+      setIsSpielplaner(!!member.is_spielplaner)
       setCurrentMemberId(member.id)
       addBreadcrumb('auth.login_success', { memberId: member.id })
       setSentryUser({ id: member.id })
@@ -212,6 +227,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSentryUser(null)
     setUser(null)
     setCoachTeamIds([]); setCoachTeamNames([])
+    setTeamResponsibleIds([]); setCaptainTeamIds([])
+    setIsSpielplaner(false)
     setMemberTeamIds([]); setMemberTeamNames([])
     setMemberSports(new Set()); setGuestLevelByTeam({}); setTeamSportById({})
     setTeamsReady(false)
@@ -263,16 +280,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const getGuestLevel = useCallback((teamId: string) => guestLevelByTeam[teamId] ?? 0, [guestLevelByTeam])
   const isGuestIn = useCallback((teamId: string) => getGuestLevel(teamId) > 0, [getGuestLevel])
 
+  const matchesRole = useCallback((role: string): boolean => {
+    if (!user) return false
+    if (['vorstand', 'admin', 'vb_admin', 'bb_admin', 'superuser'].includes(role)) {
+      return (user.role ?? []).includes(role as any)
+    }
+    if (role === 'coach') return coachTeamIds.length > 0
+    if (role === 'team_responsible') return teamResponsibleIds.length > 0
+    if (role === 'captain') return captainTeamIds.length > 0
+    if (['scorer_vb', 'referee_vb', 'otr1_bb', 'otr2_bb', 'otn_bb', 'referee_bb'].includes(role)) {
+      return (user.licences ?? []).includes(role as any)
+    }
+    if (role === 'is_spielplaner') return isSpielplaner
+    return false
+  }, [user, coachTeamIds, teamResponsibleIds, captainTeamIds, isSpielplaner])
+
   const value = useMemo<AuthContextValue>(() => ({
     user, isSuperAdmin, isAdmin, isGlobalAdmin, isVbAdmin, isBbAdmin,
     hasAdminAccessToSport, hasAdminAccessToTeam, isApproved, isProfileComplete,
     isCoach, isCoachOf, canParticipateIn, isStaffOnly, coachTeamIds, coachTeamNames,
+    teamResponsibleIds, captainTeamIds, is_spielplaner: isSpielplaner, matchesRole,
     memberTeamIds, memberTeamNames, teamsLoading, memberSports, primarySport,
     canViewTeam, isVorstand, getGuestLevel, isGuestIn, isLoading, login, loginWithOAuth, logout,
   }), [
     user, isSuperAdmin, isAdmin, isGlobalAdmin, isVbAdmin, isBbAdmin,
     hasAdminAccessToSport, hasAdminAccessToTeam, isApproved, isProfileComplete,
     isCoach, isCoachOf, canParticipateIn, isStaffOnly, coachTeamIds, coachTeamNames,
+    teamResponsibleIds, captainTeamIds, isSpielplaner, matchesRole,
     memberTeamIds, memberTeamNames, teamsLoading, memberSports, primarySport,
     canViewTeam, isVorstand, getGuestLevel, isGuestIn, isLoading, login, loginWithOAuth, logout,
   ])

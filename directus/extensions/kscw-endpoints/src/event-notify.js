@@ -66,10 +66,10 @@ export function registerEventNotify(router, { services, database, getSchema, log
           const trs = await db('teams_responsibles').select('members_id')
           for (const tr of trs) memberIds.add(String(tr.members_id))
         }
-        // Captain
+        // Captain (M2O field on teams table)
         if (role === 'captain') {
-          const caps = await db('teams_captain').select('members_id')
-          for (const c of caps) memberIds.add(String(c.members_id))
+          const caps = await db('teams').whereNotNull('captain').select('captain')
+          for (const c of caps) memberIds.add(String(c.captain))
         }
         // Licences (use JSONB containment)
         if (['scorer_vb', 'referee_vb', 'otr1_bb', 'otr2_bb', 'otn_bb', 'referee_bb'].includes(role)) {

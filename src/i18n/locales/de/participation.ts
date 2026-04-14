@@ -43,4 +43,5 @@ export default {
   warningBelowMin: 'Weniger als {{min}} Teilnehmer ({{count}}/{{min}})',
   warnings: 'Warnungen',
   all: 'Alle',
+  clearStatus: 'Zurücksetzen',
 } as const

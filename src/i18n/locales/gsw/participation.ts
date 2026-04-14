@@ -43,4 +43,5 @@ export default {
   warningBelowMin: 'Weniger als {{min}} Teilnehmer ({{count}}/{{min}})',
   warnings: 'Warnige',
   all: 'Alli',
+  clearStatus: 'Zruggsetze',
 } as const

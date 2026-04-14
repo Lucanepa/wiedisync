@@ -256,7 +256,7 @@ $$ LANGUAGE plpgsql SET search_path = public;
 
 DROP TRIGGER IF EXISTS trg_events_notify ON events;
 CREATE TRIGGER trg_events_notify
-  AFTER INSERT OR UPDATE OR DELETE ON events
+  AFTER UPDATE OR DELETE ON events
   FOR EACH ROW EXECUTE FUNCTION trg_events_notify();
 
 -- 9. Scorer delegation: validate + auto-accept same-team

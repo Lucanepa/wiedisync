@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback, useMemo, type ReactNode } from 'react'
 import { readMe, readItems } from '@directus/sdk'
-import { client, login as apiLogin, logout as apiLogout, refreshAuth, isAuthenticated, API_URL, fetchItems } from '../lib/api'
+import { client, login as apiLogin, logout as apiLogout, refreshAuth, isAuthenticated, setCurrentMemberId, API_URL, fetchItems } from '../lib/api'
 import { queryClient } from '../lib/query'
 import { setSentryUser, captureAuthError, captureApiError, addBreadcrumb } from '../lib/sentry'
 import i18n from '../i18n'
@@ -142,6 +142,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const member = await fetchMember()
         if (member) {
           setUser(member)
+          setCurrentMemberId(member.id)
           addBreadcrumb('auth.init', { memberId: member.id })
           setSentryUser({ id: member.id })
           await loadTeamContext(member.id)
@@ -194,6 +195,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const member = await fetchMember()
     if (member) {
       setUser(member)
+      setCurrentMemberId(member.id)
       addBreadcrumb('auth.login_success', { memberId: member.id })
       setSentryUser({ id: member.id })
       await loadTeamContext(member.id)
@@ -206,6 +208,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     apiLogout()
+    setCurrentMemberId(null)
     setSentryUser(null)
     setUser(null)
     setCoachTeamIds([]); setCoachTeamNames([])

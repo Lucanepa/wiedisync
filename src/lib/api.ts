@@ -113,6 +113,13 @@ export function isAuthenticated(): boolean {
   return !!getAccessToken()
 }
 
+// ── Current member ID (for activity logging outside React context) ──
+
+let _currentMemberId: string | number | null = null
+
+export function setCurrentMemberId(id: string | number | null): void { _currentMemberId = id }
+export function getCurrentMemberId(): string | number | null { return _currentMemberId }
+
 /** Detect Directus "no permission" errors (token refresh race). */
 function isPermissionError(err: unknown): boolean {
   const msg = (err as { message?: string })?.message ?? ''

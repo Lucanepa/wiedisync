@@ -1,8 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Pencil } from 'lucide-react'
 import Modal from '@/components/Modal'
 import { useMultiTeamMembers } from '../hooks/useTeamMembers'
 import { useTeamParticipations, useAllEventParticipations } from '../hooks/useParticipation'
+import { useAuth } from '../hooks/useAuth'
+import { useMutation } from '../hooks/useMutation'
 import { useCollection } from '../lib/query'
 import { fetchAllItems } from '../lib/api'
 import { getFileUrl } from '../utils/fileUrl'
@@ -73,9 +76,12 @@ export default function ParticipationRosterModal({
   const [activeSessionTab, setActiveSessionTab] = useState<string | null>(null) // null = overall
   const [statusFilter, setStatusFilter] = useState<string | null>(null) // null = "All"
 
-  // Reset filter when modal opens
+  // Reset filter and editing state when modal opens
   useEffect(() => {
-    if (open) setStatusFilter(null)
+    if (open) {
+      setStatusFilter(null)
+      setEditingMemberId(null)
+    }
   }, [open])
 
   // Fetch team leadership roles (coach, captain, team_responsible)
@@ -94,6 +100,58 @@ export default function ParticipationRosterModal({
     }
     return map
   }, [teams])
+
+  const { isCoachOf, teamResponsibleIds } = useAuth()
+
+  const canEditRoster = (activityType === 'training' || activityType === 'game') &&
+    teamIds.some(id => isCoachOf(id) || teamResponsibleIds.includes(id))
+
+  const [editingMemberId, setEditingMemberId] = useState<string | null>(null)
+  const [savingMemberIds, setSavingMemberIds] = useState<Set<string>>(new Set())
+  const { create, update, remove } = useMutation<Participation>('participations')
+
+  const handleStatusChange = useCallback(async (memberId: string, newStatus: string) => {
+    setEditingMemberId(null)
+    if (!activityId) return
+
+    const currentParticipation = participations.find(p => p.member === memberId)
+    const currentStatus = currentParticipation?.status ?? null
+
+    // No change — user selected same status or cleared when already no response
+    if (newStatus === (currentStatus ?? '')) return
+
+    setSavingMemberIds(prev => new Set(prev).add(memberId))
+    try {
+      if (newStatus === '') {
+        // Clear → delete participation record
+        if (currentParticipation) {
+          await remove(currentParticipation.id)
+        }
+      } else if (currentParticipation) {
+        // Update existing record
+        await update(currentParticipation.id, { status: newStatus })
+      } else {
+        // Create new record
+        await create({
+          member: memberId,
+          activity_type: activityType,
+          activity_id: activityId,
+          status: newStatus,
+          note: '',
+          guest_count: 0,
+          is_staff: false,
+        })
+      }
+    } catch {
+      // useMutation logs the error; UI reverts via refetch
+    } finally {
+      setSavingMemberIds(prev => {
+        const next = new Set(prev)
+        next.delete(memberId)
+        return next
+      })
+    }
+  }, [activityId, activityType, participations, create, update, remove])
 
   // For club-wide events (no team), fetch all participations and resolve members from them
   const [clubWideMembers, setClubWideMembers] = useState<Member[]>([])
@@ -517,8 +575,9 @@ export default function ParticipationRosterModal({
                   })()}
                 </div>
 
-                {/* Status badge — show session count in overall tab */}
+                {/* Status badge + edit controls */}
                 {hasSessionMode && activeSessionTab === null ? (
+                  // Session count badge — no editing in overall tab
                   (() => {
                     const counts = memberSessionCounts.get(member.id)
                     if (!counts) return <span className="shrink-0 text-xs text-gray-400 dark:text-gray-500">{t('notResponded')}</span>
@@ -534,14 +593,45 @@ export default function ParticipationRosterModal({
                       </span>
                     )
                   })()
-                ) : status ? (
-                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[status] ?? ''}`}>
-                    {absentMemberIds.has(member.id) ? t('declinedAbsence') : t(status)}
-                  </span>
+                ) : editingMemberId === member.id ? (
+                  // Inline select dropdown (editing mode)
+                  <select
+                    autoFocus
+                    defaultValue={participations.find(p => p.member === member.id)?.status ?? ''}
+                    onChange={(e) => handleStatusChange(member.id, e.target.value)}
+                    onBlur={() => setTimeout(() => setEditingMemberId(prev => prev === member.id ? null : prev), 150)}
+                    className="shrink-0 rounded-md border border-gray-300 bg-white px-1.5 py-0.5 text-xs dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+                  >
+                    <option value="">{t('clearStatus')}</option>
+                    <option value="confirmed">{t('confirmed')}</option>
+                    <option value="tentative">{t('tentative')}</option>
+                    <option value="declined">{t('declined')}</option>
+                  </select>
                 ) : (
-                  <span className="shrink-0 text-xs text-gray-400 dark:text-gray-500">
-                    {t('notResponded')}
-                  </span>
+                  // Status badge + optional pencil icon
+                  <div className="flex shrink-0 items-center gap-1">
+                    {status ? (
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[status] ?? ''}`}>
+                        {absentMemberIds.has(member.id) ? t('declinedAbsence') : t(status)}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-gray-400 dark:text-gray-500">
+                        {t('notResponded')}
+                      </span>
+                    )}
+                    {canEditRoster && !savingMemberIds.has(member.id) && (
+                      <button
+                        type="button"
+                        onClick={() => setEditingMemberId(member.id)}
+                        className="inline-flex h-7 w-7 items-center justify-center rounded text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                    {savingMemberIds.has(member.id) && (
+                      <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-gray-300 border-t-brand-500" />
+                    )}
+                  </div>
                 )}
               </div>
             )
@@ -580,9 +670,40 @@ export default function ParticipationRosterModal({
                         {member.first_name} {member.last_name}
                       </p>
                     </div>
-                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${statusColors.waitlisted}`}>
-                      {statusLabels.waitlisted}
-                    </span>
+                    <div className="flex shrink-0 items-center gap-1">
+                      {editingMemberId === wp.member ? (
+                        <select
+                          autoFocus
+                          defaultValue={wp.status}
+                          onChange={(e) => handleStatusChange(wp.member, e.target.value)}
+                          onBlur={() => setTimeout(() => setEditingMemberId(prev => prev === wp.member ? null : prev), 150)}
+                          className="rounded-md border border-gray-300 bg-white px-1.5 py-0.5 text-xs dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+                        >
+                          <option value="">{t('clearStatus')}</option>
+                          <option value="confirmed">{t('confirmed')}</option>
+                          <option value="tentative">{t('tentative')}</option>
+                          <option value="declined">{t('declined')}</option>
+                        </select>
+                      ) : (
+                        <>
+                          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColors.waitlisted}`}>
+                            {statusLabels.waitlisted}
+                          </span>
+                          {canEditRoster && !savingMemberIds.has(wp.member) && (
+                            <button
+                              type="button"
+                              onClick={() => setEditingMemberId(wp.member)}
+                              className="inline-flex h-7 w-7 items-center justify-center rounded text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                          {savingMemberIds.has(wp.member) && (
+                            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-gray-300 border-t-brand-500" />
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
                 )
               })}

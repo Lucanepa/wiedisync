@@ -256,13 +256,10 @@ export default function GameCard({ game, onClick, variant = 'card', participatio
         <div className={`w-1 shrink-0 ${statusBorderColor[myStatus] ?? ''}`} />
       )}
       <div className="flex-1 p-3">
-      {/* H/A badge + counters top-right */}
+      {/* H/A badge top-right */}
       <div className="flex items-center justify-end gap-2">
         {game.status === 'scheduled' && warnings && warnings.length > 0 && (
           <ParticipationWarningBadge warnings={warnings} namespace="participation" />
-        )}
-        {game.status === 'scheduled' && (
-          <ParticipationSummary activityType="game" activityId={game.id} compact participations={participations} />
         )}
         <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold leading-none ${
           game.type === 'home'
@@ -301,9 +298,14 @@ export default function GameCard({ game, onClick, variant = 'card', participatio
             <StatusBadge status={game.status} />
             {hallInfo && <span className="truncate text-xs text-gray-500 dark:text-gray-400">{hallInfo}</span>}
           </div>
-          {game.status === 'scheduled' && canParticipate && (
-            <div className="mt-1.5">
-              <GameCardParticipation game={game} existingParticipation={myParticipation} onSaved={onParticipationSaved} />
+          {game.status === 'scheduled' && (
+            <div className="mt-1.5 flex flex-wrap items-end gap-2">
+              {canParticipate && (
+                <GameCardParticipation game={game} existingParticipation={myParticipation} onSaved={onParticipationSaved} />
+              )}
+              {participations && participations.length > 0 && (
+                <ParticipationSummary activityType="game" activityId={game.id} bars participations={participations} />
+              )}
             </div>
           )}
         </div>

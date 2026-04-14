@@ -1,13 +1,15 @@
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Check, MessageSquare } from 'lucide-react'
 import StatusBadge from '../../components/StatusBadge'
 import TeamChip from '../../components/TeamChip'
 import RichText from '../../components/RichText'
-import ParticipationButton from '../../components/ParticipationButton'
 import ParticipationSummary from '../../components/ParticipationSummary'
 import ParticipationWarningBadge from '../../components/ParticipationWarningBadge'
 import { getEventWarnings } from '../../utils/participationWarnings'
 import { useAuth } from '../../hooks/useAuth'
-import { formatDate, formatTime } from '../../utils/dateHelpers'
+import { useMutation } from '../../hooks/useMutation'
+import { formatDate, formatTime, getDeadlineDate } from '../../utils/dateHelpers'
 import type { Event, Team, Participation } from '../../types'
 
 /** Extract Team objects from Directus M2M junction array (events_teams[].teams_id) */
@@ -177,23 +179,19 @@ export default function EventCard({ event, onClick, onEdit, onDelete, onOpenRost
 
       {/* Bottom row: RSVP + participation counter */}
       {canRSVP && (
-        <div data-tour="event-rsvp" className="mt-2.5 flex items-center justify-between gap-2" onClick={(e) => e.stopPropagation()}>
-          <ParticipationButton
-            activityType="event"
-            activityId={event.id}
-            activityDate={event.start_date?.split('T')[0]}
-            teamId={teamId(event.teams?.[0])}
-            respondBy={event.respond_by}
-            maxPlayers={event.max_players}
-            requireNoteIfAbsent={event.require_note_if_absent}
-            existingParticipation={myParticipation}
-            onSaved={onParticipationSaved}
-          />
-          <div className="flex items-center gap-2">
-            {warnings.length > 0 && (
-              <ParticipationWarningBadge warnings={warnings} namespace="participation" />
-            )}
-            <ParticipationSummary activityType="event" activityId={event.id} compact hideExtras participations={participations} />
+        <div data-tour="event-rsvp" className="mt-2.5 space-y-1.5" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center justify-between gap-2">
+            <EventCardParticipation
+              event={event}
+              existingParticipation={myParticipation}
+              onSaved={onParticipationSaved}
+            />
+            <div className="flex items-center gap-2">
+              {warnings.length > 0 && (
+                <ParticipationWarningBadge warnings={warnings} namespace="participation" />
+              )}
+              <ParticipationSummary activityType="event" activityId={event.id} compact hideExtras participations={participations} />
+            </div>
           </div>
         </div>
       )}
@@ -203,6 +201,149 @@ export default function EventCard({ event, onClick, onEdit, onDelete, onOpenRost
         </div>
       )}
       </div>
+    </div>
+  )
+}
+
+/** Inline Yes/Maybe/No buttons for event cards — matches training/game card pattern, no dropdown overflow */
+function EventCardParticipation({ event, existingParticipation, onSaved }: { event: Event; existingParticipation?: Participation; onSaved?: () => void }) {
+  const { t } = useTranslation('participation')
+  const { user, isStaffOnly } = useAuth()
+  const isStaff = !!event.teams?.[0] && isStaffOnly(teamId(event.teams[0]))
+  const { create, update } = useMutation<Participation>('participations')
+
+  const deadlinePassed = event.respond_by
+    ? getDeadlineDate(event.respond_by, event.start_date?.split('T')[1]?.slice(0, 5)) < new Date()
+    : false
+
+  const [optimisticStatus, setOptimisticStatus] = useState<Participation['status'] | null>(null)
+  const [saveConfirmed, setSaveConfirmed] = useState(false)
+  const [noteText, setNoteText] = useState(existingParticipation?.note ?? '')
+  const [noteError, setNoteError] = useState(false)
+  const noteInitRef = useRef(existingParticipation?.note ?? '')
+  const noteInputRef = useRef<HTMLInputElement>(null)
+
+  // Sync note when participation data changes
+  const serverNote = existingParticipation?.note ?? ''
+  if (serverNote !== noteInitRef.current) {
+    noteInitRef.current = serverNote
+    setNoteText(serverNote)
+  }
+
+  const serverStatus = existingParticipation?.status ?? null
+  const displayStatus = optimisticStatus ?? serverStatus
+
+  // Auto-dismiss confirmation after 2s
+  useEffect(() => {
+    if (!saveConfirmed) return
+    const timer = setTimeout(() => setSaveConfirmed(false), 2000)
+    return () => clearTimeout(timer)
+  }, [saveConfirmed])
+
+  const setStatus = useCallback(async (status: Participation['status'], note?: string) => {
+    if (!user) return
+    const n = note ?? noteText
+    // If note is required for decline/tentative and no note yet, focus the note input
+    if (event.require_note_if_absent && (status === 'declined' || status === 'tentative') && !n.trim()) {
+      setOptimisticStatus(status)
+      setNoteError(true)
+      setTimeout(() => noteInputRef.current?.focus(), 50)
+      return
+    }
+    setOptimisticStatus(status)
+    setSaveConfirmed(false)
+    try {
+      if (existingParticipation) {
+        await update(existingParticipation.id, { status, note: n, guest_count: status === 'declined' ? 0 : (existingParticipation.guest_count ?? 0) })
+      } else {
+        await create({
+          member: user.id,
+          activity_type: 'event' as const,
+          activity_id: event.id,
+          status,
+          note: n,
+          guest_count: 0,
+          is_staff: isStaff,
+        })
+      }
+      setSaveConfirmed(true)
+      onSaved?.()
+    } catch {
+      setOptimisticStatus(null)
+    }
+  }, [user, existingParticipation, event.id, event.require_note_if_absent, isStaff, noteText, create, update, onSaved])
+
+  const saveNote = () => {
+    if (noteText.trim() && displayStatus) {
+      setNoteError(false)
+      setStatus(displayStatus, noteText.trim())
+    }
+  }
+
+  const isLocked = deadlinePassed && !displayStatus
+
+  return (
+    <div className="space-y-1.5">
+      <div className="relative flex flex-wrap items-center gap-1.5">
+        {(['confirmed', 'tentative', 'declined'] as const).map((status) => {
+          const active = displayStatus === status
+          const colorMap = {
+            confirmed: active ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-green-900/30 dark:hover:text-green-400',
+            tentative: active ? 'bg-yellow-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-yellow-100 hover:text-yellow-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-yellow-900/30 dark:hover:text-yellow-400',
+            declined: active ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-red-900/30 dark:hover:text-red-400',
+          }
+          const label = { confirmed: t('yes'), tentative: t('maybe'), declined: t('no') }
+          return (
+            <button
+              key={status}
+              onClick={() => !isLocked && setStatus(status)}
+              disabled={isLocked}
+              className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
+                isLocked ? 'cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500' : colorMap[status]
+              }`}
+            >
+              {label[status]}
+            </button>
+          )
+        })}
+
+        {/* Save confirmation popover */}
+        {saveConfirmed && (
+          <span className="absolute -top-7 left-1/2 -translate-x-1/2 flex items-center gap-1 whitespace-nowrap rounded-md bg-green-600 px-2 py-0.5 text-[11px] font-medium text-white shadow-lg animate-fade-in">
+            <Check className="h-3 w-3" />
+            {t('saved')}
+          </span>
+        )}
+      </div>
+
+      {/* Deadline info */}
+      {isLocked && (
+        <p className="text-[10px] leading-tight text-red-500 dark:text-red-400">
+          {t('deadlinePassed')}
+        </p>
+      )}
+
+      {/* Note input — shown when status is set and note is required for absent */}
+      {displayStatus && event.require_note_if_absent && (displayStatus === 'declined' || displayStatus === 'tentative') && (
+        <div className="flex items-center gap-1.5">
+          <MessageSquare className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+          <input
+            ref={noteInputRef}
+            type="text"
+            value={noteText}
+            onChange={(e) => { setNoteText(e.target.value); setNoteError(false) }}
+            onKeyDown={(e) => { if (e.key === 'Enter') saveNote() }}
+            onBlur={saveNote}
+            placeholder={t('notePlaceholder')}
+            className={`min-w-0 flex-1 rounded-md border bg-transparent px-2 py-0.5 text-xs text-gray-700 placeholder:text-gray-400 focus:outline-none dark:text-gray-300 dark:placeholder:text-gray-500 ${
+              noteError ? 'border-red-400 dark:border-red-500' : 'border-gray-200 focus:border-brand-400 dark:border-gray-600 dark:focus:border-brand-500'
+            }`}
+          />
+        </div>
+      )}
+      {noteError && (
+        <p className="text-[10px] text-red-500 dark:text-red-400">{t('noteRequiredError')}</p>
+      )}
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback, useMemo, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useRef, useState, useCallback, useMemo, type ReactNode } from 'react'
 import { readMe, readItems } from '@directus/sdk'
 import { client, login as apiLogin, logout as apiLogout, refreshAuth, isAuthenticated, setCurrentMemberId, API_URL, fetchItems } from '../lib/api'
 import { queryClient } from '../lib/query'
@@ -55,6 +55,10 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<MemberUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+
+  // Capture whether a token existed at mount time (synchronous, before effects).
+  // Stored in a ref so it never changes — used to gate the app during session restore.
+  const hadTokenRef = useRef(isAuthenticated())
 
   const [coachTeamIds, setCoachTeamIds] = useState<string[]>([])
   const [coachTeamNames, setCoachTeamNames] = useState<string[]>([])
@@ -310,6 +314,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     memberTeamIds, memberTeamNames, teamsLoading, memberSports, primarySport,
     canViewTeam, isVorstand, getGuestLevel, isGuestIn, isLoading, login, loginWithOAuth, logout,
   ])
+
+  // Block the entire app while restoring a previous session so no route
+  // (including public pages like HomePage) flashes unauthenticated content.
+  if (isLoading && hadTokenRef.current) {
+    return (
+      <AuthContext.Provider value={value}>
+        <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
+          <img
+            src="/wiedisync_logo.svg"
+            alt="Loading…"
+            className="h-24 w-24 animate-spin"
+            style={{ animationDuration: '2s' }}
+          />
+        </div>
+      </AuthContext.Provider>
+    )
+  }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

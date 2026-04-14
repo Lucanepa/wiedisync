@@ -55,6 +55,8 @@ positions[3]{ticker,shares,costBasis}:
 - `.env` is gitignored — Cloudflare Pages env vars handle production config
 - **Error logging**: ALL errors (frontend + backend) are logged to persistent JSONL files and accessible via `GET /kscw/admin/error-logs`. Load `/kscw-error-logs` skill for full query reference. Frontend errors also go to Sentry (de.sentry.io, org "kscw"). Check error logs FIRST when debugging any issue.
 - **Troubleshooting**: When you encounter and solve an error, document it in `INFRA.md → Troubleshooting & Gotchas`. Check that section FIRST before debugging — the fix may already be documented.
+- **M2M junction objects in forms**: When loading Directus M2M data into form state, always extract the related item ID from the junction object. Never pass raw expanded junction objects to UI components that expect `string[]`. Pattern: `.map((j: any) => String(typeof j === 'object' ? (j.related_field?.id ?? j.related_field ?? j) : j))`.
+- **Promise.all in auth/context loading**: If one query in a `Promise.all` fails, all queries fail. For independent context queries (teams, coaches, etc.), ensure each collection actually exists in Directus before querying. After M2M recreations, always verify collection names via `GET /relations`.
 
 ## Directus Admin
 

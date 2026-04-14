@@ -16,10 +16,10 @@ const CHANGELOG: ChangelogEntry[] = [
     date: '2026-04-14',
     sections: [
       {
-        title: 'Teilnahme-Verwaltung',
+        title: 'Participation Management',
         items: [
-          'Coaches und Teamverantwortliche können die Teilnahme anderer Mitglieder direkt im Aufgebot ändern (Trainings und Spiele). Stift-Symbol neben dem Status öffnet ein Dropdown.',
-          'Mitglieder können ihre eigene absenzbedingte Absage überschreiben.',
+          'Coaches and team responsibles can now change other members\' participation status directly in the roster modal (trainings and games). Pencil icon next to the status opens a dropdown.',
+          'Members can override their own absence-declined status.',
         ],
       },
     ],
@@ -29,14 +29,14 @@ const CHANGELOG: ChangelogEntry[] = [
     date: '2026-04-10',
     sections: [
       {
-        title: 'Interaktive Anleitungen',
+        title: 'Interactive Guided Tours',
         items: [
-          'Neue geführte Touren: 10 Schritt-für-Schritt-Anleitungen für alle wichtigen Funktionen — Trainings, Spiele, Events, Abwesenheiten, Schreiber und Hallenplan.',
-          'Willkommens-Dialog für neue Mitglieder mit optionaler Einführungstour.',
-          'Anleitungs-Menü unter Mehr → Anleitung mit Fortschrittsanzeige.',
-          '"?" Button auf jeder Seite für schnellen Zugriff auf die passende Tour.',
-          'Rollenbasiert: Spieler, Coaches und Admins sehen nur relevante Touren.',
-          'Verfügbar in 5 Sprachen: Deutsch, English, Français, Italiano, Schwiizerdütsch.',
+          'New guided tours: 10 step-by-step walkthroughs for all key features — trainings, games, events, absences, scorer, and hall plan.',
+          'Welcome dialog for new members with optional introductory tour.',
+          'Guide menu under More → Guide with progress tracking.',
+          '"?" button on each page for quick access to the relevant tour.',
+          'Role-based: players, coaches, and admins only see relevant tours.',
+          'Available in 5 languages: German, English, French, Italian, Swiss German.',
         ],
       },
     ],
@@ -46,17 +46,17 @@ const CHANGELOG: ChangelogEntry[] = [
     date: '2026-04-05',
     sections: [
       {
-        title: 'Profil',
+        title: 'Profile',
         items: [
-          'Swiss-Volley-Lizenzkarte: Lizenzkategorie, Nummer, LAS-Status, Ausländer-Badge, Federation of Origin (FdO), Verband und Aktiviert/Validiert — alles direkt aus sv_vm_check geladen.',
-          'Lizenzdaten (Kategorie, Aktiviert, Validiert) werden nicht mehr nach members kopiert — sv_vm_check ist die einzige Quelle.',
-          'Absenzkarten zeigen Typ und Detail oben, Datum in einer eigenen Zeile unten.',
+          'Swiss Volley licence card: licence category, number, LAS status, foreigner badge, Federation of Origin (FdO), federation, and activated/validated — all loaded directly from sv_vm_check.',
+          'Licence data (category, activated, validated) is no longer copied to members — sv_vm_check is the single source of truth.',
+          'Absence cards show type and detail at the top, date on a separate line below.',
         ],
       },
       {
-        title: 'Sicherheit',
+        title: 'Security',
         items: [
-          'sv_vm_check-Berechtigungen: Nur 11 sichere Felder sichtbar für Mitglieder (keine E-Mail, Geburtsdatum, Name).',
+          'sv_vm_check permissions: only 11 safe fields visible to members (no email, birthday, or name).',
         ],
       },
     ],
@@ -66,11 +66,11 @@ const CHANGELOG: ChangelogEntry[] = [
     date: '2026-04-05',
     sections: [
       {
-        title: 'Volleymanager-Sync',
+        title: 'Volleymanager Sync',
         items: [
-          'Erweiterte Swiss-Volley-Synchronisierung: Nationalität, LAS-Status (lokal ausgebildet), Ausländerstatus, Verband, Doppellizenz-Informationen, Aktivierungs-/Validierungsdaten.',
-          'Filter geändert: alle Spieler werden synchronisiert (nicht nur aktivierte Lizenzen).',
-          'VM-E-Mail-Abgleich: Mitglieder erhalten automatisch ihre Volleymanager-E-Mail-Adresse. Bei der Registrierung wird geprüft, ob die E-Mail bereits bekannt ist.',
+          'Extended Swiss Volley sync: nationality, LAS status (locally trained), foreigner status, federation, double licence info, activation/validation dates.',
+          'Filter changed: all players are now synced (not just active licences).',
+          'VM email matching: members automatically receive their Volleymanager email address. Registration checks if the email is already known.',
         ],
       },
     ],
@@ -80,9 +80,9 @@ const CHANGELOG: ChangelogEntry[] = [
     date: '2026-04-04',
     sections: [
       {
-        title: 'Infrastruktur',
+        title: 'Infrastructure',
         items: [
-          'Server-Migration auf Hetzner VPS mit Supabase Postgres — bessere Performance und mehr Speicher. Uptime-Monitoring mit 6 Monitoren und E-Mail-Benachrichtigungen eingerichtet.',
+          'Server migration to Hetzner VPS with Supabase Postgres — better performance and more storage. Uptime monitoring set up with 6 monitors and email alerts.',
         ],
       },
     ],
@@ -94,7 +94,7 @@ const CHANGELOG: ChangelogEntry[] = [
       {
         title: 'Admin',
         items: [
-          'Error-Log-Kontext: Fehlereinträge werden automatisch mit lesbaren Daten angereichert — Benutzername, Rolle, Teams (mit Sportart) und Datensatz-Labels (Teamname, Spielpaarung). Suche funktioniert auch über Namen und Teams.',
+          'Error log context: error entries are automatically enriched with readable data — username, role, teams (with sport), and record labels (team name, game matchup). Search also works across names and teams.',
         ],
       },
     ],
@@ -104,14 +104,14 @@ const CHANGELOG: ChangelogEntry[] = [
     date: '2026-04-04',
     sections: [
       {
-        title: 'Sicherheit',
+        title: 'Security',
         items: [
-          'SQL-Injection-Fix in der Registrierung, E-Mail-Header-Injection-Schutz im Kontaktformular, HTML-Escaping in allen E-Mail-Templates.',
-          'Coach-E-Mails werden nicht mehr öffentlich angezeigt. Kontaktformular leitet weiterhin serverseitig weiter.',
-          'Rate-Limiting für Passwort-Zurücksetzen, Sentry-Tunnel CORS eingeschränkt, iCal-Feed-Parameter validiert.',
-          'Postgres-Constraints: Rollenvalidierung und Unique-Index für Hallenbelegung.',
-          'Hardcodierte E-Mail-Adressen in Umgebungsvariablen verschoben.',
-          'npm-Schwachstellen behoben, SQL-History auf sessionStorage umgestellt.',
+          'SQL injection fix in registration, email header injection protection in contact form, HTML escaping in all email templates.',
+          'Coach emails are no longer publicly displayed. Contact form still forwards server-side.',
+          'Rate limiting for password reset, Sentry tunnel CORS restricted, iCal feed parameters validated.',
+          'Postgres constraints: role validation and unique index for hall slot allocation.',
+          'Hardcoded email addresses moved to environment variables.',
+          'npm vulnerabilities fixed, SQL history switched to sessionStorage.',
         ],
       },
     ],
@@ -123,7 +123,7 @@ const CHANGELOG: ChangelogEntry[] = [
       {
         title: 'Admin',
         items: [
-          'Error-Log-Annotationen: Fehler können als gelöst, wichtig oder offen markiert werden — mit Notizen und Commit-Referenzen. Gelöste Fehler werden standardmässig ausgeblendet.',
+          'Error log annotations: errors can be marked as solved, important, or open — with notes and commit references. Solved errors are hidden by default.',
         ],
       },
     ],
@@ -293,7 +293,7 @@ const CHANGELOG: ChangelogEntry[] = [
         title: 'Features',
         items: [
           'Referee expenses: coaches can record who paid the referees for volleyball home games directly in the game detail modal (paid by, amount, notes)',
-          'Admin page: new "Schiedsrichterkosten" section under Admin with team/season filters and CSV export',
+          'Admin page: new "Referee Expenses" section under Admin with team/season filters and CSV export',
         ],
       },
     ],
@@ -350,8 +350,8 @@ const CHANGELOG: ChangelogEntry[] = [
       {
         title: 'Features',
         items: [
-          'RSVP response timestamps in Participation Roster — see when each team member responded (relative time: "vor 2 Std.", "gestern")',
-          'New team toggle "Antwortzeit anzeigen" in team settings — coaches can enable/disable RSVP time visibility per team',
+          'RSVP response timestamps in Participation Roster — see when each team member responded (relative time: "2 hrs ago", "yesterday")',
+          'New team toggle "Show response time" in team settings — coaches can enable/disable RSVP time visibility per team',
         ],
       },
     ],

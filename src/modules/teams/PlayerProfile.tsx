@@ -155,6 +155,12 @@ export default function PlayerProfile() {
 
   const isCoach = memberTeams.some((mt) => isCoachOf(relId(mt.team)))
 
+  // Absence status: currently absent, soon absent, or count
+  const today = todayLocal()
+  const in30Days = new Date(new Date(today).getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+  const currentlyAbsent = absences.some(a => a.start_date <= today && a.end_date >= today)
+  const soonAbsent = !currentlyAbsent && absences.some(a => a.start_date > today && a.start_date <= in30Days)
+
   return (
     <div className="mx-auto max-w-3xl">
       {/* Breadcrumb */}
@@ -313,11 +319,11 @@ export default function PlayerProfile() {
             highlight={trainingPct !== null && trainingPct < 50}
           />
           <StatCard
-            label={t('activeAbsences')}
-            value={String(absences.length)}
+            label={currentlyAbsent ? t('currentlyAbsent') : soonAbsent ? t('soonAbsent') : t('activeAbsences')}
+            value={currentlyAbsent ? t('absent') : soonAbsent ? t('upcoming') : String(absences.length)}
             icon={<AlertCircle className="h-4 w-4" />}
-            color="red"
-            highlight={absences.length > 0}
+            color={currentlyAbsent ? 'red' : soonAbsent ? 'amber' : 'red'}
+            highlight={currentlyAbsent}
           />
         </div>
       </div>

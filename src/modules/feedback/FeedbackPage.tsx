@@ -9,7 +9,7 @@ import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
 import { Textarea } from '../../components/ui/textarea'
 import { Badge } from '../../components/ui/badge'
-import { createRecord } from '../../lib/api'
+import { createRecord, API_URL, client } from '../../lib/api'
 import { sanitizeUrl } from '../../utils/sanitizeUrl'
 
 type FeedbackType = 'bug' | 'feature' | 'feedback'
@@ -153,17 +153,35 @@ export default function FeedbackPage() {
 
     setSubmitting(true)
     try {
-      const formData = new FormData()
-      formData.append('type', selectedType)
-      formData.append('title', title.trim())
-      formData.append('description', description.trim())
-      formData.append('source', 'wiedisync')
-      formData.append('status', 'new')
-      formData.append('source_url', window.location.origin)
-      if (user) formData.append('user', user.id)
-      for (const f of files) formData.append('screenshot', f)
+      // Upload screenshot first if provided
+      let screenshotId: string | null = null
+      if (files.length > 0) {
+        const fd = new FormData()
+        fd.append('file', files[0])
+        const token = await client.getToken()
+        const res = await fetch(`${API_URL}/files`, {
+          method: 'POST',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          body: fd,
+        })
+        if (res.ok) {
+          const result = await res.json()
+          screenshotId = result.data?.id ?? null
+        }
+      }
 
-      await createRecord('feedback', formData as unknown as Record<string, unknown>)
+      const payload: Record<string, unknown> = {
+        type: selectedType,
+        title: title.trim(),
+        description: description.trim(),
+        source: 'wiedisync',
+        status: 'new',
+        source_url: window.location.origin,
+      }
+      if (user) payload.user = user.id
+      if (screenshotId) payload.screenshot = screenshotId
+
+      await createRecord('feedback', payload)
 
       const msg = selectedType === 'bug' ? t('successBug')
         : selectedType === 'feature' ? t('successFeature')

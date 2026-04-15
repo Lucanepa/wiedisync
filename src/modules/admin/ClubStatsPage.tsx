@@ -41,6 +41,7 @@ interface TeamRoster {
   sport: string
   league: string
   roster_size: string
+  active_roster_size: string
   guest_count: string
   lic_scorer_vb: string
   lic_referee_vb: string
@@ -217,16 +218,17 @@ export default function ClubStatsPage() {
         gapsSub: `${t('clubStatsOf')} ${n(ov.upcoming_home_games)} ${t('clubStatsHomeGames')}`,
       }
     }
-    // Sport-filtered: compute from per-team data
-    const players = filtered.roster.reduce((sum, r) => sum + n(r.roster_size), 0)
+    // Sport-filtered: compute from per-team data (active members only)
+    const activeMembers = filtered.roster.reduce((sum, r) => sum + n(r.active_roster_size), 0)
+    const totalRoster = filtered.roster.reduce((sum, r) => sum + n(r.roster_size), 0)
     const teams = filtered.roster.length
     const homeGames = filtered.schreiber.reduce((sum, s) => sum + n(s.total_home_games), 0)
     const gaps = filtered.missing.length
     const sportLabel = sportFilter === 'volleyball' ? 'VB' : 'BB'
     return {
-      membersLabel: t('clubStatsPlayers'),
-      members: players,
-      membersSub: `${t('clubStatsOf')} ${teams} ${t('clubStatsTeams').toLowerCase()}`,
+      membersLabel: t('clubStatsActiveMembers'),
+      members: activeMembers,
+      membersSub: `${totalRoster} ${t('clubStatsTotal')}`,
       teams,
       teamsSub: sportLabel,
       games: n(ov.upcoming_games),

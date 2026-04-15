@@ -247,7 +247,7 @@ export default function TeamDetail() {
   useEffect(() => {
     if (!teamSlug) return
     setLoading(true)
-    fetchItems<Team>('teams', { filter: { name: { _eq: teamSlug } }, limit: 1 })
+    fetchItems<Team>('teams', { filter: { name: { _eq: teamSlug } }, limit: 1, fields: ['*', 'coach.members_id', 'team_responsible.members_id'] })
       .then((items) => setTeam(items[0] ?? null))
       .catch(() => setTeam(null))
       .finally(() => setLoading(false))

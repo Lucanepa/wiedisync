@@ -262,7 +262,7 @@ export default function ParticipationRosterModal({
     const map = new Map<string, { confirmed: number; total: number }>()
     const totalSessions = eventSessions!.length
     for (const m of memberList) {
-      const memberParts = allParticipations.filter((p) => p.member === m.id)
+      const memberParts = allParticipations.filter((p) => String(p.member) === String(m.id))
       const confirmed = memberParts.filter((p) => p.status === 'confirmed').length
       map.set(m.id, { confirmed, total: totalSessions })
     }
@@ -328,7 +328,7 @@ export default function ParticipationRosterModal({
   // Count absent members without a participation record as declined too
   const absentMemberIds = new Set(absences.map(a => a.member))
   const absentWithoutParticipation = memberList.filter(m =>
-    absentMemberIds.has(m.id) && !summaryParticipations.some(p => p.member === m.id)
+    absentMemberIds.has(String(m.id)) && !summaryParticipations.some(p => String(p.member) === String(m.id))
   ).length
   const declined = summaryParticipations.filter(p => p.status === 'declined').length + absentWithoutParticipation
   const waitlistedParts = summaryParticipations.filter(p => p.status === 'waitlisted')
@@ -386,8 +386,8 @@ export default function ParticipationRosterModal({
       const s = getMemberStatus(m.id)
       if (statusFilter === 'confirmed') return s === 'confirmed'
       if (statusFilter === 'tentative') return s === 'tentative'
-      if (statusFilter === 'declined') return s === 'declined' || (absentMemberIds.has(m.id) && !participations.some(p => p.member === m.id))
-      if (statusFilter === 'no_response') return s === null && !absentMemberIds.has(m.id)
+      if (statusFilter === 'declined') return s === 'declined' || (absentMemberIds.has(String(m.id)) && !participations.some(p => String(p.member) === String(m.id)))
+      if (statusFilter === 'no_response') return s === null && !absentMemberIds.has(String(m.id))
       return true
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps

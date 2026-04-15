@@ -115,7 +115,7 @@ export default function EventsPage() {
       // Role match
       if (hasRoles && event.invited_roles!.some(r => matchesRole(r))) return true
       // Direct invite
-      if (hasMembers && user && invitedMemberIds.includes(user.id)) return true
+      if (hasMembers && user && invitedMemberIds.includes(String(user.id))) return true
       return false
     })
   }, [events, allUserTeamIds, user, matchesRole, effectiveIsAdmin])

@@ -32,7 +32,7 @@ export default function MemberMultiSelect({ selected, onChange }: MemberMultiSel
   }, [members, search])
 
   const selectedMembers = useMemo(
-    () => members.filter(m => selected.includes(m.id)),
+    () => members.filter(m => selected.includes(String(m.id))),
     [members, selected]
   )
 
@@ -71,7 +71,7 @@ export default function MemberMultiSelect({ selected, onChange }: MemberMultiSel
         {open && filtered.length > 0 && (
           <div className="absolute z-50 mt-1 max-h-48 w-full overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-800">
             {filtered.slice(0, 50).map(m => {
-              const isSelected = selected.includes(m.id)
+              const isSelected = selected.includes(String(m.id))
               return (
                 <button
                   key={m.id}

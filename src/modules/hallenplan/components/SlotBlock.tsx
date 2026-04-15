@@ -124,7 +124,7 @@ export default function SlotBlock({ positioned, teamName, teamSport, hasConflict
           : getSlotColor(teamSport, slot.slot_type)
 
   // Freed/claimed/manually-free slots are clickable for coaches; own-team real slots too
-  const isOwnTeamSlot = isCoach && slot.team?.length && slot.team.some(t => coachTeamIds.includes(t))
+  const isOwnTeamSlot = isCoach && slot.team?.length && slot.team.some(t => coachTeamIds.includes(String(t)))
   const clickable = isVirtual || isAdmin || ((isFreed || isClaimed || isManuallyFree) && isCoach) || (isOwnTeamSlot && !isVirtual)
 
   // Virtual slots get dashed border; claimed slots get dotted border

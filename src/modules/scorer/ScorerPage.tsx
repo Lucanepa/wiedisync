@@ -144,7 +144,7 @@ export default function ScorerPage() {
     if (!user) return []
     const ids: string[] = []
     for (const mt of allMemberTeams) {
-      if (mt.member === user.id) ids.push(mt.team)
+      if (String(mt.member) === String(user.id)) ids.push(mt.team)
     }
     return ids
   }, [allMemberTeams, user])
@@ -179,8 +179,8 @@ export default function ScorerPage() {
       // Non-admins: only show games where their team has duty or they are personally assigned
       if (!effectiveIsAdmin && !effectiveIsVorstand && user) {
         const isPersonallyAssigned = sportTab === 'volleyball'
-          ? [g.scorer_member, g.scoreboard_member, g.scorer_scoreboard_member].includes(user.id)
-          : [g.bb_scorer_member, g.bb_timekeeper_member, g.bb_24s_official].includes(user.id)
+          ? [g.scorer_member, g.scoreboard_member, g.scorer_scoreboard_member].includes(String(user.id))
+          : [g.bb_scorer_member, g.bb_timekeeper_member, g.bb_24s_official].includes(String(user.id))
         const teamHasDuty = sportTab === 'volleyball'
           ? userTeamIds.some((tid) => tid === g.scorer_duty_team || tid === g.scoreboard_duty_team || tid === g.scorer_scoreboard_duty_team)
           : userTeamIds.some((tid) => tid === (g.bb_scorer_duty_team || g.bb_duty_team) || tid === (g.bb_timekeeper_duty_team || g.bb_duty_team) || tid === (g.bb_24s_duty_team || g.bb_duty_team))
@@ -291,8 +291,8 @@ export default function ScorerPage() {
     if (getGameSport(g) !== sportTab) return false
     if (!effectiveIsAdmin && !effectiveIsVorstand && user) {
       const isPersonallyAssigned = sportTab === 'volleyball'
-        ? [g.scorer_member, g.scoreboard_member, g.scorer_scoreboard_member].includes(user.id)
-        : [g.bb_scorer_member, g.bb_timekeeper_member, g.bb_24s_official].includes(user.id)
+        ? [g.scorer_member, g.scoreboard_member, g.scorer_scoreboard_member].includes(String(user.id))
+        : [g.bb_scorer_member, g.bb_timekeeper_member, g.bb_24s_official].includes(String(user.id))
       const teamHasDuty = sportTab === 'volleyball'
         ? userTeamIds.some((tid) => tid === g.scorer_duty_team || tid === g.scoreboard_duty_team || tid === g.scorer_scoreboard_duty_team)
         : userTeamIds.some((tid) => tid === (g.bb_scorer_duty_team || g.bb_duty_team) || tid === (g.bb_timekeeper_duty_team || g.bb_duty_team) || tid === (g.bb_24s_duty_team || g.bb_duty_team))

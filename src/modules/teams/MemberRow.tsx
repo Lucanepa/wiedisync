@@ -89,7 +89,7 @@ export default function MemberRow({ memberTeam, teamId: _teamId, teamSlug, team,
   async function toggleRole(roleKey: LeadershipRole) {
     if (!team || !onTeamUpdate) return
     const current = flattenMemberIds(team[roleKey])
-    const has = current.includes(member!.id)
+    const has = current.includes(String(member!.id))
     const nextIds = has
       ? current.filter((id) => id !== member!.id)
       : [...current, member!.id]

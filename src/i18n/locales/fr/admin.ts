@@ -65,6 +65,7 @@ export default {
   clubStatsTitle: 'Statistiques du club',
   clubStatsAll: 'Tous',
   clubStatsActiveMembers: 'Membres actifs',
+  clubStatsPlayers: 'Joueurs',
   clubStatsTeams: 'Équipes',
   clubStatsUpcomingGames: 'Prochains matchs',
   clubStatsSchreiberGaps: 'Marqueurs manquants',

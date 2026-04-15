@@ -199,6 +199,43 @@ export default function ClubStatsPage() {
     }
   }, [data, sportFilter])
 
+  // Sport-aware KPI values for header cards
+  const kpis = useMemo(() => {
+    if (!filtered) return null
+    const ov = filtered.overview
+    const mem = filtered.members
+    if (sportFilter === 'all') {
+      return {
+        membersLabel: t('clubStatsActiveMembers'),
+        members: n(ov.active_members),
+        membersSub: `${n(mem.total_members)} ${t('clubStatsTotal')}`,
+        teams: n(ov.active_teams),
+        teamsSub: `VB ${n(ov.vb_teams)} · BB ${n(ov.bb_teams)}`,
+        games: n(ov.upcoming_games),
+        gamesSub: `${n(ov.completed_games)} ${t('clubStatsCompleted')}`,
+        gaps: n(ov.upcoming_home_games_no_schreiber),
+        gapsSub: `${t('clubStatsOf')} ${n(ov.upcoming_home_games)} ${t('clubStatsHomeGames')}`,
+      }
+    }
+    // Sport-filtered: compute from per-team data
+    const players = filtered.roster.reduce((sum, r) => sum + n(r.roster_size), 0)
+    const teams = filtered.roster.length
+    const homeGames = filtered.schreiber.reduce((sum, s) => sum + n(s.total_home_games), 0)
+    const gaps = filtered.missing.length
+    const sportLabel = sportFilter === 'volleyball' ? 'VB' : 'BB'
+    return {
+      membersLabel: t('clubStatsPlayers'),
+      members: players,
+      membersSub: `${t('clubStatsOf')} ${teams} ${t('clubStatsTeams').toLowerCase()}`,
+      teams,
+      teamsSub: sportLabel,
+      games: n(ov.upcoming_games),
+      gamesSub: `${n(ov.completed_games)} ${t('clubStatsCompleted')}`,
+      gaps,
+      gapsSub: `${t('clubStatsOf')} ${homeGames} ${t('clubStatsHomeGames')}`,
+    }
+  }, [filtered, sportFilter, t])
+
   if (error) {
     return (
       <div className="p-6">
@@ -224,7 +261,7 @@ export default function ClubStatsPage() {
     )
   }
 
-  const { overview: ov, members: mem } = filtered
+  const { members: mem } = filtered
 
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
@@ -247,26 +284,24 @@ export default function ClubStatsPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard label={t('clubStatsActiveMembers')} value={n(ov.active_members)} sub={`${n(mem.total_members)} ${t('clubStatsTotal')}`} />
-        <StatCard label={t('clubStatsTeams')} value={n(ov.active_teams)} sub={`VB ${n(ov.vb_teams)} · BB ${n(ov.bb_teams)}`} />
-        <StatCard label={t('clubStatsUpcomingGames')} value={n(ov.upcoming_games)} sub={`${n(ov.completed_games)} ${t('clubStatsCompleted')}`} />
-        <StatCard
-          label={t('clubStatsSchreiberGaps')}
-          value={n(ov.upcoming_home_games_no_schreiber)}
-          sub={`${t('clubStatsOf')} ${n(ov.upcoming_home_games)} ${t('clubStatsHomeGames')}`}
-        />
-      </div>
+      {kpis && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <StatCard label={kpis.membersLabel} value={kpis.members} sub={kpis.membersSub} />
+          <StatCard label={t('clubStatsTeams')} value={kpis.teams} sub={kpis.teamsSub} />
+          <StatCard label={t('clubStatsUpcomingGames')} value={kpis.games} sub={kpis.gamesSub} />
+          <StatCard label={t('clubStatsSchreiberGaps')} value={kpis.gaps} sub={kpis.gapsSub} />
+        </div>
+      )}
 
       {/* Members & Licences */}
       <DashboardSection id="stats-members" title={t('clubStatsMembersLicences')} icon="👥">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <StatCard label={t('clubStatsRegistered')} value={n(mem.registered_users)} />
           <StatCard label={t('clubStatsShell')} value={n(mem.shell_accounts)} />
-          <StatCard label={t('clubStatsScorerVB')} value={n(mem.licence_scorer_vb)} />
-          <StatCard label={t('clubStatsRefereeVB')} value={n(mem.licence_referee_vb)} />
-          <StatCard label={t('clubStatsOTR1BB')} value={n(mem.licence_otr1_bb)} />
-          <StatCard label={t('clubStatsOTR2BB')} value={n(mem.licence_otr2_bb)} />
+          {sportFilter !== 'basketball' && <StatCard label={t('clubStatsScorerVB')} value={n(mem.licence_scorer_vb)} />}
+          {sportFilter !== 'basketball' && <StatCard label={t('clubStatsRefereeVB')} value={n(mem.licence_referee_vb)} />}
+          {sportFilter !== 'volleyball' && <StatCard label={t('clubStatsOTR1BB')} value={n(mem.licence_otr1_bb)} />}
+          {sportFilter !== 'volleyball' && <StatCard label={t('clubStatsOTR2BB')} value={n(mem.licence_otr2_bb)} />}
           <StatCard label={t('clubStatsVorstand')} value={n(mem.role_vorstand)} />
           <StatCard label={t('clubStatsAdmins')} value={n(mem.role_admin) + n(mem.role_superuser)} sub={`VB ${n(mem.role_vb_admin)} · BB ${n(mem.role_bb_admin)}`} />
         </div>

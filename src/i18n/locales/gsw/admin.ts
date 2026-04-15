@@ -220,6 +220,7 @@ export default {
   clubStatsTitle: 'Vereinsstatistik',
   clubStatsAll: 'Alli',
   clubStatsActiveMembers: 'Aktivi Mitglieder',
+  clubStatsPlayers: 'Spieler',
   clubStatsTeams: 'Teams',
   clubStatsUpcomingGames: 'Nögschti Spiel',
   clubStatsSchreiberGaps: 'Schriiberl-Lücke',

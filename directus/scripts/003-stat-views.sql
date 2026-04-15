@@ -335,10 +335,70 @@ SELECT
   (SELECT COUNT(*) FROM teams WHERE active = true)                AS active_teams,
   (SELECT COUNT(*) FROM teams WHERE active = true AND sport = 'volleyball')  AS vb_teams,
   (SELECT COUNT(*) FROM teams WHERE active = true AND sport = 'basketball')  AS bb_teams,
+  -- Games (global + per sport)
   (SELECT COUNT(*) FROM games WHERE date >= CURRENT_DATE AND status = 'scheduled') AS upcoming_games,
+  (SELECT COUNT(*) FROM games g JOIN teams t ON t.id = g.kscw_team
+    WHERE g.date >= CURRENT_DATE AND g.status = 'scheduled' AND t.sport = 'volleyball') AS vb_upcoming_games,
+  (SELECT COUNT(*) FROM games g JOIN teams t ON t.id = g.kscw_team
+    WHERE g.date >= CURRENT_DATE AND g.status = 'scheduled' AND t.sport = 'basketball') AS bb_upcoming_games,
   (SELECT COUNT(*) FROM games WHERE status = 'completed')         AS completed_games,
+  (SELECT COUNT(*) FROM games g JOIN teams t ON t.id = g.kscw_team
+    WHERE g.status = 'completed' AND t.sport = 'volleyball')      AS vb_completed_games,
+  (SELECT COUNT(*) FROM games g JOIN teams t ON t.id = g.kscw_team
+    WHERE g.status = 'completed' AND t.sport = 'basketball')      AS bb_completed_games,
   (SELECT COUNT(*) FROM trainings WHERE date >= CURRENT_DATE AND cancelled = false) AS upcoming_trainings,
   (SELECT COUNT(*) FROM events WHERE start_date >= NOW())         AS upcoming_events,
+  -- Sport-filtered member stats (distinct members on sport teams)
+  (SELECT COUNT(DISTINCT m.id) FROM member_teams mt
+    JOIN teams t ON t.id = mt.team AND t.active = true AND t.sport = 'volleyball'
+    JOIN members m ON m.id = mt.member WHERE mt.guest_level = 0
+    AND m.shell = false AND m.wiedisync_active = true)             AS vb_registered,
+  (SELECT COUNT(DISTINCT m.id) FROM member_teams mt
+    JOIN teams t ON t.id = mt.team AND t.active = true AND t.sport = 'basketball'
+    JOIN members m ON m.id = mt.member WHERE mt.guest_level = 0
+    AND m.shell = false AND m.wiedisync_active = true)             AS bb_registered,
+  (SELECT COUNT(DISTINCT m.id) FROM member_teams mt
+    JOIN teams t ON t.id = mt.team AND t.active = true AND t.sport = 'volleyball'
+    JOIN members m ON m.id = mt.member WHERE mt.guest_level = 0
+    AND m.shell = true)                                            AS vb_shell,
+  (SELECT COUNT(DISTINCT m.id) FROM member_teams mt
+    JOIN teams t ON t.id = mt.team AND t.active = true AND t.sport = 'basketball'
+    JOIN members m ON m.id = mt.member WHERE mt.guest_level = 0
+    AND m.shell = true)                                            AS bb_shell,
+  -- Licences per sport (members on sport teams with licence)
+  (SELECT COUNT(DISTINCT m.id) FROM member_teams mt
+    JOIN teams t ON t.id = mt.team AND t.active = true AND t.sport = 'volleyball'
+    JOIN members m ON m.id = mt.member WHERE mt.guest_level = 0
+    AND m.licences::jsonb @> '"scorer_vb"')                        AS vb_lic_scorer,
+  (SELECT COUNT(DISTINCT m.id) FROM member_teams mt
+    JOIN teams t ON t.id = mt.team AND t.active = true AND t.sport = 'volleyball'
+    JOIN members m ON m.id = mt.member WHERE mt.guest_level = 0
+    AND m.licences::jsonb @> '"referee_vb"')                       AS vb_lic_referee,
+  (SELECT COUNT(DISTINCT m.id) FROM member_teams mt
+    JOIN teams t ON t.id = mt.team AND t.active = true AND t.sport = 'basketball'
+    JOIN members m ON m.id = mt.member WHERE mt.guest_level = 0
+    AND m.licences::jsonb @> '"otr1_bb"')                          AS bb_lic_otr1,
+  (SELECT COUNT(DISTINCT m.id) FROM member_teams mt
+    JOIN teams t ON t.id = mt.team AND t.active = true AND t.sport = 'basketball'
+    JOIN members m ON m.id = mt.member WHERE mt.guest_level = 0
+    AND m.licences::jsonb @> '"otr2_bb"')                          AS bb_lic_otr2,
+  -- Roles per sport
+  (SELECT COUNT(DISTINCT m.id) FROM member_teams mt
+    JOIN teams t ON t.id = mt.team AND t.active = true AND t.sport = 'volleyball'
+    JOIN members m ON m.id = mt.member WHERE mt.guest_level = 0
+    AND m.role::jsonb @> '"vorstand"')                              AS vb_vorstand,
+  (SELECT COUNT(DISTINCT m.id) FROM member_teams mt
+    JOIN teams t ON t.id = mt.team AND t.active = true AND t.sport = 'basketball'
+    JOIN members m ON m.id = mt.member WHERE mt.guest_level = 0
+    AND m.role::jsonb @> '"vorstand"')                              AS bb_vorstand,
+  (SELECT COUNT(DISTINCT m.id) FROM member_teams mt
+    JOIN teams t ON t.id = mt.team AND t.active = true AND t.sport = 'volleyball'
+    JOIN members m ON m.id = mt.member WHERE mt.guest_level = 0
+    AND (m.role::jsonb @> '"admin"' OR m.role::jsonb @> '"superuser"')) AS vb_admins,
+  (SELECT COUNT(DISTINCT m.id) FROM member_teams mt
+    JOIN teams t ON t.id = mt.team AND t.active = true AND t.sport = 'basketball'
+    JOIN members m ON m.id = mt.member WHERE mt.guest_level = 0
+    AND (m.role::jsonb @> '"admin"' OR m.role::jsonb @> '"superuser"')) AS bb_admins,
   -- Schreiber coverage for upcoming home games
   (SELECT COUNT(*) FROM games
     WHERE type = 'home' AND date >= CURRENT_DATE AND status = 'scheduled') AS upcoming_home_games,

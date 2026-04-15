@@ -16,11 +16,28 @@ interface StatsOverview {
   vb_teams: string
   bb_teams: string
   upcoming_games: string
+  vb_upcoming_games: string
+  bb_upcoming_games: string
   completed_games: string
+  vb_completed_games: string
+  bb_completed_games: string
   upcoming_trainings: string
   upcoming_events: string
   upcoming_home_games: string
   upcoming_home_games_no_schreiber: string
+  // Sport-filtered member stats
+  vb_registered: string
+  bb_registered: string
+  vb_shell: string
+  bb_shell: string
+  vb_lic_scorer: string
+  vb_lic_referee: string
+  bb_lic_otr1: string
+  bb_lic_otr2: string
+  vb_vorstand: string
+  bb_vorstand: string
+  vb_admins: string
+  bb_admins: string
 }
 
 interface StatsMembers {
@@ -236,8 +253,8 @@ export default function ClubStatsPage() {
       membersSub: `${totalMembers} ${t('clubStatsTotal')}`,
       teams,
       teamsSub: sportLabel,
-      games: n(ov.upcoming_games),
-      gamesSub: `${n(ov.completed_games)} ${t('clubStatsCompleted')}`,
+      games: isVB ? n(ov.vb_upcoming_games) : n(ov.bb_upcoming_games),
+      gamesSub: `${isVB ? n(ov.vb_completed_games) : n(ov.bb_completed_games)} ${t('clubStatsCompleted')}`,
       gaps,
       gapsSub: `${t('clubStatsOf')} ${homeGames} ${t('clubStatsHomeGames')}`,
     }
@@ -268,7 +285,36 @@ export default function ClubStatsPage() {
     )
   }
 
-  const { members: mem } = filtered
+  const { members: mem, overview: ov } = filtered
+
+  // Sport-filtered member stats
+  const isVB = sportFilter === 'volleyball'
+  const memStats = useMemo(() => {
+    if (sportFilter === 'all') {
+      return {
+        registered: n(mem.registered_users),
+        shell: n(mem.shell_accounts),
+        scorerVB: n(mem.licence_scorer_vb),
+        refereeVB: n(mem.licence_referee_vb),
+        otr1BB: n(mem.licence_otr1_bb),
+        otr2BB: n(mem.licence_otr2_bb),
+        vorstand: n(mem.role_vorstand),
+        admins: n(mem.role_admin) + n(mem.role_superuser),
+        adminsSub: `VB ${n(mem.role_vb_admin)} · BB ${n(mem.role_bb_admin)}`,
+      }
+    }
+    return {
+      registered: isVB ? n(ov.vb_registered) : n(ov.bb_registered),
+      shell: isVB ? n(ov.vb_shell) : n(ov.bb_shell),
+      scorerVB: n(ov.vb_lic_scorer),
+      refereeVB: n(ov.vb_lic_referee),
+      otr1BB: n(ov.bb_lic_otr1),
+      otr2BB: n(ov.bb_lic_otr2),
+      vorstand: isVB ? n(ov.vb_vorstand) : n(ov.bb_vorstand),
+      admins: isVB ? n(ov.vb_admins) : n(ov.bb_admins),
+      adminsSub: isVB ? `VB ${n(mem.role_vb_admin)}` : `BB ${n(mem.role_bb_admin)}`,
+    }
+  }, [mem, ov, sportFilter, isVB])
 
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
@@ -303,14 +349,14 @@ export default function ClubStatsPage() {
       {/* Members & Licences */}
       <DashboardSection id="stats-members" title={t('clubStatsMembersLicences')} icon="👥">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <StatCard label={t('clubStatsRegistered')} value={n(mem.registered_users)} />
-          <StatCard label={t('clubStatsShell')} value={n(mem.shell_accounts)} />
-          {sportFilter !== 'basketball' && <StatCard label={t('clubStatsScorerVB')} value={n(mem.licence_scorer_vb)} />}
-          {sportFilter !== 'basketball' && <StatCard label={t('clubStatsRefereeVB')} value={n(mem.licence_referee_vb)} />}
-          {sportFilter !== 'volleyball' && <StatCard label={t('clubStatsOTR1BB')} value={n(mem.licence_otr1_bb)} />}
-          {sportFilter !== 'volleyball' && <StatCard label={t('clubStatsOTR2BB')} value={n(mem.licence_otr2_bb)} />}
-          <StatCard label={t('clubStatsVorstand')} value={n(mem.role_vorstand)} />
-          <StatCard label={t('clubStatsAdmins')} value={n(mem.role_admin) + n(mem.role_superuser)} sub={`VB ${n(mem.role_vb_admin)} · BB ${n(mem.role_bb_admin)}`} />
+          <StatCard label={t('clubStatsRegistered')} value={memStats.registered} />
+          <StatCard label={t('clubStatsShell')} value={memStats.shell} />
+          {sportFilter !== 'basketball' && <StatCard label={t('clubStatsScorerVB')} value={memStats.scorerVB} />}
+          {sportFilter !== 'basketball' && <StatCard label={t('clubStatsRefereeVB')} value={memStats.refereeVB} />}
+          {sportFilter !== 'volleyball' && <StatCard label={t('clubStatsOTR1BB')} value={memStats.otr1BB} />}
+          {sportFilter !== 'volleyball' && <StatCard label={t('clubStatsOTR2BB')} value={memStats.otr2BB} />}
+          <StatCard label={t('clubStatsVorstand')} value={memStats.vorstand} />
+          <StatCard label={t('clubStatsAdmins')} value={memStats.admins} sub={memStats.adminsSub} />
         </div>
       </DashboardSection>
 

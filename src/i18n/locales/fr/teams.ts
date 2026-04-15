@@ -62,6 +62,10 @@ export default {
   trainingRate: 'Taux de presence',
   activeAbsences: 'Absences',
   currentAbsences: 'Absences en cours',
+  currentlyAbsent: 'Actuellement absent',
+  soonAbsent: 'Bientôt absent',
+  absent: 'Oui',
+  upcoming: 'Bientôt',
 
   // Team detail
   sponsors: 'Sponsors',

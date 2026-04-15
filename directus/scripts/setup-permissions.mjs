@@ -217,6 +217,8 @@ const MEMBER_EDITABLE_FIELDS = [
   'birthdate_visibility', 'hide_phone', 'photo', 'language',
   'position', 'number', 'licences', 'website_visible',
   'requested_team',
+  // ClubDesk personal data fields
+  'anrede', 'adresse', 'plz', 'ort', 'nationalitaet', 'sex', 'ahv_nummer',
 ]
 
 /** Public fields for teams */
@@ -380,6 +382,10 @@ async function main() {
 
   // Members — limited fields for other members
   await setPermRead(MEMBER_POLICY, 'members', null, MEMBER_VISIBLE_FIELDS)
+
+  // Members — read own profile with expanded fields (editable fields must be readable)
+  const MEMBER_OWN_READABLE = [...new Set([...MEMBER_VISIBLE_FIELDS, ...MEMBER_EDITABLE_FIELDS])]
+  await setPermRead(MEMBER_POLICY, 'members', OWN_USER, MEMBER_OWN_READABLE)
 
   // Members — update own profile (limited fields)
   await setPerm(MEMBER_POLICY, 'members', 'update', OWN_USER, MEMBER_EDITABLE_FIELDS)

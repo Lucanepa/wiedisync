@@ -138,7 +138,7 @@ const KEEP_AS_NUMBER = new Set([
   'points', 'won', 'lost', 'played', 'draws', 'sets_won', 'sets_lost',
   'points_won', 'points_lost', 'point_diff',
   'wins_clear', 'wins_narrow', 'defeats_clear', 'defeats_narrow',
-  'sort_order', 'number', 'yob', 'courts', 'lat', 'lon',
+  'sort_order', 'number', 'courts', 'lat', 'lon',
   'game_min_participants', 'game_respond_by_days',
   'training_min_participants', 'training_respond_by_days',
   'guest_count', 'confirmed_proposal', 'seats_available',

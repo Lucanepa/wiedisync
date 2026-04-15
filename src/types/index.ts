@@ -89,7 +89,7 @@ export interface Member extends BaseRecord {
   role: ('user' | 'vorstand' | 'admin' | 'vb_admin' | 'bb_admin' | 'superuser')[]
   kscw_membership_active: boolean
   birthdate: string
-  yob: number
+
   licences: LicenceType[]
   coach_approved_team: boolean
   requested_team: string

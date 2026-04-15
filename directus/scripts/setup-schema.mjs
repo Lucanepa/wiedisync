@@ -208,7 +208,7 @@ const COLLECTIONS = [
       multiSelect('role', ['user', 'vorstand', 'admin', 'vb_admin', 'bb_admin', 'superuser']),
       boolean('kscw_membership_active', { default: true }),
       date('birthdate'),
-      integer('yob'),
+
       multiSelect('licences', ['scorer_vb', 'referee_vb', 'otr1_bb', 'otr2_bb', 'otn_bb', 'referee_bb']),
       boolean('coach_approved_team'),
       select('language', ['english', 'german', 'french', 'italian', 'swiss_german']),

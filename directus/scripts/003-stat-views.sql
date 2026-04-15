@@ -316,6 +316,22 @@ DROP VIEW IF EXISTS stats_club_overview CASCADE;
 CREATE VIEW stats_club_overview AS
 SELECT
   (SELECT COUNT(*) FROM members WHERE wiedisync_active = true)    AS active_members,
+  -- Active members per sport (distinct — a member on 2 VB teams counts once)
+  (SELECT COUNT(DISTINCT mt.member) FROM member_teams mt
+    JOIN teams t ON t.id = mt.team AND t.active = true AND t.sport = 'volleyball'
+    JOIN members m ON m.id = mt.member AND m.wiedisync_active = true
+    WHERE mt.guest_level = 0)                                     AS vb_active_members,
+  (SELECT COUNT(DISTINCT mt.member) FROM member_teams mt
+    JOIN teams t ON t.id = mt.team AND t.active = true AND t.sport = 'basketball'
+    JOIN members m ON m.id = mt.member AND m.wiedisync_active = true
+    WHERE mt.guest_level = 0)                                     AS bb_active_members,
+  -- Total members per sport (distinct)
+  (SELECT COUNT(DISTINCT mt.member) FROM member_teams mt
+    JOIN teams t ON t.id = mt.team AND t.active = true AND t.sport = 'volleyball'
+    WHERE mt.guest_level = 0)                                     AS vb_total_members,
+  (SELECT COUNT(DISTINCT mt.member) FROM member_teams mt
+    JOIN teams t ON t.id = mt.team AND t.active = true AND t.sport = 'basketball'
+    WHERE mt.guest_level = 0)                                     AS bb_total_members,
   (SELECT COUNT(*) FROM teams WHERE active = true)                AS active_teams,
   (SELECT COUNT(*) FROM teams WHERE active = true AND sport = 'volleyball')  AS vb_teams,
   (SELECT COUNT(*) FROM teams WHERE active = true AND sport = 'basketball')  AS bb_teams,

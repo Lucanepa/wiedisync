@@ -8,6 +8,10 @@ import TeamChip from '../../components/TeamChip'
 
 interface StatsOverview {
   active_members: string
+  vb_active_members: string
+  bb_active_members: string
+  vb_total_members: string
+  bb_total_members: string
   active_teams: string
   vb_teams: string
   bb_teams: string
@@ -218,17 +222,18 @@ export default function ClubStatsPage() {
         gapsSub: `${t('clubStatsOf')} ${n(ov.upcoming_home_games)} ${t('clubStatsHomeGames')}`,
       }
     }
-    // Sport-filtered: compute from per-team data (active members only)
-    const activeMembers = filtered.roster.reduce((sum, r) => sum + n(r.active_roster_size), 0)
-    const totalRoster = filtered.roster.reduce((sum, r) => sum + n(r.roster_size), 0)
+    // Sport-filtered: use distinct counts from overview (avoids double-counting multi-team members)
+    const isVB = sportFilter === 'volleyball'
+    const activeMembers = isVB ? n(ov.vb_active_members) : n(ov.bb_active_members)
+    const totalMembers = isVB ? n(ov.vb_total_members) : n(ov.bb_total_members)
     const teams = filtered.roster.length
     const homeGames = filtered.schreiber.reduce((sum, s) => sum + n(s.total_home_games), 0)
     const gaps = filtered.missing.length
-    const sportLabel = sportFilter === 'volleyball' ? 'VB' : 'BB'
+    const sportLabel = isVB ? 'VB' : 'BB'
     return {
       membersLabel: t('clubStatsActiveMembers'),
       members: activeMembers,
-      membersSub: `${totalRoster} ${t('clubStatsTotal')}`,
+      membersSub: `${totalMembers} ${t('clubStatsTotal')}`,
       teams,
       teamsSub: sportLabel,
       games: n(ov.upcoming_games),

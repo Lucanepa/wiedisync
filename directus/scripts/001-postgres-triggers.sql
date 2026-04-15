@@ -105,38 +105,58 @@ CREATE OR REPLACE FUNCTION trg_games_notify()
 RETURNS trigger AS $$
 DECLARE
   v_type text; v_title text; v_body text; v_team_id int; v_game_id int;
+  v_hall text; v_rec record;
 BEGIN
+  -- Pick the right row for field access
+  IF TG_OP = 'DELETE' THEN v_rec := OLD; ELSE v_rec := NEW; END IF;
+  v_team_id := v_rec.kscw_team; v_game_id := v_rec.id;
+  IF v_team_id IS NULL THEN
+    IF TG_OP = 'DELETE' THEN RETURN OLD; ELSE RETURN NEW; END IF;
+  END IF;
+
+  -- Resolve hall name
+  SELECT COALESCE(h.name, '') INTO v_hall FROM halls h WHERE h.id = v_rec.hall;
+  v_hall := COALESCE(v_hall, '');
+
   IF TG_OP = 'INSERT' THEN
-    v_team_id := NEW.kscw_team; v_game_id := NEW.id;
-    IF v_team_id IS NULL THEN RETURN NEW; END IF;
-    v_type := 'activity_change';
-    v_title := COALESCE(NEW.home_team,'') || ' vs ' || COALESCE(NEW.away_team,'');
-    v_body := COALESCE(NEW.date::text, '');
+    v_type := 'activity_change'; v_title := 'game_created';
+    v_body := json_build_object(
+      'home_team', COALESCE(NEW.home_team, ''), 'away_team', COALESCE(NEW.away_team, ''),
+      'date', COALESCE(to_char(NEW.date, 'DD.MM.YY'), ''),
+      'time', COALESCE(to_char(NEW.time, 'HH24:MI'), ''), 'hall', v_hall
+    )::text;
   ELSIF TG_OP = 'UPDATE' THEN
-    v_team_id := NEW.kscw_team; v_game_id := NEW.id;
-    IF v_team_id IS NULL THEN RETURN NEW; END IF;
     IF NEW.status = 'completed' AND (OLD.status IS DISTINCT FROM 'completed') THEN
-      v_type := 'result_available';
-      v_title := COALESCE(NEW.home_team,'') || ' vs ' || COALESCE(NEW.away_team,'');
-      v_body := COALESCE(NEW.home_score::text,'0') || ':' || COALESCE(NEW.away_score::text,'0');
+      v_type := 'result_available'; v_title := 'game_result';
+      v_body := json_build_object(
+        'home_team', COALESCE(NEW.home_team, ''), 'away_team', COALESCE(NEW.away_team, ''),
+        'home_score', COALESCE(NEW.home_score::text, '0'), 'away_score', COALESCE(NEW.away_score::text, '0')
+      )::text;
+    ELSIF NEW.status = 'cancelled' AND (OLD.status IS DISTINCT FROM 'cancelled') THEN
+      v_type := 'activity_change'; v_title := 'game_deleted';
+      v_body := json_build_object(
+        'home_team', COALESCE(NEW.home_team, ''), 'away_team', COALESCE(NEW.away_team, ''),
+        'date', COALESCE(to_char(NEW.date, 'DD.MM.YY'), '')
+      )::text;
     ELSE
-      v_type := 'activity_change';
-      v_title := COALESCE(NEW.home_team,'') || ' vs ' || COALESCE(NEW.away_team,'');
-      v_body := COALESCE(NEW.date::text, '');
+      v_type := 'activity_change'; v_title := 'game_updated';
+      v_body := json_build_object(
+        'home_team', COALESCE(NEW.home_team, ''), 'away_team', COALESCE(NEW.away_team, ''),
+        'date', COALESCE(to_char(NEW.date, 'DD.MM.YY'), ''),
+        'time', COALESCE(to_char(NEW.time, 'HH24:MI'), ''), 'hall', v_hall
+      )::text;
     END IF;
   ELSIF TG_OP = 'DELETE' THEN
-    v_team_id := OLD.kscw_team; v_game_id := OLD.id;
-    IF v_team_id IS NULL THEN RETURN OLD; END IF;
-    v_type := 'activity_change';
-    v_title := COALESCE(OLD.home_team,'') || ' vs ' || COALESCE(OLD.away_team,'');
-    v_body := COALESCE(OLD.date::text, '');
+    v_type := 'activity_change'; v_title := 'game_deleted';
+    v_body := json_build_object(
+      'home_team', COALESCE(OLD.home_team, ''), 'away_team', COALESCE(OLD.away_team, ''),
+      'date', COALESCE(to_char(OLD.date, 'DD.MM.YY'), '')
+    )::text;
   END IF;
 
   -- Skip notifications for past games (allow result_available up to 3 days after)
   IF v_type = 'result_available' THEN
-    IF NEW.date < CURRENT_DATE - INTERVAL '3 days' THEN
-      IF TG_OP = 'DELETE' THEN RETURN OLD; ELSE RETURN NEW; END IF;
-    END IF;
+    IF NEW.date < CURRENT_DATE - INTERVAL '3 days' THEN RETURN NEW; END IF;
   ELSE
     IF TG_OP = 'DELETE' THEN
       IF OLD.date < CURRENT_DATE THEN RETURN OLD; END IF;
@@ -224,17 +244,42 @@ CREATE TRIGGER trg_trainings_notify
 CREATE OR REPLACE FUNCTION trg_events_notify()
 RETURNS trigger AS $$
 DECLARE
-  v_type text; v_title text; v_id int;
+  v_type text; v_title_key text; v_body text; v_id int;
+  v_location text; v_rec record;
 BEGIN
+  IF TG_OP = 'DELETE' THEN v_rec := OLD; ELSE v_rec := NEW; END IF;
+  v_id := v_rec.id;
+
+  -- Resolve location (hall name or free-text location)
+  SELECT COALESCE(NULLIF(h.name, ''), v_rec.location, '') INTO v_location
+  FROM halls h WHERE h.id = v_rec.hall;
+  v_location := COALESCE(v_location, v_rec.location, '');
+
   IF TG_OP = 'INSERT' THEN
-    v_id := NEW.id; v_type := 'activity_change';
-    v_title := COALESCE(NEW.title, 'New event');
+    v_type := 'activity_change'; v_title_key := 'event_created';
+    v_body := json_build_object(
+      'title', COALESCE(NEW.title, ''),
+      'date', COALESCE(to_char(NEW.start_date, 'DD.MM.YY'), ''),
+      'time', COALESCE(to_char(NEW.start_date, 'HH24:MI'), ''),
+      'location', v_location
+    )::text;
   ELSIF TG_OP = 'UPDATE' THEN
-    v_id := NEW.id; v_type := 'activity_change';
-    v_title := COALESCE(NEW.title, 'Event updated');
+    IF NEW.status = 'cancelled' AND (OLD.status IS DISTINCT FROM 'cancelled') THEN
+      v_type := 'activity_change'; v_title_key := 'event_deleted';
+    ELSE
+      v_type := 'activity_change'; v_title_key := 'event_updated';
+    END IF;
+    v_body := json_build_object(
+      'title', COALESCE(NEW.title, ''),
+      'date', COALESCE(to_char(NEW.start_date, 'DD.MM.YY'), ''),
+      'time', COALESCE(to_char(NEW.start_date, 'HH24:MI'), ''),
+      'location', v_location
+    )::text;
   ELSIF TG_OP = 'DELETE' THEN
-    v_id := OLD.id; v_type := 'activity_change';
-    v_title := COALESCE(OLD.title, 'Event deleted');
+    v_type := 'activity_change'; v_title_key := 'event_deleted';
+    v_body := json_build_object(
+      'title', COALESCE(OLD.title, '')
+    )::text;
   END IF;
 
   -- Skip notifications for past events
@@ -245,7 +290,7 @@ BEGIN
   END IF;
 
   INSERT INTO notifications (member, type, title, body, activity_type, activity_id, team, read)
-  SELECT DISTINCT mt.member, v_type, v_title, '', 'event', v_id::text, et.teams_id, false
+  SELECT DISTINCT mt.member, v_type, v_title_key, v_body, 'event', v_id::text, et.teams_id, false
   FROM events_teams et
   JOIN member_teams mt ON mt.team = et.teams_id
   WHERE et.events_id = v_id;
@@ -256,7 +301,7 @@ $$ LANGUAGE plpgsql SET search_path = public;
 
 DROP TRIGGER IF EXISTS trg_events_notify ON events;
 CREATE TRIGGER trg_events_notify
-  AFTER UPDATE OR DELETE ON events
+  AFTER INSERT OR UPDATE OR DELETE ON events
   FOR EACH ROW EXECUTE FUNCTION trg_events_notify();
 
 -- 9. Scorer delegation: validate + auto-accept same-team

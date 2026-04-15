@@ -242,12 +242,6 @@ export default function PlayerProfile() {
                       {t('age', { years: differenceInYears(new Date(), new Date(member.birthdate)) })}
                     </span>
                   )}
-                  {member.birthdate_visibility !== 'hidden' && !member.birthdate && member.yob > 0 && (
-                    <span className="inline-flex items-center gap-1.5">
-                      <Calendar className="h-3.5 w-3.5" />
-                      {t('age', { years: new Date().getFullYear() - member.yob })}
-                    </span>
-                  )}
                   {member.email && (
                     <a href={`mailto:${member.email}`} className="inline-flex items-center gap-1.5 transition-colors hover:text-brand-500">
                       <Mail className="h-3.5 w-3.5" />

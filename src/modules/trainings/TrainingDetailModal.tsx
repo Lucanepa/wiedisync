@@ -288,17 +288,18 @@ function TrainingParticipation({ training, isStaff, isStaffParticipant }: { trai
         )}
       </div>
       {/* Deadline info */}
-      {isLocked && (
-        <p className="text-xs text-red-500 dark:text-red-400">{t('deadlinePassed')}</p>
-      )}
-      {training.respond_by && !isLocked && !deadlinePassed && (
-        <p className="text-xs text-gray-400 dark:text-gray-500">
-          {tTrainings('respondBy')}: {formatDate(training.respond_by.split(' ')[0])}, {(() => {
-            const [, rbTime] = training.respond_by.split(' ')
-            const time = rbTime && rbTime !== '00:00:00' ? rbTime.slice(0, 5) : training.start_time
-            return time ? formatTime(time) : ''
-          })()}
-        </p>
+      {training.respond_by && (
+        deadlinePassed ? (
+          <p className="text-xs text-red-500 dark:text-red-400">{t('deadlinePassed')}</p>
+        ) : (
+          <p className="text-xs text-gray-400 dark:text-gray-500">
+            {tTrainings('respondBy')}: {formatDate(training.respond_by.split(' ')[0])}, {(() => {
+              const [, rbTime] = training.respond_by.split(' ')
+              const time = rbTime && rbTime !== '00:00:00' ? rbTime.slice(0, 5) : training.start_time
+              return time ? formatTime(time) : ''
+            })()}
+          </p>
+        )
       )}
       {/* Participation note */}
       {(effectiveStatus || requireNote) && (

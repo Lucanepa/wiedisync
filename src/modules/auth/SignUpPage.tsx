@@ -320,14 +320,6 @@ export default function SignUpPage() {
             {(step === 'email' || step === 'register') && t('createAccount')}
           </h1>
 
-          <Turnstile
-            ref={turnstileRef}
-            siteKey={TURNSTILE_SITE_KEY}
-            onSuccess={setTurnstileToken}
-            onExpire={() => setTurnstileToken('')}
-            options={{ theme: 'auto', size: 'invisible' }}
-          />
-
           {/* Step 1: Email check */}
           {step === 'email' && (
             <form onSubmit={handleEmailCheck} className="space-y-4">
@@ -360,13 +352,27 @@ export default function SignUpPage() {
                 </Select>
               </FormField>
 
+              <Turnstile
+                ref={turnstileRef}
+                siteKey={TURNSTILE_SITE_KEY}
+                onSuccess={setTurnstileToken}
+                onExpire={() => setTurnstileToken('')}
+                options={{ theme: 'auto', size: 'flexible' }}
+              />
+
               {error && (
                 <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
               )}
 
-              <Button type="submit" loading={loading} className="w-full">
+              <Button type="submit" loading={loading} disabled={!turnstileToken} className="w-full">
                 {loading ? t('checkingEmail') : t('continue')}
               </Button>
+
+              {!turnstileToken && !loading && (
+                <p className="text-center text-xs text-amber-600 dark:text-amber-400">
+                  {t('captchaLoading')}
+                </p>
+              )}
 
               <p className="text-center text-xs text-gray-500 dark:text-gray-400">
                 {t('privacyConsent')}{' '}

@@ -73,6 +73,7 @@ export default {
   creatingAccount: 'Konto wird erstellt...',
   continue: 'Weiter',
   checkingEmail: 'E-Mail wird geprüft...',
+  captchaLoading: 'Sicherheitsprüfung wird geladen — bitte Inhaltsblocker deaktivieren, falls dies bestehen bleibt.',
   alreadyHaveAccount: 'Bereits ein Konto?',
   change: 'Ändern',
 

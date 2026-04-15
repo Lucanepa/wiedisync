@@ -143,8 +143,8 @@ export default function TeamDetail() {
     }
   }
 
-  const sortedMembers = useMemo(() => {
-    const sorted = [...members]
+  const sortMembers = useCallback((list: typeof members) => {
+    const sorted = [...list]
     const dir = sortDir === 'asc' ? 1 : -1
     sorted.sort((a, b) => {
       const ma = asObj<Member>(a.member)
@@ -180,7 +180,10 @@ export default function TeamDetail() {
       return cmp * dir
     })
     return sorted
-  }, [members, sortKey, sortDir, team])
+  }, [sortKey, sortDir, team])
+
+  const rosterMembers = useMemo(() => sortMembers(members.filter(mt => (Number(mt.guest_level) || 0) === 0)), [members, sortMembers])
+  const guestMembers = useMemo(() => sortMembers(members.filter(mt => (Number(mt.guest_level) || 0) > 0)), [members, sortMembers])
 
   async function handleApprove(member: Member) {
     try {
@@ -501,7 +504,7 @@ export default function TeamDetail() {
       )}
 
       <div className="mt-8">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('currentRoster', { count: members.length })}</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('currentRoster', { count: rosterMembers.length })}</h2>
 
         {members.length === 0 ? (
           <EmptyState
@@ -534,7 +537,7 @@ export default function TeamDetail() {
                 </tr>
               </thead>
               <tbody>
-                {sortedMembers.map((mt) => (
+                {rosterMembers.map((mt) => (
                   <MemberRow
                     key={mt.id as string}
                     memberTeam={mt}
@@ -552,6 +555,43 @@ export default function TeamDetail() {
           </div>
         )}
       </div>
+
+      {/* Guests */}
+      {guestMembers.length > 0 && (
+        <div className="mt-6">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('participation:guests')} ({guestMembers.length})</h2>
+          <div className="mt-4 overflow-x-auto rounded-lg border bg-white dark:bg-gray-800">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b bg-gray-50 dark:bg-gray-900 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                  <SortHeader label={t('playerCol')} sortKey="name" current={sortKey} dir={sortDir} onClick={handleSort} />
+                  <SortHeader label={t('numberCol')} sortKey="number" current={sortKey} dir={sortDir} onClick={handleSort} />
+                  <SortHeader label={t('positionCol')} sortKey="position" current={sortKey} dir={sortDir} onClick={handleSort} className="hidden sm:table-cell" />
+                  {canManage && <SortHeader label={t('emailCol')} sortKey="email" current={sortKey} dir={sortDir} onClick={handleSort} className="hidden md:table-cell" />}
+                  {canManage && <SortHeader label={t('phoneCol')} sortKey="phone" current={sortKey} dir={sortDir} onClick={handleSort} className="hidden md:table-cell" />}
+                  {canManage && <SortHeader label={t('birthdateCol')} sortKey="birthdate" current={sortKey} dir={sortDir} onClick={handleSort} className="hidden lg:table-cell" />}
+                  <SortHeader label={t('roleCol')} sortKey="role" current={sortKey} dir={sortDir} onClick={handleSort} />
+                </tr>
+              </thead>
+              <tbody>
+                {guestMembers.map((mt) => (
+                  <MemberRow
+                    key={mt.id as string}
+                    memberTeam={mt}
+                    teamId={team.id}
+                    teamSlug={team.name}
+                    team={team}
+                    canEdit={canManage}
+                    isAdmin={effectiveIsAdmin && hasAdminAccessToTeam(team.id)}
+                    showContact={canManage}
+                    onTeamUpdate={(updated) => setTeam((prev) => prev ? { ...prev, ...updated } : prev)}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Polls */}
       {teamId && isFeatureEnabled(team.features_enabled, 'polls') && (

@@ -40,11 +40,12 @@ const roleI18nKeys: Record<LeadershipRole, string> = {
   team_responsible: 'roleTeamResponsible',
 }
 
-export function getMemberRole(memberId: string, team?: Team | null): string | null {
+export function getMemberRole(memberId: string | number, team?: Team | null): string | null {
   if (!team) return null
-  if (flattenMemberIds(team.coach).includes(memberId)) return 'coach'
-  if (flattenMemberIds(team.captain).includes(memberId)) return 'captain'
-  if (flattenMemberIds(team.team_responsible).includes(memberId)) return 'team_responsible'
+  const id = String(memberId)
+  if (flattenMemberIds(team.coach).includes(id)) return 'coach'
+  if (flattenMemberIds(team.captain).includes(id)) return 'captain'
+  if (flattenMemberIds(team.team_responsible).includes(id)) return 'team_responsible'
   return null
 }
 

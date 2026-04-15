@@ -6,6 +6,7 @@
 
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
+  Vary: Origin
 
 /*
   X-Content-Type-Options: nosniff

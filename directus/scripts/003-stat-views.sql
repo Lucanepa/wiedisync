@@ -45,6 +45,10 @@ SELECT
   -- Roster size (current season members, excl. guests)
   COUNT(DISTINCT mt.member)
     FILTER (WHERE mt.guest_level = 0)     AS roster_size,
+  -- Active roster size (only wiedisync_active members, excl. guests)
+  COUNT(DISTINCT mt.member)
+    FILTER (WHERE mt.guest_level = 0
+      AND m.wiedisync_active = true)      AS active_roster_size,
   -- Guest count
   COUNT(DISTINCT mt.member)
     FILTER (WHERE mt.guest_level > 0)     AS guest_count,

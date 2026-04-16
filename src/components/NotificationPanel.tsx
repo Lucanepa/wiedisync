@@ -190,8 +190,8 @@ export default function NotificationPanel({
                 <span className="shrink-0 pt-0.5 text-gray-500 dark:text-gray-400">{typeIcons[n.type] ?? <Bell className="h-4 w-4" />}</span>
 
                 {/* Content */}
-                <div className="min-w-0 flex-1">
-                  <p className={`text-sm text-gray-900 dark:text-gray-100 ${!n.read ? 'font-medium' : ''}`}>
+                <div className="min-w-0 flex-1 pr-px">
+                  <p className={`break-words text-sm text-gray-900 dark:text-gray-100 ${!n.read ? 'font-medium' : ''}`}>
                     {renderMessage(n)}
                   </p>
                   <div className="mt-0.5 flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">

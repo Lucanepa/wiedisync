@@ -149,8 +149,8 @@ export default function SidebarNotifications({
               </span>
 
               {/* Content */}
-              <div className="min-w-0 flex-1">
-                <p className={`text-xs leading-snug ${
+              <div className="min-w-0 flex-1 pr-px">
+                <p className={`break-words text-xs leading-snug ${
                   isLight ? 'text-gray-900' : 'text-gray-100'
                 } ${!n.read ? 'font-medium' : ''}`}>
                   {renderMessage(n)}

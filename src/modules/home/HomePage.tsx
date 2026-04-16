@@ -201,17 +201,20 @@ export default function HomePage() {
   })
   const events = eventsRaw ?? []
 
-  // Rankings for user's teams — fetch all (small dataset), filter client-side
+  // Rankings for user's teams — fetch team details for SV/BB IDs, then rankings
+  const { data: userTeamDetailsRaw } = useCollection<Team>('teams', {
+    filter: hasTeams ? { id: { _in: userTeamIds } } : undefined,
+    fields: ['id', 'team_id'],
+    enabled: hasTeams,
+  })
   const userSvTeamIds = useMemo(() => {
-    return memberTeams
-      .map(mt => asObj<Team>(mt.team)?.team_id)
-      .filter((id): id is string => !!id)
-  }, [memberTeams])
+    return (userTeamDetailsRaw ?? []).map(t => t.team_id).filter(Boolean)
+  }, [userTeamDetailsRaw])
 
   const { data: allRankingsRaw } = useCollection<Ranking>('rankings', {
     sort: ['league', 'rank'],
     fields: ['id', 'league', 'rank', 'team_id', 'team_name', 'points', 'won', 'lost', 'wins_clear', 'wins_narrow', 'defeats_clear', 'defeats_narrow', 'sets_won', 'sets_lost', 'points_won', 'points_lost', 'played', 'season'],
-    enabled: hasTeams,
+    enabled: hasTeams && userSvTeamIds.length > 0,
   })
   const allRankings = allRankingsRaw ?? []
 

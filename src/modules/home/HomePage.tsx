@@ -44,8 +44,8 @@ export default function HomePage() {
 
   const { user, isApproved, primarySport, coachTeamIds } = useAuth()
   const { sport, setSport } = useSportPreference()
-  // Hide sport toggle for logged-in users who play only one sport
-  const showSportToggle = !user || primarySport === 'both'
+  // Hide sport toggle for users who play only one sport
+  const showSportToggle = primarySport === 'both'
   const [selectedGame, setSelectedGame] = useState<ExpandedGame | null>(null)
   const [selectedTraining, setSelectedTraining] = useState<TrainingExpanded | null>(null)
   const [selectedEvent, setSelectedEvent] = useState<EventExpanded | null>(null)
@@ -186,9 +186,8 @@ export default function HomePage() {
         ],
       })
     } else {
-      // Non-logged-in: only club-wide events (no teams) with public event types
+      // User has no teams yet — show only club-wide events
       conditions.push({ teams: { _null: true } })
-      conditions.push({ event_type: { _in: ['verein', 'social'] } })
     }
     return { _and: conditions }
   }, [today, hasTeams, userTeamIds])
@@ -221,9 +220,7 @@ export default function HomePage() {
   // Combined loading: wait for all primary data + participation statuses
   // For logged-in users, we need member_teams + all dependent queries + participation statuses
   // For guests, just the public queries (games, results, events)
-  const isInitialLoading = user
-    ? memberTeamsLoading || gamesLoading || resultsLoading || eventsLoading || (hasTeams && trainingsLoading) || bulkPartLoading
-    : gamesLoading || resultsLoading || eventsLoading
+  const isInitialLoading = memberTeamsLoading || gamesLoading || resultsLoading || eventsLoading || (hasTeams && trainingsLoading) || bulkPartLoading
 
   return (
     <div className="min-w-0">
@@ -340,7 +337,7 @@ export default function HomePage() {
 
       {/* Categorized view: trainings, events, games in columns */}
       {/* Default for guests, toggle for logged-in users */}
-      {(!user || !isApproved || showCategorized) && (
+      {showCategorized && (
         <HomeSections
           trainingsSection={hasTeams && nextTrainings.length > 0 ? (
             <div className="min-w-0">

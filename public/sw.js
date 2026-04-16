@@ -30,22 +30,22 @@ self.addEventListener('push', function(event) {
 self.addEventListener('notificationclick', function(event) {
   event.notification.close()
 
-  var url = (event.notification.data && event.notification.data.url) || 'https://wiedisync.kscw.ch'
+  var url = (event.notification.data && event.notification.data.url) || self.location.origin
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
-      // Focus existing tab if open
+      // Focus existing tab/window if already open (works for both prod and dev URLs)
       for (var i = 0; i < clientList.length; i++) {
         var client = clientList[i]
-        if (client.url.indexOf('wiedisync.kscw.ch') !== -1 && 'focus' in client) {
+        if (client.url.indexOf(self.location.origin) !== -1 && 'focus' in client) {
           client.focus()
-          if (url !== 'https://wiedisync.kscw.ch') {
+          if (url !== self.location.origin) {
             client.navigate(url)
           }
           return
         }
       }
-      // Otherwise open new tab
+      // Otherwise open new window/tab
       return clients.openWindow(url)
     })
   )

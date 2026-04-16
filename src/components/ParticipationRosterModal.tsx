@@ -393,6 +393,43 @@ export default function ParticipationRosterModal({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter, memberList, participations, absences])
 
+  // Compute short display names: first name only, disambiguate with last-name initials
+  const displayNames = useMemo(() => {
+    const names = new Map<string, string>()
+    const allMembers = [...memberList, ...staffMembers]
+
+    // Group by first name
+    const byFirstName = new Map<string, typeof allMembers>()
+    for (const m of allMembers) {
+      const key = m.first_name ?? ''
+      if (!byFirstName.has(key)) byFirstName.set(key, [])
+      byFirstName.get(key)!.push(m)
+    }
+
+    for (const [firstName, group] of byFirstName) {
+      if (group.length === 1) {
+        names.set(String(group[0].id), firstName)
+      } else {
+        for (const m of group) {
+          const others = group.filter(o => String(o.id) !== String(m.id))
+          const lastName = m.last_name ?? ''
+          let len = 1
+          while (len < lastName.length) {
+            const prefix = lastName.slice(0, len).toLowerCase()
+            if (!others.some(o => (o.last_name ?? '').slice(0, len).toLowerCase() === prefix)) break
+            len++
+          }
+          if (len >= lastName.length) {
+            names.set(String(m.id), `${firstName} ${lastName}`)
+          } else {
+            names.set(String(m.id), `${firstName} ${lastName.slice(0, len)}.`)
+          }
+        }
+      }
+    }
+    return names
+  }, [memberList, staffMembers])
+
   const statusColors: Record<string, string> = {
     confirmed: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
     tentative: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
@@ -468,7 +505,7 @@ export default function ParticipationRosterModal({
 
       {/* Status filter chips */}
       {memberList.length > 0 && (
-        <div className="mb-4 flex gap-1.5 overflow-x-auto">
+        <div className="mb-4 flex gap-1.5 overflow-x-auto pb-1">
           {([
             { key: null, label: t('all'), count: memberList.length, activeClass: 'bg-gray-600 text-white dark:bg-gray-400 dark:text-gray-900' },
             { key: 'confirmed', label: t('confirmed'), count: confirmed, activeClass: 'bg-green-600 text-white dark:bg-green-500 dark:text-white' },
@@ -535,8 +572,9 @@ export default function ParticipationRosterModal({
             return (
               <div
                 key={member.id}
-                className="flex min-h-[44px] items-center gap-3 border-b px-3 py-2 last:border-b-0 dark:border-gray-700 sm:min-h-0"
+                className="border-b last:border-b-0 dark:border-gray-700"
               >
+                <div className="flex min-h-[44px] items-center gap-3 px-3 py-2 sm:min-h-0">
                 {/* Avatar */}
                 {member.photo ? (
                   <img
@@ -553,7 +591,7 @@ export default function ParticipationRosterModal({
                 {/* Name */}
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm text-gray-900 dark:text-gray-100">
-                    {member.first_name} {member.last_name}
+                    {displayNames.get(String(member.id)) ?? member.first_name}
                     {leadershipRoles.has(member.id) && (
                       <span className="ml-1.5 inline-block rounded bg-brand-100 px-1 py-px text-[10px] font-medium leading-tight text-brand-700 dark:bg-brand-900/30 dark:text-brand-400">
                         {leadershipRoles.get(member.id) === 'coach' ? 'Coach' : leadershipRoles.get(member.id) === 'captain' ? 'C' : 'TR'}
@@ -573,11 +611,6 @@ export default function ParticipationRosterModal({
                       {[participation.position_1, participation.position_2, participation.position_3].filter(Boolean).join(' > ')}
                     </p>
                   )}
-                  {(() => {
-                    const absenceReason = getMemberAbsenceReason(member.id)
-                    const note = absenceReason || participation?.note
-                    return note ? <p className="truncate text-xs italic text-gray-400">{note}</p> : null
-                  })()}
                 </div>
 
                 {/* Status badge + edit controls */}
@@ -638,6 +671,13 @@ export default function ParticipationRosterModal({
                     )}
                   </div>
                 )}
+                </div>
+                {/* Note on its own row */}
+                {(() => {
+                  const absenceReason = getMemberAbsenceReason(member.id)
+                  const note = absenceReason || participation?.note
+                  return note ? <p className="break-words px-3 pb-2 pl-14 text-xs italic text-gray-400">{note}</p> : null
+                })()}
               </div>
             )
           })}
@@ -672,7 +712,7 @@ export default function ParticipationRosterModal({
                     )}
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm text-gray-900 dark:text-gray-100">
-                        {member.first_name} {member.last_name}
+                        {displayNames.get(String(member.id)) ?? member.first_name}
                       </p>
                     </div>
                     <div className="flex shrink-0 items-center gap-1">
@@ -741,7 +781,7 @@ export default function ParticipationRosterModal({
                     )}
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm text-gray-900 dark:text-gray-100">
-                        {member.first_name} {member.last_name}
+                        {displayNames.get(String(member.id)) ?? member.first_name}
                       </p>
                       {showRsvpTime && (() => {
                         const sp = staffParticipations.find(p => p.member === member.id)

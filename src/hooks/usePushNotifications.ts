@@ -27,7 +27,11 @@ export function usePushNotifications() {
 
   // Check initial state
   useEffect(() => {
-    const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window
+    const hasApis = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window
+    // Brave on Android blocks FCM with no user-facing toggle to re-enable it.
+    // Desktop Brave has a toggle, so only exclude mobile Brave.
+    const isBraveMobile = 'brave' in navigator && /Android|Mobile/i.test(navigator.userAgent)
+    const supported = hasApis && !isBraveMobile
 
     if (!supported) {
       setState(s => ({ ...s, supported: false }))

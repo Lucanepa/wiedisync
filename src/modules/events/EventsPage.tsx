@@ -190,7 +190,7 @@ export default function EventsPage() {
             {t('showPast')}
           </button>
         </div>
-        {isCoach && (
+        {!teamsLoading && isCoach && (
           <Button
             data-tour="new-event"
             onClick={() => {
@@ -203,7 +203,7 @@ export default function EventsPage() {
         )}
       </div>
 
-      {allUserTeamIds.length > 1 && (
+      {!teamsLoading && allUserTeamIds.length > 1 && (
         <div className="mt-6" data-tour="event-team-filter">
           <TeamFilter selected={selectedTeam} onChange={setSelectedTeam} limitToTeamIds={(effectiveIsAdmin || effectiveIsVorstand) ? undefined : allUserTeamIds} groupBySport={effectiveIsAdmin || effectiveIsVorstand} />
         </div>
@@ -223,10 +223,10 @@ export default function EventsPage() {
             {visibleEvents.map((event) => {
               // Coaches can only edit events linked to their teams (or club-wide with no teams)
               // Admins can edit all events
-              const canEdit = effectiveIsAdmin || (isCoach && (
+              const canEdit = !teamsLoading && (effectiveIsAdmin || (isCoach && (
                 event.teams.length === 0 ||
                 event.teams.some((tid) => isCoachOf(teamId(tid)))
-              ))
+              )))
               return (
                 <EventCard
                   key={event.id}

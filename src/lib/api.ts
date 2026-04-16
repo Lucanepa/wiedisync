@@ -104,13 +104,20 @@ export async function logout() {
   localStorage.removeItem('wiedisync-sql-history')
 }
 
+// Centralized refresh lock — prevents concurrent refreshes from consuming
+// the one-time-use refresh token multiple times (race condition on page load
+// when multiple requests fire simultaneously with an expired access token).
+let _refreshPromise: Promise<unknown> | null = null
+
 export async function refreshAuth() {
-  try {
-    return await client.refresh()
-  } catch (err) {
-    captureAuthError(err, { action: 'token_refresh' })
-    throw err
-  }
+  if (_refreshPromise) return _refreshPromise
+  _refreshPromise = client.refresh()
+    .catch((err) => {
+      captureAuthError(err, { action: 'token_refresh' })
+      throw err
+    })
+    .finally(() => { _refreshPromise = null })
+  return _refreshPromise
 }
 
 export function getAccessToken(): string | null {

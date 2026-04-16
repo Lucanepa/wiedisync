@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState, useCallback, useMemo, type ReactNode } from 'react'
-import { readMe, readItems } from '@directus/sdk'
-import { client, login as apiLogin, logout as apiLogout, refreshAuth, isAuthenticated, setCurrentMemberId, API_URL, fetchItems } from '../lib/api'
+import { readMe } from '@directus/sdk'
+import { client, login as apiLogin, logout as apiLogout, refreshAuth, isAuthenticated, setCurrentMemberId, API_URL, fetchItems, fetchAllItems } from '../lib/api'
 import { queryClient } from '../lib/query'
 import { setSentryUser, captureAuthError, captureApiError, addBreadcrumb } from '../lib/sentry'
 import i18n from '../i18n'
@@ -94,27 +94,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadTeamContext = useCallback(async (memberId: string | number) => {
     try {
       const [coachRows, trRows, memberTeams, allTeams, captainTeams] = await Promise.all([
-        client.request(readItems('teams_coaches', {
+        fetchAllItems<{ teams_id: number }>('teams_coaches', {
           filter: { members_id: { _eq: memberId } },
-          fields: ['teams_id'], limit: -1,
-        } as never)) as Promise<{ teams_id: number }[]>,
-        client.request(readItems('teams_responsibles', {
+          fields: ['teams_id'],
+        }),
+        fetchAllItems<{ teams_id: number }>('teams_responsibles', {
           filter: { members_id: { _eq: memberId } },
-          fields: ['teams_id'], limit: -1,
-        } as never)) as Promise<{ teams_id: number }[]>,
-        client.request(readItems('member_teams', {
+          fields: ['teams_id'],
+        }),
+        fetchAllItems<{ team: number; guest_level: number }>('member_teams', {
           filter: { member: { _eq: memberId }, season: { _eq: getCurrentSeason() } },
-          fields: ['team', 'guest_level'], limit: -1,
-        } as never)) as Promise<{ team: number; guest_level: number }[]>,
-        client.request(readItems('teams', {
+          fields: ['team', 'guest_level'],
+        }),
+        fetchAllItems<Pick<Team, 'id' | 'name' | 'sport'>>('teams', {
           filter: { active: { _eq: true } },
-          fields: ['id', 'name', 'sport'], limit: -1,
-        } as never)) as Promise<Pick<Team, 'id' | 'name' | 'sport'>[]>,
+          fields: ['id', 'name', 'sport'],
+        }),
         // Captain is M2O on teams — filter teams where captain = this member
-        client.request(readItems('teams', {
+        fetchAllItems<{ id: number }>('teams', {
           filter: { captain: { _eq: memberId }, active: { _eq: true } },
-          fields: ['id'], limit: -1,
-        } as never)) as Promise<{ id: number }[]>,
+          fields: ['id'],
+        }),
       ])
 
       const teamMap = new Map(allTeams.map(t => [String(t.id), t]))

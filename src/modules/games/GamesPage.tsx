@@ -36,7 +36,7 @@ export default function GamesPage() {
   const allUserTeamNames = useMemo(() => [...new Set([...memberTeamNames, ...coachTeamNames])], [memberTeamNames, coachTeamNames])
   const { effectiveIsAdmin, effectiveIsVorstand } = useAdminMode()
   const { sport, setSport } = useSportPreference()
-  const showSportToggle = effectiveIsAdmin || effectiveIsVorstand || !user || primarySport === 'both'
+  const showSportToggle = !teamsLoading && (effectiveIsAdmin || effectiveIsVorstand || !user || primarySport === 'both')
   const [activeTab, setActiveTab] = useState<TabKey>('upcoming')
   const [selectedTeams, setSelectedTeams] = useState<string[]>([])
   const [selectedGame, setSelectedGame] = useState<Game | null>(null)

@@ -151,7 +151,7 @@ export default function Layout() {
   const [moreOpen, setMoreOpen] = useState(false)
   const [notifPanelOpen, setNotifPanelOpen] = useState(false)
   const sidebarExpanded = sidebarView !== 'closed'
-  const { user, isAdmin, isApproved, isProfileComplete, isSuperAdmin, isLoading, logout } = useAuth()
+  const { user, isAdmin, isApproved, isProfileComplete, isSuperAdmin, isLoading, teamsLoading, logout } = useAuth()
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications()
   const { theme, toggleTheme } = useTheme()
   const { t } = useTranslation('nav')
@@ -174,9 +174,9 @@ export default function Layout() {
   })
   const memberTeams = memberTeamsRaw ?? []
 
-  // Block rendering until auth initialization completes (prevents unauthenticated
-  // flash and API requests firing before token refresh finishes)
-  if (isLoading && isAuthenticated()) {
+  // Block rendering until auth + role context fully loads (prevents flash
+  // where pages render before memberTeamIds/coachTeamIds are available)
+  if ((isLoading || teamsLoading) && isAuthenticated()) {
     return <LoadingSpinner />
   }
 

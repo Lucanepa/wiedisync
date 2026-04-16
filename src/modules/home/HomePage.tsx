@@ -742,23 +742,35 @@ function AppointmentRow({ appointment, onClick, participationStatus }: {
         )}
 
         <div className="min-w-0 flex-1">
-          {/* Main info row */}
-          <div
-            className="grid items-center"
-            style={{ gridTemplateColumns: '4.5rem 1.25rem 1fr', columnGap: '5px' }}
-          >
-            <div className="py-2.5 pl-3 text-xs text-gray-500 dark:text-gray-400">
-              <div>{weekday}</div>
-              <div>{dateStr}</div>
-              {timeStr && <div>{timeStr}</div>}
+          {/* Mobile: stacked layout */}
+          <div className="lg:hidden">
+            <div
+              className="grid items-center"
+              style={{ gridTemplateColumns: '4.5rem 1.25rem 1fr', columnGap: '5px' }}
+            >
+              <div className="py-2.5 pl-3 text-xs text-gray-500 dark:text-gray-400">
+                <div>{weekday}</div>
+                <div>{dateStr}</div>
+                {timeStr && <div>{timeStr}</div>}
+              </div>
+              <span className="text-gray-500 dark:text-gray-400">{typeIcon[appointment.type]}</span>
+              <p className="min-w-0 truncate px-2 text-sm text-gray-900 dark:text-gray-100">{label}</p>
             </div>
-            <span className="text-gray-500 dark:text-gray-400">{typeIcon[appointment.type]}</span>
-            <p className="min-w-0 truncate px-2 text-sm text-gray-900 dark:text-gray-100">{label}</p>
+            <div className="pb-2 pl-[calc(5.75rem+10px)]">
+              <ParticipationSummary activityType={appointment.type} activityId={appointment.data.id} bars />
+            </div>
           </div>
 
-          {/* Participation bars — own row beneath info */}
-          <div className="pb-2 pl-[calc(5.75rem+10px)]">
-            <ParticipationSummary activityType={appointment.type} activityId={appointment.data.id} bars />
+          {/* Desktop: single row, no wrapping */}
+          <div className="hidden px-3 py-2.5 lg:flex lg:items-center lg:gap-3">
+            <span className="shrink-0 whitespace-nowrap text-xs text-gray-500 dark:text-gray-400">
+              {weekday}, {dateStr}{timeStr ? ` · ${timeStr}` : ''}
+            </span>
+            <span className="shrink-0 text-gray-500 dark:text-gray-400">{typeIcon[appointment.type]}</span>
+            <p className="whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{label}</p>
+            <div className="ml-auto shrink-0">
+              <ParticipationSummary activityType={appointment.type} activityId={appointment.data.id} bars />
+            </div>
           </div>
         </div>
       </div>
@@ -814,7 +826,7 @@ function NextAppointments({
   return (
     <div className="mb-6">
       <h2 className="mb-3 text-lg font-semibold text-gray-900 dark:text-gray-100">{t('myNextAppointments')}</h2>
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white lg:w-fit dark:border-gray-700 dark:bg-gray-800">
         {appointments.map((apt) => {
           let onClick: (() => void) | undefined
           if (apt.type === 'game') onClick = () => onGameClick(apt.data as ExpandedGame)

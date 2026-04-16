@@ -93,7 +93,7 @@ export default function ParticipationSummary({
 
   if (bars) {
     return (
-      <div className="flex flex-col items-start gap-0.5">
+      <div className="flex flex-col items-start gap-0.5 lg:flex-row lg:items-center lg:gap-2">
         {!hideExtras && staffConfirmed > 0 && (
           <span className="flex items-center gap-1 text-[10px] text-brand-600 dark:text-brand-400">
             <Award className="h-3 w-3" />

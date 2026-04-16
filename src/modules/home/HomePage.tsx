@@ -289,14 +289,14 @@ export default function HomePage() {
 
       {/* News section — latest notifications */}
       {user && isApproved && latestNews.length > 0 && (
-        <div className="mb-6">
+        <div className="mb-6 lg:flex lg:flex-col lg:items-center">
           <SectionHeader
             title={tn('news')}
             linkTo="#"
             linkLabel={tn('showAll')}
             onLinkClick={(e) => { e.preventDefault(); setNotifPanelOpen(true) }}
           />
-          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white lg:w-fit lg:min-w-[32rem] dark:border-gray-700 dark:bg-gray-800">
             {latestNews.map((n) => (
               <NewsRow key={n.id} notification={n} onMarkAsRead={markAsRead} />
             ))}
@@ -306,7 +306,7 @@ export default function HomePage() {
 
       {/* View toggle: unified appointments vs categorized sections */}
       {user && isApproved && (
-        <div className="mb-4 flex justify-end">
+        <div className="mb-4 flex justify-end lg:justify-center">
           <button
             onClick={() => setShowCategorized((v) => !v)}
             className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
@@ -813,16 +813,22 @@ function AppointmentTableRow({ appointment, onClick, participationStatus }: {
       onClick={onClick}
     >
       <td className={`w-1 p-0 ${user && effectiveStatus ? statusBorderBg[effectiveStatus] ?? '' : ''}`} />
-      <td className="whitespace-nowrap py-2.5 pl-3 pr-2 text-xs text-gray-500 dark:text-gray-400">
-        {weekday}, {dateStr}{timeStr ? ` · ${timeStr}` : ''}
+      <td className="whitespace-nowrap py-3.5 pl-3 pr-1 text-xs text-gray-500 dark:text-gray-400">
+        {weekday}
       </td>
-      <td className="px-2 text-gray-500 dark:text-gray-400">
+      <td className="whitespace-nowrap py-3.5 pr-1 text-xs text-gray-500 dark:text-gray-400">
+        {dateStr}
+      </td>
+      <td className="whitespace-nowrap py-3.5 pr-3 text-xs text-gray-500 dark:text-gray-400">
+        {timeStr || ''}
+      </td>
+      <td className="py-3.5 pr-2 text-gray-500 dark:text-gray-400">
         {typeIcon[appointment.type]}
       </td>
-      <td className="whitespace-nowrap py-2.5 pr-4 text-sm text-gray-900 dark:text-gray-100">
+      <td className="whitespace-nowrap py-3.5 pr-4 text-sm text-gray-900 dark:text-gray-100">
         {label}
       </td>
-      <td className="py-2.5 pr-3">
+      <td className="py-3.5 pr-3">
         <ParticipationSummary activityType={appointment.type} activityId={appointment.data.id} bars />
       </td>
     </tr>

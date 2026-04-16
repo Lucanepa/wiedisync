@@ -94,12 +94,6 @@ export default function ParticipationSummary({
   if (bars) {
     return (
       <div className="flex flex-col items-start gap-0.5 lg:flex-row lg:items-center lg:gap-2">
-        {!hideExtras && staffConfirmed > 0 && (
-          <span className="flex items-center gap-1 text-[10px] text-brand-600 dark:text-brand-400">
-            <Award className="h-3 w-3" />
-            {t('coachPresent')}
-          </span>
-        )}
         <div className="flex items-center gap-1">
           <div className="flex items-center gap-1 rounded-md bg-green-50 px-2 py-1 dark:bg-green-900/20">
             <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
@@ -120,6 +114,12 @@ export default function ParticipationSummary({
             </div>
           )}
         </div>
+        {!hideExtras && staffConfirmed > 0 && (
+          <span className="flex items-center gap-1 text-[10px] text-brand-600 dark:text-brand-400">
+            <Award className="h-3 w-3" />
+            {t('coachPresent')}
+          </span>
+        )}
       </div>
     )
   }

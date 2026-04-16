@@ -45,6 +45,7 @@ import StatusPage from './modules/admin/StatusPage'
 
 import JoinPage from './modules/auth/JoinPage'
 import SetPasswordPage from './modules/auth/SetPasswordPage'
+import OAuthCallbackPage from './modules/auth/OAuthCallbackPage'
 import PublicTerminplanungPage from './modules/gameScheduling/pages/PublicTerminplanungPage'
 import OpponentFlowPage from './modules/gameScheduling/pages/OpponentFlowPage'
 import FeedbackPage from './modules/feedback/FeedbackPage'
@@ -86,6 +87,7 @@ export default function App() {
           <Route path="signup" element={<SignUpPage />} />
           <Route path="pending" element={<PendingPage />} />
 
+          <Route path="auth/callback" element={<OAuthCallbackPage />} />
           <Route path="join/:token" element={<JoinPage />} />
           <Route path="set-password" element={<SetPasswordPage />} />
           <Route path="terminplanung" element={<PublicTerminplanungPage />} />

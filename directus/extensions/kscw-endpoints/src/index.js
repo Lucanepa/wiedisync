@@ -32,7 +32,14 @@ const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET || ''
 
 async function verifyTurnstile(token) {
   if (!TURNSTILE_SECRET) {
-    console.warn('[kscw-endpoints] TURNSTILE_SECRET not configured — CAPTCHA disabled')
+    // Fail closed in production: reject requests when CAPTCHA is not configured.
+    // Only allow bypass in local dev (localhost or explicit DEV_MODE).
+    const isLocalDev = process.env.PUBLIC_URL?.includes('localhost') || process.env.DEV_MODE === 'true'
+    if (!isLocalDev) {
+      console.error('[kscw-endpoints] TURNSTILE_SECRET not configured — rejecting request (fail-closed)')
+      return false
+    }
+    console.warn('[kscw-endpoints] TURNSTILE_SECRET not configured — CAPTCHA bypassed (local dev)')
     return true
   }
   const resp = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
@@ -59,6 +66,31 @@ function addDays(date, days) {
   const d = new Date(date)
   d.setDate(d.getDate() + days)
   return d
+}
+
+// ── Password validation ───────────────────────────────────────
+const COMMON_PASSWORDS = new Set([
+  'password', '12345678', '123456789', '1234567890', 'qwerty123',
+  'abcdefgh', 'iloveyou', 'trustno1', 'sunshine1', 'princess1',
+  'football', 'baseball', 'dragon12', 'letmein12', 'welcome1',
+  'monkey123', 'master12', 'qwertyui', 'asdfghjk', 'zxcvbnm1',
+  'password1', 'password123', 'admin123', '11111111', '00000000',
+  'abc12345', 'changeme', 'testtest',
+])
+
+function validatePassword(password) {
+  if (!password || password.length < 8) {
+    return 'Password must be at least 8 characters'
+  }
+  if (COMMON_PASSWORDS.has(password.toLowerCase())) {
+    return 'Password is too common — please choose a stronger one'
+  }
+  const hasLetter = /[a-zA-Z]/.test(password)
+  const hasDigitOrSpecial = /[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)
+  if (!hasLetter || !hasDigitOrSpecial) {
+    return 'Password must contain at least one letter and one number or special character'
+  }
+  return null // valid
 }
 
 // ── PII scrubbing for request body logging ─────────────────────
@@ -776,8 +808,9 @@ export default {
     router.post('/set-password', async (req, res) => {
       try {
         const { password, email: rawEmail, token } = req.body
-        if (!password || password.length < 8) {
-          return res.status(400).json({ error: 'Password must be at least 8 characters' })
+        const pwError = validatePassword(password)
+        if (pwError) {
+          return res.status(400).json({ error: pwError })
         }
 
         const schema = await getSchema()
@@ -873,8 +906,9 @@ export default {
         if (!rawEmail || !password || !first_name || !last_name || !team) {
           return res.status(400).json({ error: 'email, password, first_name, last_name, team required' })
         }
-        if (password.length < 8) {
-          return res.status(400).json({ error: 'Password must be at least 8 characters' })
+        const pwError = validatePassword(password)
+        if (pwError) {
+          return res.status(400).json({ error: pwError })
         }
         const email = rawEmail.toLowerCase().trim()
 

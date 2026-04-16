@@ -341,11 +341,11 @@ export async function kscwApi<T = unknown>(
   path: string,
   options?: { method?: string; body?: unknown; headers?: Record<string, string> },
 ): Promise<T> {
-  const token = getAccessToken()
   const method = options?.method || 'GET'
-  let res: Response
-  try {
-    res = await fetch(`${API_URL}/kscw${path}`, {
+
+  const doFetch = async (): Promise<Response> => {
+    const token = getAccessToken()
+    return fetch(`${API_URL}/kscw${path}`, {
       method,
       headers: {
         'Content-Type': 'application/json',
@@ -354,6 +354,11 @@ export async function kscwApi<T = unknown>(
       },
       ...(options?.body ? { body: JSON.stringify(options.body) } : {}),
     })
+  }
+
+  let res: Response
+  try {
+    res = await doFetch()
   } catch (err) {
     // Network error (offline, DNS, CORS)
     captureApiError(err, {
@@ -364,6 +369,15 @@ export async function kscwApi<T = unknown>(
     })
     throw err
   }
+
+  // Token refresh race: retry once after refreshing if we got 401/403
+  if ((res.status === 401 || res.status === 403) && isAuthenticated()) {
+    try {
+      await refreshAuth()
+      res = await doFetch()
+    } catch { /* fall through to original error handling */ }
+  }
+
   if (!res.ok) {
     const responseBody = await res.text().catch(() => '')
     const err = new Error(`API ${path}: ${res.status}`)

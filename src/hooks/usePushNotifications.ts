@@ -88,7 +88,19 @@ export function usePushNotifications() {
       return true
     } catch (err) {
       console.error('[push] Subscribe failed:', err)
-      toast.error('Push-Benachrichtigungen konnten nicht aktiviert werden.')
+      const msg = (err instanceof Error ? err.message : '') || ''
+      // Detect push service failures (Brave blocks FCM, network issues, etc.)
+      if (msg.includes('push service') || msg.includes('AbortError') || err instanceof DOMException) {
+        const isBrave = 'brave' in navigator
+        toast.error(
+          isBrave
+            ? 'Brave blockiert Push-Dienste. Aktiviere unter brave://settings/privacy → „Google-Dienste für Push-Nachrichten verwenden".'
+            : 'Push-Dienst nicht erreichbar. Bitte prüfe deine Browser-Einstellungen oder versuche es in Chrome/Firefox.',
+          { duration: 8000 },
+        )
+      } else {
+        toast.error('Push-Benachrichtigungen konnten nicht aktiviert werden.')
+      }
       setState(s => ({ ...s, loading: false }))
       return false
     }

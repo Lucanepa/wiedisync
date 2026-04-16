@@ -280,7 +280,7 @@ function EventCardParticipation({ event, existingParticipation, onSaved }: { eve
     }
   }
 
-  const isLocked = deadlinePassed && !displayStatus
+  const isLocked = deadlinePassed
 
   return (
     <div className="space-y-1.5">

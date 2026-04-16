@@ -248,10 +248,11 @@ function ParticipationButtonInner({
   return (
     <div className="relative">
       <button
-        onClick={() => setMenuOpen(!menuOpen)}
+        onClick={() => !deadlinePassed && setMenuOpen(!menuOpen)}
+        disabled={deadlinePassed}
         className={`inline-flex min-h-[44px] items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-colors sm:min-h-0 ${
-          deadlinePassed && !currentStyle
-            ? 'bg-gray-100 text-gray-600 ring-1 ring-red-400 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:ring-red-500 dark:hover:bg-gray-600'
+          deadlinePassed
+            ? 'cursor-not-allowed bg-gray-100 text-gray-400 ring-1 ring-red-400 dark:bg-gray-700 dark:text-gray-500 dark:ring-red-500'
             : currentStyle
               ? `${currentStyle.bg} ${currentStyle.text}`
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
@@ -269,7 +270,7 @@ function ParticipationButtonInner({
         )}
       </button>
 
-      {deadlinePassed && !currentStyle && !compact && (
+      {deadlinePassed && !compact && (
         <p className="mt-0.5 text-[10px] leading-tight text-red-500 dark:text-red-400">
           {t('deadlinePassed')}
         </p>

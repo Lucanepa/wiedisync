@@ -229,7 +229,7 @@ function TrainingParticipation({ training, isStaff, isStaffParticipant }: { trai
     }
   }
 
-  const isLocked = deadlinePassed && !effectiveStatus
+  const isLocked = deadlinePassed
 
   if (hasAbsence) {
     return <p className="text-sm text-gray-500 dark:text-gray-400">{t('absent')}</p>

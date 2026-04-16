@@ -53,6 +53,10 @@ export default {
   pushDisable: 'Desactiver',
   pushDenied: 'Les notifications push sont bloquees dans les parametres de votre navigateur.',
   pushNotSupported: 'Les notifications push ne sont pas supportees par ce navigateur.',
+  pushErrorBrave: 'Brave bloque les services push. Activez « Utiliser les services Google pour les messages push » dans brave://settings/privacy.',
+  pushErrorGeneric: 'Service push inaccessible. Verifiez les parametres de votre navigateur ou essayez Chrome/Firefox.',
+  pushSubscribeFailed: 'Impossible d\'activer les notifications push.',
+  pushUnsubscribeFailed: 'Impossible de desactiver les notifications push.',
   // Time helpers
   justNow: 'a l\'instant',
   minutesAgo: 'il y a {{count}} min',

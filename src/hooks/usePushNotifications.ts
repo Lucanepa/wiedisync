@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { API_URL, kscwApi } from '../lib/api'
 import { toast } from 'sonner'
 
@@ -18,6 +19,7 @@ interface PushState {
  * Handles permission requests, SW subscription, and backend registration.
  */
 export function usePushNotifications() {
+  const { t } = useTranslation('notifications')
   const [state, setState] = useState<PushState>({
     supported: false,
     permission: 'default',
@@ -96,14 +98,9 @@ export function usePushNotifications() {
       // Detect push service failures (Brave blocks FCM, network issues, etc.)
       if (msg.includes('push service') || msg.includes('AbortError') || err instanceof DOMException) {
         const isBrave = 'brave' in navigator
-        toast.error(
-          isBrave
-            ? 'Brave blockiert Push-Dienste. Aktiviere unter brave://settings/privacy → „Google-Dienste für Push-Nachrichten verwenden".'
-            : 'Push-Dienst nicht erreichbar. Bitte prüfe deine Browser-Einstellungen oder versuche es in Chrome/Firefox.',
-          { duration: 8000 },
-        )
+        toast.error(isBrave ? t('pushErrorBrave') : t('pushErrorGeneric'), { duration: 8000 })
       } else {
-        toast.error('Push-Benachrichtigungen konnten nicht aktiviert werden.')
+        toast.error(t('pushSubscribeFailed'))
       }
       setState(s => ({ ...s, loading: false }))
       return false
@@ -136,7 +133,7 @@ export function usePushNotifications() {
       return true
     } catch (err) {
       console.error('[push] Unsubscribe failed:', err)
-      toast.error('Push-Benachrichtigungen konnten nicht deaktiviert werden.')
+      toast.error(t('pushUnsubscribeFailed'))
       setState(s => ({ ...s, loading: false }))
       return false
     }

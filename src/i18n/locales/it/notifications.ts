@@ -53,6 +53,10 @@ export default {
   pushDisable: 'Disattiva',
   pushDenied: 'Le notifiche push sono bloccate nelle impostazioni del browser.',
   pushNotSupported: 'Le notifiche push non sono supportate da questo browser.',
+  pushErrorBrave: 'Brave blocca i servizi push. Attiva "Usa i servizi Google per i messaggi push" in brave://settings/privacy.',
+  pushErrorGeneric: 'Servizio push non raggiungibile. Controlla le impostazioni del browser o prova Chrome/Firefox.',
+  pushSubscribeFailed: 'Impossibile attivare le notifiche push.',
+  pushUnsubscribeFailed: 'Impossibile disattivare le notifiche push.',
   // Time helpers
   justNow: 'adesso',
   minutesAgo: '{{count}}min fa',

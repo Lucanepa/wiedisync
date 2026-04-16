@@ -53,6 +53,10 @@ export default {
   pushDisable: 'Deaktiviere',
   pushDenied: 'Push-Benachrichtigunge sind im Browser blockiert.',
   pushNotSupported: 'Push-Benachrichtigunge werded vo dem Browser nöd unterstützt.',
+  pushErrorBrave: 'Brave blockiert Push-Dienscht. Aktivier under brave://settings/privacy → „Google-Dienscht für Push-Nachrichtte verwende".',
+  pushErrorGeneric: 'Push-Dienscht nöd erreichbar. Prüef dini Browser-Iistellige oder verwend Chrome/Firefox.',
+  pushSubscribeFailed: 'Push-Benachrichtigunge hend nöd chönne aktiviert werde.',
+  pushUnsubscribeFailed: 'Push-Benachrichtigunge hend nöd chönne deaktiviert werde.',
   // Time helpers
   justNow: 'grad ebe',
   minutesAgo: 'vor {{count}} Min.',

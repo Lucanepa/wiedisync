@@ -303,9 +303,21 @@ export default ({ action, filter, init, schedule }, { services, database, logger
 
   // Sync when members.role array changes
   action('members.items.update', async ({ keys, payload }) => {
-    if (!payload || !('role' in payload)) return
-    for (const id of keys) {
-      await syncMemberRole(id)
+    if (payload && 'role' in payload) {
+      for (const id of keys) await syncMemberRole(id)
+    }
+    // Sync member photo → directus_users.avatar
+    if (payload && 'photo' in payload) {
+      for (const id of keys) {
+        try {
+          const member = await database('members').where('id', id).select('user', 'photo').first()
+          if (member?.user) {
+            await database('directus_users').where('id', member.user).update({ avatar: member.photo })
+          }
+        } catch (err) {
+          logWarning('photo_sync', err.message, { memberId: id, stack: err.stack })
+        }
+      }
     }
   })
 
@@ -646,16 +658,54 @@ export default ({ action, filter, init, schedule }, { services, database, logger
   })
 
   // ── 5. Cron: Notification Cleanup (04:00 UTC) ──────────────────
-  // Delete notifications older than 60 days
+  // 1) Delete notifications for past activities (day after activity date)
+  // 2) Delete orphaned notifications (activity was deleted)
+  // 3) Fallback: delete remaining notifications older than 30 days
 
   schedule('0 4 * * *', async () => {
     try {
+      // 1) Past activities — delete notifications whose game/training/event already happened
+      const pastGames = await database.raw(`
+        DELETE FROM notifications n
+        USING games g
+        WHERE n.activity_type = 'game' AND n.activity_id = g.id::text
+          AND g.date < CURRENT_DATE
+      `)
+      const pastTrainings = await database.raw(`
+        DELETE FROM notifications n
+        USING trainings t
+        WHERE n.activity_type = 'training' AND n.activity_id = t.id::text
+          AND t.date < CURRENT_DATE
+      `)
+      const pastEvents = await database.raw(`
+        DELETE FROM notifications n
+        USING events e
+        WHERE n.activity_type = 'event' AND n.activity_id = e.id::text
+          AND e.start_date::date < CURRENT_DATE
+      `)
+
+      // 2) Orphaned — activity was deleted but notification lingers
+      const orphaned = await database.raw(`
+        DELETE FROM notifications
+        WHERE activity_type IN ('game', 'training', 'event')
+          AND activity_id IS NOT NULL AND activity_id != ''
+          AND (
+            (activity_type = 'game'     AND NOT EXISTS (SELECT 1 FROM games     WHERE id::text = notifications.activity_id))
+            OR (activity_type = 'training' AND NOT EXISTS (SELECT 1 FROM trainings WHERE id::text = notifications.activity_id))
+            OR (activity_type = 'event'    AND NOT EXISTS (SELECT 1 FROM events    WHERE id::text = notifications.activity_id))
+          )
+      `)
+
+      // 3) Fallback — catch-all for non-activity notifications (team, poll, etc.)
       const cutoff = new Date()
-      cutoff.setDate(cutoff.getDate() - 60)
-      const count = await database('notifications')
+      cutoff.setDate(cutoff.getDate() - 30)
+      const old = await database('notifications')
         .where('date_created', '<', cutoff.toISOString())
         .delete()
-      if (count > 0) log.info(`Notification cleanup: ${count} deleted`)
+
+      const pastCount = (pastGames?.rowCount || 0) + (pastTrainings?.rowCount || 0) + (pastEvents?.rowCount || 0)
+      const total = pastCount + (orphaned?.rowCount || 0) + old
+      if (total > 0) log.info(`Notification cleanup: ${total} deleted (past=${pastCount}, orphaned=${orphaned?.rowCount || 0}, old=${old})`)
     } catch (err) {
       log.error({ msg: `Notification cleanup: ${err.message}`, event: 'cron.notification_cleanup', stack: err.stack })
       logCronError('notification_cleanup', err)

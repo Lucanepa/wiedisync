@@ -130,6 +130,7 @@ export default {
   resettingPassword: 'Wird gspeichert...',
   resetSuccess: 'Dis Passwort isch gänderet worde. Du chasch dich jetzt ilogge.',
   resetError: 'De Link isch ungültig oder abgloffe. Bitte fordere en neue Link aa.',
+  noAccountFound: 'Käs Konto mit dere E-Mail gfunde. Erstell zersch es Konto.',
 
   // OTP verification
   otpSentTo: 'Code gschickt an {{email}}',

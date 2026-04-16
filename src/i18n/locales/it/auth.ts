@@ -128,6 +128,7 @@ export default {
   resettingPassword: 'Salvataggio...',
   resetSuccess: 'La tua password è stata cambiata con successo. Ora puoi accedere.',
   resetError: 'Questo link non è valido o è scaduto. Richiedi un nuovo link di reset.',
+  noAccountFound: 'Nessun account trovato con questa email. Crea prima un account.',
 
   // OTP verification
   otpSentTo: 'Codice inviato a {{email}}',

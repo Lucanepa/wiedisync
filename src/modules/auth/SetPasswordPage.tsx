@@ -22,6 +22,7 @@ export default function SetPasswordPage() {
   const [password, setPassword] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [noAccount, setNoAccount] = useState(false)
   const [loading, setLoading] = useState(false)
   const autoSentRef = useRef(false)
 
@@ -96,8 +97,14 @@ export default function SetPasswordPage() {
         body: { password, email: email.trim().toLowerCase() },
       })
       setPhase('success')
-    } catch {
-      setError(t('resetError'))
+    } catch (err) {
+      if ((err as Error & { code?: string }).code === 'no_account') {
+        setNoAccount(true)
+        setError(t('noAccountFound'))
+      } else {
+        setNoAccount(false)
+        setError(t('resetError'))
+      }
     } finally {
       setLoading(false)
     }
@@ -201,7 +208,18 @@ export default function SetPasswordPage() {
                     autoComplete="new-password"
                   />
 
-                  {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+                  {error && (
+                    <div className="text-sm text-red-600 dark:text-red-400">
+                      <p>{error}</p>
+                      {noAccount && (
+                        <p className="mt-2">
+                          <Link to="/signup" className="font-medium text-brand-600 hover:text-brand-500 dark:text-brand-400">
+                            {t('signUp')} →
+                          </Link>
+                        </p>
+                      )}
+                    </div>
+                  )}
 
                   <Button type="submit" loading={loading} className="w-full">
                     {loading ? t('resettingPassword') : t('resetPasswordButton')}

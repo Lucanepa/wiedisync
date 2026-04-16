@@ -865,7 +865,7 @@ export default {
               log.info(`VM email claim (set-password): member ${member.id} claimed via vm_email=${email}`)
             }
           }
-          if (!member) return res.status(400).json({ error: 'Invalid or expired request' })
+          if (!member) return res.status(400).json({ error: 'No account found', code: 'no_account' })
           memberId = member.id
 
           if (member.user) {

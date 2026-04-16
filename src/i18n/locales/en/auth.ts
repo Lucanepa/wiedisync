@@ -130,6 +130,7 @@ export default {
   resettingPassword: 'Saving...',
   resetSuccess: 'Your password has been changed successfully. You can now sign in.',
   resetError: 'This link is invalid or expired. Please request a new reset link.',
+  noAccountFound: 'No account found with this email. Create an account first.',
 
   // OTP verification
   otpSentTo: 'Code sent to {{email}}',

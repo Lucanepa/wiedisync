@@ -128,6 +128,7 @@ export default {
   resettingPassword: 'Enregistrement...',
   resetSuccess: 'Votre mot de passe a ete modifie avec succes. Vous pouvez maintenant vous connecter.',
   resetError: 'Ce lien est invalide ou expire. Veuillez demander un nouveau lien de reinitialisation.',
+  noAccountFound: 'Aucun compte trouvé avec cet e-mail. Créez d\'abord un compte.',
 
   // OTP verification
   otpSentTo: 'Code envoyé à {{email}}',

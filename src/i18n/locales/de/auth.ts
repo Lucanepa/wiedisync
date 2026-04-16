@@ -130,6 +130,7 @@ export default {
   resettingPassword: 'Wird gespeichert...',
   resetSuccess: 'Dein Passwort wurde erfolgreich geändert. Du kannst dich jetzt anmelden.',
   resetError: 'Der Link ist ungültig oder abgelaufen. Bitte fordere einen neuen Link an.',
+  noAccountFound: 'Kein Konto mit dieser E-Mail gefunden. Erstelle zuerst ein Konto.',
 
   // OTP verification
   otpSentTo: 'Code gesendet an {{email}}',

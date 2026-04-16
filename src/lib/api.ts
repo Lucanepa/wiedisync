@@ -397,7 +397,9 @@ export async function kscwApi<T = unknown>(
 
   if (!res.ok) {
     const responseBody = await res.text().catch(() => '')
-    const err = new Error(`API ${path}: ${res.status}`)
+    const err = new Error(`API ${path}: ${res.status}`) as Error & { code?: string }
+    // Parse response body and attach error code if present
+    try { const parsed = JSON.parse(responseBody); if (parsed?.code) err.code = parsed.code } catch { /* ignore */ }
     captureApiError(err, {
       operation: 'kscwApi',
       endpoint: path,

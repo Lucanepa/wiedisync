@@ -5,6 +5,7 @@ import Modal from '@/components/Modal'
 import { useMultiTeamMembers } from '../hooks/useTeamMembers'
 import { useTeamParticipations, useAllEventParticipations } from '../hooks/useParticipation'
 import { useAuth } from '../hooks/useAuth'
+import { useAdminMode } from '../hooks/useAdminMode'
 import { useMutation } from '../hooks/useMutation'
 import { useCollection } from '../lib/query'
 import { fetchAllItems } from '../lib/api'
@@ -104,9 +105,10 @@ export default function ParticipationRosterModal({
   }, [teams])
 
   const { isCoachOf, teamResponsibleIds } = useAuth()
+  const { effectiveIsAdmin } = useAdminMode()
 
-  const canEditRoster = (activityType === 'training' || activityType === 'game') &&
-    teamIds.some(id => isCoachOf(id) || teamResponsibleIds.includes(id))
+  const isStaffForActivity = teamIds.some(id => isCoachOf(id) || teamResponsibleIds.includes(id))
+  const canEditRoster = isStaffForActivity || (effectiveIsAdmin && activityType === 'event')
 
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null)
   const [savingMemberIds, setSavingMemberIds] = useState<Set<string>>(new Set())

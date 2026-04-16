@@ -50,6 +50,8 @@ export default {
   sessionParticipation: 'Teilnahm pro Zitblock',
   allowMaybe: '«Vilicht»-Antworte erlaube',
   allowMaybeHint: 'Wenn us, chönd Teilnehmer nur mit Ja oder Nei antworte.',
+  enablePositions: 'Positionswünsch',
+  enablePositionsHint: 'Teilnehmer müend bim Zuesage ihri Top-3-Positione aageh.',
   enableTasks: 'Ufgabe aktiviere',
   enableTasksHint: 'Teilnehmer chönd Pflichte für de Event zuewise und überneh.',
   minParticipants: 'Min. Teilnehmer',

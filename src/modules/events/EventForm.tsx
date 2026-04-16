@@ -72,14 +72,18 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
     return allTeams.filter((t) => coachTeamIds.includes(t.id))
   }, [allTeams, effectiveIsAdmin, coachTeamIds])
 
+  const [sportFilter, setSportFilter] = useState<'all' | 'volleyball' | 'basketball'>('all')
+
   const teamOptions = useMemo(() =>
-    availableTeams.map((team) => ({
-      value: team.id,
-      label: team.name,
-      colorKey: teamNameToColorKey(team.name, team.sport),
-      group: team.sport === 'volleyball' ? tc('volleyball') : tc('basketball'),
-    })),
-  [availableTeams, tc])
+    availableTeams
+      .filter((team) => sportFilter === 'all' || team.sport === sportFilter)
+      .map((team) => ({
+        value: team.id,
+        label: team.name,
+        colorKey: teamNameToColorKey(team.name, team.sport),
+        group: team.sport === 'volleyball' ? tc('volleyball') : tc('basketball'),
+      })),
+  [availableTeams, tc, sportFilter])
 
   const singleTeam = availableTeams.length === 1
 
@@ -97,6 +101,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
   const [minParticipants, setMinParticipants] = useState('')
   const [requireNoteIfAbsent, setRequireNoteIfAbsent] = useState(false)
   const [allowMaybe, setAllowMaybe] = useState(true)
+  const [enablePositions, setEnablePositions] = useState(false)
   const [enableTasks, setEnableTasks] = useState(false)
   const [participationMode, setParticipationMode] = useState<'whole' | 'per_day' | 'per_session'>('whole')
   const [sessions, setSessions] = useState<SessionDraft[]>([])
@@ -142,6 +147,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
       setAllowMaybe(event.allow_maybe !== false)
       setParticipationMode((event.participation_mode as 'whole' | 'per_day' | 'per_session') || 'whole')
       setEnableTasks(event.features_enabled?.tasks === true)
+      setEnablePositions(event.features_enabled?.position_preferences === true)
       setInvitedRoles(event.invited_roles ?? [])
       setInvitedMembers(
         (event.invited_members ?? []).map((m: any) => typeof m === 'object' ? String(m.members_id?.id ?? m.members_id ?? m) : String(m))
@@ -162,6 +168,8 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
       setMinParticipants('')
       setRequireNoteIfAbsent(false)
       setAllowMaybe(true)
+      setEnablePositions(false)
+      setSportFilter('all')
       setParticipationMode('whole')
       setSessions([])
       setInvitedRoles([])
@@ -278,7 +286,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
       require_note_if_absent: requireNoteIfAbsent,
       allow_maybe: allowMaybe,
       participation_mode: effectiveMode,
-      features_enabled: { tasks: enableTasks },
+      features_enabled: { tasks: enableTasks, position_preferences: enablePositions },
       invited_roles: invitedRoles.length > 0 ? invitedRoles : null,
       invited_members: invitedMembers,
       send_email_invite: sendEmailInvite,
@@ -482,26 +490,59 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
           </div>
         </div>
 
-        {eventType === 'tournament' && (
-          <div className="grid grid-cols-2 gap-4">
-            <FormInput
-              label={t('minParticipants')}
-              type="number"
-              value={minParticipants}
-              onChange={(e) => setMinParticipants(e.target.value)}
-              min={0}
-            />
-            <FormInput
-              label={t('maxPlayers')}
-              type="number"
-              value={maxPlayers}
-              onChange={(e) => setMaxPlayers(e.target.value)}
-              min={0}
-            />
-          </div>
+        {['tournament', 'trainingsweekend', 'friendly'].includes(eventType) && (
+          <>
+            <div className="grid grid-cols-2 gap-4">
+              <FormInput
+                label={t('minParticipants')}
+                type="number"
+                value={minParticipants}
+                onChange={(e) => setMinParticipants(e.target.value)}
+                min={0}
+              />
+              <FormInput
+                label={t('maxPlayers')}
+                type="number"
+                value={maxPlayers}
+                onChange={(e) => setMaxPlayers(e.target.value)}
+                min={0}
+              />
+            </div>
+
+            <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+              <Switch checked={enablePositions} onCheckedChange={setEnablePositions} />
+              <div>
+                <span>{t('enablePositions')}</span>
+                <p className="text-xs text-muted-foreground">{t('enablePositionsHint')}</p>
+              </div>
+            </div>
+          </>
         )}
 
         <FormField label={t('teamsInvolved')} helperText={t('teamsInvolvedHint')}>
+          <div className="mb-2 flex gap-1 rounded-lg border border-gray-200 bg-gray-50 p-1 dark:border-gray-600 dark:bg-gray-800">
+            {(['all', 'volleyball', 'basketball'] as const).map((sport) => (
+              <button
+                key={sport}
+                type="button"
+                onClick={() => {
+                  setSportFilter(sport)
+                  // Remove selected teams that don't match the new filter
+                  if (sport !== 'all') {
+                    const validIds = new Set(availableTeams.filter(t => t.sport === sport).map(t => t.id))
+                    setSelectedTeams(prev => prev.filter(id => validIds.has(id)))
+                  }
+                }}
+                className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  sportFilter === sport
+                    ? 'bg-brand-500 text-white shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
+                }`}
+              >
+                {sport === 'all' ? tc('all') : sport === 'volleyball' ? tc('volleyball') : tc('basketball')}
+              </button>
+            ))}
+          </div>
           <TeamMultiSelect
             options={teamOptions}
             selected={selectedTeams}

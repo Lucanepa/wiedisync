@@ -49,6 +49,8 @@ export default {
   sessionParticipation: 'Partecipazione per fascia oraria',
   allowMaybe: 'Consenti risposte "Forse"',
   allowMaybeHint: 'Se disattivato, i partecipanti possono rispondere solo Sì o No.',
+  enablePositions: 'Preferenze di ruolo',
+  enablePositionsHint: 'I partecipanti devono indicare i 3 ruoli preferiti alla conferma.',
   enableTasks: 'Attiva compiti',
   enableTasksHint: 'I partecipanti possono assegnare e prendere in carico responsabilità per questo evento.',
   minParticipants: 'Min. partecipanti',

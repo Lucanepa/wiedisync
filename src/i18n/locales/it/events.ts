@@ -30,7 +30,7 @@ export default {
   respondBy: 'Rispondi entro',
   respondByHint: 'Promemoria 1 giorno prima',
   respondByTime: 'Ora limite di iscrizione',
-  maxPlayers: 'Max giocatori',
+  maxPlayers: 'Max partecipanti',
   participation: 'Partecipazione',
   viewRoster: 'Vedi lista',
 
@@ -47,6 +47,8 @@ export default {
   sessionsConfirmed: '{{confirmed}}/{{total}} confermati',
   overallView: 'Panoramica',
   sessionParticipation: 'Partecipazione per fascia oraria',
+  allowMaybe: 'Consenti risposte "Forse"',
+  allowMaybeHint: 'Se disattivato, i partecipanti possono rispondere solo Sì o No.',
   enableTasks: 'Attiva compiti',
   enableTasksHint: 'I partecipanti possono assegnare e prendere in carico responsabilità per questo evento.',
   minParticipants: 'Min. partecipanti',

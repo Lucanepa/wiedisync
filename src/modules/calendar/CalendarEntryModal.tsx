@@ -167,6 +167,7 @@ export default function CalendarEntryModal({ entry, onClose, onRefresh }: Calend
                 participationMode={(entry.source as KscwEvent).participation_mode}
                 maxPlayers={(entry.source as KscwEvent).max_players}
                 requireNoteIfAbsent={(entry.source as KscwEvent).require_note_if_absent}
+                allowMaybe={(entry.source as KscwEvent).allow_maybe !== false}
               />
               <ParticipationSummary
                 activityType="event"

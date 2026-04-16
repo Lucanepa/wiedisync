@@ -44,4 +44,7 @@ export default {
   warnings: 'Avertissements',
   all: 'Tous',
   clearStatus: 'Effacer',
+  positions: 'Preferences de poste',
+  positionRequired: 'Choisir un poste...',
+  positionsRequiredError: 'Les 3 postes sont obligatoires',
 } as const

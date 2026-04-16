@@ -44,4 +44,7 @@ export default {
   warnings: 'Warnungen',
   all: 'Alle',
   clearStatus: 'Zurücksetzen',
+  positions: 'Positionswünsche',
+  positionRequired: 'Position wählen...',
+  positionsRequiredError: 'Alle 3 Positionen sind erforderlich',
 } as const

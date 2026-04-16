@@ -264,11 +264,7 @@ BEGIN
       'location', v_location
     )::text;
   ELSIF TG_OP = 'UPDATE' THEN
-    IF NEW.status = 'cancelled' AND (OLD.status IS DISTINCT FROM 'cancelled') THEN
-      v_type := 'activity_change'; v_title_key := 'event_deleted';
-    ELSE
-      v_type := 'activity_change'; v_title_key := 'event_updated';
-    END IF;
+    v_type := 'activity_change'; v_title_key := 'event_updated';
     v_body := json_build_object(
       'title', COALESCE(NEW.title, ''),
       'date', COALESCE(to_char(NEW.start_date, 'DD.MM.YY'), ''),

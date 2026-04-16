@@ -285,7 +285,9 @@ function EventCardParticipation({ event, existingParticipation, onSaved }: { eve
   return (
     <div className="space-y-1.5">
       <div className="relative flex flex-wrap items-center gap-1.5">
-        {(['confirmed', 'tentative', 'declined'] as const).map((status) => {
+        {(['confirmed', 'tentative', 'declined'] as const)
+          .filter((s) => s !== 'tentative' || event.allow_maybe !== false)
+          .map((status) => {
           const active = displayStatus === status
           const colorMap = {
             confirmed: active ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-green-900/30 dark:hover:text-green-400',

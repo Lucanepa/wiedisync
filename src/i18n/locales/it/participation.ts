@@ -44,4 +44,7 @@ export default {
   warnings: 'Avvertimenti',
   all: 'Tutti',
   clearStatus: 'Cancella',
+  positions: 'Preferenze di ruolo',
+  positionRequired: 'Scegli un ruolo...',
+  positionsRequiredError: 'Tutti e 3 i ruoli sono obbligatori',
 } as const

@@ -31,7 +31,7 @@ export default {
   respondBy: 'Respond by',
   respondByHint: 'Reminder 1 day before',
   respondByTime: 'Deadline time',
-  maxPlayers: 'Max players',
+  maxPlayers: 'Max participants',
   participation: 'Participation',
   viewRoster: 'View roster',
 
@@ -48,6 +48,8 @@ export default {
   sessionsConfirmed: '{{confirmed}}/{{total}} confirmed',
   overallView: 'Overall',
   sessionParticipation: 'Participation per time slot',
+  allowMaybe: 'Allow "Maybe" replies',
+  allowMaybeHint: 'When off, participants can only reply Yes or No.',
   enableTasks: 'Enable tasks',
   enableTasksHint: 'Let participants assign and claim duties for this event.',
   minParticipants: 'Min. participants',

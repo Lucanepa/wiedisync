@@ -31,7 +31,7 @@ export default {
   respondBy: 'Antwort bis',
   respondByHint: 'Erinnerung 1 Tag vorher',
   respondByTime: 'Anmeldefrist Uhrzeit',
-  maxPlayers: 'Max. Spieler',
+  maxPlayers: 'Max. Teilnehmer',
   participation: 'Teilnahme',
   viewRoster: 'Aufgebot anzeigen',
 
@@ -48,6 +48,8 @@ export default {
   sessionsConfirmed: '{{confirmed}}/{{total}} zugesagt',
   overallView: 'Gesamt',
   sessionParticipation: 'Teilnahme pro Zeitblock',
+  allowMaybe: '„Vielleicht"-Antworten erlauben',
+  allowMaybeHint: 'Wenn deaktiviert, können Teilnehmer nur mit Ja oder Nein antworten.',
   enableTasks: 'Aufgaben aktivieren',
   enableTasksHint: 'Teilnehmer können Pflichten für diesen Event zuweisen und übernehmen.',
   minParticipants: 'Min. Teilnehmer',

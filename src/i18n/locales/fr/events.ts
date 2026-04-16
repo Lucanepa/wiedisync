@@ -30,7 +30,7 @@ export default {
   respondBy: 'Repondre avant le',
   respondByHint: 'Rappel 1 jour avant',
   respondByTime: "Heure limite d'inscription",
-  maxPlayers: 'Nombre max. de joueurs',
+  maxPlayers: 'Max. participants',
   participation: 'Participation',
   viewRoster: 'Voir la liste',
 
@@ -47,6 +47,8 @@ export default {
   sessionsConfirmed: '{{confirmed}}/{{total}} confirmes',
   overallView: 'Vue d\'ensemble',
   sessionParticipation: 'Participation par creneau',
+  allowMaybe: 'Autoriser les reponses « Peut-etre »',
+  allowMaybeHint: 'Si desactive, les participants ne peuvent repondre que Oui ou Non.',
   enableTasks: 'Activer les taches',
   enableTasksHint: 'Les participants peuvent assigner et prendre en charge des responsabilites pour cet evenement.',
   minParticipants: 'Min. participants',

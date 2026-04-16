@@ -224,6 +224,7 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
         participationMode={event.participation_mode}
         eventSessions={hasSessionMode ? sessions : undefined}
         showRsvpTime={asTeams(event.teams).some(t => isFeatureEnabled(t.features_enabled, 'show_rsvp_time'))}
+        allowMaybe={event.allow_maybe !== false}
       />
     </>
   )
@@ -234,7 +235,7 @@ function EventParticipation({ event, isStaff, isStaffParticipant }: { event: Eve
   const { participation, effectiveStatus, hasAbsence, note: savedNote, setStatus, saveConfirmed, dismissConfirmed } = useParticipation(
     'event',
     event.id,
-    event.start_date?.split(' ')[0],
+    event.start_date?.split('T')[0],
     undefined,
     isStaffParticipant,
   )
@@ -243,7 +244,9 @@ function EventParticipation({ event, isStaff, isStaffParticipant }: { event: Eve
   const noteInitRef = useRef(savedNote)
   const [guestCount, setGuestCount] = useState(0)
   const [noteRequiredError, setNoteRequiredError] = useState(false)
+  const [positionsRequiredError, setPositionsRequiredError] = useState(false)
   const requireNote = !!event.require_note_if_absent
+  const allowMaybe = event.allow_maybe !== false
   const showPositions = isFeatureEnabled(event.features_enabled, 'position_preferences')
   const [pos1, setPos1] = useState<VolleyPosition | ''>(participation?.position_1 || '')
   const [pos2, setPos2] = useState<VolleyPosition | ''>(participation?.position_2 || '')
@@ -294,6 +297,7 @@ function EventParticipation({ event, isStaff, isStaffParticipant }: { event: Eve
   }
 
   async function savePositions(p1: VolleyPosition | '', p2: VolleyPosition | '', p3: VolleyPosition | '') {
+    if (p1 && p2 && p3) setPositionsRequiredError(false)
     if (effectiveStatus) {
       await setStatus(
         effectiveStatus as 'confirmed' | 'tentative' | 'declined',
@@ -313,7 +317,9 @@ function EventParticipation({ event, isStaff, isStaffParticipant }: { event: Eve
       <div className="relative flex items-center gap-2">
         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('yourStatus')}:</span>
         <div className="flex items-center gap-1.5">
-          {(['confirmed', 'tentative', 'declined'] as const).map((status) => {
+          {(['confirmed', 'tentative', 'declined'] as const)
+            .filter((s) => s !== 'tentative' || allowMaybe)
+            .map((status) => {
             const labels = { confirmed: t('yes'), tentative: t('maybe'), declined: t('no') }
             const colors = {
               confirmed: effectiveStatus === 'confirmed'
@@ -334,7 +340,12 @@ function EventParticipation({ event, isStaff, isStaffParticipant }: { event: Eve
                     setNoteRequiredError(true)
                     return
                   }
+                  if (showPositions && status === 'confirmed' && (!pos1 || !pos2 || !pos3)) {
+                    setPositionsRequiredError(true)
+                    return
+                  }
                   setNoteRequiredError(false)
+                  setPositionsRequiredError(false)
                   setStatus(status, noteText, guestCount, showPositions ? { position_1: pos1 || null, position_2: pos2 || null, position_3: pos3 || null } : undefined)
                 }}
                 className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${colors[status]}`}
@@ -411,7 +422,7 @@ function EventParticipation({ event, isStaff, isStaffParticipant }: { event: Eve
                   }}
                   className="flex-1 rounded-md border border-gray-200 bg-transparent px-2.5 py-1 text-sm text-gray-700 focus:border-brand-400 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:focus:border-brand-500"
                 >
-                  <option value="">{i === 0 ? t('positionRequired', 'Select position...') : t('positionOptional', 'Optional')}</option>
+                  <option value="">{t('positionRequired', 'Select position...')}</option>
                   {VOLLEY_POSITIONS.map((pos) => (
                     <option key={pos} value={pos} disabled={others.includes(pos)}>{pos}</option>
                   ))}
@@ -419,6 +430,9 @@ function EventParticipation({ event, isStaff, isStaffParticipant }: { event: Eve
               </div>
             )
           })}
+          {positionsRequiredError && (
+            <p className="text-[11px] text-red-500 dark:text-red-400">{t('positionsRequiredError', 'All 3 positions are required')}</p>
+          )}
         </div>
       )}
 

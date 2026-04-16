@@ -31,7 +31,7 @@ export default {
   respondBy: 'Antwort bis',
   respondByHint: 'Erinnering 1 Tag vorher',
   respondByTime: 'Aamäldefrischt Uhrzit',
-  maxPlayers: 'Max. Spieler',
+  maxPlayers: 'Max. Teilnehmer',
   participation: 'Teilnahm',
   viewRoster: 'Ufgebot aazeige',
 
@@ -48,6 +48,8 @@ export default {
   sessionsConfirmed: '{{confirmed}}/{{total}} zuegseit',
   overallView: 'Gsamt',
   sessionParticipation: 'Teilnahm pro Zitblock',
+  allowMaybe: '«Vilicht»-Antworte erlaube',
+  allowMaybeHint: 'Wenn us, chönd Teilnehmer nur mit Ja oder Nei antworte.',
   enableTasks: 'Ufgabe aktiviere',
   enableTasksHint: 'Teilnehmer chönd Pflichte für de Event zuewise und überneh.',
   minParticipants: 'Min. Teilnehmer',

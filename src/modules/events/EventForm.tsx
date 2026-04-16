@@ -96,6 +96,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
   const [maxPlayers, setMaxPlayers] = useState('')
   const [minParticipants, setMinParticipants] = useState('')
   const [requireNoteIfAbsent, setRequireNoteIfAbsent] = useState(false)
+  const [allowMaybe, setAllowMaybe] = useState(true)
   const [enableTasks, setEnableTasks] = useState(false)
   const [participationMode, setParticipationMode] = useState<'whole' | 'per_day' | 'per_session'>('whole')
   const [sessions, setSessions] = useState<SessionDraft[]>([])
@@ -138,6 +139,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
       setMaxPlayers(event.max_players ? String(event.max_players) : '')
       setMinParticipants(event.min_participants ? String(event.min_participants) : '')
       setRequireNoteIfAbsent(!!event.require_note_if_absent)
+      setAllowMaybe(event.allow_maybe !== false)
       setParticipationMode((event.participation_mode as 'whole' | 'per_day' | 'per_session') || 'whole')
       setEnableTasks(event.features_enabled?.tasks === true)
       setInvitedRoles(event.invited_roles ?? [])
@@ -159,6 +161,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
       setMaxPlayers('')
       setMinParticipants('')
       setRequireNoteIfAbsent(false)
+      setAllowMaybe(true)
       setParticipationMode('whole')
       setSessions([])
       setInvitedRoles([])
@@ -273,6 +276,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
       max_players: maxPlayers ? Number(maxPlayers) : null,
       min_participants: minParticipants ? Number(minParticipants) : null,
       require_note_if_absent: requireNoteIfAbsent,
+      allow_maybe: allowMaybe,
       participation_mode: effectiveMode,
       features_enabled: { tasks: enableTasks },
       invited_roles: invitedRoles.length > 0 ? invitedRoles : null,
@@ -459,6 +463,14 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
           <div>
             <span>{t('requireNoteIfAbsent', { ns: 'participation' })}</span>
             <p className="text-xs text-muted-foreground">{t('requireNoteIfAbsentHint', { ns: 'participation' })}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+          <Switch checked={allowMaybe} onCheckedChange={setAllowMaybe} />
+          <div>
+            <span>{t('allowMaybe')}</span>
+            <p className="text-xs text-muted-foreground">{t('allowMaybeHint')}</p>
           </div>
         </div>
 

@@ -356,6 +356,7 @@ export interface Event extends BaseRecord {
   min_participants: number
   participation_mode: 'whole' | 'per_day' | 'per_session' | ''
   require_note_if_absent: boolean
+  allow_maybe: boolean
   features_enabled: FeatureToggles
   invited_roles: string[] | null
   invited_members: string[]

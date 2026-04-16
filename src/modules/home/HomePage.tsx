@@ -211,7 +211,7 @@ export default function HomePage() {
     for (const g of nextGames) items.push({ id: g.id, type: 'game', date: g.date })
     for (const g of latestResults) items.push({ id: g.id, type: 'game', date: g.date })
     for (const tr of nextTrainings) items.push({ id: tr.id, type: 'training', date: tr.date })
-    for (const ev of events) items.push({ id: ev.id, type: 'event', date: ev.start_date?.split(' ')[0] ?? '' })
+    for (const ev of events) items.push({ id: ev.id, type: 'event', date: ev.start_date?.split('T')[0] ?? '' })
     return items
   }, [allDataLoaded, nextGames, latestResults, nextTrainings, events])
 
@@ -725,8 +725,7 @@ function AppointmentRow({ appointment, onClick, participationStatus }: {
   } else {
     const ev = appointment.data as EventExpanded
     label = ev.title
-    const timePart = ev.start_date?.split(' ')[1]
-    if (timePart) timeStr = formatTime(timePart)
+    if (!ev.all_day && ev.start_date) timeStr = formatTime(ev.start_date)
   }
 
   return (
@@ -801,7 +800,7 @@ function NextAppointments({
       if (tr.date) items.push({ type: 'training', date: tr.date, data: tr })
     }
     for (const ev of events) {
-      if (ev.start_date) items.push({ type: 'event', date: ev.start_date.split(' ')[0], data: ev })
+      if (ev.start_date) items.push({ type: 'event', date: ev.start_date.split('T')[0], data: ev })
     }
     items.sort((a, b) => a.date.localeCompare(b.date))
     return items

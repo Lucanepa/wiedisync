@@ -24,6 +24,8 @@ interface ParticipationButtonProps {
   eventSessions?: EventSession[]
   /** When true, declining or tentative requires a note */
   requireNoteIfAbsent?: boolean
+  /** When false, the "Maybe/Tentative" option is hidden */
+  allowMaybe?: boolean
   /** Pre-fetched participation — skips internal API call when provided */
   existingParticipation?: Participation
   /** Called after a successful save — parent can refetch data */
@@ -136,6 +138,7 @@ function ParticipationButtonInner({
   participationMode,
   eventSessions,
   requireNoteIfAbsent = false,
+  allowMaybe = true,
   data: { participation, effectiveStatus, setStatus, saveConfirmed, dismissConfirmed },
 }: ParticipationButtonProps & { data: ParticipationData }) {
   const { t } = useTranslation('participation')
@@ -322,7 +325,9 @@ function ParticipationButtonInner({
               </div>
             ) : (
               <>
-                {(['confirmed', 'tentative', 'declined'] as const).map((status) => {
+                {(['confirmed', 'tentative', 'declined'] as const)
+                  .filter((s) => s !== 'tentative' || allowMaybe)
+                  .map((status) => {
                   const style = statusStyles[status]
                   // Guests can't confirm when full (they'll be waitlisted server-side)
                   // Licenced players CAN confirm when full (server bumps a guest)

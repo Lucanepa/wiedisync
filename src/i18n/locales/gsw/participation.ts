@@ -44,4 +44,7 @@ export default {
   warnings: 'Warnige',
   all: 'Alli',
   clearStatus: 'Zruggsetze',
+  positions: 'Positionswünsch',
+  positionRequired: 'Position uswähle...',
+  positionsRequiredError: 'Alli 3 Positione sind pflicht',
 } as const

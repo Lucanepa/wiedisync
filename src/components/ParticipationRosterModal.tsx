@@ -27,6 +27,7 @@ interface ParticipationRosterModalProps {
   eventSessions?: EventSession[]
   participationMode?: 'whole' | 'per_day' | 'per_session' | ''
   showRsvpTime?: boolean
+  allowMaybe?: boolean
 }
 
 function formatSessionLabel(session: EventSession): string {
@@ -66,6 +67,7 @@ export default function ParticipationRosterModal({
   eventSessions,
   participationMode,
   showRsvpTime = true,
+  allowMaybe = true,
 }: ParticipationRosterModalProps) {
   const { t, i18n } = useTranslation('participation')
   const { t: te } = useTranslation('events')
@@ -642,7 +644,7 @@ export default function ParticipationRosterModal({
                   >
                     <option value="">{t('clearStatus')}</option>
                     <option value="confirmed">{t('confirmed')}</option>
-                    <option value="tentative">{t('tentative')}</option>
+                    {allowMaybe && <option value="tentative">{t('tentative')}</option>}
                     <option value="declined">{t('declined')}</option>
                   </select>
                 ) : (
@@ -672,11 +674,17 @@ export default function ParticipationRosterModal({
                   </div>
                 )}
                 </div>
-                {/* Note on its own row */}
+                {/* Note on its own row — skip if note is just a duplicate of position preferences */}
                 {(() => {
                   const absenceReason = getMemberAbsenceReason(member.id)
                   const note = absenceReason || participation?.note
-                  return note ? <p className="break-words px-3 pb-2 pl-14 text-xs italic text-gray-400">{note}</p> : null
+                  if (!note) return null
+                  // Deduplicate: if note matches the positions string, don't show it again
+                  if (participation?.position_1) {
+                    const posStr = [participation.position_1, participation.position_2, participation.position_3].filter(Boolean).join(' > ')
+                    if (note === posStr) return null
+                  }
+                  return <p className="break-words px-3 pb-2 pl-14 text-xs italic text-gray-400">{note}</p>
                 })()}
               </div>
             )
@@ -726,7 +734,7 @@ export default function ParticipationRosterModal({
                         >
                           <option value="">{t('clearStatus')}</option>
                           <option value="confirmed">{t('confirmed')}</option>
-                          <option value="tentative">{t('tentative')}</option>
+                          {allowMaybe && <option value="tentative">{t('tentative')}</option>}
                           <option value="declined">{t('declined')}</option>
                         </select>
                       ) : (

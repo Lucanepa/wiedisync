@@ -278,6 +278,7 @@ export default function EventsPage() {
         respondBy={rosterEvent?.respond_by}
         maxPlayers={rosterEvent?.max_players}
         showRsvpTime={asTeams(rosterEvent?.teams).some(t => isFeatureEnabled(t.features_enabled, 'show_rsvp_time'))}
+        allowMaybe={rosterEvent?.allow_maybe !== false}
       />
     </div>
   )

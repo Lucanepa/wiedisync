@@ -108,7 +108,7 @@ export default function ParticipationRosterModal({
   const { effectiveIsAdmin } = useAdminMode()
 
   const isStaffForActivity = teamIds.some(id => isCoachOf(id) || teamResponsibleIds.includes(id))
-  const canEditRoster = isStaffForActivity || (effectiveIsAdmin && activityType === 'event')
+  const canEditRoster = isStaffForActivity || effectiveIsAdmin
 
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null)
   const [savingMemberIds, setSavingMemberIds] = useState<Set<string>>(new Set())

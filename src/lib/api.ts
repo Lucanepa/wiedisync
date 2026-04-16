@@ -17,10 +17,20 @@ import { captureApiError, captureAuthError } from './sentry'
 const AUTH_KEY = 'directus_auth'
 const REMEMBER_KEY = 'wiedisync-remember-me'
 
+/** Detect standalone PWA mode (Add to Home Screen). */
+const isStandalone = typeof window !== 'undefined' && (
+  (window.navigator as unknown as { standalone?: boolean }).standalone === true ||
+  window.matchMedia('(display-mode: standalone)').matches
+)
+
 function isRememberMe(): boolean {
   return localStorage.getItem(REMEMBER_KEY) !== 'false'
 }
 function getStorage(): Storage {
+  // In standalone PWA mode, sessionStorage is cleared when the app is
+  // backgrounded/killed by the OS (especially iOS). Always use localStorage
+  // so auth tokens survive app restarts.
+  if (isStandalone) return localStorage
   return isRememberMe() ? localStorage : sessionStorage
 }
 

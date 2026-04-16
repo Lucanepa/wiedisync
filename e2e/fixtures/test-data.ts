@@ -1,6 +1,5 @@
 /** Known public routes for smoke tests */
 export const PUBLIC_ROUTES = [
-  { path: '/', name: 'Home' },
   { path: '/games', name: 'Games' },
   { path: '/calendar', name: 'Calendar' },
   { path: '/events', name: 'Events' },

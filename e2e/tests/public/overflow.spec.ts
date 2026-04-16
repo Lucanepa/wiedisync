@@ -18,8 +18,8 @@ test.describe('Overflow — public pages at 320px', () => {
 })
 
 test.describe('Overflow — vertical layout', () => {
-  test('page bottom is reachable by scrolling on home page', async ({ page }) => {
-    await page.goto('/')
+  test('page bottom is reachable by scrolling on games page', async ({ page }) => {
+    await page.goto('/games')
     await page.waitForLoadState('domcontentloaded')
     await page.waitForTimeout(1000)
 
@@ -35,7 +35,7 @@ test.describe('Overflow — vertical layout', () => {
 
   test('content not hidden behind tab bar on mobile', async ({ page }) => {
     await page.setViewportSize(VIEWPORTS.xs)
-    await page.goto('/')
+    await page.goto('/games')
     await page.waitForLoadState('domcontentloaded')
 
     const main = page.locator('main')

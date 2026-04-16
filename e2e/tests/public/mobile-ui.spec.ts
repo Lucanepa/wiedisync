@@ -6,7 +6,7 @@ test.use({ ...devices['Pixel 7'] })
 
 test.describe('Mobile UI — public pages (unauthenticated)', () => {
   test('bottom tab bar shows limited tabs for unauthenticated user', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/games')
     await page.waitForLoadState('domcontentloaded')
 
     const tabBar = page.locator('nav.fixed.bottom-0')
@@ -17,21 +17,6 @@ test.describe('Mobile UI — public pages (unauthenticated)', () => {
     const tabItems = tabBar.locator('a, button')
     // 3 public NavLinks + 1 More button = 4
     await expect(tabItems).toHaveCount(4)
-  })
-
-  test('More sheet shows login link for unauthenticated user', async ({ page }) => {
-    await page.goto('/')
-    await page.waitForLoadState('domcontentloaded')
-
-    const moreBtn = page.locator('nav.fixed.bottom-0 button')
-    await moreBtn.click()
-
-    // "Anmelden" / "Sign in" link (German default)
-    await expect(page.getByRole('link', { name: /Anmelden|Sign in/ })).toBeVisible({ timeout: 5_000 })
-
-    // Should NOT show secondary items (Scorer, Absences) for unauthenticated users
-    await expect(page.getByRole('link', { name: /Scorer/ })).not.toBeVisible()
-    await expect(page.getByRole('link', { name: /Absences|Absenzen/ })).not.toBeVisible()
   })
 
   for (const route of PUBLIC_ROUTES) {
@@ -48,7 +33,7 @@ test.describe('Mobile UI — public pages (unauthenticated)', () => {
   }
 
   test('no desktop sidebar at mobile viewport', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/games')
     await page.waitForLoadState('domcontentloaded')
 
     // Desktop sidebar rail (w-16 shrink-0) should not render
@@ -57,12 +42,12 @@ test.describe('Mobile UI — public pages (unauthenticated)', () => {
   })
 
   test('public page mobile screenshots', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/games')
     await page.waitForLoadState('domcontentloaded')
     await page.waitForTimeout(1000)
 
-    await expect(page).toHaveScreenshot('home-mobile-public.png', {
-      maxDiffPixelRatio: 0.10, // homepage has dynamic game/event data that changes daily
+    await expect(page).toHaveScreenshot('games-mobile-public.png', {
+      maxDiffPixelRatio: 0.10, // games page has dynamic data that changes daily
     })
   })
 

@@ -742,39 +742,90 @@ function AppointmentRow({ appointment, onClick, participationStatus }: {
         )}
 
         <div className="min-w-0 flex-1">
-          {/* Mobile: stacked layout */}
-          <div className="lg:hidden">
-            <div
-              className="grid items-center"
-              style={{ gridTemplateColumns: '4.5rem 1.25rem 1fr', columnGap: '5px' }}
-            >
-              <div className="py-2.5 pl-3 text-xs text-gray-500 dark:text-gray-400">
-                <div>{weekday}</div>
-                <div>{dateStr}</div>
-                {timeStr && <div>{timeStr}</div>}
-              </div>
-              <span className="text-gray-500 dark:text-gray-400">{typeIcon[appointment.type]}</span>
-              <p className="min-w-0 truncate px-2 text-sm text-gray-900 dark:text-gray-100">{label}</p>
+          <div
+            className="grid items-center"
+            style={{ gridTemplateColumns: '4.5rem 1.25rem 1fr', columnGap: '5px' }}
+          >
+            <div className="py-2.5 pl-3 text-xs text-gray-500 dark:text-gray-400">
+              <div>{weekday}</div>
+              <div>{dateStr}</div>
+              {timeStr && <div>{timeStr}</div>}
             </div>
-            <div className="pb-2 pl-[calc(5.75rem+10px)]">
-              <ParticipationSummary activityType={appointment.type} activityId={appointment.data.id} bars />
-            </div>
+            <span className="text-gray-500 dark:text-gray-400">{typeIcon[appointment.type]}</span>
+            <p className="min-w-0 truncate px-2 text-sm text-gray-900 dark:text-gray-100">{label}</p>
           </div>
-
-          {/* Desktop: single row, no wrapping */}
-          <div className="hidden px-3 py-2.5 lg:flex lg:items-center lg:gap-3">
-            <span className="shrink-0 whitespace-nowrap text-xs text-gray-500 dark:text-gray-400">
-              {weekday}, {dateStr}{timeStr ? ` · ${timeStr}` : ''}
-            </span>
-            <span className="shrink-0 text-gray-500 dark:text-gray-400">{typeIcon[appointment.type]}</span>
-            <p className="whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{label}</p>
-            <div className="ml-auto shrink-0">
-              <ParticipationSummary activityType={appointment.type} activityId={appointment.data.id} bars />
-            </div>
+          <div className="pb-2 pl-[calc(5.75rem+10px)]">
+            <ParticipationSummary activityType={appointment.type} activityId={appointment.data.id} bars />
           </div>
         </div>
       </div>
     </div>
+  )
+}
+
+/** Desktop table row for aligned columns */
+function AppointmentTableRow({ appointment, onClick, participationStatus }: {
+  appointment: { type: 'game' | 'training' | 'event'; date: string; data: ExpandedGame | TrainingExpanded | EventExpanded }
+  onClick?: () => void
+  participationStatus?: string
+}) {
+  const { user } = useAuth()
+  const effectiveStatus = participationStatus
+
+  const statusBorderBg: Record<string, string> = {
+    confirmed: 'bg-green-500 dark:bg-green-400',
+    tentative: 'bg-yellow-500 dark:bg-yellow-400',
+    declined: 'bg-red-500 dark:bg-red-400',
+    waitlisted: 'bg-orange-500 dark:bg-orange-400',
+    absent: 'bg-gray-400 dark:bg-gray-500',
+  }
+
+  const typeIcon = {
+    game: <VolleyballIcon className="h-4 w-4" filled />,
+    training: <TrainingConeIcon className="h-4 w-4" />,
+    event: <Calendar className="h-4 w-4" />,
+  }
+
+  const dateStr = formatDateCompact(appointment.date)
+  const weekday = formatWeekday(appointment.date)
+
+  let label = ''
+  let timeStr = ''
+  if (appointment.type === 'game') {
+    const g = appointment.data as ExpandedGame
+    label = `${g.home_team} vs ${g.away_team}`
+    if (g.time) timeStr = formatTime(g.time)
+  } else if (appointment.type === 'training') {
+    const tr = appointment.data as TrainingExpanded
+    const team = asObj<Team>(tr.team)
+    const hall = asObj<Hall>(tr.hall)
+    label = [team?.name, hall?.name].filter(Boolean).join(' · ')
+    if (tr.start_time) timeStr = formatTime(tr.start_time)
+  } else {
+    const ev = appointment.data as EventExpanded
+    label = ev.title
+    if (!ev.all_day && ev.start_date) timeStr = formatTime(ev.start_date)
+  }
+
+  return (
+    <tr
+      className="cursor-pointer border-b border-gray-100 last:border-b-0 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700/50"
+      onClick={onClick}
+    >
+      <td className={`w-1 p-0 ${user && effectiveStatus ? statusBorderBg[effectiveStatus] ?? '' : ''}`} />
+      <td className="whitespace-nowrap py-2.5 pl-3 pr-2 text-xs text-gray-500 dark:text-gray-400">
+        {weekday}, {dateStr}{timeStr ? ` · ${timeStr}` : ''}
+      </td>
+      <td className="px-2 text-gray-500 dark:text-gray-400">
+        {typeIcon[appointment.type]}
+      </td>
+      <td className="whitespace-nowrap py-2.5 pr-4 text-sm text-gray-900 dark:text-gray-100">
+        {label}
+      </td>
+      <td className="py-2.5 pr-3">
+        <ParticipationSummary activityType={appointment.type} activityId={appointment.data.id} bars />
+      </td>
+    </tr>
   )
 }
 
@@ -823,30 +874,50 @@ function NextAppointments({
 
   if (appointments.length === 0) return null
 
-  return (
-    <div className="mb-6">
-      <h2 className="mb-3 text-lg font-semibold text-gray-900 dark:text-gray-100">{t('myNextAppointments')}</h2>
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white lg:w-fit dark:border-gray-700 dark:bg-gray-800">
-        {appointments.map((apt) => {
-          let onClick: (() => void) | undefined
-          if (apt.type === 'game') onClick = () => onGameClick(apt.data as ExpandedGame)
-          else if (apt.type === 'training') onClick = () => onTrainingClick(apt.data as TrainingExpanded)
-          else onClick = () => onEventClick(apt.data as EventExpanded)
+  const renderOnClick = (apt: Appointment) => {
+    if (apt.type === 'game') return () => onGameClick(apt.data as ExpandedGame)
+    if (apt.type === 'training') return () => onTrainingClick(apt.data as TrainingExpanded)
+    return () => onEventClick(apt.data as EventExpanded)
+  }
 
-          return (
-            <AppointmentRow
-              key={`${apt.type}-${apt.data.id}`}
-              appointment={apt}
-              onClick={onClick}
-              participationStatus={participationStatuses.get(apt.data.id)}
-            />
-          )
-        })}
+  return (
+    <div className="mb-6 lg:flex lg:flex-col lg:items-center">
+      <h2 className="mb-3 text-lg font-semibold text-gray-900 dark:text-gray-100">{t('myNextAppointments')}</h2>
+
+      {/* Desktop: centered table layout with aligned columns */}
+      <div className="hidden lg:block">
+        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+          <table>
+            <tbody>
+              {appointments.map((apt) => (
+                <AppointmentTableRow
+                  key={`${apt.type}-${apt.data.id}`}
+                  appointment={apt}
+                  onClick={renderOnClick(apt)}
+                  participationStatus={participationStatuses.get(apt.data.id)}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
+
+      {/* Mobile: list layout */}
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white lg:hidden dark:border-gray-700 dark:bg-gray-800">
+        {appointments.map((apt) => (
+          <AppointmentRow
+            key={`${apt.type}-${apt.data.id}`}
+            appointment={apt}
+            onClick={renderOnClick(apt)}
+            participationStatus={participationStatuses.get(apt.data.id)}
+          />
+        ))}
+      </div>
+
       {hasMore && (
         <button
           onClick={() => setVisibleCount((v) => v + 10)}
-          className="mt-2 w-full rounded-lg py-2 text-sm text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+          className="mt-2 rounded-lg px-6 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
         >
           {t('showMore', { defaultValue: 'Show more' })}
         </button>

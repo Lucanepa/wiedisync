@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
@@ -37,7 +38,11 @@ export default function GamesPage() {
   const { effectiveIsAdmin, effectiveIsVorstand } = useAdminMode()
   const { sport, setSport } = useSportPreference()
   const showSportToggle = !teamsLoading && (effectiveIsAdmin || effectiveIsVorstand || !user || primarySport === 'both')
-  const [activeTab, setActiveTab] = useState<TabKey>('upcoming')
+  const [searchParams] = useSearchParams()
+  const [activeTab, setActiveTab] = useState<TabKey>(() => {
+    const tab = searchParams.get('tab')
+    return tab === 'rankings' || tab === 'results' || tab === 'scoreboard' ? tab : 'upcoming'
+  })
   const [selectedTeams, setSelectedTeams] = useState<string[]>([])
   const [selectedGame, setSelectedGame] = useState<Game | null>(null)
   const [showAll, setShowAll] = useState(false)

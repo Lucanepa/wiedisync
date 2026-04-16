@@ -211,31 +211,47 @@ export default function HomePage() {
     return (userTeamDetailsRaw ?? []).map(t => t.team_id).filter(Boolean)
   }, [userTeamDetailsRaw])
 
-  const { data: allRankingsRaw } = useCollection<Ranking>('rankings', {
+  // Step 1: fetch only the user's own ranking rows to discover their league names
+  const { data: userRankingRowsRaw } = useCollection<Ranking>('rankings', {
+    filter: hasTeams && userSvTeamIds.length > 0
+      ? { team_id: { _in: userSvTeamIds } }
+      : undefined,
+    fields: ['id', 'league', 'team_id'],
+    enabled: hasTeams && userSvTeamIds.length > 0,
+    all: true,
+  })
+  const userLeagueNames = useMemo(() => {
+    const names = new Set<string>()
+    for (const r of userRankingRowsRaw ?? []) {
+      if (!/^Group \d+$|Cup|Turnier|Pokal|Final|Runde \d|Spiel \d|Tour \d/i.test(r.league)) {
+        names.add(r.league)
+      }
+    }
+    return [...names]
+  }, [userRankingRowsRaw])
+
+  // Step 2: fetch full league tables only for the user's leagues
+  const { data: leagueRankingsRaw } = useCollection<Ranking>('rankings', {
+    filter: userLeagueNames.length > 0
+      ? { league: { _in: userLeagueNames } }
+      : undefined,
     sort: ['league', 'rank'],
     fields: ['id', 'league', 'rank', 'team_id', 'team_name', 'points', 'won', 'lost', 'wins_clear', 'wins_narrow', 'defeats_clear', 'defeats_narrow', 'sets_won', 'sets_lost', 'points_won', 'points_lost', 'played', 'season'],
-    enabled: hasTeams && userSvTeamIds.length > 0,
+    enabled: userLeagueNames.length > 0,
+    all: true,
   })
-  const allRankings = allRankingsRaw ?? []
 
   const userLeagueGroups = useMemo(() => {
     const grouped = new Map<string, Ranking[]>()
-    for (const r of allRankings) {
-      if (/^Group \d+$|Cup|Turnier|Pokal|Final|Runde \d|Spiel \d|Tour \d/i.test(r.league)) continue
+    for (const r of leagueRankingsRaw ?? []) {
       const existing = grouped.get(r.league) ?? []
       existing.push(r)
       grouped.set(r.league, existing)
     }
-    const filtered = new Map<string, Ranking[]>()
-    for (const [league, rows] of grouped) {
-      if (rows.some(r => userSvTeamIds.includes(r.team_id))) {
-        filtered.set(league, rows)
-      }
-    }
-    return filtered
-  }, [allRankings, userSvTeamIds])
+    return grouped
+  }, [leagueRankingsRaw])
 
-  const currentSeason = allRankings[0]?.season ?? ''
+  const currentSeason = (leagueRankingsRaw ?? [])[0]?.season ?? ''
 
   // Bulk-fetch participation statuses for all displayed activities (2 queries total
   // instead of 2 per row) so banners appear together with everything else.
@@ -372,7 +388,7 @@ export default function HomePage() {
             />
           </div>
           {userLeagueGroups.size > 0 && (
-            <div className="hidden shrink-0 lg:block">
+            <div className="hidden min-w-0 lg:block">
               <h2 className="mb-3 text-lg font-semibold text-gray-900 dark:text-gray-100">
                 {t('rankings', { defaultValue: 'Rankings' })}
                 {currentSeason && (
@@ -381,7 +397,7 @@ export default function HomePage() {
               </h2>
               <div className="space-y-4">
                 {[...userLeagueGroups.entries()].map(([league, rows]) => (
-                  <RankingsTable key={league} league={league} rankings={rows} />
+                  <RankingsTable key={league} league={league} rankings={rows} compact />
                 ))}
               </div>
             </div>
@@ -867,13 +883,13 @@ function AppointmentTableRow({ appointment, onClick, participationStatus }: {
       onClick={onClick}
     >
       <td className={`w-1 p-0 ${user && effectiveStatus ? statusBorderBg[effectiveStatus] ?? '' : ''}`} />
-      <td className="whitespace-nowrap py-3.5 pl-3 pr-1 text-xs text-gray-500 dark:text-gray-400">
+      <td className="whitespace-nowrap py-3.5 pl-4 pr-5 text-sm text-gray-500 dark:text-gray-400">
         {weekday}
       </td>
-      <td className="whitespace-nowrap py-3.5 pr-1 text-xs text-gray-500 dark:text-gray-400">
+      <td className="whitespace-nowrap py-3.5 pr-5 text-sm text-gray-500 dark:text-gray-400">
         {dateStr}
       </td>
-      <td className="whitespace-nowrap py-3.5 pr-3 text-xs text-gray-500 dark:text-gray-400">
+      <td className="whitespace-nowrap py-3.5 pr-5 text-sm text-gray-500 dark:text-gray-400">
         {timeStr || ''}
       </td>
       <td className="py-3.5 pr-2 text-gray-500 dark:text-gray-400">

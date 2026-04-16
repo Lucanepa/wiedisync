@@ -1,5 +1,6 @@
 import { Fragment, useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { ChevronDown } from 'lucide-react'
 import type { Game, Ranking } from '../../../types'
 import TeamChip from '../../../components/TeamChip'
@@ -13,21 +14,25 @@ import { formatDateCompact, formatTime } from '../../../utils/dateHelpers'
 interface RankingsTableProps {
   league: string
   rankings: Ranking[]
+  /** Hide sets/points/quotient columns (homepage sidebar) */
+  compact?: boolean
 }
 
-export default function RankingsTable({ league, rankings }: RankingsTableProps) {
+export default function RankingsTable({ league, rankings, compact }: RankingsTableProps) {
   const { t } = useTranslation('games')
+  const navigate = useNavigate()
   const sorted = [...rankings].sort((a, b) => a.rank - b.rank)
   const isBasketball = rankings.some((r) => r.team_id.startsWith('bb_'))
   const totalTeams = sorted.length
   const [breakdown, setBreakdown] = useState<{ row: Ranking; mode: 'win' | 'loss' } | null>(null)
   const [expandedTeamId, setExpandedTeamId] = useState<string | null>(null)
 
-  // Fetch all games for this league (lightweight — small dataset per league)
+  // Fetch all games for this league (skip in compact/homepage mode — no accordion)
   const { data: leagueGamesRaw } = useCollection<Game>('games', {
     filter: { league: { _eq: league } },
     sort: ['-date', '-time'],
     limit: 500,
+    enabled: !compact,
   })
   const leagueGames = leagueGamesRaw ?? []
 
@@ -98,13 +103,13 @@ export default function RankingsTable({ league, rankings }: RankingsTableProps) 
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b dark:border-gray-700 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                <th className="w-8 px-2 py-2.5 text-center">{t('rank')}</th>
-                <th className="w-10 px-2 py-2.5 text-center">{t('points')}</th>
-                <th className="px-2 py-2.5">{t('teamCol')}</th>
-                <th className="w-10 px-2 py-2.5 text-center">{t('played')}</th>
-                <th className={`w-10 px-2 py-2.5 text-center ${isBasketball ? 'hidden sm:table-cell' : ''}`}>{t('won')}</th>
-                <th className={`w-10 px-2 py-2.5 text-center ${isBasketball ? 'hidden sm:table-cell' : ''}`}>{t('lost')}</th>
-                {isBasketball ? (
+                <th className={`${compact ? 'w-10 px-3' : 'w-8 px-2'} py-2.5 text-center`}>{t('rank')}</th>
+                <th className={`${compact ? 'w-12 px-3' : 'w-10 px-2'} py-2.5 text-center`}>{t('points')}</th>
+                <th className={`${compact ? 'px-3' : 'px-2'} py-2.5`}>{t('teamCol')}</th>
+                <th className={`${compact ? 'w-12 px-3' : 'w-10 px-2'} py-2.5 text-center`}>{t('played')}</th>
+                <th className={`${compact ? 'w-12 px-3' : 'w-10 px-2'} py-2.5 text-center ${isBasketball ? 'hidden sm:table-cell' : ''}`}>{t('won')}</th>
+                <th className={`${compact ? 'w-12 px-3' : 'w-10 px-2'} py-2.5 text-center ${isBasketball ? 'hidden sm:table-cell' : ''}`}>{t('lost')}</th>
+                {!compact && (isBasketball ? (
                   <>
                     <th className="w-16 px-2 py-2.5 text-center">{t('pointsFor')} : {t('pointsAgainst')}</th>
                   </>
@@ -115,7 +120,7 @@ export default function RankingsTable({ league, rankings }: RankingsTableProps) 
                     <th className="hidden w-24 px-2 py-2.5 text-center lg:table-cell">{t('pointsFor')} : {t('pointsAgainst')}</th>
                     <th className="hidden w-12 px-2 py-2.5 text-center lg:table-cell">{t('pointsQuotient', { defaultValue: 'PQ' })}</th>
                   </>
-                )}
+                ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -124,32 +129,32 @@ export default function RankingsTable({ league, rankings }: RankingsTableProps) 
                 const isKscw = !!kscwTeam
                 const promoColor = getPromotionColor(league, row.rank, totalTeams, row.team_name)
                 const promoBorder = promoColor ? promotionBorderColors[promoColor] : ''
-                const canShowBreakdown = !isBasketball && hasBreakdownData(row)
-                const isExpanded = expandedTeamId === row.team_id
+                const canShowBreakdown = !compact && !isBasketball && hasBreakdownData(row)
+                const isExpanded = !compact && expandedTeamId === row.team_id
                 const rowGames = isExpanded ? getGamesForRow(row) : []
 
                 return (
                   <Fragment key={row.id}>
                     <tr
                       className={`cursor-pointer select-none transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/30 ${isKscw ? 'bg-brand-50 dark:bg-brand-900/20 font-semibold' : ''} ${promoBorder}`}
-                      onClick={() => toggleExpanded(row.team_id)}
+                      onClick={() => compact ? navigate('/games?tab=rankings') : toggleExpanded(row.team_id)}
                     >
-                      <td className="px-2 py-2 text-center text-gray-500 dark:text-gray-400">{row.rank}</td>
-                      <td className="px-2 py-2 text-center font-bold text-gray-900 dark:text-gray-100">{row.points}</td>
-                      <td className="max-w-0 px-2 py-2">
+                      <td className={`${compact ? 'px-3 py-3' : 'px-2 py-2'} text-center text-gray-500 dark:text-gray-400`}>{row.rank}</td>
+                      <td className={`${compact ? 'px-3 py-3' : 'px-2 py-2'} text-center font-bold text-gray-900 dark:text-gray-100`}>{row.points}</td>
+                      <td className={`${compact ? 'px-3 py-3' : 'max-w-0 px-2 py-2'}`}>
                         <div className="flex items-center gap-1.5 min-w-0">
                           {isKscw ? (
                             <TeamChip team={kscwTeam} label={`KSC Wiedikon ${kscwTeam}`} size="sm" />
                           ) : (
-                            <span className="truncate text-gray-700 dark:text-gray-300">
+                            <span className={`${compact ? 'whitespace-nowrap' : 'truncate'} text-gray-700 dark:text-gray-300`}>
                               {row.team_name || `Team ${row.team_id}`}
                             </span>
                           )}
-                          <ChevronDown className={`ml-auto h-3.5 w-3.5 shrink-0 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                          {!compact && <ChevronDown className={`ml-auto h-3.5 w-3.5 shrink-0 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />}
                         </div>
                       </td>
-                      <td className="px-2 py-2 text-center text-gray-700 dark:text-gray-300">{row.played}</td>
-                      <td className={`px-2 py-2 text-center text-green-600 dark:text-green-400 ${isBasketball ? 'hidden sm:table-cell' : ''}`}>
+                      <td className={`${compact ? 'px-3 py-3' : 'px-2 py-2'} text-center text-gray-700 dark:text-gray-300`}>{row.played}</td>
+                      <td className={`${compact ? 'px-3 py-3' : 'px-2 py-2'} text-center text-green-600 dark:text-green-400 ${isBasketball ? 'hidden sm:table-cell' : ''}`}>
                         {canShowBreakdown ? (
                           <>
                             <button
@@ -163,13 +168,13 @@ export default function RankingsTable({ league, rankings }: RankingsTableProps) 
                             <div className="hidden flex-col items-center leading-tight sm:flex">
                               <span>{row.won}</span>
                               <span className="text-[10px] font-normal text-gray-500 dark:text-gray-400">
-                                {canShowBreakdown ? `${row.wins_clear ?? 0}/${row.wins_narrow ?? 0}` : '-/-'}
+                                {`${row.wins_clear ?? 0}/${row.wins_narrow ?? 0}`}
                               </span>
                             </div>
                           </>
                         ) : row.won}
                       </td>
-                      <td className={`px-2 py-2 text-center text-red-500 dark:text-red-400 ${isBasketball ? 'hidden sm:table-cell' : ''}`}>
+                      <td className={`${compact ? 'px-3 py-3' : 'px-2 py-2'} text-center text-red-500 dark:text-red-400 ${isBasketball ? 'hidden sm:table-cell' : ''}`}>
                         {canShowBreakdown ? (
                           <>
                             <button
@@ -183,13 +188,13 @@ export default function RankingsTable({ league, rankings }: RankingsTableProps) 
                             <div className="hidden flex-col items-center leading-tight sm:flex">
                               <span>{row.lost}</span>
                               <span className="text-[10px] font-normal text-gray-500 dark:text-gray-400">
-                                {canShowBreakdown ? `${row.defeats_clear ?? 0}/${row.defeats_narrow ?? 0}` : '-/-'}
+                                {`${row.defeats_clear ?? 0}/${row.defeats_narrow ?? 0}`}
                               </span>
                             </div>
                           </>
                         ) : row.lost}
                       </td>
-                      {isBasketball ? (
+                      {!compact && (isBasketball ? (
                         <>
                           <td className="px-2 py-2 text-center text-gray-700 dark:text-gray-300">
                             {formatNumberSwiss(row.points_won)}&nbsp;:&nbsp;{formatNumberSwiss(row.points_lost)}
@@ -210,7 +215,7 @@ export default function RankingsTable({ league, rankings }: RankingsTableProps) 
                             {row.points_lost > 0 ? (row.points_won / row.points_lost).toFixed(2) : row.points_won > 0 ? '∞' : '–'}
                           </td>
                         </>
-                      )}
+                      ))}
                     </tr>
                     {isExpanded && (
                       <tr key={`${row.id}-games`}>

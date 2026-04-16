@@ -86,7 +86,7 @@ export default function RankingsTable({ league, rankings }: RankingsTableProps) 
   const lossesNarrow = breakdown?.row.defeats_narrow ?? 0
 
   // Count visible columns for the expanded row colspan
-  const colCount = isBasketball ? 7 : 6 + 1 /* sets on sm */ + 1 /* pf:pa on lg */
+  const colCount = isBasketball ? 7 : 6 + 2 /* sets+SQ on sm */ + 2 /* pf:pa+PQ on lg */
 
   return (
     <>
@@ -106,12 +106,14 @@ export default function RankingsTable({ league, rankings }: RankingsTableProps) 
                 <th className={`w-10 px-2 py-2.5 text-center ${isBasketball ? 'hidden sm:table-cell' : ''}`}>{t('lost')}</th>
                 {isBasketball ? (
                   <>
-                    <th className="w-16 px-2 py-2.5 text-center">{t('pointsFor')}:{t('pointsAgainst')}</th>
+                    <th className="w-16 px-2 py-2.5 text-center">{t('pointsFor')} : {t('pointsAgainst')}</th>
                   </>
                 ) : (
                   <>
-                    <th className="hidden w-14 px-2 py-2.5 text-center sm:table-cell">{t('sets')}</th>
-                    <th className="hidden w-16 px-2 py-2.5 text-center lg:table-cell">{t('pointsFor')}:{t('pointsAgainst')}</th>
+                    <th className="hidden w-20 px-2 py-2.5 text-center sm:table-cell">{t('sets')}</th>
+                    <th className="hidden w-12 px-2 py-2.5 text-center sm:table-cell">{t('setsQuotient', { defaultValue: 'SQ' })}</th>
+                    <th className="hidden w-24 px-2 py-2.5 text-center lg:table-cell">{t('pointsFor')} : {t('pointsAgainst')}</th>
+                    <th className="hidden w-12 px-2 py-2.5 text-center lg:table-cell">{t('pointsQuotient', { defaultValue: 'PQ' })}</th>
                   </>
                 )}
               </tr>
@@ -190,16 +192,22 @@ export default function RankingsTable({ league, rankings }: RankingsTableProps) 
                       {isBasketball ? (
                         <>
                           <td className="px-2 py-2 text-center text-gray-700 dark:text-gray-300">
-                            {formatNumberSwiss(row.points_won)}:{formatNumberSwiss(row.points_lost)}
+                            {formatNumberSwiss(row.points_won)}&nbsp;:&nbsp;{formatNumberSwiss(row.points_lost)}
                           </td>
                         </>
                       ) : (
                         <>
                           <td className="hidden px-2 py-2 text-center text-gray-700 dark:text-gray-300 sm:table-cell">
-                            {row.sets_won}:{row.sets_lost}
+                            {row.sets_won}&nbsp;:&nbsp;{row.sets_lost}
+                          </td>
+                          <td className="hidden px-2 py-2 text-center tabular-nums text-gray-500 dark:text-gray-400 sm:table-cell">
+                            {row.sets_lost > 0 ? (row.sets_won / row.sets_lost).toFixed(2) : row.sets_won > 0 ? '∞' : '–'}
                           </td>
                           <td className="hidden px-2 py-2 text-center text-gray-700 dark:text-gray-300 lg:table-cell">
-                            {formatNumberSwiss(row.points_won)}:{formatNumberSwiss(row.points_lost)}
+                            {formatNumberSwiss(row.points_won)}&nbsp;:&nbsp;{formatNumberSwiss(row.points_lost)}
+                          </td>
+                          <td className="hidden px-2 py-2 text-center tabular-nums text-gray-500 dark:text-gray-400 lg:table-cell">
+                            {row.points_lost > 0 ? (row.points_won / row.points_lost).toFixed(2) : row.points_won > 0 ? '∞' : '–'}
                           </td>
                         </>
                       )}

@@ -95,20 +95,20 @@ export default function ParticipationSummary({
     return (
       <div className="flex flex-col items-start gap-0.5 lg:flex-row lg:items-center lg:gap-2">
         <div className="flex items-center gap-1">
-          <div className="flex items-center gap-1 rounded-md bg-green-50 px-2 py-1 dark:bg-green-900/20">
+          <div className="flex min-w-[3.25rem] items-center justify-center gap-1 rounded-md bg-green-50 px-2 py-1 dark:bg-green-900/20">
             <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
             <span className="text-xs font-semibold tabular-nums text-green-700 dark:text-green-300">{confirmedTotal}</span>
           </div>
-          <div className="flex items-center gap-1 rounded-md bg-yellow-50 px-2 py-1 dark:bg-yellow-900/20">
+          <div className="flex min-w-[3.25rem] items-center justify-center gap-1 rounded-md bg-yellow-50 px-2 py-1 dark:bg-yellow-900/20">
             <HelpCircle className="h-3 w-3 text-yellow-600 dark:text-yellow-400" />
             <span className="text-xs font-semibold tabular-nums text-yellow-700 dark:text-yellow-300">{tentative}</span>
           </div>
-          <div className="flex items-center gap-1 rounded-md bg-red-50 px-2 py-1 dark:bg-red-900/20">
+          <div className="flex min-w-[3.25rem] items-center justify-center gap-1 rounded-md bg-red-50 px-2 py-1 dark:bg-red-900/20">
             <X className="h-3 w-3 text-red-600 dark:text-red-400" />
             <span className="text-xs font-semibold tabular-nums text-red-700 dark:text-red-300">{declined}</span>
           </div>
           {waitlisted > 0 && (
-            <div className="flex items-center gap-1 rounded-md bg-orange-50 px-2 py-1 dark:bg-orange-900/20">
+            <div className="flex min-w-[3.25rem] items-center justify-center gap-1 rounded-md bg-orange-50 px-2 py-1 dark:bg-orange-900/20">
               <Hourglass className="h-3 w-3 text-orange-600 dark:text-orange-400" />
               <span className="text-xs font-semibold tabular-nums text-orange-700 dark:text-orange-300">{waitlisted}</span>
             </div>

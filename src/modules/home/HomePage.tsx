@@ -18,9 +18,10 @@ import TrainingDetailModal from '../trainings/TrainingDetailModal'
 import EventDetailModal from '../events/EventDetailModal'
 import ParticipationSummary from '../../components/ParticipationSummary'
 import { useBulkParticipationStatuses } from '../../hooks/useBulkParticipationStatuses'
-import type { Game, Event, Team, Training, Hall, Member, MemberTeam, Notification, BaseRecord } from '../../types'
+import type { Game, Event, Team, Training, Hall, Member, MemberTeam, Notification, Ranking, BaseRecord } from '../../types'
 import { ClipboardList, Clock, AlertTriangle, Trophy, Bell, Calendar, LayoutGrid, List } from 'lucide-react'
 import LoadingSpinner from '../../components/LoadingSpinner'
+import RankingsTable from '../games/components/RankingsTable'
 
 type ExpandedGame = Game & {
   kscw_team?: Team & BaseRecord | string
@@ -200,6 +201,39 @@ export default function HomePage() {
   })
   const events = eventsRaw ?? []
 
+  // Rankings for user's teams — fetch all (small dataset), filter client-side
+  const userSvTeamIds = useMemo(() => {
+    return memberTeams
+      .map(mt => asObj<Team>(mt.team)?.team_id)
+      .filter((id): id is string => !!id)
+  }, [memberTeams])
+
+  const { data: allRankingsRaw } = useCollection<Ranking>('rankings', {
+    sort: ['league', 'rank'],
+    fields: ['id', 'league', 'rank', 'team_id', 'team_name', 'points', 'won', 'lost', 'wins_clear', 'wins_narrow', 'defeats_clear', 'defeats_narrow', 'sets_won', 'sets_lost', 'points_won', 'points_lost', 'played', 'season'],
+    enabled: hasTeams,
+  })
+  const allRankings = allRankingsRaw ?? []
+
+  const userLeagueGroups = useMemo(() => {
+    const grouped = new Map<string, Ranking[]>()
+    for (const r of allRankings) {
+      if (/^Group \d+$|Cup|Turnier|Pokal|Final|Runde \d|Spiel \d|Tour \d/i.test(r.league)) continue
+      const existing = grouped.get(r.league) ?? []
+      existing.push(r)
+      grouped.set(r.league, existing)
+    }
+    const filtered = new Map<string, Ranking[]>()
+    for (const [league, rows] of grouped) {
+      if (rows.some(r => userSvTeamIds.includes(r.team_id))) {
+        filtered.set(league, rows)
+      }
+    }
+    return filtered
+  }, [allRankings, userSvTeamIds])
+
+  const currentSeason = allRankings[0]?.season ?? ''
+
   // Bulk-fetch participation statuses for all displayed activities (2 queries total
   // instead of 2 per row) so banners appear together with everything else.
   // Gate on all sub-queries being done so the participation fetch fires once with
@@ -322,16 +356,33 @@ export default function HomePage() {
 
       {/* Unified "My next appointments" view (default for logged-in users) */}
       {user && isApproved && !showCategorized && (
-        <div data-tour="dashboard-appointments">
-        <NextAppointments
-          games={nextGames}
-          trainings={nextTrainings}
-          events={events}
-          onGameClick={setSelectedGame}
-          onTrainingClick={setSelectedTraining}
-          onEventClick={setSelectedEvent}
-          participationStatuses={participationStatuses}
-        />
+        <div className="lg:flex lg:items-start lg:justify-center lg:gap-8">
+          <div data-tour="dashboard-appointments">
+            <NextAppointments
+              games={nextGames}
+              trainings={nextTrainings}
+              events={events}
+              onGameClick={setSelectedGame}
+              onTrainingClick={setSelectedTraining}
+              onEventClick={setSelectedEvent}
+              participationStatuses={participationStatuses}
+            />
+          </div>
+          {userLeagueGroups.size > 0 && (
+            <div className="hidden shrink-0 lg:block">
+              <h2 className="mb-3 text-lg font-semibold text-gray-900 dark:text-gray-100">
+                {t('rankings', { defaultValue: 'Rankings' })}
+                {currentSeason && (
+                  <span className="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">{currentSeason}</span>
+                )}
+              </h2>
+              <div className="space-y-4">
+                {[...userLeagueGroups.entries()].map(([league, rows]) => (
+                  <RankingsTable key={league} league={league} rankings={rows} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

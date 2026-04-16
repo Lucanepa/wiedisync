@@ -4,7 +4,7 @@ test.describe('Dark mode', () => {
   test('defaults to dark mode in fresh browser', async ({ page }) => {
     // ThemeProvider: stored === 'light' ? 'light' : 'dark'
     // Fresh context has no localStorage → defaults to dark
-    await page.goto('/')
+    await page.goto('/login')
     const isDark = await page.evaluate(() =>
       document.documentElement.classList.contains('dark'),
     )
@@ -15,7 +15,7 @@ test.describe('Dark mode', () => {
     await page.addInitScript(() => {
       localStorage.setItem('wiedisync-theme', 'light')
     })
-    await page.goto('/')
+    await page.goto('/login')
     const isDark = await page.evaluate(() =>
       document.documentElement.classList.contains('dark'),
     )

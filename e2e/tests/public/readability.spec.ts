@@ -49,8 +49,8 @@ test.describe('Readability — minimum font sizes', () => {
 })
 
 test.describe('Readability — heading sizes', () => {
-  test('home page h1 is at least 20px', async ({ page }) => {
-    await page.goto('/')
+  test('games page h1 is at least 20px', async ({ page }) => {
+    await page.goto('/games')
     await page.waitForLoadState('domcontentloaded')
 
     const heading = page.locator('h1').first()
@@ -61,7 +61,7 @@ test.describe('Readability — heading sizes', () => {
   })
 
   test('section headers (h2) are at least 16px', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/games')
     await page.waitForLoadState('domcontentloaded')
     await page.waitForTimeout(1000)
 
@@ -78,8 +78,8 @@ test.describe('Readability — heading sizes', () => {
 })
 
 test.describe('Readability — dark mode text visibility', () => {
-  test('text is visible in dark mode on home page', async ({ page }) => {
-    await page.goto('/')
+  test('text is visible in dark mode on games page', async ({ page }) => {
+    await page.goto('/games')
     await page.waitForLoadState('domcontentloaded')
     await page.waitForTimeout(1000)
 
@@ -119,11 +119,11 @@ test.describe('Readability — dark mode text visibility', () => {
     expect(textIssues.length).toBeLessThanOrEqual(3)
   })
 
-  test('text is visible in light mode on home page', async ({ page }) => {
+  test('text is visible in light mode on games page', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('wiedisync-theme', 'light')
     })
-    await page.goto('/')
+    await page.goto('/games')
     await page.waitForLoadState('domcontentloaded')
     await page.waitForTimeout(1000)
 

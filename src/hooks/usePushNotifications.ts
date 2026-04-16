@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import { API_URL, getAccessToken } from '../lib/api'
+import { API_URL, kscwApi } from '../lib/api'
+import { toast } from 'sonner'
 
 interface PushState {
   /** Browser supports push notifications */
@@ -58,8 +59,9 @@ export function usePushNotifications() {
         return false
       }
 
-      // Get VAPID public key from Directus
+      // Get VAPID public key from Directus (public endpoint, no auth needed)
       const vapidResp = await fetch(`${API_URL}/kscw/web-push/vapid-public-key`)
+      if (!vapidResp.ok) throw new Error(`VAPID key fetch failed: ${vapidResp.status}`)
       const { publicKey } = await vapidResp.json()
 
       // Subscribe via PushManager
@@ -71,26 +73,34 @@ export function usePushNotifications() {
 
       const subJson = subscription.toJSON()
 
-      // Register with Directus
-      const token = getAccessToken()
-      await fetch(`${API_URL}/kscw/web-push/subscribe`, {
+      // Register with Directus (uses kscwApi with 401 retry)
+      await kscwApi('/web-push/subscribe', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
+        body: {
           endpoint: subJson.endpoint,
           keys_p256dh: subJson.keys?.p256dh || '',
           keys_auth: subJson.keys?.auth || '',
           user_agent: navigator.userAgent,
-        }),
+        },
       })
 
       setState(s => ({ ...s, subscribed: true, loading: false }))
       return true
     } catch (err) {
       console.error('[push] Subscribe failed:', err)
+      const msg = (err instanceof Error ? err.message : '') || ''
+      // Detect push service failures (Brave blocks FCM, network issues, etc.)
+      if (msg.includes('push service') || msg.includes('AbortError') || err instanceof DOMException) {
+        const isBrave = 'brave' in navigator
+        toast.error(
+          isBrave
+            ? 'Brave blockiert Push-Dienste. Aktiviere unter brave://settings/privacy → „Google-Dienste für Push-Nachrichten verwenden".'
+            : 'Push-Dienst nicht erreichbar. Bitte prüfe deine Browser-Einstellungen oder versuche es in Chrome/Firefox.',
+          { duration: 8000 },
+        )
+      } else {
+        toast.error('Push-Benachrichtigungen konnten nicht aktiviert werden.')
+      }
       setState(s => ({ ...s, loading: false }))
       return false
     }
@@ -111,15 +121,10 @@ export function usePushNotifications() {
         // Unsubscribe from browser
         await subscription.unsubscribe()
 
-        // Remove from Directus
-        const token = getAccessToken()
-        await fetch(`${API_URL}/kscw/web-push/unsubscribe`, {
+        // Remove from Directus (uses kscwApi with 401 retry)
+        await kscwApi('/web-push/unsubscribe', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({ endpoint }),
+          body: { endpoint },
         })
       }
 
@@ -127,6 +132,7 @@ export function usePushNotifications() {
       return true
     } catch (err) {
       console.error('[push] Unsubscribe failed:', err)
+      toast.error('Push-Benachrichtigungen konnten nicht deaktiviert werden.')
       setState(s => ({ ...s, loading: false }))
       return false
     }

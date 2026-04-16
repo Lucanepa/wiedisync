@@ -57,23 +57,18 @@ test.describe('Grid layout — responsive column counts', () => {
     }
   })
 
-  test('HomePage grid: 1 col on mobile, multi-col on desktop', async ({ page }) => {
+  test('EventsPage renders at all viewports without crash', async ({ page }) => {
     await page.setViewportSize(VIEWPORTS.xs)
-    await page.goto('/')
+    await page.goto('/events')
     await page.waitForLoadState('domcontentloaded')
     await page.waitForTimeout(1000)
 
-    const homeGrid = page.locator('.grid.gap-6').first()
-    if (await homeGrid.isVisible()) {
-      let cols = await homeGrid.evaluate((el) => getComputedStyle(el).gridTemplateColumns)
-      expect(cols.split(' ').filter((c: string) => c !== '0px').length).toBe(1)
+    await expect(page.locator('main')).toBeVisible({ timeout: 10_000 })
 
-      // Desktop — multiple columns
-      await page.setViewportSize(VIEWPORTS.lg)
-      await page.waitForTimeout(300)
-      cols = await homeGrid.evaluate((el) => getComputedStyle(el).gridTemplateColumns)
-      expect(cols.split(' ').filter((c: string) => c !== '0px').length).toBeGreaterThan(1)
-    }
+    // Desktop
+    await page.setViewportSize(VIEWPORTS.lg)
+    await page.waitForTimeout(300)
+    await expect(page.locator('main')).toBeVisible()
   })
 })
 

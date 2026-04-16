@@ -33,8 +33,8 @@ test.describe('Sizing — login page elements', () => {
 })
 
 test.describe('Sizing — images', () => {
-  test('club logo has valid dimensions on home page', async ({ page }) => {
-    await page.goto('/')
+  test('club logo has valid dimensions on games page', async ({ page }) => {
+    await page.goto('/games')
     await page.waitForLoadState('domcontentloaded')
 
     const logo = page.getByAltText('KSC Wiedikon')

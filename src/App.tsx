@@ -94,7 +94,7 @@ export default function App() {
           <Route path="terminplanung/:token" element={<OpponentFlowPage />} />
 
           <Route element={<Layout />}>
-            <Route index element={<HomePage />} />
+            <Route index element={<AuthRoute><HomePage /></AuthRoute>} />
             <Route path="calendar" element={<CalendarPage />} />
             <Route path="games" element={<GamesPage />} />
             <Route path="trainings" element={<AuthRoute><TrainingsPage /></AuthRoute>} />

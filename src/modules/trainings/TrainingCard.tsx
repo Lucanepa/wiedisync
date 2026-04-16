@@ -237,7 +237,7 @@ function TrainingParticipation({ training, existingParticipation, onSaved }: { t
     }
   }
 
-  const isLocked = deadlinePassed && !displayStatus
+  const isLocked = deadlinePassed
 
   return (
     <div className="space-y-1.5">

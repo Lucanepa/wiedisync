@@ -18,19 +18,16 @@ const CHANGELOG: ChangelogEntry[] = [
       {
         title: 'Security',
         items: [
-          'Vereinsnews CTA link: admin-posted links are now validated on save and on render — only https://… and same-origin /… paths are allowed, blocking any javascript: / data: URL that could have executed in every reader\'s browser.',
-          'Vereinsnews audience fields: dropped audience_teams and audience_roles from the member / team-responsible read whitelist so v2 role/team targeting can\'t leak admin intent when it rolls out.',
-          'Vereinsnews mass-email guard: publishing with "Email senden" on + audience=All now shows a confirmation dialog before fanning out to every active member.',
+          'Vereinsnews: CTA links are now strictly validated — only https:// and in-app links are allowed.',
+          'Vereinsnews: sending to ALL active members now shows a confirmation dialog to prevent accidental mass mails.',
         ],
       },
       {
         title: 'Fixes',
         items: [
-          'Admin Vereinsnews 403: the list page failed to load because the collection was missing the standard date_created / date_updated system fields (every other KSCW collection has them). Migration script now creates them; dev and prod schemas were backfilled and the 403 is gone.',
-          'Error log noise: anonymous visitors on /events were triggering 403 spam by fetching event_sessions / absences / staff participations. All those queries are now gated on login state.',
-          'Admin Daten-Explorer: the scorer-delegations related section was 403-ing because the query asked for fields that don\'t exist on the collection (original_scorer / delegated_to). It now uses the real schema (from_member / to_member / status / role).',
-          'Client-error reporter no longer posts empty payloads to the backend log — both the frontend reporter and the backend endpoint now reject entries that carry no actual error data.',
-          'ParticipationRosterModal: stabilised memberIds dependency to avoid a render-loop risk that could (rarely) contribute to a "Maximum call stack size exceeded" crash on /events.',
+          'Admin Vereinsnews: the list page loads again without errors.',
+          'Events page: rare crash fixed and no more error noise for logged-out visitors.',
+          'Admin Daten-Explorer: the scorer-delegations table displays correctly again.',
         ],
       },
     ],
@@ -42,11 +39,8 @@ const CHANGELOG: ChangelogEntry[] = [
       {
         title: 'Fixes',
         items: [
-          'Admin Daten-Explorer: teams now also show up on a member detail when the member is a coach, team-responsible or captain (previously only players had teams listed). New "Beziehung" column labels each team as Spieler:in / Trainer / Team-Verantwortlich / Captain.',
-          'Admin Daten-Explorer: member header subtitle, sex ("Weiblich" / "Männlich" instead of "f" / "m") and role values ("User, Vorstand" instead of "user, vorstand") now render capitalized/localized.',
-          'Admin Daten-Explorer: participation status now shows localized values (Zusagen / Absagen / Vielleicht / Warteliste) instead of raw English.',
-          'Admin Daten-Explorer: orphaned participation rows (events/trainings/games older than the 90-day cache window) now show a clear "Event #6 (entfernt)" label instead of a bare "#6".',
-          'Admin Daten-Explorer: referee-expenses section no longer 403s — the query was filtering on non-existent fields (referee / date / status). Now uses the real schema (paid_by_member, date_created, amount, notes) and formats the amount as CHF.',
+          'Admin Daten-Explorer: teams now also show up for coaches, team responsibles and captains (new "Relationship" column). Sex, roles and participation status render localized.',
+          'Admin Daten-Explorer: referee expenses load correctly again (amounts in CHF); removed events/trainings/games are clearly marked as "removed".',
         ],
       },
     ],
@@ -56,11 +50,11 @@ const CHANGELOG: ChangelogEntry[] = [
     date: '2026-04-17',
     sections: [
       {
-        title: 'Features',
+        title: 'New',
         items: [
-          'New Vereinsnews under Admin → /admin/announcements. Post club-wide announcements that show up in the homepage News card alongside notifications. Each post supports a hero image, per-locale title and rich text (de/en/fr/gsw/it), an optional CTA link, pin-to-top, expiry date, and audience targeting (all members or one sport).',
-          'Per-post toggles let you also send a push notification and/or an email blast when publishing — fired exactly once per post.',
-          'Homepage News card now merges announcements with notifications. Pinned posts always sit on top, then everything else by newest first. "Alle anzeigen" links to a new /news archive page.',
+          'Vereinsnews: admins can post club-wide announcements that appear in the homepage News card — with title, image, rich text (5 languages), optional link, pin-to-top, expiry, and audience targeting (all members or one sport).',
+          'Optionally push and/or email the announcement to the audience — fired exactly once per post.',
+          'Homepage News card merges announcements with notifications (pinned first, newest next). "Show all" opens a paginated archive.',
         ],
       },
     ],
@@ -70,13 +64,12 @@ const CHANGELOG: ChangelogEntry[] = [
     date: '2026-04-17',
     sections: [
       {
-        title: 'Features',
+        title: 'New (Admin)',
         items: [
-          'New Daten-Explorer under Admin → /admin/explore. Hierarchical read-only browser across Mitglieder, Teams, Events, Trainings and Spiele with global fuzzy search (⌘K / Ctrl+K) and click-through to related data.',
-          'Click a team, event or member to see linked records as expandable sub-sections (participations, absences, Schreibereinsätze, referee expenses) — loaded on demand.',
-          'Deep-link and share any view via URL (?t=teams&id=H3). Breadcrumb trail keeps track of where you navigated from. Browser back/forward work naturally.',
-          'Sport admins (vb_admin / bb_admin without global admin) automatically see only their sport; club-wide events stay visible.',
-          'All UI surfaces respect light and dark mode. Refresh button on the top right re-loads the cache without a full page reload.',
+          'Daten-Explorer: fast read-only browser across members, teams, events, trainings and games with global fuzzy search (⌘K / Ctrl+K).',
+          'Click a team, event or member to see linked records (participations, absences, Schreibereinsätze, referee expenses) on demand.',
+          'Deep-link and share any view via URL; breadcrumb and browser back/forward work naturally.',
+          'Sport admins automatically see only their sport; club-wide events stay visible.',
         ],
       },
     ],
@@ -88,8 +81,7 @@ const CHANGELOG: ChangelogEntry[] = [
       {
         title: 'Fixes',
         items: [
-          'All teams now use the same season format. Basketball teams were stored as "2025/2026" while volleyball teams used "2025/26", which caused internal mismatches. 19 records were normalised on dev and prod.',
-          'The season field in Directus is now a constrained dropdown with a database-level format check. A yearly cron (May 1) auto-rolls the 5-season window so the finished season can no longer be picked, and a new future season is added.',
+          'All teams now use the same season format. A yearly auto-rollover keeps the season picker in sync — the finished season disappears, a new future one is added.',
         ],
       },
     ],
@@ -101,7 +93,7 @@ const CHANGELOG: ChangelogEntry[] = [
       {
         title: 'Fixes',
         items: [
-          'Coaches and team responsibles now receive an email, in-app notification, and push when a member requests to join their team. Previously only new signups triggered notifications; additional-team requests from existing members were silent.',
+          'Coaches and team responsibles are now also notified (email, in-app, push) when a member requests to join their team — previously only new signups triggered notifications.',
         ],
       },
     ],
@@ -113,8 +105,8 @@ const CHANGELOG: ChangelogEntry[] = [
       {
         title: 'Fixes',
         items: [
-          'Signing up with an email that already exists now redirects to the login page with an "account already exists" notice instead of showing a generic error. Mixed-case email variants are also detected.',
-          'Members with mixed-case stored emails can now reset their password. Password reset, signup, and login all now treat emails case-insensitively.',
+          'Signing up with an existing email now redirects to the login page with a clear "account already exists" notice.',
+          'Emails are now treated case-insensitively everywhere — signup, login and password reset work regardless of casing.',
         ],
       },
     ],
@@ -126,7 +118,7 @@ const CHANGELOG: ChangelogEntry[] = [
       {
         title: 'Fixes',
         items: [
-          'Removed a brief flash when navigating from the teams list into a team page. Roster, absence, and participation views now stay on the loading state continuously instead of rendering an empty page before members arrive.',
+          'Removed a brief flash of empty roster/absence/participation views when opening a team page.',
         ],
       },
     ],
@@ -136,10 +128,10 @@ const CHANGELOG: ChangelogEntry[] = [
     date: '2026-04-14',
     sections: [
       {
-        title: 'Participation Management',
+        title: 'New',
         items: [
-          'Coaches and team responsibles can now change other members\' participation status directly in the roster modal (trainings and games). Pencil icon next to the status opens a dropdown.',
-          'Members can override their own absence-declined status.',
+          'Coaches and team responsibles can now change other members\' participation directly in the roster (trainings and games) — pencil icon next to the status opens the selector.',
+          'Members can override their own "auto-declined due to absence" status.',
         ],
       },
     ],
@@ -149,14 +141,13 @@ const CHANGELOG: ChangelogEntry[] = [
     date: '2026-04-10',
     sections: [
       {
-        title: 'Interactive Guided Tours',
+        title: 'Guided Tours',
         items: [
-          'New guided tours: 10 step-by-step walkthroughs for all key features — trainings, games, events, absences, scorer, and hall plan.',
-          'Welcome dialog for new members with optional introductory tour.',
-          'Guide menu under More → Guide with progress tracking.',
-          '"?" button on each page for quick access to the relevant tour.',
-          'Role-based: players, coaches, and admins only see relevant tours.',
-          'Available in 5 languages: German, English, French, Italian, Swiss German.',
+          '10 step-by-step tours for the main features: trainings, games, events, absences, scorer duty and Hallenplan.',
+          'Welcome dialog for new members with an optional intro tour.',
+          '"?" button on every page opens the matching tour.',
+          'Role-based: players, coaches and admins only see tours relevant to them.',
+          'Available in German, English, French, Italian and Swiss German.',
         ],
       },
     ],
@@ -168,15 +159,8 @@ const CHANGELOG: ChangelogEntry[] = [
       {
         title: 'Profile',
         items: [
-          'Swiss Volley licence card: licence category, number, LAS status, foreigner badge, Federation of Origin (FdO), federation, and activated/validated — all loaded directly from sv_vm_check.',
-          'Licence data (category, activated, validated) is no longer copied to members — sv_vm_check is the single source of truth.',
+          'Swiss Volley licence card: category, number, LAS, foreigner badge, Federation of Origin, federation and activation status — loaded live from Volleymanager.',
           'Absence cards show type and detail at the top, date on a separate line below.',
-        ],
-      },
-      {
-        title: 'Security',
-        items: [
-          'sv_vm_check permissions: only 11 safe fields visible to members (no email, birthday, or name).',
         ],
       },
     ],
@@ -188,9 +172,9 @@ const CHANGELOG: ChangelogEntry[] = [
       {
         title: 'Volleymanager Sync',
         items: [
-          'Extended Swiss Volley sync: nationality, LAS status (locally trained), foreigner status, federation, double licence info, activation/validation dates.',
-          'Filter changed: all players are now synced (not just active licences).',
-          'VM email matching: members automatically receive their Volleymanager email address. Registration checks if the email is already known.',
+          'Extended sync: nationality, LAS, foreigner status, federation and double-licence info.',
+          'All players are now synced (not just active licences).',
+          'Email matching: members automatically inherit their Volleymanager email on signup.',
         ],
       },
     ],
@@ -202,19 +186,7 @@ const CHANGELOG: ChangelogEntry[] = [
       {
         title: 'Infrastructure',
         items: [
-          'Server migration to Hetzner VPS with Supabase Postgres — better performance and more storage. Uptime monitoring set up with 6 monitors and email alerts.',
-        ],
-      },
-    ],
-  },
-  {
-    version: '3.3.0',
-    date: '2026-04-04',
-    sections: [
-      {
-        title: 'Admin',
-        items: [
-          'Error log context: error entries are automatically enriched with readable data — username, role, teams (with sport), and record labels (team name, game matchup). Search also works across names and teams.',
+          'Server migration to new hosting — better performance, more storage, uptime monitoring with email alerts.',
         ],
       },
     ],
@@ -226,24 +198,8 @@ const CHANGELOG: ChangelogEntry[] = [
       {
         title: 'Security',
         items: [
-          'SQL injection fix in registration, email header injection protection in contact form, HTML escaping in all email templates.',
-          'Coach emails are no longer publicly displayed. Contact form still forwards server-side.',
-          'Rate limiting for password reset, Sentry tunnel CORS restricted, iCal feed parameters validated.',
-          'Postgres constraints: role validation and unique index for hall slot allocation.',
-          'Hardcoded email addresses moved to environment variables.',
-          'npm vulnerabilities fixed, SQL history switched to sessionStorage.',
-        ],
-      },
-    ],
-  },
-  {
-    version: '3.1.0',
-    date: '2026-03-31',
-    sections: [
-      {
-        title: 'Admin',
-        items: [
-          'Error log annotations: errors can be marked as solved, important, or open — with notes and commit references. Solved errors are hidden by default.',
+          'Major hardening pass: injection protection across signup and contact form, HTML escaping in emails, rate limiting for password reset.',
+          'Coach emails are no longer publicly visible — the contact form still forwards server-side.',
         ],
       },
     ],
@@ -253,57 +209,13 @@ const CHANGELOG: ChangelogEntry[] = [
     date: '2026-03-29',
     sections: [
       {
-        title: 'Directus Migration',
+        title: 'Backend Upgrade',
         items: [
-          'Backend fully migrated from PocketBase to Directus 11 on PostgreSQL — all data, files, users, and passwords transferred',
-          'Google OAuth login now works via Directus SSO (OpenID Connect)',
-          'All auth flows (signup, login, OTP verification, password reset, shell invites) rewired to Directus',
-          'Turnstile CAPTCHA validation ported to Directus filter hooks',
-          'Branded email templates for password reset, invitations, OTP codes, and scorer reminders',
-          'Web push notifications delivered via Directus endpoints and cron hooks',
-          'Daily Swiss Volley and Basketplan sync crons running from Directus (06:00/06:05 UTC)',
-          '9 Postgres triggers replace Node.js validation hooks — zero extra memory',
-          'PocketBase fully decommissioned',
-        ],
-      },
-    ],
-  },
-  {
-    version: '2.9.0',
-    date: '2026-03-29',
-    sections: [
-      {
-        title: 'Security',
-        items: [
-          'Security hardening for production — authorization checks on scorer delegation and shell invite endpoints, cryptographically secure OTP codes, rate limiting on OTP verification, privacy-enforced member data at API level, HSTS and CSP improvements',
-        ],
-      },
-    ],
-  },
-  {
-    version: '2.8.1',
-    date: '2026-03-29',
-    sections: [
-      {
-        title: 'Improvements',
-        items: [
-          'Branded email templates — all emails (password reset, invitations, OTP codes, scorer reminders) now use the KSCW dark-mode design with logo and sport accent colors',
-        ],
-      },
-    ],
-  },
-  {
-    version: '2.8.0',
-    date: '2026-03-29',
-    sections: [
-      {
-        title: 'Infrastructure',
-        items: [
-          'Backend hooks migrated to Postgres triggers — notifications, validations, and data guards now run at the database level for faster response times and lower memory usage',
-          'All custom API endpoints ported to Directus — game scheduling, team invites, iCal feeds, contact form, scorer reminders, and OTP verification',
-          'Batch notification system — activity reminders and deadline alerts now use efficient SQL queries instead of per-member processing',
-          'Daily sync crons — Swiss Volley and Basketplan game/ranking syncs now run automatically from Directus (06:00 and 06:05 UTC)',
-          'Web push notifications now delivered via Directus — deadline reminders, upcoming activities, and scorer delegation updates trigger push',
+          'Full migration to a new backend stack — all data, files, users and passwords transferred. Faster responses and lower memory use.',
+          'Google login now works through the official OAuth flow.',
+          'Branded email templates for password reset, invitations, OTP codes and scorer reminders.',
+          'Web push notifications on new infrastructure.',
+          'Automatic daily game and ranking sync with Swiss Volley and Basketplan.',
         ],
       },
     ],
@@ -313,17 +225,17 @@ const CHANGELOG: ChangelogEntry[] = [
     date: '2026-03-29',
     sections: [
       {
-        title: 'Features',
+        title: 'New',
         items: [
-          'Google login — you can now sign in with your Google account',
+          'Google login: you can now sign in with your Google account.',
         ],
       },
       {
-        title: 'Bug Fixes',
+        title: 'Fixes',
         items: [
-          'Fixed hall plan crash when slots have no team assigned',
-          'Fixed games, sponsors, and training data not loading for logged-in users',
-          'Incomplete games (missing opponent, date, or time) are no longer shown',
+          'Hallenplan crash when a slot had no team assigned.',
+          'Games, sponsors and training data loading reliably again.',
+          'Incomplete games (missing opponent, date or time) are no longer shown.',
         ],
       },
     ],
@@ -333,45 +245,11 @@ const CHANGELOG: ChangelogEntry[] = [
     date: '2026-03-29',
     sections: [
       {
-        title: 'Bug Fixes',
+        title: 'Fixes',
         items: [
-          'Fixed data comparison issues — relation fields (team, hall, member assignments) now correctly match across all pages',
-          'Fixed scorer duty page loading error — removed non-existent field from member queries',
-          'Fixed sorting on recently created records across scorer, polls, feedback, and scheduling pages',
-          'Fixed training and game filters to correctly include records with no status set',
-        ],
-      },
-      {
-        title: 'Infrastructure',
-        items: [
-          'Added automatic timestamps (created/updated) to all database collections — 3886 existing records backfilled',
-          'Increased login session duration from 15 minutes to 1 hour',
-        ],
-      },
-    ],
-  },
-  {
-    version: '2.7.0',
-    date: '2026-03-28',
-    sections: [
-      {
-        title: 'Infrastructure',
-        items: [
-          'Backend migration to Directus — all data queries now use Directus inline relation expansion instead of PocketBase expand pattern (62 files updated)',
-          'Sentry error tracking — automatic error reporting with session replay, user context, and source map uploads',
-          'Cloudflare Web Analytics support — privacy-first analytics with no cookies required',
-        ],
-      },
-    ],
-  },
-  {
-    version: '2.6.1',
-    date: '2026-03-27',
-    sections: [
-      {
-        title: 'Bug Fixes',
-        items: [
-          'Fixed 400 error when adding members to teams — PB 0.36 hook scope isolation required restoring require() pattern for all hooks',
+          'Scorer-duty page loads cleanly again; sorting on recently created records across scorer, polls, feedback and scheduling fixed.',
+          'Training and game filters now also include records with no status set.',
+          'Login session extended from 15 minutes to 1 hour.',
         ],
       },
     ],
@@ -381,14 +259,12 @@ const CHANGELOG: ChangelogEntry[] = [
     date: '2026-03-26',
     sections: [
       {
-        title: 'Features',
+        title: 'New',
         items: [
-          'Team Settings: new accordion section in team editor replacing flat feature toggles — grouped into Features, Game Defaults, and Training Defaults with iOS-style switch toggles',
-          'Color-coded RSVP popups: save confirmation matches response color (green=yes, red=no, yellow=maybe)',
-          'Auto-decline "Maybe": tentative participations automatically convert to "No" after the RSVP deadline (opt-in per team)',
-          'Team defaults: coaches can set default min players, RSVP deadline (days before), require-note, and auto-cancel per team — applied to new games and trainings',
-          'Sync defaults: Swiss Volley and Basketplan sync now apply team game_respond_by_days when creating new games',
-          'Pre-fill: recurring training modal and training form pre-fill from team defaults',
+          'Team settings redesigned: accordion with Features, Game Defaults and Training Defaults, iOS-style toggles.',
+          'Color-coded RSVP confirmations: save toast matches the response color (green = yes, red = no, yellow = maybe).',
+          '"Maybe" auto-decline: optionally convert tentative responses to "No" once the RSVP deadline passes (per team).',
+          'Team defaults: coaches can set default min players, RSVP deadline, note requirement and auto-cancel per team — applied to new games and trainings.',
         ],
       },
     ],
@@ -398,9 +274,9 @@ const CHANGELOG: ChangelogEntry[] = [
     date: '2026-03-26',
     sections: [
       {
-        title: 'Features',
+        title: 'New',
         items: [
-          'Team photo zoom: coaches can now zoom in/out when adjusting the team photo crop — KSCW brand bands appear on the sides when zoomed out',
+          'Team photo zoom: coaches can zoom in/out when cropping the team photo — KSCW brand bands appear on the sides when zoomed out.',
         ],
       },
     ],
@@ -410,10 +286,10 @@ const CHANGELOG: ChangelogEntry[] = [
     date: '2026-03-26',
     sections: [
       {
-        title: 'Features',
+        title: 'New',
         items: [
-          'Referee expenses: coaches can record who paid the referees for volleyball home games directly in the game detail modal (paid by, amount, notes)',
-          'Admin page: new "Referee Expenses" section under Admin with team/season filters and CSV export',
+          'Referee expenses: coaches can record who paid the referees for volleyball home games directly in the game detail (payer, amount, notes).',
+          'New admin page "Referee Expenses" with team/season filters and CSV export.',
         ],
       },
     ],
@@ -423,13 +299,12 @@ const CHANGELOG: ChangelogEntry[] = [
     date: '2026-03-25',
     sections: [
       {
-        title: 'Features',
+        title: 'New',
         items: [
-          'Participation warnings: red/yellow triangle icons on game, training, and event cards when participation is insufficient — click to see details',
-          'Game roster check: RED warning when fewer than 6 field players (VB) or 5 players (BB) confirmed; YELLOW when no coach present. Libero-aware counting for volleyball.',
-          'Training auto-cancel: new "Auto-cancel" toggle on trainings — automatically cancels at RSVP deadline if confirmed count is below minimum, freeing the hall slot for others',
-          'Pre-deadline alerts: email + notification sent to all team members 1 day before deadline if game roster or training minimum is not met',
-          'Min participants for events and games: new configurable field on events and games collections',
+          'Participation warnings: red/yellow triangles on game, training and event cards when participation is insufficient — click for details.',
+          'Game roster check: RED warning below 6 field players (VB) or 5 players (BB) confirmed; YELLOW when no coach confirmed. Libero-aware for volleyball.',
+          'Training auto-cancel: optional toggle that cancels at the RSVP deadline if not enough confirmations, freeing the hall slot.',
+          'Pre-deadline alerts: email + in-app notification 1 day before the deadline if the roster or training minimum is not yet met.',
         ],
       },
     ],
@@ -439,12 +314,11 @@ const CHANGELOG: ChangelogEntry[] = [
     date: '2026-03-24',
     sections: [
       {
-        title: 'Bug Fixes',
+        title: 'Fixes',
         items: [
-          'Coach visibility: coaches and team responsibles now see trainings, games, events, and participation for teams they manage (even without being a player)',
-          'Team filter added to Events page for users with multiple teams',
-          'Fixed 400 error on pending members query — created missing requested_team relation field on members collection',
-          'Updated members API rule so coaches can view pending members requesting to join their team',
+          'Coaches and team responsibles now see trainings, games, events and participation for the teams they manage — even if they are not players themselves.',
+          'Team filter added to the Events page for members in multiple teams.',
+          'Coaches can now also see pending members who requested to join their team.',
         ],
       },
     ],
@@ -454,11 +328,11 @@ const CHANGELOG: ChangelogEntry[] = [
     date: '2026-03-24',
     sections: [
       {
-        title: 'Features',
+        title: 'Admin Dashboard',
         items: [
-          'Admin Dashboard: new overview page with KPI strip (members, teams, pending approvals, PB health, sync status) and collapsible sections for Members & Teams, Games & Season, Activity & Participation, and Infrastructure',
-          'Query Workspace: enhanced SQL editor with saved queries, 10 pre-built query templates with parameters, visual point-and-click query builder, and chart visualization (bar, line, pie) for results',
-          'Dashboard visible to all admins; Query and Tables tabs restricted to superadmins',
+          'New overview page with KPIs (members, teams, pending approvals, sync status) and collapsible sections.',
+          'Query Workspace: SQL editor with saved queries, 10 pre-built templates with parameters, visual query builder and chart output (bar, line, pie).',
+          'Dashboard visible to all admins; Query and Tables tabs restricted to superadmins.',
         ],
       },
     ],
@@ -468,23 +342,10 @@ const CHANGELOG: ChangelogEntry[] = [
     date: '2026-03-24',
     sections: [
       {
-        title: 'Features',
+        title: 'New',
         items: [
-          'RSVP response timestamps in Participation Roster — see when each team member responded (relative time: "2 hrs ago", "yesterday")',
-          'New team toggle "Show response time" in team settings — coaches can enable/disable RSVP time visibility per team',
-        ],
-      },
-    ],
-  },
-  {
-    version: '2.1.1',
-    date: '2026-03-24',
-    sections: [
-      {
-        title: 'Bug Fixes',
-        items: [
-          'Re-enabled branded auth emails (password reset, verification, email change, login alert) after Coolify redeploy disabled the hook file',
-          'Removed broken OTP email branding hook that silently blocked all OTP email sending — PB now sends default-styled OTP emails reliably',
+          'RSVP response timestamps in the Participation Roster: see when each team member responded ("2 hrs ago", "yesterday").',
+          'Per-team toggle "Show response time" in team settings.',
         ],
       },
     ],
@@ -494,14 +355,13 @@ const CHANGELOG: ChangelogEntry[] = [
     date: '2026-03-24',
     sections: [
       {
-        title: 'Features',
+        title: 'OTP Authentication',
         items: [
-          'OTP-based authentication: all auth flows now use 8-digit email codes instead of token links',
-          'New signup: email verified via OTP before registration',
-          'Existing member activation: OTP replaces confusing "password reset" for ClubDesk imports',
-          'Shell invite (QR join): set password inline after claiming invite',
-          'Forgot password: inline OTP flow on login page',
-          'Context-aware labels: "Activate Account", "Verify Email", "Reset Password", "Set Password"',
+          'All auth flows now use 8-digit email codes instead of token links.',
+          'Signup: email is verified via OTP before registration.',
+          'Activation of existing members (ClubDesk import) via OTP instead of the confusing "password reset" flow.',
+          'Shell invite (QR join): set password inline after claiming the invite.',
+          'Forgot password: inline OTP flow on the login page.',
         ],
       },
     ],
@@ -511,16 +371,16 @@ const CHANGELOG: ChangelogEntry[] = [
     date: '2026-03-24',
     sections: [
       {
-        title: 'Bug Fixes',
+        title: 'Fixes',
         items: [
-          'Feedback submissions now visible under "My Submissions" (missing timestamp field fixed)',
-          'Participation counts no longer vanish briefly when opening game/training details',
+          'Feedback submissions are visible again under "My Submissions".',
+          'Participation counts no longer flicker briefly when opening game/training details.',
         ],
       },
       {
-        title: 'Features',
+        title: 'New',
         items: [
-          'Attach up to 5 screenshots per feedback submission (was 1)',
+          'Attach up to 5 screenshots per feedback submission (was 1).',
         ],
       },
     ],
@@ -530,76 +390,51 @@ const CHANGELOG: ChangelogEntry[] = [
     date: '2026-03-19',
     sections: [
       {
-        title: 'Core Platform',
+        title: 'Launch',
         items: [
-          'React 19 + TypeScript + Vite + Tailwind CSS',
-          'PocketBase backend with realtime subscriptions',
-          'Cloudflare Pages + Infomaniak VPS (CF Tunnel)',
-          '5 languages: DE, EN, FR, IT, Swiss German',
+          'Wiedisync goes live: real-time web app for KSC Wiedikon on Cloudflare hosting, available in German, English, French, Italian and Swiss German.',
         ],
       },
       {
         title: 'Authentication',
         items: [
-          'Email login, signup, password reset',
-          'Google OAuth with onboarding',
-          'Role approval system (pending → coach approved)',
-          'Privacy settings and account deletion',
+          'Email login, signup and password reset; Google OAuth with onboarding; role approval; privacy settings and account deletion.',
         ],
       },
       {
         title: 'Games & Scoreboard',
         items: [
-          'Game cards with set scores and KSCW-perspective coloring',
-          'Scoreboard with Absolute / Per Game toggle',
-          'Embed page for external widgets',
+          'Game cards with set scores and KSCW-perspective coloring, scoreboard with Total / Per-Game toggle, embed page for external widgets.',
         ],
       },
       {
         title: 'Calendar & Hallenplan',
         items: [
-          'Monthly calendar grid with H/A colored boxes',
-          'Absence tracking with clickable bars',
-          'Hall slot management with virtual slots and claiming',
-          'Sport field filtering, hide past days',
+          'Monthly calendar with home/away colored boxes, clickable absence bars, hall slot management with virtual slots and claiming.',
         ],
       },
       {
         title: 'Trainings & Participation',
         items: [
-          'RSVP on all activities with realtime sync',
-          'Participation notes and save confirmation',
-          'Guest counter and player/coach split',
-          'Recurring training selection',
+          'RSVP on all activities with realtime sync, participation notes, guest counter and recurring training selection.',
         ],
       },
       {
         title: 'Teams & Roster',
         items: [
-          'Team overview with photo cards',
-          'Position management and roster editor',
-          'Per-team guest levels (G1/G2/G3)',
-          'External user invite system with QR codes',
-          'Shell accounts → full member conversion',
+          'Team overview with photo cards, position management, per-team guest levels (G1/G2/G3), external user invite via QR code, shell-account upgrade.',
         ],
       },
       {
-        title: 'Admin Mode',
+        title: 'Admin',
         items: [
-          'Admin/member mode separation with toggle',
-          'All modules respect admin mode',
-          'Database browser, ClubDesk sync, game scheduling',
+          'Admin/member mode separation, database browser, ClubDesk sync, game scheduling.',
         ],
       },
       {
         title: 'Other Features',
         items: [
-          'Scorer duty management and delegation',
-          'In-app notification system',
-          'Event management with Trainingsweekend type',
-          'Location autocomplete (local halls + Nominatim)',
-          'Feedback & bug reporting with GitHub integration',
-          'Auto-deploy webhook for PocketBase hooks',
+          'Schreiberdienst (scorer duty) management and delegation, in-app notifications, events (including Trainingsweekend), location autocomplete, feedback & bug reporting.',
         ],
       },
     ],

@@ -41,4 +41,5 @@ export default {
   clubStats: 'Vereinsstatistik',
   anmeldungen: 'Amäldigä',
   guide: 'Aleitig',
+  adminExplorer: 'Dateni-Explorer',
 } as const

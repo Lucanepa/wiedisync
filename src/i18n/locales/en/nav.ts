@@ -42,4 +42,5 @@ export default {
   volleyFeedback: 'Volley Feedback',
   anmeldungen: 'Registrations',
   guide: 'Guide',
+  adminExplorer: 'Data Explorer',
 } as const

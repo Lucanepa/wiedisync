@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { CalendarEntry } from '../../../types/calendar'
-import { CalendarOff } from 'lucide-react'
+import { CalendarOff, TrafficCone, CircleX, Star } from 'lucide-react'
 import BasketballIcon from '../../../components/BasketballIcon'
 import VolleyballIcon from '../../../components/VolleyballIcon'
 import {
@@ -18,48 +18,33 @@ import {
   DAY_HEADERS,
 } from '../../../utils/dateUtils'
 
-/* ── type icons (inline SVGs matching hallenplan) ────────── */
+/* ── type icons (lucide-react, colored via currentColor) ─── */
+
+const ICON_CLASS = 'inline-block h-3.5 w-3.5 shrink-0'
 
 const TypeIcon = ({ type, sport, className = '' }: { type: string; sport?: 'volleyball' | 'basketball'; className?: string }) => {
   if (type === 'training') {
-    // Training cone
-    return (
-      <svg className={`inline-block h-2.5 w-2.5 shrink-0 ${className}`} viewBox="0 0 24 24" fill="currentColor">
-        <path d="M6 20h12l-1.5-5H7.5L6 20zM7 13h10l-1.5-5h-7L7 13zM9 6h6l-.75-2.5a1 1 0 00-.96-.72h-2.58a1 1 0 00-.96.72L9 6z" />
-      </svg>
-    )
+    return <TrafficCone className={`${ICON_CLASS} ${className}`} strokeWidth={2.5} />
   }
   if (type === 'closure') {
-    // X-circle for closures
-    return (
-      <svg className={`inline-block h-2.5 w-2.5 shrink-0 ${className}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
-        <circle cx="12" cy="12" r="10" />
-        <path strokeLinecap="round" d="M15 9l-6 6M9 9l6 6" />
-      </svg>
-    )
+    return <CircleX className={`${ICON_CLASS} ${className}`} strokeWidth={2.5} />
   }
   if (type === 'game' || type === 'game-home' || type === 'game-away') {
     return sport === 'basketball'
-      ? <BasketballIcon className="inline-block h-2.5 w-2.5 shrink-0" filled />
-      : <VolleyballIcon className="inline-block h-2.5 w-2.5 shrink-0" filled />
+      ? <BasketballIcon className={ICON_CLASS} filled />
+      : <VolleyballIcon className={ICON_CLASS} filled />
   }
   if (type === 'event') {
-    // Star
-    return (
-      <svg className={`inline-block h-2.5 w-2.5 shrink-0 ${className}`} viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" />
-      </svg>
-    )
+    return <Star className={`${ICON_CLASS} ${className}`} fill="currentColor" strokeWidth={2} />
   }
   if (type === 'absence') {
-    return <CalendarOff className={`inline-block h-2.5 w-2.5 shrink-0 ${className}`} />
+    return <CalendarOff className={`${ICON_CLASS} ${className}`} strokeWidth={2.5} />
   }
   if (type === 'hall') {
-    // Hall events — default to basketball ball (most GCal hall events are BB games)
-    return <BasketballIcon className="inline-block h-2.5 w-2.5 shrink-0" filled />
+    return <BasketballIcon className={ICON_CLASS} filled />
   }
   // Fallback dot
-  return <span className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-current ${className}`} />
+  return <span className={`inline-block h-2 w-2 shrink-0 rounded-full bg-current ${className}`} />
 }
 
 /* ── colour helpers ──────────────────────────────────────── */

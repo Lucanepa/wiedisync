@@ -1587,5 +1587,5 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     }
   })
 
-  log.info('KSCW hooks loaded: role-sync (5 actions, 2 filters), Turnstile, member privacy, registration approval, 10 crons (validations+notifications in Postgres)')
+  log.info('KSCW hooks loaded: role-sync (5 actions, 2 filters), Turnstile, member privacy, registration approval, 11 crons (validations+notifications in Postgres)')
 }

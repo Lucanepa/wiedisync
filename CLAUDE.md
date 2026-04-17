@@ -81,8 +81,8 @@ positions[3]{ticker,shares,costBasis}:
 - **`kscw.ch`** — currently ClubDesk (external). Will eventually be migrated to point at KSCW platform. **Do NOT change until explicitly confirmed.**
 - **`wiedisync.kscw.ch`** — React app production, CF Pages project `wiedisync` (`prod` branch) → `directus.kscw.ch`
 - **`wiedisync.pages.dev`** — React app dev/preview, CF Pages project `wiedisync` (`dev` branch) → `directus-dev.kscw.ch` (auto-detected via hostname in `src/lib/api.ts`)
-- **`directus.kscw.ch`** — Directus API production (Coolify container)
-- **`directus-dev.kscw.ch`** — Directus API dev (Coolify container)
+- **`directus.kscw.ch`** — Directus API production (Docker container `directus-kscw` on Hetzner, not managed by Coolify)
+- **`directus-dev.kscw.ch`** — Directus API dev (Docker container `directus-kscw-dev` on Hetzner, not managed by Coolify)
 - **`kscw-website.pages.dev`** — Public club website (static HTML), CF Pages project `kscw-website`. **Deploy to dev/preview only** until further notice — do NOT push website changes to production.
 - **`kscw-push.lucanepa.workers.dev`** — Web push CF Worker
 
@@ -96,11 +96,11 @@ See `INFRA.md → Domains & Hosting Overview` for full domain map, future migrat
 **All changes go through `dev` first.** Never push directly to `prod`. When asked to push/deploy Wiedisync or the public website, always push to `dev` unless explicitly told to push to `prod`/production. Workflow:
 
 1. Develop and commit on `dev` branch
-2. Deploy frontend to dev (push `dev` → Cloudflare Pages preview)
-3. Deploy Directus extensions to dev (Coolify auto-deploy on push)
+2. Deploy frontend to dev (push `dev` → Cloudflare Pages preview auto-deploys)
+3. Deploy Directus extensions to dev: `npm run ext:deploy:dev` (rsyncs `directus/extensions/` to VPS `/opt/directus-kscw-dev/extensions/` and restarts the container — **not auto-deployed by Coolify**; Directus runs as plain Docker containers, not Coolify applications)
 4. Test on `wiedisync.pages.dev` against `directus-dev.kscw.ch`
 5. Once confirmed working, merge `dev` → `prod` (with user approval)
-6. Push `prod` to trigger production build
+6. Push `prod` to trigger production frontend build, then `npm run ext:deploy:prod` for the backend extensions
 
 ## Session Workflow
 

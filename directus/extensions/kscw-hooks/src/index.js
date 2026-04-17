@@ -565,6 +565,144 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     }
   })
 
+  // ── Announcements (Vereinsnews) — publish fanout ─────────────────
+  // Fires when an announcement is created or updated. If it's now published
+  // (published_at set) and hasn't been fanned out yet (fanout_sent_at null),
+  // resolves the audience and sends push + email per the per-post toggles.
+  // Sets fanout_sent_at after sending so subsequent edits don't re-fanout.
+  function stripHtmlPlain(html) {
+    return String(html || '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
+  }
+  function pickAnnouncementTranslation(translations, lang) {
+    const t = translations || {}
+    const map = { german: 'de', swiss_german: 'gsw', english: 'en', french: 'fr', italian: 'it' }
+    const code = map[lang] || lang || 'de'
+    return t[code] || t.de || t.en || Object.values(t).find(v => v && v.title) || { title: '', body: '' }
+  }
+
+  async function resolveAnnouncementAudience(ann) {
+    if (ann.audience_type === 'sport' && ann.audience_sport) {
+      const rows = await database('member_teams as mt')
+        .join('teams as t', 't.id', 'mt.team')
+        .join('members as m', 'm.id', 'mt.member')
+        .where('t.sport', ann.audience_sport)
+        .where('m.wiedisync_active', true)
+        .distinct('m.id')
+        .select('m.id')
+      return rows.map(r => r.id).filter(Boolean)
+    }
+    // Default 'all' — every wiedisync-active member
+    const rows = await database('members')
+      .where('wiedisync_active', true)
+      .select('id')
+    return rows.map(r => r.id).filter(Boolean)
+  }
+
+  async function notifyAnnouncementPublished(annId) {
+    try {
+      if (!annId) return
+      const ann = await database('announcements').where('id', annId).first()
+      if (!ann) return
+      // Not published yet, or already fanned out
+      if (!ann.published_at) return
+      if (ann.fanout_sent_at) return
+      // Don't fanout for future-scheduled posts (let an admin trigger again later if needed)
+      if (new Date(ann.published_at) > new Date()) return
+      // Nothing requested? Still mark as fanned out so we don't keep checking
+      if (!ann.notify_push && !ann.notify_email) {
+        await database('announcements').where('id', annId).update({ fanout_sent_at: new Date().toISOString() })
+        return
+      }
+
+      const memberIds = await resolveAnnouncementAudience(ann)
+      if (memberIds.length === 0) {
+        await database('announcements').where('id', annId).update({ fanout_sent_at: new Date().toISOString() })
+        return
+      }
+
+      const translations = (typeof ann.translations === 'string')
+        ? (() => { try { return JSON.parse(ann.translations) } catch { return {} } })()
+        : (ann.translations || {})
+
+      const baseTr = pickAnnouncementTranslation(translations, 'german')
+      const baseTitle = baseTr.title || 'Vereinsnews'
+      const baseBodyText = stripHtmlPlain(baseTr.body).slice(0, 200)
+      const newsUrl = `${FRONTEND_URL}/news`
+
+      // Push fanout (single batch, German title for all)
+      if (ann.notify_push) {
+        await sendPushToMembers(database, memberIds, baseTitle, baseBodyText, newsUrl, `announcement-${annId}`, log)
+      }
+
+      // Email fanout (per-recipient locale resolution)
+      if (ann.notify_email) {
+        try {
+          const schema = await getSchema()
+          const { MailService } = services
+          const mailService = new MailService({ schema, knex: database })
+          const recipients = await database('members')
+            .whereIn('id', memberIds)
+            .whereNotNull('email')
+            .select('id', 'email', 'first_name', 'language')
+
+          let sent = 0
+          let failed = 0
+          for (const r of recipients) {
+            try {
+              const tr = pickAnnouncementTranslation(translations, r.language)
+              const title = tr.title || baseTitle
+              const bodyHtml = tr.body || baseTr.body || ''
+              const isGerman = !r.language || r.language === 'german' || r.language === 'swiss_german'
+              const ctaLabel = isGerman ? 'Auf WiediSync ansehen' : 'View on WiediSync'
+
+              const emailBody =
+                `<div style="font-size:14px;color:#e2e8f0;line-height:1.6">${bodyHtml}</div>` +
+                (ann.link
+                  ? `<div style="text-align:center;margin-top:24px"><a href="${ann.link}" style="display:inline-block;padding:12px 24px;background:#FFC832;color:#1a1a1a;text-decoration:none;border-radius:8px;font-weight:600">${isGerman ? 'Mehr erfahren' : 'Read more'}</a></div>`
+                  : '')
+
+              const html = buildEmailLayout(emailBody, {
+                title: isGerman ? 'Vereinsnews' : 'Club news',
+                subtitle: title,
+                greeting: r.first_name ? (isGerman ? `Hallo ${r.first_name}` : `Hi ${r.first_name}`) : (isGerman ? 'Hallo' : 'Hi'),
+                ctaUrl: newsUrl,
+                ctaLabel,
+              })
+
+              await mailService.send({
+                to: r.email,
+                subject: `${isGerman ? 'Vereinsnews' : 'Club news'}: ${title}`,
+                html,
+                text: `${title}\n\n${stripHtmlPlain(bodyHtml).slice(0, 500)}\n\n${newsUrl}`,
+              })
+              sent++
+            } catch (perEmailErr) {
+              failed++
+              log.warn({ msg: `[announcements] email to ${r.email} failed: ${perEmailErr.message}` })
+            }
+          }
+          log.info(`[announcements] Emails: ${sent} sent, ${failed} failed (out of ${recipients.length})`)
+        } catch (emailErr) {
+          log.warn({ msg: `[announcements] email batch failed: ${emailErr.message}`, stack: emailErr.stack })
+        }
+      }
+
+      // Mark as fanned out
+      await database('announcements').where('id', annId).update({ fanout_sent_at: new Date().toISOString() })
+      log.info(`[announcements] Fanout complete for #${annId} → ${memberIds.length} recipients (push=${!!ann.notify_push}, email=${!!ann.notify_email})`)
+    } catch (err) {
+      log.error({ msg: `[announcements] ${err.message}`, event: 'announcement_fanout', annId, stack: err.stack })
+      writeErrorLog?.('announcement_fanout_failed', err.message, { annId, stack: err.stack })
+    }
+  }
+
+  action('announcements.items.create', async ({ key }) => {
+    if (key) await notifyAnnouncementPublished(key)
+  })
+  action('announcements.items.update', async ({ keys }) => {
+    for (const k of keys || []) await notifyAnnouncementPublished(k)
+  })
+
   // When a training/game is created, auto-decline for members with overlapping absences
   action('trainings.items.create', async ({ key }) => {
     try {

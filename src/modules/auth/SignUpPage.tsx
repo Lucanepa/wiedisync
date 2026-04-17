@@ -285,7 +285,11 @@ export default function SignUpPage() {
       await login(email.trim().toLowerCase(), password)
       logActivity('create', 'members', res.member_id, { first_name: firstName, last_name: lastName, requested_team: selectedTeam })
       navigate('/pending', { replace: true })
-    } catch {
+    } catch (err) {
+      if ((err as Error & { code?: string }).code === 'email_exists') {
+        navigate('/login', { state: { email: email.trim().toLowerCase(), accountExists: true } })
+        return
+      }
       setError(t('registrationFailed'))
       turnstileRef.current?.reset()
       setTurnstileToken('')

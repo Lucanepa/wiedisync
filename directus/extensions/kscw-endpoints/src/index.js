@@ -323,13 +323,20 @@ export default {
         const normalised = email.toLowerCase().trim()
 
         const member = await database('members')
-          .where('email', normalised)
+          .whereRaw('LOWER(email) = ?', [normalised])
           .select('id', 'wiedisync_active', 'shell', 'first_name', 'last_name')
           .first()
 
+        // Also check directus_users — catches accounts imported/created outside
+        // the normal flow where no `members` row exists or emails disagree.
+        const directusUser = await database('directus_users')
+          .whereRaw('LOWER(email) = ?', [normalised])
+          .select('id')
+          .first()
+
         const result = {
-          exists: !!member,
-          claimed: member?.wiedisync_active || false,
+          exists: !!member || !!directusUser,
+          claimed: member?.wiedisync_active || (!!directusUser && !member) || false,
           shell: member?.shell || false,
         }
 
@@ -855,30 +862,46 @@ export default {
             return res.status(400).json({ error: 'Invalid or expired request' })
           }
 
-          let member = await database('members').where('email', email).first()
+          let member = await database('members')
+            .whereRaw('LOWER(email) = ?', [email]).first()
           // Fallback: check if email matches a VM-synced email (Volleymanager claim)
           if (!member) {
-            member = await database('members').where('vm_email', email).whereNull('user').first()
+            member = await database('members')
+              .whereRaw('LOWER(vm_email) = ?', [email])
+              .whereNull('user').first()
             if (member) {
               // Update the member's email to the verified one for future logins
               await database('members').where('id', member.id).update({ email })
               log.info(`VM email claim (set-password): member ${member.id} claimed via vm_email=${email}`)
             }
           }
-          if (!member) return res.status(400).json({ error: 'No account found', code: 'no_account' })
-          memberId = member.id
-
-          if (member.user) {
-            // Member already linked to a Directus user — update password
-            userId = member.user
+          if (!member) {
+            // Fallback: user exists in directus_users but has no member row
+            const orphanUser = await database('directus_users')
+              .whereRaw('LOWER(email) = ?', [email])
+              .select('id').first()
+            if (!orphanUser) {
+              return res.status(400).json({ error: 'No account found', code: 'no_account' })
+            }
+            userId = orphanUser.id
           } else {
-            // Create Directus user and link to member
-            userId = await adminUsersService.createOne({
-              email, password,
-              first_name: member.first_name || '',
-              last_name: member.last_name || '',
-            })
-            await database('members').where('id', member.id).update({ user: userId })
+            memberId = member.id
+            // Normalise stored email to lowercase to prevent future case drift
+            if (member.email && member.email !== email) {
+              await database('members').where('id', member.id).update({ email })
+            }
+            if (member.user) {
+              // Member already linked to a Directus user — update password
+              userId = member.user
+            } else {
+              // Create Directus user and link to member
+              userId = await adminUsersService.createOne({
+                email, password,
+                first_name: member.first_name || '',
+                last_name: member.last_name || '',
+              })
+              await database('members').where('id', member.id).update({ user: userId })
+            }
           }
 
           // Clean up used verifications
@@ -920,9 +943,19 @@ export default {
           return res.status(400).json({ error: 'Email not verified' })
         }
 
-        // Check not already registered
-        const existing = await database('members').where('email', email).first()
-        if (existing) return res.status(400).json({ error: 'Email already registered' })
+        // Check not already registered (case-insensitive; also catches directus_users
+        // rows without a linked member)
+        const existing = await database('members')
+          .whereRaw('LOWER(email) = ?', [email]).first()
+        if (existing) {
+          return res.status(400).json({ error: 'Email already registered', code: 'email_exists' })
+        }
+        const existingDirectusUser = await database('directus_users')
+          .whereRaw('LOWER(email) = ?', [email])
+          .select('id').first()
+        if (existingDirectusUser) {
+          return res.status(400).json({ error: 'Email already registered', code: 'email_exists' })
+        }
 
         const schema = await getSchema()
         const { UsersService } = services
@@ -933,14 +966,24 @@ export default {
         if (!memberRole) throw new Error('Member role not found in directus_roles')
 
         // Create Directus user with Member role
-        const userId = await adminUsersService.createOne({
-          email, password, first_name, last_name,
-          role: memberRole.id,
-        })
+        let userId
+        try {
+          userId = await adminUsersService.createOne({
+            email, password, first_name, last_name,
+            role: memberRole.id,
+          })
+        } catch (createErr) {
+          // Directus enforces case-insensitive uniqueness; translate to a clean error
+          const msg = String(createErr?.message || '')
+          if (msg.includes('has to be unique') || msg.toLowerCase().includes('unique')) {
+            return res.status(400).json({ error: 'Email already registered', code: 'email_exists' })
+          }
+          throw createErr
+        }
 
         // Check if signup email matches an existing member's vm_email (Volleymanager claim)
         const vmMatch = await database('members')
-          .where('vm_email', email)
+          .whereRaw('LOWER(vm_email) = ?', [email])
           .whereNull('user')
           .first()
 

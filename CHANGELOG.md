@@ -2,6 +2,14 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.9.4] — 2026-04-17
+
+### Fixes
+
+- **Consistent team season format** — All 32 active teams now use the short season format `2025/26`. Previously 18 basketball teams carried the long format `2025/2026` and one volleyball team had a `2025/27` typo, causing mismatches against `getCurrentSeason()` and the sync-written `games.season` / `rankings.season` (both short). 19 rows normalised on dev + prod.
+- **Enum + constraint on `teams.season`** — Field converted from free-text input to a dropdown (`allowOther: false`) and a Postgres CHECK constraint `teams_season_format_check` enforces `^\d{4}/\d{2}$` on both dev and prod, so the drift can't recur.
+- **Auto-rolling season window** — New monthly cron hook (`schedule('7 3 1 * *')` in `kscw-hooks`) rewrites the dropdown choices to a 5-season window starting from the currently-live season. Jan–Apr → starts at last autumn's season; May onward → starts at this autumn's. So from May 1 2026 onwards, `2025/26` is no longer selectable and `2030/31` becomes available — admins are forced to set teams to a current or future season.
+
 ## [3.9.3] — 2026-04-17
 
 ### Fixes

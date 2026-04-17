@@ -35,6 +35,13 @@ export function pickTranslation(
  *
  * v1 audience filter: `all` always visible; `sport` matches user's primarySport
  * (or shown when primarySport='both'). `teams`/`roles` reserved for v2.
+ *
+ * Audit note (F2): the audience filter applied here is **client-side only**.
+ * Directus permission rules cannot traverse member_teams.team.sport from the
+ * current user, so the server returns all published announcements and this
+ * hook narrows by primarySport. A direct API call could reveal sport-targeted
+ * posts to members of the other sport. Acceptable for v1 (low-sensitivity
+ * content) — revisit if announcements ever carry confidential payload.
  */
 export function useAnnouncements(opts?: { limit?: number }) {
   const { user, isApproved, primarySport } = useAuth()

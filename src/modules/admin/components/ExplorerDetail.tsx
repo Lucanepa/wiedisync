@@ -10,6 +10,7 @@ import {
 } from './explorerHelpers'
 import ExplorerSectionCard from './ExplorerSectionCard'
 import { useRelatedEntities, type SectionKey } from '../hooks/useRelatedEntities'
+import { useAuth } from '../../../hooks/useAuth'
 
 interface Props {
   cache: CacheShape
@@ -19,10 +20,17 @@ interface Props {
   onBack?: () => void
 }
 
+function capitalize(s: string | null | undefined): string {
+  if (!s) return '—'
+  return s.charAt(0).toUpperCase() + s.slice(1)
+}
+
 export default function ExplorerDetail({ cache, type, id, onSelect, onBack }: Props) {
   const onNavigate = onSelect
   const { t } = useTranslation('admin')
   const related = useRelatedEntities()
+  const { isGlobalAdmin, isVorstand } = useAuth()
+  const showRestrictedSections = isGlobalAdmin || isVorstand
 
   const entity = useMemo(() => {
     if (!type || !id) return null
@@ -75,11 +83,11 @@ export default function ExplorerDetail({ cache, type, id, onSelect, onBack }: Pr
       </div>
 
       {/* Fields + sections per type */}
-      {type === 'members' && renderMember(entity as never, cache, onNavigate, related, t)}
+      {type === 'members' && renderMember(entity as never, cache, onNavigate, related, t, showRestrictedSections)}
       {type === 'teams' && renderTeam(entity as never, cache, onNavigate, t)}
       {type === 'events' && renderEvent(entity as never, cache, onNavigate, related, t)}
-      {type === 'trainings' && renderTraining(entity as never, cache, onNavigate, related, t)}
-      {type === 'games' && renderGame(entity as never, cache, onNavigate, related, t)}
+      {type === 'trainings' && renderTraining(entity as never, cache, onNavigate, related, t, showRestrictedSections)}
+      {type === 'games' && renderGame(entity as never, cache, onNavigate, related, t, showRestrictedSections)}
     </div>
   )
 }
@@ -175,13 +183,16 @@ function renderMember(
   onNavigate: Props['onSelect'],
   related: ReturnType<typeof useRelatedEntities>,
   t: TFn,
+  showRestrictedSections: boolean,
 ) {
   const teamIds = cache.memberTeams.get(String(m.id)) ?? []
   const memberTeams = teamIds
     .map((tid) => cache.teams.find((x) => String(x.id) === tid) ?? null)
     .filter((x): x is NonNullable<typeof x> => x !== null)
 
-  const memberSections: SectionKey[] = ['participations', 'absences', 'schreibereinsaetze', 'refereeExpenses']
+  const memberSections: SectionKey[] = showRestrictedSections
+    ? ['participations', 'absences', 'schreibereinsaetze', 'refereeExpenses']
+    : ['participations', 'absences']
   const sectionLabelKey: Record<SectionKey, string> = {
     participations: 'explorerSectionParticipations',
     absences: 'explorerSectionAbsences',
@@ -277,7 +288,7 @@ function renderMemberParticipationsTable(
           ? <NavBtn type={bucketType} id={activityId} label={activityLabel} onClick={onNavigate} />
           : <span>{activityLabel}</span>
 
-        return [activityCell, activityDate || '—', r.status ?? '—']
+        return [activityCell, activityDate || '—', capitalize(r.status)]
       })}
     />
   )
@@ -562,9 +573,12 @@ function renderTraining(
   onNavigate: Props['onSelect'],
   related: ReturnType<typeof useRelatedEntities>,
   t: TFn,
+  showRestrictedSections: boolean,
 ) {
   const team = cache.teams.find((tm) => String(tm.id) === String(tr.team))
-  const sectionKeys: SectionKey[] = ['participations', 'schreibereinsaetze']
+  const sectionKeys: SectionKey[] = showRestrictedSections
+    ? ['participations', 'schreibereinsaetze']
+    : ['participations']
   const sectionLabelKey: Record<SectionKey, string> = {
     participations: 'explorerSectionParticipations',
     absences: 'explorerSectionAbsences',
@@ -613,10 +627,13 @@ function renderGame(
   onNavigate: Props['onSelect'],
   related: ReturnType<typeof useRelatedEntities>,
   t: TFn,
+  showRestrictedSections: boolean,
 ) {
   const home = cache.teams.find((tm) => String(tm.id) === String(g.home_team))
   const away = cache.teams.find((tm) => String(tm.id) === String(g.away_team))
-  const sectionKeys: SectionKey[] = ['participations', 'schreibereinsaetze', 'scorerDelegations']
+  const sectionKeys: SectionKey[] = showRestrictedSections
+    ? ['participations', 'schreibereinsaetze', 'scorerDelegations']
+    : ['participations']
   const sectionLabelKey: Record<SectionKey, string> = {
     participations: 'explorerSectionParticipations',
     absences: 'explorerSectionAbsences',

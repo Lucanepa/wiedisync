@@ -30,8 +30,8 @@ const BUCKETS: BucketKey[] = ['members', 'teams', 'events', 'trainings', 'games'
 export default function ExplorerTree({ cache, selectedType, selectedId, query, onSelect }: Props) {
   const { t } = useTranslation('admin')
   const [expanded, setExpanded] = useState<Record<BucketKey, boolean>>({
-    members: true,
-    teams: true,
+    members: false,
+    teams: false,
     events: false,
     trainings: false,
     games: false,
@@ -109,7 +109,7 @@ export default function ExplorerTree({ cache, selectedType, selectedId, query, o
             <button
               type="button"
               onClick={() => setExpanded((e) => ({ ...e, [b]: !e[b] }))}
-              className="flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 font-semibold text-primary hover:bg-muted"
+              className="flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 font-semibold text-foreground hover:bg-muted"
             >
               {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
               <Icon className="h-4 w-4" />

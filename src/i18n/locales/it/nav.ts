@@ -41,4 +41,5 @@ export default {
   clubStats: 'Statistiche',
   anmeldungen: 'Iscrizioni',
   guide: 'Guida',
+  adminExplorer: 'Esploratore Dati',
 } as const

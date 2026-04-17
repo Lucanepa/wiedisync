@@ -25,7 +25,7 @@ import { asObj } from '../utils/relations'
 import {
   Home, Calendar, Trophy, UserX, PenSquare, PartyPopper, Users,
   ClipboardList, Building2, CalendarClock, Activity,
-  HeartPulse, Settings, ChevronDown, MessageSquare, Banknote, BarChart3, UserPlus, Bug, GraduationCap,
+  HeartPulse, Settings, ChevronDown, MessageSquare, Banknote, BarChart3, UserPlus, Bug, GraduationCap, Database,
 } from 'lucide-react'
 
 type ExpandedMemberTeam = MemberTeam & { team: Team | string }
@@ -69,6 +69,7 @@ function useNavItems(isLoggedIn: boolean, isApproved: boolean) {
       { to: '/admin/anmeldungen', label: t('anmeldungen'), icon: <UserPlus className={iconClass} /> },
       { to: '/admin/club-stats', label: t('clubStats'), icon: <BarChart3 className={iconClass} /> },
       { to: '/admin/volley-feedback', label: t('volleyFeedback'), icon: <MessageSquare className={iconClass} /> },
+      { to: '/admin/explore', label: t('adminExplorer'), icon: <Database className={iconClass} /> },
     ],
     superadminItems: [
       { to: '/admin/infra', label: t('infraHealth'), icon: <Activity className={iconClass} /> },

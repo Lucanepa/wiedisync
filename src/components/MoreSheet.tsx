@@ -9,7 +9,7 @@ import LanguageDropdown from '@/components/LanguageDropdown'
 import { getFileUrl } from '../utils/fileUrl'
 import AdminToggle from './AdminToggle'
 import { useAdminMode } from '../hooks/useAdminMode'
-import { Bell, UserX, PenSquare, CalendarDays, ClipboardList, Building2, CalendarClock, HeartPulse, LogIn, User, Users, Settings, ChevronDown, ScrollText, MessageSquare, Banknote, BarChart3, UserPlus, Bug, Activity, GraduationCap } from 'lucide-react'
+import { Bell, UserX, PenSquare, CalendarDays, ClipboardList, Building2, CalendarClock, HeartPulse, LogIn, User, Users, Settings, ChevronDown, ScrollText, MessageSquare, Banknote, BarChart3, UserPlus, Bug, Activity, GraduationCap, Database } from 'lucide-react'
 import type { MemberTeam, Team } from '../types'
 import { asObj } from '../utils/relations'
 
@@ -44,6 +44,7 @@ const adminItems = [
   { to: '/admin/anmeldungen', labelKey: 'anmeldungen', icon: <UserPlus className={iconClass} /> },
   { to: '/admin/club-stats', labelKey: 'clubStats', icon: <BarChart3 className={iconClass} /> },
   { to: '/admin/volley-feedback', labelKey: 'volleyFeedback', icon: <MessageSquare className={iconClass} /> },
+  { to: '/admin/explore', labelKey: 'adminExplorer', icon: <Database className={iconClass} /> },
 ]
 
 function OptionsAccordion({ theme, toggleTheme, onClose }: { theme: string; toggleTheme: () => void; onClose?: () => void }) {

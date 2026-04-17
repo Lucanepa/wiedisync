@@ -60,8 +60,9 @@ export function memberLabel(m: Member): string {
   return `${ln}, ${fn}`.trim().replace(/^,\s*/, '').trim() || `Member #${m.id}`
 }
 
+/** Short label (e.g. "H1") — used for tree rows and compact chips. */
 export function teamLabel(t: Team): string {
-  return t.full_name || t.name || `Team #${t.id}`
+  return t.name || t.full_name || `Team #${t.id}`
 }
 
 export function eventLabel(e: EventRec): string {

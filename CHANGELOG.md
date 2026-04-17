@@ -2,6 +2,12 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.10.0] — 2026-04-17
+
+### Features
+
+- **Daten-Explorer** (`/admin/explore`) — new admin page: a read-only hierarchical browser over Members, Teams, Events, Trainings and Games. Global fuzzy search with `⌘K` / `Ctrl+K`, URL deep-link (`?t=<type>&id=<id>`), in-panel breadcrumb, and lazy-loaded related sub-sections (participations, absences, Schreibereinsätze, referee expenses, scorer delegations). Sport admins (vb_admin / bb_admin only) are scoped to their sport; club-wide events remain visible. Every detail view has an "In Directus öffnen" escape hatch. Refresh button in header re-loads the cache without a full page reload. Full i18n in de/en/fr/gsw/it.
+
 ## [3.9.4] — 2026-04-17
 
 ### Fixes

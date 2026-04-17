@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.9.4'
+const APP_VERSION = '3.10.0'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,22 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.10.0',
+    date: '2026-04-17',
+    sections: [
+      {
+        title: 'Features',
+        items: [
+          'New Daten-Explorer under Admin → /admin/explore. Hierarchical read-only browser across Mitglieder, Teams, Events, Trainings and Spiele with global fuzzy search (⌘K / Ctrl+K) and click-through to related data.',
+          'Click a team, event or member to see linked records as expandable sub-sections (participations, absences, Schreibereinsätze, referee expenses) — loaded on demand.',
+          'Deep-link and share any view via URL (?t=teams&id=H3). Breadcrumb trail keeps track of where you navigated from. Browser back/forward work naturally.',
+          'Sport admins (vb_admin / bb_admin without global admin) automatically see only their sport; club-wide events stay visible.',
+          'All UI surfaces respect light and dark mode. Refresh button on the top right re-loads the cache without a full page reload.',
+        ],
+      },
+    ],
+  },
   {
     version: '3.9.4',
     date: '2026-04-17',

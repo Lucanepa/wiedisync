@@ -391,4 +391,16 @@ export default {
   explorerColAmount: 'Betrag',
   explorerColOriginal: 'Ursprünglich',
   explorerColDelegatedTo: 'Delegiert an',
+  explorerColRelation: 'Beziehung',
+  explorerColNotes: 'Notizen',
+  // Team relation labels (used in member → teams view)
+  explorerRelationPlayer: 'Spieler:in',
+  // Sex labels
+  explorerSexMale: 'Männlich',
+  explorerSexFemale: 'Weiblich',
+  // Activity singular labels (fallback when entity not in cache)
+  explorerActivityEvent: 'Event',
+  explorerActivityTraining: 'Training',
+  explorerActivityGame: 'Spiel',
+  explorerActivityRemoved: '(entfernt)',
 } as const

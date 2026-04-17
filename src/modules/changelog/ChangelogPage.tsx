@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.11.0'
+const APP_VERSION = '3.11.1'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,22 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.11.1',
+    date: '2026-04-17',
+    sections: [
+      {
+        title: 'Fixes',
+        items: [
+          'Admin Daten-Explorer: teams now also show up on a member detail when the member is a coach, team-responsible or captain (previously only players had teams listed). New "Beziehung" column labels each team as Spieler:in / Trainer / Team-Verantwortlich / Captain.',
+          'Admin Daten-Explorer: member header subtitle, sex ("Weiblich" / "Männlich" instead of "f" / "m") and role values ("User, Vorstand" instead of "user, vorstand") now render capitalized/localized.',
+          'Admin Daten-Explorer: participation status now shows localized values (Zusagen / Absagen / Vielleicht / Warteliste) instead of raw English.',
+          'Admin Daten-Explorer: orphaned participation rows (events/trainings/games older than the 90-day cache window) now show a clear "Event #6 (entfernt)" label instead of a bare "#6".',
+          'Admin Daten-Explorer: referee-expenses section no longer 403s — the query was filtering on non-existent fields (referee / date / status). Now uses the real schema (paid_by_member, date_created, amount, notes) and formats the amount as CHF.',
+        ],
+      },
+    ],
+  },
   {
     version: '3.11.0',
     date: '2026-04-17',

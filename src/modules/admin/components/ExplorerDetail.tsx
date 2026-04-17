@@ -70,7 +70,7 @@ export default function ExplorerDetail({ cache, type, id, onSelect, onBack }: Pr
       {/* Title + directus link */}
       <h1 className="text-xl font-bold text-primary">{title}</h1>
       <div className="mb-4 flex items-center gap-3 text-xs text-muted-foreground">
-        <span>{type} · #{id}</span>
+        <span>{t(`explorerBucket${type.charAt(0).toUpperCase()}${type.slice(1)}` as never)} · #{id}</span>
         <a
           href={directusUrl}
           target="_blank"
@@ -185,11 +185,27 @@ function renderMember(
   t: TFn,
   showRestrictedSections: boolean,
 ) {
-  const teamIds = cache.memberTeams.get(String(m.id)) ?? []
-  const memberTeams = teamIds
+  const memberIdStr = String(m.id)
+  // Union of all team associations: player + coach + team-responsible + captain
+  const relations = new Map<string, Set<string>>()
+  const addRelation = (teamId: string, label: string) => {
+    const set = relations.get(teamId) ?? new Set<string>()
+    set.add(label)
+    relations.set(teamId, set)
+  }
+  for (const tid of cache.memberTeams.get(memberIdStr) ?? []) addRelation(tid, t('explorerRelationPlayer'))
+  for (const tid of cache.memberCoachTeams.get(memberIdStr) ?? []) addRelation(tid, t('explorerFieldCoach'))
+  for (const tid of cache.memberTrTeams.get(memberIdStr) ?? []) addRelation(tid, t('explorerFieldTeamResponsible'))
+  for (const tm of cache.teams) {
+    if (String((tm as unknown as { captain?: unknown }).captain) === memberIdStr) {
+      addRelation(String(tm.id), t('explorerFieldCaptain'))
+    }
+  }
+  const memberTeams = [...relations.keys()]
     .map((tid) => cache.teams.find((x) => String(x.id) === tid) ?? null)
     .filter((x): x is NonNullable<typeof x> => x !== null)
 
+  // Vorstand can read absences/participations but not referee_expenses
   const memberSections: SectionKey[] = showRestrictedSections
     ? ['participations', 'absences', 'refereeExpenses']
     : ['participations', 'absences']
@@ -202,12 +218,23 @@ function renderMember(
 
   const teamName = (tid: string) => cache.teams.find((x) => String(x.id) === tid)?.name ?? tid
 
+  const rawRoles = Array.isArray(m.role) ? (m.role as string[]) : []
+  const roleLabel = rawRoles.length
+    ? rawRoles.map((r) => capitalize(r)).join(', ')
+    : '—'
+  const sexValue = String(m.sex ?? '').toLowerCase()
+  const sexLabel = sexValue === 'm'
+    ? t('explorerSexMale')
+    : sexValue === 'f'
+      ? t('explorerSexFemale')
+      : sexValue ? capitalize(sexValue) : '—'
+
   return (
     <>
       <div className="mb-4">
         <Field label={t('explorerFieldEmail')}>{String(m.email ?? '—')}</Field>
-        <Field label={t('explorerFieldSex')}>{String(m.sex ?? '—')}</Field>
-        <Field label={t('explorerFieldRole')}>{Array.isArray(m.role) ? (m.role as string[]).join(', ') : '—'}</Field>
+        <Field label={t('explorerFieldSex')}>{sexLabel}</Field>
+        <Field label={t('explorerFieldRole')}>{roleLabel}</Field>
         <Field label={t('explorerFieldActive')}>{m.kscw_membership_active ? '✓' : '—'}</Field>
       </div>
 
@@ -218,11 +245,13 @@ function renderMember(
             { key: 'name', label: t('explorerColName') },
             { key: 'sport', label: t('explorerFieldSport') },
             { key: 'season', label: t('explorerFieldSeason') },
+            { key: 'relation', label: t('explorerColRelation') },
           ]}
           rows={memberTeams.map((tm) => [
             <NavBtn type="teams" id={String(tm.id)} label={teamLabel(tm)} onClick={onNavigate} />,
             String(tm.sport ?? '—'),
             String(tm.season ?? '—'),
+            [...(relations.get(String(tm.id)) ?? [])].join(', ') || '—',
           ])}
         />
       </ExplorerSectionCard>
@@ -269,24 +298,38 @@ function renderMemberParticipationsTable(
         const activityId = String(r.activity_id ?? '')
         const validBuckets: BucketKey[] = ['events', 'trainings', 'games']
 
-        let activityLabel = `#${activityId}`
+        // Singular type label used in fallback rendering when entity is not in the page-load cache
+        const typeLabelKey: Partial<Record<BucketKey, string>> = {
+          events: 'explorerActivityEvent',
+          trainings: 'explorerActivityTraining',
+          games: 'explorerActivityGame',
+        }
+        const typeLabel = typeLabelKey[bucketType] ? t(typeLabelKey[bucketType] as string) : ''
+
+        let entityFound = false
+        let activityLabel = typeLabel ? `${typeLabel} #${activityId}` : `#${activityId}`
         let activityDate = ''
         if (bucketType === 'events') {
           const ev = cache.events.find((e) => String(e.id) === activityId)
-          if (ev) { activityLabel = eventLabel(ev); activityDate = formatShortDate(ev.start_date) }
+          if (ev) { entityFound = true; activityLabel = eventLabel(ev); activityDate = formatShortDate(ev.start_date) }
         } else if (bucketType === 'trainings') {
           const tr = cache.trainings.find((x) => String(x.id) === activityId)
-          if (tr) { activityLabel = trainingLabel(tr, teamName); activityDate = formatShortDate(tr.date) }
+          if (tr) { entityFound = true; activityLabel = trainingLabel(tr, teamName); activityDate = formatShortDate(tr.date) }
         } else if (bucketType === 'games') {
           const g = cache.games.find((x) => String(x.id) === activityId)
-          if (g) { activityLabel = gameLabel(g, teamName); activityDate = formatShortDate(g.date) }
+          if (g) { entityFound = true; activityLabel = gameLabel(g, teamName); activityDate = formatShortDate(g.date) }
         }
 
-        const activityCell = validBuckets.includes(bucketType)
+        const activityCell = entityFound && validBuckets.includes(bucketType)
           ? <NavBtn type={bucketType} id={activityId} label={activityLabel} onClick={onNavigate} />
-          : <span>{activityLabel}</span>
+          : <span className="text-muted-foreground italic">{activityLabel} {t('explorerActivityRemoved')}</span>
 
-        return [activityCell, activityDate || '—', capitalize(r.status)]
+        const status = r.status ?? ''
+        const statusLabel = ['confirmed', 'declined', 'tentative', 'waitlisted'].includes(status)
+          ? t(`explorerStatus_${status}`)
+          : (status ? capitalize(status) : '—')
+
+        return [activityCell, activityDate || '—', statusLabel]
       })}
     />
   )
@@ -319,14 +362,16 @@ function renderRefereeExpensesTable(rows: unknown[], t: TFn) {
       cols={[
         { key: 'date', label: t('explorerFieldDate') },
         { key: 'amount', label: t('explorerColAmount') },
-        { key: 'status', label: t('explorerFieldStatus') },
+        { key: 'notes', label: t('explorerColNotes') },
       ]}
       rows={rows.map((row) => {
-        const r = row as { date?: string; amount?: number; status?: string; notes?: string }
+        const r = row as { date_created?: string; amount?: number; notes?: string }
+        const notesRaw = r.notes ?? ''
+        const notes = notesRaw.length > 60 ? notesRaw.slice(0, 60) + '…' : notesRaw || '—'
         return [
-          formatShortDate(r.date) || '—',
-          r.amount != null ? String(r.amount) : '—',
-          r.status ?? '—',
+          formatShortDate(r.date_created) || '—',
+          r.amount != null ? `CHF ${r.amount.toFixed(2)}` : '—',
+          notes,
         ]
       })}
     />

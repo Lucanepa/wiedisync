@@ -2,6 +2,16 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.11.1] — 2026-04-17
+
+### Fixes
+
+- **Admin Daten-Explorer — Teams section for coaches/TRs/captains** — A member who is only a coach, team-responsible or captain (no `member_teams` row) previously showed "Teams 0". The cache now also fetches `teams_coaches` and `teams_responsibles` junctions and derives captain associations from `teams.captain` (M2O). All four relations are unioned into the Teams table, with a new **Beziehung** column labelling each row (Spieler:in / Trainer / Team-Verantwortlich / Captain). Sport-scope filtering for members also considers coach/TR/captain teams now.
+- **Admin Daten-Explorer — capitalisation & localisation in member detail** — Subtitle `members · #11` now renders as the localized bucket name (`Mitglieder · #11`). Sex value resolves `m`/`f` to `Männlich`/`Weiblich`. Role array is capitalized (`User, Vorstand` instead of `user, vorstand`). Participation status cells use existing `explorerStatus_*` keys (`Zusagen`/`Absagen`/`Vielleicht`/`Warteliste`) instead of raw English.
+- **Admin Daten-Explorer — orphaned participation rows** — Participations referencing an event / training / game outside the 90-day cache window (or deleted) were rendered as a bare `#6`. They now render as italic-muted `Event #6 (entfernt)` / `Training #6 (entfernt)` / `Spiel #6 (entfernt)` with the type made explicit.
+- **Admin Daten-Explorer — referee-expenses 403** — The Schiedsrichter-Spesen section was 403-ing for every user because `useRelatedEntities` filtered on `referee` and requested `date` / `status` — none of which exist in the `referee_expenses` collection (schema: `paid_by_member`, `paid_by_other`, `amount`, `notes`, `game`, `team`, `recorded_by`). Query now filters on `paid_by_member` and reads the real fields. Table columns changed to **Datum / Betrag / Notizen**, amount formatted as `CHF x.xx`.
+- **i18n** — Added `explorerSexMale`, `explorerSexFemale`, `explorerColRelation`, `explorerColNotes`, `explorerRelationPlayer`, `explorerActivityEvent`, `explorerActivityTraining`, `explorerActivityGame`, `explorerActivityRemoved` across de/en/fr/gsw/it.
+
 ## [3.11.0] — 2026-04-17
 
 ### Features

@@ -335,4 +335,13 @@ export default {
   explorerColAmount: 'Betrag',
   explorerColOriginal: 'Ursprünglich',
   explorerColDelegatedTo: 'Delegiert a',
+  explorerColRelation: 'Beziähig',
+  explorerColNotes: 'Notize',
+  explorerRelationPlayer: 'Spieler:in',
+  explorerSexMale: 'Männlich',
+  explorerSexFemale: 'Wiiblich',
+  explorerActivityEvent: 'Event',
+  explorerActivityTraining: 'Training',
+  explorerActivityGame: 'Spiel',
+  explorerActivityRemoved: '(ewägg)',
 } as const

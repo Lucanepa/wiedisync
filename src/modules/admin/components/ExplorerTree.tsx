@@ -27,15 +27,75 @@ const BUCKET_ICONS = {
 
 const BUCKETS: BucketKey[] = ['members', 'teams', 'events', 'trainings', 'games']
 
+type Sport = 'volleyball' | 'basketball' | 'other'
+const SPORTS: Sport[] = ['volleyball', 'basketball', 'other']
+
+/** Classify an entity into volleyball / basketball / other based on cache lookups. */
+function sportForEntity(type: BucketKey, id: string, cache: CacheShape): Sport {
+  switch (type) {
+    case 'teams': {
+      const team = cache.teams.find((tm) => String(tm.id) === id)
+      const s = (team as unknown as { sport?: string } | undefined)?.sport
+      if (s === 'volleyball' || s === 'basketball') return s
+      return 'other'
+    }
+    case 'members': {
+      const teamIds = cache.memberTeams.get(id) ?? []
+      for (const tid of teamIds) {
+        const team = cache.teams.find((tm) => String(tm.id) === tid)
+        const sp = (team as unknown as { sport?: string } | undefined)?.sport
+        if (sp === 'volleyball' || sp === 'basketball') return sp
+      }
+      return 'other'
+    }
+    case 'trainings': {
+      const tr = cache.trainings.find((x) => String(x.id) === id)
+      if (!tr) return 'other'
+      const teamId = String((tr as unknown as { team?: unknown }).team ?? '')
+      const team = cache.teams.find((tm) => String(tm.id) === teamId)
+      const s = (team as unknown as { sport?: string } | undefined)?.sport
+      if (s === 'volleyball' || s === 'basketball') return s
+      return 'other'
+    }
+    case 'games': {
+      const g = cache.games.find((x) => String(x.id) === id)
+      if (!g) return 'other'
+      for (const field of ['home_team', 'away_team'] as const) {
+        const teamId = String((g as unknown as Record<string, unknown>)[field] ?? '')
+        const team = cache.teams.find((tm) => String(tm.id) === teamId)
+        const s = (team as unknown as { sport?: string } | undefined)?.sport
+        if (s === 'volleyball' || s === 'basketball') return s
+      }
+      return 'other'
+    }
+    case 'events': {
+      const ev = cache.events.find((x) => String(x.id) === id)
+      if (!ev) return 'other'
+      const teamsField = (ev as unknown as { teams?: unknown[] }).teams
+      if (!Array.isArray(teamsField) || teamsField.length === 0) return 'other'
+      for (const j of teamsField) {
+        const teamsId = String((j as { teams_id?: unknown })?.teams_id ?? '')
+        const team = cache.teams.find((tm) => String(tm.id) === teamsId)
+        const s = (team as unknown as { sport?: string } | undefined)?.sport
+        if (s === 'volleyball' || s === 'basketball') return s
+      }
+      return 'other'
+    }
+  }
+}
+
 export default function ExplorerTree({ cache, selectedType, selectedId, query, onSelect }: Props) {
-  const { t } = useTranslation('admin')
-  const [expanded, setExpanded] = useState<Record<BucketKey, boolean>>({
-    members: true,
-    teams: true,
-    events: false,
-    trainings: false,
-    games: false,
-  })
+  const { t } = useTranslation(['admin', 'common'])
+  // expanded keys: 'members' = bucket open, 'members:volleyball' = sub-group open
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
+
+  const toggleKey = (key: string) =>
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
 
   const teamName = useMemo(() => {
     const map = new Map<string, string>()
@@ -82,13 +142,21 @@ export default function ExplorerTree({ cache, selectedType, selectedId, query, o
     return rankEntities(allEntities, query, 500)
   }, [allEntities, query])
 
+  // Group first by bucket, then by sport
   const groups = useMemo(() => {
-    const g: Record<BucketKey, ExplorerEntity[]> = {
-      members: [], teams: [], events: [], trainings: [], games: [],
+    const g: Record<BucketKey, Record<Sport, ExplorerEntity[]>> = {
+      members: { volleyball: [], basketball: [], other: [] },
+      teams: { volleyball: [], basketball: [], other: [] },
+      events: { volleyball: [], basketball: [], other: [] },
+      trainings: { volleyball: [], basketball: [], other: [] },
+      games: { volleyball: [], basketball: [], other: [] },
     }
-    matched.forEach((e) => g[e.type].push(e))
+    matched.forEach((e) => {
+      const sport = sportForEntity(e.type, e.id, cache)
+      g[e.type][sport].push(e)
+    })
     return g
-  }, [matched])
+  }, [matched, cache])
 
   const labelFor: Record<BucketKey, string> = {
     members: t('explorerBucketMembers'),
@@ -98,61 +166,97 @@ export default function ExplorerTree({ cache, selectedType, selectedId, query, o
     games: t('explorerBucketGames'),
   }
 
+  const sportLabel = (sport: Sport): string => {
+    if (sport === 'volleyball') return t('common:volleyball')
+    if (sport === 'basketball') return t('common:basketball')
+    return t('explorerSportOther')
+  }
+
   return (
     <nav className="h-full overflow-y-auto px-2 py-2 text-sm">
       {BUCKETS.map((b) => {
         const Icon = BUCKET_ICONS[b]
-        const items = groups[b]
-        const isExpanded = expanded[b] || !!query
+        const bucketGroups = groups[b]
+        const totalCount = SPORTS.reduce((n, s) => n + bucketGroups[s].length, 0)
+        const bucketExpanded = expanded.has(b) || !!query
+
         return (
           <div key={b} className="mb-1">
+            {/* Bucket header */}
             <button
               type="button"
-              onClick={() => setExpanded((e) => ({ ...e, [b]: !e[b] }))}
-              className="flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 font-semibold text-primary hover:bg-muted"
+              onClick={() => toggleKey(b)}
+              className="flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 font-semibold text-foreground hover:bg-muted"
             >
-              {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+              {bucketExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
               <Icon className="h-4 w-4" />
               <span>{labelFor[b]}</span>
-              <span className="ml-auto text-xs font-normal text-muted-foreground">{items.length}</span>
+              <span className="ml-auto text-xs font-normal text-muted-foreground">{totalCount}</span>
             </button>
-            {isExpanded && (
+
+            {bucketExpanded && (
               <ul className="mt-0.5">
-                {items.slice(0, 200).map((e) => {
-                  const isActive = selectedType === e.type && selectedId === e.id
+                {SPORTS.map((sport) => {
+                  const items = bucketGroups[sport]
+                  if (items.length === 0) return null
+                  const subKey = `${b}:${sport}`
+                  const subExpanded = expanded.has(subKey) || !!query
+
                   return (
-                    <li key={`${e.type}-${e.id}`}>
+                    <li key={sport}>
+                      {/* Sub-group header */}
                       <button
                         type="button"
-                        onClick={() => onSelect(e.type, e.id)}
-                        className={
-                          'flex w-full rounded-md px-2 py-1 pl-7 text-left ' +
-                          (isActive
-                            ? 'bg-primary text-primary-foreground'
-                            : 'text-foreground hover:bg-muted')
-                        }
+                        onClick={() => toggleKey(subKey)}
+                        className="flex w-full items-center gap-1.5 rounded-md px-2 py-1 pl-5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
                       >
-                        {highlightMatch(e.label, query).map((seg, i) =>
-                          seg.match ? (
-                            <mark
-                              key={i}
-                              className="rounded-sm bg-yellow-200 px-0.5 text-yellow-900 dark:bg-yellow-800/40 dark:text-yellow-200"
-                            >
-                              {seg.text}
-                            </mark>
-                          ) : (
-                            <span key={i}>{seg.text}</span>
-                          ),
-                        )}
+                        {subExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                        <span>{sportLabel(sport)}</span>
+                        <span className="ml-auto font-normal">{items.length}</span>
                       </button>
+
+                      {subExpanded && (
+                        <ul className="mt-0.5">
+                          {items.slice(0, 200).map((e) => {
+                            const isActive = selectedType === e.type && selectedId === e.id
+                            return (
+                              <li key={`${e.type}-${e.id}`}>
+                                <button
+                                  type="button"
+                                  onClick={() => onSelect(e.type, e.id)}
+                                  className={
+                                    'flex w-full rounded-md px-2 py-1 pl-9 text-left ' +
+                                    (isActive
+                                      ? 'bg-primary text-primary-foreground'
+                                      : 'text-foreground hover:bg-muted')
+                                  }
+                                >
+                                  {highlightMatch(e.label, query).map((seg, i) =>
+                                    seg.match ? (
+                                      <mark
+                                        key={i}
+                                        className="rounded-sm bg-yellow-200 px-0.5 text-yellow-900 dark:bg-yellow-800/40 dark:text-yellow-200"
+                                      >
+                                        {seg.text}
+                                      </mark>
+                                    ) : (
+                                      <span key={i}>{seg.text}</span>
+                                    ),
+                                  )}
+                                </button>
+                              </li>
+                            )
+                          })}
+                          {items.length > 200 && (
+                            <li className="px-2 py-1 pl-9 text-xs text-muted-foreground">
+                              … {items.length - 200} more (narrow the search)
+                            </li>
+                          )}
+                        </ul>
+                      )}
                     </li>
                   )
                 })}
-                {items.length > 200 && (
-                  <li className="px-2 py-1 pl-7 text-xs text-muted-foreground">
-                    … {items.length - 200} more (narrow the search)
-                  </li>
-                )}
               </ul>
             )}
           </div>

@@ -136,6 +136,12 @@ export default {
   explorerSectionSchreibereinsaetze: 'Schreibereinsätze',
   explorerSectionRefereeExpenses: 'Frais d\'arbitrage',
   explorerSectionScorerDelegations: 'Délégations marqueurs',
+  // Participation status groups
+  explorerStatus_confirmed: 'Confirmés',
+  explorerStatus_declined: 'Refusés',
+  explorerStatus_tentative: 'Peut-être',
+  explorerStatus_waitlisted: "Liste d'attente",
+  explorerStatus_other: 'Autre',
   explorerFieldEmail: 'E-Mail',
   explorerFieldSex: 'Sexe',
   explorerFieldRole: 'Rôle',
@@ -157,4 +163,5 @@ export default {
   explorerFieldHomeTeam: 'Domicile',
   explorerFieldAwayTeam: 'Extérieur',
   explorerFieldResult: 'Résultat',
+  explorerSportOther: 'Autre',
 } as const

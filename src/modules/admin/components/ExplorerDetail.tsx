@@ -6,6 +6,7 @@ import { API_URL } from '../../../lib/api'
 import type { BucketKey, CacheShape } from './explorerHelpers'
 import {
   memberLabel, teamLabel, eventLabel, trainingLabel, gameLabel,
+  formatShortDate, formatShortDateTime,
 } from './explorerHelpers'
 import ExplorerSectionCard from './ExplorerSectionCard'
 import EntityLink from './EntityLink'
@@ -15,12 +16,12 @@ interface Props {
   cache: CacheShape
   type: BucketKey | null
   id: string | null
-  navStack: Array<{ t: BucketKey; id: string }>
   onSelect: (type: BucketKey, id: string) => void
   onBack?: () => void
 }
 
-export default function ExplorerDetail({ cache, type, id, navStack, onSelect, onBack }: Props) {
+export default function ExplorerDetail({ cache, type, id, onSelect, onBack }: Props) {
+  const onNavigate = onSelect
   const { t } = useTranslation('admin')
   const related = useRelatedEntities()
 
@@ -59,32 +60,6 @@ export default function ExplorerDetail({ cache, type, id, navStack, onSelect, on
         </button>
       )}
 
-      {/* Breadcrumb */}
-      {navStack.length > 1 && (
-        <nav className="mb-2 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
-          {navStack.map((seg, i) => {
-            const isLast = i === navStack.length - 1
-            const label = crumbLabel(seg.t, seg.id, cache)
-            return (
-              <span key={`${seg.t}-${seg.id}-${i}`} className="flex items-center gap-1">
-                {i > 0 && <span className="opacity-50">›</span>}
-                {isLast ? (
-                  <strong className="text-foreground">{label}</strong>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => onSelect(seg.t, seg.id)}
-                    className="underline-offset-2 hover:underline"
-                  >
-                    {label}
-                  </button>
-                )}
-              </span>
-            )
-          })}
-        </nav>
-      )}
-
       {/* Title + directus link */}
       <h1 className="text-xl font-bold text-primary">{title}</h1>
       <div className="mb-4 flex items-center gap-3 text-xs text-muted-foreground">
@@ -101,11 +76,11 @@ export default function ExplorerDetail({ cache, type, id, navStack, onSelect, on
       </div>
 
       {/* Fields + sections per type */}
-      {type === 'members' && renderMember(entity as never, cache, onSelect, related, t)}
-      {type === 'teams' && renderTeam(entity as never, cache, onSelect, t)}
-      {type === 'events' && renderEvent(entity as never, cache, onSelect, related, t)}
-      {type === 'trainings' && renderTraining(entity as never, cache, onSelect, related, t)}
-      {type === 'games' && renderGame(entity as never, cache, onSelect, related, t)}
+      {type === 'members' && renderMember(entity as never, cache, onNavigate, related, t)}
+      {type === 'teams' && renderTeam(entity as never, cache, onNavigate, t)}
+      {type === 'events' && renderEvent(entity as never, cache, onNavigate, related, t)}
+      {type === 'trainings' && renderTraining(entity as never, cache, onNavigate, related, t)}
+      {type === 'games' && renderGame(entity as never, cache, onNavigate, related, t)}
     </div>
   )
 }
@@ -130,33 +105,79 @@ function titleFor(type: BucketKey, entity: Record<string, unknown>, cache: Cache
   }
 }
 
-function crumbLabel(t: BucketKey, id: string, cache: CacheShape): string {
-  const arr = cache[t] as Array<{ id: string | number }>
-  const e = arr.find((x) => String(x.id) === id)
-  if (!e) return `#${id}`
-  return titleFor(t, e as unknown as Record<string, unknown>, cache)
-}
-
 type TFn = (key: string, opts?: Record<string, unknown>) => string
+
+/**
+ * Render a single participation row.
+ * - showMember=true: renders member name (linked) + status
+ * - showActivity=true: renders activity label (linked) + status
+ */
+function renderParticipationRow(
+  p: { id?: string | number; member?: unknown; activity_type?: string; activity_id?: unknown; status?: string },
+  cache: CacheShape,
+  onNavigate: (type: BucketKey, id: string) => void,
+  mode: 'showMember' | 'showActivity',
+) {
+  const key = p.id ?? Math.random()
+
+  if (mode === 'showMember') {
+    const memberId = String(p.member ?? '')
+    const member = cache.members.find((m) => String(m.id) === memberId)
+    const label = member ? memberLabel(member) : `#${memberId}`
+    return (
+      <li key={key} className="flex items-center gap-1 rounded border border-border bg-background px-2 py-1 text-xs">
+        <EntityLink type="members" id={memberId} label={label} onClick={onNavigate} />
+        <span className="text-muted-foreground">· {p.status ?? '?'}</span>
+      </li>
+    )
+  }
+
+  // showActivity
+  const rawType = String(p.activity_type ?? '')
+  const bucketType = (rawType + 's') as BucketKey
+  const activityId = String(p.activity_id ?? '')
+  const teamName = (tid: string) => cache.teams.find((tm) => String(tm.id) === tid)?.name ?? tid
+
+  let activityLabel = `#${activityId}`
+  if (bucketType === 'events') {
+    const ev = cache.events.find((e) => String(e.id) === activityId)
+    if (ev) activityLabel = eventLabel(ev)
+  } else if (bucketType === 'trainings') {
+    const tr = cache.trainings.find((tr) => String(tr.id) === activityId)
+    if (tr) activityLabel = trainingLabel(tr, teamName)
+  } else if (bucketType === 'games') {
+    const g = cache.games.find((g) => String(g.id) === activityId)
+    if (g) activityLabel = gameLabel(g, teamName)
+  }
+
+  const validBucket: BucketKey[] = ['members', 'teams', 'events', 'trainings', 'games']
+  if (!validBucket.includes(bucketType)) {
+    return (
+      <li key={key} className="rounded border border-border bg-background px-2 py-1 font-mono text-[11px]">
+        {JSON.stringify(p)}
+      </li>
+    )
+  }
+
+  return (
+    <li key={key} className="flex items-center gap-1 rounded border border-border bg-background px-2 py-1 text-xs">
+      <EntityLink type={bucketType} id={activityId} label={activityLabel} onClick={onNavigate} />
+      <span className="text-muted-foreground">· {p.status ?? '?'}</span>
+    </li>
+  )
+}
 
 // ── Member ────────────────────────────────────────────────────────────
 function renderMember(
-  m: Record<string, unknown> & { id: string | number; teams?: unknown },
+  m: Record<string, unknown> & { id: string | number },
   cache: CacheShape,
-  onSelect: Props['onSelect'],
+  onNavigate: Props['onSelect'],
   related: ReturnType<typeof useRelatedEntities>,
   t: TFn,
 ) {
-  const junctions = Array.isArray(m.teams) ? m.teams : []
-  const memberTeams = junctions
-    .map((j: unknown) => {
-      const tid = String((j as { team?: { id?: unknown } | string | number })?.team
-        ? (typeof (j as { team: unknown }).team === 'object'
-            ? (j as { team: { id?: unknown } }).team?.id
-            : (j as { team: unknown }).team)
-        : (j as { id?: unknown })?.id ?? j)
-      return cache.teams.find((x) => String(x.id) === tid) ?? null
-    })
+  const teamIds = cache.memberTeams.get(String(m.id)) ?? []
+  const memberTeams = teamIds
+    .map((tid) => cache.teams.find((x) => String(x.id) === tid) ?? null)
     .filter((x): x is NonNullable<typeof x> => x !== null)
 
   const memberSections: SectionKey[] = ['participations', 'absences', 'schreibereinsaetze', 'refereeExpenses']
@@ -180,7 +201,7 @@ function renderMember(
       <ExplorerSectionCard title={t('explorerSectionTeams')} count={memberTeams.length} lazy={false}>
         <div className="flex flex-wrap gap-1">
           {memberTeams.map((tm) => (
-            <EntityLink key={tm.id} type="teams" id={String(tm.id)} label={teamLabel(tm)} onClick={onSelect} />
+            <EntityLink key={tm.id} type="teams" id={String(tm.id)} label={teamLabel(tm)} onClick={onNavigate} />
           ))}
         </div>
       </ExplorerSectionCard>
@@ -197,14 +218,19 @@ function renderMember(
             error={state?.error}
           >
             <ul className="space-y-1 text-xs">
-              {(state?.data ?? []).map((row, idx) => {
-                const r = row as { id?: string | number }
-                return (
-                  <li key={r.id ?? idx} className="rounded border border-border bg-background px-2 py-1 font-mono text-[11px]">
-                    {JSON.stringify(row)}
-                  </li>
-                )
-              })}
+              {s === 'participations'
+                ? (state?.data ?? []).map((row, idx) => {
+                    const r = row as { id?: string | number; member?: unknown; activity_type?: string; activity_id?: unknown; status?: string }
+                    return renderParticipationRow({ ...r, id: r.id ?? idx }, cache, onNavigate, 'showActivity')
+                  })
+                : (state?.data ?? []).map((row, idx) => {
+                    const r = row as { id?: string | number }
+                    return (
+                      <li key={r.id ?? idx} className="rounded border border-border bg-background px-2 py-1 font-mono text-[11px]">
+                        {JSON.stringify(row)}
+                      </li>
+                    )
+                  })}
             </ul>
           </ExplorerSectionCard>
         )
@@ -217,27 +243,20 @@ function renderMember(
 function renderTeam(
   tm: Record<string, unknown> & { id: string | number },
   cache: CacheShape,
-  onSelect: Props['onSelect'],
+  onNavigate: Props['onSelect'],
   t: TFn,
 ) {
-  const members = cache.members.filter((m) => {
-    const ts = Array.isArray((m as unknown as { teams?: unknown[] }).teams)
-      ? (m as unknown as { teams: unknown[] }).teams
-      : []
-    return ts.some((j: unknown) => {
-      const tid = String((j as { team?: { id?: unknown } | string | number })?.team
-        ? (typeof (j as { team: unknown }).team === 'object'
-            ? (j as { team: { id?: unknown } }).team?.id
-            : (j as { team: unknown }).team)
-        : (j as { id?: unknown })?.id ?? j)
-      return tid === String(tm.id)
-    })
-  })
+  const tmId = String(tm.id)
+  const members = cache.members.filter((m) =>
+    (cache.memberTeams.get(String(m.id)) ?? []).includes(tmId),
+  )
   const trainings = cache.trainings.filter((tr) => String((tr as unknown as { team?: unknown }).team) === String(tm.id))
   const games = cache.games.filter((g) =>
     String((g as unknown as { home_team?: unknown }).home_team) === String(tm.id) ||
     String((g as unknown as { away_team?: unknown }).away_team) === String(tm.id),
   )
+
+  const teamName = (tid: string) => cache.teams.find((x) => String(x.id) === tid)?.name ?? tid
 
   return (
     <>
@@ -250,7 +269,7 @@ function renderTeam(
       <ExplorerSectionCard title={t('explorerSectionMembers')} count={members.length} lazy={false}>
         <div className="flex flex-wrap gap-1">
           {members.map((m) => (
-            <EntityLink key={m.id} type="members" id={String(m.id)} label={memberLabel(m)} onClick={onSelect} />
+            <EntityLink key={m.id} type="members" id={String(m.id)} label={memberLabel(m)} onClick={onNavigate} />
           ))}
         </div>
       </ExplorerSectionCard>
@@ -259,13 +278,14 @@ function renderTeam(
         <ul className="space-y-1 text-xs">
           {trainings.slice(0, 50).map((tr) => {
             const trAny = tr as unknown as { id: string | number; date?: string; start_time?: string }
+            const label = `${formatShortDate(trAny.date ?? '')} ${(trAny.start_time ?? '').slice(0, 5)}`.trim()
             return (
               <li key={trAny.id}>
                 <EntityLink
                   type="trainings"
                   id={String(trAny.id)}
-                  label={`${trAny.date ?? '—'} ${trAny.start_time ?? ''}`.trim()}
-                  onClick={onSelect}
+                  label={label || trainingLabel(tr as never, teamName)}
+                  onClick={onNavigate}
                 />
               </li>
             )
@@ -276,14 +296,14 @@ function renderTeam(
       <ExplorerSectionCard title={t('explorerBucketGames')} count={games.length} lazy={false}>
         <ul className="space-y-1 text-xs">
           {games.slice(0, 50).map((g) => {
-            const gAny = g as unknown as { id: string | number; date?: string; home_team?: string; away_team?: string }
+            const gAny = g as unknown as { id: string | number }
             return (
               <li key={gAny.id}>
                 <EntityLink
                   type="games"
                   id={String(gAny.id)}
-                  label={`${gAny.date ?? '—'} · ${gAny.home_team ?? '?'} vs ${gAny.away_team ?? '?'}`}
-                  onClick={onSelect}
+                  label={gameLabel(g as never, teamName)}
+                  onClick={onNavigate}
                 />
               </li>
             )
@@ -294,11 +314,53 @@ function renderTeam(
   )
 }
 
+/** Group participation rows by status. */
+function byStatus(rows: unknown[]): Record<string, unknown[]> {
+  const g: Record<string, unknown[]> = { confirmed: [], declined: [], tentative: [], waitlisted: [] }
+  rows.forEach((r) => {
+    const status = (r as { status?: string }).status ?? 'other'
+    ;(g[status] ??= []).push(r)
+  })
+  return g
+}
+
+/** Render grouped participation rows (for events, trainings, games). */
+function renderGroupedParticipations(
+  rows: unknown[],
+  cache: CacheShape,
+  onNavigate: (type: BucketKey, id: string) => void,
+  t: TFn,
+) {
+  const groups = byStatus(rows)
+  const ORDER = ['confirmed', 'declined', 'tentative', 'waitlisted', 'other']
+  return (
+    <>
+      {ORDER.map((status) => {
+        const statusRows = groups[status] ?? []
+        if (statusRows.length === 0) return null
+        return (
+          <div key={status} className="mb-2">
+            <div className="mb-1 text-[11px] font-semibold text-muted-foreground">
+              {t(`explorerStatus_${status}`)} · {statusRows.length}
+            </div>
+            <ul className="space-y-1 text-xs">
+              {statusRows.map((row, idx) => {
+                const r = row as { id?: string | number; member?: unknown; activity_type?: string; activity_id?: unknown; status?: string }
+                return renderParticipationRow({ ...r, id: r.id ?? idx }, cache, onNavigate, 'showMember')
+              })}
+            </ul>
+          </div>
+        )
+      })}
+    </>
+  )
+}
+
 // ── Event ─────────────────────────────────────────────────────────────
 function renderEvent(
   e: Record<string, unknown> & { id: string | number },
-  _cache: CacheShape,
-  _onSelect: Props['onSelect'],
+  cache: CacheShape,
+  onNavigate: Props['onSelect'],
   related: ReturnType<typeof useRelatedEntities>,
   t: TFn,
 ) {
@@ -306,8 +368,8 @@ function renderEvent(
   return (
     <>
       <div className="mb-4">
-        <Field label={t('explorerFieldStartDate')}>{String(e.start_date ?? '—')}</Field>
-        <Field label={t('explorerFieldEndDate')}>{String(e.end_date ?? '—')}</Field>
+        <Field label={t('explorerFieldStartDate')}>{formatShortDateTime(e.start_date as string | null) || '—'}</Field>
+        <Field label={t('explorerFieldEndDate')}>{formatShortDateTime(e.end_date as string | null) || '—'}</Field>
         <Field label={t('explorerFieldEventType')}>{String(e.event_type ?? '—')}</Field>
         <Field label={t('explorerFieldParticipationMode')}>{String(e.participation_mode ?? '—')}</Field>
       </div>
@@ -318,16 +380,7 @@ function renderEvent(
         isLoading={state?.loading}
         error={state?.error}
       >
-        <ul className="space-y-1 text-xs">
-          {(state?.data ?? []).map((row, idx) => {
-            const r = row as { id?: string | number; member?: unknown; status?: string }
-            return (
-              <li key={r.id ?? idx} className="rounded border border-border bg-background px-2 py-1">
-                #{String(r.member ?? '?')} · {r.status ?? '?'}
-              </li>
-            )
-          })}
-        </ul>
+        {renderGroupedParticipations(state?.data ?? [], cache, onNavigate, t)}
       </ExplorerSectionCard>
     </>
   )
@@ -337,7 +390,7 @@ function renderEvent(
 function renderTraining(
   tr: Record<string, unknown> & { id: string | number },
   cache: CacheShape,
-  onSelect: Props['onSelect'],
+  onNavigate: Props['onSelect'],
   related: ReturnType<typeof useRelatedEntities>,
   t: TFn,
 ) {
@@ -356,11 +409,11 @@ function renderTraining(
       <div className="mb-4">
         {team && (
           <Field label={t('explorerFieldTeam')}>
-            <EntityLink type="teams" id={String(team.id)} label={teamLabel(team)} onClick={onSelect} />
+            <EntityLink type="teams" id={String(team.id)} label={teamLabel(team)} onClick={onNavigate} />
           </Field>
         )}
-        <Field label={t('explorerFieldDate')}>{String(tr.date ?? '—')}</Field>
-        <Field label={t('explorerFieldTime')}>{`${String(tr.start_time ?? '')} – ${String(tr.end_time ?? '')}`}</Field>
+        <Field label={t('explorerFieldDate')}>{formatShortDate(tr.date as string | null) || '—'}</Field>
+        <Field label={t('explorerFieldTime')}>{`${(String(tr.start_time ?? '')).slice(0, 5)} – ${(String(tr.end_time ?? '')).slice(0, 5)}`}</Field>
         <Field label={t('explorerFieldHall')}>{String(tr.hall ?? '—')}</Field>
       </div>
       {sectionKeys.map((s) => {
@@ -374,16 +427,20 @@ function renderTraining(
             isLoading={state?.loading}
             error={state?.error}
           >
-            <ul className="space-y-1 text-xs">
-              {(state?.data ?? []).map((row, idx) => {
-                const r = row as { id?: string | number }
-                return (
-                  <li key={r.id ?? idx} className="rounded border border-border bg-background px-2 py-1 font-mono text-[11px]">
-                    {JSON.stringify(row)}
-                  </li>
-                )
-              })}
-            </ul>
+            {s === 'participations'
+              ? renderGroupedParticipations(state?.data ?? [], cache, onNavigate, t)
+              : (
+                <ul className="space-y-1 text-xs">
+                  {(state?.data ?? []).map((row, idx) => {
+                    const r = row as { id?: string | number }
+                    return (
+                      <li key={r.id ?? idx} className="rounded border border-border bg-background px-2 py-1 font-mono text-[11px]">
+                        {JSON.stringify(row)}
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
           </ExplorerSectionCard>
         )
       })}
@@ -395,7 +452,7 @@ function renderTraining(
 function renderGame(
   g: Record<string, unknown> & { id: string | number },
   cache: CacheShape,
-  onSelect: Props['onSelect'],
+  onNavigate: Props['onSelect'],
   related: ReturnType<typeof useRelatedEntities>,
   t: TFn,
 ) {
@@ -414,12 +471,12 @@ function renderGame(
     <>
       <div className="mb-4">
         <Field label={t('explorerFieldHomeTeam')}>
-          {home ? <EntityLink type="teams" id={String(home.id)} label={teamLabel(home)} onClick={onSelect} /> : `#${String(g.home_team)}`}
+          {home ? <EntityLink type="teams" id={String(home.id)} label={teamLabel(home)} onClick={onNavigate} /> : `#${String(g.home_team)}`}
         </Field>
         <Field label={t('explorerFieldAwayTeam')}>
-          {away ? <EntityLink type="teams" id={String(away.id)} label={teamLabel(away)} onClick={onSelect} /> : `#${String(g.away_team)}`}
+          {away ? <EntityLink type="teams" id={String(away.id)} label={teamLabel(away)} onClick={onNavigate} /> : `#${String(g.away_team)}`}
         </Field>
-        <Field label={t('explorerFieldDate')}>{String(g.date ?? '—')}</Field>
+        <Field label={t('explorerFieldDate')}>{formatShortDate(g.date as string | null) || '—'}</Field>
         <Field label={t('explorerFieldTime')}>{String(g.time ?? '—')}</Field>
         <Field label={t('explorerFieldHall')}>{String(g.hall ?? '—')}</Field>
         <Field label={t('explorerFieldResult')}>
@@ -437,16 +494,20 @@ function renderGame(
             isLoading={state?.loading}
             error={state?.error}
           >
-            <ul className="space-y-1 text-xs">
-              {(state?.data ?? []).map((row, idx) => {
-                const r = row as { id?: string | number }
-                return (
-                  <li key={r.id ?? idx} className="rounded border border-border bg-background px-2 py-1 font-mono text-[11px]">
-                    {JSON.stringify(row)}
-                  </li>
-                )
-              })}
-            </ul>
+            {s === 'participations'
+              ? renderGroupedParticipations(state?.data ?? [], cache, onNavigate, t)
+              : (
+                <ul className="space-y-1 text-xs">
+                  {(state?.data ?? []).map((row, idx) => {
+                    const r = row as { id?: string | number }
+                    return (
+                      <li key={r.id ?? idx} className="rounded border border-border bg-background px-2 py-1 font-mono text-[11px]">
+                        {JSON.stringify(row)}
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
           </ExplorerSectionCard>
         )
       })}

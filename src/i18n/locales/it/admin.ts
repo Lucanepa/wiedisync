@@ -136,6 +136,12 @@ export default {
   explorerSectionSchreibereinsaetze: 'Schreibereinsätze',
   explorerSectionRefereeExpenses: 'Spese arbitrali',
   explorerSectionScorerDelegations: 'Deleghe segnapunti',
+  // Participation status groups
+  explorerStatus_confirmed: 'Confermati',
+  explorerStatus_declined: 'Rifiutati',
+  explorerStatus_tentative: 'Forse',
+  explorerStatus_waitlisted: "Lista d'attesa",
+  explorerStatus_other: 'Altro',
   explorerFieldEmail: 'Email',
   explorerFieldSex: 'Sesso',
   explorerFieldRole: 'Ruolo',
@@ -157,4 +163,5 @@ export default {
   explorerFieldHomeTeam: 'Casa',
   explorerFieldAwayTeam: 'Ospite',
   explorerFieldResult: 'Risultato',
+  explorerSportOther: 'Altro',
 } as const

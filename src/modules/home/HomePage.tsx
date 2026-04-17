@@ -16,9 +16,12 @@ import NotificationPanel from '../../components/NotificationPanel'
 import GameDetailModal from '../games/components/GameDetailModal'
 import TrainingDetailModal from '../trainings/TrainingDetailModal'
 import EventDetailModal from '../events/EventDetailModal'
+import AnnouncementRow from './components/AnnouncementRow'
+import AnnouncementDetailModal from './components/AnnouncementDetailModal'
+import { useAnnouncements } from '../../hooks/useAnnouncements'
 import ParticipationSummary from '../../components/ParticipationSummary'
 import { useBulkParticipationStatuses } from '../../hooks/useBulkParticipationStatuses'
-import type { Game, Event, Team, Training, Hall, Member, MemberTeam, Notification, Ranking, BaseRecord } from '../../types'
+import type { Game, Event, Team, Training, Hall, Member, MemberTeam, Notification, Announcement, Ranking, BaseRecord } from '../../types'
 import { ClipboardList, Clock, AlertTriangle, Trophy, Bell, Calendar, LayoutGrid, List } from 'lucide-react'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import RankingsTable from '../games/components/RankingsTable'
@@ -54,8 +57,37 @@ export default function HomePage() {
   const [showAllResults, setShowAllResults] = useState(false)
   const [showCategorized, setShowCategorized] = useState(false)
   const [notifPanelOpen, setNotifPanelOpen] = useState(false)
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null)
   const { notifications: allNotifs, unreadCount, markAsRead, markAllAsRead } = useNotifications()
-  const latestNews = allNotifs.slice(0, 3)
+  const { announcements } = useAnnouncements({ limit: 10 })
+
+  // Unified news feed: pinned announcements first, then notifications + remaining
+  // announcements interleaved by timestamp (desc). Cap at 3 for the homepage card.
+  type FeedItem =
+    | { kind: 'announcement'; id: string; ts: number; pinned: boolean; record: Announcement }
+    | { kind: 'notification'; id: string; ts: number; pinned: false; record: Notification }
+  const feedItems = useMemo<FeedItem[]>(() => {
+    const annItems: FeedItem[] = announcements.map((a) => ({
+      kind: 'announcement',
+      id: `a:${a.id}`,
+      ts: new Date(a.published_at ?? a.date_created ?? 0).getTime(),
+      pinned: !!a.pinned,
+      record: a,
+    }))
+    const notifItems: FeedItem[] = allNotifs.map((n) => ({
+      kind: 'notification',
+      id: `n:${n.id}`,
+      ts: new Date(n.date_created ?? n.created ?? 0).getTime(),
+      pinned: false,
+      record: n,
+    }))
+    const merged = [...annItems, ...notifItems]
+    merged.sort((a, b) => {
+      if (a.pinned !== b.pinned) return a.pinned ? -1 : 1
+      return b.ts - a.ts
+    })
+    return merged.slice(0, 3)
+  }, [announcements, allNotifs])
 
   const today = useMemo(() => todayLocal(), [])
 
@@ -340,21 +372,35 @@ export default function HomePage() {
         </p>
       </div>
 
-      {/* News section — latest notifications */}
-      {user && isApproved && latestNews.length > 0 && (
+      {/* News section — unified feed: announcements + notifications */}
+      {user && isApproved && feedItems.length > 0 && (
         <div className="mb-6 lg:flex lg:flex-col lg:items-center">
           <SectionHeader
             title={tn('news')}
-            linkTo="#"
+            linkTo="/news"
             linkLabel={tn('showAll')}
-            onLinkClick={(e) => { e.preventDefault(); setNotifPanelOpen(true) }}
           />
           <div className="overflow-hidden rounded-xl border border-gray-200 bg-white lg:w-fit lg:min-w-[32rem] dark:border-gray-700 dark:bg-gray-800">
-            {latestNews.map((n) => (
-              <NewsRow key={n.id} notification={n} onMarkAsRead={markAsRead} />
-            ))}
+            {feedItems.map((item) =>
+              item.kind === 'announcement' ? (
+                <AnnouncementRow
+                  key={item.id}
+                  announcement={item.record}
+                  onClick={() => setSelectedAnnouncement(item.record)}
+                />
+              ) : (
+                <NewsRow key={item.id} notification={item.record} onMarkAsRead={markAsRead} />
+              ),
+            )}
           </div>
         </div>
+      )}
+
+      {selectedAnnouncement && (
+        <AnnouncementDetailModal
+          announcement={selectedAnnouncement}
+          onClose={() => setSelectedAnnouncement(null)}
+        />
       )}
 
       {/* View toggle: unified appointments vs categorized sections */}

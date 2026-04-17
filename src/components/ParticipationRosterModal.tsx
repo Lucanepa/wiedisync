@@ -31,6 +31,13 @@ interface ParticipationRosterModalProps {
   allowMaybe?: boolean
 }
 
+/** Sort comparator: by first_name then last_name, locale-aware + case-insensitive. */
+function byFirstThenLastName<T extends { first_name?: string | null; last_name?: string | null }>(a: T, b: T): number {
+  const cmp = (a.first_name ?? '').localeCompare(b.first_name ?? '', undefined, { sensitivity: 'base' })
+  if (cmp !== 0) return cmp
+  return (a.last_name ?? '').localeCompare(b.last_name ?? '', undefined, { sensitivity: 'base' })
+}
+
 function formatSessionLabel(session: EventSession): string {
   const dateStr = session.date?.split(' ')[0] ?? ''
   const d = new Date(dateStr + 'T00:00:00')
@@ -145,7 +152,7 @@ export default function ParticipationRosterModal({
       filter: { id: { _in: uniqueMemberIds } },
       fields: ['id', 'first_name', 'last_name', 'photo'],
     })
-      .then(m => setClubWideMembers(m.sort((a, b) => (a.last_name ?? '').localeCompare(b.last_name ?? ''))))
+      .then(m => setClubWideMembers(m.sort(byFirstThenLastName)))
       .catch(() => setClubWideMembers([]))
       .finally(() => setClubWideLoading(false))
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -157,7 +164,7 @@ export default function ParticipationRosterModal({
         .map((mt) => asObj<Member>(mt.member))
         .filter((m): m is Member => m !== null)
         .map(m => ({ ...m, id: String(m.id) }))
-        .sort((a, b) => (a.last_name ?? '').localeCompare(b.last_name ?? ''))
+        .sort(byFirstThenLastName)
 
   const memberIds = memberList.map((m) => m.id)
 
@@ -254,7 +261,7 @@ export default function ParticipationRosterModal({
           filter: { id: { _in: staffMemberIds } },
           fields: ['id', 'first_name', 'last_name', 'photo'],
         })
-        setStaffMembers(members.sort((a, b) => (a.last_name ?? '').localeCompare(b.last_name ?? '')))
+        setStaffMembers(members.sort(byFirstThenLastName))
       })
       .catch(() => setStaffMembers([]))
   // eslint-disable-next-line react-hooks/exhaustive-deps

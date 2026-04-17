@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.11.2'
+const APP_VERSION = '3.11.3'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,18 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.11.3',
+    date: '2026-04-17',
+    sections: [
+      {
+        title: 'Fixes',
+        items: [
+          'Volleyball home games: the referee-expenses section no longer fires a permission error for logged-out or pending-approval visitors — the fetch now waits until the account is approved.',
+        ],
+      },
+    ],
+  },
   {
     version: '3.11.2',
     date: '2026-04-17',

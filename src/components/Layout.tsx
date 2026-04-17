@@ -54,10 +54,10 @@ function useNavItems(isLoggedIn: boolean, isApproved: boolean) {
         </svg>
       ),
     },
-    { to: '/absences', label: t('absences'), icon: <UserX className={iconClass} /> },
-    { to: '/scorer', label: t('scorer'), icon: <PenSquare className={iconClass} /> },
     { to: '/events', label: t('events'), icon: <PartyPopper className={iconClass} /> },
     { to: '/teams', label: t(showTeamsPlural ? 'teams' : 'team'), icon: <Users className={iconClass} /> },
+    { to: '/absences', label: t('absences'), icon: <UserX className={iconClass} /> },
+    { to: '/scorer', label: t('scorer'), icon: <PenSquare className={iconClass} /> },
   ]
   return {
     navItems: isLoggedIn && isApproved ? [...publicItems, ...authItems] : publicItems,

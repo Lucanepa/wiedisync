@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.9.2'
+const APP_VERSION = '3.9.3'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,18 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.9.3',
+    date: '2026-04-17',
+    sections: [
+      {
+        title: 'Fixes',
+        items: [
+          'Coaches and team responsibles now receive an email, in-app notification, and push when a member requests to join their team. Previously only new signups triggered notifications; additional-team requests from existing members were silent.',
+        ],
+      },
+    ],
+  },
   {
     version: '3.9.2',
     date: '2026-04-17',

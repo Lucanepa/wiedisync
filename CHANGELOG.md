@@ -2,6 +2,12 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.9.3] — 2026-04-17
+
+### Fixes
+
+- **Team join-request notifications** — Coaches and team responsibles now receive an email, in-app notification, and push notification when a member requests to join their team via the account-claim or additional-team flow. Previously only new signups via `/register` triggered notifications; additional-team requests (`team_requests` collection) were silent.
+
 ## [3.9.2] — 2026-04-17
 
 ### Fixes

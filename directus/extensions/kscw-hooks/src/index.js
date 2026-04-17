@@ -21,7 +21,7 @@
 
 import { logCronError, logWarning, logAuthDenial, cleanOldLogs, writeErrorLog } from '../../kscw-endpoints/src/error-log.js'
 import { initSentry } from '../../kscw-endpoints/src/sentry.js'
-import { buildEmailLayout, buildInfoCard } from '../../kscw-endpoints/src/email-template.js'
+import { buildEmailLayout, buildInfoCard, buildAlertBox } from '../../kscw-endpoints/src/email-template.js'
 
 // Frontend URL — env var or auto-detect from Directus PUBLIC_URL
 const FRONTEND_URL = process.env.FRONTEND_URL
@@ -477,6 +477,93 @@ export default ({ action, filter, init, schedule }, { services, database, logger
 
   action('absences.items.create', async ({ key }) => { await autoDeclineForAbsence(key) })
   action('absences.items.update', async ({ keys }) => { for (const k of keys) await autoDeclineForAbsence(k) })
+
+  // ── Team join request notifications ──────────────────────────────
+  // Notify coaches + team responsibles when a member requests to join a team.
+  // Fires for both collection creates (team_requests) and inline
+  // members.requested_team sets from the account-claim flow.
+  async function notifyTeamJoinRequest(memberId, teamId) {
+    try {
+      if (!memberId || !teamId) return
+      const member = await database('members').where('id', memberId)
+        .select('id', 'first_name', 'last_name').first()
+      if (!member) return
+
+      const teamRow = await database('teams').where('id', teamId)
+        .select('name', 'slug').first()
+      const teamName = teamRow?.name || `Team ${teamId}`
+      const teamSlug = teamRow?.slug || ''
+
+      const coaches = await database('teams_coaches').where('teams_id', teamId).select('members_id')
+      const trMembers = await database('teams_responsibles').where('teams_id', teamId).select('members_id')
+      const recipientIds = [...new Set([...coaches, ...trMembers].map(r => r.members_id))]
+        .filter(id => id && id !== memberId)
+      if (recipientIds.length === 0) return
+
+      // In-app notifications
+      await database('notifications').insert(recipientIds.map(rid => ({
+        member: rid,
+        type: 'member_join_request',
+        title: 'member_join_request',
+        body: JSON.stringify({ memberName: `${member.first_name} ${member.last_name}`, teamName }),
+        activity_type: 'team',
+        activity_id: teamSlug || String(teamId),
+        team: teamId,
+        read: false,
+      })))
+
+      // Emails
+      const schema = await getSchema()
+      const { MailService } = services
+      const mailService = new MailService({ schema, knex: database })
+      const recipients = await database('members')
+        .whereIn('id', recipientIds)
+        .select('email', 'first_name', 'language')
+      for (const r of recipients) {
+        if (!r.email) continue
+        const isGerman = !r.language || r.language === 'german' || r.language === 'swiss_german'
+        const subject = isGerman
+          ? `WiediSync — Neue Beitrittsanfrage für ${teamName}`
+          : `WiediSync — New join request for ${teamName}`
+        const bodyHtml =
+          `<div style="font-size:14px;color:#e2e8f0;margin-bottom:16px">${isGerman
+            ? `<strong>${member.first_name} ${member.last_name}</strong> möchte dem Team <strong>${teamName}</strong> beitreten.`
+            : `<strong>${member.first_name} ${member.last_name}</strong> wants to join team <strong>${teamName}</strong>.`
+          }</div>` +
+          buildAlertBox('info', isGerman ? 'Aktion erforderlich' : 'Action required',
+            isGerman ? 'Bitte genehmige oder lehne die Anfrage auf der Teamseite ab.' : 'Please approve or reject the request on the team page.') +
+          `<div style="text-align:center;margin-top:20px"><a href="${FRONTEND_URL}/teams/${teamSlug}" style="display:inline-block;padding:12px 24px;background:#4A55A2;color:#fff;text-decoration:none;border-radius:8px;font-weight:600">${isGerman ? 'Zur Teamseite' : 'Go to team page'}</a></div>`
+        const html = buildEmailLayout(bodyHtml, {
+          title: isGerman ? 'Neue Beitrittsanfrage' : 'New join request',
+          subtitle: `WiediSync — ${teamName}`,
+        })
+        mailService.send({
+          to: r.email,
+          subject,
+          html,
+          text: `${member.first_name} ${member.last_name} → ${teamName}\n${FRONTEND_URL}/teams/${teamSlug}`,
+        }).catch(e => log.error(`team-join-request email: ${e.message}`))
+      }
+
+      // Push
+      await sendPushToMembers(database, recipientIds,
+        `Neue Beitrittsanfrage: ${member.first_name} ${member.last_name}`,
+        `${member.first_name} ${member.last_name} möchte ${teamName} beitreten`,
+        `${FRONTEND_URL}/teams/${teamSlug}`, 'team', log)
+    } catch (err) {
+      log.error({ msg: `[team-join-request] ${err.message}`, stack: err.stack })
+    }
+  }
+
+  action('team_requests.items.create', async ({ payload, key }) => {
+    const memberId = payload?.member
+    const teamId = payload?.team
+    if (memberId && teamId) await notifyTeamJoinRequest(memberId, teamId)
+    else if (key) {
+      const row = await database('team_requests').where('id', key).select('member', 'team').first()
+      if (row) await notifyTeamJoinRequest(row.member, row.team)
+    }
+  })
 
   // When a training/game is created, auto-decline for members with overlapping absences
   action('trainings.items.create', async ({ key }) => {

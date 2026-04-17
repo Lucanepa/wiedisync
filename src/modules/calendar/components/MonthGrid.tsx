@@ -31,8 +31,8 @@ const TypeIcon = ({ type, sport, className = '' }: { type: string; sport?: 'voll
   }
   if (type === 'game' || type === 'game-home' || type === 'game-away') {
     return sport === 'basketball'
-      ? <BasketballIcon className={ICON_CLASS} filled />
-      : <VolleyballIcon className={ICON_CLASS} filled />
+      ? <BasketballIcon className={`${ICON_CLASS} ${className}`} />
+      : <VolleyballIcon className={`${ICON_CLASS} ${className}`} />
   }
   if (type === 'event') {
     return <Star className={`${ICON_CLASS} ${className}`} fill="currentColor" strokeWidth={2} />

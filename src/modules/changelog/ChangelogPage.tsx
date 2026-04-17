@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.9.1'
+const APP_VERSION = '3.9.2'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,19 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.9.2',
+    date: '2026-04-17',
+    sections: [
+      {
+        title: 'Fixes',
+        items: [
+          'Signing up with an email that already exists now redirects to the login page with an "account already exists" notice instead of showing a generic error. Mixed-case email variants are also detected.',
+          'Members with mixed-case stored emails can now reset their password. Password reset, signup, and login all now treat emails case-insensitively.',
+        ],
+      },
+    ],
+  },
   {
     version: '3.9.1',
     date: '2026-04-17',

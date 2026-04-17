@@ -2,6 +2,13 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.9.2] — 2026-04-17
+
+### Fixes
+
+- **Signup with existing email** — Signing up with an email that already exists (including mixed-case variants like `Joaquinburgazzi@gmail.com`) now cleanly redirects to the login page with an "account already exists" banner instead of failing with a generic "Registrierung fehlgeschlagen" error. `/check-email` is now case-insensitive and also checks `directus_users` for accounts without a linked member record.
+- **Password reset for mixed-case emails** — `/set-password` now matches `members.email` and `vm_email` case-insensitively, and falls back to `directus_users` when no member row exists. Members with mixed-case stored emails could not reset their password before. Existing mixed-case emails in the database (17 members, 17 users, 1 `vm_email`) were normalised to lowercase to prevent future drift.
+
 ## [3.9.1] — 2026-04-17
 
 ### Fixes

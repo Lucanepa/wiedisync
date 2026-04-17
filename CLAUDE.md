@@ -110,6 +110,7 @@ See `INFRA.md → Domains & Hosting Overview` for full domain map, future migrat
 
 ## Changelog
 <!-- Keep recent entries. Overwrite when stale. For full history see git log. -->
+- **2026-04-17** — Case-insensitive email lookup fix (v3.9.2): `/check-email`, `/register`, `/set-password` now use `LOWER(email)` matching + `directus_users` fallback. Fixes mixed-case emails (17 rows each in members/users, 1 vm_email) bypassing duplicate detection on signup and blocking password resets. Frontend `SignUpPage` redirects to `/login` on `code:email_exists`. DB normalised on prod+dev.
 - **2026-04-17** — Team page load flash fix (v3.9.1): Derived `isLoading` (key-comparison) in `useTeamMembers`, `useMultiTeamMembers`, `useTeamAbsences` — eliminates one-frame empty-roster paint when `teamId` transitions from undefined → defined. `RosterEditor` also gates on `!team` to cover its own async team fetch.
 - **2026-04-14** — Coach/TR participation editing (v3.9.0): Coaches and team responsibles can change other members' participation status inline in the roster modal (trainings/games only). Pencil icon → native `<select>` dropdown. Also works on waitlisted members. Users can override their own absence-declined status.
 - **2026-04-10** — Interactive guided tours (v3.8.0): 10 React Joyride v3 tours (trainings, games, events, absences, scorer, hallenplan) with custom KSCW-branded tooltip. Welcome modal for first-timers, role-based auto-offers, central Guide menu at `/guide`, per-page "?" buttons. 5 languages, 36 unit tests. `src/modules/guide/`.

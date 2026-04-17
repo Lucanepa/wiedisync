@@ -161,6 +161,37 @@ async function main() {
   await createField('announcements', m2oInt('created_by', { meta: { note: 'Autofilled to current member', readonly: true } }))
   await createField('announcements', datetime('fanout_sent_at', { meta: { note: 'Set by hook after push/email fanout — prevents duplicate sends on edit', readonly: true, hidden: true } }))
 
+  // Standard Directus system fields (every other KSCW collection has these;
+  // admin list sorts drafts by -date_created when published_at is null).
+  await createField('announcements', {
+    field: 'date_created',
+    type: 'timestamp',
+    schema: { is_nullable: true },
+    meta: {
+      special: ['date-created'],
+      interface: 'datetime',
+      readonly: true,
+      hidden: true,
+      width: 'half',
+      display: 'datetime',
+      display_options: { relative: true },
+    },
+  })
+  await createField('announcements', {
+    field: 'date_updated',
+    type: 'timestamp',
+    schema: { is_nullable: true },
+    meta: {
+      special: ['date-updated'],
+      interface: 'datetime',
+      readonly: true,
+      hidden: true,
+      width: 'half',
+      display: 'datetime',
+      display_options: { relative: true },
+    },
+  })
+
   // Relations
   await createRelation('announcements', 'image', 'directus_files')
   await createRelation('announcements', 'created_by', 'members')

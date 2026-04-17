@@ -16,11 +16,19 @@ const CHANGELOG: ChangelogEntry[] = [
     date: '2026-04-17',
     sections: [
       {
+        title: 'Security',
+        items: [
+          'Vereinsnews CTA link: admin-posted links are now validated on save and on render — only https://… and same-origin /… paths are allowed, blocking any javascript: / data: URL that could have executed in every reader\'s browser.',
+          'Vereinsnews audience fields: dropped audience_teams and audience_roles from the member / team-responsible read whitelist so v2 role/team targeting can\'t leak admin intent when it rolls out.',
+          'Vereinsnews mass-email guard: publishing with "Email senden" on + audience=All now shows a confirmation dialog before fanning out to every active member.',
+        ],
+      },
+      {
         title: 'Fixes',
         items: [
+          'Admin Vereinsnews 403: the list page failed to load because the collection was missing the standard date_created / date_updated system fields (every other KSCW collection has them). Migration script now creates them; dev and prod schemas were backfilled and the 403 is gone.',
           'Error log noise: anonymous visitors on /events were triggering 403 spam by fetching event_sessions / absences / staff participations. All those queries are now gated on login state.',
           'Admin Daten-Explorer: the scorer-delegations related section was 403-ing because the query asked for fields that don\'t exist on the collection (original_scorer / delegated_to). It now uses the real schema (from_member / to_member / status / role).',
-          'Admin Vereinsnews list: sort tiebreaker switched from -date_created to -id to avoid a Directus permission edge case on the announcements collection.',
           'Client-error reporter no longer posts empty payloads to the backend log — both the frontend reporter and the backend endpoint now reject entries that carry no actual error data.',
           'ParticipationRosterModal: stabilised memberIds dependency to avoid a render-loop risk that could (rarely) contribute to a "Maximum call stack size exceeded" crash on /events.',
         ],

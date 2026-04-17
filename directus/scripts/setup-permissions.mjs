@@ -421,9 +421,12 @@ async function main() {
       ] },
     ],
   }, [
+    // Intentionally exclude audience_teams / audience_roles — once role/team
+    // targeting (v2) lands, exposing those arrays to non-admins would reveal
+    // targeting intent for posts that weren't meant to be widely visible.
     'id', 'image', 'link', 'pinned',
     'published_at', 'expires_at',
-    'audience_type', 'audience_sport', 'audience_teams', 'audience_roles',
+    'audience_type', 'audience_sport',
     'translations', 'created_by',
     'date_created', 'date_updated',
   ])
@@ -576,9 +579,12 @@ async function main() {
       ] },
     ],
   }, [
+    // Intentionally exclude audience_teams / audience_roles — once role/team
+    // targeting (v2) lands, exposing those arrays to non-admins would reveal
+    // targeting intent for posts that weren't meant to be widely visible.
     'id', 'image', 'link', 'pinned',
     'published_at', 'expires_at',
-    'audience_type', 'audience_sport', 'audience_teams', 'audience_roles',
+    'audience_type', 'audience_sport',
     'translations', 'created_by',
     'date_created', 'date_updated',
   ])

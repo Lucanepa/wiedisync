@@ -703,12 +703,38 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     for (const k of keys || []) await notifyAnnouncementPublished(k)
   })
 
-  // ── Announcements: server-side created_by enforcement ──
-  // Prevents an admin (Sport Admin+) from spoofing `created_by` to
-  // another member's ID via a direct API call. On create, set it from
-  // the accountability user's linked member; on update, never allow it
-  // to change.
+  // ── Announcements: server-side created_by + audience_sport enforcement ──
+  // F5: Prevents an admin (Sport Admin+) from spoofing `created_by` via
+  // direct API. On create, set from accountability user's linked member;
+  // on update, never allow it to change.
+  // F3: Prevents a sport-scoped admin (vb_admin / bb_admin) from posting
+  // an announcement targeting the OTHER sport. Global admin/superuser
+  // and members with BOTH sport roles bypass.
+  async function validateAnnouncementAudience(payload, context) {
+    if (!payload?.audience_sport) return
+    const userId = context?.accountability?.user
+    if (!userId) return
+    const m = await database('members').where('user', userId).select('role').first()
+    if (!m) return
+    const roles = Array.isArray(m.role) ? m.role : []
+    if (roles.includes('admin') || roles.includes('superuser')) return
+    const isVb = roles.includes('vb_admin')
+    const isBb = roles.includes('bb_admin')
+    if (isVb && isBb) return
+    if (payload.audience_sport === 'volleyball' && !isVb) {
+      const err = new Error('Only volleyball admins can post volleyball-targeted announcements.')
+      err.status = 403
+      throw err
+    }
+    if (payload.audience_sport === 'basketball' && !isBb) {
+      const err = new Error('Only basketball admins can post basketball-targeted announcements.')
+      err.status = 403
+      throw err
+    }
+  }
+
   filter('announcements.items.create', async (payload, _meta, context) => {
+    await validateAnnouncementAudience(payload, context)
     const userId = context?.accountability?.user
     if (userId) {
       const m = await database('members').where('user', userId).select('id').first()
@@ -719,7 +745,8 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     }
     return payload
   })
-  filter('announcements.items.update', async (payload) => {
+  filter('announcements.items.update', async (payload, _meta, context) => {
+    await validateAnnouncementAudience(payload, context)
     if (payload && Object.prototype.hasOwnProperty.call(payload, 'created_by')) {
       delete payload.created_by
     }

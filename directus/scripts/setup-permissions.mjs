@@ -563,8 +563,25 @@ async function main() {
   // Notifications — create (coaches send notifications)
   await setPerm(LEADER_POLICY, 'notifications', 'create')
 
-  // Announcements — read all (drafts included, for visibility into pipeline)
-  await setPermRead(LEADER_POLICY, 'announcements')
+  // Announcements — restricted to same filter as members (no draft access).
+  // F6 audit fix: coaches don't need to see admin's pre-publication drafts.
+  // Vorstand keeps unrestricted access for their pipeline-visibility role.
+  await setPermRead(LEADER_POLICY, 'announcements', {
+    _and: [
+      { published_at: { _nnull: true } },
+      { published_at: { _lte: '$NOW' } },
+      { _or: [
+        { expires_at: { _null: true } },
+        { expires_at: { _gt: '$NOW' } },
+      ] },
+    ],
+  }, [
+    'id', 'image', 'link', 'pinned',
+    'published_at', 'expires_at',
+    'audience_type', 'audience_sport', 'audience_teams', 'audience_roles',
+    'translations', 'created_by',
+    'date_created', 'date_updated',
+  ])
 
   // User logs — read all
   await setPermRead(LEADER_POLICY, 'user_logs')

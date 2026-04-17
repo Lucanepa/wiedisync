@@ -80,17 +80,17 @@ export function useExplorerCache(scope: ExplorerScope) {
         fetchAllItems<EventRec>('events', {
           filter: { _and: [{ end_date: { _gte: cutoff } }, ...(f.events ? [f.events] : [])] },
           fields: ['id', 'title', 'event_type', 'start_date', 'end_date', 'participation_mode', 'teams.teams_id'],
-          sort: ['-start_date'],
+          sort: ['start_date'],
         }),
         fetchAllItems<Training>('trainings', {
           filter: { _and: [{ date: { _gte: cutoff } }, ...(Object.keys(f.trainings).length ? [f.trainings] : [])] },
           fields: ['id', 'team', 'date', 'start_time', 'end_time', 'hall', 'cancelled'],
-          sort: ['-date'],
+          sort: ['date'],
         }),
         fetchAllItems<Game>('games', {
           filter: { _and: [{ date: { _gte: cutoff } }, ...(f.games ? [f.games] : [])] },
           fields: ['id', 'home_team', 'away_team', 'date', 'time', 'hall', 'home_score', 'away_score'],
-          sort: ['-date'],
+          sort: ['date'],
         }),
       ])
 

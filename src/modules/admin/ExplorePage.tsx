@@ -39,7 +39,17 @@ export default function ExplorePage() {
   const [navStack, setNavStack] = useState<NavItem[]>([])
   const [query, setQuery] = useState('')
 
-  const handleSelect = useCallback(
+  /** Jump: reset history to a single entry (tree clicks + search). */
+  const handleJumpTo = useCallback(
+    (type: BucketKey, id: string) => {
+      setNavStack([{ t: type, id }])
+      setParams({ t: type, id }, { replace: false })
+    },
+    [setParams],
+  )
+
+  /** Navigate: push onto existing history (chip clicks + breadcrumb). */
+  const handleNavigate = useCallback(
     (type: BucketKey, id: string) => {
       setNavStack((stack) => {
         const top = stack[stack.length - 1]
@@ -112,7 +122,7 @@ export default function ExplorePage() {
               selectedType={selectedType}
               selectedId={selectedId}
               query={query}
-              onSelect={handleSelect}
+              onSelect={handleJumpTo}
             />
           )}
         </aside>
@@ -129,7 +139,7 @@ export default function ExplorePage() {
             type={selectedType}
             id={selectedId}
             navStack={navStack}
-            onSelect={handleSelect}
+            onNavigate={handleNavigate}
             onBack={handleBackToTree}
           />
         </main>

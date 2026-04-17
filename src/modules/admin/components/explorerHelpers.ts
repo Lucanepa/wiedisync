@@ -71,11 +71,32 @@ export function eventLabel(e: EventRec): string {
 
 export function trainingLabel(t: Training, teamLookup: (id: string) => string): string {
   const teamStr = t.team ? teamLookup(String(t.team)) : ''
-  return [teamStr, t.date].filter(Boolean).join(' · ')
+  return [teamStr, formatShortDate(t.date)].filter(Boolean).join(' · ')
 }
 
 export function gameLabel(g: Game, teamLookup: (id: string) => string): string {
   const home = g.home_team ? teamLookup(String(g.home_team)) : '?'
   const away = g.away_team ? teamLookup(String(g.away_team)) : '?'
-  return `${home} vs ${away} · ${g.date ?? ''}`.trim()
+  return `${home} vs ${away} · ${formatShortDate(g.date)}`.trim()
+}
+
+/** Convert a YYYY-MM-DD or full ISO string to dd.mm.yy. Empty string if input is falsy. */
+export function formatShortDate(iso: string | null | undefined): string {
+  if (!iso) return ''
+  const [yyyy, mm, dd] = iso.slice(0, 10).split('-')
+  if (!yyyy || !mm || !dd) return iso
+  return `${dd}.${mm}.${yyyy.slice(2)}`
+}
+
+/** Convert a full ISO datetime to dd.mm.yy HH:mm. Empty string if input is falsy. */
+export function formatShortDateTime(iso: string | null | undefined): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  const dd = String(d.getDate()).padStart(2, '0')
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const yy = String(d.getFullYear()).slice(2)
+  const hh = String(d.getHours()).padStart(2, '0')
+  const mi = String(d.getMinutes()).padStart(2, '0')
+  return `${dd}.${mm}.${yy} ${hh}:${mi}`
 }

@@ -157,4 +157,5 @@ export default {
   explorerFieldHomeTeam: 'Domicile',
   explorerFieldAwayTeam: 'Extérieur',
   explorerFieldResult: 'Résultat',
+  explorerSportOther: 'Autre',
 } as const

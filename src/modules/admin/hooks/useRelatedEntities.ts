@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
-import { fetchAllItems } from '../../../lib/api'
+import { readItems } from '@directus/sdk'
+import { client } from '../../../lib/api'
 import type { BucketKey } from '../components/explorerHelpers'
 
 export type SectionKey =
@@ -19,7 +20,7 @@ type CacheMap = Record<string, CachedEntry>
 
 /**
  * Directus query per (parent type, section) combination. Returns query params
- * to pass to fetchAllItems. For sections that don't apply to a parent type,
+ * to pass to the SDK. For sections that don't apply to a parent type,
  * these may return empty / mismatched filters — but the UI only renders
  * sections relevant to the parent type, so those combinations won't fire.
  */
@@ -92,6 +93,10 @@ const cacheKey = (parent: BucketKey, id: string, section: SectionKey, epoch: num
  * first expansion of a section; `get()` returns the cached state. `clearAll()`
  * invalidates every cached entry (bumps the internal epoch — e.g. when the
  * page-load cache is refreshed).
+ *
+ * Uses the Directus SDK client directly (bypasses captureApiError) so that
+ * 403s on restricted collections (e.g. schreibereinsaetze for non-admins)
+ * are silently swallowed instead of spamming Sentry.
  */
 export function useRelatedEntities() {
   const [cache, setCache] = useState<CacheMap>({})
@@ -104,13 +109,17 @@ export function useRelatedEntities() {
       setCache((c) => ({ ...c, [key]: { data: [], loading: true, error: null } }))
       try {
         const q = QUERIES[section](parent, id)
-        const data = await fetchAllItems<unknown>(q.collection, {
-          filter: q.filter,
-          fields: q.fields,
-          sort: q.sort,
-        })
+        const data = await client.request(
+          readItems(q.collection as Parameters<typeof readItems>[0], {
+            filter: q.filter,
+            fields: q.fields as string[],
+            sort: q.sort as string[],
+            limit: -1,
+          }),
+        ) as unknown[]
         setCache((c) => ({ ...c, [key]: { data, loading: false, error: null } }))
       } catch (err) {
+        // Silently set error state — no Sentry capture
         setCache((c) => ({
           ...c,
           [key]: { data: [], loading: false, error: err as Error },

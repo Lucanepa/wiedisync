@@ -490,9 +490,9 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       if (!member) return
 
       const teamRow = await database('teams').where('id', teamId)
-        .select('name', 'slug').first()
+        .select('name').first()
       const teamName = teamRow?.name || `Team ${teamId}`
-      const teamSlug = teamRow?.slug || ''
+      const teamUrlPath = encodeURIComponent(teamName)
 
       const coaches = await database('teams_coaches').where('teams_id', teamId).select('members_id')
       const trMembers = await database('teams_responsibles').where('teams_id', teamId).select('members_id')
@@ -507,7 +507,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
         title: 'member_join_request',
         body: JSON.stringify({ memberName: `${member.first_name} ${member.last_name}`, teamName }),
         activity_type: 'team',
-        activity_id: teamSlug || String(teamId),
+        activity_id: teamName,
         team: teamId,
         read: false,
       })))
@@ -532,7 +532,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
           }</div>` +
           buildAlertBox('info', isGerman ? 'Aktion erforderlich' : 'Action required',
             isGerman ? 'Bitte genehmige oder lehne die Anfrage auf der Teamseite ab.' : 'Please approve or reject the request on the team page.') +
-          `<div style="text-align:center;margin-top:20px"><a href="${FRONTEND_URL}/teams/${teamSlug}" style="display:inline-block;padding:12px 24px;background:#4A55A2;color:#fff;text-decoration:none;border-radius:8px;font-weight:600">${isGerman ? 'Zur Teamseite' : 'Go to team page'}</a></div>`
+          `<div style="text-align:center;margin-top:20px"><a href="${FRONTEND_URL}/teams/${teamUrlPath}" style="display:inline-block;padding:12px 24px;background:#4A55A2;color:#fff;text-decoration:none;border-radius:8px;font-weight:600">${isGerman ? 'Zur Teamseite' : 'Go to team page'}</a></div>`
         const html = buildEmailLayout(bodyHtml, {
           title: isGerman ? 'Neue Beitrittsanfrage' : 'New join request',
           subtitle: `WiediSync — ${teamName}`,
@@ -541,7 +541,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
           to: r.email,
           subject,
           html,
-          text: `${member.first_name} ${member.last_name} → ${teamName}\n${FRONTEND_URL}/teams/${teamSlug}`,
+          text: `${member.first_name} ${member.last_name} → ${teamName}\n${FRONTEND_URL}/teams/${teamUrlPath}`,
         }).catch(e => log.error(`team-join-request email: ${e.message}`))
       }
 
@@ -549,7 +549,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       await sendPushToMembers(database, recipientIds,
         `Neue Beitrittsanfrage: ${member.first_name} ${member.last_name}`,
         `${member.first_name} ${member.last_name} möchte ${teamName} beitreten`,
-        `${FRONTEND_URL}/teams/${teamSlug}`, 'team', log)
+        `${FRONTEND_URL}/teams/${teamUrlPath}`, 'team', log)
     } catch (err) {
       log.error({ msg: `[team-join-request] ${err.message}`, stack: err.stack })
     }

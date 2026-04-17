@@ -21,7 +21,7 @@ export function buildFilters(scope: ExplorerScope): CacheFilters {
   if (scope !== 'all') {
     teams.sport = { _eq: scope }
     ;(trainings as { team?: unknown }).team = { sport: { _eq: scope } }
-    games = { sport: { _eq: scope } }
+    games = { kscw_team: { sport: { _eq: scope } } }
     events = {
       _or: [
         { teams: { teams_id: { sport: { _eq: scope } } } },

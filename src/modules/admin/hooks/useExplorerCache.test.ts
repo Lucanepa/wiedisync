@@ -13,7 +13,7 @@ describe('buildFilters', () => {
     const f = buildFilters('volleyball')
     expect(f.teams).toEqual({ active: { _eq: true }, sport: { _eq: 'volleyball' } })
     expect(f.trainings).toMatchObject({ team: { sport: { _eq: 'volleyball' } } })
-    expect(f.games).toEqual({ sport: { _eq: 'volleyball' } })
+    expect(f.games).toEqual({ kscw_team: { sport: { _eq: 'volleyball' } } })
   })
 
   it('events filter includes club-wide (no teams) entries', () => {

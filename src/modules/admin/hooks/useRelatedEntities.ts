@@ -67,9 +67,9 @@ const QUERIES: Record<
   }),
   refereeExpenses: (_parent, id) => ({
     collection: 'referee_expenses',
-    filter: { referee: { _eq: id } },
-    fields: ['id', 'referee', 'date', 'amount', 'status'],
-    sort: ['-date'],
+    filter: { paid_by_member: { _eq: id } },
+    fields: ['id', 'paid_by_member', 'game', 'team', 'amount', 'notes', 'date_created'],
+    sort: ['-date_created'],
   }),
   scorerDelegations: (_parent, id) => ({
     collection: 'scorer_delegations',

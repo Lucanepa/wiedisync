@@ -18,8 +18,12 @@ export interface CacheShape {
   events: EventRec[]
   trainings: Training[]
   games: Game[]
-  /** memberId → array of team ids (from member_teams junction) */
+  /** memberId → array of team ids (from member_teams junction — players) */
   memberTeams: Map<string, string[]>
+  /** memberId → array of team ids they coach (from teams_coaches junction) */
+  memberCoachTeams: Map<string, string[]>
+  /** memberId → array of team ids they are team responsible for (from teams_responsibles junction) */
+  memberTrTeams: Map<string, string[]>
   loadedAt: number | null
 }
 

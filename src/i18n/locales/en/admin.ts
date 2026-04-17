@@ -388,4 +388,13 @@ export default {
   explorerColAmount: 'Amount',
   explorerColOriginal: 'Original',
   explorerColDelegatedTo: 'Delegated To',
+  explorerColRelation: 'Relation',
+  explorerColNotes: 'Notes',
+  explorerRelationPlayer: 'Player',
+  explorerSexMale: 'Male',
+  explorerSexFemale: 'Female',
+  explorerActivityEvent: 'Event',
+  explorerActivityTraining: 'Training',
+  explorerActivityGame: 'Game',
+  explorerActivityRemoved: '(removed)',
 } as const

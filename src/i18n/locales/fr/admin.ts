@@ -180,4 +180,13 @@ export default {
   explorerColAmount: 'Montant',
   explorerColOriginal: 'Original',
   explorerColDelegatedTo: 'Délégué à',
+  explorerColRelation: 'Relation',
+  explorerColNotes: 'Notes',
+  explorerRelationPlayer: 'Joueur·euse',
+  explorerSexMale: 'Homme',
+  explorerSexFemale: 'Femme',
+  explorerActivityEvent: 'Événement',
+  explorerActivityTraining: 'Entraînement',
+  explorerActivityGame: 'Match',
+  explorerActivityRemoved: '(supprimé)',
 } as const

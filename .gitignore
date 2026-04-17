@@ -39,6 +39,9 @@ directus/.env
 docs/superpowers/plans/
 docs/superpowers/specs/
 
+# Handbook & presentation PDF generator (ad-hoc tooling, not for the repo)
+docs/handbook/
+
 # Claude Code settings (contains permission tokens/credentials)
 .claude/settings.json
 

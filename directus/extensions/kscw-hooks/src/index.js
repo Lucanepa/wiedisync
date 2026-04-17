@@ -1108,9 +1108,9 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     }
   })
 
-  // ── 10c. Cron: Refresh teams.season dropdown choices (1st of each month, 03:07 UTC) ──
-  // Season rolls over on May 1 (old season ends) and Sep 1 (new season starts calendar-wise).
+  // ── 10c. Cron: Refresh teams.season dropdown choices (May 1 annually, 03:00 UTC) ──
   // Earliest allowed season is the one currently "live": Jan-Apr → last autumn's; May onwards → this autumn's.
+  // The window only shifts on May 1 (old season ends), so one run per year is enough.
   // Past seasons are removed so admins can't accidentally assign a team to a finished season.
 
   function computeSeasonChoices(now = new Date(), count = 5) {
@@ -1136,7 +1136,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     return choices.map(c => c.value).join(', ')
   }
 
-  schedule('7 3 1 * *', async () => {
+  schedule('0 3 1 5 *', async () => {
     try {
       const seasons = await refreshSeasonChoices()
       log.info(`[season-refresh] teams.season choices set to: ${seasons}`)

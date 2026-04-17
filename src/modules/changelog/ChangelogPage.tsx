@@ -19,7 +19,7 @@ const CHANGELOG: ChangelogEntry[] = [
         title: 'Fixes',
         items: [
           'All teams now use the same season format. Basketball teams were stored as "2025/2026" while volleyball teams used "2025/26", which caused internal mismatches. 19 records were normalised on dev and prod.',
-          'The season field in Directus is now a constrained dropdown with a database-level format check. A monthly cron auto-rolls the 5-season window so from May 1 onward the finished season can no longer be picked, and a new future season is added.',
+          'The season field in Directus is now a constrained dropdown with a database-level format check. A yearly cron (May 1) auto-rolls the 5-season window so the finished season can no longer be picked, and a new future season is added.',
         ],
       },
     ],

@@ -40,7 +40,7 @@ export function buildFilters(scope: ExplorerScope): CacheFilters {
 }
 
 const EMPTY: CacheShape = {
-  members: [], teams: [], events: [], trainings: [], games: [], loadedAt: null,
+  members: [], teams: [], events: [], trainings: [], games: [], memberTeams: new Map(), loadedAt: null,
 }
 
 const NINETY_DAYS_MS = 90 * 24 * 60 * 60 * 1000
@@ -66,10 +66,10 @@ export function useExplorerCache(scope: ExplorerScope) {
     try {
       const f = buildFilters(scope)
       const cutoff = ninetyDaysAgoISO()
-      const [members, teams, events, trainings, games] = await Promise.all([
+      const [members, teams, events, trainings, games, junctions] = await Promise.all([
         fetchAllItems<Member>('members', {
           filter: f.members,
-          fields: ['id', 'first_name', 'last_name', 'email', 'sex', 'kscw_membership_active', 'role', 'user', 'teams.team.id', 'teams.team.sport'],
+          fields: ['id', 'first_name', 'last_name', 'email', 'sex', 'kscw_membership_active', 'role', 'user'],
           sort: ['last_name', 'first_name'],
         }),
         fetchAllItems<Team>('teams', {
@@ -92,21 +92,33 @@ export function useExplorerCache(scope: ExplorerScope) {
           fields: ['id', 'home_team', 'away_team', 'date', 'time', 'hall', 'home_score', 'away_score'],
           sort: ['date'],
         }),
+        fetchAllItems<{ member: string | number; team: string | number }>('member_teams', {
+          fields: ['member', 'team'],
+        }),
       ])
+
+      // Build memberTeams Map: memberId → [teamId, ...]
+      const memberTeams = new Map<string, string[]>()
+      for (const j of junctions) {
+        const mid = String(j.member)
+        const tid = String(j.team)
+        const existing = memberTeams.get(mid)
+        if (existing) existing.push(tid)
+        else memberTeams.set(mid, [tid])
+      }
+
+      // Build teamSportMap for sport-scoping
+      const teamSportMap = new Map<string, string>()
+      for (const tm of teams) {
+        teamSportMap.set(String(tm.id), String((tm as unknown as { sport?: string }).sport ?? ''))
+      }
 
       // Member sport-filter: keep those with ≥1 team in scope
       const filteredMembers = scope === 'all'
         ? members
-        : members.filter((m) => {
-            const ts = Array.isArray((m as unknown as { teams?: unknown[] }).teams)
-              ? (m as unknown as { teams: unknown[] }).teams
-              : []
-            return ts.some((junction: unknown) => {
-              const j = junction as { team?: { sport?: string } | string }
-              if (typeof j?.team === 'object' && j.team) return (j.team as { sport?: string }).sport === scope
-              return false
-            })
-          })
+        : members.filter((m) =>
+            (memberTeams.get(String(m.id)) ?? []).some((teamId) => teamSportMap.get(teamId) === scope),
+          )
 
       setData({
         members: filteredMembers,
@@ -114,6 +126,7 @@ export function useExplorerCache(scope: ExplorerScope) {
         events,
         trainings,
         games,
+        memberTeams,
         loadedAt: Date.now(),
       })
     } catch (err) {

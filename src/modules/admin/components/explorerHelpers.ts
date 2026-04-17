@@ -18,6 +18,8 @@ export interface CacheShape {
   events: EventRec[]
   trainings: Training[]
   games: Game[]
+  /** memberId → array of team ids (from member_teams junction) */
+  memberTeams: Map<string, string[]>
   loadedAt: number | null
 }
 

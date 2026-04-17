@@ -344,6 +344,12 @@ export default {
   explorerSectionSchreibereinsaetze: 'Schreibereinsätze',
   explorerSectionRefereeExpenses: 'Referee Expenses',
   explorerSectionScorerDelegations: 'Scorer Delegations',
+  // Participation status groups
+  explorerStatus_confirmed: 'Confirmed',
+  explorerStatus_declined: 'Declined',
+  explorerStatus_tentative: 'Tentative',
+  explorerStatus_waitlisted: 'Waitlist',
+  explorerStatus_other: 'Other',
   explorerFieldEmail: 'Email',
   explorerFieldSex: 'Sex',
   explorerFieldRole: 'Role',

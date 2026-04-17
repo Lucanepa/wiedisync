@@ -40,17 +40,11 @@ function sportForEntity(type: BucketKey, id: string, cache: CacheShape): Sport {
       return 'other'
     }
     case 'members': {
-      const member = cache.members.find((m) => String(m.id) === id)
-      if (!member) return 'other'
-      const junctions = Array.isArray((member as unknown as { teams?: unknown[] }).teams)
-        ? (member as unknown as { teams: unknown[] }).teams
-        : []
-      for (const j of junctions) {
-        const teamObj = (j as { team?: { sport?: string } | null })?.team
-        if (teamObj && typeof teamObj === 'object') {
-          const sp = teamObj.sport
-          if (sp === 'volleyball' || sp === 'basketball') return sp
-        }
+      const teamIds = cache.memberTeams.get(id) ?? []
+      for (const tid of teamIds) {
+        const team = cache.teams.find((tm) => String(tm.id) === tid)
+        const sp = (team as unknown as { sport?: string } | undefined)?.sport
+        if (sp === 'volleyball' || sp === 'basketball') return sp
       }
       return 'other'
     }

@@ -1,5 +1,5 @@
 // src/modules/admin/ExplorePage.tsx
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { RefreshCw } from 'lucide-react'
@@ -9,8 +9,6 @@ import { getExplorerScope, type BucketKey } from './components/explorerHelpers'
 import ExplorerSearch from './components/ExplorerSearch'
 import ExplorerTree from './components/ExplorerTree'
 import ExplorerDetail from './components/ExplorerDetail'
-
-type NavItem = { t: BucketKey; id: string }
 
 const VALID_TYPES: readonly BucketKey[] = ['members', 'teams', 'events', 'trainings', 'games']
 
@@ -36,27 +34,10 @@ export default function ExplorePage() {
     : null
   const selectedId = rawId && /^[\w-]+$/.test(rawId) ? rawId : null
 
-  const [navStack, setNavStack] = useState<NavItem[]>([])
   const [query, setQuery] = useState('')
 
-  /** Jump: reset history to a single entry (tree clicks + search). */
-  const handleJumpTo = useCallback(
+  const handleSelect = useCallback(
     (type: BucketKey, id: string) => {
-      setNavStack([{ t: type, id }])
-      setParams({ t: type, id }, { replace: false })
-    },
-    [setParams],
-  )
-
-  /** Navigate: push onto existing history (chip clicks + breadcrumb). */
-  const handleNavigate = useCallback(
-    (type: BucketKey, id: string) => {
-      setNavStack((stack) => {
-        const top = stack[stack.length - 1]
-        if (top?.t === type && top?.id === id) return stack
-        const next = [...stack, { t: type, id }]
-        return next.length > 10 ? next.slice(next.length - 10) : next
-      })
       setParams({ t: type, id }, { replace: false })
     },
     [setParams],
@@ -65,16 +46,6 @@ export default function ExplorePage() {
   const handleBackToTree = useCallback(() => {
     setParams({}, { replace: false })
   }, [setParams])
-
-  // Keep navStack in sync when URL changes via browser back/forward
-  useEffect(() => {
-    if (!selectedType || !selectedId) return
-    setNavStack((stack) => {
-      const top = stack[stack.length - 1]
-      if (top?.t === selectedType && top?.id === selectedId) return stack
-      return [...stack, { t: selectedType, id: selectedId }].slice(-10)
-    })
-  }, [selectedType, selectedId])
 
   const handleRefresh = useCallback(() => {
     void refresh()
@@ -122,7 +93,7 @@ export default function ExplorePage() {
               selectedType={selectedType}
               selectedId={selectedId}
               query={query}
-              onSelect={handleJumpTo}
+              onSelect={handleSelect}
             />
           )}
         </aside>
@@ -138,8 +109,7 @@ export default function ExplorePage() {
             cache={data}
             type={selectedType}
             id={selectedId}
-            navStack={navStack}
-            onNavigate={handleNavigate}
+            onSelect={handleSelect}
             onBack={handleBackToTree}
           />
         </main>

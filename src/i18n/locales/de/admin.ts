@@ -346,6 +346,12 @@ export default {
   explorerSectionSchreibereinsaetze: 'Schreibereinsätze',
   explorerSectionRefereeExpenses: 'Schiedsrichter-Spesen',
   explorerSectionScorerDelegations: 'Scorer-Delegationen',
+  // Participation status groups
+  explorerStatus_confirmed: 'Zusagen',
+  explorerStatus_declined: 'Absagen',
+  explorerStatus_tentative: 'Vielleicht',
+  explorerStatus_waitlisted: 'Warteliste',
+  explorerStatus_other: 'Andere',
   // Field labels
   explorerFieldEmail: 'E-Mail',
   explorerFieldSex: 'Geschlecht',

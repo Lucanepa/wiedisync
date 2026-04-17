@@ -16,12 +16,12 @@ interface Props {
   cache: CacheShape
   type: BucketKey | null
   id: string | null
-  navStack: Array<{ t: BucketKey; id: string }>
-  onNavigate: (type: BucketKey, id: string) => void
+  onSelect: (type: BucketKey, id: string) => void
   onBack?: () => void
 }
 
-export default function ExplorerDetail({ cache, type, id, navStack, onNavigate, onBack }: Props) {
+export default function ExplorerDetail({ cache, type, id, onSelect, onBack }: Props) {
+  const onNavigate = onSelect
   const { t } = useTranslation('admin')
   const related = useRelatedEntities()
 
@@ -58,32 +58,6 @@ export default function ExplorerDetail({ cache, type, id, navStack, onNavigate, 
         >
           ← {t('explorerBackToTree')}
         </button>
-      )}
-
-      {/* Breadcrumb */}
-      {navStack.length > 1 && (
-        <nav className="mb-2 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
-          {navStack.map((seg, i) => {
-            const isLast = i === navStack.length - 1
-            const label = crumbLabel(seg.t, seg.id, cache)
-            return (
-              <span key={`${seg.t}-${seg.id}-${i}`} className="flex items-center gap-1">
-                {i > 0 && <span className="opacity-50">›</span>}
-                {isLast ? (
-                  <strong className="text-foreground">{label}</strong>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => onNavigate(seg.t, seg.id)}
-                    className="underline-offset-2 hover:underline"
-                  >
-                    {label}
-                  </button>
-                )}
-              </span>
-            )
-          })}
-        </nav>
       )}
 
       {/* Title + directus link */}
@@ -129,13 +103,6 @@ function titleFor(type: BucketKey, entity: Record<string, unknown>, cache: Cache
     case 'trainings': return trainingLabel(entity as never, teamName)
     case 'games': return gameLabel(entity as never, teamName)
   }
-}
-
-function crumbLabel(t: BucketKey, id: string, cache: CacheShape): string {
-  const arr = cache[t] as Array<{ id: string | number }>
-  const e = arr.find((x) => String(x.id) === id)
-  if (!e) return `#${id}`
-  return titleFor(t, e as unknown as Record<string, unknown>, cache)
 }
 
 type TFn = (key: string, opts?: Record<string, unknown>) => string
@@ -202,22 +169,15 @@ function renderParticipationRow(
 
 // ── Member ────────────────────────────────────────────────────────────
 function renderMember(
-  m: Record<string, unknown> & { id: string | number; teams?: unknown },
+  m: Record<string, unknown> & { id: string | number },
   cache: CacheShape,
-  onNavigate: Props['onNavigate'],
+  onNavigate: Props['onSelect'],
   related: ReturnType<typeof useRelatedEntities>,
   t: TFn,
 ) {
-  const junctions = Array.isArray(m.teams) ? m.teams : []
-  const memberTeams = junctions
-    .map((j: unknown) => {
-      const tid = String((j as { team?: { id?: unknown } | string | number })?.team
-        ? (typeof (j as { team: unknown }).team === 'object'
-            ? (j as { team: { id?: unknown } }).team?.id
-            : (j as { team: unknown }).team)
-        : (j as { id?: unknown })?.id ?? j)
-      return cache.teams.find((x) => String(x.id) === tid) ?? null
-    })
+  const teamIds = cache.memberTeams.get(String(m.id)) ?? []
+  const memberTeams = teamIds
+    .map((tid) => cache.teams.find((x) => String(x.id) === tid) ?? null)
     .filter((x): x is NonNullable<typeof x> => x !== null)
 
   const memberSections: SectionKey[] = ['participations', 'absences', 'schreibereinsaetze', 'refereeExpenses']
@@ -283,22 +243,13 @@ function renderMember(
 function renderTeam(
   tm: Record<string, unknown> & { id: string | number },
   cache: CacheShape,
-  onNavigate: Props['onNavigate'],
+  onNavigate: Props['onSelect'],
   t: TFn,
 ) {
-  const members = cache.members.filter((m) => {
-    const ts = Array.isArray((m as unknown as { teams?: unknown[] }).teams)
-      ? (m as unknown as { teams: unknown[] }).teams
-      : []
-    return ts.some((j: unknown) => {
-      const tid = String((j as { team?: { id?: unknown } | string | number })?.team
-        ? (typeof (j as { team: unknown }).team === 'object'
-            ? (j as { team: { id?: unknown } }).team?.id
-            : (j as { team: unknown }).team)
-        : (j as { id?: unknown })?.id ?? j)
-      return tid === String(tm.id)
-    })
-  })
+  const tmId = String(tm.id)
+  const members = cache.members.filter((m) =>
+    (cache.memberTeams.get(String(m.id)) ?? []).includes(tmId),
+  )
   const trainings = cache.trainings.filter((tr) => String((tr as unknown as { team?: unknown }).team) === String(tm.id))
   const games = cache.games.filter((g) =>
     String((g as unknown as { home_team?: unknown }).home_team) === String(tm.id) ||
@@ -327,12 +278,13 @@ function renderTeam(
         <ul className="space-y-1 text-xs">
           {trainings.slice(0, 50).map((tr) => {
             const trAny = tr as unknown as { id: string | number; date?: string; start_time?: string }
+            const label = `${formatShortDate(trAny.date ?? '')} ${(trAny.start_time ?? '').slice(0, 5)}`.trim()
             return (
               <li key={trAny.id}>
                 <EntityLink
                   type="trainings"
                   id={String(trAny.id)}
-                  label={trainingLabel(tr as never, teamName)}
+                  label={label || trainingLabel(tr as never, teamName)}
                   onClick={onNavigate}
                 />
               </li>
@@ -362,11 +314,53 @@ function renderTeam(
   )
 }
 
+/** Group participation rows by status. */
+function byStatus(rows: unknown[]): Record<string, unknown[]> {
+  const g: Record<string, unknown[]> = { confirmed: [], declined: [], tentative: [], waitlisted: [] }
+  rows.forEach((r) => {
+    const status = (r as { status?: string }).status ?? 'other'
+    ;(g[status] ??= []).push(r)
+  })
+  return g
+}
+
+/** Render grouped participation rows (for events, trainings, games). */
+function renderGroupedParticipations(
+  rows: unknown[],
+  cache: CacheShape,
+  onNavigate: (type: BucketKey, id: string) => void,
+  t: TFn,
+) {
+  const groups = byStatus(rows)
+  const ORDER = ['confirmed', 'declined', 'tentative', 'waitlisted', 'other']
+  return (
+    <>
+      {ORDER.map((status) => {
+        const statusRows = groups[status] ?? []
+        if (statusRows.length === 0) return null
+        return (
+          <div key={status} className="mb-2">
+            <div className="mb-1 text-[11px] font-semibold text-muted-foreground">
+              {t(`explorerStatus_${status}`)} · {statusRows.length}
+            </div>
+            <ul className="space-y-1 text-xs">
+              {statusRows.map((row, idx) => {
+                const r = row as { id?: string | number; member?: unknown; activity_type?: string; activity_id?: unknown; status?: string }
+                return renderParticipationRow({ ...r, id: r.id ?? idx }, cache, onNavigate, 'showMember')
+              })}
+            </ul>
+          </div>
+        )
+      })}
+    </>
+  )
+}
+
 // ── Event ─────────────────────────────────────────────────────────────
 function renderEvent(
   e: Record<string, unknown> & { id: string | number },
   cache: CacheShape,
-  onNavigate: Props['onNavigate'],
+  onNavigate: Props['onSelect'],
   related: ReturnType<typeof useRelatedEntities>,
   t: TFn,
 ) {
@@ -374,7 +368,7 @@ function renderEvent(
   return (
     <>
       <div className="mb-4">
-        <Field label={t('explorerFieldStartDate')}>{formatShortDateTime(e.start_date as string | null)|| '—'}</Field>
+        <Field label={t('explorerFieldStartDate')}>{formatShortDateTime(e.start_date as string | null) || '—'}</Field>
         <Field label={t('explorerFieldEndDate')}>{formatShortDateTime(e.end_date as string | null) || '—'}</Field>
         <Field label={t('explorerFieldEventType')}>{String(e.event_type ?? '—')}</Field>
         <Field label={t('explorerFieldParticipationMode')}>{String(e.participation_mode ?? '—')}</Field>
@@ -386,12 +380,7 @@ function renderEvent(
         isLoading={state?.loading}
         error={state?.error}
       >
-        <ul className="space-y-1 text-xs">
-          {(state?.data ?? []).map((row, idx) => {
-            const r = row as { id?: string | number; member?: unknown; activity_type?: string; activity_id?: unknown; status?: string }
-            return renderParticipationRow({ ...r, id: r.id ?? idx }, cache, onNavigate, 'showMember')
-          })}
-        </ul>
+        {renderGroupedParticipations(state?.data ?? [], cache, onNavigate, t)}
       </ExplorerSectionCard>
     </>
   )
@@ -401,7 +390,7 @@ function renderEvent(
 function renderTraining(
   tr: Record<string, unknown> & { id: string | number },
   cache: CacheShape,
-  onNavigate: Props['onNavigate'],
+  onNavigate: Props['onSelect'],
   related: ReturnType<typeof useRelatedEntities>,
   t: TFn,
 ) {
@@ -424,7 +413,7 @@ function renderTraining(
           </Field>
         )}
         <Field label={t('explorerFieldDate')}>{formatShortDate(tr.date as string | null) || '—'}</Field>
-        <Field label={t('explorerFieldTime')}>{`${String(tr.start_time ?? '')} – ${String(tr.end_time ?? '')}`}</Field>
+        <Field label={t('explorerFieldTime')}>{`${(String(tr.start_time ?? '')).slice(0, 5)} – ${(String(tr.end_time ?? '')).slice(0, 5)}`}</Field>
         <Field label={t('explorerFieldHall')}>{String(tr.hall ?? '—')}</Field>
       </div>
       {sectionKeys.map((s) => {
@@ -438,13 +427,11 @@ function renderTraining(
             isLoading={state?.loading}
             error={state?.error}
           >
-            <ul className="space-y-1 text-xs">
-              {s === 'participations'
-                ? (state?.data ?? []).map((row, idx) => {
-                    const r = row as { id?: string | number; member?: unknown; activity_type?: string; activity_id?: unknown; status?: string }
-                    return renderParticipationRow({ ...r, id: r.id ?? idx }, cache, onNavigate, 'showMember')
-                  })
-                : (state?.data ?? []).map((row, idx) => {
+            {s === 'participations'
+              ? renderGroupedParticipations(state?.data ?? [], cache, onNavigate, t)
+              : (
+                <ul className="space-y-1 text-xs">
+                  {(state?.data ?? []).map((row, idx) => {
                     const r = row as { id?: string | number }
                     return (
                       <li key={r.id ?? idx} className="rounded border border-border bg-background px-2 py-1 font-mono text-[11px]">
@@ -452,7 +439,8 @@ function renderTraining(
                       </li>
                     )
                   })}
-            </ul>
+                </ul>
+              )}
           </ExplorerSectionCard>
         )
       })}
@@ -464,7 +452,7 @@ function renderTraining(
 function renderGame(
   g: Record<string, unknown> & { id: string | number },
   cache: CacheShape,
-  onNavigate: Props['onNavigate'],
+  onNavigate: Props['onSelect'],
   related: ReturnType<typeof useRelatedEntities>,
   t: TFn,
 ) {
@@ -506,13 +494,11 @@ function renderGame(
             isLoading={state?.loading}
             error={state?.error}
           >
-            <ul className="space-y-1 text-xs">
-              {s === 'participations'
-                ? (state?.data ?? []).map((row, idx) => {
-                    const r = row as { id?: string | number; member?: unknown; activity_type?: string; activity_id?: unknown; status?: string }
-                    return renderParticipationRow({ ...r, id: r.id ?? idx }, cache, onNavigate, 'showMember')
-                  })
-                : (state?.data ?? []).map((row, idx) => {
+            {s === 'participations'
+              ? renderGroupedParticipations(state?.data ?? [], cache, onNavigate, t)
+              : (
+                <ul className="space-y-1 text-xs">
+                  {(state?.data ?? []).map((row, idx) => {
                     const r = row as { id?: string | number }
                     return (
                       <li key={r.id ?? idx} className="rounded border border-border bg-background px-2 py-1 font-mono text-[11px]">
@@ -520,7 +506,8 @@ function renderGame(
                       </li>
                     )
                   })}
-            </ul>
+                </ul>
+              )}
           </ExplorerSectionCard>
         )
       })}

@@ -63,6 +63,7 @@ export default function CalendarFilters({ open, onClose, filters, onChange, allo
             selected={filters.sources}
             onChange={(sources) => onChange({ ...filters, sources: sources as SourceFilter[] })}
             placeholder={tc('all')}
+            inline
           />
         </div>
 

@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.10.0'
+const APP_VERSION = '3.11.0'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,20 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.11.0',
+    date: '2026-04-17',
+    sections: [
+      {
+        title: 'Features',
+        items: [
+          'New Vereinsnews under Admin → /admin/announcements. Post club-wide announcements that show up in the homepage News card alongside notifications. Each post supports a hero image, per-locale title and rich text (de/en/fr/gsw/it), an optional CTA link, pin-to-top, expiry date, and audience targeting (all members or one sport).',
+          'Per-post toggles let you also send a push notification and/or an email blast when publishing — fired exactly once per post.',
+          'Homepage News card now merges announcements with notifications. Pinned posts always sit on top, then everything else by newest first. "Alle anzeigen" links to a new /news archive page.',
+        ],
+      },
+    ],
+  },
   {
     version: '3.10.0',
     date: '2026-04-17',

@@ -2,6 +2,12 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.11.0] — 2026-04-17
+
+### Features
+
+- **Vereinsnews** — new admin page (`/admin/announcements`) for posting club-wide announcements that surface in the homepage News card alongside notifications. Each post supports a hero image, per-locale title + rich-text body (de/en/fr/gsw/it via TipTap editor), an optional CTA link, pin-to-top, expiry date, and audience targeting (all members or one sport in v1; teams/roles schema-ready). Per-post toggles control whether publishing also fires a push notification and/or an email blast (each one fans out exactly once via `fanout_sent_at` guard). The homepage News card merges announcements with notifications, sorted with pinned posts first then newest first, capped at 3 with "Alle anzeigen" linking to a paginated `/news` archive. Tap a row to open the full detail modal.
+
 ## [3.10.0] — 2026-04-17
 
 ### Features

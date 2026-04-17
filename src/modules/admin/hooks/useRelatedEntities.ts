@@ -6,7 +6,6 @@ import type { BucketKey } from '../components/explorerHelpers'
 export type SectionKey =
   | 'participations'
   | 'absences'
-  | 'schreibereinsaetze'
   | 'refereeExpenses'
   | 'scorerDelegations'
 
@@ -66,12 +65,6 @@ const QUERIES: Record<
     fields: ['id', 'member', 'start_date', 'end_date', 'reason', 'affects'],
     sort: ['-start_date'],
   }),
-  schreibereinsaetze: (parent, id) => ({
-    collection: 'schreibereinsaetze',
-    filter: parent === 'members' ? { member: { _eq: id } } : { activity_id: { _eq: id } },
-    fields: ['id', 'member', 'game', 'training', 'date', 'role'],
-    sort: ['-date'],
-  }),
   refereeExpenses: (_parent, id) => ({
     collection: 'referee_expenses',
     filter: { referee: { _eq: id } },
@@ -95,7 +88,7 @@ const cacheKey = (parent: BucketKey, id: string, section: SectionKey, epoch: num
  * page-load cache is refreshed).
  *
  * Uses the Directus SDK client directly (bypasses captureApiError) so that
- * 403s on restricted collections (e.g. schreibereinsaetze for non-admins)
+ * 403s on restricted collections (e.g. referee_expenses for non-admins)
  * are silently swallowed instead of spamming Sentry.
  */
 export function useRelatedEntities() {

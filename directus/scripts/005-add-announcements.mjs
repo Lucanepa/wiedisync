@@ -16,15 +16,22 @@
 const DIRECTUS_URL = process.env.DIRECTUS_URL || 'http://localhost:8055'
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@kscw.ch'
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD
-if (!ADMIN_PASSWORD) { console.error('Missing ADMIN_PASSWORD env var'); process.exit(1) }
+const STATIC_TOKEN = process.env.DIRECTUS_TOKEN || ''
+if (!ADMIN_PASSWORD && !STATIC_TOKEN) { console.error('Missing ADMIN_PASSWORD or DIRECTUS_TOKEN env var'); process.exit(1) }
 
 let token = null
 
 async function auth() {
+  if (STATIC_TOKEN) {
+    token = STATIC_TOKEN
+    const res = await fetch(`${DIRECTUS_URL}/server/info`, { headers: { Authorization: `Bearer ${token}` } })
+    if (res.ok) return
+    console.log('  Static token invalid, falling back to password auth...')
+  }
   const res = await fetch(`${DIRECTUS_URL}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD.replace(/\\!/g, '!') }),
+    body: JSON.stringify({ email: ADMIN_EMAIL, password: (ADMIN_PASSWORD || '').replace(/\\!/g, '!') }),
   })
   if (!res.ok) throw new Error(`Auth failed: ${res.status} ${await res.text()}`)
   const { data } = await res.json()

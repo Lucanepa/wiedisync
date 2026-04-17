@@ -377,7 +377,10 @@ export default function MonthGrid({
                       {/* Timed events */}
                       {inMonth && (visibleTimed.length + overflow > 0) && (
                         <div className="mt-auto space-y-px overflow-hidden">
-                          {visibleTimed.map((entry) => (
+                          {visibleTimed.map((entry) => {
+                            const entryColor = barColors[colorKey(entry)]
+                            const useChip = !bgColor && (entry.type === 'event' || entry.type === 'game')
+                            return (
                             <button
                               key={entry.id}
                               type="button"
@@ -385,8 +388,12 @@ export default function MonthGrid({
                                 e.stopPropagation()
                                 onEntryClick?.(entry)
                               }}
-                              className={`flex w-full items-center gap-0.5 truncate rounded px-0.5 text-left text-[10px] leading-snug transition-opacity hover:opacity-80 lg:text-xs ${
-                                bgColor ? `${bgColor.text} ${bgColor.darkText}` : 'text-gray-800 dark:text-gray-200'
+                              className={`flex w-full items-center gap-0.5 truncate rounded px-0.5 text-left text-[10px] font-medium leading-snug transition-opacity hover:opacity-80 lg:text-xs ${
+                                bgColor
+                                  ? `${bgColor.text} ${bgColor.darkText}`
+                                  : useChip
+                                    ? `${entryColor.bg} ${entryColor.darkBg} ${entryColor.text} ${entryColor.darkText}`
+                                    : 'text-gray-800 dark:text-gray-200'
                               }`}
                             >
                               <TypeIcon type={colorKey(entry)} sport={entry.sport} className={dotColors[colorKey(entry)].replace('bg-', 'text-')} />
@@ -404,7 +411,8 @@ export default function MonthGrid({
                                 <span className="hidden lg:inline truncate">{entry.title}</span>
                               )}
                             </button>
-                          ))}
+                            )
+                          })}
                           {overflow > 0 && (
                             <button
                               type="button"

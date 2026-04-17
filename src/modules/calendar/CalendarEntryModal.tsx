@@ -123,7 +123,7 @@ export default function CalendarEntryModal({ entry, onClose, onRefresh }: Calend
               <DetailRow label={t('common:hall')} value={entry.location} />
             )}
 
-            {entry.description && (
+            {entry.description && entry.type !== 'event' && entry.type !== 'absence' && (
               <DetailRow label={t('common:details')} value={entry.description} />
             )}
 
@@ -172,7 +172,8 @@ export default function CalendarEntryModal({ entry, onClose, onRefresh }: Calend
               <ParticipationSummary
                 activityType="event"
                 activityId={entry.source.id}
-                compact
+                bars
+                hideExtras
               />
             </div>
           )}

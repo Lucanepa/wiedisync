@@ -28,6 +28,7 @@ import polls from './locales/en/polls'
 import bugfixes from './locales/en/bugfixes'
 import guide from './locales/en/guide'
 import invitations from './locales/en/invitations'
+import announcements from './locales/en/announcements'
 
 import deCommon from './locales/de/common'
 import deNav from './locales/de/nav'
@@ -56,6 +57,7 @@ import dePolls from './locales/de/polls'
 import deBugfixes from './locales/de/bugfixes'
 import deGuide from './locales/de/guide'
 import deInvitations from './locales/de/invitations'
+import deAnnouncements from './locales/de/announcements'
 
 import frCommon from './locales/fr/common'
 import frNav from './locales/fr/nav'
@@ -83,6 +85,7 @@ import frPolls from './locales/fr/polls'
 import frBugfixes from './locales/fr/bugfixes'
 import frGuide from './locales/fr/guide'
 import frInvitations from './locales/fr/invitations'
+import frAnnouncements from './locales/fr/announcements'
 
 import itCommon from './locales/it/common'
 import itNav from './locales/it/nav'
@@ -110,6 +113,7 @@ import itPolls from './locales/it/polls'
 import itBugfixes from './locales/it/bugfixes'
 import itGuide from './locales/it/guide'
 import itInvitations from './locales/it/invitations'
+import itAnnouncements from './locales/it/announcements'
 
 import gswCommon from './locales/gsw/common'
 import gswNav from './locales/gsw/nav'
@@ -138,6 +142,7 @@ import gswPolls from './locales/gsw/polls'
 import gswBugfixes from './locales/gsw/bugfixes'
 import gswGuide from './locales/gsw/guide'
 import gswInvitations from './locales/gsw/invitations'
+import gswAnnouncements from './locales/gsw/announcements'
 
 function getInitialLanguage(): string {
   if (typeof window === 'undefined') return 'de'
@@ -185,6 +190,7 @@ i18n.use(initReactI18next).init({
     'bugfixes',
     'guide',
     'invitations',
+    'announcements',
   ],
   defaultNS: 'common',
   resources: {
@@ -216,6 +222,7 @@ i18n.use(initReactI18next).init({
       bugfixes,
       guide,
       invitations,
+      announcements,
     },
     de: {
       common: deCommon,
@@ -245,6 +252,7 @@ i18n.use(initReactI18next).init({
       bugfixes: deBugfixes,
       guide: deGuide,
       invitations: deInvitations,
+      announcements: deAnnouncements,
     },
     fr: {
       common: frCommon,
@@ -273,6 +281,7 @@ i18n.use(initReactI18next).init({
       bugfixes: frBugfixes,
       guide: frGuide,
       invitations: frInvitations,
+      announcements: frAnnouncements,
     },
     it: {
       common: itCommon,
@@ -301,6 +310,7 @@ i18n.use(initReactI18next).init({
       bugfixes: itBugfixes,
       guide: itGuide,
       invitations: itInvitations,
+      announcements: itAnnouncements,
     },
     gsw: {
       common: gswCommon,
@@ -330,6 +340,7 @@ i18n.use(initReactI18next).init({
       bugfixes: gswBugfixes,
       guide: gswGuide,
       invitations: gswInvitations,
+      announcements: gswAnnouncements,
     },
   },
   interpolation: {

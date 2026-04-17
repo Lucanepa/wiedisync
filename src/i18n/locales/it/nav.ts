@@ -42,4 +42,5 @@ export default {
   anmeldungen: 'Iscrizioni',
   guide: 'Guida',
   adminExplorer: 'Esploratore Dati',
+  announcements: 'Notizie',
 } as const

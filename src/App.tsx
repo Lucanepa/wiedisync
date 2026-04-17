@@ -43,6 +43,8 @@ import AdminDashboardPage from './modules/gameScheduling/pages/AdminDashboardPag
 import BugfixDashboardPage from './modules/admin/BugfixDashboardPage'
 import StatusPage from './modules/admin/StatusPage'
 import ExplorePage from './modules/admin/ExplorePage'
+import AnnouncementsPage from './modules/admin/AnnouncementsPage'
+import NewsArchivePage from './modules/news/NewsArchivePage'
 
 import JoinPage from './modules/auth/JoinPage'
 import SetPasswordPage from './modules/auth/SetPasswordPage'
@@ -122,6 +124,8 @@ export default function App() {
             <Route path="admin/volley-feedback" element={<AdminRoute><VolleyFeedbackPage /></AdminRoute>} />
             <Route path="admin/anmeldungen" element={<AdminRoute><AnmeldungenPage /></AdminRoute>} />
             <Route path="admin/explore" element={<AdminRoute><ExplorePage /></AdminRoute>} />
+            <Route path="admin/announcements" element={<AdminRoute><AnnouncementsPage /></AdminRoute>} />
+            <Route path="news" element={<AuthRoute><NewsArchivePage /></AuthRoute>} />
             <Route path="admin/infra" element={<SuperAdminRoute><InfraHealthPage /></SuperAdminRoute>} />
             <Route path="admin/data-health" element={<SuperAdminRoute><DataHealthPage /></SuperAdminRoute>} />
             <Route path="admin/audit-log" element={<SuperAdminRoute><AuditLogPage /></SuperAdminRoute>} />

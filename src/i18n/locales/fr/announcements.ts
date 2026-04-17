@@ -1,0 +1,60 @@
+export default {
+  pageTitle: 'Actualités du club',
+  newAnnouncement: 'Nouveau post',
+  empty: 'Aucune actualité pour l\'instant. Cliquez sur « Nouveau post » pour commencer.',
+  loadError: 'Impossible de charger les actualités',
+
+  createTitle: 'Nouvelle actualité',
+  editTitle: 'Modifier l\'actualité',
+  image: 'Image principale',
+  uploadImage: 'Télécharger une image',
+  titlePlaceholder: 'Titre',
+  bodyPlaceholder: 'Texte…',
+  link: 'Lien (optionnel)',
+
+  audience: 'Public',
+  audienceLabel: 'Public',
+  audienceAll: 'Tous les membres',
+  audienceSport: 'Un sport',
+  sport: 'Sport',
+  volleyball: 'Volleyball',
+  basketball: 'Basketball',
+
+  pin: 'Épingler en haut de la carte Actualités',
+  pinned: 'Épinglé',
+  expires: 'Date d\'expiration (optionnel)',
+
+  publish: 'Publier (visible immédiatement)',
+  notifyPush: 'Envoyer une notification push',
+  notifyEmail: 'Envoyer un email',
+
+  statusPublished: 'Publié',
+  statusDraft: 'Brouillon',
+  statusExpired: 'Expiré',
+  noTitle: 'Sans titre',
+
+  titleRequired: 'Le titre allemand est obligatoire',
+  sportRequired: 'Choisissez un sport',
+  imageType: 'Seulement PNG, JPEG ou WebP autorisés',
+  imageSize: 'Image trop grande (max 5 Mo)',
+  imageUploaded: 'Image téléchargée',
+  imageUploadError: 'Échec du téléchargement',
+  created: 'Actualité créée',
+  updated: 'Actualité mise à jour',
+  deleted: 'Actualité supprimée',
+  saveError: 'Échec de la sauvegarde',
+  deleteError: 'Échec de la suppression',
+
+  cancel: 'Annuler',
+  save: 'Enregistrer',
+  create: 'Créer',
+  delete: 'Supprimer',
+  confirmDeleteTitle: 'Supprimer cette actualité ?',
+  confirmDeleteBody: 'Cette action est irréversible.',
+
+  openLink: 'Lire plus',
+  loadMore: 'Voir plus',
+  signInRequired: 'Veuillez vous connecter pour voir les actualités.',
+
+  emailSubjectPrefix: 'Actualités du club',
+} as const

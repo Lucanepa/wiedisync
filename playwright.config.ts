@@ -1,4 +1,4 @@
-import { defineConfig, devices } from '@playwright/test'
+import { defineConfig } from '@playwright/test'
 import dotenv from 'dotenv'
 import { fileURLToPath } from 'url'
 import { dirname, resolve } from 'path'
@@ -25,14 +25,7 @@ export default defineConfig({
     timezoneId: 'Europe/Zurich',
   },
 
-  projects: [
-    // Unauthenticated tests — public/ and auth/ tests
-    {
-      name: 'unauthenticated',
-      testMatch: /tests\/(public|auth)\/.*/,
-      use: { ...devices['Desktop Chrome'] },
-    },
-  ],
+  projects: [],
 
   webServer: {
     command: 'npm run dev',

@@ -164,4 +164,14 @@ export default {
   explorerFieldAwayTeam: 'Ospite',
   explorerFieldResult: 'Risultato',
   explorerSportOther: 'Altro',
+  // Explorer column headers
+  explorerColName: 'Nome',
+  explorerColNumber: 'Nr.',
+  explorerColReason: 'Motivo',
+  explorerColActivity: 'Attività',
+  explorerColNote: 'Nota',
+  explorerColRole: 'Ruolo',
+  explorerColAmount: 'Importo',
+  explorerColOriginal: 'Originale',
+  explorerColDelegatedTo: 'Delegato a',
 } as const

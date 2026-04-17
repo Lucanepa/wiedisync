@@ -372,4 +372,14 @@ export default {
   explorerFieldAwayTeam: 'Away',
   explorerFieldResult: 'Result',
   explorerSportOther: 'Other',
+  // Explorer column headers
+  explorerColName: 'Name',
+  explorerColNumber: 'Nr.',
+  explorerColReason: 'Reason',
+  explorerColActivity: 'Activity',
+  explorerColNote: 'Note',
+  explorerColRole: 'Role',
+  explorerColAmount: 'Amount',
+  explorerColOriginal: 'Original',
+  explorerColDelegatedTo: 'Delegated To',
 } as const

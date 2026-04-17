@@ -319,4 +319,14 @@ export default {
   explorerFieldAwayTeam: 'Gast',
   explorerFieldResult: 'Resultat',
   explorerSportOther: 'Anders',
+  // Explorer Spalte-Überchrift
+  explorerColName: 'Name',
+  explorerColNumber: 'Nr.',
+  explorerColReason: 'Grund',
+  explorerColActivity: 'Aktivität',
+  explorerColNote: 'Notiz',
+  explorerColRole: 'Rolle',
+  explorerColAmount: 'Betrag',
+  explorerColOriginal: 'Ursprünglich',
+  explorerColDelegatedTo: 'Delegiert a',
 } as const

@@ -375,4 +375,14 @@ export default {
   explorerFieldAwayTeam: 'Gast',
   explorerFieldResult: 'Resultat',
   explorerSportOther: 'Sonstige',
+  // Explorer column headers
+  explorerColName: 'Name',
+  explorerColNumber: 'Nr.',
+  explorerColReason: 'Grund',
+  explorerColActivity: 'Aktivität',
+  explorerColNote: 'Notiz',
+  explorerColRole: 'Rolle',
+  explorerColAmount: 'Betrag',
+  explorerColOriginal: 'Ursprünglich',
+  explorerColDelegatedTo: 'Delegiert an',
 } as const

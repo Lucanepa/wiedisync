@@ -2612,6 +2612,81 @@
       }
     },
     {
+      "collection": "reports",
+      "field": "reporter",
+      "related_collection": "members",
+      "meta": {
+        "junction_field": null,
+        "many_collection": "reports",
+        "many_field": "reporter",
+        "one_allowed_collections": null,
+        "one_collection": "members",
+        "one_collection_field": null,
+        "one_deselect_action": "nullify",
+        "one_field": null,
+        "sort_field": null
+      },
+      "schema": {
+        "table": "reports",
+        "column": "reporter",
+        "foreign_key_table": "members",
+        "foreign_key_column": "id",
+        "constraint_name": "reports_reporter_foreign",
+        "on_update": "NO ACTION",
+        "on_delete": "NO ACTION"
+      }
+    },
+    {
+      "collection": "reports",
+      "field": "reported_member",
+      "related_collection": "members",
+      "meta": {
+        "junction_field": null,
+        "many_collection": "reports",
+        "many_field": "reported_member",
+        "one_allowed_collections": null,
+        "one_collection": "members",
+        "one_collection_field": null,
+        "one_deselect_action": "nullify",
+        "one_field": null,
+        "sort_field": null
+      },
+      "schema": {
+        "table": "reports",
+        "column": "reported_member",
+        "foreign_key_table": "members",
+        "foreign_key_column": "id",
+        "constraint_name": "reports_reported_member_foreign",
+        "on_update": "NO ACTION",
+        "on_delete": "NO ACTION"
+      }
+    },
+    {
+      "collection": "reports",
+      "field": "resolved_by",
+      "related_collection": "members",
+      "meta": {
+        "junction_field": null,
+        "many_collection": "reports",
+        "many_field": "resolved_by",
+        "one_allowed_collections": null,
+        "one_collection": "members",
+        "one_collection_field": null,
+        "one_deselect_action": "nullify",
+        "one_field": null,
+        "sort_field": null
+      },
+      "schema": {
+        "table": "reports",
+        "column": "resolved_by",
+        "foreign_key_table": "members",
+        "foreign_key_column": "id",
+        "constraint_name": "reports_resolved_by_foreign",
+        "on_update": "NO ACTION",
+        "on_delete": "NO ACTION"
+      }
+    },
+    {
       "collection": "scorer_delegations",
       "field": "from_member",
       "related_collection": "members",

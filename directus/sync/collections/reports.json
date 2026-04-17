@@ -1,20 +1,20 @@
 {
   "collection": {
-    "collection": "messages",
+    "collection": "reports",
     "meta": {
       "accountability": "all",
       "archive_app_filter": true,
       "archive_field": null,
       "archive_value": null,
       "collapse": "open",
-      "collection": "messages",
+      "collection": "reports",
       "color": null,
       "display_template": null,
       "group": null,
       "hidden": false,
-      "icon": "chat_bubble",
+      "icon": "report",
       "item_duplication_fields": null,
-      "note": "Messaging v1 messages",
+      "note": "Messaging v1 content/member reports. reporter/reported_member/message/conversation will get ON DELETE SET NULL in Task 12.",
       "preview_url": null,
       "singleton": false,
       "sort": null,
@@ -24,16 +24,16 @@
       "versioning": false
     },
     "schema": {
-      "name": "messages"
+      "name": "reports"
     }
   },
   "fields": [
     {
-      "collection": "messages",
+      "collection": "reports",
       "field": "id",
       "type": "uuid",
       "meta": {
-        "collection": "messages",
+        "collection": "reports",
         "conditions": null,
         "display": null,
         "display_options": null,
@@ -57,7 +57,7 @@
       },
       "schema": {
         "name": "id",
-        "table": "messages",
+        "table": "reports",
         "data_type": "uuid",
         "default_value": null,
         "max_length": null,
@@ -75,22 +75,22 @@
       }
     },
     {
-      "collection": "messages",
-      "field": "conversation",
-      "type": "uuid",
+      "collection": "reports",
+      "field": "reporter",
+      "type": "integer",
       "meta": {
-        "collection": "messages",
+        "collection": "reports",
         "conditions": null,
         "display": null,
         "display_options": null,
-        "field": "conversation",
+        "field": "reporter",
         "group": null,
         "hidden": false,
         "interface": "select-dropdown-m2o",
         "note": null,
         "options": null,
         "readonly": false,
-        "required": true,
+        "required": false,
         "searchable": true,
         "sort": 2,
         "special": [
@@ -102,60 +102,14 @@
         "width": "full"
       },
       "schema": {
-        "name": "conversation",
-        "table": "messages",
-        "data_type": "uuid",
-        "default_value": null,
-        "max_length": null,
-        "numeric_precision": null,
-        "numeric_scale": null,
-        "is_nullable": false,
-        "is_unique": false,
-        "is_indexed": true,
-        "is_primary_key": false,
-        "is_generated": false,
-        "generation_expression": null,
-        "has_auto_increment": false,
-        "foreign_key_table": "conversations",
-        "foreign_key_column": "id"
-      }
-    },
-    {
-      "collection": "messages",
-      "field": "sender",
-      "type": "integer",
-      "meta": {
-        "collection": "messages",
-        "conditions": null,
-        "display": null,
-        "display_options": null,
-        "field": "sender",
-        "group": null,
-        "hidden": false,
-        "interface": "select-dropdown-m2o",
-        "note": null,
-        "options": null,
-        "readonly": false,
-        "required": true,
-        "searchable": true,
-        "sort": 3,
-        "special": [
-          "m2o"
-        ],
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "full"
-      },
-      "schema": {
-        "name": "sender",
-        "table": "messages",
+        "name": "reporter",
+        "table": "reports",
         "data_type": "integer",
         "default_value": null,
         "max_length": null,
         "numeric_precision": 32,
         "numeric_scale": 0,
-        "is_nullable": false,
+        "is_nullable": true,
         "is_unique": false,
         "is_indexed": true,
         "is_primary_key": false,
@@ -167,15 +121,153 @@
       }
     },
     {
-      "collection": "messages",
-      "field": "type",
-      "type": "string",
+      "collection": "reports",
+      "field": "reported_member",
+      "type": "integer",
       "meta": {
-        "collection": "messages",
+        "collection": "reports",
         "conditions": null,
         "display": null,
         "display_options": null,
-        "field": "type",
+        "field": "reported_member",
+        "group": null,
+        "hidden": false,
+        "interface": "select-dropdown-m2o",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 3,
+        "special": [
+          "m2o"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "reported_member",
+        "table": "reports",
+        "data_type": "integer",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": true,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": "members",
+        "foreign_key_column": "id"
+      }
+    },
+    {
+      "collection": "reports",
+      "field": "message",
+      "type": "uuid",
+      "meta": {
+        "collection": "reports",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "message",
+        "group": null,
+        "hidden": false,
+        "interface": "select-dropdown-m2o",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 4,
+        "special": [
+          "m2o"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "message",
+        "table": "reports",
+        "data_type": "uuid",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": true,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": "messages",
+        "foreign_key_column": "id"
+      }
+    },
+    {
+      "collection": "reports",
+      "field": "conversation",
+      "type": "uuid",
+      "meta": {
+        "collection": "reports",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "conversation",
+        "group": null,
+        "hidden": false,
+        "interface": "select-dropdown-m2o",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 5,
+        "special": [
+          "m2o"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "conversation",
+        "table": "reports",
+        "data_type": "uuid",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": true,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": "conversations",
+        "foreign_key_column": "id"
+      }
+    },
+    {
+      "collection": "reports",
+      "field": "reason",
+      "type": "string",
+      "meta": {
+        "collection": "reports",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "reason",
         "group": null,
         "hidden": false,
         "interface": "select-dropdown",
@@ -183,19 +275,31 @@
         "options": {
           "choices": [
             {
-              "text": "Text",
-              "value": "text"
+              "text": "Harassment",
+              "value": "harassment"
             },
             {
-              "text": "Poll",
-              "value": "poll"
+              "text": "Spam",
+              "value": "spam"
+            },
+            {
+              "text": "Inappropriate",
+              "value": "inappropriate"
+            },
+            {
+              "text": "Other",
+              "value": "other"
+            },
+            {
+              "text": "Moderator Delete",
+              "value": "moderator_delete"
             }
           ]
         },
         "readonly": false,
         "required": true,
         "searchable": true,
-        "sort": 4,
+        "sort": 6,
         "special": null,
         "translations": null,
         "validation": null,
@@ -203,10 +307,10 @@
         "width": "full"
       },
       "schema": {
-        "name": "type",
-        "table": "messages",
+        "name": "reason",
+        "table": "reports",
         "data_type": "character varying",
-        "default_value": "text",
+        "default_value": null,
         "max_length": 255,
         "numeric_precision": null,
         "numeric_scale": null,
@@ -222,24 +326,24 @@
       }
     },
     {
-      "collection": "messages",
-      "field": "body",
+      "collection": "reports",
+      "field": "note",
       "type": "text",
       "meta": {
-        "collection": "messages",
+        "collection": "reports",
         "conditions": null,
         "display": null,
         "display_options": null,
-        "field": "body",
+        "field": "note",
         "group": null,
         "hidden": false,
         "interface": "input-multiline",
-        "note": null,
+        "note": "Max 500 characters (enforced in app; column is text due to PG text type)",
         "options": null,
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 5,
+        "sort": 7,
         "special": null,
         "translations": null,
         "validation": null,
@@ -247,8 +351,8 @@
         "width": "full"
       },
       "schema": {
-        "name": "body",
-        "table": "messages",
+        "name": "note",
+        "table": "reports",
         "data_type": "text",
         "default_value": null,
         "max_length": null,
@@ -266,15 +370,118 @@
       }
     },
     {
-      "collection": "messages",
-      "field": "poll",
-      "type": "integer",
+      "collection": "reports",
+      "field": "message_snapshot",
+      "type": "text",
       "meta": {
-        "collection": "messages",
+        "collection": "reports",
         "conditions": null,
         "display": null,
         "display_options": null,
-        "field": "poll",
+        "field": "message_snapshot",
+        "group": null,
+        "hidden": false,
+        "interface": "input-multiline",
+        "note": "Audit preservation copy of message body at report time (kept even after message hard-delete)",
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 8,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "message_snapshot",
+        "table": "reports",
+        "data_type": "text",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "reports",
+      "field": "status",
+      "type": "string",
+      "meta": {
+        "collection": "reports",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "status",
+        "group": null,
+        "hidden": false,
+        "interface": "select-dropdown",
+        "note": null,
+        "options": {
+          "choices": [
+            {
+              "text": "Open",
+              "value": "open"
+            },
+            {
+              "text": "Resolved",
+              "value": "resolved"
+            },
+            {
+              "text": "Dismissed",
+              "value": "dismissed"
+            }
+          ]
+        },
+        "readonly": false,
+        "required": true,
+        "searchable": true,
+        "sort": 9,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "status",
+        "table": "reports",
+        "data_type": "character varying",
+        "default_value": "open",
+        "max_length": 255,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": false,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "reports",
+      "field": "resolved_by",
+      "type": "integer",
+      "meta": {
+        "collection": "reports",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "resolved_by",
         "group": null,
         "hidden": false,
         "interface": "select-dropdown-m2o",
@@ -283,7 +490,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 6,
+        "sort": 10,
         "special": [
           "m2o"
         ],
@@ -293,8 +500,8 @@
         "width": "full"
       },
       "schema": {
-        "name": "poll",
-        "table": "messages",
+        "name": "resolved_by",
+        "table": "reports",
         "data_type": "integer",
         "default_value": null,
         "max_length": null,
@@ -302,21 +509,65 @@
         "numeric_scale": 0,
         "is_nullable": true,
         "is_unique": false,
+        "is_indexed": true,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": "members",
+        "foreign_key_column": "id"
+      }
+    },
+    {
+      "collection": "reports",
+      "field": "resolved_at",
+      "type": "timestamp",
+      "meta": {
+        "collection": "reports",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "resolved_at",
+        "group": null,
+        "hidden": false,
+        "interface": "datetime",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 11,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "resolved_at",
+        "table": "reports",
+        "data_type": "timestamp with time zone",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
         "is_indexed": false,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": "polls",
-        "foreign_key_column": "id"
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
-      "collection": "messages",
+      "collection": "reports",
       "field": "created_at",
       "type": "timestamp",
       "meta": {
-        "collection": "messages",
+        "collection": "reports",
         "conditions": null,
         "display": null,
         "display_options": null,
@@ -329,7 +580,7 @@
         "readonly": true,
         "required": false,
         "searchable": true,
-        "sort": 7,
+        "sort": 12,
         "special": [
           "date-created"
         ],
@@ -340,7 +591,7 @@
       },
       "schema": {
         "name": "created_at",
-        "table": "messages",
+        "table": "reports",
         "data_type": "timestamp with time zone",
         "default_value": "CURRENT_TIMESTAMP",
         "max_length": null,
@@ -356,155 +607,17 @@
         "foreign_key_table": null,
         "foreign_key_column": null
       }
-    },
-    {
-      "collection": "messages",
-      "field": "edited_at",
-      "type": "timestamp",
-      "meta": {
-        "collection": "messages",
-        "conditions": null,
-        "display": null,
-        "display_options": null,
-        "field": "edited_at",
-        "group": null,
-        "hidden": false,
-        "interface": "datetime",
-        "note": null,
-        "options": null,
-        "readonly": false,
-        "required": false,
-        "searchable": true,
-        "sort": 8,
-        "special": null,
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "full"
-      },
-      "schema": {
-        "name": "edited_at",
-        "table": "messages",
-        "data_type": "timestamp with time zone",
-        "default_value": null,
-        "max_length": null,
-        "numeric_precision": null,
-        "numeric_scale": null,
-        "is_nullable": true,
-        "is_unique": false,
-        "is_indexed": false,
-        "is_primary_key": false,
-        "is_generated": false,
-        "generation_expression": null,
-        "has_auto_increment": false,
-        "foreign_key_table": null,
-        "foreign_key_column": null
-      }
-    },
-    {
-      "collection": "messages",
-      "field": "deleted_at",
-      "type": "timestamp",
-      "meta": {
-        "collection": "messages",
-        "conditions": null,
-        "display": null,
-        "display_options": null,
-        "field": "deleted_at",
-        "group": null,
-        "hidden": false,
-        "interface": "datetime",
-        "note": null,
-        "options": null,
-        "readonly": false,
-        "required": false,
-        "searchable": true,
-        "sort": 9,
-        "special": null,
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "full"
-      },
-      "schema": {
-        "name": "deleted_at",
-        "table": "messages",
-        "data_type": "timestamp with time zone",
-        "default_value": null,
-        "max_length": null,
-        "numeric_precision": null,
-        "numeric_scale": null,
-        "is_nullable": true,
-        "is_unique": false,
-        "is_indexed": true,
-        "is_primary_key": false,
-        "is_generated": false,
-        "generation_expression": null,
-        "has_auto_increment": false,
-        "foreign_key_table": null,
-        "foreign_key_column": null
-      }
     }
   ],
   "relations": [
     {
-      "collection": "message_reactions",
-      "field": "message",
-      "related_collection": "messages",
-      "meta": {
-        "junction_field": null,
-        "many_collection": "message_reactions",
-        "many_field": "message",
-        "one_allowed_collections": null,
-        "one_collection": "messages",
-        "one_collection_field": null,
-        "one_deselect_action": "nullify",
-        "one_field": null,
-        "sort_field": null
-      },
-      "schema": {
-        "table": "message_reactions",
-        "column": "message",
-        "foreign_key_table": "messages",
-        "foreign_key_column": "id",
-        "constraint_name": "message_reactions_message_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "NO ACTION"
-      }
-    },
-    {
-      "collection": "messages",
-      "field": "conversation",
-      "related_collection": "conversations",
-      "meta": {
-        "junction_field": null,
-        "many_collection": "messages",
-        "many_field": "conversation",
-        "one_allowed_collections": null,
-        "one_collection": "conversations",
-        "one_collection_field": null,
-        "one_deselect_action": "nullify",
-        "one_field": null,
-        "sort_field": null
-      },
-      "schema": {
-        "table": "messages",
-        "column": "conversation",
-        "foreign_key_table": "conversations",
-        "foreign_key_column": "id",
-        "constraint_name": "messages_conversation_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "NO ACTION"
-      }
-    },
-    {
-      "collection": "messages",
-      "field": "sender",
+      "collection": "reports",
+      "field": "reporter",
       "related_collection": "members",
       "meta": {
         "junction_field": null,
-        "many_collection": "messages",
-        "many_field": "sender",
+        "many_collection": "reports",
+        "many_field": "reporter",
         "one_allowed_collections": null,
         "one_collection": "members",
         "one_collection_field": null,
@@ -513,36 +626,36 @@
         "sort_field": null
       },
       "schema": {
-        "table": "messages",
-        "column": "sender",
+        "table": "reports",
+        "column": "reporter",
         "foreign_key_table": "members",
         "foreign_key_column": "id",
-        "constraint_name": "messages_sender_foreign",
+        "constraint_name": "reports_reporter_foreign",
         "on_update": "NO ACTION",
         "on_delete": "NO ACTION"
       }
     },
     {
-      "collection": "messages",
-      "field": "poll",
-      "related_collection": "polls",
+      "collection": "reports",
+      "field": "reported_member",
+      "related_collection": "members",
       "meta": {
         "junction_field": null,
-        "many_collection": "messages",
-        "many_field": "poll",
+        "many_collection": "reports",
+        "many_field": "reported_member",
         "one_allowed_collections": null,
-        "one_collection": "polls",
+        "one_collection": "members",
         "one_collection_field": null,
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
       },
       "schema": {
-        "table": "messages",
-        "column": "poll",
-        "foreign_key_table": "polls",
+        "table": "reports",
+        "column": "reported_member",
+        "foreign_key_table": "members",
         "foreign_key_column": "id",
-        "constraint_name": "messages_poll_foreign",
+        "constraint_name": "reports_reported_member_foreign",
         "on_update": "NO ACTION",
         "on_delete": "NO ACTION"
       }
@@ -568,6 +681,56 @@
         "foreign_key_table": "messages",
         "foreign_key_column": "id",
         "constraint_name": "reports_message_foreign",
+        "on_update": "NO ACTION",
+        "on_delete": "NO ACTION"
+      }
+    },
+    {
+      "collection": "reports",
+      "field": "conversation",
+      "related_collection": "conversations",
+      "meta": {
+        "junction_field": null,
+        "many_collection": "reports",
+        "many_field": "conversation",
+        "one_allowed_collections": null,
+        "one_collection": "conversations",
+        "one_collection_field": null,
+        "one_deselect_action": "nullify",
+        "one_field": null,
+        "sort_field": null
+      },
+      "schema": {
+        "table": "reports",
+        "column": "conversation",
+        "foreign_key_table": "conversations",
+        "foreign_key_column": "id",
+        "constraint_name": "reports_conversation_foreign",
+        "on_update": "NO ACTION",
+        "on_delete": "NO ACTION"
+      }
+    },
+    {
+      "collection": "reports",
+      "field": "resolved_by",
+      "related_collection": "members",
+      "meta": {
+        "junction_field": null,
+        "many_collection": "reports",
+        "many_field": "resolved_by",
+        "one_allowed_collections": null,
+        "one_collection": "members",
+        "one_collection_field": null,
+        "one_deselect_action": "nullify",
+        "one_field": null,
+        "sort_field": null
+      },
+      "schema": {
+        "table": "reports",
+        "column": "resolved_by",
+        "foreign_key_table": "members",
+        "foreign_key_column": "id",
+        "constraint_name": "reports_resolved_by_foreign",
         "on_update": "NO ACTION",
         "on_delete": "NO ACTION"
       }

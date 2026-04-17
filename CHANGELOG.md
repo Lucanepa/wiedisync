@@ -2,6 +2,16 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.11.2] — 2026-04-17
+
+### Fixes
+
+- **Anonymous 403 spam on `/events`** — `EventDetailModal`, `EventForm` and `ParticipationRosterModal` now gate the `event_sessions` / `absences` / staff-participation fetches on `!!user`, so logged-out visitors no longer flood the error log with "You don't have permission to access collection …".
+- **Admin Daten-Explorer — scorer-delegations 403** — `useRelatedEntities` requested `original_scorer` / `delegated_to` (fields that don't exist on `scorer_delegations`). Query now uses the real schema: `from_member`, `to_member`, `status`, `role`, `date_created`. Rendering already expected these names.
+- **Admin Vereinsnews sort** — admin list sort tiebreaker changed from `-date_created` to `-id` to sidestep a Directus permission edge case on `announcements.date_created`.
+- **Empty `client_error` payload floods** — `sendToErrorLog` in `src/lib/sentry.ts` now short-circuits when the entry has no `error` / `stack` / `type` / `responseBody`. The `/client-error` backend endpoint in `kscw-endpoints` also rejects empty payloads (defence in depth). Fixes ~26/day null-field log entries.
+- **ParticipationRosterModal — memberIds dep stability** — extracted a `memberIdsKey` string so the absences `useCallback` + `useEffect` chain has a stable primitive dep, reducing a potential render-loop vector tied to today's "Maximum call stack size exceeded" crash on `/events`.
+
 ## [3.11.1] — 2026-04-17
 
 ### Fixes

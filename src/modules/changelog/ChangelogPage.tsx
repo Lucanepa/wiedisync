@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.11.1'
+const APP_VERSION = '3.11.2'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,22 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.11.2',
+    date: '2026-04-17',
+    sections: [
+      {
+        title: 'Fixes',
+        items: [
+          'Error log noise: anonymous visitors on /events were triggering 403 spam by fetching event_sessions / absences / staff participations. All those queries are now gated on login state.',
+          'Admin Daten-Explorer: the scorer-delegations related section was 403-ing because the query asked for fields that don\'t exist on the collection (original_scorer / delegated_to). It now uses the real schema (from_member / to_member / status / role).',
+          'Admin Vereinsnews list: sort tiebreaker switched from -date_created to -id to avoid a Directus permission edge case on the announcements collection.',
+          'Client-error reporter no longer posts empty payloads to the backend log — both the frontend reporter and the backend endpoint now reject entries that carry no actual error data.',
+          'ParticipationRosterModal: stabilised memberIds dependency to avoid a render-loop risk that could (rarely) contribute to a "Maximum call stack size exceeded" crash on /events.',
+        ],
+      },
+    ],
+  },
   {
     version: '3.11.1',
     date: '2026-04-17',

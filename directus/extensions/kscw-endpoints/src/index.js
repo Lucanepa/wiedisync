@@ -198,6 +198,9 @@ export default {
         const body = req.body
         if (!body || typeof body !== 'object') return res.status(400).end()
 
+        // Reject empty payloads (no actual error data) — they only produce null-field noise
+        if (!body.error && !body.stack && !body.type && !body.responseBody) return res.status(204).end()
+
         // Write to JSONL — add userId from auth if available, project tag for multi-app support
         writeErrorLog({
           level: 'error',

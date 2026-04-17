@@ -67,7 +67,7 @@ export default function AnnouncementsPage() {
     setIsLoading(true)
     try {
       const result = await fetchItems<Announcement>('announcements', {
-        sort: ['-pinned', '-published_at', '-date_created'],
+        sort: ['-pinned', '-published_at', '-id'],
         limit: 100,
       })
       setItems(result)

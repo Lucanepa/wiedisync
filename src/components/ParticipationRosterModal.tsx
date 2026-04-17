@@ -111,7 +111,7 @@ export default function ParticipationRosterModal({
     return map
   }, [teams])
 
-  const { isCoachOf, teamResponsibleIds } = useAuth()
+  const { user, isCoachOf, teamResponsibleIds } = useAuth()
   const { effectiveIsAdmin } = useAdminMode()
 
   const isStaffForActivity = teamIds.some(id => isCoachOf(id) || teamResponsibleIds.includes(id))
@@ -239,7 +239,7 @@ export default function ParticipationRosterModal({
 
   // Fetch staff participations (coaches/team_responsible who aren't in member_teams)
   useEffect(() => {
-    if (!open || !activityId || isClubWide) return
+    if (!user || !open || !activityId || isClubWide) return
     fetchAllItems<Participation>('participations', {
         filter: {
           _and: [
@@ -281,8 +281,9 @@ export default function ParticipationRosterModal({
   }, [hasSessionMode, activeSessionTab, eventSessions, memberList, allParticipations])
 
   // Fetch absences overlapping activity date (same pattern as AttendanceSheet)
+  const memberIdsKey = memberIds.join(',')
   const fetchAbsences = useCallback(async () => {
-    if (!activityDate || memberIds.length === 0) return
+    if (!user || !activityDate || memberIds.length === 0) return
     try {
       const dateStr = activityDate.split(' ')[0]
       const result = await fetchAllItems<Absence>('absences', {
@@ -299,11 +300,11 @@ export default function ParticipationRosterModal({
       // ignore
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activityDate, memberIds.join(',')])
+  }, [user, activityDate, memberIdsKey])
 
   useEffect(() => {
-    if (open && activityDate) fetchAbsences()
-  }, [open, fetchAbsences, activityDate])
+    if (user && open && activityDate) fetchAbsences()
+  }, [user, open, fetchAbsences, activityDate])
 
   // Members who are both players (in memberList) and staff (coach/TR) should be
   // treated as players — their is_staff participation counts as player participation.

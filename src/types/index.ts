@@ -505,6 +505,48 @@ export interface Notification extends BaseRecord {
   read: boolean
 }
 
+// ── Announcements (Vereinsnews) ────────────────────────────────────
+
+export type AnnouncementLocale = 'de' | 'en' | 'fr' | 'gsw' | 'it'
+
+export interface AnnouncementTranslation {
+  title: string
+  /** HTML body (sanitized at render via RichText component) */
+  body: string
+}
+
+export type AnnouncementAudienceType = 'all' | 'sport' | 'teams' | 'roles'
+
+export interface Announcement extends BaseRecord {
+  /** UUID of directus_files (hero image), or null */
+  image: string | null
+  /** Optional CTA link (external or internal). */
+  link: string
+  /** Sticky to top of feed when true. */
+  pinned: boolean
+  /** ISO timestamp; null = draft (not visible to members). */
+  published_at: string | null
+  /** Optional auto-hide timestamp. */
+  expires_at: string | null
+  audience_type: AnnouncementAudienceType
+  /** When audience_type='sport' */
+  audience_sport: 'volleyball' | 'basketball' | null
+  /** When audience_type='teams' (schema-ready, hidden in v1 admin UI). */
+  audience_teams: string[]
+  /** When audience_type='roles' (schema-ready, hidden in v1 admin UI). */
+  audience_roles: string[]
+  /** Per-post toggle: also send web push on publish. */
+  notify_push: boolean
+  /** Per-post toggle: also send email on publish. */
+  notify_email: boolean
+  /** M2O → members.id (autofill). */
+  created_by: string | null
+  /** Set by backend hook after push/email fanout — prevents re-sending on edit. */
+  fanout_sent_at: string | null
+  /** Per-locale title + HTML body. German required. */
+  translations: Partial<Record<AnnouncementLocale, AnnouncementTranslation>>
+}
+
 export type TaskCategory = 'setup' | 'equipment' | 'food' | 'firstAid' | 'other'
 
 export interface Task extends BaseRecord {

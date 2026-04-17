@@ -5,6 +5,7 @@ import RichText from '../../../components/RichText'
 import { assetUrl } from '../../../lib/api'
 import { pickTranslation } from '../../../hooks/useAnnouncements'
 import { formatDate } from '../../../utils/dateHelpers'
+import { isSafeAppLink } from '../../../utils/sanitizeUrl'
 import type { Announcement } from '../../../types'
 
 interface Props {
@@ -26,9 +27,11 @@ export default function AnnouncementDetailModal({ announcement, onClose }: Props
 
   const publishedDate = announcement.published_at ? formatDate(announcement.published_at) : ''
 
+  const safeLink = isSafeAppLink(announcement.link) ? announcement.link : null
   const linkLabel = (() => {
+    if (!safeLink) return t('openLink', { defaultValue: 'Mehr erfahren' })
     try {
-      const u = new URL(announcement.link, window.location.origin)
+      const u = new URL(safeLink, window.location.origin)
       return u.hostname.replace(/^www\./, '')
     } catch {
       return t('openLink', { defaultValue: 'Mehr erfahren' })
@@ -59,10 +62,10 @@ export default function AnnouncementDetailModal({ announcement, onClose }: Props
 
         {tr.body && <RichText html={tr.body} />}
 
-        {announcement.link && (
+        {safeLink && (
           <a
-            href={announcement.link}
-            target={announcement.link.startsWith('http') ? '_blank' : undefined}
+            href={safeLink}
+            target={safeLink.startsWith('http') ? '_blank' : undefined}
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700"
           >

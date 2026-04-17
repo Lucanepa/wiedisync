@@ -7,6 +7,7 @@ import {
 import { useAuth } from '../../hooks/useAuth'
 import { fetchItems, createRecord, updateRecord, deleteRecord, assetUrl, API_URL, getAccessToken } from '../../lib/api'
 import { pickTranslation } from '../../hooks/useAnnouncements'
+import { isSafeAppLink } from '../../utils/sanitizeUrl'
 import Modal from '../../components/Modal'
 import RichTextEditor from '../../components/RichTextEditor'
 import LoadingSpinner from '../../components/LoadingSpinner'
@@ -147,6 +148,22 @@ export default function AnnouncementsPage() {
       toast.error(t('sportRequired', { defaultValue: 'Sport wählen' }))
       return
     }
+    const trimmedLink = form.link.trim()
+    if (trimmedLink && !isSafeAppLink(trimmedLink)) {
+      toast.error(t('linkInvalid', { defaultValue: 'Link muss mit https:// oder / beginnen' }))
+      return
+    }
+
+    // Mass-email confirmation guard — audience=all + email send would hit ~200 members.
+    // Single point of friction modeled on the /events/test-email CLAUDE.md guideline.
+    if (form.notify_email && form.audience_type === 'all' && (form.publishNow || form.published_at)) {
+      const ok = window.confirm(
+        t('confirmMassEmail', {
+          defaultValue: 'Diese Vereinsnews wird per E-Mail an ALLE aktiven Mitglieder versendet. Fortfahren?',
+        }),
+      )
+      if (!ok) return
+    }
 
     // Strip empty translations (where both title and body are blank)
     const cleanedTranslations: Partial<Record<AnnouncementLocale, AnnouncementTranslation>> = {}
@@ -159,7 +176,7 @@ export default function AnnouncementsPage() {
 
     const payload: Record<string, unknown> = {
       image: form.image,
-      link: form.link.trim(),
+      link: trimmedLink,
       pinned: form.pinned,
       published_at: form.publishNow
         ? (form.published_at && new Date(form.published_at) <= new Date() ? form.published_at : new Date().toISOString())

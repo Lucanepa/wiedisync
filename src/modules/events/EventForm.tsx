@@ -115,7 +115,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
     filter: event ? { event: { _eq: event.id } } : { id: { _eq: -1 } },
     sort: ['sort_order', 'date', 'start_time'],
     limit: 100,
-    enabled: !!event,
+    enabled: !!user && !!event,
   })
   const existingSessions = existingSessionsRaw ?? []
 

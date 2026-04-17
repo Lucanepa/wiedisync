@@ -73,7 +73,7 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
     filter: event ? { event: { _eq: event.id } } : undefined,
     sort: ['sort_order', 'date', 'start_time'],
     limit: 100,
-    enabled: !!event && !!hasSessionMode,
+    enabled: !!user && !!event && !!hasSessionMode,
   })
   const sessions = sessionsRaw ?? []
 

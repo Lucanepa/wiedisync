@@ -74,7 +74,7 @@ const QUERIES: Record<
   scorerDelegations: (_parent, id) => ({
     collection: 'scorer_delegations',
     filter: { game: { _eq: id } },
-    fields: ['id', 'game', 'original_scorer', 'delegated_to', 'date_created'],
+    fields: ['id', 'game', 'from_member', 'to_member', 'status', 'role', 'date_created'],
   }),
 }
 

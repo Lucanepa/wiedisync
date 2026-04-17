@@ -348,6 +348,9 @@ function sendToErrorLog(entry: Record<string, unknown>) {
     // Skip in local dev
     if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) return
 
+    // Skip empty entries — backend would log them as null-field noise
+    if (!entry.error && !entry.stack && !entry.type && !entry.responseBody) return
+
     const token = (() => {
       try {
         const raw = localStorage.getItem('directus_auth') || sessionStorage.getItem('directus_auth')

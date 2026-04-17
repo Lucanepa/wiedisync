@@ -1021,9 +1021,9 @@ export default {
         // Notify coaches of the requested team
         const memberId = String(member.id || member)
         try {
-          const teamRow = await database('teams').where('id', team).select('name', 'slug').first()
+          const teamRow = await database('teams').where('id', team).select('name').first()
           const teamName = teamRow?.name || `Team ${team}`
-          const teamSlug = teamRow?.slug || ''
+          const teamUrlPath = encodeURIComponent(teamName)
           const coaches = await database('teams_coaches')
             .where('teams_id', team)
             .select('members_id')
@@ -1040,7 +1040,7 @@ export default {
               title: 'member_join_request',
               body: JSON.stringify({ memberName: `${first_name} ${last_name}`, teamName }),
               activity_type: 'team',
-              activity_id: teamSlug || String(team),
+              activity_id: teamName,
               team: team,
               read: false,
             }))
@@ -1067,7 +1067,7 @@ export default {
                 }</div>` +
                 buildAlertBox('info', isGerman ? 'Aktion erforderlich' : 'Action required',
                   isGerman ? 'Bitte genehmige oder lehne die Anfrage auf der Teamseite ab.' : 'Please approve or reject the request on the team page.') +
-                `<div style="text-align:center;margin-top:20px"><a href="${FRONTEND_URL}/teams/${teamSlug}" style="display:inline-block;padding:12px 24px;background:#4A55A2;color:#fff;text-decoration:none;border-radius:8px;font-weight:600">${isGerman ? 'Zur Teamseite' : 'Go to team page'}</a></div>`
+                `<div style="text-align:center;margin-top:20px"><a href="${FRONTEND_URL}/teams/${teamUrlPath}" style="display:inline-block;padding:12px 24px;background:#4A55A2;color:#fff;text-decoration:none;border-radius:8px;font-weight:600">${isGerman ? 'Zur Teamseite' : 'Go to team page'}</a></div>`
               const html = buildEmailLayout(bodyHtml, {
                 title: isGerman ? 'Neue Beitrittsanfrage' : 'New join request',
                 subtitle: `WiediSync — ${teamName}`,
@@ -1076,7 +1076,7 @@ export default {
                 to: coach.email,
                 subject,
                 html,
-                text: `${first_name} ${last_name} → ${teamName}\n${FRONTEND_URL}/teams/${teamSlug}`,
+                text: `${first_name} ${last_name} → ${teamName}\n${FRONTEND_URL}/teams/${teamUrlPath}`,
               }).catch(e => log.error(`register notify email: ${e.message}`))
             }
 
@@ -1085,7 +1085,7 @@ export default {
               sendPushToMember(database, rid,
                 `Neue Beitrittsanfrage: ${first_name} ${last_name}`,
                 `${first_name} ${last_name} möchte ${teamName} beitreten`,
-                `${FRONTEND_URL}/teams/${teamSlug}`, 'team', log).catch(() => {})
+                `${FRONTEND_URL}/teams/${teamUrlPath}`, 'team', log).catch(() => {})
             }
           }
         } catch (notifErr) {

@@ -42,4 +42,5 @@ export default {
   anmeldungen: 'Amäldigä',
   guide: 'Aleitig',
   adminExplorer: 'Dateni-Explorer',
+  announcements: 'Vereinsnews',
 } as const

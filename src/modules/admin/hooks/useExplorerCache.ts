@@ -89,7 +89,11 @@ export function useExplorerCache(scope: ExplorerScope) {
         }),
         fetchAllItems<Game>('games', {
           filter: { _and: [{ date: { _gte: cutoff } }, ...(f.games ? [f.games] : [])] },
-          fields: ['id', 'kscw_team', 'home_team', 'away_team', 'date', 'time', 'hall', 'home_score', 'away_score'],
+          fields: [
+            'id', 'kscw_team', 'home_team', 'away_team', 'date', 'time', 'hall', 'home_score', 'away_score',
+            'scorer_member', 'scoreboard_member', 'scorer_scoreboard_member',
+            'bb_scorer_member', 'bb_timekeeper_member', 'bb_24s_official',
+          ],
           sort: ['date'],
         }),
         fetchAllItems<{ member: string | number; team: string | number }>('member_teams', {

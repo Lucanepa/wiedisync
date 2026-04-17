@@ -1,0 +1,60 @@
+export default {
+  pageTitle: 'Vereinsnews',
+  newAnnouncement: 'Neui News',
+  empty: 'Na keini Vereinsnews. Druck „Neui News" zum aafanga.',
+  loadError: 'Han d\'Vereinsnews nöd chöne lade',
+
+  createTitle: 'Neui Vereinsnews',
+  editTitle: 'Vereinsnews bearbeite',
+  image: 'Titelbild',
+  uploadImage: 'Bild ufelade',
+  titlePlaceholder: 'Titel',
+  bodyPlaceholder: 'Text…',
+  link: 'Link (optional)',
+
+  audience: 'Für wer',
+  audienceLabel: 'Für wer',
+  audienceAll: 'All Mitglieder',
+  audienceSport: 'Ei Sportart',
+  sport: 'Sportart',
+  volleyball: 'Volleyball',
+  basketball: 'Basketball',
+
+  pin: 'Aaheftä (zoberscht id News-Charte)',
+  pinned: 'Aagheftet',
+  expires: 'Ablauf-Datum (optional)',
+
+  publish: 'Veröffentliche (gli sichtbar)',
+  notifyPush: 'Push-Mitteilig schicke',
+  notifyEmail: 'E-Mail schicke',
+
+  statusPublished: 'Veröffentlicht',
+  statusDraft: 'Entwurf',
+  statusExpired: 'Abglofe',
+  noTitle: 'Kei Titel',
+
+  titleRequired: 'Dütsche Titel isch Pflicht',
+  sportRequired: 'Sport useswähle',
+  imageType: 'Nur PNG, JPEG oder WebP erlaubt',
+  imageSize: 'S\'Bild isch z\'gross (max 5 MB)',
+  imageUploaded: 'Bild hochglade',
+  imageUploadError: 'Upload het nöd funktioniert',
+  created: 'Vereinsnews erstellt',
+  updated: 'Vereinsnews aktualisiert',
+  deleted: 'Vereinsnews glöscht',
+  saveError: 'Het nöd chöne speichere',
+  deleteError: 'Het nöd chöne lösche',
+
+  cancel: 'Abbreche',
+  save: 'Speichere',
+  create: 'Erstelle',
+  delete: 'Lösche',
+  confirmDeleteTitle: 'Vereinsnews lösche?',
+  confirmDeleteBody: 'Das chasch nüm rückgängig mache.',
+
+  openLink: 'Mehr erfahre',
+  loadMore: 'Meh azeige',
+  signInRequired: 'Bitte alogge zum d\'News z\'gseh.',
+
+  emailSubjectPrefix: 'Vereinsnews',
+} as const

@@ -43,4 +43,5 @@ export default {
   anmeldungen: 'Registrations',
   guide: 'Guide',
   adminExplorer: 'Data Explorer',
+  announcements: 'Club News',
 } as const

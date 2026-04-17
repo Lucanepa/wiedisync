@@ -1,0 +1,60 @@
+export default {
+  pageTitle: 'Notizie del club',
+  newAnnouncement: 'Nuovo post',
+  empty: 'Nessuna notizia ancora. Clicca "Nuovo post" per iniziare.',
+  loadError: 'Impossibile caricare le notizie',
+
+  createTitle: 'Nuova notizia del club',
+  editTitle: 'Modifica notizia',
+  image: 'Immagine di copertina',
+  uploadImage: 'Carica immagine',
+  titlePlaceholder: 'Titolo',
+  bodyPlaceholder: 'Testo…',
+  link: 'Link (opzionale)',
+
+  audience: 'Destinatari',
+  audienceLabel: 'Destinatari',
+  audienceAll: 'Tutti i membri',
+  audienceSport: 'Uno sport',
+  sport: 'Sport',
+  volleyball: 'Pallavolo',
+  basketball: 'Pallacanestro',
+
+  pin: 'Fissa in alto nella scheda Notizie',
+  pinned: 'Fissato',
+  expires: 'Data di scadenza (opzionale)',
+
+  publish: 'Pubblica (visibile subito)',
+  notifyPush: 'Invia notifica push',
+  notifyEmail: 'Invia email',
+
+  statusPublished: 'Pubblicato',
+  statusDraft: 'Bozza',
+  statusExpired: 'Scaduto',
+  noTitle: 'Nessun titolo',
+
+  titleRequired: 'Il titolo tedesco è obbligatorio',
+  sportRequired: 'Scegli uno sport',
+  imageType: 'Solo PNG, JPEG o WebP consentiti',
+  imageSize: 'Immagine troppo grande (max 5 MB)',
+  imageUploaded: 'Immagine caricata',
+  imageUploadError: 'Caricamento fallito',
+  created: 'Notizia creata',
+  updated: 'Notizia aggiornata',
+  deleted: 'Notizia eliminata',
+  saveError: 'Salvataggio fallito',
+  deleteError: 'Eliminazione fallita',
+
+  cancel: 'Annulla',
+  save: 'Salva',
+  create: 'Crea',
+  delete: 'Elimina',
+  confirmDeleteTitle: 'Eliminare la notizia?',
+  confirmDeleteBody: 'Questa azione è irreversibile.',
+
+  openLink: 'Scopri di più',
+  loadMore: 'Carica altri',
+  signInRequired: 'Accedi per vedere le notizie.',
+
+  emailSubjectPrefix: 'Notizie del club',
+} as const

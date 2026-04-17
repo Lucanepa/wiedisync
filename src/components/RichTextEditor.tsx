@@ -1,0 +1,94 @@
+import { useEditor, EditorContent } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
+import Link from '@tiptap/extension-link'
+import Placeholder from '@tiptap/extension-placeholder'
+import { Bold, Italic, List, ListOrdered, Quote, Link as LinkIcon, Heading2, Heading3 } from 'lucide-react'
+import { useEffect, useCallback } from 'react'
+
+interface Props {
+  value: string
+  onChange: (html: string) => void
+  placeholder?: string
+  minHeight?: string
+}
+
+/**
+ * TipTap-based rich-text editor producing HTML compatible with the
+ * RichText sanitisation whitelist (p, br, strong, em, u, s, a, ul, ol,
+ * li, h1-h3, blockquote, span).
+ */
+export default function RichTextEditor({ value, onChange, placeholder, minHeight = '8rem' }: Props) {
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        heading: { levels: [2, 3] },
+      }),
+      Link.configure({
+        openOnClick: false,
+        autolink: true,
+        HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' },
+      }),
+      Placeholder.configure({ placeholder: placeholder ?? '' }),
+    ],
+    content: value || '',
+    onUpdate: ({ editor }) => {
+      const html = editor.getHTML()
+      onChange(html === '<p></p>' ? '' : html)
+    },
+    editorProps: {
+      attributes: {
+        class: 'prose prose-sm max-w-none dark:prose-invert focus:outline-none px-3 py-2',
+        style: `min-height: ${minHeight}`,
+      },
+    },
+  })
+
+  useEffect(() => {
+    if (!editor) return
+    const current = editor.getHTML()
+    const next = value || ''
+    if (current !== next && next !== '<p></p>') {
+      editor.commands.setContent(next, false)
+    }
+  }, [value, editor])
+
+  const setLink = useCallback(() => {
+    if (!editor) return
+    const previous = editor.getAttributes('link').href as string | undefined
+    const url = window.prompt('Link URL (https://… or /path)', previous ?? '')
+    if (url === null) return
+    if (url === '') {
+      editor.chain().focus().extendMarkRange('link').unsetLink().run()
+      return
+    }
+    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+  }, [editor])
+
+  if (!editor) return null
+
+  const btn = (active: boolean) =>
+    `inline-flex h-8 w-8 items-center justify-center rounded text-sm transition-colors ${
+      active
+        ? 'bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300'
+        : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+    }`
+
+  return (
+    <div className="overflow-hidden rounded-md border border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-900">
+      <div className="flex flex-wrap items-center gap-0.5 border-b border-gray-200 bg-gray-50 px-1 py-1 dark:border-gray-700 dark:bg-gray-800">
+        <button type="button" onClick={() => editor.chain().focus().toggleBold().run()} className={btn(editor.isActive('bold'))} aria-label="Bold"><Bold className="h-4 w-4" /></button>
+        <button type="button" onClick={() => editor.chain().focus().toggleItalic().run()} className={btn(editor.isActive('italic'))} aria-label="Italic"><Italic className="h-4 w-4" /></button>
+        <span className="mx-1 h-5 w-px bg-gray-300 dark:bg-gray-600" />
+        <button type="button" onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} className={btn(editor.isActive('heading', { level: 2 }))} aria-label="Heading 2"><Heading2 className="h-4 w-4" /></button>
+        <button type="button" onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} className={btn(editor.isActive('heading', { level: 3 }))} aria-label="Heading 3"><Heading3 className="h-4 w-4" /></button>
+        <span className="mx-1 h-5 w-px bg-gray-300 dark:bg-gray-600" />
+        <button type="button" onClick={() => editor.chain().focus().toggleBulletList().run()} className={btn(editor.isActive('bulletList'))} aria-label="Bullet list"><List className="h-4 w-4" /></button>
+        <button type="button" onClick={() => editor.chain().focus().toggleOrderedList().run()} className={btn(editor.isActive('orderedList'))} aria-label="Numbered list"><ListOrdered className="h-4 w-4" /></button>
+        <button type="button" onClick={() => editor.chain().focus().toggleBlockquote().run()} className={btn(editor.isActive('blockquote'))} aria-label="Quote"><Quote className="h-4 w-4" /></button>
+        <span className="mx-1 h-5 w-px bg-gray-300 dark:bg-gray-600" />
+        <button type="button" onClick={setLink} className={btn(editor.isActive('link'))} aria-label="Link"><LinkIcon className="h-4 w-4" /></button>
+      </div>
+      <EditorContent editor={editor} />
+    </div>
+  )
+}

@@ -406,6 +406,20 @@ async function main() {
   await setPerm(MEMBER_POLICY, 'notifications', 'update', OWN_MEMBER)
   await setPerm(MEMBER_POLICY, 'notifications', 'delete', OWN_MEMBER)
 
+  // Announcements (Vereinsnews) — read only published, non-expired posts.
+  // Audience matching (sport / teams / roles) is enforced client-side in
+  // useAnnouncements; the server-side filter just prevents draft leakage.
+  await setPermRead(MEMBER_POLICY, 'announcements', {
+    _and: [
+      { published_at: { _nnull: true } },
+      { published_at: { _lte: '$NOW' } },
+      { _or: [
+        { expires_at: { _null: true } },
+        { expires_at: { _gt: '$NOW' } },
+      ] },
+    ],
+  })
+
   // Push subscriptions — CRUD own
   await setPermRead(MEMBER_POLICY, 'push_subscriptions', OWN_MEMBER)
   await setPerm(MEMBER_POLICY, 'push_subscriptions', 'create')
@@ -541,6 +555,9 @@ async function main() {
   // Notifications — create (coaches send notifications)
   await setPerm(LEADER_POLICY, 'notifications', 'create')
 
+  // Announcements — read all (drafts included, for visibility into pipeline)
+  await setPermRead(LEADER_POLICY, 'announcements')
+
   // User logs — read all
   await setPermRead(LEADER_POLICY, 'user_logs')
 
@@ -567,6 +584,7 @@ async function main() {
     'poll_votes', 'team_requests', 'push_subscriptions',
     'game_scheduling_seasons', 'game_scheduling_slots',
     'game_scheduling_opponents', 'game_scheduling_bookings',
+    'announcements',
   ]
   for (const col of VORSTAND_READ_ALL) {
     await setPermRead(VORSTAND_POLICY, col)
@@ -593,6 +611,7 @@ async function main() {
     'game_scheduling_seasons', 'game_scheduling_slots',
     'game_scheduling_opponents', 'game_scheduling_bookings',
     'query_templates', 'sv_vm_check',
+    'announcements',
     'directus_files',
   ]
 

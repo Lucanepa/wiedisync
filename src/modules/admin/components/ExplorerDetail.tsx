@@ -86,7 +86,7 @@ export default function ExplorerDetail({ cache, type, id, onSelect, onBack }: Pr
       {type === 'members' && renderMember(entity as never, cache, onNavigate, related, t, showRestrictedSections)}
       {type === 'teams' && renderTeam(entity as never, cache, onNavigate, t)}
       {type === 'events' && renderEvent(entity as never, cache, onNavigate, related, t)}
-      {type === 'trainings' && renderTraining(entity as never, cache, onNavigate, related, t, showRestrictedSections)}
+      {type === 'trainings' && renderTraining(entity as never, cache, onNavigate, related, t)}
       {type === 'games' && renderGame(entity as never, cache, onNavigate, related, t, showRestrictedSections)}
     </div>
   )
@@ -191,12 +191,11 @@ function renderMember(
     .filter((x): x is NonNullable<typeof x> => x !== null)
 
   const memberSections: SectionKey[] = showRestrictedSections
-    ? ['participations', 'absences', 'schreibereinsaetze', 'refereeExpenses']
+    ? ['participations', 'absences', 'refereeExpenses']
     : ['participations', 'absences']
   const sectionLabelKey: Record<SectionKey, string> = {
     participations: 'explorerSectionParticipations',
     absences: 'explorerSectionAbsences',
-    schreibereinsaetze: 'explorerSectionSchreibereinsaetze',
     refereeExpenses: 'explorerSectionRefereeExpenses',
     scorerDelegations: 'explorerSectionScorerDelegations',
   }
@@ -241,7 +240,6 @@ function renderMember(
           >
             {s === 'participations' && renderMemberParticipationsTable(state?.data ?? [], cache, onNavigate, teamName, t)}
             {s === 'absences' && renderAbsencesTable(state?.data ?? [], t)}
-            {s === 'schreibereinsaetze' && renderSchreibereinsaetzeTable(state?.data ?? [], cache, onNavigate, t)}
             {s === 'refereeExpenses' && renderRefereeExpensesTable(state?.data ?? [], t)}
           </ExplorerSectionCard>
         )
@@ -310,51 +308,6 @@ function renderAbsencesTable(rows: unknown[], t: TFn) {
           formatShortDate(r.end_date) || '—',
           reason,
         ]
-      })}
-    />
-  )
-}
-
-function renderSchreibereinsaetzeTable(
-  rows: unknown[],
-  cache: CacheShape,
-  onNavigate: (type: BucketKey, id: string) => void,
-  t: TFn,
-) {
-  const teamName = (tid: string) => cache.teams.find((x) => String(x.id) === tid)?.name ?? tid
-  return (
-    <CompactTable
-      cols={[
-        { key: 'date', label: t('explorerFieldDate') },
-        { key: 'activity', label: t('explorerColActivity') },
-        { key: 'role', label: t('explorerColRole') },
-      ]}
-      rows={rows.map((row) => {
-        const r = row as { game?: unknown; training?: unknown; role?: string; date?: string }
-        let activityCell: React.ReactNode = '—'
-        let dateStr = formatShortDate(r.date) || '—'
-
-        if (r.game) {
-          const gId = String(r.game)
-          const g = cache.games.find((x) => String(x.id) === gId)
-          if (g) {
-            activityCell = <NavBtn type="games" id={gId} label={gameLabel(g, teamName)} onClick={onNavigate} />
-            if (!r.date) dateStr = formatShortDate(g.date) || '—'
-          } else {
-            activityCell = `#${gId}`
-          }
-        } else if (r.training) {
-          const tId = String(r.training)
-          const tr = cache.trainings.find((x) => String(x.id) === tId)
-          if (tr) {
-            activityCell = <NavBtn type="trainings" id={tId} label={trainingLabel(tr, teamName)} onClick={onNavigate} />
-            if (!r.date) dateStr = formatShortDate(tr.date) || '—'
-          } else {
-            activityCell = `#${tId}`
-          }
-        }
-
-        return [dateStr, activityCell, r.role ?? '—']
       })}
     />
   )
@@ -573,16 +526,11 @@ function renderTraining(
   onNavigate: Props['onSelect'],
   related: ReturnType<typeof useRelatedEntities>,
   t: TFn,
-  showRestrictedSections: boolean,
 ) {
   const team = cache.teams.find((tm) => String(tm.id) === String(tr.team))
-  const sectionKeys: SectionKey[] = showRestrictedSections
-    ? ['participations', 'schreibereinsaetze']
-    : ['participations']
   const sectionLabelKey: Record<SectionKey, string> = {
     participations: 'explorerSectionParticipations',
     absences: 'explorerSectionAbsences',
-    schreibereinsaetze: 'explorerSectionSchreibereinsaetze',
     refereeExpenses: 'explorerSectionRefereeExpenses',
     scorerDelegations: 'explorerSectionScorerDelegations',
   }
@@ -599,7 +547,7 @@ function renderTraining(
         <Field label={t('explorerFieldTime')}>{`${(String(tr.start_time ?? '')).slice(0, 5)} – ${(String(tr.end_time ?? '')).slice(0, 5)}`}</Field>
         <Field label={t('explorerFieldHall')}>{String(tr.hall ?? '—')}</Field>
       </div>
-      {sectionKeys.map((s) => {
+      {(['participations'] as SectionKey[]).map((s) => {
         const state = related.get('trainings', String(tr.id), s)
         return (
           <ExplorerSectionCard
@@ -610,9 +558,7 @@ function renderTraining(
             isLoading={state?.loading}
             error={state?.error}
           >
-            {s === 'participations'
-              ? renderGroupedParticipations(state?.data ?? [], cache, onNavigate, t)
-              : renderSchreibereinsaetzeTable(state?.data ?? [], cache, onNavigate, t)}
+            {renderGroupedParticipations(state?.data ?? [], cache, onNavigate, t)}
           </ExplorerSectionCard>
         )
       })}
@@ -632,15 +578,34 @@ function renderGame(
   const home = cache.teams.find((tm) => String(tm.id) === String(g.home_team))
   const away = cache.teams.find((tm) => String(tm.id) === String(g.away_team))
   const sectionKeys: SectionKey[] = showRestrictedSections
-    ? ['participations', 'schreibereinsaetze', 'scorerDelegations']
+    ? ['participations', 'scorerDelegations']
     : ['participations']
   const sectionLabelKey: Record<SectionKey, string> = {
     participations: 'explorerSectionParticipations',
     absences: 'explorerSectionAbsences',
-    schreibereinsaetze: 'explorerSectionSchreibereinsaetze',
     refereeExpenses: 'explorerSectionRefereeExpenses',
     scorerDelegations: 'explorerSectionScorerDelegations',
   }
+
+  // Scoring duties — fields on the game record itself
+  const DUTY_FIELDS: { field: string; labelKey: string }[] = [
+    { field: 'scorer_member',           labelKey: 'explorerDutyScorer' },
+    { field: 'scoreboard_member',       labelKey: 'explorerDutyScoreboard' },
+    { field: 'scorer_scoreboard_member',labelKey: 'explorerDutyScorerScoreboard' },
+    { field: 'bb_scorer_member',        labelKey: 'explorerDutyBbScorer' },
+    { field: 'bb_timekeeper_member',    labelKey: 'explorerDutyBbTimekeeper' },
+    { field: 'bb_24s_official',         labelKey: 'explorerDutyBb24s' },
+  ]
+  const dutyRows = DUTY_FIELDS.flatMap(({ field, labelKey }) => {
+    const raw = g[field]
+    if (raw == null || raw === '' || raw === 0) return []
+    const memberId = String(raw)
+    const member = cache.members.find((m) => String(m.id) === memberId)
+    const memberCell = member
+      ? <NavBtn type="members" id={memberId} label={memberLabel(member)} onClick={onNavigate} />
+      : <span>{`#${memberId}`}</span>
+    return [[t(labelKey), memberCell] as React.ReactNode[]]
+  })
 
   return (
     <>
@@ -658,6 +623,20 @@ function renderGame(
           {`${String(g.home_score ?? '-')} : ${String(g.away_score ?? '-')}`}
         </Field>
       </div>
+
+      {/* Scoring duties — inline from game record fields */}
+      {dutyRows.length > 0 && (
+        <ExplorerSectionCard title={t('explorerSectionScoringDuties')} lazy={false}>
+          <CompactTable
+            cols={[
+              { key: 'role', label: t('explorerColRole') },
+              { key: 'member', label: t('explorerColName') },
+            ]}
+            rows={dutyRows}
+          />
+        </ExplorerSectionCard>
+      )}
+
       {sectionKeys.map((s) => {
         const state = related.get('games', String(g.id), s)
         return (
@@ -670,7 +649,6 @@ function renderGame(
             error={state?.error}
           >
             {s === 'participations' && renderGroupedParticipations(state?.data ?? [], cache, onNavigate, t)}
-            {s === 'schreibereinsaetze' && renderSchreibereinsaetzeTable(state?.data ?? [], cache, onNavigate, t)}
             {s === 'scorerDelegations' && renderScorerDelegationsTable(state?.data ?? [], cache, onNavigate, t)}
           </ExplorerSectionCard>
         )

@@ -1,0 +1,60 @@
+export default {
+  pageTitle: 'Club News',
+  newAnnouncement: 'New post',
+  empty: 'No club news yet. Click "New post" to get started.',
+  loadError: 'Could not load club news',
+
+  createTitle: 'New club news',
+  editTitle: 'Edit club news',
+  image: 'Hero image',
+  uploadImage: 'Upload image',
+  titlePlaceholder: 'Title',
+  bodyPlaceholder: 'Text…',
+  link: 'Link (optional)',
+
+  audience: 'Audience',
+  audienceLabel: 'Audience',
+  audienceAll: 'All members',
+  audienceSport: 'A sport',
+  sport: 'Sport',
+  volleyball: 'Volleyball',
+  basketball: 'Basketball',
+
+  pin: 'Pin to top of News card',
+  pinned: 'Pinned',
+  expires: 'Expiry date (optional)',
+
+  publish: 'Publish (visible immediately)',
+  notifyPush: 'Send push notification',
+  notifyEmail: 'Send email',
+
+  statusPublished: 'Published',
+  statusDraft: 'Draft',
+  statusExpired: 'Expired',
+  noTitle: 'No title',
+
+  titleRequired: 'German title is required',
+  sportRequired: 'Pick a sport',
+  imageType: 'Only PNG, JPEG or WebP allowed',
+  imageSize: 'Image too large (max 5 MB)',
+  imageUploaded: 'Image uploaded',
+  imageUploadError: 'Upload failed',
+  created: 'Club news created',
+  updated: 'Club news updated',
+  deleted: 'Club news deleted',
+  saveError: 'Could not save',
+  deleteError: 'Could not delete',
+
+  cancel: 'Cancel',
+  save: 'Save',
+  create: 'Create',
+  delete: 'Delete',
+  confirmDeleteTitle: 'Delete club news?',
+  confirmDeleteBody: 'This action cannot be undone.',
+
+  openLink: 'Read more',
+  loadMore: 'Load more',
+  signInRequired: 'Please sign in to see news.',
+
+  emailSubjectPrefix: 'Club news',
+} as const

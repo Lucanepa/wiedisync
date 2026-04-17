@@ -703,6 +703,53 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     for (const k of keys || []) await notifyAnnouncementPublished(k)
   })
 
+  // ── Announcements: server-side created_by enforcement ──
+  // Prevents an admin (Sport Admin+) from spoofing `created_by` to
+  // another member's ID via a direct API call. On create, set it from
+  // the accountability user's linked member; on update, never allow it
+  // to change.
+  filter('announcements.items.create', async (payload, _meta, context) => {
+    const userId = context?.accountability?.user
+    if (userId) {
+      const m = await database('members').where('user', userId).select('id').first()
+      if (m?.id) payload.created_by = m.id
+      else delete payload.created_by
+    } else {
+      delete payload.created_by
+    }
+    return payload
+  })
+  filter('announcements.items.update', async (payload) => {
+    if (payload && Object.prototype.hasOwnProperty.call(payload, 'created_by')) {
+      delete payload.created_by
+    }
+    return payload
+  })
+
+  // ── Cron: Announcement scheduled-publish fanout (every 5 min) ──
+  // Picks up posts where published_at has now arrived but fanout_sent_at
+  // is still null (i.e. created with a future published_at and never
+  // re-saved by an admin). Calls the same notifyAnnouncementPublished
+  // helper which marks fanout_sent_at on every code path so the cron
+  // doesn't loop on the same row.
+  schedule('*/5 * * * *', async () => {
+    try {
+      const due = await database('announcements')
+        .whereNotNull('published_at')
+        .where('published_at', '<=', new Date())
+        .whereNull('fanout_sent_at')
+        .select('id')
+      if (due.length === 0) return
+      for (const row of due) {
+        await notifyAnnouncementPublished(row.id)
+      }
+      log.info(`[announcements/cron] Scheduled fanout fired for ${due.length} post(s)`)
+    } catch (err) {
+      log.error({ msg: `[announcements/cron] ${err.message}`, stack: err.stack })
+      logCronError('announcement_fanout_cron', err)
+    }
+  })
+
   // When a training/game is created, auto-decline for members with overlapping absences
   action('trainings.items.create', async ({ key }) => {
     try {

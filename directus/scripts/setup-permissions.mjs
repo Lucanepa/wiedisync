@@ -409,6 +409,8 @@ async function main() {
   // Announcements (Vereinsnews) — read only published, non-expired posts.
   // Audience matching (sport / teams / roles) is enforced client-side in
   // useAnnouncements; the server-side filter just prevents draft leakage.
+  // Field whitelist excludes internal admin state (notify_push, notify_email,
+  // fanout_sent_at) which members shouldn't see.
   await setPermRead(MEMBER_POLICY, 'announcements', {
     _and: [
       { published_at: { _nnull: true } },
@@ -418,7 +420,13 @@ async function main() {
         { expires_at: { _gt: '$NOW' } },
       ] },
     ],
-  })
+  }, [
+    'id', 'image', 'link', 'pinned',
+    'published_at', 'expires_at',
+    'audience_type', 'audience_sport', 'audience_teams', 'audience_roles',
+    'translations', 'created_by',
+    'date_created', 'date_updated',
+  ])
 
   // Push subscriptions — CRUD own
   await setPermRead(MEMBER_POLICY, 'push_subscriptions', OWN_MEMBER)

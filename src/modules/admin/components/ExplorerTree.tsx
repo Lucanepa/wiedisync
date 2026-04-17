@@ -60,7 +60,7 @@ function sportForEntity(type: BucketKey, id: string, cache: CacheShape): Sport {
     case 'games': {
       const g = cache.games.find((x) => String(x.id) === id)
       if (!g) return 'other'
-      for (const field of ['home_team', 'away_team'] as const) {
+      for (const field of ['kscw_team', 'home_team', 'away_team'] as const) {
         const teamId = String((g as unknown as Record<string, unknown>)[field] ?? '')
         const team = cache.teams.find((tm) => String(tm.id) === teamId)
         const s = (team as unknown as { sport?: string } | undefined)?.sport

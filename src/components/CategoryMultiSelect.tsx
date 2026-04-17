@@ -23,9 +23,11 @@ interface CategoryMultiSelectProps {
   onChange: (selected: string[]) => void
   /** Placeholder when all selected */
   placeholder?: string
+  /** Render options list inline (no collapsible dropdown). Useful inside modals. */
+  inline?: boolean
 }
 
-export default function CategoryMultiSelect({ options, selected, onChange, placeholder }: CategoryMultiSelectProps) {
+export default function CategoryMultiSelect({ options, selected, onChange, placeholder, inline = false }: CategoryMultiSelectProps) {
   const { t } = useTranslation('common')
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -68,6 +70,67 @@ export default function CategoryMultiSelect({ options, selected, onChange, place
 
   // Selected options for display
   const selectedOptions = options.filter((o) => selected.includes(o.value))
+
+  const list = (
+    <>
+      {/* All option */}
+      <button
+        type="button"
+        onClick={allSelected ? handleSelectNone : handleSelectAll}
+        className={`flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 ${
+          allSelected ? 'bg-brand-50 font-semibold text-brand-700 dark:bg-brand-900/30 dark:text-brand-300' : 'text-gray-700 dark:text-gray-300'
+        }`}
+      >
+        <Checkbox checked={allSelected} indeterminate={!allSelected && !noneSelected} />
+        {placeholder ?? t('all')}
+      </button>
+
+      {hasGroups ? (
+        groups.map((group) => {
+          const groupOptions = options.filter((o) => o.group === group)
+          const groupValues = groupOptions.map((o) => o.value)
+          const allGroupSelected = groupValues.every((v) => selected.includes(v))
+          const someGroupSelected = groupValues.some((v) => selected.includes(v))
+
+          function toggleGroup() {
+            if (allGroupSelected) {
+              onChange(selected.filter((v) => !groupValues.includes(v)))
+            } else {
+              onChange([...new Set([...selected, ...groupValues])])
+            }
+          }
+
+          return (
+            <div key={group}>
+              <button
+                type="button"
+                onClick={toggleGroup}
+                className="sticky top-0 flex w-full items-center gap-2.5 bg-gray-50 px-3 py-1.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 hover:bg-gray-100 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800"
+              >
+                <Checkbox checked={allGroupSelected} indeterminate={someGroupSelected && !allGroupSelected} size="sm" />
+                {group}
+              </button>
+              {groupOptions.map((o) => (
+                <OptionRow key={o.value} option={o} isSelected={selected.includes(o.value)} onToggle={() => toggle(o.value)} />
+              ))}
+            </div>
+          )
+        })
+      ) : (
+        options.map((o) => (
+          <OptionRow key={o.value} option={o} isSelected={selected.includes(o.value)} onToggle={() => toggle(o.value)} />
+        ))
+      )}
+    </>
+  )
+
+  if (inline) {
+    return (
+      <div className="w-full overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-600 dark:bg-gray-800">
+        {list}
+      </div>
+    )
+  }
 
   return (
     <div ref={ref} className="relative w-full">
@@ -114,54 +177,7 @@ export default function CategoryMultiSelect({ options, selected, onChange, place
       {/* Dropdown */}
       {open && (
         <div className="absolute left-0 z-50 mt-1 max-h-72 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-800">
-          {/* All option */}
-          <button
-            type="button"
-            onClick={allSelected ? handleSelectNone : handleSelectAll}
-            className={`flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 ${
-              allSelected ? 'bg-brand-50 font-semibold text-brand-700 dark:bg-brand-900/30 dark:text-brand-300' : 'text-gray-700 dark:text-gray-300'
-            }`}
-          >
-            <Checkbox checked={allSelected} indeterminate={!allSelected && !noneSelected} />
-            {placeholder ?? t('all')}
-          </button>
-
-          {hasGroups ? (
-            groups.map((group) => {
-              const groupOptions = options.filter((o) => o.group === group)
-              const groupValues = groupOptions.map((o) => o.value)
-              const allGroupSelected = groupValues.every((v) => selected.includes(v))
-              const someGroupSelected = groupValues.some((v) => selected.includes(v))
-
-              function toggleGroup() {
-                if (allGroupSelected) {
-                  onChange(selected.filter((v) => !groupValues.includes(v)))
-                } else {
-                  onChange([...new Set([...selected, ...groupValues])])
-                }
-              }
-
-              return (
-                <div key={group}>
-                  <button
-                    type="button"
-                    onClick={toggleGroup}
-                    className="sticky top-0 flex w-full items-center gap-2.5 bg-gray-50 px-3 py-1.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 hover:bg-gray-100 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800"
-                  >
-                    <Checkbox checked={allGroupSelected} indeterminate={someGroupSelected && !allGroupSelected} size="sm" />
-                    {group}
-                  </button>
-                  {groupOptions.map((o) => (
-                    <OptionRow key={o.value} option={o} isSelected={selected.includes(o.value)} onToggle={() => toggle(o.value)} />
-                  ))}
-                </div>
-              )
-            })
-          ) : (
-            options.map((o) => (
-              <OptionRow key={o.value} option={o} isSelected={selected.includes(o.value)} onToggle={() => toggle(o.value)} />
-            ))
-          )}
+          {list}
         </div>
       )}
     </div>

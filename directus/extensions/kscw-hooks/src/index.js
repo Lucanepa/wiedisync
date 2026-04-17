@@ -1108,6 +1108,44 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     }
   })
 
+  // ── 10c. Cron: Refresh teams.season dropdown choices (1st of each month, 03:07 UTC) ──
+  // Season rolls over on May 1 (old season ends) and Sep 1 (new season starts calendar-wise).
+  // Earliest allowed season is the one currently "live": Jan-Apr → last autumn's; May onwards → this autumn's.
+  // Past seasons are removed so admins can't accidentally assign a team to a finished season.
+
+  function computeSeasonChoices(now = new Date(), count = 5) {
+    const y = now.getFullYear()
+    const m = now.getMonth()
+    const startYear = m >= 4 ? y : y - 1
+    const choices = []
+    for (let i = 0; i < count; i++) {
+      const a = startYear + i
+      const b = String(a + 1).slice(2)
+      const v = `${a}/${b}`
+      choices.push({ text: v, value: v })
+    }
+    return choices
+  }
+
+  async function refreshSeasonChoices() {
+    const choices = computeSeasonChoices()
+    const options = { choices, allowOther: false }
+    await database('directus_fields')
+      .where({ collection: 'teams', field: 'season' })
+      .update({ interface: 'select-dropdown', options: JSON.stringify(options) })
+    return choices.map(c => c.value).join(', ')
+  }
+
+  schedule('7 3 1 * *', async () => {
+    try {
+      const seasons = await refreshSeasonChoices()
+      log.info(`[season-refresh] teams.season choices set to: ${seasons}`)
+    } catch (err) {
+      log.error({ msg: `Season refresh cron: ${err.message}`, event: 'cron.season_refresh', stack: err.stack })
+      logCronError('season_refresh', err)
+    }
+  })
+
   // ── 11. Filter: Member Privacy (birthdate_visibility, hide_phone) ──
   // Enforces privacy settings at the API level so even direct API access respects them.
   // Admins and the member's own record are exempt.

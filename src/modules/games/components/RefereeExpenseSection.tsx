@@ -23,7 +23,7 @@ const OTHER_VALUE = '__other__'
 
 export default function RefereeExpenseSection({ gameId, teamId, canEdit }: RefereeExpenseSectionProps) {
   const { t } = useTranslation('games')
-  const { user } = useAuth()
+  const { user, isApproved } = useAuth()
   const { members } = useTeamMembers(teamId)
   const { create, update } = useMutation<RefereeExpense>('referee_expenses')
 
@@ -42,6 +42,9 @@ export default function RefereeExpenseSection({ gameId, teamId, canEdit }: Refer
 
   // Fetch existing record + coaches (who may not be team members)
   useEffect(() => {
+    // Skip when unauthenticated / role still pending — they have no read permission
+    // on referee_expenses and the fetch would just produce Sentry noise.
+    if (!user || !isApproved) { setLoading(false); return }
     let cancelled = false
     setLoading(true)
 
@@ -86,7 +89,7 @@ export default function RefereeExpenseSection({ gameId, teamId, canEdit }: Refer
     })
 
     return () => { cancelled = true }
-  }, [gameId, teamId])
+  }, [gameId, teamId, user, isApproved])
 
   // Build member options: team roster + coaches/team responsibles (deduplicated)
   const memberOptions = useMemo(() => {

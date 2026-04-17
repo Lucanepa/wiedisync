@@ -9,7 +9,6 @@ import {
   formatShortDate, formatShortDateTime,
 } from './explorerHelpers'
 import ExplorerSectionCard from './ExplorerSectionCard'
-import EntityLink from './EntityLink'
 import { useRelatedEntities, type SectionKey } from '../hooks/useRelatedEntities'
 
 interface Props {
@@ -107,63 +106,65 @@ function titleFor(type: BucketKey, entity: Record<string, unknown>, cache: Cache
 
 type TFn = (key: string, opts?: Record<string, unknown>) => string
 
-/**
- * Render a single participation row.
- * - showMember=true: renders member name (linked) + status
- * - showActivity=true: renders activity label (linked) + status
- */
-function renderParticipationRow(
-  p: { id?: string | number; member?: unknown; activity_type?: string; activity_id?: unknown; status?: string },
-  cache: CacheShape,
-  onNavigate: (type: BucketKey, id: string) => void,
-  mode: 'showMember' | 'showActivity',
-) {
-  const key = p.id ?? Math.random()
+// ── Compact table skeleton ─────────────────────────────────────────────
+interface ColDef {
+  key: string
+  label: string
+  className?: string
+}
 
-  if (mode === 'showMember') {
-    const memberId = String(p.member ?? '')
-    const member = cache.members.find((m) => String(m.id) === memberId)
-    const label = member ? memberLabel(member) : `#${memberId}`
-    return (
-      <li key={key} className="flex items-center gap-1 rounded border border-border bg-background px-2 py-1 text-xs">
-        <EntityLink type="members" id={memberId} label={label} onClick={onNavigate} />
-        <span className="text-muted-foreground">· {p.status ?? '?'}</span>
-      </li>
-    )
-  }
-
-  // showActivity
-  const rawType = String(p.activity_type ?? '')
-  const bucketType = (rawType + 's') as BucketKey
-  const activityId = String(p.activity_id ?? '')
-  const teamName = (tid: string) => cache.teams.find((tm) => String(tm.id) === tid)?.name ?? tid
-
-  let activityLabel = `#${activityId}`
-  if (bucketType === 'events') {
-    const ev = cache.events.find((e) => String(e.id) === activityId)
-    if (ev) activityLabel = eventLabel(ev)
-  } else if (bucketType === 'trainings') {
-    const tr = cache.trainings.find((tr) => String(tr.id) === activityId)
-    if (tr) activityLabel = trainingLabel(tr, teamName)
-  } else if (bucketType === 'games') {
-    const g = cache.games.find((g) => String(g.id) === activityId)
-    if (g) activityLabel = gameLabel(g, teamName)
-  }
-
-  const validBucket: BucketKey[] = ['members', 'teams', 'events', 'trainings', 'games']
-  if (!validBucket.includes(bucketType)) {
-    return (
-      <li key={key} className="rounded border border-border bg-background px-2 py-1 font-mono text-[11px]">
-        {JSON.stringify(p)}
-      </li>
-    )
-  }
-
+function CompactTable({
+  cols,
+  rows,
+}: {
+  cols: ColDef[]
+  rows: React.ReactNode[][]
+}) {
   return (
-    <li key={key} className="flex items-center gap-1 rounded border border-border bg-background px-2 py-1 text-xs">
-      <EntityLink type={bucketType} id={activityId} label={activityLabel} onClick={onNavigate} />
-      <span className="text-muted-foreground">· {p.status ?? '?'}</span>
-    </li>
+    <table className="w-full text-xs">
+      <thead className="text-left text-muted-foreground">
+        <tr>
+          {cols.map((c) => (
+            <th key={c.key} className={`py-1 pr-3 font-medium ${c.className ?? ''}`}>
+              {c.label}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody className="text-foreground">
+        {rows.map((cells, i) => (
+          <tr key={i} className="border-t border-border">
+            {cells.map((cell, j) => (
+              <td key={j} className={`py-1 pr-3 ${cols[j]?.className ?? ''}`}>
+                {cell}
+              </td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )
+}
+
+function NavBtn({
+  type,
+  id,
+  label,
+  onClick,
+}: {
+  type: BucketKey
+  id: string
+  label: string
+  onClick: (type: BucketKey, id: string) => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onClick(type, id)}
+      className="text-primary hover:underline text-left"
+    >
+      {label}
+    </button>
   )
 }
 
@@ -189,6 +190,8 @@ function renderMember(
     scorerDelegations: 'explorerSectionScorerDelegations',
   }
 
+  const teamName = (tid: string) => cache.teams.find((x) => String(x.id) === tid)?.name ?? tid
+
   return (
     <>
       <div className="mb-4">
@@ -198,12 +201,20 @@ function renderMember(
         <Field label={t('explorerFieldActive')}>{m.kscw_membership_active ? '✓' : '—'}</Field>
       </div>
 
+      {/* Teams table */}
       <ExplorerSectionCard title={t('explorerSectionTeams')} count={memberTeams.length} lazy={false}>
-        <div className="flex flex-wrap gap-1">
-          {memberTeams.map((tm) => (
-            <EntityLink key={tm.id} type="teams" id={String(tm.id)} label={teamLabel(tm)} onClick={onNavigate} />
-          ))}
-        </div>
+        <CompactTable
+          cols={[
+            { key: 'name', label: t('explorerColName') },
+            { key: 'sport', label: t('explorerFieldSport') },
+            { key: 'season', label: t('explorerFieldSeason') },
+          ]}
+          rows={memberTeams.map((tm) => [
+            <NavBtn type="teams" id={String(tm.id)} label={teamLabel(tm)} onClick={onNavigate} />,
+            String(tm.sport ?? '—'),
+            String(tm.season ?? '—'),
+          ])}
+        />
       </ExplorerSectionCard>
 
       {memberSections.map((s) => {
@@ -217,25 +228,144 @@ function renderMember(
             isLoading={state?.loading}
             error={state?.error}
           >
-            <ul className="space-y-1 text-xs">
-              {s === 'participations'
-                ? (state?.data ?? []).map((row, idx) => {
-                    const r = row as { id?: string | number; member?: unknown; activity_type?: string; activity_id?: unknown; status?: string }
-                    return renderParticipationRow({ ...r, id: r.id ?? idx }, cache, onNavigate, 'showActivity')
-                  })
-                : (state?.data ?? []).map((row, idx) => {
-                    const r = row as { id?: string | number }
-                    return (
-                      <li key={r.id ?? idx} className="rounded border border-border bg-background px-2 py-1 font-mono text-[11px]">
-                        {JSON.stringify(row)}
-                      </li>
-                    )
-                  })}
-            </ul>
+            {s === 'participations' && renderMemberParticipationsTable(state?.data ?? [], cache, onNavigate, teamName, t)}
+            {s === 'absences' && renderAbsencesTable(state?.data ?? [], t)}
+            {s === 'schreibereinsaetze' && renderSchreibereinsaetzeTable(state?.data ?? [], cache, onNavigate, t)}
+            {s === 'refereeExpenses' && renderRefereeExpensesTable(state?.data ?? [], t)}
           </ExplorerSectionCard>
         )
       })}
     </>
+  )
+}
+
+function renderMemberParticipationsTable(
+  rows: unknown[],
+  cache: CacheShape,
+  onNavigate: (type: BucketKey, id: string) => void,
+  teamName: (tid: string) => string,
+  t: TFn,
+) {
+  return (
+    <CompactTable
+      cols={[
+        { key: 'activity', label: t('explorerColActivity') },
+        { key: 'date', label: t('explorerFieldDate') },
+        { key: 'status', label: t('explorerFieldStatus') },
+      ]}
+      rows={rows.map((row) => {
+        const r = row as { activity_type?: string; activity_id?: unknown; status?: string }
+        const rawType = String(r.activity_type ?? '')
+        const bucketType = (rawType + 's') as BucketKey
+        const activityId = String(r.activity_id ?? '')
+        const validBuckets: BucketKey[] = ['events', 'trainings', 'games']
+
+        let activityLabel = `#${activityId}`
+        let activityDate = ''
+        if (bucketType === 'events') {
+          const ev = cache.events.find((e) => String(e.id) === activityId)
+          if (ev) { activityLabel = eventLabel(ev); activityDate = formatShortDate(ev.start_date) }
+        } else if (bucketType === 'trainings') {
+          const tr = cache.trainings.find((x) => String(x.id) === activityId)
+          if (tr) { activityLabel = trainingLabel(tr, teamName); activityDate = formatShortDate(tr.date) }
+        } else if (bucketType === 'games') {
+          const g = cache.games.find((x) => String(x.id) === activityId)
+          if (g) { activityLabel = gameLabel(g, teamName); activityDate = formatShortDate(g.date) }
+        }
+
+        const activityCell = validBuckets.includes(bucketType)
+          ? <NavBtn type={bucketType} id={activityId} label={activityLabel} onClick={onNavigate} />
+          : <span>{activityLabel}</span>
+
+        return [activityCell, activityDate || '—', r.status ?? '—']
+      })}
+    />
+  )
+}
+
+function renderAbsencesTable(rows: unknown[], t: TFn) {
+  return (
+    <CompactTable
+      cols={[
+        { key: 'start', label: t('explorerFieldStartDate') },
+        { key: 'end', label: t('explorerFieldEndDate') },
+        { key: 'reason', label: t('explorerColReason') },
+      ]}
+      rows={rows.map((row) => {
+        const r = row as { start_date?: string; end_date?: string; reason?: string; reason_detail?: string }
+        const reason = r.reason_detail ? `${r.reason ?? ''} — ${r.reason_detail}` : (r.reason ?? '—')
+        return [
+          formatShortDate(r.start_date) || '—',
+          formatShortDate(r.end_date) || '—',
+          reason,
+        ]
+      })}
+    />
+  )
+}
+
+function renderSchreibereinsaetzeTable(
+  rows: unknown[],
+  cache: CacheShape,
+  onNavigate: (type: BucketKey, id: string) => void,
+  t: TFn,
+) {
+  const teamName = (tid: string) => cache.teams.find((x) => String(x.id) === tid)?.name ?? tid
+  return (
+    <CompactTable
+      cols={[
+        { key: 'date', label: t('explorerFieldDate') },
+        { key: 'activity', label: t('explorerColActivity') },
+        { key: 'role', label: t('explorerColRole') },
+      ]}
+      rows={rows.map((row) => {
+        const r = row as { game?: unknown; training?: unknown; role?: string; date?: string }
+        let activityCell: React.ReactNode = '—'
+        let dateStr = formatShortDate(r.date) || '—'
+
+        if (r.game) {
+          const gId = String(r.game)
+          const g = cache.games.find((x) => String(x.id) === gId)
+          if (g) {
+            activityCell = <NavBtn type="games" id={gId} label={gameLabel(g, teamName)} onClick={onNavigate} />
+            if (!r.date) dateStr = formatShortDate(g.date) || '—'
+          } else {
+            activityCell = `#${gId}`
+          }
+        } else if (r.training) {
+          const tId = String(r.training)
+          const tr = cache.trainings.find((x) => String(x.id) === tId)
+          if (tr) {
+            activityCell = <NavBtn type="trainings" id={tId} label={trainingLabel(tr, teamName)} onClick={onNavigate} />
+            if (!r.date) dateStr = formatShortDate(tr.date) || '—'
+          } else {
+            activityCell = `#${tId}`
+          }
+        }
+
+        return [dateStr, activityCell, r.role ?? '—']
+      })}
+    />
+  )
+}
+
+function renderRefereeExpensesTable(rows: unknown[], t: TFn) {
+  return (
+    <CompactTable
+      cols={[
+        { key: 'date', label: t('explorerFieldDate') },
+        { key: 'amount', label: t('explorerColAmount') },
+        { key: 'status', label: t('explorerFieldStatus') },
+      ]}
+      rows={rows.map((row) => {
+        const r = row as { date?: string; amount?: number; status?: string; notes?: string }
+        return [
+          formatShortDate(r.date) || '—',
+          r.amount != null ? String(r.amount) : '—',
+          r.status ?? '—',
+        ]
+      })}
+    />
   )
 }
 
@@ -266,49 +396,76 @@ function renderTeam(
         <Field label={t('explorerFieldActive')}>{tm.active ? '✓' : '—'}</Field>
       </div>
 
+      {/* Members table */}
       <ExplorerSectionCard title={t('explorerSectionMembers')} count={members.length} lazy={false}>
-        <div className="flex flex-wrap gap-1">
-          {members.map((m) => (
-            <EntityLink key={m.id} type="members" id={String(m.id)} label={memberLabel(m)} onClick={onNavigate} />
-          ))}
-        </div>
+        <CompactTable
+          cols={[
+            { key: 'name', label: t('explorerColName') },
+            { key: 'nr', label: t('explorerColNumber') },
+          ]}
+          rows={members.map((mem) => {
+            const memAny = mem as unknown as { number?: number }
+            return [
+              <NavBtn type="members" id={String(mem.id)} label={memberLabel(mem)} onClick={onNavigate} />,
+              memAny.number != null ? String(memAny.number) : '—',
+            ]
+          })}
+        />
       </ExplorerSectionCard>
 
+      {/* Trainings table */}
       <ExplorerSectionCard title={t('explorerBucketTrainings')} count={trainings.length} lazy={false}>
-        <ul className="space-y-1 text-xs">
-          {trainings.slice(0, 50).map((tr) => {
-            const trAny = tr as unknown as { id: string | number; date?: string; start_time?: string }
-            const label = `${formatShortDate(trAny.date ?? '')} ${(trAny.start_time ?? '').slice(0, 5)}`.trim()
-            return (
-              <li key={trAny.id}>
-                <EntityLink
-                  type="trainings"
-                  id={String(trAny.id)}
-                  label={label || trainingLabel(tr as never, teamName)}
-                  onClick={onNavigate}
-                />
-              </li>
-            )
+        <CompactTable
+          cols={[
+            { key: 'date', label: t('explorerFieldDate') },
+            { key: 'time', label: t('explorerFieldTime') },
+            { key: 'hall', label: t('explorerFieldHall') },
+          ]}
+          rows={trainings.slice(0, 50).map((tr) => {
+            const trAny = tr as unknown as { id: string | number; date?: string; start_time?: string; end_time?: string; hall?: string }
+            return [
+              <NavBtn
+                type="trainings"
+                id={String(trAny.id)}
+                label={formatShortDate(trAny.date ?? '') || trainingLabel(tr as never, teamName)}
+                onClick={onNavigate}
+              />,
+              `${(trAny.start_time ?? '').slice(0, 5)} – ${(trAny.end_time ?? '').slice(0, 5)}`.trim(),
+              trAny.hall ?? '—',
+            ]
           })}
-        </ul>
+        />
       </ExplorerSectionCard>
 
+      {/* Games table */}
       <ExplorerSectionCard title={t('explorerBucketGames')} count={games.length} lazy={false}>
-        <ul className="space-y-1 text-xs">
-          {games.slice(0, 50).map((g) => {
-            const gAny = g as unknown as { id: string | number }
-            return (
-              <li key={gAny.id}>
-                <EntityLink
-                  type="games"
-                  id={String(gAny.id)}
-                  label={gameLabel(g as never, teamName)}
-                  onClick={onNavigate}
-                />
-              </li>
-            )
+        <CompactTable
+          cols={[
+            { key: 'date', label: t('explorerFieldDate') },
+            { key: 'time', label: t('explorerFieldTime') },
+            { key: 'home', label: t('explorerFieldHomeTeam') },
+            { key: 'away', label: t('explorerFieldAwayTeam') },
+            { key: 'result', label: t('explorerFieldResult') },
+            { key: 'hall', label: t('explorerFieldHall') },
+          ]}
+          rows={games.slice(0, 50).map((g) => {
+            const gAny = g as unknown as {
+              id: string | number; date?: string; time?: string
+              home_team?: unknown; away_team?: unknown
+              home_score?: number; away_score?: number; hall?: string
+            }
+            const homeTeam = cache.teams.find((x) => String(x.id) === String(gAny.home_team))
+            const awayTeam = cache.teams.find((x) => String(x.id) === String(gAny.away_team))
+            return [
+              <NavBtn type="games" id={String(gAny.id)} label={formatShortDate(gAny.date ?? '') || '—'} onClick={onNavigate} />,
+              (gAny.time ?? '—').toString().slice(0, 5),
+              homeTeam ? teamLabel(homeTeam) : `#${String(gAny.home_team)}`,
+              awayTeam ? teamLabel(awayTeam) : `#${String(gAny.away_team)}`,
+              `${gAny.home_score ?? '-'} : ${gAny.away_score ?? '-'}`,
+              gAny.hall ?? '—',
+            ]
           })}
-        </ul>
+        />
       </ExplorerSectionCard>
     </>
   )
@@ -324,7 +481,7 @@ function byStatus(rows: unknown[]): Record<string, unknown[]> {
   return g
 }
 
-/** Render grouped participation rows (for events, trainings, games). */
+/** Render grouped participation rows as compact tables (for events, trainings, games). */
 function renderGroupedParticipations(
   rows: unknown[],
   cache: CacheShape,
@@ -339,16 +496,28 @@ function renderGroupedParticipations(
         const statusRows = groups[status] ?? []
         if (statusRows.length === 0) return null
         return (
-          <div key={status} className="mb-2">
+          <div key={status} className="mb-3">
             <div className="mb-1 text-[11px] font-semibold text-muted-foreground">
               {t(`explorerStatus_${status}`)} · {statusRows.length}
             </div>
-            <ul className="space-y-1 text-xs">
-              {statusRows.map((row, idx) => {
-                const r = row as { id?: string | number; member?: unknown; activity_type?: string; activity_id?: unknown; status?: string }
-                return renderParticipationRow({ ...r, id: r.id ?? idx }, cache, onNavigate, 'showMember')
+            <CompactTable
+              cols={[
+                { key: 'member', label: t('explorerColName') },
+                { key: 'note', label: t('explorerColNote') },
+              ]}
+              rows={statusRows.map((row) => {
+                const r = row as { id?: string | number; member?: unknown; note?: string }
+                const memberId = String(r.member ?? '')
+                const member = cache.members.find((mem) => String(mem.id) === memberId)
+                const label = member ? memberLabel(member) : `#${memberId}`
+                const noteRaw = r.note ?? ''
+                const note = noteRaw.length > 40 ? noteRaw.slice(0, 40) + '…' : noteRaw || '—'
+                return [
+                  <NavBtn type="members" id={memberId} label={label} onClick={onNavigate} />,
+                  note,
+                ]
               })}
-            </ul>
+            />
           </div>
         )
       })}
@@ -409,7 +578,7 @@ function renderTraining(
       <div className="mb-4">
         {team && (
           <Field label={t('explorerFieldTeam')}>
-            <EntityLink type="teams" id={String(team.id)} label={teamLabel(team)} onClick={onNavigate} />
+            <NavBtn type="teams" id={String(team.id)} label={teamLabel(team)} onClick={onNavigate} />
           </Field>
         )}
         <Field label={t('explorerFieldDate')}>{formatShortDate(tr.date as string | null) || '—'}</Field>
@@ -429,18 +598,7 @@ function renderTraining(
           >
             {s === 'participations'
               ? renderGroupedParticipations(state?.data ?? [], cache, onNavigate, t)
-              : (
-                <ul className="space-y-1 text-xs">
-                  {(state?.data ?? []).map((row, idx) => {
-                    const r = row as { id?: string | number }
-                    return (
-                      <li key={r.id ?? idx} className="rounded border border-border bg-background px-2 py-1 font-mono text-[11px]">
-                        {JSON.stringify(row)}
-                      </li>
-                    )
-                  })}
-                </ul>
-              )}
+              : renderSchreibereinsaetzeTable(state?.data ?? [], cache, onNavigate, t)}
           </ExplorerSectionCard>
         )
       })}
@@ -471,10 +629,10 @@ function renderGame(
     <>
       <div className="mb-4">
         <Field label={t('explorerFieldHomeTeam')}>
-          {home ? <EntityLink type="teams" id={String(home.id)} label={teamLabel(home)} onClick={onNavigate} /> : `#${String(g.home_team)}`}
+          {home ? <NavBtn type="teams" id={String(home.id)} label={teamLabel(home)} onClick={onNavigate} /> : `#${String(g.home_team)}`}
         </Field>
         <Field label={t('explorerFieldAwayTeam')}>
-          {away ? <EntityLink type="teams" id={String(away.id)} label={teamLabel(away)} onClick={onNavigate} /> : `#${String(g.away_team)}`}
+          {away ? <NavBtn type="teams" id={String(away.id)} label={teamLabel(away)} onClick={onNavigate} /> : `#${String(g.away_team)}`}
         </Field>
         <Field label={t('explorerFieldDate')}>{formatShortDate(g.date as string | null) || '—'}</Field>
         <Field label={t('explorerFieldTime')}>{String(g.time ?? '—')}</Field>
@@ -494,23 +652,43 @@ function renderGame(
             isLoading={state?.loading}
             error={state?.error}
           >
-            {s === 'participations'
-              ? renderGroupedParticipations(state?.data ?? [], cache, onNavigate, t)
-              : (
-                <ul className="space-y-1 text-xs">
-                  {(state?.data ?? []).map((row, idx) => {
-                    const r = row as { id?: string | number }
-                    return (
-                      <li key={r.id ?? idx} className="rounded border border-border bg-background px-2 py-1 font-mono text-[11px]">
-                        {JSON.stringify(row)}
-                      </li>
-                    )
-                  })}
-                </ul>
-              )}
+            {s === 'participations' && renderGroupedParticipations(state?.data ?? [], cache, onNavigate, t)}
+            {s === 'schreibereinsaetze' && renderSchreibereinsaetzeTable(state?.data ?? [], cache, onNavigate, t)}
+            {s === 'scorerDelegations' && renderScorerDelegationsTable(state?.data ?? [], cache, onNavigate, t)}
           </ExplorerSectionCard>
         )
       })}
     </>
+  )
+}
+
+function renderScorerDelegationsTable(
+  rows: unknown[],
+  cache: CacheShape,
+  onNavigate: (type: BucketKey, id: string) => void,
+  t: TFn,
+) {
+  return (
+    <CompactTable
+      cols={[
+        { key: 'original', label: t('explorerColOriginal') },
+        { key: 'delegatedTo', label: t('explorerColDelegatedTo') },
+        { key: 'date', label: t('explorerFieldDate') },
+      ]}
+      rows={rows.map((row) => {
+        const r = row as { from_member?: unknown; to_member?: unknown; date_created?: string }
+        const fromId = String(r.from_member ?? '')
+        const toId = String(r.to_member ?? '')
+        const fromMember = cache.members.find((m) => String(m.id) === fromId)
+        const toMember = cache.members.find((m) => String(m.id) === toId)
+        const fromLabel = fromMember ? memberLabel(fromMember) : `#${fromId}`
+        const toLabel = toMember ? memberLabel(toMember) : `#${toId}`
+        return [
+          <NavBtn type="members" id={fromId} label={fromLabel} onClick={onNavigate} />,
+          <NavBtn type="members" id={toId} label={toLabel} onClick={onNavigate} />,
+          formatShortDate(r.date_created) || '—',
+        ]
+      })}
+    />
   )
 }

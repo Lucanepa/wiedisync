@@ -9,7 +9,7 @@
       "collapse": "open",
       "collection": "members",
       "color": "#4A55A2",
-      "display_template": null,
+      "display_template": "{{first_name}} {{last_name}}",
       "group": null,
       "hidden": false,
       "icon": "person",
@@ -642,6 +642,50 @@
     },
     {
       "collection": "members",
+      "field": "yob",
+      "type": "integer",
+      "meta": {
+        "collection": "members",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "yob",
+        "group": null,
+        "hidden": false,
+        "interface": "input",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 13,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "yob",
+        "table": "members",
+        "data_type": "integer",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "members",
       "field": "licences",
       "type": "json",
       "meta": {
@@ -1154,8 +1198,10 @@
       "meta": {
         "collection": "members",
         "conditions": null,
-        "display": null,
-        "display_options": null,
+        "display": "related-values",
+        "display_options": {
+          "template": "{{name}}"
+        },
         "field": "requested_team",
         "group": null,
         "hidden": false,
@@ -1184,13 +1230,13 @@
         "numeric_scale": 0,
         "is_nullable": true,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id"
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
@@ -1232,13 +1278,13 @@
         "numeric_scale": null,
         "is_nullable": true,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": "directus_users",
-        "foreign_key_column": "id"
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
@@ -1335,6 +1381,55 @@
     },
     {
       "collection": "members",
+      "field": "is_spielplaner",
+      "type": "boolean",
+      "meta": {
+        "collection": "members",
+        "conditions": null,
+        "display": "boolean",
+        "display_options": {
+          "colorOff": "#676673",
+          "colorOn": "#4270F1"
+        },
+        "field": "is_spielplaner",
+        "group": null,
+        "hidden": false,
+        "interface": "boolean",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 28,
+        "special": [
+          "cast-boolean"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "is_spielplaner",
+        "table": "members",
+        "data_type": "boolean",
+        "default_value": false,
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": false,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "members",
       "field": "licence_category",
       "type": "string",
       "meta": {
@@ -1346,12 +1441,12 @@
         "group": null,
         "hidden": false,
         "interface": "input",
-        "note": "Swiss Volley licence category (RLL, ALL, JLL, etc.) — synced from Volleymanager",
+        "note": "SV licence category — synced from Volleymanager",
         "options": null,
         "readonly": true,
         "required": false,
         "searchable": true,
-        "sort": 30,
+        "sort": 29,
         "special": null,
         "translations": null,
         "validation": null,
@@ -1390,12 +1485,12 @@
         "group": null,
         "hidden": false,
         "interface": "boolean",
-        "note": "Swiss Volley licence activated for current season — synced from Volleymanager",
+        "note": "SV licence activated — synced from Volleymanager",
         "options": null,
         "readonly": true,
         "required": false,
         "searchable": true,
-        "sort": 31,
+        "sort": 30,
         "special": null,
         "translations": null,
         "validation": null,
@@ -1434,12 +1529,12 @@
         "group": null,
         "hidden": false,
         "interface": "boolean",
-        "note": "Swiss Volley licence validated for current season — synced from Volleymanager",
+        "note": "SV licence validated — synced from Volleymanager",
         "options": null,
         "readonly": true,
         "required": false,
         "searchable": true,
-        "sort": 32,
+        "sort": 31,
         "special": null,
         "translations": null,
         "validation": null,
@@ -1477,13 +1572,13 @@
         "field": "vm_email",
         "group": null,
         "hidden": false,
-        "interface": null,
+        "interface": "input",
         "note": "Email from Volleymanager (synced monthly)",
         "options": null,
         "readonly": true,
         "required": false,
         "searchable": true,
-        "sort": 33,
+        "sort": 32,
         "special": null,
         "translations": null,
         "validation": null,
@@ -1538,7 +1633,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 34,
+        "sort": 33,
         "special": null,
         "translations": null,
         "validation": null,
@@ -1566,35 +1661,299 @@
     },
     {
       "collection": "members",
-      "field": "is_spielplaner",
-      "type": "boolean",
+      "field": "adresse",
+      "type": "string",
       "meta": {
         "collection": "members",
         "conditions": null,
-        "display": "boolean",
+        "display": null,
         "display_options": null,
-        "field": "is_spielplaner",
+        "field": "adresse",
         "group": null,
         "hidden": false,
-        "interface": "boolean",
+        "interface": "input",
         "note": null,
         "options": null,
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 35,
+        "sort": null,
         "special": null,
         "translations": null,
         "validation": null,
         "validation_message": null,
-        "width": "half"
+        "width": "full"
       },
       "schema": {
-        "name": "is_spielplaner",
+        "name": "adresse",
         "table": "members",
-        "data_type": "boolean",
-        "default_value": false,
-        "max_length": null,
+        "data_type": "character varying",
+        "default_value": null,
+        "max_length": 255,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "members",
+      "field": "plz",
+      "type": "string",
+      "meta": {
+        "collection": "members",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "plz",
+        "group": null,
+        "hidden": false,
+        "interface": "input",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": null,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "plz",
+        "table": "members",
+        "data_type": "character varying",
+        "default_value": null,
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "members",
+      "field": "ort",
+      "type": "string",
+      "meta": {
+        "collection": "members",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "ort",
+        "group": null,
+        "hidden": false,
+        "interface": "input",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": null,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "ort",
+        "table": "members",
+        "data_type": "character varying",
+        "default_value": null,
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "members",
+      "field": "nationalitaet",
+      "type": "string",
+      "meta": {
+        "collection": "members",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "nationalitaet",
+        "group": null,
+        "hidden": false,
+        "interface": "input",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": null,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "nationalitaet",
+        "table": "members",
+        "data_type": "character varying",
+        "default_value": null,
+        "max_length": 100,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "members",
+      "field": "anrede",
+      "type": "string",
+      "meta": {
+        "collection": "members",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "anrede",
+        "group": null,
+        "hidden": false,
+        "interface": "input",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": null,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "anrede",
+        "table": "members",
+        "data_type": "character varying",
+        "default_value": null,
+        "max_length": 10,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "members",
+      "field": "ahv_nummer",
+      "type": "string",
+      "meta": {
+        "collection": "members",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "ahv_nummer",
+        "group": null,
+        "hidden": false,
+        "interface": "input",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": null,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "ahv_nummer",
+        "table": "members",
+        "data_type": "character varying",
+        "default_value": null,
+        "max_length": 20,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "members",
+      "field": "beitragskategorie",
+      "type": "string",
+      "meta": {
+        "collection": "members",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "beitragskategorie",
+        "group": null,
+        "hidden": false,
+        "interface": "input",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": null,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "beitragskategorie",
+        "table": "members",
+        "data_type": "character varying",
+        "default_value": null,
+        "max_length": 100,
         "numeric_precision": null,
         "numeric_scale": null,
         "is_nullable": true,
@@ -1633,6 +1992,31 @@
         "constraint_name": "absences_member_foreign",
         "on_update": "NO ACTION",
         "on_delete": "CASCADE"
+      }
+    },
+    {
+      "collection": "announcements",
+      "field": "created_by",
+      "related_collection": "members",
+      "meta": {
+        "junction_field": null,
+        "many_collection": "announcements",
+        "many_field": "created_by",
+        "one_allowed_collections": null,
+        "one_collection": "members",
+        "one_collection_field": null,
+        "one_deselect_action": "nullify",
+        "one_field": null,
+        "sort_field": null
+      },
+      "schema": {
+        "table": "announcements",
+        "column": "created_by",
+        "foreign_key_table": "members",
+        "foreign_key_column": "id",
+        "constraint_name": "announcements_created_by_foreign",
+        "on_update": "NO ACTION",
+        "on_delete": "SET NULL"
       }
     },
     {
@@ -1686,6 +2070,56 @@
       }
     },
     {
+      "collection": "conversation_members",
+      "field": "member",
+      "related_collection": "members",
+      "meta": {
+        "junction_field": "conversation",
+        "many_collection": "conversation_members",
+        "many_field": "member",
+        "one_allowed_collections": null,
+        "one_collection": "members",
+        "one_collection_field": null,
+        "one_deselect_action": "nullify",
+        "one_field": null,
+        "sort_field": null
+      },
+      "schema": {
+        "table": "conversation_members",
+        "column": "member",
+        "foreign_key_table": "members",
+        "foreign_key_column": "id",
+        "constraint_name": "conversation_members_member_foreign",
+        "on_update": "NO ACTION",
+        "on_delete": "SET NULL"
+      }
+    },
+    {
+      "collection": "conversations",
+      "field": "created_by",
+      "related_collection": "members",
+      "meta": {
+        "junction_field": null,
+        "many_collection": "conversations",
+        "many_field": "created_by",
+        "one_allowed_collections": null,
+        "one_collection": "members",
+        "one_collection_field": null,
+        "one_deselect_action": "nullify",
+        "one_field": null,
+        "sort_field": null
+      },
+      "schema": {
+        "table": "conversations",
+        "column": "created_by",
+        "foreign_key_table": "members",
+        "foreign_key_column": "id",
+        "constraint_name": "conversations_created_by_foreign",
+        "on_update": "NO ACTION",
+        "on_delete": "RESTRICT"
+      }
+    },
+    {
       "collection": "events",
       "field": "created_by",
       "related_collection": "members",
@@ -1699,15 +2133,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "events",
-        "column": "created_by",
-        "foreign_key_table": "members",
-        "foreign_key_column": "id",
-        "constraint_name": "events_created_by_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1730,25 +2155,9 @@
         "column": "members_id",
         "foreign_key_table": "members",
         "foreign_key_column": "id",
-        "constraint_name": "events_members_members_id_fkey",
+        "constraint_name": "events_members_members_id_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "CASCADE"
-      }
-    },
-    {
-      "collection": "events_members",
-      "field": "members_id",
-      "related_collection": "members",
-      "meta": {
-        "junction_field": "events_id",
-        "many_collection": "events_members",
-        "many_field": "members_id",
-        "one_allowed_collections": null,
-        "one_collection": "members",
-        "one_collection_field": null,
-        "one_deselect_action": "nullify",
-        "one_field": null,
-        "sort_field": null
+        "on_delete": "SET NULL"
       }
     },
     {
@@ -1765,15 +2174,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "games",
-        "column": "scorer_member",
-        "foreign_key_table": "members",
-        "foreign_key_column": "id",
-        "constraint_name": "games_scorer_member_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1790,15 +2190,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "games",
-        "column": "scoreboard_member",
-        "foreign_key_table": "members",
-        "foreign_key_column": "id",
-        "constraint_name": "games_scoreboard_member_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1815,15 +2206,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "games",
-        "column": "scorer_scoreboard_member",
-        "foreign_key_table": "members",
-        "foreign_key_column": "id",
-        "constraint_name": "games_scorer_scoreboard_member_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1840,15 +2222,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "games",
-        "column": "bb_scorer_member",
-        "foreign_key_table": "members",
-        "foreign_key_column": "id",
-        "constraint_name": "games_bb_scorer_member_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1865,15 +2238,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "games",
-        "column": "bb_timekeeper_member",
-        "foreign_key_table": "members",
-        "foreign_key_column": "id",
-        "constraint_name": "games_bb_timekeeper_member_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1890,15 +2254,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "games",
-        "column": "bb_24s_official",
-        "foreign_key_table": "members",
-        "foreign_key_column": "id",
-        "constraint_name": "games_bb_24s_official_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1940,15 +2295,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "members",
-        "column": "requested_team",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "members_requested_team_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1965,15 +2311,56 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
+      }
+    },
+    {
+      "collection": "message_reactions",
+      "field": "member",
+      "related_collection": "members",
+      "meta": {
+        "junction_field": null,
+        "many_collection": "message_reactions",
+        "many_field": "member",
+        "one_allowed_collections": null,
+        "one_collection": "members",
+        "one_collection_field": null,
+        "one_deselect_action": "nullify",
+        "one_field": null,
+        "sort_field": null
       },
       "schema": {
-        "table": "members",
-        "column": "user",
-        "foreign_key_table": "directus_users",
+        "table": "message_reactions",
+        "column": "member",
+        "foreign_key_table": "members",
         "foreign_key_column": "id",
-        "constraint_name": "members_user_foreign",
+        "constraint_name": "message_reactions_member_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
+        "on_delete": "NO ACTION"
+      }
+    },
+    {
+      "collection": "messages",
+      "field": "sender",
+      "related_collection": "members",
+      "meta": {
+        "junction_field": null,
+        "many_collection": "messages",
+        "many_field": "sender",
+        "one_allowed_collections": null,
+        "one_collection": "members",
+        "one_collection_field": null,
+        "one_deselect_action": "nullify",
+        "one_field": null,
+        "sort_field": null
+      },
+      "schema": {
+        "table": "messages",
+        "column": "sender",
+        "foreign_key_table": "members",
+        "foreign_key_column": "id",
+        "constraint_name": "messages_sender_foreign",
+        "on_update": "NO ACTION",
+        "on_delete": "NO ACTION"
       }
     },
     {
@@ -2065,15 +2452,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "polls",
-        "column": "created_by",
-        "foreign_key_table": "members",
-        "foreign_key_column": "id",
-        "constraint_name": "polls_created_by_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -2115,15 +2493,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "referee_expenses",
-        "column": "paid_by_member",
-        "foreign_key_table": "members",
-        "foreign_key_column": "id",
-        "constraint_name": "referee_expenses_paid_by_member_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -2140,15 +2509,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "referee_expenses",
-        "column": "recorded_by",
-        "foreign_key_table": "members",
-        "foreign_key_column": "id",
-        "constraint_name": "referee_expenses_recorded_by_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -2240,15 +2600,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "task_templates",
-        "column": "created_by",
-        "foreign_key_table": "members",
-        "foreign_key_column": "id",
-        "constraint_name": "task_templates_created_by_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -2265,15 +2616,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "tasks",
-        "column": "assigned_to",
-        "foreign_key_table": "members",
-        "foreign_key_column": "id",
-        "constraint_name": "tasks_assigned_to_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -2290,15 +2632,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "tasks",
-        "column": "claimed_by",
-        "foreign_key_table": "members",
-        "foreign_key_column": "id",
-        "constraint_name": "tasks_claimed_by_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -2315,15 +2648,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "tasks",
-        "column": "created_by",
-        "foreign_key_table": "members",
-        "foreign_key_column": "id",
-        "constraint_name": "tasks_created_by_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -2340,15 +2664,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "team_invites",
-        "column": "invited_by",
-        "foreign_key_table": "members",
-        "foreign_key_column": "id",
-        "constraint_name": "team_invites_invited_by_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -2365,24 +2680,40 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
+      }
+    },
+    {
+      "collection": "teams",
+      "field": "captain",
+      "related_collection": "members",
+      "meta": {
+        "junction_field": null,
+        "many_collection": "teams",
+        "many_field": "captain",
+        "one_allowed_collections": null,
+        "one_collection": "members",
+        "one_collection_field": null,
+        "one_deselect_action": "nullify",
+        "one_field": null,
+        "sort_field": null
       },
       "schema": {
-        "table": "team_invites",
-        "column": "claimed_by",
+        "table": "teams",
+        "column": "captain",
         "foreign_key_table": "members",
         "foreign_key_column": "id",
-        "constraint_name": "team_invites_claimed_by_foreign",
+        "constraint_name": "teams_captain_foreign",
         "on_update": "NO ACTION",
         "on_delete": "SET NULL"
       }
     },
     {
-      "collection": "teams_captain",
+      "collection": "teams_coaches",
       "field": "members_id",
       "related_collection": "members",
       "meta": {
-        "junction_field": null,
-        "many_collection": "teams_captain",
+        "junction_field": "teams_id",
+        "many_collection": "teams_coaches",
         "many_field": "members_id",
         "one_allowed_collections": null,
         "one_collection": "members",
@@ -2392,22 +2723,22 @@
         "sort_field": null
       },
       "schema": {
-        "table": "teams_captain",
+        "table": "teams_coaches",
         "column": "members_id",
         "foreign_key_table": "members",
         "foreign_key_column": "id",
-        "constraint_name": "teams_captain_members_id_foreign",
+        "constraint_name": "teams_members_3_members_id_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "CASCADE"
+        "on_delete": "SET NULL"
       }
     },
     {
-      "collection": "teams_coach",
+      "collection": "teams_responsibles",
       "field": "members_id",
       "related_collection": "members",
       "meta": {
-        "junction_field": null,
-        "many_collection": "teams_coach",
+        "junction_field": "teams_id",
+        "many_collection": "teams_responsibles",
         "many_field": "members_id",
         "one_allowed_collections": null,
         "one_collection": "members",
@@ -2417,38 +2748,13 @@
         "sort_field": null
       },
       "schema": {
-        "table": "teams_coach",
+        "table": "teams_responsibles",
         "column": "members_id",
         "foreign_key_table": "members",
         "foreign_key_column": "id",
-        "constraint_name": "teams_coach_members_id_foreign",
+        "constraint_name": "teams_members_4_members_id_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "CASCADE"
-      }
-    },
-    {
-      "collection": "teams_team_responsible",
-      "field": "members_id",
-      "related_collection": "members",
-      "meta": {
-        "junction_field": null,
-        "many_collection": "teams_team_responsible",
-        "many_field": "members_id",
-        "one_allowed_collections": null,
-        "one_collection": "members",
-        "one_collection_field": null,
-        "one_deselect_action": "nullify",
-        "one_field": null,
-        "sort_field": null
-      },
-      "schema": {
-        "table": "teams_team_responsible",
-        "column": "members_id",
-        "foreign_key_table": "members",
-        "foreign_key_column": "id",
-        "constraint_name": "teams_team_responsible_members_id_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "CASCADE"
+        "on_delete": "SET NULL"
       }
     },
     {

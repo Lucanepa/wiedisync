@@ -8,21 +8,26 @@ export type AbsenceWithMember = Absence & { member: Member | string }
 export function useTeamAbsences(teamIds: string[], startDate: string, endDate: string) {
   const [absences, setAbsences] = useState<AbsenceWithMember[]>([])
   const [memberMap, setMemberMap] = useState<Record<string, Member>>({})
-  const [isLoading, setIsLoading] = useState(true)
+  // Derived loading: compare requested key to the one we've loaded. Prevents
+  // the flash where isLoading stays false after teamIds flip but before the
+  // refetch effect runs setIsLoading(true).
+  const [loadedKey, setLoadedKey] = useState<string | null | undefined>(undefined)
   const [error, setError] = useState<Error | null>(null)
 
   // Stable key for dependency tracking
   const teamIdsKey = teamIds.join(',')
+  const requestedKey = teamIds.length === 0 ? null : `${teamIdsKey}|${startDate}|${endDate}`
+  const isLoading = loadedKey !== requestedKey
 
   const fetch = useCallback(async () => {
     if (teamIds.length === 0) {
       setAbsences([])
       setMemberMap({})
-      setIsLoading(false)
+      setLoadedKey(null)
       return
     }
 
-    setIsLoading(true)
+    const key = `${teamIdsKey}|${startDate}|${endDate}`
     setError(null)
     try {
       // Get players from member_teams for all teams
@@ -51,7 +56,7 @@ export function useTeamAbsences(teamIds: string[], startDate: string, endDate: s
       if (memberIds.length === 0) {
         setAbsences([])
         setMemberMap({})
-        setIsLoading(false)
+        setLoadedKey(key)
         return
       }
 
@@ -100,7 +105,7 @@ export function useTeamAbsences(teamIds: string[], startDate: string, endDate: s
     } catch (err) {
       setError(err instanceof Error ? err : new Error(String(err)))
     } finally {
-      setIsLoading(false)
+      setLoadedKey(key)
     }
   }, [teamIdsKey, startDate, endDate]) // eslint-disable-line react-hooks/exhaustive-deps
 

@@ -2,6 +2,12 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.9.1] — 2026-04-17
+
+### Fixes
+
+- **Team page load flash** — Navigating from the teams list into a team detail page no longer briefly shows an empty roster before the loading indicator reappears. Derived loading state in `useTeamMembers`, `useMultiTeamMembers`, and `useTeamAbsences` flips to `true` synchronously when the team/ID input changes, eliminating a one-frame paint window.
+
 ## [3.9.0] — 2026-04-14
 
 ### Features

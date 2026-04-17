@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.9.0'
+const APP_VERSION = '3.9.1'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,18 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.9.1',
+    date: '2026-04-17',
+    sections: [
+      {
+        title: 'Fixes',
+        items: [
+          'Removed a brief flash when navigating from the teams list into a team page. Roster, absence, and participation views now stay on the loading state continuously instead of rendering an empty page before members arrive.',
+        ],
+      },
+    ],
+  },
   {
     version: '3.9.0',
     date: '2026-04-14',

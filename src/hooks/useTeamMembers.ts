@@ -8,22 +8,28 @@ export type ExpandedMemberTeam = Omit<MemberTeam, 'member'> & { member: (Member 
 
 export function useTeamMembers(teamId: string | undefined, season?: string) {
   const [members, setMembers] = useState<ExpandedMemberTeam[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  // loadedKey is derived-state for isLoading: undefined = never loaded (initial),
+  // null = loaded "no teamId" state, string = loaded data for that key.
+  // Deriving isLoading synchronously from key mismatch eliminates the flash
+  // where isLoading briefly stays false between a teamId change and the effect
+  // firing setIsLoading(true).
+  const [loadedKey, setLoadedKey] = useState<string | null | undefined>(undefined)
   const [error, setError] = useState<Error | null>(null)
 
+  const safeTeamId = teamId ? relId(teamId) : ''
+  const requestedKey = safeTeamId ? `${safeTeamId}:${season ?? ''}` : null
+  const isLoading = loadedKey !== requestedKey
+
   const fetch = useCallback(async () => {
-    if (!teamId) {
+    if (!safeTeamId) {
       setMembers([])
-      setIsLoading(false)
+      setLoadedKey(null)
       return
     }
 
-    setIsLoading(true)
     setError(null)
+    const key = `${safeTeamId}:${season ?? ''}`
     try {
-      // Defensive: ensure we always pass a scalar ID, never an expanded object
-      const safeTeamId = relId(teamId)
-      if (!safeTeamId) { setMembers([]); setIsLoading(false); return }
       const team = await fetchItem<Team>('teams', safeTeamId, { fields: ['id', 'sport'] })
       const filter: Record<string, unknown> = { team: { _eq: safeTeamId } }
       if (season) filter.season = { _eq: season }
@@ -54,9 +60,9 @@ export function useTeamMembers(teamId: string | undefined, season?: string) {
     } catch (err) {
       setError(err instanceof Error ? err : new Error(String(err)))
     } finally {
-      setIsLoading(false)
+      setLoadedKey(key)
     }
-  }, [teamId, season])
+  }, [safeTeamId, season])
 
   useEffect(() => {
     fetch()
@@ -68,22 +74,23 @@ export function useTeamMembers(teamId: string | undefined, season?: string) {
 /** Fetch members from multiple teams, deduplicating by member ID. */
 export function useMultiTeamMembers(teamIds: string[]) {
   const [members, setMembers] = useState<ExpandedMemberTeam[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [loadedKey, setLoadedKey] = useState<string | null | undefined>(undefined)
   const [error, setError] = useState<Error | null>(null)
   // Defensive: ensure all IDs are scalars
   const safeIds = teamIds.map(id => relId(id)).filter(Boolean)
   const key = safeIds.slice().sort().join(',')
+  const requestedKey = safeIds.length === 0 ? null : key
+  const isLoading = loadedKey !== requestedKey
 
   const fetch = useCallback(async () => {
     if (safeIds.length === 0) {
       setMembers([])
-      setIsLoading(false)
+      setLoadedKey(null)
       return
     }
 
     // Single team — delegate to simpler path
     if (safeIds.length === 1) {
-      setIsLoading(true)
       setError(null)
       try {
         const result = await fetchAllItems<ExpandedMemberTeam>('member_teams', {
@@ -95,12 +102,11 @@ export function useMultiTeamMembers(teamIds: string[]) {
       } catch (err) {
         setError(err instanceof Error ? err : new Error(String(err)))
       } finally {
-        setIsLoading(false)
+        setLoadedKey(key)
       }
       return
     }
 
-    setIsLoading(true)
     setError(null)
     try {
       const result = await fetchAllItems<ExpandedMemberTeam>('member_teams', {
@@ -120,7 +126,7 @@ export function useMultiTeamMembers(teamIds: string[]) {
     } catch (err) {
       setError(err instanceof Error ? err : new Error(String(err)))
     } finally {
-      setIsLoading(false)
+      setLoadedKey(key)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key])

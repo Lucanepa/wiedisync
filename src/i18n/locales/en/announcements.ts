@@ -53,6 +53,7 @@ export default {
   confirmDeleteBody: 'This action cannot be undone.',
 
   openLink: 'Read more',
+  linkHint: 'Link to the discounted ticket — the discount should already be applied.',
   loadMore: 'Load more',
   signInRequired: 'Please sign in to see news.',
 

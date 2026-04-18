@@ -62,15 +62,20 @@ export default function AnnouncementDetailModal({ announcement, onClose }: Props
         {tr.body && <RichText html={tr.body} />}
 
         {safeLink && (
-          <a
-            href={safeLink}
-            target={safeLink.startsWith('http') ? '_blank' : undefined}
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700"
-          >
-            {linkLabel}
-            <ExternalLink className="h-3.5 w-3.5" />
-          </a>
+          <div className="space-y-2">
+            <p className="text-sm text-gray-600 dark:text-gray-300">
+              {t('linkHint', { defaultValue: 'Link zum vergünstigten Ticket — der Rabatt sollte bereits angewendet sein.' })}
+            </p>
+            <a
+              href={safeLink}
+              target={safeLink.startsWith('http') ? '_blank' : undefined}
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700"
+            >
+              {linkLabel}
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          </div>
         )}
       </div>
     </Modal>

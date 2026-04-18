@@ -53,6 +53,7 @@ export default {
   confirmDeleteBody: 'Das chasch nüm rückgängig mache.',
 
   openLink: 'Mehr erfahre',
+  linkHint: 'Link zum vergünstigte Ticket — de Rabatt sötti scho aagwendet sii.',
   loadMore: 'Meh azeige',
   signInRequired: 'Bitte alogge zum d\'News z\'gseh.',
 

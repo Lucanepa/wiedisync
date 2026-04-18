@@ -3,6 +3,7 @@ import { Megaphone, Pin } from 'lucide-react'
 import { assetUrl } from '../../../lib/api'
 import { stripHtml } from '../../../components/RichText'
 import { pickTranslation } from '../../../hooks/useAnnouncements'
+import { parseWallClock } from '../../../utils/dateHelpers'
 import type { Announcement } from '../../../types'
 
 interface Props {
@@ -17,7 +18,7 @@ export default function AnnouncementRow({ announcement, onClick }: Props) {
   const timeAgo = (() => {
     const ts = announcement.published_at ?? announcement.date_created
     if (!ts) return ''
-    const diff = Date.now() - new Date(ts).getTime()
+    const diff = Date.now() - parseWallClock(ts).getTime()
     const minutes = Math.floor(diff / 60000)
     if (minutes < 1) return String(t('justNow'))
     if (minutes < 60) return String(t('minutesAgo', { count: minutes }))

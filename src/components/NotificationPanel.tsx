@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { ClipboardList, Clock, AlertTriangle, Trophy, Bell, ArrowRightLeft, BellRing, BellOff, UserPlus } from 'lucide-react'
 import type { Notification } from '../types'
 import { usePushNotifications } from '../hooks/usePushNotifications'
+import { parseWallClock } from '../utils/dateHelpers'
 
 interface NotificationPanelProps {
   notifications: Notification[]
@@ -34,7 +35,7 @@ const typeLabels: Record<string, string> = {
 }
 
 function timeAgo(dateStr: string, t: (key: string, opts?: Record<string, unknown>) => string): string {
-  const diff = Date.now() - new Date(dateStr).getTime()
+  const diff = Date.now() - parseWallClock(dateStr).getTime()
   const minutes = Math.floor(diff / 60000)
   if (minutes < 1) return t('justNow')
   if (minutes < 60) return t('minutesAgo', { count: minutes })

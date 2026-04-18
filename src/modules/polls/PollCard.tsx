@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Clock, Lock, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { Poll } from '../../types'
+import { parseWallClock } from '../../utils/dateHelpers'
 import { usePollVotes } from './hooks/usePoll'
 
 interface PollCardProps {
@@ -83,7 +84,7 @@ export default function PollCard({ poll, canManage, onClose, onDelete }: PollCar
             <span className="text-red-500 dark:text-red-400">{t('deadlinePassed')}</span>
           ) : (
             <span>
-              {t('deadline')}: {new Date(poll.deadline).toLocaleDateString()}
+              {t('deadline')}: {parseWallClock(poll.deadline).toLocaleDateString()}
             </span>
           )}
         </div>

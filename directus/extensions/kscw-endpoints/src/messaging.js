@@ -12,6 +12,7 @@ import {
   loadBlocks, shareTeam, findExistingDmConversation, checkDeclineCooldown,
   requireRequestRecipient,
   requireMessageOwner, requireTeamModerator, snapshotMessage, requireAdmin,
+  resolveRecipientsForPush, buildPushPreview,
 } from './messaging-helpers.js'
 
 const stub = (name) => (req, res) => res.status(501).json({
@@ -24,6 +25,39 @@ export function registerMessaging(router, ctx) {
   const { database: db, logger, services, getSchema } = ctx
   const { ItemsService } = services
   const log = logger.child({ extension: 'kscw-messaging' })
+
+  // Non-blocking push fan-out. Fire-and-forget — never awaited by the caller.
+  // Groups recipients by push_preview_content flag and calls sendPushToMembers
+  // once per group. Errors logged but don't propagate.
+  async function firePushForMessage(conv, sender, body, opts = {}) {
+    try {
+      const recipientIds = await resolveRecipientsForPush(db, conv, sender.id)
+      if (recipientIds.length === 0) return
+      const recipients = await db('members')
+        .whereIn('id', recipientIds)
+        .select('id', 'push_preview_content')
+      const senderName = [sender.first_name, sender.last_name].filter(Boolean).join(' ') || 'KSCW'
+
+      const withPreview = recipients.filter(r => r.push_preview_content === true).map(r => r.id)
+      const genericOnly = recipients.filter(r => r.push_preview_content !== true).map(r => r.id)
+
+      const { sendPushToMembers } = await import('./web-push.js')
+      const url = process.env.FRONTEND_URL || 'https://wiedisync.kscw.ch'
+      const pushUrl = `${url}/inbox/${conv.id}`
+      const tag = `msg-${conv.id}`
+
+      if (withPreview.length > 0) {
+        const previewBody = buildPushPreview({ push_preview_content: true }, senderName, opts.pollQuestion ? `📊 ${opts.pollQuestion}` : body)
+        await sendPushToMembers(db, withPreview, senderName, previewBody, pushUrl, tag, log)
+      }
+      if (genericOnly.length > 0) {
+        const genericBody = buildPushPreview({ push_preview_content: false }, senderName, body)
+        await sendPushToMembers(db, genericOnly, 'KSC Wiedikon', genericBody, pushUrl, tag, log)
+      }
+    } catch (err) {
+      log.error({ err: err?.message ?? String(err) }, 'messaging push fan-out failed')
+    }
+  }
 
   // ── GET /messaging/conversations ─────────────────────────────────────
   router.get('/messaging/conversations', async (req, res) => {
@@ -220,6 +254,8 @@ export function registerMessaging(router, ctx) {
         deleted_at: null,
         sender_name: [member.first_name, member.last_name].filter(Boolean).join(' ') || null,
       }
+      // Non-blocking push fan-out (spec §5). Fire-and-forget.
+      ;(async () => { await firePushForMessage(conv, member, body) })()
       res.json(inserted)
     } catch (e) { sendError(res, log, e) }
   })
@@ -804,6 +840,8 @@ export function registerMessaging(router, ctx) {
         last_message_at: nowIso, last_message_preview: preview,
       })
 
+      // Non-blocking push fan-out (poll variant — use question as preview)
+      ;(async () => { await firePushForMessage(conv, me, null, { pollQuestion: question }) })()
       res.json({ poll_id: pollId, message_id: messageId })
     } catch (e) { sendError(res, log, e) }
   })

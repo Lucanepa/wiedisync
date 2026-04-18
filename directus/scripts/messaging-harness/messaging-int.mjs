@@ -68,11 +68,10 @@ const EXPECTED_MEMBER_FIELDS = [
 // Plan 04 implemented: POST /messages/:id/reactions, PATCH /messages/:id,
 // DELETE /messages/:id, POST /reports, GET /reports, PATCH /reports/:id,
 // POST /messaging/polls — pruned below (reactions + reports removed from stubs).
-// Remaining stubs for Plan 05:
-const EXPECTED_ENDPOINTS = [
-  ['POST',   '/kscw/messaging/settings/consent'],
-  ['POST',   '/kscw/messaging/export'],
-]
+// Plan 05 implemented: POST /settings/consent, POST /conversations/:id/clear,
+// POST /export — all stubs now live. Array is empty.
+// After Plan 05, there are no 501 endpoints left.
+const EXPECTED_ENDPOINTS = []
 
 async function testCollections() {
   console.log('\n[collections] verifying new collections exist...')
@@ -98,6 +97,7 @@ async function testMemberFields() {
 }
 
 async function testEndpointSkeleton() {
+  if (EXPECTED_ENDPOINTS.length === 0) return  // Plan 05: all stubs implemented
   console.log('\n[endpoints] verifying /kscw/messaging/* routes respond 501...')
   for (const [method, path] of EXPECTED_ENDPOINTS) {
     try {
@@ -704,6 +704,103 @@ async function testPlan04Endpoints(dbClient) {
   }
 }
 
+async function testPlan05Endpoints(dbClient) {
+  console.log('\n[plan05] verifying consent + clear + export + retention helpers...')
+
+  const TOKEN_A = process.env.DIRECTUS_DEV_USER_TOKEN_A
+  if (!TOKEN_A) { fail('plan05 token', 'DIRECTUS_DEV_USER_TOKEN_A required'); return }
+  const memberA = Number(process.env.MESSAGING_TEST_MEMBER_A)
+  const convId = process.env.MESSAGING_TEST_CONV
+
+  const asA = (p, i={}) => fetch(`${API}${p}`, { ...i,
+    headers: { Authorization:`Bearer ${TOKEN_A}`, 'Content-Type':'application/json', ...(i.headers??{}) } })
+
+  // 1. POST /settings/consent decision=accepted
+  try {
+    await dbClient.query(
+      `UPDATE members SET consent_decision='pending', consent_prompted_at=NULL,
+         communications_team_chat_enabled=false, communications_dm_enabled=false WHERE id=$1`,
+      [memberA])
+    const r = await asA('/kscw/messaging/settings/consent', {
+      method:'POST', body: JSON.stringify({ decision: 'accepted' }) })
+    if (r.status !== 200) throw new Error(`status=${r.status}`)
+    const row = await dbClient.query(
+      `SELECT consent_decision, communications_team_chat_enabled, communications_dm_enabled FROM members WHERE id=$1`, [memberA])
+    if (row.rows[0]?.consent_decision !== 'accepted') throw new Error('consent not accepted')
+    if (row.rows[0]?.communications_team_chat_enabled !== true) throw new Error('team_chat flag not set')
+    if (row.rows[0]?.communications_dm_enabled !== true) throw new Error('dm flag not set')
+    pass('POST /settings/consent accepted → flags on + consent=accepted')
+  } catch (e) { fail('consent accepted', e) }
+
+  // 2. Consent=later → prompted_at bumped, decision stays pending
+  try {
+    await dbClient.query(`UPDATE members SET consent_decision='pending', consent_prompted_at=NULL WHERE id=$1`, [memberA])
+    const r = await asA('/kscw/messaging/settings/consent', {
+      method:'POST', body: JSON.stringify({ decision: 'later' }) })
+    if (r.status !== 200) throw new Error(`status=${r.status}`)
+    const row = await dbClient.query(
+      `SELECT consent_decision, consent_prompted_at FROM members WHERE id=$1`, [memberA])
+    if (row.rows[0]?.consent_decision !== 'pending') throw new Error('consent shouldnt change on later')
+    if (!row.rows[0]?.consent_prompted_at) throw new Error('prompted_at not bumped')
+    pass('POST /settings/consent later → prompted_at bumped, decision still pending')
+  } catch (e) { fail('consent later', e) }
+
+  // 3. Consent=declined
+  try {
+    const r = await asA('/kscw/messaging/settings/consent', {
+      method:'POST', body: JSON.stringify({ decision: 'declined' }) })
+    if (r.status !== 200) throw new Error(`status=${r.status}`)
+    const row = await dbClient.query(`SELECT consent_decision FROM members WHERE id=$1`, [memberA])
+    if (row.rows[0]?.consent_decision !== 'declined') throw new Error('decision not declined')
+    pass('POST /settings/consent declined → decision=declined')
+  } catch (e) { fail('consent declined', e) }
+
+  // Restore for downstream:
+  await dbClient.query(
+    `UPDATE members SET consent_decision='accepted', communications_team_chat_enabled=true, communications_dm_enabled=true WHERE id=$1`,
+    [memberA])
+
+  // 4. POST /conversations/:id/clear
+  try {
+    await asA('/kscw/messaging/messages', { method:'POST',
+      body: JSON.stringify({ conversation: convId, type:'text', body:'p05-clear-1' }) })
+    await asA('/kscw/messaging/messages', { method:'POST',
+      body: JSON.stringify({ conversation: convId, type:'text', body:'p05-clear-2' }) })
+    const r = await asA(`/kscw/messaging/conversations/${convId}/clear`, { method:'POST' })
+    const b = await r.json()
+    if (r.status !== 200) throw new Error(`status=${r.status}`)
+    if (typeof b.cleared !== 'number' || b.cleared < 2) throw new Error(`expected cleared>=2, got ${b.cleared}`)
+    const remaining = await dbClient.query(
+      `SELECT COUNT(*) FROM messages WHERE conversation=$1 AND sender=$2 AND deleted_at IS NULL`, [convId, memberA])
+    if (Number(remaining.rows[0].count) !== 0) throw new Error(`A still has ${remaining.rows[0].count} live messages`)
+    pass('POST /conversations/:id/clear soft-deletes all sender messages')
+  } catch (e) { fail('clear conversation', e) }
+
+  // 5. POST /export — JSON bundle
+  try {
+    // Ensure rate limit is cleared first
+    await dbClient.query(`UPDATE members SET last_export_at = NULL WHERE id=$1`, [memberA])
+    const r = await asA('/kscw/messaging/export', { method:'POST' })
+    const b = await r.json()
+    if (r.status !== 200) throw new Error(`status=${r.status}`)
+    for (const key of ['messages', 'conversations', 'reactions', 'blocks', 'settings', 'reports_filed']) {
+      if (!(key in b)) throw new Error(`missing section: ${key}`)
+    }
+    if (!b.generated_at) throw new Error('missing generated_at')
+    pass('POST /export returns a structured bundle')
+  } catch (e) { fail('export', e) }
+
+  // 6. Export rate-limit
+  try {
+    const r = await asA('/kscw/messaging/export', { method:'POST' })
+    const b = await r.json().catch(() => ({}))
+    if (!((r.status === 429 && b.code === 'messaging/rate_limited') || (r.status === 200 && b.cached === true))) {
+      throw new Error(`status=${r.status} code=${b.code} cached=${b.cached}`)
+    }
+    pass('POST /export enforces 1/day rate limit')
+  } catch (e) { fail('export rate limit', e) }
+}
+
 async function main() {
   const client = new pg.Client({ connectionString: DB_URL })
   await client.connect()
@@ -716,6 +813,7 @@ async function main() {
     await testPlan02Endpoints(client)
     await testPlan03Endpoints(client)
     await testPlan04Endpoints(client)
+    await testPlan05Endpoints(client)
   } finally {
     await client.end()
   }

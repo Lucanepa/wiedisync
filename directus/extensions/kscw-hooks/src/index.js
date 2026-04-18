@@ -684,8 +684,17 @@ export default ({ action, filter, init, schedule }, { services, database, logger
               // Gate: never render `ann.link` inline in the email. External/CTA
               // links stay behind wiedisync login — recipients click the layout
               // CTA ("Auf WiediSync ansehen") to reach the full post + link.
+              //
+              // Body wrapper forces justified text. Inline anchors get an
+              // explicit light-blue style (default browser blue is unreadable
+              // on the #1e293b dark card). We inline-style via regex rather
+              // than a <style> block so the CTA button <a> isn't affected.
+              const bodyWithStyledLinks = bodyHtml.replace(
+                /<a\s/gi,
+                '<a style="color:#93c5fd;text-decoration:underline" ',
+              )
               const emailBody =
-                `<div style="font-size:14px;color:#e2e8f0;line-height:1.6">${bodyHtml}</div>`
+                `<div style="font-size:14px;color:#e2e8f0;line-height:1.6;text-align:justify">${bodyWithStyledLinks}</div>`
 
               const html = buildEmailLayout(emailBody, {
                 title: isGerman ? 'Vereinsnews' : 'Club news',

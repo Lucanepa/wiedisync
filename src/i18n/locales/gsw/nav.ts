@@ -45,4 +45,5 @@ export default {
   adminExplorer: 'Dateni-Explorer',
   announcements: 'Vereinsnews',
   news: 'News',
+  moderationReports: 'Moderationsberichte',
 } as const

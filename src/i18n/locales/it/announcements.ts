@@ -53,6 +53,7 @@ export default {
   confirmDeleteBody: 'Questa azione è irreversibile.',
 
   openLink: 'Scopri di più',
+  linkHint: 'Link al biglietto scontato — lo sconto dovrebbe essere già applicato.',
   loadMore: 'Carica altri',
   signInRequired: 'Accedi per vedere le notizie.',
 

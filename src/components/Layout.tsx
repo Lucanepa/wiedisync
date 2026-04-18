@@ -27,7 +27,7 @@ import { asObj } from '../utils/relations'
 import {
   Home, Calendar, Trophy, UserX, PenSquare, PartyPopper, Users,
   ClipboardList, Building2, CalendarClock, Activity, Inbox,
-  HeartPulse, Settings, ChevronDown, MessageSquare, Banknote, BarChart3, UserPlus, Bug, GraduationCap, Database, Megaphone, Newspaper,
+  HeartPulse, Settings, ChevronDown, MessageSquare, Banknote, BarChart3, UserPlus, Bug, GraduationCap, Database, Megaphone, Newspaper, Flag,
 } from 'lucide-react'
 
 type ExpandedMemberTeam = MemberTeam & { team: Team | string }
@@ -77,6 +77,7 @@ function useNavItems(isLoggedIn: boolean, isApproved: boolean) {
       { to: '/admin/volley-feedback', label: t('volleyFeedback'), icon: <MessageSquare className={iconClass} /> },
       { to: '/admin/explore', label: t('adminExplorer'), icon: <Database className={iconClass} /> },
       { to: '/admin/announcements', label: t('announcements'), icon: <Megaphone className={iconClass} /> },
+      { to: '/admin/reports', label: t('moderationReports'), icon: <Flag className={iconClass} /> },
     ],
     superadminItems: [
       { to: '/admin/infra', label: t('infraHealth'), icon: <Activity className={iconClass} /> },

@@ -553,9 +553,53 @@ export function registerMessaging(router, ctx) {
     } catch (e) { sendError(res, log, e) }
   })
 
+  // ── DELETE /messaging/messages/:id ──────────────────────────────────
+  router.delete('/messaging/messages/:id', async (req, res) => {
+    try {
+      const userId = requireAuth(req)
+      const me = await requireMember(db, userId)
+
+      const msg = await db('messages').where('id', req.params.id).first()
+      if (!msg) throw new MessagingError(404, 'messaging/not_found', 'Message not found')
+      if (msg.deleted_at != null)
+        throw new MessagingError(400, 'messaging/invalid_body', 'Already deleted')
+
+      const isSelf = String(msg.sender) === String(me.id)
+      if (!isSelf) {
+        // Moderator path — only valid for team conversations
+        await requireTeamModerator(db, msg.id, me.id)
+      }
+
+      const schema = await getSchema()
+      const messagesService = new ItemsService('messages', { schema, knex: db })
+      const reportsService  = new ItemsService('reports',  { schema, knex: db })
+      const nowIso = new Date().toISOString()
+
+      await messagesService.updateOne(msg.id, { deleted_at: nowIso })
+
+      if (!isSelf) {
+        // Moderator audit — auto-close report row
+        await reportsService.createOne({
+          id: crypto.randomUUID(),
+          reporter: me.id,
+          reported_member: msg.sender,
+          message: msg.id,
+          conversation: msg.conversation,
+          reason: 'moderator_delete',
+          note: null,
+          message_snapshot: msg.body ?? null,
+          status: 'resolved',
+          resolved_by: me.id,
+          resolved_at: nowIso,
+        })
+      }
+
+      res.json({ id: msg.id, deleted_at: nowIso, moderator_delete: !isSelf })
+    } catch (e) { sendError(res, log, e) }
+  })
+
   // ── The rest stay 501 for Plans 03-05 ───────────────────────────────
   router.post('/messaging/conversations/:id/clear',       stub('POST /conversations/:id/clear'))
-  router.delete('/messaging/messages/:id',                stub('DELETE /messages/:id'))
   router.post('/messaging/reports',                       stub('POST /reports'))
   router.get('/messaging/reports',                        stub('GET /reports'))
   router.patch('/messaging/reports/:id',                  stub('PATCH /reports/:id'))

@@ -130,3 +130,17 @@ export type CreatePollBody = {
   deadline?: string
   anonymous?: boolean
 }
+
+export type ExportBundle = {
+  generated_at: string
+  member_id: string | number
+  conversations: unknown[]
+  messages: unknown[]
+  reactions: unknown[]
+  blocks: unknown[]
+  settings: Record<string, unknown> | null
+  reports_filed: unknown[]
+  cached?: boolean
+  last_export_at?: string
+  message?: string
+}

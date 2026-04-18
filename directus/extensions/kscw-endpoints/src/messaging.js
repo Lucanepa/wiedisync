@@ -310,13 +310,47 @@ export function registerMessaging(router, ctx) {
     } catch (e) { sendError(res, log, e) }
   })
 
+  // ── POST /messaging/requests/:id/accept ─────────────────────────────
+  router.post('/messaging/requests/:id/accept', async (req, res) => {
+    try {
+      const userId = requireAuth(req)
+      const me = await requireMember(db, userId)
+      requireDmEnabled(me)
+      const { req: reqRow } = await requireRequestRecipient(db, req.params.id, me.id)
+
+      const schema = await getSchema()
+      const requestsService = new ItemsService('message_requests', { schema, knex: db })
+      const conversationsService = new ItemsService('conversations', { schema, knex: db })
+      const nowIso = new Date().toISOString()
+
+      await requestsService.updateOne(reqRow.id, { status: 'accepted', resolved_at: nowIso })
+      await conversationsService.updateOne(reqRow.conversation, { type: 'dm' })
+
+      res.json({ conversation_id: reqRow.conversation, status: 'accepted' })
+    } catch (e) { sendError(res, log, e) }
+  })
+
+  // ── POST /messaging/requests/:id/decline ────────────────────────────
+  router.post('/messaging/requests/:id/decline', async (req, res) => {
+    try {
+      const userId = requireAuth(req)
+      const me = await requireMember(db, userId)
+      const { req: reqRow } = await requireRequestRecipient(db, req.params.id, me.id)
+
+      const schema = await getSchema()
+      const requestsService = new ItemsService('message_requests', { schema, knex: db })
+      const nowIso = new Date().toISOString()
+
+      await requestsService.updateOne(reqRow.id, { status: 'declined', resolved_at: nowIso })
+      res.json({ conversation_id: reqRow.conversation, status: 'declined' })
+    } catch (e) { sendError(res, log, e) }
+  })
+
   // ── The rest stay 501 for Plans 03-05 ───────────────────────────────
   router.post('/messaging/conversations/:id/clear',       stub('POST /conversations/:id/clear'))
   router.patch('/messaging/messages/:id',                 stub('PATCH /messages/:id'))
   router.delete('/messaging/messages/:id',                stub('DELETE /messages/:id'))
   router.post('/messaging/messages/:id/reactions',        stub('POST /messages/:id/reactions'))
-  router.post('/messaging/requests/:id/accept',           stub('POST /requests/:id/accept'))
-  router.post('/messaging/requests/:id/decline',          stub('POST /requests/:id/decline'))
   router.post('/messaging/blocks',                        stub('POST /blocks'))
   router.delete('/messaging/blocks/:member',              stub('DELETE /blocks/:member'))
   router.post('/messaging/reports',                       stub('POST /reports'))

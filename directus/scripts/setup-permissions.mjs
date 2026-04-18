@@ -343,6 +343,10 @@ async function main() {
     await setPerm(PUBLIC_POLICY, 'feedback', 'create', null,
       ['type', 'title', 'description', 'source', 'source_url', 'status', 'name', 'email', 'screenshot'])
 
+    // Mixed tournament signups — public create (kscw-website form, validated by Turnstile hook)
+    await setPerm(PUBLIC_POLICY, 'mixed_tournament_signups', 'create', null,
+      ['name', 'email', 'sex', 'position_1', 'position_2', 'position_3', 'teams', 'notes', 'is_member', 'member_id'])
+
     // Files (team photos, logos, feedback screenshots)
     await setPermRead(PUBLIC_POLICY, 'directus_files')
     await setPerm(PUBLIC_POLICY, 'directus_files', 'create')

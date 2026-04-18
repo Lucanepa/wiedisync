@@ -63,11 +63,12 @@ const EXPECTED_MEMBER_FIELDS = [
 // Plan 02 implemented: GET /conversations, POST /messages,
 // POST /conversations/:id/read, POST /conversations/:id/mute,
 // GET /conversations/:id/messages.
+// Plan 03 implemented (after Task 21+): POST /conversations/dm, PATCH /settings,
+// POST /requests/:id/decline, POST /blocks, DELETE /blocks/:member — pruned below.
+// Final EXPECTED_ENDPOINTS after Plan 03 is fully implemented:
 const EXPECTED_ENDPOINTS = [
-  ['POST',   '/kscw/messaging/conversations/dm'],
   ['POST',   '/kscw/messaging/messages/00000000-0000-0000-0000-000000000000/reactions'],
   ['POST',   '/kscw/messaging/reports'],
-  ['PATCH',  '/kscw/messaging/settings'],
   ['POST',   '/kscw/messaging/settings/consent'],
   ['POST',   '/kscw/messaging/export'],
 ]
@@ -289,6 +290,203 @@ async function testSentinelMember() {
   } catch (e) { fail('sentinel member', e) }
 }
 
+async function testPlan03Endpoints(dbClient) {
+  console.log('\n[plan03] verifying DM + request + block endpoints...')
+
+  let seedResult
+  try {
+    const stdout = execSync(
+      `node ${resolve(__dirname, 'seed-plan03.mjs')}`,
+      { env: process.env, encoding: 'utf-8', stdio: ['ignore', 'pipe', 'pipe'] }
+    )
+    const lines = stdout.trim().split('\n').filter(Boolean)
+    const jsonLine = lines.reverse().find(l => l.startsWith('{'))
+    if (!jsonLine) throw new Error(`seed produced no JSON line; stdout: ${stdout.slice(0,200)}`)
+    seedResult = JSON.parse(jsonLine)
+  } catch (e) { fail('plan03 seed', e); return }
+
+  const { memberA, memberB, memberC } = seedResult
+  const TOKEN_A = process.env.DIRECTUS_DEV_USER_TOKEN_A
+  const TOKEN_B = process.env.DIRECTUS_DEV_USER_TOKEN_B
+  if (!TOKEN_A || !TOKEN_B) {
+    fail('plan03 user tokens', 'DIRECTUS_DEV_USER_TOKEN_A and _B must both be set')
+    return
+  }
+  const asA = (p, i={}) => fetch(`${API}${p}`, { ...i,
+    headers: { Authorization:`Bearer ${TOKEN_A}`, 'Content-Type':'application/json', ...(i.headers??{}) } })
+  const asB = (p, i={}) => fetch(`${API}${p}`, { ...i,
+    headers: { Authorization:`Bearer ${TOKEN_B}`, 'Content-Type':'application/json', ...(i.headers??{}) } })
+
+  // ── DM between teammates ───────────────────────────────────────────
+  let dmConv
+  try {
+    const r = await asA('/kscw/messaging/conversations/dm', {
+      method: 'POST',
+      body: JSON.stringify({ recipient: String(memberB) }),
+    })
+    const b = await r.json()
+    if (r.status !== 200) throw new Error(`status=${r.status}: ${JSON.stringify(b)}`)
+    if (!b.conversation_id || b.created !== true || b.type !== 'dm')
+      throw new Error(`unexpected body: ${JSON.stringify(b)}`)
+    dmConv = b.conversation_id
+    const rows = await dbClient.query(
+      `SELECT member, archived FROM conversation_members WHERE conversation = $1 ORDER BY member`, [dmConv]
+    )
+    if (rows.rows.length !== 2) throw new Error(`expected 2 members, got ${rows.rows.length}`)
+    if (rows.rows.some(r => r.archived)) throw new Error('DM members should not be archived')
+    pass('POST /conversations/dm creates type=dm between teammates')
+  } catch (e) { fail('POST /conversations/dm teammate', e) }
+
+  // Idempotent
+  try {
+    const r = await asA('/kscw/messaging/conversations/dm', {
+      method: 'POST', body: JSON.stringify({ recipient: String(memberB) }),
+    })
+    const b = await r.json()
+    if (r.status !== 409 || b.code !== 'messaging/conversation_exists' || b.conversation_id !== dmConv)
+      throw new Error(`status=${r.status} code=${b.code} id=${b.conversation_id}`)
+    pass('POST /conversations/dm is idempotent — 409 conversation_exists')
+  } catch (e) { fail('POST /conversations/dm idempotent', e) }
+
+  // ── DM to non-teammate → dm_request ───────────────────────────────
+  let reqConv, reqId
+  try {
+    const r = await asA('/kscw/messaging/conversations/dm', {
+      method: 'POST', body: JSON.stringify({ recipient: String(memberC) }),
+    })
+    const b = await r.json()
+    if (r.status !== 200) throw new Error(`status=${r.status}: ${JSON.stringify(b)}`)
+    if (b.type !== 'dm_request' || b.request_status !== 'pending')
+      throw new Error(`expected dm_request, got ${JSON.stringify(b)}`)
+    reqConv = b.conversation_id
+    const { rows } = await dbClient.query(
+      `SELECT id, status FROM message_requests WHERE conversation = $1`, [reqConv]
+    )
+    if (rows.length !== 1 || rows[0].status !== 'pending')
+      throw new Error('message_requests row not pending')
+    reqId = rows[0].id
+    pass('POST /conversations/dm non-teammate creates dm_request')
+  } catch (e) { fail('POST /conversations/dm non-teammate', e) }
+
+  // Sender can post into a dm_request
+  try {
+    const r = await asA('/kscw/messaging/messages', {
+      method: 'POST', body: JSON.stringify({ conversation: reqConv, type:'text', body:'hi from A' }),
+    })
+    const b = await r.json()
+    if (r.status !== 200) throw new Error(`status=${r.status}: ${JSON.stringify(b)}`)
+    pass('POST /messages inside dm_request works for sender')
+  } catch (e) { fail('POST /messages in dm_request', e) }
+
+  // Decline + cooldown — requires TOKEN_C; soft-skip if missing
+  if (!process.env.DIRECTUS_DEV_USER_TOKEN_C) {
+    console.log('  ~ skipping decline-endpoint via C (set DIRECTUS_DEV_USER_TOKEN_C to enable)')
+  } else {
+    const TOKEN_C = process.env.DIRECTUS_DEV_USER_TOKEN_C
+    const asC = (p, i={}) => fetch(`${API}${p}`, { ...i,
+      headers: { Authorization:`Bearer ${TOKEN_C}`, 'Content-Type':'application/json', ...(i.headers??{}) } })
+    try {
+      const r = await asC(`/kscw/messaging/requests/${reqId}/decline`, { method:'POST' })
+      if (r.status !== 200) throw new Error(`decline status=${r.status}`)
+      const { rows } = await dbClient.query(
+        `SELECT status, resolved_at FROM message_requests WHERE id=$1`, [reqId])
+      if (rows[0]?.status !== 'declined' || !rows[0]?.resolved_at)
+        throw new Error('decline not persisted')
+      pass('POST /requests/:id/decline flips status and resolved_at')
+    } catch (e) { fail('POST /requests/:id/decline', e) }
+    try {
+      const r = await asA('/kscw/messaging/conversations/dm', {
+        method: 'POST', body: JSON.stringify({ recipient: String(memberC) }),
+      })
+      const b = await r.json()
+      if (r.status !== 429 || b.code !== 'messaging/request_cooldown')
+        throw new Error(`status=${r.status} code=${b.code}`)
+      pass('POST /conversations/dm honors 30d cooldown after decline')
+    } catch (e) { fail('cooldown check', e) }
+  }
+
+  // ── Blocks ─────────────────────────────────────────────────────
+  try {
+    const r = await asB('/kscw/messaging/blocks', {
+      method: 'POST', body: JSON.stringify({ member: String(memberA) }),
+    })
+    if (r.status !== 200) throw new Error(`block status=${r.status}`)
+    const { rows } = await dbClient.query(
+      `SELECT 1 FROM blocks WHERE blocker=$1 AND blocked=$2`, [memberB, memberA])
+    if (rows.length !== 1) throw new Error('block row not inserted')
+    pass('POST /blocks inserts row')
+  } catch (e) { fail('POST /blocks', e) }
+
+  try {
+    const r = await asA('/kscw/messaging/conversations')
+    const list = await r.json()
+    if ((Array.isArray(list) ? list : list.data).some(c => c.id === dmConv))
+      throw new Error('blocked DM still visible to A')
+    pass('blocked DM hidden from A list')
+  } catch (e) { fail('blocked DM hidden', e) }
+
+  try {
+    const r = await asA('/kscw/messaging/messages', {
+      method: 'POST', body: JSON.stringify({ conversation: dmConv, type:'text', body:'nope' }),
+    })
+    const b = await r.json()
+    if (r.status !== 403 || b.code !== 'messaging/blocked')
+      throw new Error(`status=${r.status} code=${b.code}`)
+    pass('POST /messages into blocked DM → 403 blocked')
+  } catch (e) { fail('blocked-DM send 403', e) }
+
+  try {
+    const r = await asB(`/kscw/messaging/blocks/${memberA}`, { method:'DELETE' })
+    if (r.status !== 200) throw new Error(`unblock status=${r.status}`)
+    const { rows } = await dbClient.query(
+      `SELECT 1 FROM blocks WHERE blocker=$1 AND blocked=$2`, [memberB, memberA])
+    if (rows.length !== 0) throw new Error('block row still present')
+    pass('DELETE /blocks/:member removes row')
+  } catch (e) { fail('DELETE /blocks', e) }
+
+  // Self-DM guard
+  try {
+    const r = await asA('/kscw/messaging/conversations/dm', {
+      method: 'POST', body: JSON.stringify({ recipient: String(memberA) }),
+    })
+    const b = await r.json()
+    if (r.status !== 400 || b.code !== 'messaging/invalid_body')
+      throw new Error(`status=${r.status} code=${b.code}`)
+    pass('POST /conversations/dm rejects self as recipient')
+  } catch (e) { fail('self-DM 400', e) }
+
+  // dm_enabled opt-out on recipient
+  try {
+    await dbClient.query(`UPDATE members SET communications_dm_enabled = false WHERE id = $1`, [memberB])
+    try {
+      const r = await asA('/kscw/messaging/conversations/dm', {
+        method: 'POST', body: JSON.stringify({ recipient: String(memberB) }),
+      })
+      const b = await r.json()
+      if (!(r.status === 403 || r.status === 409))
+        throw new Error(`status=${r.status} code=${b.code}`)
+      pass('POST /conversations/dm blocked when recipient dm_enabled=false or DM exists')
+    } finally {
+      await dbClient.query(`UPDATE members SET communications_dm_enabled = true WHERE id = $1`, [memberB])
+    }
+  } catch (e) { fail('dm_enabled opt-out', e) }
+
+  // PATCH /settings
+  try {
+    const r = await asA('/kscw/messaging/settings', {
+      method: 'PATCH', body: JSON.stringify({ dm_enabled: false, push_preview_content: true }),
+    })
+    if (r.status !== 200) throw new Error(`status=${r.status}`)
+    const { rows } = await dbClient.query(
+      `SELECT communications_dm_enabled, push_preview_content FROM members WHERE id=$1`, [memberA])
+    if (rows[0]?.communications_dm_enabled !== false) throw new Error('dm_enabled not updated')
+    if (rows[0]?.push_preview_content !== true) throw new Error('push_preview_content not updated')
+    pass('PATCH /settings updates fields')
+    await dbClient.query(
+      `UPDATE members SET communications_dm_enabled=true, push_preview_content=false WHERE id=$1`, [memberA])
+  } catch (e) { fail('PATCH /settings', e) }
+}
+
 async function main() {
   const client = new pg.Client({ connectionString: DB_URL })
   await client.connect()
@@ -299,6 +497,7 @@ async function main() {
     await testSentinelMember()
     await testEndpointSkeleton()
     await testPlan02Endpoints(client)
+    await testPlan03Endpoints(client)
   } finally {
     await client.end()
   }

@@ -74,3 +74,16 @@ node directus/scripts/messaging-harness/seed-plan02.mjs
 ```
 
 The seed is idempotent — safe to re-run. It also clears leftover messages from prior harness runs.
+
+### Plan 03 additions
+
+- `DIRECTUS_DEV_USER_TOKEN_B` — a user-scoped static token for `plan02-b` (the member's
+  directus_users row has email `plan02-b@kscw.ch`; the linked `members` row has email
+  `plan02-b@kscw.test`). Mint it in Directus admin the same way as TOKEN_A:
+  Users → find the user → Static Token tab → Generate → Save → copy.
+- `DIRECTUS_DEV_USER_TOKEN_C` — **optional**. Static token for the plan03-c member.
+  Without it the harness skips the decline + cooldown assertions — the other Plan 03
+  assertions still run.
+
+The seed (`seed-plan03.mjs`) is idempotent and also resets any DM/request/block state
+between plan02-a, plan02-b, and plan03-c so tests start from a clean slate every run.

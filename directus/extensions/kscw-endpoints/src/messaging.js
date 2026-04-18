@@ -7,7 +7,10 @@
 
 import {
   MessagingError, loadConversationMembership, requireAuth,
-  requireMember, requireTeamChatEnabled, sendError, shapeConversationSummary,
+  requireMember, requireTeamChatEnabled, requireDmEnabled,
+  sendError, shapeConversationSummary,
+  loadBlocks, shareTeam, findExistingDmConversation, checkDeclineCooldown,
+  requireRequestRecipient,
 } from './messaging-helpers.js'
 
 const stub = (name) => (req, res) => res.status(501).json({
@@ -230,8 +233,84 @@ export function registerMessaging(router, ctx) {
     } catch (e) { sendError(res, log, e) }
   })
 
+  // ── POST /messaging/conversations/dm ────────────────────────────────
+  router.post('/messaging/conversations/dm', async (req, res) => {
+    try {
+      const userId = requireAuth(req)
+      const me = await requireMember(db, userId)
+      requireDmEnabled(me)
+
+      const b = req.body ?? {}
+      const recipientId = b.recipient != null ? String(b.recipient) : null
+      if (!recipientId) throw new MessagingError(400, 'messaging/invalid_body', 'recipient required')
+      if (recipientId === String(me.id))
+        throw new MessagingError(400, 'messaging/invalid_body', 'cannot DM yourself')
+
+      const other = await db('members').where('id', recipientId).first()
+      if (!other) throw new MessagingError(400, 'messaging/invalid_body', 'recipient not found')
+      if (other.communications_banned === true)
+        throw new MessagingError(403, 'messaging/comms_disabled', 'Recipient cannot receive messages')
+      if (other.communications_dm_enabled !== true)
+        throw new MessagingError(403, 'messaging/comms_disabled',
+          'Recipient has direct messages disabled')
+
+      const { either } = await loadBlocks(db, me.id)
+      if (either.has(String(recipientId)))
+        throw new MessagingError(403, 'messaging/blocked', 'Messaging is blocked between you and this member')
+
+      const existing = await findExistingDmConversation(db, me.id, recipientId)
+      if (existing) {
+        const code = existing.type === 'dm' ? 'messaging/conversation_exists' : 'messaging/request_pending'
+        return res.status(409).json({
+          code,
+          message: existing.type === 'dm' ? 'DM already exists' : 'DM request already pending',
+          conversation_id: existing.id,
+          type: existing.type,
+        })
+      }
+
+      await checkDeclineCooldown(db, me.id, recipientId)
+
+      const sharesTeam = await shareTeam(db, me.id, recipientId)
+      const convType = sharesTeam ? 'dm' : 'dm_request'
+
+      const schema = await getSchema()
+      const conversationsService = new ItemsService('conversations', { schema, knex: db })
+      const convMembersService   = new ItemsService('conversation_members', { schema, knex: db })
+      const requestsService      = new ItemsService('message_requests', { schema, knex: db })
+
+      const convId = crypto.randomUUID()
+      const nowIso = new Date().toISOString()
+
+      await conversationsService.createOne({
+        id: convId, type: convType, team: null, title: null,
+        created_by: me.id, created_at: nowIso,
+      })
+      await convMembersService.createMany([
+        { id: crypto.randomUUID(), conversation: convId, member: me.id,       archived: false, role: 'member', joined_at: nowIso },
+        { id: crypto.randomUUID(), conversation: convId, member: recipientId, archived: false, role: 'member', joined_at: nowIso },
+      ])
+
+      let requestStatus = null
+      if (convType === 'dm_request') {
+        await requestsService.createOne({
+          id: crypto.randomUUID(), conversation: convId,
+          sender: me.id, recipient: recipientId,
+          status: 'pending', created_at: nowIso,
+        })
+        requestStatus = 'pending'
+      }
+
+      res.json({
+        conversation_id: convId,
+        created: true,
+        type: convType,
+        request_status: requestStatus,
+      })
+    } catch (e) { sendError(res, log, e) }
+  })
+
   // ── The rest stay 501 for Plans 03-05 ───────────────────────────────
-  router.post('/messaging/conversations/dm',              stub('POST /conversations/dm'))
   router.post('/messaging/conversations/:id/clear',       stub('POST /conversations/:id/clear'))
   router.patch('/messaging/messages/:id',                 stub('PATCH /messages/:id'))
   router.delete('/messaging/messages/:id',                stub('DELETE /messages/:id'))

@@ -163,9 +163,19 @@ export function registerMessaging(router, ctx) {
 
   // ── POST /messaging/conversations/:id/mute ──────────────────────────
   router.post('/messaging/conversations/:id/mute', async (req, res) => {
-    // filled in Task 7
-    res.status(501).json({ code: 'messaging/not_implemented',
-      message: 'POST /conversations/:id/mute — coming in Task 7', details: { method: req.method, path: req.path } })
+    try {
+      const userId = requireAuth(req)
+      const member = await requireMember(db, userId)
+      const conversationId = req.params.id
+      const { membership } = await loadConversationMembership(db, conversationId, member.id)
+
+      const newMuted = !(membership.muted === true)
+      await db('conversation_members')
+        .where({ conversation: conversationId, member: member.id })
+        .update({ muted: newMuted })
+
+      res.json({ muted: newMuted })
+    } catch (e) { sendError(res, log, e) }
   })
 
   // ── The rest stay 501 for Plans 03-05 ───────────────────────────────

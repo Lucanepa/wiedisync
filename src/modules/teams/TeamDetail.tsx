@@ -33,7 +33,7 @@ type SortDir = 'asc' | 'desc'
 export default function TeamDetail() {
   const { t } = useTranslation('teams')
   const { teamSlug } = useParams<{ teamSlug: string }>()
-  const { isCoachOf, hasAdminAccessToTeam, canViewTeam } = useAuth()
+  const { user, isCoachOf, hasAdminAccessToTeam, canViewTeam } = useAuth()
   const { effectiveIsAdmin } = useAdminMode()
   const [team, setTeam] = useState<Team | null>(null)
   const [loading, setLoading] = useState(true)
@@ -603,7 +603,7 @@ export default function TeamDetail() {
       )}
 
       {/* Nachrichten */}
-      {messagingFeatureEnabled() && team && (
+      {messagingFeatureEnabled(user?.id) && team && (
         <TeamMessagesSection teamId={String(team.id)} />
       )}
 

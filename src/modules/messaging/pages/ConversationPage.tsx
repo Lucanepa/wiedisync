@@ -51,7 +51,7 @@ export default function ConversationPage() {
     request,
   )
 
-  if (!messagingFeatureEnabled()) return null
+  if (!messagingFeatureEnabled(user?.id)) return null
   if (!user) return null
   if (!conv) {
     return (

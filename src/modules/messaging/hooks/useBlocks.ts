@@ -13,7 +13,7 @@ import { messagingFeatureEnabled } from '../../../utils/messagingFeatureFlag'
  */
 export function useBlocks() {
   const { user } = useAuth()
-  const enabled = messagingFeatureEnabled() && !!user?.id
+  const enabled = messagingFeatureEnabled(user?.id) && !!user?.id
   const [rows, setRows] = useState<BlockRow[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const meRef = useRef<string | null>(user?.id ?? null)

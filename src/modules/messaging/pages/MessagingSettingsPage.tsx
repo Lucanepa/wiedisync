@@ -16,7 +16,7 @@ export default function MessagingSettingsPage() {
   const [pushPreview, setPushPreview] = useState<boolean>(user?.push_preview_content === true)
   const [busy, setBusy] = useState(false)
 
-  if (!messagingFeatureEnabled()) return <Navigate to="/" replace />
+  if (!messagingFeatureEnabled(user?.id)) return <Navigate to="/" replace />
   if (!user) return null
 
   const consentStatus = user.consent_decision ?? 'pending'

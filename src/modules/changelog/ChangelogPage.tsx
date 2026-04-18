@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.11.3'
+const APP_VERSION = '3.12.0'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,29 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.12.0',
+    date: '2026-04-19',
+    sections: [
+      {
+        title: 'Neu',
+        items: [
+          'Nachrichten-Feature ist komplett gebaut und auf dem Server live — Team-Chats, Direktnachrichten, Umfragen, Reaktionen, Meldungen, Einverständnis, Datenexport und Push-Benachrichtigungen. Aktivierung für Mitglieder erfolgt in einem nächsten Schritt (Test-Gruppe zuerst, dann alle).',
+          'Datenschutzerklärung: neuer Abschnitt „Nachrichten" unter /datenschutz#nachrichten mit Details zu gespeicherten Daten, Aufbewahrungsfristen (12 Monate / 30 Tage / 90 Tage), Zugriff und Rechten.',
+          'Test-Rollout-Modus: einzelne Mitglieder können das Feature vor der offiziellen Freigabe testen (Admin-gesteuerte Allowlist).',
+        ],
+      },
+      {
+        title: 'Sicherheit',
+        items: [
+          'Datenbank-Zugriff für die Supabase-anon- und -authenticated-Rollen auf allen Tabellen gesperrt (Defense-in-Depth).',
+          'Nicht genutzte Supabase-Dienste (REST, Auth, Edge Functions, Studio, Storage, MinIO u. a.) abgeschaltet — weniger Angriffsfläche.',
+          'Nachrichten: Berechtigungen auf Zeilenebene verschärft — Mitglieder sehen nur ihre eigenen Blocks, Nachrichtenanfragen und Konversations-Mitgliedschaften über die REST-API.',
+          'Admin-Hygiene: nicht genutzte Test-Accounts entfernt, Drift zwischen Dev und Prod ausgeglichen, alter Static-Token eines Members rotiert.',
+        ],
+      },
+    ],
+  },
   {
     version: '3.11.3',
     date: '2026-04-17',

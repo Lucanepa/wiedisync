@@ -2,6 +2,23 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.12.0] — 2026-04-19
+
+### Added
+
+- **Messaging v1** — full messaging system built and deployed to production backend: team chats, direct messages, polls, reactions, reports/moderation, nFADP consent flow, JSON data export (1×/day), push notifications (generic or preview). All 7 collections + Postgres triggers + RBAC + extension endpoints live on `directus.kscw.ch`. Feature is shipped silent (code present, UI hidden) — activation happens via a separate CF Pages env var flip, with per-member allowlist support for a staged rollout to a test group before the club-wide launch.
+- **Privacy policy — Messaging section** — new section 9 "Nachrichten (Messaging)" at `/datenschutz#nachrichten` covering data stored, 12mo/30d/90d retention, access, rights, reports, and push notifications. All 5 locales (de/en/fr/gsw/it).
+- **Staged rollout allowlist** — `messagingFeatureEnabled(memberId)` now reads a `VITE_FEATURE_MESSAGING_ALLOWLIST` env var (comma-separated member IDs) so the feature can be turned on for a small test group before the global `VITE_FEATURE_MESSAGING=true` flip. Global flag still wins.
+
+### Security
+
+- **Supabase anon/authenticated DB lockdown** — new migration `011-revoke-supabase-anon-all.sql` revokes ALL table, view, and sequence privileges from the Supabase `anon` and `authenticated` Postgres roles in the `public` schema, revokes `USAGE` on the schema, and strips default privileges for future objects. Closes a defense-in-depth gap where 43 prod tables (including all 7 messaging collections, `members`, `games`, `trainings`, `polls`) had CRUD + TRUNCATE grants to roles that were only ever meant for the Supabase REST gateway — which this project does not use.
+- **Supabase API layer shut down** — stopped (with `--restart=no`) the Supabase containers that this project doesn't use: Kong, PostgREST, GoTrue, Edge Functions, Storage, MinIO, Studio, Meta, Vector, Analytics, Supavisor, imgproxy, realtime. Only `supabase-db` remains running (used by Directus as the Postgres engine). Reduces attack surface.
+- **Messaging RBAC row-filter tightening** — member-role READ on `blocks`, `message_requests`, and `conversation_members` is now scoped to `$CURRENT_USER`-owned rows via row filters. Previously unfiltered — a member could enumerate others' block pairs and request memberships via raw `/items/*` calls. Hooks already filtered at fetch-time for correct UX; this closes the REST-layer gap. (Deferred Plan 01 task #47, now landed.)
+- **Admin hygiene** — removed 2 leftover test directus_users + 3 test members (+ cascade-deleted messaging rows) from dev; eliminated dev/prod permission drift (both now at exactly 9 policies × matching perm counts); dropped unused `yob` column from `members` on both DBs; rotated one member-role static token that had been lingering.
+
+---
+
 ## [3.11.2] — 2026-04-17
 
 ### Security

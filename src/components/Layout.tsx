@@ -90,7 +90,7 @@ function useNavItems(isLoggedIn: boolean, isApproved: boolean) {
 
 type SidebarView = 'closed' | 'nav' | 'notifications'
 
-function SidebarOptions({ isAdmin, theme, toggleTheme, onClose }: { isAdmin: boolean; theme: string; toggleTheme: () => void; onClose?: () => void }) {
+function SidebarOptions({ isAdmin, theme, toggleTheme, onClose, memberId }: { isAdmin: boolean; theme: string; toggleTheme: () => void; onClose?: () => void; memberId?: number | string | null }) {
   const [open, setOpen] = useState(false)
   const { t } = useTranslation('nav')
 
@@ -149,7 +149,7 @@ function SidebarOptions({ isAdmin, theme, toggleTheme, onClose }: { isAdmin: boo
               <MessageSquare className="h-4 w-4" />
               {t('feedback')}
             </NavLink>
-            {messagingFeatureEnabled() && (
+            {messagingFeatureEnabled(memberId) && (
               <NavLink
                 to="/options/messaging"
                 onClick={onClose}
@@ -185,7 +185,7 @@ export default function Layout() {
   const location = useLocation()
   const { isAdminMode, setAdminMode } = useAdminMode()
   const { navItems, adminItems, superadminItems } = useNavItems(!!user, isApproved)
-  const messagingOn = messagingFeatureEnabled()
+  const messagingOn = messagingFeatureEnabled(user?.id)
   const unreadMessages = useUnreadTotal()
 
   // Auto-activate admin mode when navigating to /admin/* routes
@@ -423,7 +423,7 @@ export default function Layout() {
                 {t('guide')}
               </NavLink>
               <div data-tour="nav-settings">
-                <SidebarOptions isAdmin={isAdmin} theme={theme} toggleTheme={toggleTheme} onClose={() => setSidebarView('closed')} />
+                <SidebarOptions isAdmin={isAdmin} theme={theme} toggleTheme={toggleTheme} onClose={() => setSidebarView('closed')} memberId={user?.id} />
               </div>
 
               {user ? (
@@ -562,7 +562,7 @@ export default function Layout() {
       )}
 
       {/* Messaging consent modal — shown when user hasn't responded to consent prompt yet */}
-      {messagingFeatureEnabled() && isApproved && user && <ConsentModal />}
+      {messagingFeatureEnabled(user?.id) && isApproved && user && <ConsentModal />}
     </div>
   )
 }

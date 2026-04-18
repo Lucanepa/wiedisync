@@ -3,10 +3,12 @@ import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { ChevronRight } from 'lucide-react'
 import { messagingFeatureEnabled } from '../../../utils/messagingFeatureFlag'
+import { useAuth } from '../../../hooks/useAuth'
 
 export default function MessagingSettingsCard() {
   const { t } = useTranslation('messaging')
-  if (!messagingFeatureEnabled()) return null
+  const { user } = useAuth()
+  if (!messagingFeatureEnabled(user?.id)) return null
   return (
     <div className="mt-8">
       <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('settingsCardTitle')}</h2>

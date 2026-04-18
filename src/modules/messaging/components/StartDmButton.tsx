@@ -21,7 +21,7 @@ export default function StartDmButton({ recipientId, label, variant = 'default',
   const nav = useNavigate()
   const [loading, setLoading] = useState(false)
 
-  if (!messagingFeatureEnabled() || !user?.id || String(recipientId) === String(user.id)) return null
+  if (!messagingFeatureEnabled(user?.id) || !user?.id || String(recipientId) === String(user.id)) return null
   if (user.communications_dm_enabled !== true) return null
 
   const onClick = useCallback(async () => {

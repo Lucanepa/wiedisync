@@ -5,13 +5,15 @@ import { useMessageRequests } from '../hooks/useMessageRequests'
 import ConversationList from '../components/ConversationList'
 import InboxEmptyState from '../components/InboxEmptyState'
 import { messagingFeatureEnabled } from '../../../utils/messagingFeatureFlag'
+import { useAuth } from '../../../hooks/useAuth'
 
 export default function InboxPage() {
   const { t } = useTranslation('messaging')
+  const { user } = useAuth()
   const { conversations } = useConversations()
   const { requests } = useMessageRequests()
 
-  if (!messagingFeatureEnabled()) return <Navigate to="/" replace />
+  if (!messagingFeatureEnabled(user?.id)) return <Navigate to="/" replace />
 
   // Only DMs + dm_requests in the Inbox — team chats still live on team pages
   const inbox = conversations.filter(c => c.type === 'dm' || c.type === 'dm_request')

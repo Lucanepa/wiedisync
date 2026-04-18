@@ -22,7 +22,7 @@ export function useConversation(
   const { user } = useAuth()
   const { blockedMemberIds } = useBlocks()
   const effectiveBlocked = blockedSenderIds ?? blockedMemberIds
-  const enabled = messagingFeatureEnabled() && !!user?.id && !!conversationId
+  const enabled = messagingFeatureEnabled(user?.id) && !!user?.id && !!conversationId
   const [messages, setMessages] = useState<MessageRow[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [sendError, setSendError] = useState<Error | null>(null)

@@ -346,13 +346,54 @@ export function registerMessaging(router, ctx) {
     } catch (e) { sendError(res, log, e) }
   })
 
+  // ── POST /messaging/blocks ──────────────────────────────────────────
+  router.post('/messaging/blocks', async (req, res) => {
+    try {
+      const userId = requireAuth(req)
+      const me = await requireMember(db, userId)
+      const targetId = req.body?.member != null ? String(req.body.member) : null
+      if (!targetId) throw new MessagingError(400, 'messaging/invalid_body', 'member required')
+      if (targetId === String(me.id))
+        throw new MessagingError(400, 'messaging/invalid_body', 'cannot block yourself')
+
+      const other = await db('members').where('id', targetId).first()
+      if (!other) throw new MessagingError(400, 'messaging/invalid_body', 'member not found')
+
+      const existing = await db('blocks').where({ blocker: me.id, blocked: targetId }).first()
+      if (existing) return res.json({ blocked: targetId, created: false })
+
+      const schema = await getSchema()
+      const blocksService = new ItemsService('blocks', { schema, knex: db })
+      await blocksService.createOne({
+        id: crypto.randomUUID(), blocker: me.id, blocked: targetId,
+        created_at: new Date().toISOString(),
+      })
+      res.json({ blocked: targetId, created: true })
+    } catch (e) { sendError(res, log, e) }
+  })
+
+  // ── DELETE /messaging/blocks/:member ────────────────────────────────
+  router.delete('/messaging/blocks/:member', async (req, res) => {
+    try {
+      const userId = requireAuth(req)
+      const me = await requireMember(db, userId)
+      const targetId = String(req.params.member)
+
+      const row = await db('blocks').where({ blocker: me.id, blocked: targetId }).first()
+      if (!row) return res.json({ unblocked: targetId, removed: false })
+
+      const schema = await getSchema()
+      const blocksService = new ItemsService('blocks', { schema, knex: db })
+      await blocksService.deleteOne(row.id)
+      res.json({ unblocked: targetId, removed: true })
+    } catch (e) { sendError(res, log, e) }
+  })
+
   // ── The rest stay 501 for Plans 03-05 ───────────────────────────────
   router.post('/messaging/conversations/:id/clear',       stub('POST /conversations/:id/clear'))
   router.patch('/messaging/messages/:id',                 stub('PATCH /messages/:id'))
   router.delete('/messaging/messages/:id',                stub('DELETE /messages/:id'))
   router.post('/messaging/messages/:id/reactions',        stub('POST /messages/:id/reactions'))
-  router.post('/messaging/blocks',                        stub('POST /blocks'))
-  router.delete('/messaging/blocks/:member',              stub('DELETE /blocks/:member'))
   router.post('/messaging/reports',                       stub('POST /reports'))
   router.get('/messaging/reports',                        stub('GET /reports'))
   router.patch('/messaging/reports/:id',                  stub('PATCH /reports/:id'))

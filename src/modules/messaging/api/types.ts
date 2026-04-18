@@ -53,7 +53,7 @@ export type MessageRow = {
   id: string
   conversation: string
   sender: string
-  type: 'text' | 'poll'
+  type: MessageType
   body: string | null
   poll: string | null
   created_at: string

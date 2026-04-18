@@ -13,7 +13,7 @@ describe('messagingApi', () => {
 
   it('has the expected method names (contract surface)', () => {
     const expected = [
-      'listConversations','createDm','markRead','toggleMute','clearConversation',
+      'listConversations','listMessages','createDm','markRead','toggleMute','clearConversation',
       'send','edit','delete',
       'react',
       'acceptRequest','declineRequest','block','unblock',

@@ -598,9 +598,73 @@ export function registerMessaging(router, ctx) {
     } catch (e) { sendError(res, log, e) }
   })
 
+  // ── POST /messaging/reports ─────────────────────────────────────────
+  const ALLOWED_REPORT_REASONS = new Set(['harassment', 'spam', 'inappropriate', 'other'])
+
+  router.post('/messaging/reports', async (req, res) => {
+    try {
+      const userId = requireAuth(req)
+      const me = await requireMember(db, userId)
+
+      const b = req.body ?? {}
+      const reportedMember = b.reported_member != null ? Number(b.reported_member) : null
+      const messageId = typeof b.message === 'string' ? b.message : null
+      const conversationId = typeof b.conversation === 'string' ? b.conversation : null
+      const reason = typeof b.reason === 'string' ? b.reason : null
+      const note = typeof b.note === 'string' ? b.note.slice(0, 500) : null
+
+      if (!reportedMember) throw new MessagingError(400, 'messaging/invalid_body', 'reported_member required')
+      if (reportedMember === me.id) throw new MessagingError(400, 'messaging/invalid_body', 'cannot report yourself')
+      if (!messageId && !conversationId) throw new MessagingError(400, 'messaging/invalid_body', 'message or conversation required')
+      if (!reason || !ALLOWED_REPORT_REASONS.has(reason))
+        throw new MessagingError(400, 'messaging/invalid_body', `reason must be one of ${[...ALLOWED_REPORT_REASONS].join(',')}`)
+
+      const snapshot = messageId ? await snapshotMessage(db, messageId) : null
+
+      const schema = await getSchema()
+      const reportsService = new ItemsService('reports', { schema, knex: db })
+      const id = crypto.randomUUID()
+      await reportsService.createOne({
+        id,
+        reporter: me.id,
+        reported_member: reportedMember,
+        message: messageId, conversation: conversationId,
+        reason, note,
+        message_snapshot: snapshot,
+        status: 'open',
+      })
+
+      // Admin in-app notifications — fan out to every member with role containing
+      // 'admin' or 'superuser'. Fetch all members with a non-null role and filter
+      // in JS to avoid knex-vs-Postgres `?|` operator bind-parameter conflicts.
+      //
+      // Notifications column shape: type/title/body/activity_type/activity_id/
+      // read/member/team/date_created (DB default CURRENT_TIMESTAMP). Do NOT pass
+      // created_at. Matches existing fan-out in src/index.js:1051.
+      const allMembersWithRole = await db('members').whereNotNull('role').select('id', 'role')
+      const admins = allMembersWithRole.filter(m => {
+        const roles = Array.isArray(m.role) ? m.role : (typeof m.role === 'string' ? JSON.parse(m.role) : [])
+        return roles.includes('admin') || roles.includes('superuser')
+      })
+      if (admins.length > 0) {
+        const notifRows = admins.map(a => ({
+          member: a.id,
+          type: 'new_report',
+          title: 'new_report',
+          body: JSON.stringify({ reportId: id, reason }),
+          activity_type: 'report',
+          activity_id: id,
+          read: false,
+        }))
+        await db('notifications').insert(notifRows)
+      }
+
+      res.json({ id })
+    } catch (e) { sendError(res, log, e) }
+  })
+
   // ── The rest stay 501 for Plans 03-05 ───────────────────────────────
   router.post('/messaging/conversations/:id/clear',       stub('POST /conversations/:id/clear'))
-  router.post('/messaging/reports',                       stub('POST /reports'))
   router.get('/messaging/reports',                        stub('GET /reports'))
   router.patch('/messaging/reports/:id',                  stub('PATCH /reports/:id'))
   router.post('/messaging/settings/consent',              stub('POST /settings/consent'))

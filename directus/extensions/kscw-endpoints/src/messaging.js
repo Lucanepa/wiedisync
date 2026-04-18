@@ -265,6 +265,9 @@ export function registerMessaging(router, ctx) {
       const conversationId = req.params.id
       await loadConversationMembership(db, conversationId, member.id)
 
+      const { either: blockedEither } = await loadBlocks(db, member.id)
+      const blockedIds = [...blockedEither]
+
       const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 200)
       const before = typeof req.query.before === 'string' ? req.query.before : null
 
@@ -279,6 +282,7 @@ export function registerMessaging(router, ctx) {
           'm.poll', 'm.created_at', 'm.edited_at', 'm.deleted_at',
           's.first_name as sender_first_name', 's.last_name as sender_last_name',
         )
+      if (blockedIds.length > 0) q = q.whereNotIn('m.sender', blockedIds)
       if (before) q = q.andWhere('m.created_at', '<', before)
 
       const rows = await q

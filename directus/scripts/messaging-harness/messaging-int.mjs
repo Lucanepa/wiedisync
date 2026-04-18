@@ -115,6 +115,7 @@ async function testTriggers(client) {
     'trg_messaging_member_team_chat_enabled',
     'trg_messaging_teams_insert',
     'trg_messaging_protect_sentinel',
+    'trg_messaging_dm_autoaccept',    // Plan 03
   ]
   const { rows } = await client.query(
     `SELECT trigger_name FROM information_schema.triggers WHERE trigger_name = ANY($1::text[])`,

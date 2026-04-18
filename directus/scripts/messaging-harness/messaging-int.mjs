@@ -65,10 +65,11 @@ const EXPECTED_MEMBER_FIELDS = [
 // GET /conversations/:id/messages.
 // Plan 03 implemented (after Task 21+): POST /conversations/dm, PATCH /settings,
 // POST /requests/:id/decline, POST /blocks, DELETE /blocks/:member — pruned below.
-// Final EXPECTED_ENDPOINTS after Plan 03 is fully implemented:
+// Plan 04 implemented: POST /messages/:id/reactions, PATCH /messages/:id,
+// DELETE /messages/:id, POST /reports, GET /reports, PATCH /reports/:id,
+// POST /messaging/polls — pruned below (reactions + reports removed from stubs).
+// Remaining stubs for Plan 05:
 const EXPECTED_ENDPOINTS = [
-  ['POST',   '/kscw/messaging/messages/00000000-0000-0000-0000-000000000000/reactions'],
-  ['POST',   '/kscw/messaging/reports'],
   ['POST',   '/kscw/messaging/settings/consent'],
   ['POST',   '/kscw/messaging/export'],
 ]
@@ -488,6 +489,221 @@ async function testPlan03Endpoints(dbClient) {
   } catch (e) { fail('PATCH /settings', e) }
 }
 
+async function testPlan04Endpoints(dbClient) {
+  console.log('\n[plan04] verifying message actions + reports + polls-in-messages...')
+
+  const TOKEN_A = process.env.DIRECTUS_DEV_USER_TOKEN_A
+  const TOKEN_B = process.env.DIRECTUS_DEV_USER_TOKEN_B
+  const TOKEN_ADMIN = process.env.DIRECTUS_DEV_TOKEN
+  if (!TOKEN_A || !TOKEN_B || !TOKEN_ADMIN) {
+    fail('plan04 tokens', 'DIRECTUS_DEV_USER_TOKEN_A, _B, DIRECTUS_DEV_TOKEN required')
+    return
+  }
+
+  const convId = process.env.MESSAGING_TEST_CONV
+  const memberA = Number(process.env.MESSAGING_TEST_MEMBER_A)
+  const memberB = Number(process.env.MESSAGING_TEST_MEMBER_B)
+  if (!convId || !memberA || !memberB) { fail('plan04 env', 'MESSAGING_TEST_CONV/MEMBER_A/_B must be set'); return }
+
+  const asA = (p, i={}) => fetch(`${API}${p}`, { ...i,
+    headers: { Authorization:`Bearer ${TOKEN_A}`, 'Content-Type':'application/json', ...(i.headers??{}) } })
+  const asB = (p, i={}) => fetch(`${API}${p}`, { ...i,
+    headers: { Authorization:`Bearer ${TOKEN_B}`, 'Content-Type':'application/json', ...(i.headers??{}) } })
+  const asAdmin = (p, i={}) => fetch(`${API}${p}`, { ...i,
+    headers: { Authorization:`Bearer ${TOKEN_ADMIN}`, 'Content-Type':'application/json', ...(i.headers??{}) } })
+
+  // Fresh baseline: send a message from A so we have something to react to, edit, delete, and report.
+  let msgId
+  try {
+    const r = await asA('/kscw/messaging/messages', { method:'POST',
+      body: JSON.stringify({ conversation: convId, type:'text', body:'plan04-seed' }) })
+    const b = await r.json()
+    if (r.status !== 200) throw new Error(`status=${r.status}`)
+    msgId = b.id
+    if (!msgId) throw new Error('no message id')
+    pass('plan04 baseline message sent')
+  } catch (e) { fail('plan04 baseline', e); return }
+
+  // 1. React (toggle on)
+  try {
+    const r = await asA(`/kscw/messaging/messages/${msgId}/reactions`, {
+      method:'POST', body: JSON.stringify({ emoji: '👍' }) })
+    const b = await r.json()
+    if (r.status !== 200 || b.added !== true) throw new Error(`status=${r.status} added=${b.added}`)
+    const row = await dbClient.query(`SELECT emoji FROM message_reactions WHERE message=$1 AND member=$2`, [msgId, memberA])
+    if (row.rows[0]?.emoji !== '👍') throw new Error('reaction row missing')
+    pass('POST /messages/:id/reactions toggle-on')
+  } catch (e) { fail('react on', e) }
+
+  // 2. React (toggle off)
+  try {
+    const r = await asA(`/kscw/messaging/messages/${msgId}/reactions`, {
+      method:'POST', body: JSON.stringify({ emoji: '👍' }) })
+    const b = await r.json()
+    if (r.status !== 200 || b.added !== false) throw new Error(`status=${r.status} added=${b.added}`)
+    const row = await dbClient.query(`SELECT 1 FROM message_reactions WHERE message=$1 AND member=$2 AND emoji='👍'`, [msgId, memberA])
+    if (row.rows.length !== 0) throw new Error('reaction row still present')
+    pass('POST /messages/:id/reactions toggle-off')
+  } catch (e) { fail('react off', e) }
+
+  // 3. Edit own message
+  try {
+    const r = await asA(`/kscw/messaging/messages/${msgId}`, {
+      method:'PATCH', body: JSON.stringify({ body: 'plan04-seed-edited' }) })
+    const b = await r.json()
+    if (r.status !== 200) throw new Error(`status=${r.status}`)
+    const row = await dbClient.query(`SELECT body, edited_at FROM messages WHERE id=$1`, [msgId])
+    if (row.rows[0]?.body !== 'plan04-seed-edited') throw new Error('body not updated')
+    if (!row.rows[0]?.edited_at) throw new Error('edited_at not set')
+    pass('PATCH /messages/:id edits own')
+  } catch (e) { fail('edit own', e) }
+
+  // 4. Non-sender cannot edit
+  try {
+    const r = await asB(`/kscw/messaging/messages/${msgId}`, {
+      method:'PATCH', body: JSON.stringify({ body: 'hax' }) })
+    const b = await r.json().catch(() => ({}))
+    if (r.status !== 403 || b.code !== 'messaging/forbidden') throw new Error(`status=${r.status} code=${b.code}`)
+    pass('PATCH /messages/:id rejects non-sender with 403')
+  } catch (e) { fail('edit non-sender', e) }
+
+  // 5. File a report (B reports A's message)
+  let reportId
+  try {
+    const r = await asB('/kscw/messaging/reports', {
+      method:'POST',
+      body: JSON.stringify({
+        reported_member: memberA, message: msgId, conversation: convId,
+        reason: 'spam', note: 'harness report',
+      })
+    })
+    const b = await r.json()
+    if (r.status !== 200) throw new Error(`status=${r.status}: ${JSON.stringify(b)}`)
+    reportId = b.id
+    if (!reportId) throw new Error('no id')
+    const row = await dbClient.query(`SELECT status, message_snapshot FROM reports WHERE id=$1`, [reportId])
+    if (row.rows[0]?.status !== 'open') throw new Error('report not open')
+    if (!row.rows[0]?.message_snapshot) throw new Error('message_snapshot missing')
+    pass('POST /reports creates open report with snapshot')
+  } catch (e) { fail('create report', e) }
+
+  // 6. Admin queue
+  try {
+    const r = await asAdmin('/kscw/messaging/reports')
+    const b = await r.json()
+    if (r.status !== 200) throw new Error(`status=${r.status}`)
+    const list = Array.isArray(b) ? b : b.data ?? b.reports
+    if (!list?.some(x => x.id === reportId)) throw new Error('report missing from admin list')
+    pass('GET /reports admin queue contains report')
+  } catch (e) { fail('admin reports list', e) }
+
+  // 7. Non-admin forbidden from queue
+  try {
+    const r = await asA('/kscw/messaging/reports')
+    if (r.status !== 403) throw new Error(`status=${r.status}`)
+    pass('GET /reports 403 for non-admin')
+  } catch (e) { fail('admin reports 403', e) }
+
+  // 8. Admin resolves with delete_message
+  try {
+    const r = await asAdmin(`/kscw/messaging/reports/${reportId}`, {
+      method:'PATCH', body: JSON.stringify({ status:'resolved', delete_message: true }) })
+    if (r.status !== 200) throw new Error(`status=${r.status}`)
+    const rep = await dbClient.query(`SELECT status, resolved_at FROM reports WHERE id=$1`, [reportId])
+    if (rep.rows[0]?.status !== 'resolved') throw new Error('status not resolved')
+    const msg = await dbClient.query(`SELECT deleted_at FROM messages WHERE id=$1`, [msgId])
+    if (!msg.rows[0]?.deleted_at) throw new Error('message not soft-deleted')
+    pass('PATCH /reports/:id resolve+delete soft-deletes message')
+  } catch (e) { fail('resolve report', e) }
+
+  // 9. DELETE /messages/:id self-delete path (new message A sends, A deletes)
+  let ownDelId
+  try {
+    const s = await asA('/kscw/messaging/messages', { method:'POST',
+      body: JSON.stringify({ conversation: convId, type:'text', body:'for-self-delete' }) })
+    ownDelId = (await s.json()).id
+    const r = await asA(`/kscw/messaging/messages/${ownDelId}`, { method:'DELETE' })
+    if (r.status !== 200) throw new Error(`status=${r.status}`)
+    const row = await dbClient.query(`SELECT deleted_at FROM messages WHERE id=$1`, [ownDelId])
+    if (!row.rows[0]?.deleted_at) throw new Error('not soft-deleted')
+    pass('DELETE /messages/:id self-delete sets deleted_at')
+  } catch (e) { fail('self-delete', e) }
+
+  // 10. DELETE /messages/:id — B tries to delete A's new message (not coach/TR) → 403
+  let aThirdId
+  try {
+    const s = await asA('/kscw/messaging/messages', { method:'POST',
+      body: JSON.stringify({ conversation: convId, type:'text', body:'for-mod-delete' }) })
+    aThirdId = (await s.json()).id
+    const r = await asB(`/kscw/messaging/messages/${aThirdId}`, { method:'DELETE' })
+    const b = await r.json().catch(() => ({}))
+    if (r.status !== 403) throw new Error(`expected 403, got status=${r.status}`)
+    pass('DELETE /messages/:id 403 for non-owner non-moderator')
+  } catch (e) { fail('non-owner delete 403', e) }
+
+  // 11. POST /messaging/polls creates poll + message(type=poll)
+  let pollMsgId
+  try {
+    const r = await asA('/kscw/messaging/polls', { method:'POST',
+      body: JSON.stringify({
+        conversation: convId,
+        question: 'Harness poll?',
+        options: ['yes', 'no'],
+        mode: 'single',
+      }) })
+    const b = await r.json()
+    if (r.status !== 200) throw new Error(`status=${r.status}: ${JSON.stringify(b)}`)
+    if (!b.poll_id || !b.message_id) throw new Error('missing poll_id or message_id')
+    pollMsgId = b.message_id
+    const msg = await dbClient.query(`SELECT type, poll FROM messages WHERE id=$1`, [pollMsgId])
+    if (msg.rows[0]?.type !== 'poll' || !msg.rows[0]?.poll) throw new Error('poll message not shaped')
+    pass('POST /messaging/polls creates poll + message row')
+  } catch (e) { fail('poll create', e) }
+
+  // 12. Invalid emoji rejected
+  try {
+    const r = await asA(`/kscw/messaging/messages/${msgId}/reactions`, {
+      method:'POST', body: JSON.stringify({ emoji: '🤡'.repeat(20) }) })
+    const b = await r.json().catch(() => ({}))
+    if (r.status !== 400 || b.code !== 'messaging/invalid_body') throw new Error(`status=${r.status} code=${b.code}`)
+    pass('POST /reactions rejects oversized emoji')
+  } catch (e) { fail('emoji length 400', e) }
+
+  // 13. PATCH /messages/:id on a soft-deleted message → 400 invalid_body
+  try {
+    const r = await asA(`/kscw/messaging/messages/${ownDelId}`, {
+      method:'PATCH', body: JSON.stringify({ body: 'revive' }) })
+    const b = await r.json().catch(() => ({}))
+    if (r.status !== 400 || b.code !== 'messaging/invalid_body') throw new Error(`status=${r.status} code=${b.code}`)
+    pass('PATCH /messages/:id rejects edit of soft-deleted')
+  } catch (e) { fail('edit-deleted 400', e) }
+
+  // 14. Ban flow — admin resolves with ban=true on a fresh report, then target's flags flipped
+  let banReportId
+  try {
+    const rep = await asB('/kscw/messaging/reports', { method:'POST',
+      body: JSON.stringify({ reported_member: memberA, conversation: convId, reason: 'harassment' }) })
+    banReportId = (await rep.json()).id
+    const res = await asAdmin(`/kscw/messaging/reports/${banReportId}`, {
+      method:'PATCH', body: JSON.stringify({ status:'resolved', ban: true }) })
+    if (res.status !== 200) throw new Error(`ban resolve status=${res.status}`)
+    const mrow = await dbClient.query(
+      `SELECT communications_banned, communications_team_chat_enabled, communications_dm_enabled FROM members WHERE id=$1`, [memberA])
+    if (mrow.rows[0]?.communications_banned !== true) throw new Error('banned flag not set')
+    if (mrow.rows[0]?.communications_team_chat_enabled !== false) throw new Error('team_chat not disabled')
+    if (mrow.rows[0]?.communications_dm_enabled !== false) throw new Error('dm not disabled')
+    // Restore:
+    await dbClient.query(
+      `UPDATE members SET communications_banned=false, communications_team_chat_enabled=true, communications_dm_enabled=true WHERE id=$1`, [memberA])
+    pass('PATCH /reports/:id ban=true sets banned + flips flags')
+  } catch (e) {
+    try { await dbClient.query(
+      `UPDATE members SET communications_banned=false, communications_team_chat_enabled=true, communications_dm_enabled=true WHERE id=$1`, [memberA])
+    } catch {}
+    fail('ban flow', e)
+  }
+}
+
 async function main() {
   const client = new pg.Client({ connectionString: DB_URL })
   await client.connect()
@@ -499,6 +715,7 @@ async function main() {
     await testEndpointSkeleton()
     await testPlan02Endpoints(client)
     await testPlan03Endpoints(client)
+    await testPlan04Endpoints(client)
   } finally {
     await client.end()
   }

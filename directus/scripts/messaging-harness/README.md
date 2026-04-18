@@ -87,3 +87,13 @@ The seed is idempotent — safe to re-run. It also clears leftover messages from
 
 The seed (`seed-plan03.mjs`) is idempotent and also resets any DM/request/block state
 between plan02-a, plan02-b, and plan03-c so tests start from a clean slate every run.
+
+### Plan 04 additions
+
+Plan 04 reuses `DIRECTUS_DEV_TOKEN` (admin) for the reports queue assertions.
+No new seed or token env vars. The seed-plan02 + seed-plan03 scripts cover all
+Plan 04 scenarios — member A sends messages, A edits / self-deletes, B files
+reports, admin resolves.
+
+All Plan 04 assertions restore member A's state in `finally` blocks so the
+harness is safe to re-run indefinitely.

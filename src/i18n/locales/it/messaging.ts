@@ -87,4 +87,10 @@ export default {
   reportReason_moderator_delete: 'Eliminato dal moderatore',
   bannedBannerTitle: 'Messaggistica bloccata',
   bannedBannerBody: 'Questa persona non può inviare né ricevere messaggi.',
+  consentModalTitle: 'Attivare la messaggistica?',
+  consentModalBody1: 'La messaggistica ti permette di chattare direttamente con i compagni di squadra e altri membri.',
+  consentModalBody2: 'I tuoi messaggi vengono salvati. Ulteriori informazioni nella',
+  consentAccept: 'Attiva',
+  consentDecline: 'Rifiuta',
+  consentLater: 'Più tardi',
 }

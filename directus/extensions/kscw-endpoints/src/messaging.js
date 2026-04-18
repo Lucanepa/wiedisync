@@ -12,6 +12,8 @@ import {
   loadBlocks, shareTeam, findExistingDmConversation, checkDeclineCooldown,
   requireRequestRecipient,
   requireMessageOwner, requireTeamModerator, snapshotMessage, requireAdmin,
+  resolveRecipientsForPush, buildPushPreview,
+  checkExportRateLimit, markExportDone,
 } from './messaging-helpers.js'
 
 const stub = (name) => (req, res) => res.status(501).json({
@@ -24,6 +26,39 @@ export function registerMessaging(router, ctx) {
   const { database: db, logger, services, getSchema } = ctx
   const { ItemsService } = services
   const log = logger.child({ extension: 'kscw-messaging' })
+
+  // Non-blocking push fan-out. Fire-and-forget — never awaited by the caller.
+  // Groups recipients by push_preview_content flag and calls sendPushToMembers
+  // once per group. Errors logged but don't propagate.
+  async function firePushForMessage(conv, sender, body, opts = {}) {
+    try {
+      const recipientIds = await resolveRecipientsForPush(db, conv, sender.id)
+      if (recipientIds.length === 0) return
+      const recipients = await db('members')
+        .whereIn('id', recipientIds)
+        .select('id', 'push_preview_content')
+      const senderName = [sender.first_name, sender.last_name].filter(Boolean).join(' ') || 'KSCW'
+
+      const withPreview = recipients.filter(r => r.push_preview_content === true).map(r => r.id)
+      const genericOnly = recipients.filter(r => r.push_preview_content !== true).map(r => r.id)
+
+      const { sendPushToMembers } = await import('./web-push.js')
+      const url = process.env.FRONTEND_URL || 'https://wiedisync.kscw.ch'
+      const pushUrl = `${url}/inbox/${conv.id}`
+      const tag = `msg-${conv.id}`
+
+      if (withPreview.length > 0) {
+        const previewBody = buildPushPreview({ push_preview_content: true }, senderName, opts.pollQuestion ? `📊 ${opts.pollQuestion}` : body)
+        await sendPushToMembers(db, withPreview, senderName, previewBody, pushUrl, tag, log)
+      }
+      if (genericOnly.length > 0) {
+        const genericBody = buildPushPreview({ push_preview_content: false }, senderName, body)
+        await sendPushToMembers(db, genericOnly, 'KSC Wiedikon', genericBody, pushUrl, tag, log)
+      }
+    } catch (err) {
+      log.error({ err: err?.message ?? String(err) }, 'messaging push fan-out failed')
+    }
+  }
 
   // ── GET /messaging/conversations ─────────────────────────────────────
   router.get('/messaging/conversations', async (req, res) => {
@@ -220,6 +255,8 @@ export function registerMessaging(router, ctx) {
         deleted_at: null,
         sender_name: [member.first_name, member.last_name].filter(Boolean).join(' ') || null,
       }
+      // Non-blocking push fan-out (spec §5). Fire-and-forget.
+      ;(async () => { await firePushForMessage(conv, member, body) })()
       res.json(inserted)
     } catch (e) { sendError(res, log, e) }
   })
@@ -754,6 +791,39 @@ export function registerMessaging(router, ctx) {
     } catch (e) { sendError(res, log, e) }
   })
 
+  // ── POST /messaging/settings/consent ────────────────────────────────
+  const CONSENT_DECISIONS = new Set(['accepted', 'declined', 'later'])
+
+  router.post('/messaging/settings/consent', async (req, res) => {
+    try {
+      const userId = requireAuth(req)
+      const me = await requireMember(db, userId)
+
+      const decision = req.body?.decision
+      if (!CONSENT_DECISIONS.has(decision))
+        throw new MessagingError(400, 'messaging/invalid_body', 'decision must be accepted|declined|later')
+
+      if (me.communications_banned === true)
+        throw new MessagingError(403, 'messaging/banned', 'Your messaging access is disabled')
+
+      const schema = await getSchema()
+      const membersService = new ItemsService('members', { schema, knex: db })
+      const nowIso = new Date().toISOString()
+      const patch = { consent_prompted_at: nowIso }
+      if (decision === 'accepted') {
+        patch.consent_decision = 'accepted'
+        patch.communications_team_chat_enabled = true
+        patch.communications_dm_enabled = true
+      } else if (decision === 'declined') {
+        patch.consent_decision = 'declined'
+      }
+      // 'later' only bumps consent_prompted_at.
+      await membersService.updateOne(me.id, patch)
+
+      res.json({ decision, consent_prompted_at: nowIso })
+    } catch (e) { sendError(res, log, e) }
+  })
+
   // ── POST /messaging/polls ───────────────────────────────────────────
   router.post('/messaging/polls', async (req, res) => {
     try {
@@ -804,12 +874,100 @@ export function registerMessaging(router, ctx) {
         last_message_at: nowIso, last_message_preview: preview,
       })
 
+      // Non-blocking push fan-out (poll variant — use question as preview)
+      ;(async () => { await firePushForMessage(conv, me, null, { pollQuestion: question }) })()
       res.json({ poll_id: pollId, message_id: messageId })
     } catch (e) { sendError(res, log, e) }
   })
 
-  // ── The rest stay 501 for Plans 03-05 ───────────────────────────────
-  router.post('/messaging/conversations/:id/clear',       stub('POST /conversations/:id/clear'))
-  router.post('/messaging/settings/consent',              stub('POST /settings/consent'))
-  router.post('/messaging/export',                        stub('POST /export'))
+  // ── POST /messaging/conversations/:id/clear ─────────────────────────
+  router.post('/messaging/conversations/:id/clear', async (req, res) => {
+    try {
+      const userId = requireAuth(req)
+      const me = await requireMember(db, userId)
+      await loadConversationMembership(db, req.params.id, me.id)
+
+      const schema = await getSchema()
+      const messagesService = new ItemsService('messages', { schema, knex: db })
+      const nowIso = new Date().toISOString()
+
+      const rows = await db('messages')
+        .where('conversation', req.params.id)
+        .andWhere('sender', me.id)
+        .andWhereRaw('deleted_at IS NULL')
+        .select('id')
+      if (rows.length === 0) return res.json({ cleared: 0 })
+
+      await messagesService.updateMany(rows.map(r => r.id), { deleted_at: nowIso })
+
+      res.json({ cleared: rows.length })
+    } catch (e) { sendError(res, log, e) }
+  })
+
+  // ── POST /messaging/export ──────────────────────────────────────────
+  router.post('/messaging/export', async (req, res) => {
+    try {
+      const userId = requireAuth(req)
+      const me = await requireMember(db, userId)
+
+      const cachedAt = await checkExportRateLimit(db, me.id)
+      if (cachedAt) {
+        return res.status(200).json({
+          cached: true, last_export_at: cachedAt,
+          message: 'Rate-limited to 1 export per 24h. Re-request after 24h from last_export_at.',
+        })
+      }
+
+      const myConvs = await db('conversation_members as cm')
+        .join('conversations as c', 'c.id', 'cm.conversation')
+        .where('cm.member', me.id)
+        .select('c.id', 'c.type', 'c.team', 'c.title', 'c.created_at', 'c.last_message_at',
+                'cm.joined_at', 'cm.last_read_at', 'cm.muted', 'cm.archived')
+
+      const convIds = myConvs.map(c => c.id)
+
+      const messages = convIds.length > 0
+        ? await db('messages').whereIn('conversation', convIds)
+            .select('id', 'conversation', 'sender', 'type', 'body', 'poll',
+                    'created_at', 'edited_at', 'deleted_at')
+        : []
+
+      const reactions = convIds.length > 0
+        ? await db('message_reactions as mr')
+            .join('messages as m', 'm.id', 'mr.message')
+            .whereIn('m.conversation', convIds)
+            .andWhere(function () {
+              this.where('mr.member', me.id).orWhere('m.sender', me.id)
+            })
+            .select('mr.id', 'mr.message', 'mr.member', 'mr.emoji', 'mr.created_at')
+        : []
+
+      const blocks = await db('blocks').where('blocker', me.id)
+        .select('id', 'blocker', 'blocked', 'created_at')
+
+      const settingsRow = await db('members').where('id', me.id)
+        .select('communications_team_chat_enabled', 'communications_dm_enabled',
+                'communications_banned', 'push_preview_content',
+                'consent_decision', 'consent_prompted_at', 'last_export_at')
+        .first()
+
+      const reportsFiled = await db('reports').where('reporter', me.id)
+        .select('id', 'reported_member', 'message', 'conversation',
+                'reason', 'note', 'message_snapshot', 'status', 'created_at')
+
+      const bundle = {
+        generated_at: new Date().toISOString(),
+        member_id: me.id,
+        conversations: myConvs,
+        messages,
+        reactions,
+        blocks,
+        settings: settingsRow,
+        reports_filed: reportsFiled,
+      }
+
+      await markExportDone(db, me.id)
+      res.json(bundle)
+    } catch (e) { sendError(res, log, e) }
+  })
 }

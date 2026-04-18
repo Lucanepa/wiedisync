@@ -97,3 +97,14 @@ reports, admin resolves.
 
 All Plan 04 assertions restore member A's state in `finally` blocks so the
 harness is safe to re-run indefinitely.
+
+### Plan 05 additions
+
+Plan 05 reuses `DIRECTUS_DEV_USER_TOKEN_A` for 6 assertions: 3 consent variants,
+clear conversation, export JSON bundle, and the 1/day rate limit.
+
+The harness mutates `members.consent_decision` + flags + `last_export_at` and
+restores them at the end of the block. Safe to re-run.
+
+After Plan 05 completes, `EXPECTED_ENDPOINTS` is empty — all messaging endpoints
+are live.

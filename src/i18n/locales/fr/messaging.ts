@@ -87,4 +87,10 @@ export default {
   reportReason_moderator_delete: 'Supprimé par un modérateur',
   bannedBannerTitle: 'Messagerie bloquée',
   bannedBannerBody: 'Cette personne ne peut pas envoyer ni recevoir de messages.',
+  consentModalTitle: 'Activer la messagerie ?',
+  consentModalBody1: 'La messagerie te permet de chatter directement avec tes coéquipiers et autres membres.',
+  consentModalBody2: 'Tes messages sont enregistrés. Plus d\'infos dans la',
+  consentAccept: 'Activer',
+  consentDecline: 'Refuser',
+  consentLater: 'Plus tard',
 }

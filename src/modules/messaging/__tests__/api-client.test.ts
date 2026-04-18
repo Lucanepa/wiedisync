@@ -171,4 +171,28 @@ describe('messagingApi', () => {
       }),
     )
   })
+
+  it('recordConsent passes body as a raw object', async () => {
+    await messagingApi.recordConsent({ decision: 'accepted' })
+    expect(kscwApi).toHaveBeenCalledWith(
+      '/messaging/settings/consent',
+      expect.objectContaining({ method: 'POST', body: { decision: 'accepted' } }),
+    )
+  })
+
+  it('clearConversation POSTs with no body', async () => {
+    await messagingApi.clearConversation('conv-1')
+    expect(kscwApi).toHaveBeenCalledWith(
+      '/messaging/conversations/conv-1/clear',
+      expect.objectContaining({ method: 'POST' }),
+    )
+  })
+
+  it('exportData POSTs with no body', async () => {
+    await messagingApi.exportData()
+    expect(kscwApi).toHaveBeenCalledWith(
+      '/messaging/export',
+      expect.objectContaining({ method: 'POST' }),
+    )
+  })
 })

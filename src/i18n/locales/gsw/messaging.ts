@@ -87,4 +87,10 @@ export default {
   reportReason_moderator_delete: 'Von Moderator gelöscht',
   bannedBannerTitle: 'Messaging blockiert',
   bannedBannerBody: 'Diese Person kann keine Nachrichten senden oder empfangen.',
+  consentModalTitle: 'Nachrichte aktiviere?',
+  consentModalBody1: 'Mit Nachrichte chasch direkt mit Teammitglieder und anderi Mitglieder chatre.',
+  consentModalBody2: 'Dini Nachrichte wärde gspeicheret. Meh Infos im',
+  consentAccept: 'Aktiviere',
+  consentDecline: 'Ablehne',
+  consentLater: 'Spöter',
 }

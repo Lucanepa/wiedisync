@@ -1,8 +1,8 @@
 import { kscwApi } from '../../../lib/api'
 import type {
   BlockBody, ConsentBody, ConversationSummary, CreateDmBody, CreateDmResponse,
-  ListMessagesResponse, MessageRow, ReactionBody, ReactionToggleResponse, ReportBody, ReportRow,
-  SendMessageBody, SettingsBody, CreatePollBody,
+  ExportBundle, ListMessagesResponse, MessageRow, ReactionBody, ReactionToggleResponse,
+  ReportBody, ReportRow, SendMessageBody, SettingsBody, CreatePollBody,
 } from './types'
 
 export const messagingApi = {
@@ -32,9 +32,6 @@ export const messagingApi = {
       `/messaging/conversations/${conversationId}/mute`,
       { method: 'POST' },
     ),
-
-  clearConversation: (conversationId: string) =>
-    kscwApi<void>(`/messaging/conversations/${conversationId}/clear`, { method: 'POST' }),
 
   // Messages
   send: (body: SendMessageBody) =>
@@ -85,7 +82,13 @@ export const messagingApi = {
   updateSettings: (body: SettingsBody) =>
     kscwApi<{ updated: string[] }>('/messaging/settings', { method: 'PATCH', body }),
   recordConsent: (body: ConsentBody) =>
-    kscwApi<void>('/messaging/settings/consent', { method: 'POST', body }),
+    kscwApi<{ decision: ConsentBody['decision']; consent_prompted_at: string }>(
+      '/messaging/settings/consent', { method: 'POST', body }),
+
+  clearConversation: (conversationId: string) =>
+    kscwApi<{ cleared: number }>(
+      `/messaging/conversations/${conversationId}/clear`, { method: 'POST' }),
+
   exportData: () =>
-    kscwApi<{ url: string; expires_at: string }>('/messaging/export', { method: 'POST' }),
+    kscwApi<ExportBundle>('/messaging/export', { method: 'POST' }),
 }

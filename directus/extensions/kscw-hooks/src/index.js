@@ -608,11 +608,15 @@ export default ({ action, filter, init, schedule }, { services, database, logger
 
   async function resolveAnnouncementAudience(ann) {
     if (ann.audience_type === 'sport' && ann.audience_sport) {
+      // Sport-scoped: reach EVERY member on a team of that sport, regardless
+      // of wiedisync_active. Club-wide sport comms (tournaments, discounts,
+      // federation news) should hit the whole sport, not just app opt-ins.
+      // Per-channel opt-out still applies inside the send loop (email requires
+      // non-null address; push requires an active subscription).
       const rows = await database('member_teams as mt')
         .join('teams as t', 't.id', 'mt.team')
         .join('members as m', 'm.id', 'mt.member')
         .where('t.sport', ann.audience_sport)
-        .where('m.wiedisync_active', true)
         .distinct('m.id')
         .select('m.id')
       return rows.map(r => r.id).filter(Boolean)
@@ -1831,6 +1835,34 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       }
     } catch (err) {
       log.error({ msg: `Registration status email: ${err.message}`, event: 'registration.status', stack: err.stack })
+    }
+  })
+
+  // Messaging retention (Plan 05 / spec §9)
+  // Runs nightly at 03:00 UTC. Failures isolated via try/catch.
+  schedule('0 3 * * *', async () => {
+    try {
+      const db = database
+      const now = new Date()
+
+      const r1 = await db('messages')
+        .whereRaw(`created_at < NOW() - INTERVAL '12 months'`)
+        .del()
+      const r2 = await db('messages')
+        .whereRaw(`deleted_at IS NOT NULL AND deleted_at < NOW() - INTERVAL '30 days'`)
+        .del()
+      const r3 = await db('message_requests')
+        .where('status', 'declined')
+        .andWhereRaw(`resolved_at < NOW() - INTERVAL '90 days'`)
+        .del()
+
+      logger.info({
+        plan: 'messaging-05-retention',
+        at: now.toISOString(),
+        purged: { old_messages: r1, soft_deleted_messages: r2, declined_requests: r3 },
+      }, 'messaging retention cron complete')
+    } catch (err) {
+      logger.error({ err: err?.message ?? String(err) }, 'messaging retention cron failed')
     }
   })
 

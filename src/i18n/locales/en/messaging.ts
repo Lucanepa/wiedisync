@@ -87,4 +87,10 @@ export default {
   reportReason_moderator_delete: 'Deleted by moderator',
   bannedBannerTitle: 'Messaging banned',
   bannedBannerBody: 'This person cannot send or receive messages.',
+  consentModalTitle: 'Enable messaging?',
+  consentModalBody1: 'Messaging lets you chat directly with teammates and other members.',
+  consentModalBody2: 'Your messages are stored. See our',
+  consentAccept: 'Enable',
+  consentDecline: 'Decline',
+  consentLater: 'Later',
 }

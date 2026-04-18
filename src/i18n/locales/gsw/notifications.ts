@@ -44,6 +44,7 @@ export default {
   carpool_joined: '{{passenger}} fahrt bi dinere Fahrt zu {{game}} mit',
   carpool_cancelled: '{{driver}} het d Fahrt zu {{game}} abgseit',
   task_assigned: 'Dir isch e Ufgab zuegwise worde: {{label}}',
+  new_report: 'Nöii Meldig: {{reason}}',
   pollCreated: 'Umfrag',
   carpoolUpdate: 'Fahrgmeinschaft',
   taskAssigned: 'Ufgab',

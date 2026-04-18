@@ -27,7 +27,7 @@ import { asObj } from '../utils/relations'
 import {
   Home, Calendar, Trophy, UserX, PenSquare, PartyPopper, Users,
   ClipboardList, Building2, CalendarClock, Activity,
-  HeartPulse, Settings, ChevronDown, MessageSquare, Banknote, BarChart3, UserPlus, Bug, GraduationCap, Database, Megaphone,
+  HeartPulse, Settings, ChevronDown, MessageSquare, Banknote, BarChart3, UserPlus, Bug, GraduationCap, Database, Megaphone, Newspaper,
 } from 'lucide-react'
 
 type ExpandedMemberTeam = MemberTeam & { team: Team | string }
@@ -60,6 +60,7 @@ function useNavItems(isLoggedIn: boolean, isApproved: boolean) {
     { to: '/teams', label: t(showTeamsPlural ? 'teams' : 'team'), icon: <Users className={iconClass} /> },
     { to: '/absences', label: t('absences'), icon: <UserX className={iconClass} /> },
     { to: '/scorer', label: t('scorer'), icon: <PenSquare className={iconClass} /> },
+    { to: '/news', label: t('news'), icon: <Newspaper className={iconClass} /> },
   ]
   return {
     navItems: isLoggedIn && isApproved ? [...publicItems, ...authItems] : publicItems,

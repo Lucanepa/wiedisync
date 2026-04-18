@@ -44,6 +44,7 @@ export default {
   carpool_joined: '{{passenger}} joined your ride to {{game}}',
   carpool_cancelled: '{{driver}} cancelled the ride to {{game}}',
   task_assigned: 'You have been assigned: {{label}}',
+  new_report: 'New report: {{reason}}',
   // Type labels for new features
   pollCreated: 'Poll',
   carpoolUpdate: 'Carpool',

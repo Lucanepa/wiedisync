@@ -380,7 +380,7 @@ export default function HomePage() {
             linkTo="/news"
             linkLabel={tn('showAll')}
           />
-          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white lg:w-fit lg:min-w-[32rem] dark:border-gray-700 dark:bg-gray-800">
+          <div className="w-full overflow-hidden rounded-xl border border-gray-200 bg-white lg:max-w-2xl dark:border-gray-700 dark:bg-gray-800">
             {feedItems.map((item) =>
               item.kind === 'announcement' ? (
                 <AnnouncementRow

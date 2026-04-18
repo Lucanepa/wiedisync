@@ -18,9 +18,11 @@
  * Idempotent: for each (policy, collection, action) tuple, any existing permission
  * is deleted before a fresh one is inserted — so re-running is safe.
  *
- * Row-level filters (e.g. "member can only read conversations they belong to") are NOT
- * set here. That tightening is Plan 02 scope. For now, collection-level READ for Member
- * is the skeleton; writes go through /kscw/messaging/* custom endpoints.
+ * Row-level READ filters for the Member policy are set on blocks / message_requests /
+ * conversation_members (Plan 01 deferred task #47, landed Plan 06): a member can only
+ * see their own rows via raw /items/<collection> — enumeration of others is blocked at
+ * the REST layer. Hooks continue to filter at fetch-time for correct UX.
+ * Writes go through /kscw/messaging/* custom endpoints.
  *
  * Usage:
  *   DIRECTUS_URL=https://directus-dev.kscw.ch \
@@ -79,15 +81,35 @@ async function main() {
     'blocks', 'message_requests', 'reports',
   ]
 
-  // MEMBER policy: collection-level READ only.
-  // Members interact with messaging data exclusively through /kscw/messaging/* endpoints
-  // (which use admin-scoped accountability and enforce row-level visibility server-side).
-  // Direct writes to collections are intentionally NOT granted here.
-  // Row-level read filters (e.g. only see conversations you're a member of) are Plan 02 scope.
+  // Row-level READ filters for the Member policy.
+  // Direct writes to collections are intentionally NOT granted; members mutate state only
+  // through /kscw/messaging/* endpoints (admin-scoped accountability with server-side checks).
+  // These filters prevent an authenticated member from enumerating other members' rows via
+  // raw /items/<collection> calls. Hooks already filter at fetch-time for correct UX; this
+  // is the REST-layer guard.
+  // Collections not listed here fall back to {} (unfiltered) — by design for now.
+  const MEMBER_READ_FILTERS = {
+    // A member can only see blocks they created. Incoming blocks stay opaque per UX intent
+    // (users who block you shouldn't be discoverable by a simple API probe).
+    blocks: { blocker: { user: { _eq: '$CURRENT_USER' } } },
+    // A member sees only requests where they are the sender or the recipient.
+    message_requests: {
+      _or: [
+        { sender: { user: { _eq: '$CURRENT_USER' } } },
+        { recipient: { user: { _eq: '$CURRENT_USER' } } },
+      ],
+    },
+    // A member sees only their own conversation memberships (join rows). Other members of
+    // the same conversation are exposed via the /kscw/messaging/conversations endpoint,
+    // which returns shaped summaries and respects blocks + dm_request visibility.
+    conversation_members: { member: { user: { _eq: '$CURRENT_USER' } } },
+  }
+
   console.log('\nApplying Member READ permissions...')
   for (const c of COLLECTIONS) {
-    await upsertPermission({ policy: POLICIES.member, collection: c, action: 'read', permissions: {}, fields: ['*'] })
-    console.log(`  ✓ member READ ${c}`)
+    const permissions = MEMBER_READ_FILTERS[c] ?? {}
+    await upsertPermission({ policy: POLICIES.member, collection: c, action: 'read', permissions, fields: ['*'] })
+    console.log(`  ✓ member READ ${c}${MEMBER_READ_FILTERS[c] ? ' (row-filtered)' : ''}`)
   }
 
   // ADMIN policy: full CRUD.

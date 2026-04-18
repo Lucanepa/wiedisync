@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useCollection } from '../../lib/query'
+import { parseWallClock } from '../../utils/dateHelpers'
 import DashboardSection from './components/DashboardSection'
 
 // ── Types ────────────────────────────────────────────────────────
@@ -69,7 +70,7 @@ function computeAverages(items: VolleyFeedback[]) {
 }
 
 function formatDate(d: string) {
-  const date = new Date(d)
+  const date = parseWallClock(d)
   return date.toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit' })
 }
 
@@ -123,7 +124,7 @@ export default function VolleyFeedbackPage() {
   function exportCSV() {
     const headers = ['Date', 'Name', 'Anonymous', 'Functions', 'Teams', 'Club', 'Board', 'TK Leadership', 'Training', 'Communication', 'Feedback', 'Ideas', 'Other']
     const rows = filtered.map(i => [
-      i.date_created ? new Date(i.date_created).toLocaleDateString('de-CH') : '',
+      i.date_created ? parseWallClock(i.date_created).toLocaleDateString('de-CH') : '',
       i.is_anonymous ? 'Anonym' : (i.name || ''),
       i.is_anonymous ? 'Ja' : 'Nein',
       i.functions?.join(', ') || '',

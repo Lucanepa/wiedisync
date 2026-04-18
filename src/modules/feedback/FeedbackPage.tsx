@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import { Bug, Lightbulb, MessageCircle, Paperclip, X, ExternalLink, ChevronDown, ChevronRight, CheckCircle2, AlertCircle } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { useCollection } from '../../lib/query'
-import { formatRelativeTime } from '../../utils/dateHelpers'
+import { formatRelativeTime, parseWallClock } from '../../utils/dateHelpers'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
 import { Textarea } from '../../components/ui/textarea'
@@ -464,7 +464,7 @@ function IssueRow({ issue, formatDate, closed }: { issue: GitHubIssue; formatDat
           )}
           {closed && issue.closedAt && (
             <p className="mb-2 text-xs text-purple-600 dark:text-purple-400">
-              {t('resolvedOn')} {new Date(issue.closedAt).toLocaleDateString()}
+              {t('resolvedOn')} {parseWallClock(issue.closedAt).toLocaleDateString()}
             </p>
           )}
           <a

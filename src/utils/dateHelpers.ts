@@ -2,9 +2,21 @@ const dateFmt = new Intl.DateTimeFormat('en-US', { day: 'numeric', month: 'short
 const dateShortFmt = new Intl.DateTimeFormat('en-US', { day: '2-digit', month: '2-digit' })
 const weekdayFmt = new Intl.DateTimeFormat('en-US', { weekday: 'short' })
 
+// Convention: API datetimes are "wall-clock time labeled as UTC" (admin typed 12:30
+// Swiss → DB stores 12:30Z → we must render hours/minutes verbatim, NOT convert TZ).
+// parseWallClock strips any trailing Z/offset so `new Date()` parses as LOCAL,
+// making `.getHours()`, Intl formatters, etc. return the stored wall-clock values.
+export function parseWallClock(input: string | Date | null | undefined): Date {
+  if (input instanceof Date) return input
+  if (!input) return new Date(NaN)
+  const stripped = input.replace(/(\.\d+)?(Z|[+-]\d{2}:?\d{2})$/i, '')
+  const withT = stripped.includes('T') ? stripped : stripped.replace(' ', 'T')
+  return new Date(withT)
+}
+
 /** Swiss compact: dd.mm.yy */
 export function formatDateCompact(date: string): string {
-  const d = new Date(date)
+  const d = parseWallClock(date)
   const dd = String(d.getDate()).padStart(2, '0')
   const mm = String(d.getMonth() + 1).padStart(2, '0')
   const yy = String(d.getFullYear()).slice(-2)
@@ -12,21 +24,21 @@ export function formatDateCompact(date: string): string {
 }
 
 export function formatDate(date: string): string {
-  return dateFmt.format(new Date(date))
+  return dateFmt.format(parseWallClock(date))
 }
 
 export function formatDateShort(date: string): string {
-  return dateShortFmt.format(new Date(date))
+  return dateShortFmt.format(parseWallClock(date))
 }
 
 export function formatWeekday(date: string): string {
-  return weekdayFmt.format(new Date(date))
+  return weekdayFmt.format(parseWallClock(date))
 }
 
 export function formatTime(time: string): string {
-  // For ISO/datetime strings, use Date to correctly handle UTC→local conversion
+  // For ISO/datetime strings, parse as wall-clock (stored times are admin-typed, TZ-naive)
   if (time.includes('T') || (time.includes(' ') && time.includes('-'))) {
-    const d = new Date(time)
+    const d = parseWallClock(time)
     return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
   }
   // Plain time string (e.g. "20:00" or "20:00:00")
@@ -131,7 +143,7 @@ export function addDays(date: Date, days: number): Date {
 
 /** Format a datetime as dd.mm.yy HH:mm */
 export function formatDateTimeCompact(datetime: string): string {
-  const d = new Date(datetime)
+  const d = parseWallClock(datetime)
   const dd = String(d.getDate()).padStart(2, '0')
   const mm = String(d.getMonth() + 1).padStart(2, '0')
   const yy = String(d.getFullYear()).slice(-2)
@@ -148,7 +160,8 @@ function toIntlLocale(locale: string): string {
 
 /** Format a datetime as locale-aware relative time (e.g. "vor 2 Std.", "2 hr. ago"). */
 export function formatRelativeTime(datetime: string, locale: string = 'de-CH'): string {
-  const diffMs = Date.now() - new Date(datetime).getTime()
+  // Use wall-clock parse so the stored "admin-typed time labeled as UTC" matches the local "now" frame.
+  const diffMs = Date.now() - parseWallClock(datetime).getTime()
   const diffMin = Math.floor(diffMs / 60000)
   const diffHr = Math.floor(diffMin / 60)
   const diffDay = Math.floor(diffHr / 24)
@@ -195,9 +208,14 @@ export function parseRespondByTime(respondBy: string | undefined | null, fallbac
 /**
  * Compute deadline Date from respond_by string with backward-compatible fallback.
  * Legacy 00:00:00 records fall back to activityStartTime or 23:59.
+ * Handles both "YYYY-MM-DD HH:MM:SS" and ISO "YYYY-MM-DDTHH:MM:SS(.sss)Z" inputs.
  */
 export function getDeadlineDate(respondBy: string, activityStartTime?: string): Date {
-  const [rbDate, rbTime] = respondBy.split(' ')
+  // Normalize away TZ marker + T separator so we can split on space
+  const normalized = respondBy
+    .replace('T', ' ')
+    .replace(/(\.\d+)?(Z|[+-]\d{2}:?\d{2})$/i, '')
+  const [rbDate, rbTime] = normalized.split(' ')
   const effectiveTime = rbTime && rbTime !== '00:00:00' ? rbTime.slice(0, 5) : (activityStartTime || '23:59')
   return new Date(`${rbDate}T${effectiveTime}`)
 }

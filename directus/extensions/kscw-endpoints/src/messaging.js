@@ -748,6 +748,60 @@ export function registerMessaging(router, ctx) {
     } catch (e) { sendError(res, log, e) }
   })
 
+  // ── POST /messaging/polls ───────────────────────────────────────────
+  router.post('/messaging/polls', async (req, res) => {
+    try {
+      const userId = requireAuth(req)
+      const me = await requireMember(db, userId)
+
+      const b = req.body ?? {}
+      const conversationId = typeof b.conversation === 'string' ? b.conversation : null
+      const question = typeof b.question === 'string' ? b.question.trim() : ''
+      const options = Array.isArray(b.options) ? b.options.map(String).map(s => s.trim()).filter(Boolean) : []
+      const mode = b.mode === 'multi' ? 'multi' : 'single'
+      const anonymous = b.anonymous === true
+      const deadline = typeof b.deadline === 'string' && b.deadline.length > 0 ? b.deadline : null
+
+      if (!conversationId) throw new MessagingError(400, 'messaging/invalid_body', 'conversation required')
+      if (question.length < 1 || question.length > 255)
+        throw new MessagingError(400, 'messaging/invalid_body', 'question must be 1..255 chars')
+      if (options.length < 2 || options.length > 10)
+        throw new MessagingError(400, 'messaging/invalid_body', 'options must be 2..10 non-empty strings')
+
+      const { conv } = await loadConversationMembership(db, conversationId, me.id)
+      if (conv.type === 'team') requireTeamChatEnabled(me)
+      else if (conv.type === 'dm' || conv.type === 'dm_request') requireDmEnabled(me)
+      else throw new MessagingError(400, 'messaging/invalid_body', `Unsupported conversation type: ${conv.type}`)
+
+      const schema = await getSchema()
+      const pollsService = new ItemsService('polls', { schema, knex: db })
+      const messagesService = new ItemsService('messages', { schema, knex: db })
+      const conversationsService = new ItemsService('conversations', { schema, knex: db })
+      const nowIso = new Date().toISOString()
+
+      // polls.id is integer (serial). ItemsService.createOne returns the PK.
+      const pollId = await pollsService.createOne({
+        conversation: conversationId,
+        team: null,
+        question, options, mode, deadline, anonymous,
+        created_by: me.id, status: 'open',
+      })
+
+      const messageId = crypto.randomUUID()
+      await messagesService.createOne({
+        id: messageId, conversation: conversationId, sender: me.id,
+        type: 'poll', body: null, poll: pollId, created_at: nowIso,
+      })
+
+      const preview = `📊 ${question.length > 100 ? question.slice(0, 97) + '...' : question}`
+      await conversationsService.updateOne(conversationId, {
+        last_message_at: nowIso, last_message_preview: preview,
+      })
+
+      res.json({ poll_id: pollId, message_id: messageId })
+    } catch (e) { sendError(res, log, e) }
+  })
+
   // ── The rest stay 501 for Plans 03-05 ───────────────────────────────
   router.post('/messaging/conversations/:id/clear',       stub('POST /conversations/:id/clear'))
   router.post('/messaging/settings/consent',              stub('POST /settings/consent'))

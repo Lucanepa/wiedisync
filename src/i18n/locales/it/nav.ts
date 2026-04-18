@@ -45,4 +45,5 @@ export default {
   announcements: 'Notizie',
   news: 'News',
   moderationReports: 'Segnalazioni',
+  messagingSettings: 'Messaggistica',
 } as const

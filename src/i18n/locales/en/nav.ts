@@ -46,4 +46,5 @@ export default {
   announcements: 'Club News',
   news: 'News',
   moderationReports: 'Moderation reports',
+  messagingSettings: 'Messaging',
 } as const

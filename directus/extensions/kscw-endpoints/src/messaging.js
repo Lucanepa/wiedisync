@@ -528,9 +528,33 @@ export function registerMessaging(router, ctx) {
     } catch (e) { sendError(res, log, e) }
   })
 
+  // ── PATCH /messaging/messages/:id ───────────────────────────────────
+  router.patch('/messaging/messages/:id', async (req, res) => {
+    try {
+      const userId = requireAuth(req)
+      const me = await requireMember(db, userId)
+      const msg = await requireMessageOwner(db, req.params.id, me.id)
+
+      if (msg.deleted_at != null)
+        throw new MessagingError(400, 'messaging/invalid_body', 'Cannot edit a deleted message')
+      if (msg.type !== 'text')
+        throw new MessagingError(400, 'messaging/invalid_body', 'Only text messages can be edited')
+
+      const body = typeof req.body?.body === 'string' ? req.body.body.trim() : ''
+      if (body.length < 1 || body.length > 4000)
+        throw new MessagingError(400, 'messaging/invalid_body', 'body must be 1..4000 chars')
+
+      const schema = await getSchema()
+      const messagesService = new ItemsService('messages', { schema, knex: db })
+      const nowIso = new Date().toISOString()
+      await messagesService.updateOne(msg.id, { body, edited_at: nowIso })
+
+      res.json({ id: msg.id, body, edited_at: nowIso })
+    } catch (e) { sendError(res, log, e) }
+  })
+
   // ── The rest stay 501 for Plans 03-05 ───────────────────────────────
   router.post('/messaging/conversations/:id/clear',       stub('POST /conversations/:id/clear'))
-  router.patch('/messaging/messages/:id',                 stub('PATCH /messages/:id'))
   router.delete('/messaging/messages/:id',                stub('DELETE /messages/:id'))
   router.post('/messaging/reports',                       stub('POST /reports'))
   router.get('/messaging/reports',                        stub('GET /reports'))

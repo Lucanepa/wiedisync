@@ -18,6 +18,7 @@ describe('messagingApi', () => {
       'react',
       'acceptRequest','declineRequest','block','unblock',
       'createReport','listReports','resolveReport',
+      'createPoll',
       'updateSettings','recordConsent','exportData',
     ] as const
     for (const k of expected) {
@@ -100,6 +101,73 @@ describe('messagingApi', () => {
       expect.objectContaining({
         method: 'PATCH',
         body: { dm_enabled: true, team_chat_enabled: false },
+      }),
+    )
+  })
+
+  it('react POSTs to correct URL with raw body', async () => {
+    await messagingApi.react('msg-1', { emoji: '👍' })
+    expect(kscwApi).toHaveBeenCalledWith(
+      '/messaging/messages/msg-1/reactions',
+      expect.objectContaining({ method: 'POST', body: { emoji: '👍' } }),
+    )
+  })
+
+  it('edit PATCHes to correct URL with raw body', async () => {
+    await messagingApi.edit('msg-1', { body: 'new' })
+    expect(kscwApi).toHaveBeenCalledWith(
+      '/messaging/messages/msg-1',
+      expect.objectContaining({ method: 'PATCH', body: { body: 'new' } }),
+    )
+  })
+
+  it('delete calls DELETE on correct URL with no body', async () => {
+    await messagingApi.delete('msg-1')
+    expect(kscwApi).toHaveBeenCalledWith(
+      '/messaging/messages/msg-1',
+      expect.objectContaining({ method: 'DELETE' }),
+    )
+  })
+
+  it('createReport POSTs with exact raw body', async () => {
+    await messagingApi.createReport({ reported_member: 'mbr-2', message: 'msg-1', reason: 'spam' })
+    expect(kscwApi).toHaveBeenCalledWith(
+      '/messaging/reports',
+      expect.objectContaining({
+        method: 'POST',
+        body: { reported_member: 'mbr-2', message: 'msg-1', reason: 'spam' },
+      }),
+    )
+  })
+
+  it('listReports GETs /messaging/reports with no query string', async () => {
+    await messagingApi.listReports()
+    expect(kscwApi).toHaveBeenCalledWith('/messaging/reports')
+  })
+
+  it('listReports with status filter appends ?status=open', async () => {
+    await messagingApi.listReports({ status: 'open' })
+    expect(kscwApi).toHaveBeenCalledWith('/messaging/reports?status=open')
+  })
+
+  it('resolveReport PATCHes with raw body', async () => {
+    await messagingApi.resolveReport('rep-1', { status: 'resolved', delete_message: true })
+    expect(kscwApi).toHaveBeenCalledWith(
+      '/messaging/reports/rep-1',
+      expect.objectContaining({
+        method: 'PATCH',
+        body: { status: 'resolved', delete_message: true },
+      }),
+    )
+  })
+
+  it('createPoll POSTs to /messaging/polls with raw body', async () => {
+    await messagingApi.createPoll({ conversation: 'c', question: 'q', options: ['a', 'b'], mode: 'single' })
+    expect(kscwApi).toHaveBeenCalledWith(
+      '/messaging/polls',
+      expect.objectContaining({
+        method: 'POST',
+        body: { conversation: 'c', question: 'q', options: ['a', 'b'], mode: 'single' },
       }),
     )
   })

@@ -111,7 +111,7 @@
         "numeric_scale": null,
         "is_nullable": false,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
@@ -157,7 +157,7 @@
         "numeric_scale": 0,
         "is_nullable": false,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
@@ -427,7 +427,7 @@
         "foreign_key_column": "id",
         "constraint_name": "conversation_members_conversation_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
+        "on_delete": "CASCADE"
       }
     },
     {
@@ -452,7 +452,7 @@
         "foreign_key_column": "id",
         "constraint_name": "conversation_members_member_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
+        "on_delete": "CASCADE"
       }
     }
   ]

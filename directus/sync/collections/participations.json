@@ -465,8 +465,10 @@
       "meta": {
         "collection": "participations",
         "conditions": null,
-        "display": null,
-        "display_options": null,
+        "display": "related-values",
+        "display_options": {
+          "template": "{{first_name}} {{last_name}}"
+        },
         "field": "member",
         "group": null,
         "hidden": false,
@@ -495,7 +497,7 @@
         "numeric_scale": 0,
         "is_nullable": true,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
@@ -583,6 +585,219 @@
         "data_type": "timestamp with time zone",
         "default_value": null,
         "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "participations",
+      "field": "position_1",
+      "type": "string",
+      "meta": {
+        "collection": "participations",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "position_1",
+        "group": null,
+        "hidden": false,
+        "interface": "select-dropdown",
+        "note": null,
+        "options": {
+          "choices": [
+            {
+              "text": "Setter",
+              "value": "Setter"
+            },
+            {
+              "text": "Outside",
+              "value": "Outside"
+            },
+            {
+              "text": "Middle",
+              "value": "Middle"
+            },
+            {
+              "text": "Opposite",
+              "value": "Opposite"
+            },
+            {
+              "text": "Libero",
+              "value": "Libero"
+            },
+            {
+              "text": "Universal",
+              "value": "Universal"
+            }
+          ]
+        },
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 13,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "third"
+      },
+      "schema": {
+        "name": "position_1",
+        "table": "participations",
+        "data_type": "character varying",
+        "default_value": null,
+        "max_length": 255,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "participations",
+      "field": "position_2",
+      "type": "string",
+      "meta": {
+        "collection": "participations",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "position_2",
+        "group": null,
+        "hidden": false,
+        "interface": "select-dropdown",
+        "note": null,
+        "options": {
+          "choices": [
+            {
+              "text": "Setter",
+              "value": "Setter"
+            },
+            {
+              "text": "Outside",
+              "value": "Outside"
+            },
+            {
+              "text": "Middle",
+              "value": "Middle"
+            },
+            {
+              "text": "Opposite",
+              "value": "Opposite"
+            },
+            {
+              "text": "Libero",
+              "value": "Libero"
+            },
+            {
+              "text": "Universal",
+              "value": "Universal"
+            }
+          ]
+        },
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 14,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "third"
+      },
+      "schema": {
+        "name": "position_2",
+        "table": "participations",
+        "data_type": "character varying",
+        "default_value": null,
+        "max_length": 255,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "participations",
+      "field": "position_3",
+      "type": "string",
+      "meta": {
+        "collection": "participations",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "position_3",
+        "group": null,
+        "hidden": false,
+        "interface": "select-dropdown",
+        "note": null,
+        "options": {
+          "choices": [
+            {
+              "text": "Setter",
+              "value": "Setter"
+            },
+            {
+              "text": "Outside",
+              "value": "Outside"
+            },
+            {
+              "text": "Middle",
+              "value": "Middle"
+            },
+            {
+              "text": "Opposite",
+              "value": "Opposite"
+            },
+            {
+              "text": "Libero",
+              "value": "Libero"
+            },
+            {
+              "text": "Universal",
+              "value": "Universal"
+            }
+          ]
+        },
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 15,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "third"
+      },
+      "schema": {
+        "name": "position_3",
+        "table": "participations",
+        "data_type": "character varying",
+        "default_value": null,
+        "max_length": 255,
         "numeric_precision": null,
         "numeric_scale": null,
         "is_nullable": true,

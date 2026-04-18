@@ -9,7 +9,7 @@
       "collapse": "open",
       "collection": "sponsors",
       "color": null,
-      "display_template": null,
+      "display_template": "{{name}}",
       "group": null,
       "hidden": false,
       "icon": "handshake",
@@ -158,8 +158,8 @@
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": "directus_files",
-        "foreign_key_column": "id"
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
@@ -476,15 +476,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "sponsors",
-        "column": "logo",
-        "foreign_key_table": "directus_files",
-        "foreign_key_column": "id",
-        "constraint_name": "sponsors_logo_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "NO ACTION"
       }
     },
     {
@@ -492,7 +483,7 @@
       "field": "sponsors_id",
       "related_collection": "sponsors",
       "meta": {
-        "junction_field": null,
+        "junction_field": "teams_id",
         "many_collection": "teams_sponsors",
         "many_field": "sponsors_id",
         "one_allowed_collections": null,
@@ -501,15 +492,6 @@
         "one_deselect_action": "nullify",
         "one_field": "teams",
         "sort_field": null
-      },
-      "schema": {
-        "table": "teams_sponsors",
-        "column": "sponsors_id",
-        "foreign_key_table": "sponsors",
-        "foreign_key_column": "id",
-        "constraint_name": "teams_sponsors_sponsors_id_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "CASCADE"
       }
     }
   ]

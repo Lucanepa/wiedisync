@@ -12,7 +12,7 @@
       "display_template": null,
       "group": null,
       "hidden": true,
-      "icon": "link",
+      "icon": "import_export",
       "item_duplication_fields": null,
       "note": null,
       "preview_url": null,
@@ -40,10 +40,10 @@
         "field": "id",
         "group": null,
         "hidden": true,
-        "interface": "numeric",
+        "interface": null,
         "note": null,
         "options": null,
-        "readonly": true,
+        "readonly": false,
         "required": false,
         "searchable": true,
         "sort": 1,
@@ -70,50 +70,6 @@
         "has_auto_increment": true,
         "foreign_key_table": null,
         "foreign_key_column": null
-      }
-    },
-    {
-      "collection": "hall_events_halls",
-      "field": "hall_events_id",
-      "type": "integer",
-      "meta": {
-        "collection": "hall_events_halls",
-        "conditions": null,
-        "display": null,
-        "display_options": null,
-        "field": "hall_events_id",
-        "group": null,
-        "hidden": true,
-        "interface": null,
-        "note": null,
-        "options": null,
-        "readonly": false,
-        "required": false,
-        "searchable": true,
-        "sort": 2,
-        "special": null,
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "full"
-      },
-      "schema": {
-        "name": "hall_events_id",
-        "table": "hall_events_halls",
-        "data_type": "integer",
-        "default_value": null,
-        "max_length": null,
-        "numeric_precision": 32,
-        "numeric_scale": 0,
-        "is_nullable": true,
-        "is_unique": false,
-        "is_indexed": false,
-        "is_primary_key": false,
-        "is_generated": false,
-        "generation_expression": null,
-        "has_auto_increment": false,
-        "foreign_key_table": "hall_events",
-        "foreign_key_column": "id"
       }
     },
     {
@@ -162,39 +118,37 @@
     },
     {
       "collection": "hall_events_halls",
-      "field": "date_created",
-      "type": "timestamp",
+      "field": "hall_events_id",
+      "type": "integer",
       "meta": {
         "collection": "hall_events_halls",
         "conditions": null,
         "display": null,
         "display_options": null,
-        "field": "date_created",
+        "field": "hall_events_id",
         "group": null,
         "hidden": true,
-        "interface": "datetime",
+        "interface": null,
         "note": null,
         "options": null,
-        "readonly": true,
+        "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 4,
-        "special": [
-          "date-created"
-        ],
+        "sort": 2,
+        "special": null,
         "translations": null,
         "validation": null,
         "validation_message": null,
-        "width": "half"
+        "width": "full"
       },
       "schema": {
-        "name": "date_created",
+        "name": "hall_events_id",
         "table": "hall_events_halls",
-        "data_type": "timestamp with time zone",
+        "data_type": "integer",
         "default_value": null,
         "max_length": null,
-        "numeric_precision": null,
-        "numeric_scale": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
         "is_nullable": true,
         "is_unique": false,
         "is_indexed": false,
@@ -202,58 +156,37 @@
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": null,
-        "foreign_key_column": null
-      }
-    },
-    {
-      "collection": "hall_events_halls",
-      "field": "date_updated",
-      "type": "timestamp",
-      "meta": {
-        "collection": "hall_events_halls",
-        "conditions": null,
-        "display": null,
-        "display_options": null,
-        "field": "date_updated",
-        "group": null,
-        "hidden": true,
-        "interface": "datetime",
-        "note": null,
-        "options": null,
-        "readonly": true,
-        "required": false,
-        "searchable": true,
-        "sort": 5,
-        "special": [
-          "date-updated"
-        ],
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "half"
-      },
-      "schema": {
-        "name": "date_updated",
-        "table": "hall_events_halls",
-        "data_type": "timestamp with time zone",
-        "default_value": null,
-        "max_length": null,
-        "numeric_precision": null,
-        "numeric_scale": null,
-        "is_nullable": true,
-        "is_unique": false,
-        "is_indexed": false,
-        "is_primary_key": false,
-        "is_generated": false,
-        "generation_expression": null,
-        "has_auto_increment": false,
-        "foreign_key_table": null,
-        "foreign_key_column": null
+        "foreign_key_table": "hall_events",
+        "foreign_key_column": "id"
       }
     }
   ],
   "relations": [
+    {
+      "collection": "hall_events_halls",
+      "field": "halls_id",
+      "related_collection": "halls",
+      "meta": {
+        "junction_field": "hall_events_id",
+        "many_collection": "hall_events_halls",
+        "many_field": "halls_id",
+        "one_allowed_collections": null,
+        "one_collection": "halls",
+        "one_collection_field": null,
+        "one_deselect_action": "nullify",
+        "one_field": null,
+        "sort_field": null
+      },
+      "schema": {
+        "table": "hall_events_halls",
+        "column": "halls_id",
+        "foreign_key_table": "halls",
+        "foreign_key_column": "id",
+        "constraint_name": "hall_events_halls_1_halls_id_foreign",
+        "on_update": "NO ACTION",
+        "on_delete": "SET NULL"
+      }
+    },
     {
       "collection": "hall_events_halls",
       "field": "hall_events_id",
@@ -274,34 +207,9 @@
         "column": "hall_events_id",
         "foreign_key_table": "hall_events",
         "foreign_key_column": "id",
-        "constraint_name": "hall_events_halls_hall_events_id_foreign",
+        "constraint_name": "hall_events_halls_1_hall_events_id_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "CASCADE"
-      }
-    },
-    {
-      "collection": "hall_events_halls",
-      "field": "halls_id",
-      "related_collection": "halls",
-      "meta": {
-        "junction_field": null,
-        "many_collection": "hall_events_halls",
-        "many_field": "halls_id",
-        "one_allowed_collections": null,
-        "one_collection": "halls",
-        "one_collection_field": null,
-        "one_deselect_action": "nullify",
-        "one_field": null,
-        "sort_field": null
-      },
-      "schema": {
-        "table": "hall_events_halls",
-        "column": "halls_id",
-        "foreign_key_table": "halls",
-        "foreign_key_column": "id",
-        "constraint_name": "hall_events_halls_halls_id_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "CASCADE"
+        "on_delete": "SET NULL"
       }
     }
   ]

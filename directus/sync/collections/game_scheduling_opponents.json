@@ -299,8 +299,10 @@
       "meta": {
         "collection": "game_scheduling_opponents",
         "conditions": null,
-        "display": null,
-        "display_options": null,
+        "display": "related-values",
+        "display_options": {
+          "template": "{{name}}"
+        },
         "field": "kscw_team",
         "group": null,
         "hidden": false,
@@ -329,13 +331,13 @@
         "numeric_scale": 0,
         "is_nullable": true,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id"
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
@@ -345,8 +347,10 @@
       "meta": {
         "collection": "game_scheduling_opponents",
         "conditions": null,
-        "display": null,
-        "display_options": null,
+        "display": "related-values",
+        "display_options": {
+          "template": "{{home_team}} vs {{away_team}}"
+        },
         "field": "home_game",
         "group": null,
         "hidden": false,
@@ -375,13 +379,13 @@
         "numeric_scale": 0,
         "is_nullable": true,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": "games",
-        "foreign_key_column": "id"
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
@@ -391,8 +395,10 @@
       "meta": {
         "collection": "game_scheduling_opponents",
         "conditions": null,
-        "display": null,
-        "display_options": null,
+        "display": "related-values",
+        "display_options": {
+          "template": "{{home_team}} vs {{away_team}}"
+        },
         "field": "away_game",
         "group": null,
         "hidden": false,
@@ -421,13 +427,13 @@
         "numeric_scale": 0,
         "is_nullable": true,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": "games",
-        "foreign_key_column": "id"
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
@@ -538,15 +544,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "game_scheduling_bookings",
-        "column": "opponent",
-        "foreign_key_table": "game_scheduling_opponents",
-        "foreign_key_column": "id",
-        "constraint_name": "game_scheduling_bookings_opponent_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -563,15 +560,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "game_scheduling_opponents",
-        "column": "kscw_team",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "game_scheduling_opponents_kscw_team_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -588,15 +576,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "game_scheduling_opponents",
-        "column": "home_game",
-        "foreign_key_table": "games",
-        "foreign_key_column": "id",
-        "constraint_name": "game_scheduling_opponents_home_game_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -613,15 +592,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "game_scheduling_opponents",
-        "column": "away_game",
-        "foreign_key_table": "games",
-        "foreign_key_column": "id",
-        "constraint_name": "game_scheduling_opponents_away_game_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     }
   ]

@@ -385,7 +385,7 @@
         "foreign_key_column": "id",
         "constraint_name": "message_requests_conversation_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "NO ACTION"
+        "on_delete": "CASCADE"
       }
     },
     {
@@ -410,7 +410,7 @@
         "foreign_key_column": "id",
         "constraint_name": "message_requests_sender_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "NO ACTION"
+        "on_delete": "CASCADE"
       }
     },
     {
@@ -435,7 +435,7 @@
         "foreign_key_column": "id",
         "constraint_name": "message_requests_recipient_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "NO ACTION"
+        "on_delete": "CASCADE"
       }
     }
   ]

@@ -211,8 +211,10 @@
       "meta": {
         "collection": "push_subscriptions",
         "conditions": null,
-        "display": null,
-        "display_options": null,
+        "display": "related-values",
+        "display_options": {
+          "template": "{{first_name}} {{last_name}}"
+        },
         "field": "member",
         "group": null,
         "hidden": false,

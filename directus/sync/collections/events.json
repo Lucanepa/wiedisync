@@ -701,8 +701,10 @@
       "meta": {
         "collection": "events",
         "conditions": null,
-        "display": null,
-        "display_options": null,
+        "display": "related-values",
+        "display_options": {
+          "template": "{{name}}"
+        },
         "field": "hall",
         "group": null,
         "hidden": false,
@@ -731,13 +733,13 @@
         "numeric_scale": 0,
         "is_nullable": true,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": "halls",
-        "foreign_key_column": "id"
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
@@ -747,8 +749,10 @@
       "meta": {
         "collection": "events",
         "conditions": null,
-        "display": null,
-        "display_options": null,
+        "display": "related-values",
+        "display_options": {
+          "template": "{{first_name}} {{last_name}}"
+        },
         "field": "created_by",
         "group": null,
         "hidden": false,
@@ -777,43 +781,13 @@
         "numeric_scale": 0,
         "is_nullable": true,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": "members",
-        "foreign_key_column": "id"
-      }
-    },
-    {
-      "collection": "events",
-      "field": "teams",
-      "type": "alias",
-      "meta": {
-        "collection": "events",
-        "conditions": null,
-        "display": null,
-        "display_options": null,
-        "field": "teams",
-        "group": null,
-        "hidden": false,
-        "interface": "list-m2m",
-        "note": null,
-        "options": {
-          "junctionCollection": "events_teams"
-        },
-        "readonly": false,
-        "required": false,
-        "searchable": true,
-        "sort": 17,
-        "special": [
-          "m2m"
-        ],
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "full"
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
@@ -910,6 +884,62 @@
     },
     {
       "collection": "events",
+      "field": "teams",
+      "type": "alias",
+      "meta": {
+        "collection": "events",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "teams",
+        "group": null,
+        "hidden": false,
+        "interface": "list-m2m",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 20,
+        "special": [
+          "m2m"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      }
+    },
+    {
+      "collection": "events",
+      "field": "invited_members",
+      "type": "alias",
+      "meta": {
+        "collection": "events",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "invited_members",
+        "group": null,
+        "hidden": false,
+        "interface": "list-m2m",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 21,
+        "special": [
+          "m2m"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      }
+    },
+    {
+      "collection": "events",
       "field": "invited_roles",
       "type": "json",
       "meta": {
@@ -928,7 +958,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 20,
+        "sort": 22,
         "special": [
           "cast-json"
         ],
@@ -974,7 +1004,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 21,
+        "sort": 23,
         "special": null,
         "translations": null,
         "validation": null,
@@ -1002,30 +1032,46 @@
     },
     {
       "collection": "events",
-      "field": "invited_members",
-      "type": "alias",
+      "field": "allow_maybe",
+      "type": "boolean",
       "meta": {
         "collection": "events",
         "conditions": null,
-        "display": "related-values",
+        "display": "boolean",
         "display_options": null,
-        "field": "invited_members",
+        "field": "allow_maybe",
         "group": null,
         "hidden": false,
-        "interface": "list-m2m",
-        "note": null,
+        "interface": "boolean",
+        "note": "When off, participants can only reply Yes or No",
         "options": null,
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": null,
-        "special": [
-          "m2m"
-        ],
+        "sort": 24,
+        "special": null,
         "translations": null,
         "validation": null,
         "validation_message": null,
-        "width": "full"
+        "width": "half"
+      },
+      "schema": {
+        "name": "allow_maybe",
+        "table": "events",
+        "data_type": "boolean",
+        "default_value": true,
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     }
   ],
@@ -1052,7 +1098,7 @@
         "foreign_key_column": "id",
         "constraint_name": "event_sessions_event_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
+        "on_delete": "CASCADE"
       }
     },
     {
@@ -1069,15 +1115,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "events",
-        "column": "hall",
-        "foreign_key_table": "halls",
-        "foreign_key_column": "id",
-        "constraint_name": "events_hall_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1094,15 +1131,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "events",
-        "column": "created_by",
-        "foreign_key_table": "members",
-        "foreign_key_column": "id",
-        "constraint_name": "events_created_by_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1125,25 +1153,9 @@
         "column": "events_id",
         "foreign_key_table": "events",
         "foreign_key_column": "id",
-        "constraint_name": "events_members_events_id_fkey",
+        "constraint_name": "events_members_events_id_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "CASCADE"
-      }
-    },
-    {
-      "collection": "events_members",
-      "field": "events_id",
-      "related_collection": "events",
-      "meta": {
-        "junction_field": "members_id",
-        "many_collection": "events_members",
-        "many_field": "events_id",
-        "one_allowed_collections": null,
-        "one_collection": "events",
-        "one_collection_field": null,
-        "one_deselect_action": "nullify",
-        "one_field": "invited_members",
-        "sort_field": null
+        "on_delete": "SET NULL"
       }
     },
     {
@@ -1166,9 +1178,9 @@
         "column": "events_id",
         "foreign_key_table": "events",
         "foreign_key_column": "id",
-        "constraint_name": "events_teams_events_id_foreign",
+        "constraint_name": "events_teams_1_events_id_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "CASCADE"
+        "on_delete": "SET NULL"
       }
     }
   ]

@@ -473,14 +473,18 @@
       "meta": {
         "collection": "absences",
         "conditions": null,
-        "display": null,
-        "display_options": null,
+        "display": "related-values",
+        "display_options": {
+          "template": "{{last_name}} {{first_name}}"
+        },
         "field": "member",
         "group": null,
         "hidden": false,
         "interface": "select-dropdown-m2o",
         "note": null,
-        "options": null,
+        "options": {
+          "template": "{{last_name}} {{first_name}}"
+        },
         "readonly": false,
         "required": false,
         "searchable": true,
@@ -503,7 +507,7 @@
         "numeric_scale": 0,
         "is_nullable": true,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,

@@ -9,7 +9,7 @@
       "collapse": "open",
       "collection": "teams",
       "color": "#4A55A2",
-      "display_template": null,
+      "display_template": "{{name}}",
       "group": null,
       "hidden": false,
       "icon": "groups",
@@ -315,9 +315,33 @@
         "field": "season",
         "group": null,
         "hidden": false,
-        "interface": "input",
+        "interface": "select-dropdown",
         "note": null,
-        "options": null,
+        "options": {
+          "allowOther": false,
+          "choices": [
+            {
+              "text": "2025/26",
+              "value": "2025/26"
+            },
+            {
+              "text": "2026/27",
+              "value": "2026/27"
+            },
+            {
+              "text": "2027/28",
+              "value": "2027/28"
+            },
+            {
+              "text": "2028/29",
+              "value": "2028/29"
+            },
+            {
+              "text": "2029/30",
+              "value": "2029/30"
+            }
+          ]
+        },
         "readonly": false,
         "required": false,
         "searchable": true,
@@ -663,126 +687,6 @@
     },
     {
       "collection": "teams",
-      "field": "coach",
-      "type": "alias",
-      "meta": {
-        "collection": "teams",
-        "conditions": null,
-        "display": null,
-        "display_options": null,
-        "field": "coach",
-        "group": null,
-        "hidden": false,
-        "interface": "list-m2m",
-        "note": null,
-        "options": {
-          "junctionCollection": "teams_coach"
-        },
-        "readonly": false,
-        "required": false,
-        "searchable": true,
-        "sort": 15,
-        "special": [
-          "m2m"
-        ],
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "full"
-      }
-    },
-    {
-      "collection": "teams",
-      "field": "captain",
-      "type": "alias",
-      "meta": {
-        "collection": "teams",
-        "conditions": null,
-        "display": null,
-        "display_options": null,
-        "field": "captain",
-        "group": null,
-        "hidden": false,
-        "interface": "list-m2m",
-        "note": null,
-        "options": {
-          "junctionCollection": "teams_captain"
-        },
-        "readonly": false,
-        "required": false,
-        "searchable": true,
-        "sort": 16,
-        "special": [
-          "m2m"
-        ],
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "full"
-      }
-    },
-    {
-      "collection": "teams",
-      "field": "team_responsible",
-      "type": "alias",
-      "meta": {
-        "collection": "teams",
-        "conditions": null,
-        "display": null,
-        "display_options": null,
-        "field": "team_responsible",
-        "group": null,
-        "hidden": false,
-        "interface": "list-m2m",
-        "note": null,
-        "options": {
-          "junctionCollection": "teams_team_responsible"
-        },
-        "readonly": false,
-        "required": false,
-        "searchable": true,
-        "sort": 17,
-        "special": [
-          "m2m"
-        ],
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "full"
-      }
-    },
-    {
-      "collection": "teams",
-      "field": "sponsors",
-      "type": "alias",
-      "meta": {
-        "collection": "teams",
-        "conditions": null,
-        "display": null,
-        "display_options": null,
-        "field": "sponsors",
-        "group": null,
-        "hidden": false,
-        "interface": "list-m2m",
-        "note": null,
-        "options": {
-          "junctionCollection": "teams_sponsors"
-        },
-        "readonly": false,
-        "required": false,
-        "searchable": true,
-        "sort": 18,
-        "special": [
-          "m2m"
-        ],
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "full"
-      }
-    },
-    {
-      "collection": "teams",
       "field": "date_created",
       "type": "timestamp",
       "meta": {
@@ -875,6 +779,146 @@
     },
     {
       "collection": "teams",
+      "field": "sponsors",
+      "type": "alias",
+      "meta": {
+        "collection": "teams",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "sponsors",
+        "group": null,
+        "hidden": false,
+        "interface": "list-m2m",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 21,
+        "special": [
+          "m2m"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      }
+    },
+    {
+      "collection": "teams",
+      "field": "coach",
+      "type": "alias",
+      "meta": {
+        "collection": "teams",
+        "conditions": null,
+        "display": "related-values",
+        "display_options": {
+          "template": "{{members_id.first_name}} {{members_id.last_name}}"
+        },
+        "field": "coach",
+        "group": null,
+        "hidden": false,
+        "interface": "list-m2m",
+        "note": null,
+        "options": {
+          "template": "{{members_id.first_name}} {{members_id.last_name}}"
+        },
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 22,
+        "special": [
+          "m2m"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      }
+    },
+    {
+      "collection": "teams",
+      "field": "team_responsible",
+      "type": "alias",
+      "meta": {
+        "collection": "teams",
+        "conditions": null,
+        "display": "related-values",
+        "display_options": {
+          "template": "{{members_id.first_name}} {{members_id.last_name}}"
+        },
+        "field": "team_responsible",
+        "group": null,
+        "hidden": false,
+        "interface": "list-m2m",
+        "note": null,
+        "options": {
+          "template": "{{members_id.first_name}} {{members_id.last_name}}"
+        },
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 23,
+        "special": [
+          "m2m"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      }
+    },
+    {
+      "collection": "teams",
+      "field": "captain",
+      "type": "integer",
+      "meta": {
+        "collection": "teams",
+        "conditions": null,
+        "display": "related-values",
+        "display_options": {
+          "template": "{{first_name}} {{last_name}}"
+        },
+        "field": "captain",
+        "group": null,
+        "hidden": false,
+        "interface": "select-dropdown-m2o",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 24,
+        "special": [
+          "m2o"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "captain",
+        "table": "teams",
+        "data_type": "integer",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": "members",
+        "foreign_key_column": "id"
+      }
+    },
+    {
+      "collection": "teams",
       "field": "open_for_players",
       "type": "boolean",
       "meta": {
@@ -891,7 +935,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 21,
+        "sort": 25,
         "special": null,
         "translations": null,
         "validation": null,
@@ -935,7 +979,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 22,
+        "sort": 26,
         "special": null,
         "translations": null,
         "validation": null,
@@ -979,7 +1023,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 23,
+        "sort": 27,
         "special": null,
         "translations": null,
         "validation": null,
@@ -1023,7 +1067,7 @@
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 24,
+        "sort": 28,
         "special": null,
         "translations": null,
         "validation": null,
@@ -1052,11 +1096,36 @@
   ],
   "relations": [
     {
+      "collection": "conversations",
+      "field": "team",
+      "related_collection": "teams",
+      "meta": {
+        "junction_field": null,
+        "many_collection": "conversations",
+        "many_field": "team",
+        "one_allowed_collections": null,
+        "one_collection": "teams",
+        "one_collection_field": null,
+        "one_deselect_action": "nullify",
+        "one_field": null,
+        "sort_field": null
+      },
+      "schema": {
+        "table": "conversations",
+        "column": "team",
+        "foreign_key_table": "teams",
+        "foreign_key_column": "id",
+        "constraint_name": "conversations_team_foreign",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE"
+      }
+    },
+    {
       "collection": "events_teams",
       "field": "teams_id",
       "related_collection": "teams",
       "meta": {
-        "junction_field": null,
+        "junction_field": "events_id",
         "many_collection": "events_teams",
         "many_field": "teams_id",
         "one_allowed_collections": null,
@@ -1071,9 +1140,9 @@
         "column": "teams_id",
         "foreign_key_table": "teams",
         "foreign_key_column": "id",
-        "constraint_name": "events_teams_teams_id_foreign",
+        "constraint_name": "events_teams_1_teams_id_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "CASCADE"
+        "on_delete": "SET NULL"
       }
     },
     {
@@ -1090,15 +1159,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "game_scheduling_opponents",
-        "column": "kscw_team",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "game_scheduling_opponents_kscw_team_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1115,15 +1175,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "game_scheduling_slots",
-        "column": "kscw_team",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "game_scheduling_slots_kscw_team_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1140,15 +1191,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "games",
-        "column": "kscw_team",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "games_kscw_team_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1165,15 +1207,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "games",
-        "column": "scorer_duty_team",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "games_scorer_duty_team_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1190,15 +1223,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "games",
-        "column": "scoreboard_duty_team",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "games_scoreboard_duty_team_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1215,15 +1239,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "games",
-        "column": "scorer_scoreboard_duty_team",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "games_scorer_scoreboard_duty_team_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1240,15 +1255,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "games",
-        "column": "bb_duty_team",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "games_bb_duty_team_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1265,15 +1271,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "games",
-        "column": "bb_scorer_duty_team",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "games_bb_scorer_duty_team_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1290,15 +1287,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "games",
-        "column": "bb_timekeeper_duty_team",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "games_bb_timekeeper_duty_team_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1315,40 +1303,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "games",
-        "column": "bb_24s_duty_team",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "games_bb_24s_duty_team_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
-      }
-    },
-    {
-      "collection": "hall_slots",
-      "field": "team",
-      "related_collection": "teams",
-      "meta": {
-        "junction_field": null,
-        "many_collection": "hall_slots",
-        "many_field": "team",
-        "one_allowed_collections": null,
-        "one_collection": "teams",
-        "one_collection_field": null,
-        "one_deselect_action": "nullify",
-        "one_field": null,
-        "sort_field": null
-      },
-      "schema": {
-        "table": "hall_slots",
-        "column": "team",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "hall_slots_team_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1356,7 +1310,7 @@
       "field": "teams_id",
       "related_collection": "teams",
       "meta": {
-        "junction_field": null,
+        "junction_field": "hall_slots_id",
         "many_collection": "hall_slots_teams",
         "many_field": "teams_id",
         "one_allowed_collections": null,
@@ -1373,7 +1327,7 @@
         "foreign_key_column": "id",
         "constraint_name": "hall_slots_teams_teams_id_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "CASCADE"
+        "on_delete": "SET NULL"
       }
     },
     {
@@ -1390,15 +1344,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "member_teams",
-        "column": "team",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "member_teams_team_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1415,15 +1360,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "members",
-        "column": "requested_team",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "members_requested_team_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1440,15 +1376,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "notifications",
-        "column": "team",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "notifications_team_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1465,15 +1392,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "polls",
-        "column": "team",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "polls_team_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1490,15 +1408,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "rankings",
-        "column": "team",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "rankings_team_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1515,15 +1424,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "referee_expenses",
-        "column": "team",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "referee_expenses_team_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1540,15 +1440,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "scorer_delegations",
-        "column": "from_team",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "scorer_delegations_from_team_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1565,15 +1456,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "scorer_delegations",
-        "column": "to_team",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "scorer_delegations_to_team_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1590,15 +1472,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "slot_claims",
-        "column": "claimed_by_team",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "slot_claims_claimed_by_team_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1615,15 +1488,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "task_templates",
-        "column": "team",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "task_templates_team_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1640,49 +1504,40 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
+      }
+    },
+    {
+      "collection": "teams",
+      "field": "captain",
+      "related_collection": "members",
+      "meta": {
+        "junction_field": null,
+        "many_collection": "teams",
+        "many_field": "captain",
+        "one_allowed_collections": null,
+        "one_collection": "members",
+        "one_collection_field": null,
+        "one_deselect_action": "nullify",
+        "one_field": null,
+        "sort_field": null
       },
       "schema": {
-        "table": "team_invites",
-        "column": "team",
-        "foreign_key_table": "teams",
+        "table": "teams",
+        "column": "captain",
+        "foreign_key_table": "members",
         "foreign_key_column": "id",
-        "constraint_name": "team_invites_team_foreign",
+        "constraint_name": "teams_captain_foreign",
         "on_update": "NO ACTION",
         "on_delete": "SET NULL"
       }
     },
     {
-      "collection": "teams_captain",
+      "collection": "teams_coaches",
       "field": "teams_id",
       "related_collection": "teams",
       "meta": {
         "junction_field": "members_id",
-        "many_collection": "teams_captain",
-        "many_field": "teams_id",
-        "one_allowed_collections": null,
-        "one_collection": "teams",
-        "one_collection_field": null,
-        "one_deselect_action": "nullify",
-        "one_field": "captain",
-        "sort_field": null
-      },
-      "schema": {
-        "table": "teams_captain",
-        "column": "teams_id",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "teams_captain_teams_id_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "CASCADE"
-      }
-    },
-    {
-      "collection": "teams_coach",
-      "field": "teams_id",
-      "related_collection": "teams",
-      "meta": {
-        "junction_field": "members_id",
-        "many_collection": "teams_coach",
+        "many_collection": "teams_coaches",
         "many_field": "teams_id",
         "one_allowed_collections": null,
         "one_collection": "teams",
@@ -1692,13 +1547,38 @@
         "sort_field": null
       },
       "schema": {
-        "table": "teams_coach",
+        "table": "teams_coaches",
         "column": "teams_id",
         "foreign_key_table": "teams",
         "foreign_key_column": "id",
-        "constraint_name": "teams_coach_teams_id_foreign",
+        "constraint_name": "teams_members_3_teams_id_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "CASCADE"
+        "on_delete": "SET NULL"
+      }
+    },
+    {
+      "collection": "teams_responsibles",
+      "field": "teams_id",
+      "related_collection": "teams",
+      "meta": {
+        "junction_field": "members_id",
+        "many_collection": "teams_responsibles",
+        "many_field": "teams_id",
+        "one_allowed_collections": null,
+        "one_collection": "teams",
+        "one_collection_field": null,
+        "one_deselect_action": "nullify",
+        "one_field": "team_responsible",
+        "sort_field": null
+      },
+      "schema": {
+        "table": "teams_responsibles",
+        "column": "teams_id",
+        "foreign_key_table": "teams",
+        "foreign_key_column": "id",
+        "constraint_name": "teams_members_4_teams_id_foreign",
+        "on_update": "NO ACTION",
+        "on_delete": "SET NULL"
       }
     },
     {
@@ -1721,34 +1601,9 @@
         "column": "teams_id",
         "foreign_key_table": "teams",
         "foreign_key_column": "id",
-        "constraint_name": "teams_sponsors_teams_id_foreign",
+        "constraint_name": "teams_sponsors_1_teams_id_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "CASCADE"
-      }
-    },
-    {
-      "collection": "teams_team_responsible",
-      "field": "teams_id",
-      "related_collection": "teams",
-      "meta": {
-        "junction_field": "members_id",
-        "many_collection": "teams_team_responsible",
-        "many_field": "teams_id",
-        "one_allowed_collections": null,
-        "one_collection": "teams",
-        "one_collection_field": null,
-        "one_deselect_action": "nullify",
-        "one_field": "team_responsible",
-        "sort_field": null
-      },
-      "schema": {
-        "table": "teams_team_responsible",
-        "column": "teams_id",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "teams_team_responsible_teams_id_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "CASCADE"
+        "on_delete": "SET NULL"
       }
     },
     {
@@ -1765,15 +1620,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "trainings",
-        "column": "team",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "trainings_team_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     }
   ]

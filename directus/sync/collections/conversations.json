@@ -373,7 +373,7 @@
         "note": null,
         "options": null,
         "readonly": false,
-        "required": true,
+        "required": false,
         "searchable": true,
         "sort": 8,
         "special": [
@@ -392,7 +392,7 @@
         "max_length": null,
         "numeric_precision": 32,
         "numeric_scale": 0,
-        "is_nullable": false,
+        "is_nullable": true,
         "is_unique": false,
         "is_indexed": false,
         "is_primary_key": false,
@@ -455,7 +455,7 @@
         "foreign_key_column": "id",
         "constraint_name": "conversation_members_conversation_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
+        "on_delete": "CASCADE"
       }
     },
     {
@@ -480,7 +480,7 @@
         "foreign_key_column": "id",
         "constraint_name": "conversations_team_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
+        "on_delete": "CASCADE"
       }
     },
     {
@@ -505,7 +505,7 @@
         "foreign_key_column": "id",
         "constraint_name": "conversations_created_by_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "RESTRICT"
+        "on_delete": "SET NULL"
       }
     },
     {
@@ -530,7 +530,7 @@
         "foreign_key_column": "id",
         "constraint_name": "message_requests_conversation_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "NO ACTION"
+        "on_delete": "CASCADE"
       }
     },
     {
@@ -555,7 +555,7 @@
         "foreign_key_column": "id",
         "constraint_name": "messages_conversation_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "NO ACTION"
+        "on_delete": "CASCADE"
       }
     },
     {
@@ -580,7 +580,7 @@
         "foreign_key_column": "id",
         "constraint_name": "polls_conversation_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "NO ACTION"
+        "on_delete": "CASCADE"
       }
     },
     {
@@ -605,7 +605,7 @@
         "foreign_key_column": "id",
         "constraint_name": "reports_conversation_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "NO ACTION"
+        "on_delete": "SET NULL"
       }
     }
   ]

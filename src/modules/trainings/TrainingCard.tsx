@@ -242,45 +242,28 @@ function TrainingParticipation({ training, existingParticipation, onSaved }: { t
   return (
     <div className="space-y-1.5">
       <div data-tour="rsvp-buttons" className="relative flex flex-wrap items-center gap-1.5">
-        <button
-          onClick={() => !isLocked && setStatus('confirmed')}
-          disabled={isLocked}
-          className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
-            isLocked
-              ? 'cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500'
-              : displayStatus === 'confirmed'
-                ? 'bg-green-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-green-900/30 dark:hover:text-green-400'
-          }`}
-        >
-          {t('yes')}
-        </button>
-        <button
-          onClick={() => !isLocked && setStatus('tentative')}
-          disabled={isLocked}
-          className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
-            isLocked
-              ? 'cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500'
-              : displayStatus === 'tentative'
-                ? 'bg-yellow-500 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-yellow-100 hover:text-yellow-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-yellow-900/30 dark:hover:text-yellow-400'
-          }`}
-        >
-          {t('maybe')}
-        </button>
-        <button
-          onClick={() => !isLocked && setStatus('declined')}
-          disabled={isLocked}
-          className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
-            isLocked
-              ? 'cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500'
-              : displayStatus === 'declined'
-                ? 'bg-red-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-red-900/30 dark:hover:text-red-400'
-          }`}
-        >
-          {t('no')}
-        </button>
+        {(['confirmed', 'tentative', 'declined'] as const)
+          // When deadline has passed: only render the user's selected choice (if any) in its color.
+          .filter((s) => !isLocked || displayStatus === s)
+          .map((status) => {
+            const active = displayStatus === status
+            const colorMap = {
+              confirmed: active ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-green-900/30 dark:hover:text-green-400',
+              tentative: active ? 'bg-yellow-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-yellow-100 hover:text-yellow-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-yellow-900/30 dark:hover:text-yellow-400',
+              declined: active ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-red-900/30 dark:hover:text-red-400',
+            }
+            const label = { confirmed: t('yes'), tentative: t('maybe'), declined: t('no') }
+            return (
+              <button
+                key={status}
+                onClick={() => !isLocked && setStatus(status)}
+                disabled={isLocked}
+                className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${isLocked ? 'cursor-not-allowed' : ''} ${colorMap[status]}`}
+              >
+                {label[status]}
+              </button>
+            )
+          })}
 
         {/* Inline guest counter — coaches/TR only */}
         {displayStatus && isStaff && (

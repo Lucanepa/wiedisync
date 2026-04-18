@@ -240,24 +240,16 @@ function TrainingParticipation({ training, isStaff, isStaffParticipant }: { trai
       <div className="relative flex items-center gap-2">
         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('yourStatus')}:</span>
         <div className="flex items-center gap-1.5">
-          {(['confirmed', 'tentative', 'declined'] as const).map((status) => {
+          {(['confirmed', 'tentative', 'declined'] as const)
+            // When deadline has passed: only render the user's selected choice (if any) in its color.
+            .filter((s) => !isLocked || effectiveStatus === s)
+            .map((status) => {
             const labels = { confirmed: t('yes'), tentative: t('maybe'), declined: t('no') }
+            const active = effectiveStatus === status
             const colors = {
-              confirmed: isLocked
-                ? 'cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500'
-                : effectiveStatus === 'confirmed'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-green-900/30 dark:hover:text-green-400',
-              tentative: isLocked
-                ? 'cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500'
-                : effectiveStatus === 'tentative'
-                  ? 'bg-yellow-500 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-yellow-100 hover:text-yellow-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-yellow-900/30 dark:hover:text-yellow-400',
-              declined: isLocked
-                ? 'cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500'
-                : effectiveStatus === 'declined'
-                  ? 'bg-red-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-red-900/30 dark:hover:text-red-400',
+              confirmed: active ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-green-900/30 dark:hover:text-green-400',
+              tentative: active ? 'bg-yellow-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-yellow-100 hover:text-yellow-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-yellow-900/30 dark:hover:text-yellow-400',
+              declined: active ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-700 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-red-900/30 dark:hover:text-red-400',
             }
             return (
               <button
@@ -272,7 +264,7 @@ function TrainingParticipation({ training, isStaff, isStaffParticipant }: { trai
                   setNoteRequiredError(false)
                   setStatus(status, noteText, guestCount)
                 }}
-                className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${colors[status]}`}
+                className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${isLocked ? 'cursor-not-allowed' : ''} ${colors[status]}`}
               >
                 {labels[status]}
               </button>

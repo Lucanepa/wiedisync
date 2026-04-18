@@ -20,7 +20,7 @@ export default function PollCard({ poll, canManage, onClose, onDelete }: PollCar
 
   const isOpen = poll.status === 'open'
   const hasVoted = !!myVote
-  const deadlinePassed = poll.deadline ? new Date(poll.deadline) < new Date() : false
+  const deadlinePassed = poll.deadline ? parseWallClock(poll.deadline) < new Date() : false
   const canVote = isOpen && !hasVoted && !deadlinePassed
   const showResults = hasVoted || !isOpen || deadlinePassed
 

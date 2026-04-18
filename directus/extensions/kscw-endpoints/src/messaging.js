@@ -17,7 +17,8 @@ const stub = (name) => (req, res) => res.status(501).json({
 })
 
 export function registerMessaging(router, ctx) {
-  const { database: db, logger } = ctx
+  const { database: db, logger, services, getSchema } = ctx
+  const { ItemsService } = services
   const log = logger.child({ extension: 'kscw-messaging' })
 
   // ── GET /messaging/conversations ─────────────────────────────────────
@@ -110,36 +111,46 @@ export function registerMessaging(router, ctx) {
       // they just work as-long-as member is in the conversation_members; blocks are
       // enforced in Plan 03.
 
-      // Atomic write: message INSERT + conversation denorm UPDATE.
+      // Write via ItemsService so Directus realtime broadcasts the create.
+      // Raw-knex inserts bypass ItemsService's emit pipeline, so any subscriber
+      // (the frontend useRealtime hook on the `messages` collection) would
+      // never hear the new message. Admin-scoped service is safe here: policy
+      // (membership, opt-in) has already been enforced above.
       const preview = body.length > 120 ? body.slice(0, 117) + '...' : body
       const nowIso = new Date().toISOString()
+      const schema = await getSchema()
 
-      let inserted
+      const messagesService = new ItemsService('messages', { schema, knex: db })
+      const conversationsService = new ItemsService('conversations', { schema, knex: db })
+
       const newId = crypto.randomUUID()
-      await db.transaction(async (trx) => {
-        const [row] = await trx('messages')
-          .insert({
-            id: newId,
-            conversation: conversationId,
-            sender: member.id,
-            type: 'text',
-            body,
-            created_at: nowIso,
-          })
-          .returning(['id', 'conversation', 'sender', 'type', 'body', 'poll',
-                      'created_at', 'edited_at', 'deleted_at'])
-        inserted = row
-
-        await trx('conversations')
-          .where('id', conversationId)
-          .update({
-            last_message_at: nowIso,
-            last_message_preview: preview,
-          })
+      await messagesService.createOne({
+        id: newId,
+        conversation: conversationId,
+        sender: member.id,
+        type: 'text',
+        body,
+        created_at: nowIso,
+      })
+      // Denorm — also via service so conversations.update emits for any future
+      // subscriber (Plan 03 uses this for preview updates in the inbox list).
+      await conversationsService.updateOne(conversationId, {
+        last_message_at: nowIso,
+        last_message_preview: preview,
       })
 
-      // Denorm sender name for UI convenience
-      inserted.sender_name = [member.first_name, member.last_name].filter(Boolean).join(' ') || null
+      const inserted = {
+        id: newId,
+        conversation: conversationId,
+        sender: member.id,
+        type: 'text',
+        body,
+        poll: null,
+        created_at: nowIso,
+        edited_at: null,
+        deleted_at: null,
+        sender_name: [member.first_name, member.last_name].filter(Boolean).join(' ') || null,
+      }
       res.json(inserted)
     } catch (e) { sendError(res, log, e) }
   })

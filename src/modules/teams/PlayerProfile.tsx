@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams, useSearchParams, Link } from 'react-router-dom'
-import { XCircle, ChevronRight, Mail, Phone, Award, Calendar, TrendingUp, AlertCircle } from 'lucide-react'
+import { XCircle, ChevronRight, Mail, Phone, Award, Calendar, TrendingUp, AlertCircle, AlertTriangle } from 'lucide-react'
 import { differenceInYears } from 'date-fns'
 import { useCollection } from '../../lib/query'
 import { useAuth } from '../../hooks/useAuth'
@@ -21,10 +21,11 @@ type ExpandedMemberTeam = MemberTeam & { team: Team | string }
 
 export default function PlayerProfile() {
   const { t } = useTranslation('teams')
+  const { t: tm } = useTranslation('messaging')
   const { memberId } = useParams<{ memberId: string }>()
   const [searchParams] = useSearchParams()
   const fromTeam = searchParams.get('from')
-  const { isCoachOf } = useAuth()
+  const { isCoachOf, isAdmin } = useAuth()
   const [member, setMember] = useState<Member | null>(null)
   const [loading, setLoading] = useState(true)
   const [lightboxOpen, setLightboxOpen] = useState(false)
@@ -183,6 +184,16 @@ export default function PlayerProfile() {
         <ChevronRight className="h-3.5 w-3.5 shrink-0" />
         <span className="font-medium text-gray-900 dark:text-gray-100">{memberName(member)}</span>
       </nav>
+
+      {isAdmin && member.communications_banned === true && (
+        <div className="mb-4 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive flex items-start gap-2">
+          <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+          <div>
+            <div className="font-semibold">{tm('bannedBannerTitle')}</div>
+            <div className="text-xs text-destructive/80">{tm('bannedBannerBody')}</div>
+          </div>
+        </div>
+      )}
 
       {/* Profile card */}
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">

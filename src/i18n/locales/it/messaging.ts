@@ -85,4 +85,6 @@ export default {
   adminResolveBan: 'Escalation (Blocca)',
   adminDismiss: 'Respingi',
   reportReason_moderator_delete: 'Eliminato dal moderatore',
+  bannedBannerTitle: 'Messaggistica bloccata',
+  bannedBannerBody: 'Questa persona non può inviare né ricevere messaggi.',
 }

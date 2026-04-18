@@ -22,10 +22,11 @@ const reloadMock = vi.fn()
 Object.defineProperty(globalThis, 'window', {
   value: { location: { reload: reloadMock } },
   writable: true,
+  configurable: true,
 })
 
 // ── Mock messagingApi ────────────────────────────────────────────────
-const recordConsentMock = vi.fn(async () => ({ decision: 'accepted', consent_prompted_at: '' }))
+const recordConsentMock = vi.fn(async (_body: unknown) => ({ decision: 'accepted', consent_prompted_at: '' }))
 vi.mock('../api/messaging', () => ({
   messagingApi: {
     recordConsent: (body: unknown) => recordConsentMock(body),
@@ -39,7 +40,6 @@ vi.mock('../../../hooks/useAuth', () => ({
 }))
 
 import { useMessagingConsent } from '../hooks/useMessagingConsent'
-import { messagingApi } from '../api/messaging'
 
 describe('useMessagingConsent', () => {
   beforeEach(() => {

@@ -8,7 +8,7 @@ import { messagingFeatureEnabled } from '../../../utils/messagingFeatureFlag'
 
 export function useReactions(messageId: string | null) {
   const { user } = useAuth()
-  const enabled = messagingFeatureEnabled() && !!user?.id && !!messageId
+  const enabled = messagingFeatureEnabled(user?.id) && !!user?.id && !!messageId
   const [rows, setRows] = useState<ReactionRow[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const msgRef = useRef<string | null>(messageId)

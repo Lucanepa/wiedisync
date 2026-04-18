@@ -146,9 +146,19 @@ export function registerMessaging(router, ctx) {
 
   // ── POST /messaging/conversations/:id/read ──────────────────────────
   router.post('/messaging/conversations/:id/read', async (req, res) => {
-    // filled in Task 6
-    res.status(501).json({ code: 'messaging/not_implemented',
-      message: 'POST /conversations/:id/read — coming in Task 6', details: { method: req.method, path: req.path } })
+    try {
+      const userId = requireAuth(req)
+      const member = await requireMember(db, userId)
+      const conversationId = req.params.id
+      await loadConversationMembership(db, conversationId, member.id)
+
+      const nowIso = new Date().toISOString()
+      await db('conversation_members')
+        .where({ conversation: conversationId, member: member.id })
+        .update({ last_read_at: nowIso })
+
+      res.json({ last_read_at: nowIso })
+    } catch (e) { sendError(res, log, e) }
   })
 
   // ── POST /messaging/conversations/:id/mute ──────────────────────────

@@ -72,4 +72,7 @@ export default {
   reportReason_other: 'Other',
   reportNoteOptional: 'Note (optional)',
   reportSubmit: 'Report',
+  createPoll: 'Create poll',
+  composerExtras: 'More',
+  pollLoadError: 'Could not load poll',
 }

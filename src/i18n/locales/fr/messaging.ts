@@ -72,4 +72,7 @@ export default {
   reportReason_other: 'Autre',
   reportNoteOptional: 'Remarque (optionnelle)',
   reportSubmit: 'Signaler',
+  createPoll: 'Créer un sondage',
+  composerExtras: 'Plus',
+  pollLoadError: 'Impossible de charger le sondage',
 }

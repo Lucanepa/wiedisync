@@ -6,6 +6,7 @@ import EditMessageInline from './EditMessageInline'
 import MessageActions from './MessageActions'
 import ReactionBar from './ReactionBar'
 import { messagingApi } from '../api/messaging'
+import PollMessage from './PollMessage'
 
 type Props = {
   message: MessageRow
@@ -47,8 +48,7 @@ export default function MessageBubble({ message, isOwn, currentMemberId, isTeamM
                 : 'bg-muted text-foreground rounded-bl-sm'}
       `}>
         {message.type === 'poll' && message.poll ? (
-          // Placeholder — Task 17 swaps in <PollMessage pollId={message.poll} />
-          <div className="text-xs italic">[Poll #{String(message.poll)}]</div>
+          <PollMessage pollId={message.poll} />
         ) : editing && message.body != null ? (
           <EditMessageInline messageId={message.id} initialBody={message.body} onDone={() => setEditing(false)} />
         ) : (

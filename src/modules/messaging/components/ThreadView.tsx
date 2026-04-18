@@ -57,7 +57,7 @@ export default function ThreadView({ conversation, onMarkRead, onToggleMute, hea
         isTeamModerator={isTeamModerator}
         onReport={setReportingMessage}
       />
-      <MessageComposer onSend={send} disabled={composerDisabled} />
+      <MessageComposer onSend={send} disabled={composerDisabled} conversationId={conversation.id} />
       {sendError && (
         <div className="text-xs text-destructive px-3 pb-2">{t('failedToSend')}</div>
       )}

@@ -72,4 +72,7 @@ export default {
   reportReason_other: 'Sonstiges',
   reportNoteOptional: 'Bemerkung (optional)',
   reportSubmit: 'Melden',
+  createPoll: 'Umfrage erstellen',
+  composerExtras: 'Mehr',
+  pollLoadError: 'Umfrage konnte nicht geladen werden',
 }

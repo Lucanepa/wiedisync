@@ -15,6 +15,9 @@ vi.mock('../../../hooks/useAuth', () => ({
   useAuth: () => ({ user: { id: 'mbr-me' }, isLoading: false }),
 }))
 vi.mock('../../../hooks/useRealtime', () => ({ useRealtime: vi.fn() }))
+vi.mock('../hooks/useBlocks', () => ({
+  useBlocks: () => ({ blockedMemberIds: [], blockedSet: new Set(), block: vi.fn(), unblock: vi.fn(), isLoading: false, refetch: vi.fn() }),
+}))
 vi.mock('react', async (importOriginal) => {
   const actual = await importOriginal<typeof import('react')>()
   return {

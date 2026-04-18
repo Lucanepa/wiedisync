@@ -4,12 +4,12 @@ import type { ConversationSummary, MessageRow } from '../api/types'
 import { useRealtime } from '../../../hooks/useRealtime'
 import { useAuth } from '../../../hooks/useAuth'
 import { messagingFeatureEnabled } from '../../../utils/messagingFeatureFlag'
+import { useBlocks } from './useBlocks'
 
 type UseConversationsOptions = {
   /**
    * Sender IDs to filter out of realtime updates (used for blocks in Plan 03).
-   * Plan 02 always passes [] — the blocks table exists but is unused until DMs land.
-   * Parameterising now means Plan 03 is a one-line change at the call site.
+   * Defaults to useBlocks().blockedMemberIds in Plan 03; override only for tests.
    */
   blockedSenderIds?: string[]
 }
@@ -23,14 +23,16 @@ type UseConversationsOptions = {
  * — see src/hooks/useAuth.tsx:13), so `user.id` is `members.id` and compares
  * directly against `message.sender`.
  */
-export function useConversations({ blockedSenderIds = [] }: UseConversationsOptions = {}) {
+export function useConversations({ blockedSenderIds }: UseConversationsOptions = {}) {
   const { user } = useAuth()
+  const { blockedMemberIds } = useBlocks()
+  const effectiveBlocked = blockedSenderIds ?? blockedMemberIds
   const enabled = messagingFeatureEnabled() && !!user?.id
   const [conversations, setConversations] = useState<ConversationSummary[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
-  const blockedRef = useRef(new Set(blockedSenderIds))
-  blockedRef.current = new Set(blockedSenderIds)
+  const blockedRef = useRef(new Set(effectiveBlocked))
+  blockedRef.current = new Set(effectiveBlocked)
 
   const refetch = useCallback(async () => {
     if (!enabled) { setConversations([]); return }

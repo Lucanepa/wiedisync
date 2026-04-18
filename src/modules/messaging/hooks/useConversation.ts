@@ -4,9 +4,10 @@ import type { MessageRow } from '../api/types'
 import { useRealtime } from '../../../hooks/useRealtime'
 import { useAuth } from '../../../hooks/useAuth'
 import { messagingFeatureEnabled } from '../../../utils/messagingFeatureFlag'
+import { useBlocks } from './useBlocks'
 
 type UseConversationOptions = {
-  /** Sender IDs whose messages must not appear in the thread. Plan 02 passes []; Plan 03 populates from blocks. */
+  /** Sender IDs whose messages must not appear in the thread. Defaults to useBlocks().blockedMemberIds in Plan 03; override only for tests. */
   blockedSenderIds?: string[]
 }
 
@@ -16,9 +17,11 @@ type UseConversationOptions = {
  */
 export function useConversation(
   conversationId: string | null,
-  { blockedSenderIds = [] }: UseConversationOptions = {},
+  { blockedSenderIds }: UseConversationOptions = {},
 ) {
   const { user } = useAuth()
+  const { blockedMemberIds } = useBlocks()
+  const effectiveBlocked = blockedSenderIds ?? blockedMemberIds
   const enabled = messagingFeatureEnabled() && !!user?.id && !!conversationId
   const [messages, setMessages] = useState<MessageRow[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -26,8 +29,8 @@ export function useConversation(
   const [hasMore, setHasMore] = useState(false)
   const convIdRef = useRef(conversationId)
   convIdRef.current = conversationId
-  const blockedRef = useRef(new Set(blockedSenderIds))
-  blockedRef.current = new Set(blockedSenderIds)
+  const blockedRef = useRef(new Set(effectiveBlocked))
+  blockedRef.current = new Set(effectiveBlocked)
 
   const refetch = useCallback(async () => {
     if (!enabled || !conversationId) { setMessages([]); return }

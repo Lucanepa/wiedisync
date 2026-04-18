@@ -287,6 +287,8 @@ function EventCardParticipation({ event, existingParticipation, onSaved }: { eve
       <div className="relative flex flex-wrap items-center gap-1.5">
         {(['confirmed', 'tentative', 'declined'] as const)
           .filter((s) => s !== 'tentative' || event.allow_maybe !== false)
+          // When deadline has passed: only render the user's selected choice (if any) in its color.
+          .filter((s) => !isLocked || displayStatus === s)
           .map((status) => {
           const active = displayStatus === status
           const colorMap = {
@@ -300,9 +302,7 @@ function EventCardParticipation({ event, existingParticipation, onSaved }: { eve
               key={status}
               onClick={() => !isLocked && setStatus(status)}
               disabled={isLocked}
-              className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
-                isLocked ? 'cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500' : colorMap[status]
-              }`}
+              className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${isLocked ? 'cursor-not-allowed' : ''} ${colorMap[status]}`}
             >
               {label[status]}
             </button>

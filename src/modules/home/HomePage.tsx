@@ -629,7 +629,7 @@ function NewsRow({ notification, onMarkAsRead }: { notification: Notification; o
   })()
 
   const timeAgo = (() => {
-    const diff = Date.now() - new Date(notification.created ?? notification.date_created ?? '').getTime()
+    const diff = Date.now() - parseWallClock(notification.created ?? notification.date_created ?? '').getTime()
     const minutes = Math.floor(diff / 60000)
     if (minutes < 1) return String(t('justNow'))
     if (minutes < 60) return String(t('minutesAgo', { count: minutes }))

@@ -30,10 +30,26 @@ export function useInfraHealth(): InfraHealth {
   const checkHealth = useCallback(async () => {
     setIsLoading(true)
     try {
-      // API health check
-      const pbHealth = await fetch(`${API_URL}/server/health`)
-        .then(r => ({ name: 'Directus', status: r.ok ? 'ok' as const : 'error' as const }))
-        .catch(() => ({ name: 'Directus', status: 'error' as const }))
+      // API health check — Directus /server/health may omit CORS headers, so
+      // fall back to no-cors (opaque response = server reachable), matching
+      // the pattern used by InfraHealthPage.checkEndpoint.
+      const pbStart = Date.now()
+      let pbHealth: ServiceHealth
+      try {
+        const r = await fetch(`${API_URL}/server/health`, { mode: 'cors' })
+        pbHealth = { name: 'Directus', status: r.ok ? 'ok' : 'error', latency: Date.now() - pbStart }
+      } catch {
+        try {
+          const r = await fetch(`${API_URL}/server/health`, { mode: 'no-cors' })
+          pbHealth = {
+            name: 'Directus',
+            status: r.type === 'opaque' ? 'ok' : 'error',
+            latency: Date.now() - pbStart,
+          }
+        } catch {
+          pbHealth = { name: 'Directus', status: 'error' }
+        }
+      }
 
       setServices([pbHealth])
 

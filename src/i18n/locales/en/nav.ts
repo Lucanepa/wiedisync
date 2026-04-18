@@ -45,4 +45,5 @@ export default {
   adminExplorer: 'Data Explorer',
   announcements: 'Club News',
   news: 'News',
+  moderationReports: 'Moderation reports',
 } as const

@@ -58,6 +58,7 @@ import { SentryErrorBoundary } from './lib/sentry'
 const GuidePage = lazy(() => import('./modules/guide/GuidePage'))
 const InboxPage = lazy(() => import('./modules/messaging/pages/InboxPage'))
 const ConversationPage = lazy(() => import('./modules/messaging/pages/ConversationPage'))
+const AdminReportsPage = lazy(() => import('./modules/admin/AdminReportsPage'))
 
 function SentryFallback() {
   return (
@@ -129,6 +130,7 @@ export default function App() {
             <Route path="admin/anmeldungen" element={<AdminRoute><AnmeldungenPage /></AdminRoute>} />
             <Route path="admin/explore" element={<AdminRoute><ExplorePage /></AdminRoute>} />
             <Route path="admin/announcements" element={<AdminRoute><AnnouncementsPage /></AdminRoute>} />
+            <Route path="admin/reports" element={<AdminRoute><Suspense fallback={null}><AdminReportsPage /></Suspense></AdminRoute>} />
             <Route path="news" element={<AuthRoute><NewsArchivePage /></AuthRoute>} />
             <Route path="admin/infra" element={<SuperAdminRoute><InfraHealthPage /></SuperAdminRoute>} />
             <Route path="admin/data-health" element={<SuperAdminRoute><DataHealthPage /></SuperAdminRoute>} />

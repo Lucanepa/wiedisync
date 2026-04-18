@@ -44,4 +44,5 @@ export default {
   adminExplorer: 'Esploratore Dati',
   announcements: 'Notizie',
   news: 'News',
+  moderationReports: 'Segnalazioni',
 } as const

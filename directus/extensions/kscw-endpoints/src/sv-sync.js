@@ -161,7 +161,7 @@ export async function syncSvGames(db, log) {
           const newRb = new Date(new Date(parsed.date).getTime() - offset)
           data.respond_by = newRb.toISOString().split('T')[0]
         }
-        await db('games').where('id', existing.id).update(data)
+        await db('games').where('id', existing.id).update({ ...data, date_updated: new Date() })
         updated++
       } else {
         // Apply respond_by default on creation
@@ -174,7 +174,7 @@ export async function syncSvGames(db, log) {
             data.respond_by = rb.toISOString().split('T')[0]
           }
         }
-        await db('games').insert(data)
+        await db('games').insert({ ...data, date_created: new Date(), date_updated: new Date() })
         created++
       }
     } catch (e) {
@@ -261,10 +261,10 @@ export async function syncSvRankings(db, log) {
           .first()
 
         if (existing) {
-          await db('rankings').where('id', existing.id).update(data)
+          await db('rankings').where('id', existing.id).update({ ...data, date_updated: new Date() })
           updated++
         } else {
-          await db('rankings').insert(data)
+          await db('rankings').insert({ ...data, date_created: new Date(), date_updated: new Date() })
           created++
         }
       } catch (e) {

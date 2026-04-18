@@ -251,7 +251,7 @@ export async function syncBpGames(db, log) {
           const offset = new Date(existing.date).getTime() - new Date(existing.respond_by).getTime()
           data.respond_by = new Date(new Date(g.date).getTime() - offset).toISOString().split('T')[0]
         }
-        await db('games').where('id', existing.id).update(data)
+        await db('games').where('id', existing.id).update({ ...data, date_updated: new Date() })
         updated++
       } else {
         const fe = typeof pbTeam.features_enabled === 'string'
@@ -260,7 +260,7 @@ export async function syncBpGames(db, log) {
         if (days > 0 && g.date) {
           data.respond_by = new Date(new Date(g.date).getTime() - days * 86400000).toISOString().split('T')[0]
         }
-        await db('games').insert(data)
+        await db('games').insert({ ...data, date_created: new Date(), date_updated: new Date() })
         created++
       }
     } catch (e) {
@@ -326,8 +326,8 @@ export async function syncBpRankings(db, log, leagueHoldingIds = {}) {
           if (pbTeamId) data.team = pbTeamId
 
           const existing = await db('rankings').where('team_id', teamId).where('league', r.league).first()
-          if (existing) { await db('rankings').where('id', existing.id).update(data); updated++ }
-          else { await db('rankings').insert(data); created++ }
+          if (existing) { await db('rankings').where('id', existing.id).update({ ...data, date_updated: new Date() }); updated++ }
+          else { await db('rankings').insert({ ...data, date_created: new Date(), date_updated: new Date() }); created++ }
         } catch (e) { errors++; log.warn(`[BP Sync] Ranking: ${e.message}`) }
       }
     } catch (e) { log.warn(`[BP Sync] League ${lhId}: ${e.message}`) }

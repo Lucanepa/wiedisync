@@ -790,6 +790,39 @@ export function registerMessaging(router, ctx) {
     } catch (e) { sendError(res, log, e) }
   })
 
+  // ── POST /messaging/settings/consent ────────────────────────────────
+  const CONSENT_DECISIONS = new Set(['accepted', 'declined', 'later'])
+
+  router.post('/messaging/settings/consent', async (req, res) => {
+    try {
+      const userId = requireAuth(req)
+      const me = await requireMember(db, userId)
+
+      const decision = req.body?.decision
+      if (!CONSENT_DECISIONS.has(decision))
+        throw new MessagingError(400, 'messaging/invalid_body', 'decision must be accepted|declined|later')
+
+      if (me.communications_banned === true)
+        throw new MessagingError(403, 'messaging/banned', 'Your messaging access is disabled')
+
+      const schema = await getSchema()
+      const membersService = new ItemsService('members', { schema, knex: db })
+      const nowIso = new Date().toISOString()
+      const patch = { consent_prompted_at: nowIso }
+      if (decision === 'accepted') {
+        patch.consent_decision = 'accepted'
+        patch.communications_team_chat_enabled = true
+        patch.communications_dm_enabled = true
+      } else if (decision === 'declined') {
+        patch.consent_decision = 'declined'
+      }
+      // 'later' only bumps consent_prompted_at.
+      await membersService.updateOne(me.id, patch)
+
+      res.json({ decision, consent_prompted_at: nowIso })
+    } catch (e) { sendError(res, log, e) }
+  })
+
   // ── POST /messaging/polls ───────────────────────────────────────────
   router.post('/messaging/polls', async (req, res) => {
     try {
@@ -848,6 +881,5 @@ export function registerMessaging(router, ctx) {
 
   // ── The rest stay 501 for Plans 03-05 ───────────────────────────────
   router.post('/messaging/conversations/:id/clear',       stub('POST /conversations/:id/clear'))
-  router.post('/messaging/settings/consent',              stub('POST /settings/consent'))
   router.post('/messaging/export',                        stub('POST /export'))
 }

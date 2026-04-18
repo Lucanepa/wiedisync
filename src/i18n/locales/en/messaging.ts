@@ -26,4 +26,10 @@ export default {
   dmsSectionTitle: 'Direct Messages',
   backToInbox: 'Back',
   requestAwaitingResponse: 'Request sent — waiting for their response.',
+  settingsCardTitle: 'Messaging Settings',
+  settingsCardDescription: 'Control how you send and receive messages from team members.',
+  settingsTeamChatLabel: 'Team chat',
+  settingsTeamChatHint: 'Send and receive messages in team conversations.',
+  settingsDmLabel: 'Direct messages',
+  settingsDmHint: 'Receive direct messages from other members.',
 }

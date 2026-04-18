@@ -14,6 +14,7 @@ import { formatDate, toISODate } from '../../utils/dateHelpers'
 import ProfileEditModal from './ProfileEditModal'
 import DeleteAccountModal from './DeleteAccountModal'
 import TeamRequestModal from './TeamRequestModal'
+import MessagingSettingsCard from '../messaging/pages/MessagingSettingsCard'
 import type { MemberTeam, Team, Absence, LicenceType } from '../../types'
 import { updateRecord } from '../../lib/api'
 import { asObj } from '../../utils/relations'
@@ -334,6 +335,8 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
+
+      <MessagingSettingsCard />
 
       {/* Active Absences */}
       <div className="mt-8">

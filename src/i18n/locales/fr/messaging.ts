@@ -26,4 +26,10 @@ export default {
   dmsSectionTitle: 'Messages directs',
   backToInbox: 'Retour',
   requestAwaitingResponse: 'Demande envoyée — en attente de réponse.',
+  settingsCardTitle: 'Paramètres de messagerie',
+  settingsCardDescription: 'Contrôle comment tu envoies et reçois des messages des membres de l\'équipe.',
+  settingsTeamChatLabel: 'Chat d\'équipe',
+  settingsTeamChatHint: 'Envoyer et recevoir des messages dans les conversations d\'équipe.',
+  settingsDmLabel: 'Messages directs',
+  settingsDmHint: 'Recevoir des messages directs d\'autres membres.',
 }

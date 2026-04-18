@@ -26,4 +26,10 @@ export default {
   dmsSectionTitle: 'Messaggi diretti',
   backToInbox: 'Indietro',
   requestAwaitingResponse: 'Richiesta inviata — in attesa di risposta.',
+  settingsCardTitle: 'Impostazioni messaggi',
+  settingsCardDescription: 'Controlla come invii e ricevi messaggi dai membri della squadra.',
+  settingsTeamChatLabel: 'Chat della squadra',
+  settingsTeamChatHint: 'Invia e ricevi messaggi nelle conversazioni della squadra.',
+  settingsDmLabel: 'Messaggi diretti',
+  settingsDmHint: 'Ricevi messaggi diretti da altri membri.',
 }

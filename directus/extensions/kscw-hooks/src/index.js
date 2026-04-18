@@ -134,6 +134,32 @@ async function verifyTurnstile(token) {
   return data.success === true
 }
 
+// Why password auth instead of a static admin token:
+// Directus can silently invalidate static tokens on role/schema changes,
+// which caused SV/BP syncs to log "401 Invalid user credentials" unnoticed.
+// Logging in per-run exchanges env credentials for a short-lived access_token,
+// which is resilient to those invalidations.
+async function getCronAccessToken(log, contextName) {
+  const email = process.env.DIRECTUS_SYNC_EMAIL
+  const password = process.env.DIRECTUS_SYNC_PASSWORD
+  if (!email || !password) {
+    log.warn(`${contextName} skipped: DIRECTUS_SYNC_EMAIL or DIRECTUS_SYNC_PASSWORD not set`)
+    return null
+  }
+  const r = await fetch('http://localhost:8055/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  })
+  if (!r.ok) {
+    const body = await r.text().catch(() => '')
+    throw new Error(`auth/login ${r.status}: ${body.slice(0, 200)}`)
+  }
+  const { data } = await r.json()
+  if (!data?.access_token) throw new Error('auth/login returned no access_token')
+  return data.access_token
+}
+
 export default ({ action, filter, init, schedule }, { services, database, logger, getSchema }) => {
   initSentry().catch(() => {})
   const log = logger.child({ extension: 'kscw-hooks' })
@@ -1251,9 +1277,9 @@ export default ({ action, filter, init, schedule }, { services, database, logger
   // Calls the existing SV sync endpoint via internal HTTP
 
   schedule('0 6 * * *', async () => {
-    const token = process.env.DIRECTUS_ADMIN_TOKEN
-    if (!token) { log.warn('SV sync skipped: DIRECTUS_ADMIN_TOKEN not set'); return }
     try {
+      const token = await getCronAccessToken(log, 'SV sync')
+      if (!token) return
       const res = await fetch('http://localhost:8055/kscw/admin/sv-sync', {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
@@ -1271,9 +1297,9 @@ export default ({ action, filter, init, schedule }, { services, database, logger
   // Calls the existing BP sync endpoint via internal HTTP
 
   schedule('5 6 * * *', async () => {
-    const token = process.env.DIRECTUS_ADMIN_TOKEN
-    if (!token) { log.warn('BP sync skipped: DIRECTUS_ADMIN_TOKEN not set'); return }
     try {
+      const token = await getCronAccessToken(log, 'BP sync')
+      if (!token) return
       const res = await fetch('http://localhost:8055/kscw/admin/bp-sync', {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
@@ -1291,13 +1317,13 @@ export default ({ action, filter, init, schedule }, { services, database, logger
   // Calls the vm-sync-check script via the admin endpoint
 
   schedule('0 4 1 * *', async () => {
-    const token = process.env.DIRECTUS_ADMIN_TOKEN
-    if (!token) { log.warn('VM sync skipped: DIRECTUS_ADMIN_TOKEN not set'); return }
     if (!process.env.VM_USERNAME || !process.env.VM_PASSWORD) {
       log.warn('VM sync skipped: VM_USERNAME or VM_PASSWORD not set')
       return
     }
     try {
+      const token = await getCronAccessToken(log, 'VM sync')
+      if (!token) return
       const { execSync } = await import('node:child_process')
       // Only pass required env vars to child process (avoid leaking secrets in crash dumps)
       const env = {

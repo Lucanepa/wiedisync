@@ -458,6 +458,36 @@ export function registerMessaging(router, ctx) {
     } catch (e) { sendError(res, log, e) }
   })
 
+  // ── PATCH /messaging/settings ───────────────────────────────────────
+  router.patch('/messaging/settings', async (req, res) => {
+    try {
+      const userId = requireAuth(req)
+      const me = await requireMember(db, userId)
+
+      const b = req.body ?? {}
+      const patch = {}
+      if (typeof b.team_chat_enabled === 'boolean')    patch.communications_team_chat_enabled = b.team_chat_enabled
+      if (typeof b.dm_enabled === 'boolean')           patch.communications_dm_enabled        = b.dm_enabled
+      if (typeof b.push_preview_content === 'boolean') patch.push_preview_content             = b.push_preview_content
+      if (Object.keys(patch).length === 0) {
+        throw new MessagingError(400, 'messaging/invalid_body', 'no known settings keys in body')
+      }
+
+      // Respect admin-forced ban — user cannot flip it off themselves.
+      if (me.communications_banned === true) {
+        throw new MessagingError(403, 'messaging/banned', 'Your messaging access is disabled')
+      }
+
+      // Use ItemsService so Plan 01's trg_messaging_member_team_chat_enabled fires
+      // (archives/un-archives conversation_members) and any Directus subscribers
+      // get the update event.
+      const schema = await getSchema()
+      const membersService = new ItemsService('members', { schema, knex: db })
+      await membersService.updateOne(me.id, patch)
+      res.json({ updated: Object.keys(patch) })
+    } catch (e) { sendError(res, log, e) }
+  })
+
   // ── The rest stay 501 for Plans 03-05 ───────────────────────────────
   router.post('/messaging/conversations/:id/clear',       stub('POST /conversations/:id/clear'))
   router.patch('/messaging/messages/:id',                 stub('PATCH /messages/:id'))
@@ -466,7 +496,6 @@ export function registerMessaging(router, ctx) {
   router.post('/messaging/reports',                       stub('POST /reports'))
   router.get('/messaging/reports',                        stub('GET /reports'))
   router.patch('/messaging/reports/:id',                  stub('PATCH /reports/:id'))
-  router.patch('/messaging/settings',                     stub('PATCH /settings'))
   router.post('/messaging/settings/consent',              stub('POST /settings/consent'))
   router.post('/messaging/export',                        stub('POST /export'))
 }

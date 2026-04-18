@@ -26,4 +26,10 @@ export default {
   dmsSectionTitle: 'Direktnachrichten',
   backToInbox: 'Zurück',
   requestAwaitingResponse: 'Anfrage gesendet — warte auf Antwort.',
+  settingsCardTitle: 'Nachrichten-Einstellungen',
+  settingsCardDescription: 'Steuere, wie du Nachrichten vo Teammitglieder empfangsch und sendsch.',
+  settingsTeamChatLabel: 'Teamchat',
+  settingsTeamChatHint: 'Nachrichte i Teamunterhaltunge sende und empfange.',
+  settingsDmLabel: 'Direktnachrichte',
+  settingsDmHint: 'Direktnachrichte vo andere Mitglieder empfange.',
 }

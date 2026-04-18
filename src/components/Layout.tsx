@@ -5,6 +5,8 @@ import { useAuth } from '../hooks/useAuth'
 import { useTheme } from '../hooks/useTheme'
 import { useIsDesktop } from '../hooks/useMediaQuery'
 import { useNotifications } from '../hooks/useNotifications'
+import { useUnreadTotal } from '../modules/messaging/hooks/useUnreadTotal'
+import { messagingFeatureEnabled } from '../utils/messagingFeatureFlag'
 import { getFileUrl } from '../utils/fileUrl'
 import { isAuthenticated } from '../lib/api'
 import AdminToggle from './AdminToggle'
@@ -161,6 +163,8 @@ export default function Layout() {
   const location = useLocation()
   const { isAdminMode, setAdminMode } = useAdminMode()
   const { navItems, adminItems, superadminItems } = useNavItems(!!user, isApproved)
+  const messagingOn = messagingFeatureEnabled()
+  const unreadMessages = useUnreadTotal()
 
   // Auto-activate admin mode when navigating to /admin/* routes
   useEffect(() => {
@@ -261,29 +265,42 @@ export default function Layout() {
 
             <nav data-tour="nav-sidebar" className="flex-1 overflow-y-auto p-4">
               <ul className="space-y-1">
-                {navItems.map((item) => (
-                  <li key={item.to}>
-                    <NavLink
-                      to={item.to}
-                      onClick={() => setSidebarView('closed')}
-                      className={({ isActive }) =>
-                        `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                          theme === 'light'
-                            ? isActive
-                              ? 'bg-brand-50 text-brand-700'
-                              : 'text-gray-700 hover:bg-gray-100'
-                            : isActive
-                              ? 'border-l-3 border-gold-400 bg-brand-800 text-gold-400'
-                              : 'text-gray-300 hover:bg-brand-800 hover:text-white'
-                        }`
-                      }
-                      end={item.to === '/'}
-                    >
-                      {item.icon}
-                      {item.label}
-                    </NavLink>
-                  </li>
-                ))}
+                {navItems.map((item) => {
+                  const showBadge = messagingOn && item.to === '/teams' && unreadMessages > 0
+                  return (
+                    <li key={item.to}>
+                      <NavLink
+                        to={item.to}
+                        onClick={() => setSidebarView('closed')}
+                        className={({ isActive }) =>
+                          `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                            theme === 'light'
+                              ? isActive
+                                ? 'bg-brand-50 text-brand-700'
+                                : 'text-gray-700 hover:bg-gray-100'
+                              : isActive
+                                ? 'border-l-3 border-gold-400 bg-brand-800 text-gold-400'
+                                : 'text-gray-300 hover:bg-brand-800 hover:text-white'
+                          }`
+                        }
+                        end={item.to === '/'}
+                      >
+                        <span className="relative flex items-center gap-3">
+                          {item.icon}
+                          {item.label}
+                          {showBadge && (
+                            <span
+                              className="absolute -top-1 -right-2 rounded-full bg-primary text-primary-foreground text-[10px] leading-none px-1.5 py-0.5 min-w-[18px] text-center"
+                              aria-label={`${unreadMessages} ungelesene Nachrichten`}
+                            >
+                              {unreadMessages > 99 ? '99+' : unreadMessages}
+                            </span>
+                          )}
+                        </span>
+                      </NavLink>
+                    </li>
+                  )
+                })}
               </ul>
 
               {isAdminMode && (

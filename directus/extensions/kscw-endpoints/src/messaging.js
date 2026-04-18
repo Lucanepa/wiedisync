@@ -178,6 +178,47 @@ export function registerMessaging(router, ctx) {
     } catch (e) { sendError(res, log, e) }
   })
 
+  // ── GET /messaging/conversations/:id/messages ───────────────────────
+  router.get('/messaging/conversations/:id/messages', async (req, res) => {
+    try {
+      const userId = requireAuth(req)
+      const member = await requireMember(db, userId)
+      const conversationId = req.params.id
+      await loadConversationMembership(db, conversationId, member.id)
+
+      const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 200)
+      const before = typeof req.query.before === 'string' ? req.query.before : null
+
+      let q = db('messages as m')
+        .leftJoin('members as s', 's.id', 'm.sender')
+        .where('m.conversation', conversationId)
+        .andWhereRaw('m.deleted_at IS NULL')
+        .orderBy('m.created_at', 'desc')
+        .limit(limit + 1)  // +1 to detect has_more
+        .select(
+          'm.id', 'm.conversation', 'm.sender', 'm.type', 'm.body',
+          'm.poll', 'm.created_at', 'm.edited_at', 'm.deleted_at',
+          's.first_name as sender_first_name', 's.last_name as sender_last_name',
+        )
+      if (before) q = q.andWhere('m.created_at', '<', before)
+
+      const rows = await q
+      const has_more = rows.length > limit
+      const slice = has_more ? rows.slice(0, limit) : rows
+
+      // Return chronological order (oldest first) for easier rendering
+      slice.reverse()
+      const messages = slice.map(r => ({
+        id: r.id, conversation: r.conversation, sender: r.sender,
+        type: r.type, body: r.body, poll: r.poll,
+        created_at: r.created_at, edited_at: r.edited_at, deleted_at: r.deleted_at,
+        sender_name: [r.sender_first_name, r.sender_last_name].filter(Boolean).join(' ') || null,
+      }))
+
+      res.json({ messages, has_more })
+    } catch (e) { sendError(res, log, e) }
+  })
+
   // ── The rest stay 501 for Plans 03-05 ───────────────────────────────
   router.post('/messaging/conversations/dm',              stub('POST /conversations/dm'))
   router.post('/messaging/conversations/:id/clear',       stub('POST /conversations/:id/clear'))

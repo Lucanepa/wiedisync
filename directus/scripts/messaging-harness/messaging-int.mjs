@@ -241,6 +241,17 @@ async function testPlan02Endpoints(dbClient) {
     pass('POST /messages 400 invalid_body for empty body')
   } catch (e) { fail('empty body 400', e) }
 
+  // 9. List messages returns the seeded thread (including the one just sent)
+  try {
+    const r = await asA(`/kscw/messaging/conversations/${convId}/messages`)
+    const b = await r.json()
+    if (r.status !== 200) throw new Error(`status=${r.status}`)
+    if (!Array.isArray(b.messages)) throw new Error('messages not an array')
+    if (!b.messages.some((m) => m.body === 'harness-hello')) throw new Error('sent message missing')
+    if (typeof b.has_more !== 'boolean') throw new Error('has_more missing')
+    pass('GET /conversations/:id/messages returns thread')
+  } catch (e) { fail('list messages', e) }
+
   // 8. 403 messaging/comms_disabled when opt-out flag is false — always restore
   try {
     await dbClient.query(`UPDATE members SET communications_team_chat_enabled = false WHERE id = $1`, [memberA])

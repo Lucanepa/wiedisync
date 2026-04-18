@@ -57,10 +57,14 @@ const EXPECTED_MEMBER_FIELDS = [
   'consent_prompted_at',
 ]
 
+// Routes still 501-stubbed in the current plan phase.
+// As Plan 02/03/04/05 implement endpoints, prune this list — each removed entry
+// moves from "skeleton 501" into the Plan-specific assertion block.
+// Plan 02 implemented: GET /conversations, POST /messages,
+// POST /conversations/:id/read, POST /conversations/:id/mute,
+// GET /conversations/:id/messages.
 const EXPECTED_ENDPOINTS = [
-  ['GET',    '/kscw/messaging/conversations'],
   ['POST',   '/kscw/messaging/conversations/dm'],
-  ['POST',   '/kscw/messaging/messages'],
   ['POST',   '/kscw/messaging/messages/00000000-0000-0000-0000-000000000000/reactions'],
   ['POST',   '/kscw/messaging/reports'],
   ['PATCH',  '/kscw/messaging/settings'],

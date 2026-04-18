@@ -136,14 +136,18 @@ export default function InfraHealthPage() {
     // ── Services ──
     const svcResults: HealthCheck[] = []
 
-    // API Prod — use shared hook result (already fetched on mount/refresh)
-    const hookApiService = infraRef.current.services.find(s => s.name === 'Directus')
-    const apiProdOk = hookApiService?.status === 'ok'
+    // API Prod (no-cors fallback — same treatment as Dev; avoids racing the
+    // shared hook's useEffect, which populated undefined on first render and
+    // made the Prod card flash "Down" even when reachable)
+    const prodHealth = await checkEndpoint(`${PROD_URL}/server/health`, true)
+    const apiProdOk = prodHealth.ok
     svcResults.push({
       name: t('infraPbProd'),
-      status: apiProdOk ? 'healthy' : 'down',
-      detail: apiProdOk ? PROD_URL.replace('https://', '') : 'Unreachable',
-      responseTime: hookApiService?.latency ?? null,
+      status: apiProdOk ? 'healthy' : prodHealth.cors ? 'unknown' : 'down',
+      detail: apiProdOk
+        ? PROD_URL.replace('https://', '')
+        : prodHealth.cors ? 'CORS (cross-origin)' : 'Unreachable',
+      responseTime: apiProdOk ? prodHealth.ms : null,
     })
 
     // API Dev (no-cors fallback — dev server may not whitelist this origin)

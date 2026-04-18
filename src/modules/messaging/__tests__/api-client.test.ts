@@ -26,27 +26,30 @@ describe('messagingApi', () => {
     }
   })
 
-  it('createDm posts to /messaging/conversations/dm with the recipient', async () => {
+  it('createDm passes body as a plain object (not pre-stringified)', async () => {
     await messagingApi.createDm({ recipient: 'mbr-1' })
     expect(kscwApi).toHaveBeenCalledWith(
       '/messaging/conversations/dm',
-      expect.objectContaining({ method: 'POST', body: JSON.stringify({ recipient: 'mbr-1' }) }),
+      expect.objectContaining({ method: 'POST', body: { recipient: 'mbr-1' } }),
     )
   })
 
-  it('send posts to /messaging/messages', async () => {
+  it('send passes body as a plain object', async () => {
     await messagingApi.send({ conversation: 'conv-1', type: 'text', body: 'hi' })
     expect(kscwApi).toHaveBeenCalledWith(
       '/messaging/messages',
-      expect.objectContaining({ method: 'POST' }),
+      expect.objectContaining({
+        method: 'POST',
+        body: { conversation: 'conv-1', type: 'text', body: 'hi' },
+      }),
     )
   })
 
-  it('react posts to /messaging/messages/:id/reactions', async () => {
+  it('react passes body as a plain object', async () => {
     await messagingApi.react('msg-1', { emoji: '👍' })
     expect(kscwApi).toHaveBeenCalledWith(
       '/messaging/messages/msg-1/reactions',
-      expect.objectContaining({ method: 'POST', body: JSON.stringify({ emoji: '👍' }) }),
+      expect.objectContaining({ method: 'POST', body: { emoji: '👍' } }),
     )
   })
 

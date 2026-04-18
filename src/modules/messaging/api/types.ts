@@ -48,3 +48,23 @@ export type ConversationSummary = {
 }
 
 export type MessagingError = { code: string; message: string; details?: unknown }
+
+export type MessageRow = {
+  id: string
+  conversation: string
+  sender: string
+  type: 'text' | 'poll'
+  body: string | null
+  poll: string | null
+  created_at: string
+  edited_at: string | null
+  deleted_at: string | null
+  /** Resolved at read-time, not stored. Denormalized for UI. */
+  sender_name?: string
+}
+
+export type ListMessagesResponse = {
+  messages: MessageRow[]
+  /** true if more older messages exist (use `before=<oldest.created_at>` to page) */
+  has_more: boolean
+}

@@ -667,8 +667,11 @@ export function registerMessaging(router, ctx) {
   router.get('/messaging/reports', async (req, res) => {
     try {
       const userId = requireAuth(req)
-      const me = await requireMember(db, userId)
-      await requireAdmin(db, me.id)
+      // System admins (DIRECTUS_ADMIN_TOKEN) have no members row; try lookup but
+      // allow null — requireAdmin will short-circuit via accountability.admin.
+      const me = await db('members').where('user', userId)
+        .select('id', 'role').first().then(r => r ?? null)
+      await requireAdmin(db, me?.id ?? null, req.accountability)
 
       const limit = Math.min(Math.max(Number(req.query.limit) || 200, 1), 500)
       const statusFilter = typeof req.query.status === 'string' ? req.query.status : null
@@ -707,8 +710,11 @@ export function registerMessaging(router, ctx) {
   router.patch('/messaging/reports/:id', async (req, res) => {
     try {
       const userId = requireAuth(req)
-      const me = await requireMember(db, userId)
-      await requireAdmin(db, me.id)
+      // System admins (DIRECTUS_ADMIN_TOKEN) have no members row; try lookup but
+      // allow null — requireAdmin will short-circuit via accountability.admin.
+      const me = await db('members').where('user', userId)
+        .select('id', 'role').first().then(r => r ?? null)
+      await requireAdmin(db, me?.id ?? null, req.accountability)
 
       const b = req.body ?? {}
       if (!ALLOWED_REPORT_STATUSES.has(b.status))
@@ -726,7 +732,7 @@ export function registerMessaging(router, ctx) {
       const nowIso = new Date().toISOString()
 
       await reportsService.updateOne(report.id, {
-        status: b.status, resolved_by: me.id, resolved_at: nowIso,
+        status: b.status, resolved_by: me?.id ?? null, resolved_at: nowIso,
       })
 
       if (deleteMessage && report.message) {

@@ -308,10 +308,16 @@ export async function snapshotMessage(db, messageId) {
 }
 
 /**
- * Admin gate — members.role JSONB array contains 'admin' OR 'superuser'.
- * Uses JS filter (not knex `?|` bind) to avoid operator-vs-parameter conflicts.
+ * Admin gate — passes if:
+ *   (a) req.accountability.admin === true  (Directus system-admin token with no member row), OR
+ *   (b) the caller's members.role JSONB array contains 'admin' or 'superuser'.
+ *
+ * Pass `accountability` from `req.accountability` so system admins bypass the member-role lookup.
+ * `memberId` may be null when the caller has no members row but is a Directus admin.
  */
-export async function requireAdmin(db, memberId) {
+export async function requireAdmin(db, memberId, accountability) {
+  if (accountability?.admin === true) return   // Directus system-admin short-circuit
+  if (!memberId) throw new MessagingError(403, 'messaging/forbidden', 'Admin access required')
   const row = await db('members').where('id', memberId).select('role').first()
   const roles = Array.isArray(row?.role) ? row.role : (typeof row?.role === 'string' ? JSON.parse(row.role) : [])
   if (!roles.includes('admin') && !roles.includes('superuser')) {

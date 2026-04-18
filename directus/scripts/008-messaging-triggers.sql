@@ -2,22 +2,30 @@
 -- 008-messaging-triggers.sql
 -- KSCW Messaging v1 — Plan 01, Task 13
 -- Installed: 2026-04-17
+-- Fixed:     2026-04-17 (Task 13 fix — spec §3 alignment)
 --
 -- Creates 4 Postgres triggers that keep conversations/conversation_members in
--- sync with the team-membership and chat-settings state:
+-- sync with the team-membership and chat-settings state.
+--
+-- KEY DESIGN INVARIANT (corrected from first iteration):
+--   Every member in member_teams ALWAYS has a conversation_members row for
+--   their team's conversation.  The `archived` flag acts as the visibility
+--   toggle (archived = NOT chat_enabled).  Trigger 3 only UPDATEs existing
+--   rows — it never INSERTs, so rows MUST already exist.
 --
 --   1. trg_messaging_teams_members_insert
 --        AFTER INSERT on member_teams
---        When a member joins a team that already has a team conversation AND the
---        member has communications_team_chat_enabled = true, insert them into
---        conversation_members (archived = false).  If no team conversation
---        exists yet, nothing to do — the teams INSERT trigger handles that.
+--        When a member joins a team that already has a team conversation,
+--        ALWAYS insert a conversation_members row (archived reflects
+--        communications_team_chat_enabled preference).  Never short-circuits
+--        based on the enabled flag.  If no team conversation exists yet,
+--        nothing to do — the teams INSERT trigger handles that.
 --
 --   2. trg_messaging_teams_members_delete
 --        AFTER DELETE on member_teams
---        When a member leaves a team, archive their conversation_members row for
---        that team's conversation (set archived = true).  Row is kept so history
---        is preserved; Directus can still read it.
+--        When a member leaves a team, archive their conversation_members row
+--        for that team's conversation (set archived = true).  Row is kept so
+--        history is preserved; Directus can still read it.
 --
 --   3. trg_messaging_member_team_chat_enabled
 --        AFTER UPDATE OF communications_team_chat_enabled on members
@@ -26,12 +34,15 @@
 --        (via member_teams).
 --        When a member opts out (true → false): archive all their team
 --        conversation_members rows.
+--        NOTE: relies on rows ALWAYS existing (invariant above).
 --
 --   4. trg_messaging_teams_insert
 --        AFTER INSERT on teams
---        When a new team is created, automatically create a 'team' conversation
---        and add all existing members of that team who have
---        communications_team_chat_enabled = true as conversation_members.
+--        When a new team is created, automatically create a 'team'
+--        conversation with created_by resolved via fallback chain
+--        (first coach → first admin/superuser → sentinel system@kscw.ch),
+--        then add ALL existing team members as conversation_members
+--        (archived reflects each member's chat preference).
 --
 -- Schema assumptions verified on 2026-04-17:
 --   • member_teams columns: member (integer FK → members.id),
@@ -43,6 +54,7 @@
 --   • conversation_members.id — uuid, no sequence default → gen_random_uuid()
 --   • conversations.type    — varchar(255) NOT NULL  (value 'team' for team chats)
 --   • conversations.team    — integer FK → teams.id  (nullable for DMs)
+--   • conversations.created_by — integer FK → members.id  (nullable)
 --   • conversation_members.role defaults to 'member'
 --   • conversation_members.archived defaults to false
 --   • uq_conv_members_conv_member UNIQUE(conversation, member) already exists
@@ -53,21 +65,14 @@ BEGIN;
 
 -- ---------------------------------------------------------------------------
 -- Trigger 1: auto-join member when they are added to a team
+-- FIX: always insert (archived reflects preference), never short-circuit
 -- ---------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION fn_messaging_teams_members_insert()
 RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE
   v_conv uuid;
+  v_enabled boolean;
 BEGIN
-  -- Only act when the member has team chat enabled
-  IF NOT EXISTS (
-    SELECT 1 FROM members
-     WHERE id = NEW.member
-       AND communications_team_chat_enabled = true
-  ) THEN
-    RETURN NEW;
-  END IF;
-
   -- Find the team conversation (if any)
   SELECT id INTO v_conv
     FROM conversations
@@ -79,11 +84,16 @@ BEGIN
     RETURN NEW;  -- no conversation yet; teams INSERT trigger will handle it
   END IF;
 
-  -- Upsert: insert if not present; if already present and archived, un-archive
+  -- Look up member's chat preference; default false if NULL
+  SELECT communications_team_chat_enabled INTO v_enabled
+    FROM members WHERE id = NEW.member;
+
+  -- ALWAYS insert — archived = NOT enabled (false = visible, true = hidden)
+  -- Upsert: if somehow a row exists, update archived to reflect current preference
   INSERT INTO conversation_members (id, conversation, member, archived)
-  VALUES (gen_random_uuid(), v_conv, NEW.member, false)
+  VALUES (gen_random_uuid(), v_conv, NEW.member, NOT COALESCE(v_enabled, false))
   ON CONFLICT (conversation, member)
-    DO UPDATE SET archived = false;
+    DO UPDATE SET archived = EXCLUDED.archived;
 
   RETURN NEW;
 END;
@@ -97,6 +107,7 @@ CREATE TRIGGER trg_messaging_teams_members_insert
 
 -- ---------------------------------------------------------------------------
 -- Trigger 2: archive member's participation when they leave a team
+-- (unchanged — behavior was correct)
 -- ---------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION fn_messaging_teams_members_delete()
 RETURNS trigger LANGUAGE plpgsql AS $$
@@ -132,6 +143,8 @@ CREATE TRIGGER trg_messaging_teams_members_delete
 
 -- ---------------------------------------------------------------------------
 -- Trigger 3: sync archived flag when member toggles team-chat consent
+-- (unchanged — UPDATE-only behavior is correct given the invariant that rows
+--  always exist for every team member)
 -- ---------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION fn_messaging_member_team_chat_enabled()
 RETURNS trigger LANGUAGE plpgsql AS $$
@@ -172,26 +185,52 @@ CREATE TRIGGER trg_messaging_member_team_chat_enabled
 
 -- ---------------------------------------------------------------------------
 -- Trigger 4: auto-create team conversation when a new team is inserted
+-- FIX: resolve created_by via fallback chain (coach → admin/superuser → sentinel)
+--      add ALL existing members (not just chat-enabled ones), archived reflects preference
 -- ---------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION fn_messaging_teams_insert()
 RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE
-  v_conv uuid;
+  v_conv    uuid;
+  v_creator integer;
 BEGIN
   v_conv := gen_random_uuid();
 
-  -- Create the team conversation
-  INSERT INTO conversations (id, type, team, created_at)
-  VALUES (v_conv, 'team', NEW.id, CURRENT_TIMESTAMP);
+  -- Creator fallback 1: first coach of the team
+  SELECT tc.members_id INTO v_creator
+    FROM teams_coaches tc
+   WHERE tc.teams_id = NEW.id
+   ORDER BY tc.id
+   LIMIT 1;
 
-  -- Add any existing team members who have chat enabled
-  -- (handles the edge case where member_teams rows pre-date the trigger install)
+  -- Creator fallback 2: first admin or superuser (members.role is JSON)
+  IF v_creator IS NULL THEN
+    SELECT id INTO v_creator
+      FROM members
+     WHERE role::jsonb ?| ARRAY['admin','superuser']
+     ORDER BY id
+     LIMIT 1;
+  END IF;
+
+  -- Creator fallback 3: sentinel system user
+  IF v_creator IS NULL THEN
+    SELECT id INTO v_creator
+      FROM members
+     WHERE LOWER(email) = 'system@kscw.ch'
+     LIMIT 1;
+  END IF;
+
+  -- Create the team conversation with resolved creator
+  INSERT INTO conversations (id, type, team, created_by, created_at)
+  VALUES (v_conv, 'team', NEW.id, v_creator, CURRENT_TIMESTAMP);
+
+  -- Add ALL existing team members; archived reflects each member's chat preference
   INSERT INTO conversation_members (id, conversation, member, archived)
-  SELECT gen_random_uuid(), v_conv, mt.member, false
+  SELECT gen_random_uuid(), v_conv, mt.member,
+         NOT COALESCE(m.communications_team_chat_enabled, false)
     FROM member_teams mt
     JOIN members m ON m.id = mt.member
    WHERE mt.team = NEW.id
-     AND m.communications_team_chat_enabled = true
   ON CONFLICT (conversation, member) DO NOTHING;
 
   RETURN NEW;
@@ -221,28 +260,44 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_conversations_one_per_team
 BEGIN;
 
 -- Backfill 1: create team conversations for all existing teams that don't have one yet
--- Uses gen_random_uuid() for the UUID PK; ON CONFLICT on the partial unique index
--- ensures idempotency if run more than once.
-INSERT INTO conversations (id, type, team, created_at)
-SELECT gen_random_uuid(), 'team', t.id, CURRENT_TIMESTAMP
+-- FIX: also resolve created_by via the same fallback chain as Trigger 4
+INSERT INTO conversations (id, type, team, created_by, created_at)
+SELECT gen_random_uuid(),
+       'team',
+       t.id,
+       COALESCE(
+         (SELECT tc.members_id FROM teams_coaches tc WHERE tc.teams_id = t.id ORDER BY tc.id LIMIT 1),
+         (SELECT id FROM members WHERE role::jsonb ?| ARRAY['admin','superuser'] ORDER BY id LIMIT 1),
+         (SELECT id FROM members WHERE LOWER(email) = 'system@kscw.ch' LIMIT 1)
+       ),
+       CURRENT_TIMESTAMP
   FROM teams t
  WHERE NOT EXISTS (
    SELECT 1 FROM conversations c
     WHERE c.type = 'team' AND c.team = t.id
  );
 
--- Backfill 2: add existing team members who have chat enabled to their team conversations
--- members.role is JSON — use JSONB containment to check admin/superuser roles
--- NOTE: members with communications_team_chat_enabled = true are added as active (archived=false)
--- At time of this install: 0 members have chat enabled, so this inserts 0 rows (correct).
--- Admins/superusers who have enabled chat are also covered by the member_teams join;
--- they must be in member_teams to be auto-added here (consistent with trigger logic).
+-- Backfill 2: add ALL existing team members to their team conversations
+-- FIX: no filter on communications_team_chat_enabled — EVERY member gets a row;
+--      archived = NOT enabled (false = active/visible, true = hidden from chat list)
 INSERT INTO conversation_members (id, conversation, member, archived)
-SELECT gen_random_uuid(), c.id, mt.member, false
+SELECT gen_random_uuid(),
+       c.id,
+       mt.member,
+       NOT COALESCE(m.communications_team_chat_enabled, false)
   FROM member_teams mt
   JOIN members m ON m.id = mt.member
   JOIN conversations c ON c.team = mt.team AND c.type = 'team'
- WHERE m.communications_team_chat_enabled = true
 ON CONFLICT (conversation, member) DO NOTHING;
+
+-- Corrective: fill in created_by on existing team conversations that were
+-- created by the previous-iteration script without a created_by resolver.
+UPDATE conversations c
+   SET created_by = COALESCE(
+         (SELECT tc.members_id FROM teams_coaches tc WHERE tc.teams_id = c.team ORDER BY tc.id LIMIT 1),
+         (SELECT id FROM members WHERE role::jsonb ?| ARRAY['admin','superuser'] ORDER BY id LIMIT 1),
+         (SELECT id FROM members WHERE LOWER(email) = 'system@kscw.ch' LIMIT 1)
+       )
+ WHERE c.type = 'team' AND c.created_by IS NULL;
 
 COMMIT;

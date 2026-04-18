@@ -63,4 +63,13 @@ export default {
   report: 'Signaler',
   addReaction: 'Ajouter une réaction',
   removeReaction: 'Retirer la réaction',
+  reportDialogTitle: 'Signaler le message',
+  reportDialogHint: 'Un·e admin examinera ton signalement.',
+  reportReason: 'Motif',
+  reportReason_harassment: 'Harcèlement',
+  reportReason_spam: 'Spam',
+  reportReason_inappropriate: 'Inapproprié',
+  reportReason_other: 'Autre',
+  reportNoteOptional: 'Remarque (optionnelle)',
+  reportSubmit: 'Signaler',
 }

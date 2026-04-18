@@ -63,4 +63,13 @@ export default {
   report: 'Melde',
   addReaction: 'Reaktion hinzuefüege',
   removeReaction: 'Reaktion entferne',
+  reportDialogTitle: 'Nachricht melden',
+  reportDialogHint: 'Ein Admin prüft deinen Bericht.',
+  reportReason: 'Grund',
+  reportReason_harassment: 'Belästigung',
+  reportReason_spam: 'Spam',
+  reportReason_inappropriate: 'Unangemessen',
+  reportReason_other: 'Sonstiges',
+  reportNoteOptional: 'Bemerkung (optional)',
+  reportSubmit: 'Melden',
 }

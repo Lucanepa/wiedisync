@@ -63,4 +63,13 @@ export default {
   report: 'Report',
   addReaction: 'Add reaction',
   removeReaction: 'Remove reaction',
+  reportDialogTitle: 'Report message',
+  reportDialogHint: 'An admin will review your report.',
+  reportReason: 'Reason',
+  reportReason_harassment: 'Harassment',
+  reportReason_spam: 'Spam',
+  reportReason_inappropriate: 'Inappropriate',
+  reportReason_other: 'Other',
+  reportNoteOptional: 'Note (optional)',
+  reportSubmit: 'Report',
 }

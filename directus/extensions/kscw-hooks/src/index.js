@@ -608,11 +608,15 @@ export default ({ action, filter, init, schedule }, { services, database, logger
 
   async function resolveAnnouncementAudience(ann) {
     if (ann.audience_type === 'sport' && ann.audience_sport) {
+      // Sport-scoped: reach EVERY member on a team of that sport, regardless
+      // of wiedisync_active. Club-wide sport comms (tournaments, discounts,
+      // federation news) should hit the whole sport, not just app opt-ins.
+      // Per-channel opt-out still applies inside the send loop (email requires
+      // non-null address; push requires an active subscription).
       const rows = await database('member_teams as mt')
         .join('teams as t', 't.id', 'mt.team')
         .join('members as m', 'm.id', 'mt.member')
         .where('t.sport', ann.audience_sport)
-        .where('m.wiedisync_active', true)
         .distinct('m.id')
         .select('m.id')
       return rows.map(r => r.id).filter(Boolean)

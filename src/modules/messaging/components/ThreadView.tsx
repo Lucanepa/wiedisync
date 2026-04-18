@@ -22,8 +22,13 @@ type Props = {
 
 export default function ThreadView({ conversation, onMarkRead, onToggleMute, header, composerDisabled, title }: Props) {
   const { t } = useTranslation('messaging')
-  const { user } = useAuth()
+  const { user, coachTeamIds, teamResponsibleIds } = useAuth()
   const { messages, isLoading, send, sendError } = useConversation(conversation.id)
+
+  const isTeamModerator = conversation.type === 'team' && conversation.team != null && (
+    coachTeamIds.includes(String(conversation.team)) ||
+    teamResponsibleIds.includes(String(conversation.team))
+  )
 
   useEffect(() => {
     if (conversation.id && conversation.unread_count > 0) onMarkRead(conversation.id)
@@ -47,6 +52,7 @@ export default function ThreadView({ conversation, onMarkRead, onToggleMute, hea
         messages={messages}
         currentMemberId={user?.id ?? null}
         isLoading={isLoading}
+        isTeamModerator={isTeamModerator}
       />
       <MessageComposer onSend={send} disabled={composerDisabled} />
       {sendError && (

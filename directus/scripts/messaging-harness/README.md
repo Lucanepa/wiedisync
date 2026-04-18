@@ -35,8 +35,42 @@ Exit 0 = all assertions passed. Exit 1 = one or more failed.
 
 ## What it asserts
 
+### Plan 01 block
 - All 7 new collections exist (`conversations`, `conversation_members`, `messages`, `message_reactions`, `blocks`, `message_requests`, `reports`).
 - All 7 new fields on `members` (see spec §3).
 - All 5 Postgres triggers exist (spec §3 Triggers 1, 2, 3/4 merged, 6, + sentinel-protect). Spec Trigger 5 is enforced via FK `ON DELETE` rules, not a trigger.
 - Sentinel system-user member exists at `MESSAGING_SYSTEM_MEMBER_ID`.
 - All endpoint skeleton routes return `501` (Plan 01) or the correct status code (later plans).
+
+### Plan 02 block
+
+The Plan 02 block runs the seed automatically (`seed-plan02.mjs` via `child_process.execSync`) then uses `DIRECTUS_DEV_USER_TOKEN_A` to make user-scoped requests. It asserts:
+
+1. `GET /kscw/messaging/conversations` → 200, test conv appears with `type='team'`.
+2. `POST /kscw/messaging/messages` → 200, DB row has correct body + sender.
+3. `POST /kscw/messaging/conversations/:id/read` → 200, `last_read_at` bumped within 10 s.
+4. `POST /kscw/messaging/conversations/:id/mute` → toggles `muted` true → false.
+5. `GET /kscw/messaging/conversations` (again) → `unread_count = 0` after mark-read.
+6. `POST /kscw/messaging/messages` with a non-member conversation → 403 `messaging/not_a_member`.
+7. `POST /kscw/messaging/messages` with empty body → 400 `messaging/invalid_body`.
+8. With `communications_team_chat_enabled=false` → 403 `messaging/comms_disabled` (flag restored in `finally`).
+
+#### Additional env vars required for Plan 02
+
+- `DIRECTUS_DEV_USER_TOKEN_A` — a **user-scoped** static token for the test member
+  `plan02-a@kscw.test` (the `members` row is created by `seed-plan02.mjs`; the linked
+  `directus_users` row must be created and connected manually by Luca). Mint it in Directus admin:
+  **Users → find `plan02-a@kscw.test` → Static Token tab → Generate → copy.**
+  Without this token the Plan 02 block reports 1 failure (`plan02 user token`) and skips
+  assertions 1–8.
+
+#### Running the seed standalone (debugging)
+
+```bash
+cd /path/to/wiedisync
+set -a && source .env.local && set +a
+node directus/scripts/messaging-harness/seed-plan02.mjs
+# Prints: {"teamId":...,"convId":"...","memberA":...,"memberB":...}
+```
+
+The seed is idempotent — safe to re-run. It also clears leftover messages from prior harness runs.

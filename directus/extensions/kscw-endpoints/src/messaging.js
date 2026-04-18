@@ -879,7 +879,30 @@ export function registerMessaging(router, ctx) {
     } catch (e) { sendError(res, log, e) }
   })
 
+  // ── POST /messaging/conversations/:id/clear ─────────────────────────
+  router.post('/messaging/conversations/:id/clear', async (req, res) => {
+    try {
+      const userId = requireAuth(req)
+      const me = await requireMember(db, userId)
+      await loadConversationMembership(db, req.params.id, me.id)
+
+      const schema = await getSchema()
+      const messagesService = new ItemsService('messages', { schema, knex: db })
+      const nowIso = new Date().toISOString()
+
+      const rows = await db('messages')
+        .where('conversation', req.params.id)
+        .andWhere('sender', me.id)
+        .andWhereRaw('deleted_at IS NULL')
+        .select('id')
+      if (rows.length === 0) return res.json({ cleared: 0 })
+
+      await messagesService.updateMany(rows.map(r => r.id), { deleted_at: nowIso })
+
+      res.json({ cleared: rows.length })
+    } catch (e) { sendError(res, log, e) }
+  })
+
   // ── The rest stay 501 for Plans 03-05 ───────────────────────────────
-  router.post('/messaging/conversations/:id/clear',       stub('POST /conversations/:id/clear'))
   router.post('/messaging/export',                        stub('POST /export'))
 }

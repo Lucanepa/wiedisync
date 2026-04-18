@@ -4,6 +4,10 @@
 
 import pg from 'pg'
 import { execSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
+import { dirname, resolve } from 'node:path'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const API = 'https://directus-dev.kscw.ch'
 const TOKEN = process.env.DIRECTUS_DEV_TOKEN
@@ -121,10 +125,20 @@ async function testTriggers(client) {
 async function testPlan02Endpoints(dbClient) {
   console.log('\n[plan02] verifying team-chat endpoints...')
 
-  const seedJson = execSync('node directus/scripts/messaging-harness/seed-plan02.mjs', {
-    env: process.env, encoding: 'utf-8',
-  }).trim().split('\n').pop() // last line in case seed logs
-  const { convId, memberA } = JSON.parse(seedJson)
+  let seedResult
+  try {
+    const stdout = execSync(`node ${resolve(__dirname, 'seed-plan02.mjs')}`, {
+      env: process.env, encoding: 'utf-8', stdio: ['ignore', 'pipe', 'pipe'],
+    })
+    const lines = stdout.trim().split('\n').filter(Boolean)
+    const jsonLine = lines.reverse().find(l => l.startsWith('{'))
+    if (!jsonLine) throw new Error(`seed produced no JSON line; stdout was: ${stdout.slice(0, 200)}`)
+    seedResult = JSON.parse(jsonLine)
+  } catch (e) {
+    fail('plan02 seed', e)
+    return
+  }
+  const { convId, memberA } = seedResult
 
   const TOKEN_A = process.env.DIRECTUS_DEV_USER_TOKEN_A
   if (!TOKEN_A) {
@@ -235,7 +249,11 @@ async function testPlan02Endpoints(dbClient) {
       if (r.status !== 403 || b.code !== 'messaging/comms_disabled') throw new Error(`status=${r.status} code=${b.code}`)
       pass('POST /messages 403 comms_disabled when opted out')
     } finally {
-      await dbClient.query(`UPDATE members SET communications_team_chat_enabled = true WHERE id = $1`, [memberA])
+      try {
+        await dbClient.query(`UPDATE members SET communications_team_chat_enabled = true WHERE id = $1`, [memberA])
+      } catch (restoreErr) {
+        fail('opt-out 403 flag restore', restoreErr)
+      }
     }
   } catch (e) { fail('opt-out 403', e) }
 }

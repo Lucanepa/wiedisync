@@ -24,4 +24,6 @@ export default {
   inboxTitle: 'Direktnachrichten',
   requestsSectionTitle: 'Ausstehende Anfragen',
   dmsSectionTitle: 'Direktnachrichten',
+  backToInbox: 'Zurück',
+  requestAwaitingResponse: 'Anfrage gesendet — warte auf Antwort.',
 }

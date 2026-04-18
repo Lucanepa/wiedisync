@@ -24,4 +24,6 @@ export default {
   inboxTitle: 'Direct Messages',
   requestsSectionTitle: 'Pending Requests',
   dmsSectionTitle: 'Direct Messages',
+  backToInbox: 'Back',
+  requestAwaitingResponse: 'Request sent — waiting for their response.',
 }

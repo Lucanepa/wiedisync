@@ -24,4 +24,6 @@ export default {
   inboxTitle: 'Messages directs',
   requestsSectionTitle: 'Demandes en attente',
   dmsSectionTitle: 'Messages directs',
+  backToInbox: 'Retour',
+  requestAwaitingResponse: 'Demande envoyée — en attente de réponse.',
 }

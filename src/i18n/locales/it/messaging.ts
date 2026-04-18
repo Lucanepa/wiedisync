@@ -24,4 +24,6 @@ export default {
   inboxTitle: 'Messaggi diretti',
   requestsSectionTitle: 'Richieste in sospeso',
   dmsSectionTitle: 'Messaggi diretti',
+  backToInbox: 'Indietro',
+  requestAwaitingResponse: 'Richiesta inviata — in attesa di risposta.',
 }

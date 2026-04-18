@@ -663,10 +663,93 @@ export function registerMessaging(router, ctx) {
     } catch (e) { sendError(res, log, e) }
   })
 
+  // ── GET /messaging/reports ──────────────────────────────────────────
+  router.get('/messaging/reports', async (req, res) => {
+    try {
+      const userId = requireAuth(req)
+      const me = await requireMember(db, userId)
+      await requireAdmin(db, me.id)
+
+      const limit = Math.min(Math.max(Number(req.query.limit) || 200, 1), 500)
+      const statusFilter = typeof req.query.status === 'string' ? req.query.status : null
+
+      let q = db('reports as r')
+        .leftJoin('members as rep', 'rep.id', 'r.reporter')
+        .leftJoin('members as rm',  'rm.id',  'r.reported_member')
+        .orderBy('r.created_at', 'desc')
+        .limit(limit)
+        .select(
+          'r.id', 'r.reporter', 'r.reported_member', 'r.message', 'r.conversation',
+          'r.reason', 'r.note', 'r.message_snapshot', 'r.status',
+          'r.resolved_by', 'r.resolved_at', 'r.created_at',
+          'rep.first_name as reporter_first_name', 'rep.last_name as reporter_last_name',
+          'rm.first_name as reported_first_name', 'rm.last_name as reported_last_name',
+        )
+      if (statusFilter) q = q.where('r.status', statusFilter)
+      const rows = await q
+
+      const reports = rows.map(r => ({
+        id: r.id, reporter: r.reporter, reported_member: r.reported_member,
+        message: r.message, conversation: r.conversation,
+        reason: r.reason, note: r.note, message_snapshot: r.message_snapshot,
+        status: r.status, resolved_by: r.resolved_by, resolved_at: r.resolved_at, created_at: r.created_at,
+        reporter_name: [r.reporter_first_name, r.reporter_last_name].filter(Boolean).join(' ') || null,
+        reported_name: [r.reported_first_name, r.reported_last_name].filter(Boolean).join(' ') || null,
+      }))
+
+      res.json({ reports })
+    } catch (e) { sendError(res, log, e) }
+  })
+
+  // ── PATCH /messaging/reports/:id ────────────────────────────────────
+  const ALLOWED_REPORT_STATUSES = new Set(['resolved', 'dismissed'])
+
+  router.patch('/messaging/reports/:id', async (req, res) => {
+    try {
+      const userId = requireAuth(req)
+      const me = await requireMember(db, userId)
+      await requireAdmin(db, me.id)
+
+      const b = req.body ?? {}
+      if (!ALLOWED_REPORT_STATUSES.has(b.status))
+        throw new MessagingError(400, 'messaging/invalid_body', 'status must be resolved or dismissed')
+      const deleteMessage = b.delete_message === true
+      const ban = b.ban === true
+
+      const report = await db('reports').where('id', req.params.id).first()
+      if (!report) throw new MessagingError(404, 'messaging/not_found', 'Report not found')
+
+      const schema = await getSchema()
+      const reportsService = new ItemsService('reports', { schema, knex: db })
+      const messagesService = new ItemsService('messages', { schema, knex: db })
+      const membersService = new ItemsService('members', { schema, knex: db })
+      const nowIso = new Date().toISOString()
+
+      await reportsService.updateOne(report.id, {
+        status: b.status, resolved_by: me.id, resolved_at: nowIso,
+      })
+
+      if (deleteMessage && report.message) {
+        const msg = await db('messages').where('id', report.message).first()
+        if (msg && msg.deleted_at == null) {
+          await messagesService.updateOne(msg.id, { deleted_at: nowIso })
+        }
+      }
+
+      if (ban && report.reported_member) {
+        await membersService.updateOne(report.reported_member, {
+          communications_banned: true,
+          communications_team_chat_enabled: false,
+          communications_dm_enabled: false,
+        })
+      }
+
+      res.json({ id: report.id, status: b.status, delete_message: deleteMessage, ban })
+    } catch (e) { sendError(res, log, e) }
+  })
+
   // ── The rest stay 501 for Plans 03-05 ───────────────────────────────
   router.post('/messaging/conversations/:id/clear',       stub('POST /conversations/:id/clear'))
-  router.get('/messaging/reports',                        stub('GET /reports'))
-  router.patch('/messaging/reports/:id',                  stub('PATCH /reports/:id'))
   router.post('/messaging/settings/consent',              stub('POST /settings/consent'))
   router.post('/messaging/export',                        stub('POST /export'))
 }

@@ -1,6 +1,6 @@
 import { kscwApi } from '../../../lib/api'
 import type {
-  BlockBody, ConsentBody, ConversationSummary, CreateDmBody,
+  BlockBody, ConsentBody, ConversationSummary, CreateDmBody, CreateDmResponse,
   ListMessagesResponse, MessageRow, ReactionBody, ReportBody,
   SendMessageBody, SettingsBody,
 } from './types'
@@ -11,10 +11,7 @@ export const messagingApi = {
     kscwApi<ConversationSummary[]>('/messaging/conversations'),
 
   createDm: (body: CreateDmBody) =>
-    kscwApi<{ conversation_id: string; created: boolean }>(
-      '/messaging/conversations/dm',
-      { method: 'POST', body },
-    ),
+    kscwApi<CreateDmResponse>('/messaging/conversations/dm', { method: 'POST', body }),
 
   listMessages: (conversationId: string, opts?: { before?: string; limit?: number }) => {
     const qs = new URLSearchParams()
@@ -54,10 +51,16 @@ export const messagingApi = {
     kscwApi<{ added: boolean }>(`/messaging/messages/${messageId}/reactions`, { method: 'POST', body }),
 
   // Requests & blocks (Plan 03 fills)
-  acceptRequest: (id: string) => kscwApi<void>(`/messaging/requests/${id}/accept`, { method: 'POST' }),
-  declineRequest: (id: string) => kscwApi<void>(`/messaging/requests/${id}/decline`, { method: 'POST' }),
-  block: (body: BlockBody) => kscwApi<void>('/messaging/blocks', { method: 'POST', body }),
-  unblock: (memberId: string) => kscwApi<void>(`/messaging/blocks/${memberId}`, { method: 'DELETE' }),
+  acceptRequest: (id: string) =>
+    kscwApi<{ conversation_id: string; status: 'accepted' }>(
+      `/messaging/requests/${id}/accept`, { method: 'POST' }),
+  declineRequest: (id: string) =>
+    kscwApi<{ conversation_id: string; status: 'declined' }>(
+      `/messaging/requests/${id}/decline`, { method: 'POST' }),
+  block: (body: BlockBody) =>
+    kscwApi<{ blocked: string; created: boolean }>('/messaging/blocks', { method: 'POST', body }),
+  unblock: (memberId: string) =>
+    kscwApi<{ unblocked: string; removed: boolean }>(`/messaging/blocks/${memberId}`, { method: 'DELETE' }),
 
   // Moderation (Plan 04)
   createReport: (body: ReportBody) => kscwApi<{ id: string }>('/messaging/reports', { method: 'POST', body }),
@@ -66,7 +69,8 @@ export const messagingApi = {
     kscwApi<void>(`/messaging/reports/${id}`, { method: 'PATCH', body }),
 
   // Settings (Plan 05)
-  updateSettings: (body: SettingsBody) => kscwApi<void>('/messaging/settings', { method: 'PATCH', body }),
+  updateSettings: (body: SettingsBody) =>
+    kscwApi<{ updated: string[] }>('/messaging/settings', { method: 'PATCH', body }),
   recordConsent: (body: ConsentBody) =>
     kscwApi<void>('/messaging/settings/consent', { method: 'POST', body }),
   exportData: () =>

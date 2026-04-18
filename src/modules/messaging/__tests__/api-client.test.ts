@@ -60,4 +60,47 @@ describe('messagingApi', () => {
       expect.objectContaining({ method: 'DELETE' }),
     )
   })
+
+  it('acceptRequest POSTs with no body', async () => {
+    await messagingApi.acceptRequest('req-1')
+    expect(kscwApi).toHaveBeenCalledWith(
+      '/messaging/requests/req-1/accept',
+      expect.objectContaining({ method: 'POST' }),
+    )
+  })
+
+  it('declineRequest POSTs with no body', async () => {
+    await messagingApi.declineRequest('req-1')
+    expect(kscwApi).toHaveBeenCalledWith(
+      '/messaging/requests/req-1/decline',
+      expect.objectContaining({ method: 'POST' }),
+    )
+  })
+
+  it('block passes body as a raw object', async () => {
+    await messagingApi.block({ member: 'mbr-2' })
+    expect(kscwApi).toHaveBeenCalledWith(
+      '/messaging/blocks',
+      expect.objectContaining({ method: 'POST', body: { member: 'mbr-2' } }),
+    )
+  })
+
+  it('unblock calls DELETE on the member path', async () => {
+    await messagingApi.unblock('mbr-2')
+    expect(kscwApi).toHaveBeenCalledWith(
+      '/messaging/blocks/mbr-2',
+      expect.objectContaining({ method: 'DELETE' }),
+    )
+  })
+
+  it('updateSettings passes body as a raw object', async () => {
+    await messagingApi.updateSettings({ dm_enabled: true, team_chat_enabled: false })
+    expect(kscwApi).toHaveBeenCalledWith(
+      '/messaging/settings',
+      expect.objectContaining({
+        method: 'PATCH',
+        body: { dm_enabled: true, team_chat_enabled: false },
+      }),
+    )
+  })
 })

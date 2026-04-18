@@ -70,3 +70,27 @@ export type ListMessagesResponse = {
   /** true if more older messages exist (use `before=<oldest.created_at>` to page) */
   has_more: boolean
 }
+
+export type CreateDmResponse = {
+  conversation_id: string
+  created: boolean
+  type: 'dm' | 'dm_request'
+  request_status: 'pending' | 'accepted' | 'declined' | null
+}
+
+export type BlockRow = {
+  id: string
+  blocker: string
+  blocked: string
+  created_at: string
+}
+
+export type MessageRequestRow = {
+  id: string
+  conversation: string
+  sender: string
+  recipient: string
+  status: 'pending' | 'accepted' | 'declined'
+  created_at: string
+  resolved_at: string | null
+}

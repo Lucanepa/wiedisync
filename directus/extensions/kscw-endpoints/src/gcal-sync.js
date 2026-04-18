@@ -98,10 +98,10 @@ export function registerGCalSync(router, { database, logger }) {
 
         const existing = await db('hall_events').where('uid', ev.uid).first()
         if (existing) {
-          await db('hall_events').where('id', existing.id).update(record)
+          await db('hall_events').where('id', existing.id).update({ ...record, date_updated: new Date() })
           updated++
         } else {
-          await db('hall_events').insert(record)
+          await db('hall_events').insert({ ...record, date_created: new Date(), date_updated: new Date() })
           created++
         }
       }

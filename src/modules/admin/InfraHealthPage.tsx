@@ -209,7 +209,7 @@ export default function InfraHealthPage() {
         const total = data.total ?? 0
         svcResults.push({
           name: t('infraErrorLog'),
-          status: total === 0 ? 'healthy' : total <= 10 ? 'stale' : 'down',
+          status: total === 0 ? 'healthy' : total <= 10 ? 'healthy' : total <= 50 ? 'stale' : 'down',
           detail: total === 0 ? t('infraNoErrors') : `${total} ${t('infraErrorsToday')}`,
           value: total,
         })

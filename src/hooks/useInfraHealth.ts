@@ -59,9 +59,19 @@ export function useInfraHealth(): InfraHealth {
 
       for (const source of ['swiss_volley', 'basketplan']) {
         try {
+          // Legacy sync rows (before the knex scripts were patched to bump
+          // date_updated) have null timestamps. Postgres sorts NULLS-FIRST on
+          // DESC, so without the _nnull filter we'd return a junk row and
+          // render "Unknown" / stale-by-default. Filter + take max of both.
           const records = await fetchItems<Record<string, unknown>>('games', {
-            sort: ['-date_created'],
-            filter: { source: { _eq: source } },
+            sort: ['-date_updated', '-date_created'],
+            filter: {
+              source: { _eq: source },
+              _or: [
+                { date_updated: { _nnull: true } },
+                { date_created: { _nnull: true } },
+              ],
+            },
             fields: ['date_created', 'date_updated'],
             limit: 1,
           })
@@ -76,10 +86,16 @@ export function useInfraHealth(): InfraHealth {
         }
       }
 
-      // GCal sync
+      // GCal sync — same null-sort defense as above.
       try {
         const gcalRecords = await fetchItems<Record<string, unknown>>('hall_events', {
-          sort: ['-date_created'],
+          sort: ['-date_updated', '-date_created'],
+          filter: {
+            _or: [
+              { date_updated: { _nnull: true } },
+              { date_created: { _nnull: true } },
+            ],
+          },
           fields: ['date_created', 'date_updated'],
           limit: 1,
         })

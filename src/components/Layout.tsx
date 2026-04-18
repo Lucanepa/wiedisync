@@ -26,7 +26,7 @@ import type { MemberTeam, Team } from '../types'
 import { asObj } from '../utils/relations'
 import {
   Home, Calendar, Trophy, UserX, PenSquare, PartyPopper, Users,
-  ClipboardList, Building2, CalendarClock, Activity,
+  ClipboardList, Building2, CalendarClock, Activity, Inbox,
   HeartPulse, Settings, ChevronDown, MessageSquare, Banknote, BarChart3, UserPlus, Bug, GraduationCap, Database, Megaphone,
 } from 'lucide-react'
 
@@ -57,6 +57,9 @@ function useNavItems(isLoggedIn: boolean, isApproved: boolean) {
       ),
     },
     { to: '/events', label: t('events'), icon: <PartyPopper className={iconClass} /> },
+    ...(messagingFeatureEnabled()
+      ? [{ to: '/inbox', label: t('inbox'), icon: <Inbox className={iconClass} /> }]
+      : []),
     { to: '/teams', label: t(showTeamsPlural ? 'teams' : 'team'), icon: <Users className={iconClass} /> },
     { to: '/absences', label: t('absences'), icon: <UserX className={iconClass} /> },
     { to: '/scorer', label: t('scorer'), icon: <PenSquare className={iconClass} /> },
@@ -266,7 +269,7 @@ export default function Layout() {
             <nav data-tour="nav-sidebar" className="flex-1 overflow-y-auto p-4">
               <ul className="space-y-1">
                 {navItems.map((item) => {
-                  const showBadge = messagingOn && item.to === '/teams' && unreadMessages > 0
+                  const showBadge = messagingOn && item.to === '/inbox' && unreadMessages > 0
                   return (
                     <li key={item.to}>
                       <NavLink

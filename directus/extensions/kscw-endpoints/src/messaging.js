@@ -99,7 +99,7 @@ export function registerMessaging(router, ctx) {
       }
       if (type !== 'text') {
         // Plan 04 adds 'poll'. Reject everything else including unset.
-        throw new MessagingError(400, 'messaging/invalid_body', 'type must be "text" in plan 02')
+        throw new MessagingError(400, 'messaging/invalid_body', 'type must be "text"')
       }
       if (body.length < 1 || body.length > 4000) {
         throw new MessagingError(400, 'messaging/invalid_body', 'body must be 1..4000 chars')
@@ -109,10 +109,26 @@ export function registerMessaging(router, ctx) {
 
       if (conv.type === 'team') {
         requireTeamChatEnabled(member)
+        // Block-check on team conversations: do NOT reject the send; blocks only
+        // filter reads server-side (spec §7) so other non-blocked members still see it.
+      } else if (conv.type === 'dm' || conv.type === 'dm_request') {
+        requireDmEnabled(member)
+        const others = await db('conversation_members')
+          .where('conversation', conv.id)
+          .andWhere('member', '<>', member.id)
+          .select('member')
+        const otherId = others[0]?.member
+        if (otherId != null) {
+          const { either } = await loadBlocks(db, member.id)
+          if (either.has(String(otherId))) {
+            throw new MessagingError(403, 'messaging/blocked',
+              'Messaging is blocked between you and this member')
+          }
+        }
+      } else {
+        throw new MessagingError(400, 'messaging/invalid_body',
+          `Unsupported conversation type: ${conv.type}`)
       }
-      // DM paths not implemented in Plan 02 — fall through for 'dm' conversations,
-      // they just work as-long-as member is in the conversation_members; blocks are
-      // enforced in Plan 03.
 
       // Write via ItemsService so Directus realtime broadcasts the create.
       // Raw-knex inserts bypass ItemsService's emit pipeline, so any subscriber

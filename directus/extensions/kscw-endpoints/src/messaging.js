@@ -81,9 +81,67 @@ export function registerMessaging(router, ctx) {
 
   // ── POST /messaging/messages ────────────────────────────────────────
   router.post('/messaging/messages', async (req, res) => {
-    // filled in Task 5
-    res.status(501).json({ code: 'messaging/not_implemented',
-      message: 'POST /messages — coming in Task 5', details: { method: req.method, path: req.path } })
+    try {
+      const userId = requireAuth(req)
+      const member = await requireMember(db, userId)
+
+      const b = req.body ?? {}
+      const conversationId = typeof b.conversation === 'string' ? b.conversation : null
+      const type = b.type === 'text' || b.type === 'poll' ? b.type : null
+      const body = typeof b.body === 'string' ? b.body.trim() : ''
+
+      if (!conversationId) {
+        throw new MessagingError(400, 'messaging/invalid_body', 'conversation required')
+      }
+      if (type !== 'text') {
+        // Plan 04 adds 'poll'. Reject everything else including unset.
+        throw new MessagingError(400, 'messaging/invalid_body', 'type must be "text" in plan 02')
+      }
+      if (body.length < 1 || body.length > 4000) {
+        throw new MessagingError(400, 'messaging/invalid_body', 'body must be 1..4000 chars')
+      }
+
+      const { conv } = await loadConversationMembership(db, conversationId, member.id)
+
+      if (conv.type === 'team') {
+        requireTeamChatEnabled(member)
+      }
+      // DM paths not implemented in Plan 02 — fall through for 'dm' conversations,
+      // they just work as-long-as member is in the conversation_members; blocks are
+      // enforced in Plan 03.
+
+      // Atomic write: message INSERT + conversation denorm UPDATE.
+      const preview = body.length > 120 ? body.slice(0, 117) + '...' : body
+      const nowIso = new Date().toISOString()
+
+      let inserted
+      const newId = crypto.randomUUID()
+      await db.transaction(async (trx) => {
+        const [row] = await trx('messages')
+          .insert({
+            id: newId,
+            conversation: conversationId,
+            sender: member.id,
+            type: 'text',
+            body,
+            created_at: nowIso,
+          })
+          .returning(['id', 'conversation', 'sender', 'type', 'body', 'poll',
+                      'created_at', 'edited_at', 'deleted_at'])
+        inserted = row
+
+        await trx('conversations')
+          .where('id', conversationId)
+          .update({
+            last_message_at: nowIso,
+            last_message_preview: preview,
+          })
+      })
+
+      // Denorm sender name for UI convenience
+      inserted.sender_name = [member.first_name, member.last_name].filter(Boolean).join(' ') || null
+      res.json(inserted)
+    } catch (e) { sendError(res, log, e) }
   })
 
   // ── POST /messaging/conversations/:id/read ──────────────────────────

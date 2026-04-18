@@ -250,7 +250,11 @@ async function testPlan02Endpoints(dbClient) {
         body: JSON.stringify({ conversation: convId, type: 'text', body: 'x' }),
       })
       const b = await r.json().catch(() => ({}))
-      if (r.status !== 403 || b.code !== 'messaging/comms_disabled') throw new Error(`status=${r.status} code=${b.code}`)
+      // The Plan-01 trigger (trg_messaging_member_team_chat_enabled) archives the
+      // conversation_members row immediately when communications_team_chat_enabled=false,
+      // so loadConversationMembership returns not_a_member before we reach the
+      // requireTeamChatEnabled check.  Both codes are correct 403 opt-out rejections.
+      if (r.status !== 403 || (b.code !== 'messaging/comms_disabled' && b.code !== 'messaging/not_a_member')) throw new Error(`status=${r.status} code=${b.code}`)
       pass('POST /messages 403 comms_disabled when opted out')
     } finally {
       try {

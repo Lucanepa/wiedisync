@@ -118,6 +118,15 @@ export interface Member extends BaseRecord {
   ahv_nummer: string
   beitragskategorie: string
 
+  // Messaging
+  communications_team_chat_enabled?: boolean
+  communications_dm_enabled?: boolean
+  communications_banned?: boolean
+  push_preview_content?: boolean
+  last_online_at?: string | null
+  consent_decision?: ConsentDecision
+  consent_prompted_at?: string | null
+
 }
 
 export interface MemberTeam extends BaseRecord {
@@ -590,7 +599,8 @@ export interface CarpoolPassenger extends BaseRecord {
 // ── Polls ───────────────────────────────────────────────────────────────
 
 export interface Poll extends BaseRecord {
-  team: string
+  team: string | null
+  conversation?: string | null
   question: string
   options: string[]
   mode: 'single' | 'multi'
@@ -605,3 +615,86 @@ export interface PollVote extends BaseRecord {
   member: string
   selected_options: number[]
 }
+
+// ─── Messaging ───────────────────────────────────────────────
+
+export type ConversationType = 'team' | 'dm' | 'dm_request'
+
+export interface Conversation extends BaseRecord {
+  type: ConversationType
+  team: string | null
+  title: string | null
+  created_by: string
+  created_at: string
+  last_message_at: string | null
+  last_message_preview: string | null
+}
+
+export type ConversationMemberRole = 'member' | 'moderator'
+
+export interface ConversationMember extends BaseRecord {
+  conversation: string
+  member: string
+  role: ConversationMemberRole
+  joined_at: string
+  last_read_at: string | null
+  muted: boolean
+  archived: boolean
+}
+
+export type MessageType = 'text' | 'poll'
+
+export interface Message extends BaseRecord {
+  conversation: string
+  sender: string
+  type: MessageType
+  body: string | null
+  poll: string | null
+  created_at: string
+  edited_at: string | null
+  deleted_at: string | null
+}
+
+export interface MessageReaction extends BaseRecord {
+  message: string
+  member: string
+  emoji: string
+  created_at: string
+}
+
+export interface Block extends BaseRecord {
+  blocker: string
+  blocked: string
+  created_at: string
+}
+
+export type MessageRequestStatus = 'pending' | 'accepted' | 'declined'
+
+export interface MessageRequest extends BaseRecord {
+  conversation: string
+  sender: string
+  recipient: string
+  status: MessageRequestStatus
+  created_at: string
+  resolved_at: string | null
+}
+
+export type ReportReason =
+  | 'harassment' | 'spam' | 'inappropriate' | 'other' | 'moderator_delete'
+export type ReportStatus = 'open' | 'resolved' | 'dismissed'
+
+export interface Report extends BaseRecord {
+  reporter: string | null
+  reported_member: string | null
+  message: string | null
+  conversation: string | null
+  reason: ReportReason
+  note: string | null
+  message_snapshot: string | null
+  status: ReportStatus
+  resolved_by: string | null
+  resolved_at: string | null
+  created_at: string
+}
+
+export type ConsentDecision = 'pending' | 'declined' | 'accepted'

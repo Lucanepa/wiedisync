@@ -12,7 +12,7 @@
       "display_template": null,
       "group": null,
       "hidden": true,
-      "icon": null,
+      "icon": "import_export",
       "item_duplication_fields": null,
       "note": null,
       "preview_url": null,
@@ -39,14 +39,14 @@
         "display_options": null,
         "field": "id",
         "group": null,
-        "hidden": false,
+        "hidden": true,
         "interface": null,
         "note": null,
         "options": null,
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": null,
+        "sort": 1,
         "special": null,
         "translations": null,
         "validation": null,
@@ -83,14 +83,14 @@
         "display_options": null,
         "field": "events_id",
         "group": null,
-        "hidden": false,
+        "hidden": true,
         "interface": null,
         "note": null,
         "options": null,
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": null,
+        "sort": 2,
         "special": null,
         "translations": null,
         "validation": null,
@@ -127,14 +127,14 @@
         "display_options": null,
         "field": "members_id",
         "group": null,
-        "hidden": false,
+        "hidden": true,
         "interface": null,
         "note": null,
         "options": null,
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": null,
+        "sort": 3,
         "special": null,
         "translations": null,
         "validation": null,
@@ -164,31 +164,6 @@
   "relations": [
     {
       "collection": "events_members",
-      "field": "events_id",
-      "related_collection": "events",
-      "meta": {
-        "junction_field": "members_id",
-        "many_collection": "events_members",
-        "many_field": "events_id",
-        "one_allowed_collections": null,
-        "one_collection": "events",
-        "one_collection_field": null,
-        "one_deselect_action": "nullify",
-        "one_field": "invited_members",
-        "sort_field": null
-      },
-      "schema": {
-        "table": "events_members",
-        "column": "events_id",
-        "foreign_key_table": "events",
-        "foreign_key_column": "id",
-        "constraint_name": "events_members_events_id_fkey",
-        "on_update": "NO ACTION",
-        "on_delete": "CASCADE"
-      }
-    },
-    {
-      "collection": "events_members",
       "field": "members_id",
       "related_collection": "members",
       "meta": {
@@ -207,9 +182,9 @@
         "column": "members_id",
         "foreign_key_table": "members",
         "foreign_key_column": "id",
-        "constraint_name": "events_members_members_id_fkey",
+        "constraint_name": "events_members_members_id_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "CASCADE"
+        "on_delete": "SET NULL"
       }
     },
     {
@@ -226,22 +201,15 @@
         "one_deselect_action": "nullify",
         "one_field": "invited_members",
         "sort_field": null
-      }
-    },
-    {
-      "collection": "events_members",
-      "field": "members_id",
-      "related_collection": "members",
-      "meta": {
-        "junction_field": "events_id",
-        "many_collection": "events_members",
-        "many_field": "members_id",
-        "one_allowed_collections": null,
-        "one_collection": "members",
-        "one_collection_field": null,
-        "one_deselect_action": "nullify",
-        "one_field": null,
-        "sort_field": null
+      },
+      "schema": {
+        "table": "events_members",
+        "column": "events_id",
+        "foreign_key_table": "events",
+        "foreign_key_column": "id",
+        "constraint_name": "events_members_events_id_foreign",
+        "on_update": "NO ACTION",
+        "on_delete": "SET NULL"
       }
     }
   ]

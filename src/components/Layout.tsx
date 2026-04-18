@@ -22,6 +22,7 @@ import TeamChip from './TeamChip'
 import { useCollection } from '../lib/query'
 import LoadingSpinner from './LoadingSpinner'
 import ProfileEditModal from '../modules/auth/ProfileEditModal'
+import ConsentModal from '../modules/messaging/components/ConsentModal'
 import type { MemberTeam, Team } from '../types'
 import { asObj } from '../utils/relations'
 import {
@@ -148,6 +149,22 @@ function SidebarOptions({ isAdmin, theme, toggleTheme, onClose }: { isAdmin: boo
               <MessageSquare className="h-4 w-4" />
               {t('feedback')}
             </NavLink>
+            {messagingFeatureEnabled() && (
+              <NavLink
+                to="/options/messaging"
+                onClick={onClose}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                    isActive
+                      ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/50 dark:text-gold-400'
+                      : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+                  }`
+                }
+              >
+                <MessageSquare className="h-4 w-4" />
+                {t('messagingSettings')}
+              </NavLink>
+            )}
           </div>
         </div>
       </div>
@@ -543,6 +560,9 @@ export default function Layout() {
           onboarding
         />
       )}
+
+      {/* Messaging consent modal — shown when user hasn't responded to consent prompt yet */}
+      {messagingFeatureEnabled() && isApproved && user && <ConsentModal />}
     </div>
   )
 }

@@ -9,7 +9,7 @@
       "collapse": "open",
       "collection": "games",
       "color": "#FFC832",
-      "display_template": null,
+      "display_template": "{{home_team}} vs {{away_team}}",
       "group": null,
       "hidden": false,
       "icon": "sports_volleyball",
@@ -972,8 +972,10 @@
       "meta": {
         "collection": "games",
         "conditions": null,
-        "display": null,
-        "display_options": null,
+        "display": "related-values",
+        "display_options": {
+          "template": "{{name}}"
+        },
         "field": "kscw_team",
         "group": null,
         "hidden": false,
@@ -1002,13 +1004,13 @@
         "numeric_scale": 0,
         "is_nullable": true,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id"
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
@@ -1018,8 +1020,10 @@
       "meta": {
         "collection": "games",
         "conditions": null,
-        "display": null,
-        "display_options": null,
+        "display": "related-values",
+        "display_options": {
+          "template": "{{name}}"
+        },
         "field": "hall",
         "group": null,
         "hidden": false,
@@ -1048,13 +1052,13 @@
         "numeric_scale": 0,
         "is_nullable": true,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": "halls",
-        "foreign_key_column": "id"
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
@@ -1064,8 +1068,10 @@
       "meta": {
         "collection": "games",
         "conditions": null,
-        "display": null,
-        "display_options": null,
+        "display": "related-values",
+        "display_options": {
+          "template": "{{first_name}} {{last_name}}"
+        },
         "field": "scorer_member",
         "group": null,
         "hidden": false,
@@ -1094,13 +1100,13 @@
         "numeric_scale": 0,
         "is_nullable": true,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": "members",
-        "foreign_key_column": "id"
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
@@ -1110,8 +1116,10 @@
       "meta": {
         "collection": "games",
         "conditions": null,
-        "display": null,
-        "display_options": null,
+        "display": "related-values",
+        "display_options": {
+          "template": "{{first_name}} {{last_name}}"
+        },
         "field": "scoreboard_member",
         "group": null,
         "hidden": false,
@@ -1140,13 +1148,13 @@
         "numeric_scale": 0,
         "is_nullable": true,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": "members",
-        "foreign_key_column": "id"
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
@@ -1156,8 +1164,10 @@
       "meta": {
         "collection": "games",
         "conditions": null,
-        "display": null,
-        "display_options": null,
+        "display": "related-values",
+        "display_options": {
+          "template": "{{first_name}} {{last_name}}"
+        },
         "field": "scorer_scoreboard_member",
         "group": null,
         "hidden": false,
@@ -1186,13 +1196,13 @@
         "numeric_scale": 0,
         "is_nullable": true,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": "members",
-        "foreign_key_column": "id"
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
@@ -1202,8 +1212,10 @@
       "meta": {
         "collection": "games",
         "conditions": null,
-        "display": null,
-        "display_options": null,
+        "display": "related-values",
+        "display_options": {
+          "template": "{{name}}"
+        },
         "field": "scorer_duty_team",
         "group": null,
         "hidden": false,
@@ -1232,13 +1244,13 @@
         "numeric_scale": 0,
         "is_nullable": true,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id"
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
@@ -1248,8 +1260,10 @@
       "meta": {
         "collection": "games",
         "conditions": null,
-        "display": null,
-        "display_options": null,
+        "display": "related-values",
+        "display_options": {
+          "template": "{{name}}"
+        },
         "field": "scoreboard_duty_team",
         "group": null,
         "hidden": false,
@@ -1278,13 +1292,13 @@
         "numeric_scale": 0,
         "is_nullable": true,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id"
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
@@ -1294,8 +1308,10 @@
       "meta": {
         "collection": "games",
         "conditions": null,
-        "display": null,
-        "display_options": null,
+        "display": "related-values",
+        "display_options": {
+          "template": "{{name}}"
+        },
         "field": "scorer_scoreboard_duty_team",
         "group": null,
         "hidden": false,
@@ -1324,13 +1340,13 @@
         "numeric_scale": 0,
         "is_nullable": true,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id"
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
@@ -1340,8 +1356,10 @@
       "meta": {
         "collection": "games",
         "conditions": null,
-        "display": null,
-        "display_options": null,
+        "display": "related-values",
+        "display_options": {
+          "template": "{{first_name}} {{last_name}}"
+        },
         "field": "bb_scorer_member",
         "group": null,
         "hidden": false,
@@ -1370,13 +1388,13 @@
         "numeric_scale": 0,
         "is_nullable": true,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": "members",
-        "foreign_key_column": "id"
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
@@ -1386,8 +1404,10 @@
       "meta": {
         "collection": "games",
         "conditions": null,
-        "display": null,
-        "display_options": null,
+        "display": "related-values",
+        "display_options": {
+          "template": "{{first_name}} {{last_name}}"
+        },
         "field": "bb_timekeeper_member",
         "group": null,
         "hidden": false,
@@ -1416,13 +1436,13 @@
         "numeric_scale": 0,
         "is_nullable": true,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": "members",
-        "foreign_key_column": "id"
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
@@ -1432,8 +1452,10 @@
       "meta": {
         "collection": "games",
         "conditions": null,
-        "display": null,
-        "display_options": null,
+        "display": "related-values",
+        "display_options": {
+          "template": "{{first_name}} {{last_name}}"
+        },
         "field": "bb_24s_official",
         "group": null,
         "hidden": false,
@@ -1462,13 +1484,13 @@
         "numeric_scale": 0,
         "is_nullable": true,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": "members",
-        "foreign_key_column": "id"
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
@@ -1478,8 +1500,10 @@
       "meta": {
         "collection": "games",
         "conditions": null,
-        "display": null,
-        "display_options": null,
+        "display": "related-values",
+        "display_options": {
+          "template": "{{name}}"
+        },
         "field": "bb_duty_team",
         "group": null,
         "hidden": false,
@@ -1508,13 +1532,13 @@
         "numeric_scale": 0,
         "is_nullable": true,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id"
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
@@ -1524,8 +1548,10 @@
       "meta": {
         "collection": "games",
         "conditions": null,
-        "display": null,
-        "display_options": null,
+        "display": "related-values",
+        "display_options": {
+          "template": "{{name}}"
+        },
         "field": "bb_scorer_duty_team",
         "group": null,
         "hidden": false,
@@ -1554,13 +1580,13 @@
         "numeric_scale": 0,
         "is_nullable": true,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id"
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
@@ -1570,8 +1596,10 @@
       "meta": {
         "collection": "games",
         "conditions": null,
-        "display": null,
-        "display_options": null,
+        "display": "related-values",
+        "display_options": {
+          "template": "{{name}}"
+        },
         "field": "bb_timekeeper_duty_team",
         "group": null,
         "hidden": false,
@@ -1600,13 +1628,13 @@
         "numeric_scale": 0,
         "is_nullable": true,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id"
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
@@ -1616,8 +1644,10 @@
       "meta": {
         "collection": "games",
         "conditions": null,
-        "display": null,
-        "display_options": null,
+        "display": "related-values",
+        "display_options": {
+          "template": "{{name}}"
+        },
         "field": "bb_24s_duty_team",
         "group": null,
         "hidden": false,
@@ -1646,13 +1676,13 @@
         "numeric_scale": 0,
         "is_nullable": true,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id"
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
@@ -1807,15 +1837,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "carpools",
-        "column": "game",
-        "foreign_key_table": "games",
-        "foreign_key_column": "id",
-        "constraint_name": "carpools_game_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1832,15 +1853,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "game_scheduling_bookings",
-        "column": "game",
-        "foreign_key_table": "games",
-        "foreign_key_column": "id",
-        "constraint_name": "game_scheduling_bookings_game_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1857,15 +1869,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "game_scheduling_opponents",
-        "column": "home_game",
-        "foreign_key_table": "games",
-        "foreign_key_column": "id",
-        "constraint_name": "game_scheduling_opponents_home_game_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1882,15 +1885,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "game_scheduling_opponents",
-        "column": "away_game",
-        "foreign_key_table": "games",
-        "foreign_key_column": "id",
-        "constraint_name": "game_scheduling_opponents_away_game_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1907,15 +1901,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "game_scheduling_slots",
-        "column": "game",
-        "foreign_key_table": "games",
-        "foreign_key_column": "id",
-        "constraint_name": "game_scheduling_slots_game_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1932,15 +1917,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "games",
-        "column": "kscw_team",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "games_kscw_team_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1957,15 +1933,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "games",
-        "column": "hall",
-        "foreign_key_table": "halls",
-        "foreign_key_column": "id",
-        "constraint_name": "games_hall_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -1982,15 +1949,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "games",
-        "column": "scorer_member",
-        "foreign_key_table": "members",
-        "foreign_key_column": "id",
-        "constraint_name": "games_scorer_member_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -2007,15 +1965,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "games",
-        "column": "scoreboard_member",
-        "foreign_key_table": "members",
-        "foreign_key_column": "id",
-        "constraint_name": "games_scoreboard_member_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -2032,15 +1981,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "games",
-        "column": "scorer_scoreboard_member",
-        "foreign_key_table": "members",
-        "foreign_key_column": "id",
-        "constraint_name": "games_scorer_scoreboard_member_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -2057,15 +1997,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "games",
-        "column": "scorer_duty_team",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "games_scorer_duty_team_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -2082,15 +2013,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "games",
-        "column": "scoreboard_duty_team",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "games_scoreboard_duty_team_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -2107,15 +2029,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "games",
-        "column": "scorer_scoreboard_duty_team",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "games_scorer_scoreboard_duty_team_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -2132,15 +2045,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "games",
-        "column": "bb_scorer_member",
-        "foreign_key_table": "members",
-        "foreign_key_column": "id",
-        "constraint_name": "games_bb_scorer_member_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -2157,15 +2061,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "games",
-        "column": "bb_timekeeper_member",
-        "foreign_key_table": "members",
-        "foreign_key_column": "id",
-        "constraint_name": "games_bb_timekeeper_member_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -2182,15 +2077,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "games",
-        "column": "bb_24s_official",
-        "foreign_key_table": "members",
-        "foreign_key_column": "id",
-        "constraint_name": "games_bb_24s_official_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -2207,15 +2093,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "games",
-        "column": "bb_duty_team",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "games_bb_duty_team_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -2232,15 +2109,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "games",
-        "column": "bb_scorer_duty_team",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "games_bb_scorer_duty_team_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -2257,15 +2125,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "games",
-        "column": "bb_timekeeper_duty_team",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "games_bb_timekeeper_duty_team_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -2282,15 +2141,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "games",
-        "column": "bb_24s_duty_team",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "games_bb_24s_duty_team_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -2307,15 +2157,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "referee_expenses",
-        "column": "game",
-        "foreign_key_table": "games",
-        "foreign_key_column": "id",
-        "constraint_name": "referee_expenses_game_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -2332,15 +2173,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "scorer_delegations",
-        "column": "game",
-        "foreign_key_table": "games",
-        "foreign_key_column": "id",
-        "constraint_name": "scorer_delegations_game_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     }
   ]

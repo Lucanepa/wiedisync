@@ -1,18 +1,18 @@
 {
   "collection": {
-    "collection": "hall_closures",
+    "collection": "newsletter_subscribers",
     "meta": {
       "accountability": "all",
       "archive_app_filter": true,
       "archive_field": null,
       "archive_value": null,
       "collapse": "open",
-      "collection": "hall_closures",
-      "color": null,
+      "collection": "newsletter_subscribers",
+      "color": "#4A55A2",
       "display_template": null,
       "group": null,
       "hidden": false,
-      "icon": "block",
+      "icon": "mail",
       "item_duplication_fields": null,
       "note": null,
       "preview_url": null,
@@ -24,16 +24,16 @@
       "versioning": false
     },
     "schema": {
-      "name": "hall_closures"
+      "name": "newsletter_subscribers"
     }
   },
   "fields": [
     {
-      "collection": "hall_closures",
+      "collection": "newsletter_subscribers",
       "field": "id",
       "type": "integer",
       "meta": {
-        "collection": "hall_closures",
+        "collection": "newsletter_subscribers",
         "conditions": null,
         "display": null,
         "display_options": null,
@@ -55,9 +55,9 @@
       },
       "schema": {
         "name": "id",
-        "table": "hall_closures",
+        "table": "newsletter_subscribers",
         "data_type": "integer",
-        "default_value": "nextval('hall_closures_id_seq'::regclass)",
+        "default_value": "nextval('newsletter_subscribers_id_seq'::regclass)",
         "max_length": null,
         "numeric_precision": 32,
         "numeric_scale": 0,
@@ -73,22 +73,22 @@
       }
     },
     {
-      "collection": "hall_closures",
-      "field": "start_date",
-      "type": "date",
+      "collection": "newsletter_subscribers",
+      "field": "email",
+      "type": "string",
       "meta": {
-        "collection": "hall_closures",
+        "collection": "newsletter_subscribers",
         "conditions": null,
         "display": null,
         "display_options": null,
-        "field": "start_date",
+        "field": "email",
         "group": null,
         "hidden": false,
-        "interface": "datetime",
+        "interface": "input",
         "note": null,
         "options": null,
         "readonly": false,
-        "required": false,
+        "required": true,
         "searchable": true,
         "sort": 2,
         "special": null,
@@ -98,15 +98,15 @@
         "width": "full"
       },
       "schema": {
-        "name": "start_date",
-        "table": "hall_closures",
-        "data_type": "date",
+        "name": "email",
+        "table": "newsletter_subscribers",
+        "data_type": "character varying",
         "default_value": null,
-        "max_length": null,
+        "max_length": 255,
         "numeric_precision": null,
         "numeric_scale": null,
-        "is_nullable": true,
-        "is_unique": false,
+        "is_nullable": false,
+        "is_unique": true,
         "is_indexed": false,
         "is_primary_key": false,
         "is_generated": false,
@@ -117,20 +117,31 @@
       }
     },
     {
-      "collection": "hall_closures",
-      "field": "end_date",
-      "type": "date",
+      "collection": "newsletter_subscribers",
+      "field": "locale",
+      "type": "string",
       "meta": {
-        "collection": "hall_closures",
+        "collection": "newsletter_subscribers",
         "conditions": null,
         "display": null,
         "display_options": null,
-        "field": "end_date",
+        "field": "locale",
         "group": null,
         "hidden": false,
-        "interface": "datetime",
+        "interface": "select-dropdown",
         "note": null,
-        "options": null,
+        "options": {
+          "choices": [
+            {
+              "text": "Deutsch",
+              "value": "de"
+            },
+            {
+              "text": "English",
+              "value": "en"
+            }
+          ]
+        },
         "readonly": false,
         "required": false,
         "searchable": true,
@@ -142,10 +153,62 @@
         "width": "full"
       },
       "schema": {
-        "name": "end_date",
-        "table": "hall_closures",
-        "data_type": "date",
-        "default_value": null,
+        "name": "locale",
+        "table": "newsletter_subscribers",
+        "data_type": "character varying",
+        "default_value": "de",
+        "max_length": 2,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "newsletter_subscribers",
+      "field": "categories",
+      "type": "json",
+      "meta": {
+        "collection": "newsletter_subscribers",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "categories",
+        "group": null,
+        "hidden": false,
+        "interface": "input-code",
+        "note": null,
+        "options": {
+          "language": "json"
+        },
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 4,
+        "special": [
+          "cast-json"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "categories",
+        "table": "newsletter_subscribers",
+        "data_type": "json",
+        "default_value": [
+          "volleyball",
+          "basketball",
+          "club"
+        ],
         "max_length": null,
         "numeric_precision": null,
         "numeric_scale": null,
@@ -161,87 +224,20 @@
       }
     },
     {
-      "collection": "hall_closures",
-      "field": "reason",
-      "type": "string",
+      "collection": "newsletter_subscribers",
+      "field": "verified",
+      "type": "boolean",
       "meta": {
-        "collection": "hall_closures",
+        "collection": "newsletter_subscribers",
         "conditions": null,
         "display": null,
         "display_options": null,
-        "field": "reason",
+        "field": "verified",
         "group": null,
         "hidden": false,
-        "interface": "input",
+        "interface": "boolean",
         "note": null,
         "options": null,
-        "readonly": false,
-        "required": false,
-        "searchable": true,
-        "sort": 4,
-        "special": null,
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "full"
-      },
-      "schema": {
-        "name": "reason",
-        "table": "hall_closures",
-        "data_type": "character varying",
-        "default_value": null,
-        "max_length": 255,
-        "numeric_precision": null,
-        "numeric_scale": null,
-        "is_nullable": true,
-        "is_unique": false,
-        "is_indexed": false,
-        "is_primary_key": false,
-        "is_generated": false,
-        "generation_expression": null,
-        "has_auto_increment": false,
-        "foreign_key_table": null,
-        "foreign_key_column": null
-      }
-    },
-    {
-      "collection": "hall_closures",
-      "field": "source",
-      "type": "string",
-      "meta": {
-        "collection": "hall_closures",
-        "conditions": null,
-        "display": null,
-        "display_options": null,
-        "field": "source",
-        "group": null,
-        "hidden": false,
-        "interface": "select-dropdown",
-        "note": null,
-        "options": {
-          "choices": [
-            {
-              "text": "hauswart",
-              "value": "hauswart"
-            },
-            {
-              "text": "admin",
-              "value": "admin"
-            },
-            {
-              "text": "auto",
-              "value": "auto"
-            },
-            {
-              "text": "gcal",
-              "value": "gcal"
-            },
-            {
-              "text": "school_holidays",
-              "value": "school_holidays"
-            }
-          ]
-        },
         "readonly": false,
         "required": false,
         "searchable": true,
@@ -253,8 +249,52 @@
         "width": "full"
       },
       "schema": {
-        "name": "source",
-        "table": "hall_closures",
+        "name": "verified",
+        "table": "newsletter_subscribers",
+        "data_type": "boolean",
+        "default_value": false,
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "newsletter_subscribers",
+      "field": "verify_token",
+      "type": "string",
+      "meta": {
+        "collection": "newsletter_subscribers",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "verify_token",
+        "group": null,
+        "hidden": false,
+        "interface": "input",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 6,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "verify_token",
+        "table": "newsletter_subscribers",
         "data_type": "character varying",
         "default_value": null,
         "max_length": 255,
@@ -272,134 +312,36 @@
       }
     },
     {
-      "collection": "hall_closures",
-      "field": "hall",
-      "type": "integer",
+      "collection": "newsletter_subscribers",
+      "field": "unsubscribe_token",
+      "type": "string",
       "meta": {
-        "collection": "hall_closures",
+        "collection": "newsletter_subscribers",
         "conditions": null,
-        "display": "related-values",
-        "display_options": {
-          "template": "{{name}}"
-        },
-        "field": "hall",
+        "display": null,
+        "display_options": null,
+        "field": "unsubscribe_token",
         "group": null,
         "hidden": false,
-        "interface": "select-dropdown-m2o",
+        "interface": "input",
         "note": null,
-        "options": {
-          "template": "{{name}}"
-        },
+        "options": null,
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 6,
-        "special": [
-          "m2o"
-        ],
+        "sort": 7,
+        "special": null,
         "translations": null,
         "validation": null,
         "validation_message": null,
         "width": "full"
       },
       "schema": {
-        "name": "hall",
-        "table": "hall_closures",
-        "data_type": "integer",
+        "name": "unsubscribe_token",
+        "table": "newsletter_subscribers",
+        "data_type": "character varying",
         "default_value": null,
-        "max_length": null,
-        "numeric_precision": 32,
-        "numeric_scale": 0,
-        "is_nullable": true,
-        "is_unique": false,
-        "is_indexed": true,
-        "is_primary_key": false,
-        "is_generated": false,
-        "generation_expression": null,
-        "has_auto_increment": false,
-        "foreign_key_table": null,
-        "foreign_key_column": null
-      }
-    },
-    {
-      "collection": "hall_closures",
-      "field": "date_created",
-      "type": "timestamp",
-      "meta": {
-        "collection": "hall_closures",
-        "conditions": null,
-        "display": null,
-        "display_options": null,
-        "field": "date_created",
-        "group": null,
-        "hidden": true,
-        "interface": "datetime",
-        "note": null,
-        "options": null,
-        "readonly": true,
-        "required": false,
-        "searchable": true,
-        "sort": 7,
-        "special": [
-          "date-created"
-        ],
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "half"
-      },
-      "schema": {
-        "name": "date_created",
-        "table": "hall_closures",
-        "data_type": "timestamp with time zone",
-        "default_value": null,
-        "max_length": null,
-        "numeric_precision": null,
-        "numeric_scale": null,
-        "is_nullable": true,
-        "is_unique": false,
-        "is_indexed": false,
-        "is_primary_key": false,
-        "is_generated": false,
-        "generation_expression": null,
-        "has_auto_increment": false,
-        "foreign_key_table": null,
-        "foreign_key_column": null
-      }
-    },
-    {
-      "collection": "hall_closures",
-      "field": "date_updated",
-      "type": "timestamp",
-      "meta": {
-        "collection": "hall_closures",
-        "conditions": null,
-        "display": null,
-        "display_options": null,
-        "field": "date_updated",
-        "group": null,
-        "hidden": true,
-        "interface": "datetime",
-        "note": null,
-        "options": null,
-        "readonly": true,
-        "required": false,
-        "searchable": true,
-        "sort": 8,
-        "special": [
-          "date-updated"
-        ],
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "half"
-      },
-      "schema": {
-        "name": "date_updated",
-        "table": "hall_closures",
-        "data_type": "timestamp with time zone",
-        "default_value": null,
-        "max_length": null,
+        "max_length": 255,
         "numeric_precision": null,
         "numeric_scale": null,
         "is_nullable": true,
@@ -414,22 +356,5 @@
       }
     }
   ],
-  "relations": [
-    {
-      "collection": "hall_closures",
-      "field": "hall",
-      "related_collection": "halls",
-      "meta": {
-        "junction_field": null,
-        "many_collection": "hall_closures",
-        "many_field": "hall",
-        "one_allowed_collections": null,
-        "one_collection": "halls",
-        "one_collection_field": null,
-        "one_deselect_action": "nullify",
-        "one_field": null,
-        "sort_field": null
-      }
-    }
-  ]
+  "relations": []
 }

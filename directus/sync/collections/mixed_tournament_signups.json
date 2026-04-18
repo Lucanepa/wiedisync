@@ -1,20 +1,20 @@
 {
   "collection": {
-    "collection": "tasks",
+    "collection": "mixed_tournament_signups",
     "meta": {
       "accountability": "all",
       "archive_app_filter": true,
       "archive_field": null,
       "archive_value": null,
       "collapse": "open",
-      "collection": "tasks",
+      "collection": "mixed_tournament_signups",
       "color": null,
       "display_template": null,
       "group": null,
       "hidden": false,
-      "icon": "task_alt",
+      "icon": "sports_volleyball",
       "item_duplication_fields": null,
-      "note": null,
+      "note": "Mixed Tournament 2026 signups",
       "preview_url": null,
       "singleton": false,
       "sort": null,
@@ -24,23 +24,23 @@
       "versioning": false
     },
     "schema": {
-      "name": "tasks"
+      "name": "mixed_tournament_signups"
     }
   },
   "fields": [
     {
-      "collection": "tasks",
+      "collection": "mixed_tournament_signups",
       "field": "id",
       "type": "integer",
       "meta": {
-        "collection": "tasks",
+        "collection": "mixed_tournament_signups",
         "conditions": null,
         "display": null,
         "display_options": null,
         "field": "id",
         "group": null,
         "hidden": true,
-        "interface": "numeric",
+        "interface": "input",
         "note": null,
         "options": null,
         "readonly": true,
@@ -55,9 +55,9 @@
       },
       "schema": {
         "name": "id",
-        "table": "tasks",
+        "table": "mixed_tournament_signups",
         "data_type": "integer",
-        "default_value": "nextval('tasks_id_seq'::regclass)",
+        "default_value": "nextval('mixed_tournament_signups_id_seq'::regclass)",
         "max_length": null,
         "numeric_precision": 32,
         "numeric_scale": 0,
@@ -73,250 +73,36 @@
       }
     },
     {
-      "collection": "tasks",
-      "field": "activity_type",
+      "collection": "mixed_tournament_signups",
+      "field": "name",
       "type": "string",
       "meta": {
-        "collection": "tasks",
+        "collection": "mixed_tournament_signups",
         "conditions": null,
         "display": null,
         "display_options": null,
-        "field": "activity_type",
+        "field": "name",
         "group": null,
         "hidden": false,
-        "interface": "select-dropdown",
+        "interface": "input",
         "note": null,
-        "options": {
-          "choices": [
-            {
-              "text": "game",
-              "value": "game"
-            },
-            {
-              "text": "training",
-              "value": "training"
-            },
-            {
-              "text": "event",
-              "value": "event"
-            }
-          ]
-        },
+        "options": null,
         "readonly": false,
-        "required": false,
+        "required": true,
         "searchable": true,
         "sort": 2,
         "special": null,
         "translations": null,
         "validation": null,
         "validation_message": null,
-        "width": "full"
+        "width": "half"
       },
       "schema": {
-        "name": "activity_type",
-        "table": "tasks",
+        "name": "name",
+        "table": "mixed_tournament_signups",
         "data_type": "character varying",
         "default_value": null,
         "max_length": 255,
-        "numeric_precision": null,
-        "numeric_scale": null,
-        "is_nullable": true,
-        "is_unique": false,
-        "is_indexed": false,
-        "is_primary_key": false,
-        "is_generated": false,
-        "generation_expression": null,
-        "has_auto_increment": false,
-        "foreign_key_table": null,
-        "foreign_key_column": null
-      }
-    },
-    {
-      "collection": "tasks",
-      "field": "activity_id",
-      "type": "string",
-      "meta": {
-        "collection": "tasks",
-        "conditions": null,
-        "display": null,
-        "display_options": null,
-        "field": "activity_id",
-        "group": null,
-        "hidden": false,
-        "interface": "input",
-        "note": null,
-        "options": null,
-        "readonly": false,
-        "required": false,
-        "searchable": true,
-        "sort": 3,
-        "special": null,
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "full"
-      },
-      "schema": {
-        "name": "activity_id",
-        "table": "tasks",
-        "data_type": "character varying",
-        "default_value": null,
-        "max_length": 255,
-        "numeric_precision": null,
-        "numeric_scale": null,
-        "is_nullable": true,
-        "is_unique": false,
-        "is_indexed": false,
-        "is_primary_key": false,
-        "is_generated": false,
-        "generation_expression": null,
-        "has_auto_increment": false,
-        "foreign_key_table": null,
-        "foreign_key_column": null
-      }
-    },
-    {
-      "collection": "tasks",
-      "field": "label",
-      "type": "string",
-      "meta": {
-        "collection": "tasks",
-        "conditions": null,
-        "display": null,
-        "display_options": null,
-        "field": "label",
-        "group": null,
-        "hidden": false,
-        "interface": "input",
-        "note": null,
-        "options": null,
-        "readonly": false,
-        "required": false,
-        "searchable": true,
-        "sort": 4,
-        "special": null,
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "full"
-      },
-      "schema": {
-        "name": "label",
-        "table": "tasks",
-        "data_type": "character varying",
-        "default_value": null,
-        "max_length": 255,
-        "numeric_precision": null,
-        "numeric_scale": null,
-        "is_nullable": true,
-        "is_unique": false,
-        "is_indexed": false,
-        "is_primary_key": false,
-        "is_generated": false,
-        "generation_expression": null,
-        "has_auto_increment": false,
-        "foreign_key_table": null,
-        "foreign_key_column": null
-      }
-    },
-    {
-      "collection": "tasks",
-      "field": "category",
-      "type": "string",
-      "meta": {
-        "collection": "tasks",
-        "conditions": null,
-        "display": null,
-        "display_options": null,
-        "field": "category",
-        "group": null,
-        "hidden": false,
-        "interface": "select-dropdown",
-        "note": null,
-        "options": {
-          "choices": [
-            {
-              "text": "setup",
-              "value": "setup"
-            },
-            {
-              "text": "equipment",
-              "value": "equipment"
-            },
-            {
-              "text": "food",
-              "value": "food"
-            },
-            {
-              "text": "firstAid",
-              "value": "firstAid"
-            },
-            {
-              "text": "other",
-              "value": "other"
-            }
-          ]
-        },
-        "readonly": false,
-        "required": false,
-        "searchable": true,
-        "sort": 5,
-        "special": null,
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "full"
-      },
-      "schema": {
-        "name": "category",
-        "table": "tasks",
-        "data_type": "character varying",
-        "default_value": null,
-        "max_length": 255,
-        "numeric_precision": null,
-        "numeric_scale": null,
-        "is_nullable": true,
-        "is_unique": false,
-        "is_indexed": false,
-        "is_primary_key": false,
-        "is_generated": false,
-        "generation_expression": null,
-        "has_auto_increment": false,
-        "foreign_key_table": null,
-        "foreign_key_column": null
-      }
-    },
-    {
-      "collection": "tasks",
-      "field": "completed",
-      "type": "boolean",
-      "meta": {
-        "collection": "tasks",
-        "conditions": null,
-        "display": null,
-        "display_options": null,
-        "field": "completed",
-        "group": null,
-        "hidden": false,
-        "interface": "boolean",
-        "note": null,
-        "options": null,
-        "readonly": false,
-        "required": false,
-        "searchable": true,
-        "sort": 6,
-        "special": null,
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "full"
-      },
-      "schema": {
-        "name": "completed",
-        "table": "tasks",
-        "data_type": "boolean",
-        "default_value": false,
-        "max_length": null,
         "numeric_precision": null,
         "numeric_scale": null,
         "is_nullable": false,
@@ -331,34 +117,135 @@
       }
     },
     {
-      "collection": "tasks",
-      "field": "completed_at",
-      "type": "timestamp",
+      "collection": "mixed_tournament_signups",
+      "field": "email",
+      "type": "string",
       "meta": {
-        "collection": "tasks",
+        "collection": "mixed_tournament_signups",
         "conditions": null,
         "display": null,
         "display_options": null,
-        "field": "completed_at",
+        "field": "email",
         "group": null,
         "hidden": false,
-        "interface": "datetime",
+        "interface": "input",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": true,
+        "searchable": true,
+        "sort": 3,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "half"
+      },
+      "schema": {
+        "name": "email",
+        "table": "mixed_tournament_signups",
+        "data_type": "character varying",
+        "default_value": null,
+        "max_length": 255,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": false,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "mixed_tournament_signups",
+      "field": "sex",
+      "type": "string",
+      "meta": {
+        "collection": "mixed_tournament_signups",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "sex",
+        "group": null,
+        "hidden": false,
+        "interface": "select-dropdown",
+        "note": null,
+        "options": {
+          "choices": [
+            {
+              "text": "Männlich",
+              "value": "männlich"
+            },
+            {
+              "text": "Weiblich",
+              "value": "weiblich"
+            }
+          ]
+        },
+        "readonly": false,
+        "required": true,
+        "searchable": true,
+        "sort": 4,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "half"
+      },
+      "schema": {
+        "name": "sex",
+        "table": "mixed_tournament_signups",
+        "data_type": "character varying",
+        "default_value": null,
+        "max_length": 255,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": false,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "mixed_tournament_signups",
+      "field": "teams",
+      "type": "json",
+      "meta": {
+        "collection": "mixed_tournament_signups",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "teams",
+        "group": null,
+        "hidden": false,
+        "interface": "input-code",
         "note": null,
         "options": null,
         "readonly": false,
         "required": false,
         "searchable": true,
-        "sort": 7,
-        "special": null,
+        "sort": 5,
+        "special": [
+          "cast-json"
+        ],
         "translations": null,
         "validation": null,
         "validation_message": null,
-        "width": "full"
+        "width": "half"
       },
       "schema": {
-        "name": "completed_at",
-        "table": "tasks",
-        "data_type": "timestamp with time zone",
+        "name": "teams",
+        "table": "mixed_tournament_signups",
+        "data_type": "json",
         "default_value": null,
         "max_length": null,
         "numeric_precision": null,
@@ -375,20 +262,189 @@
       }
     },
     {
-      "collection": "tasks",
-      "field": "sort_order",
-      "type": "integer",
+      "collection": "mixed_tournament_signups",
+      "field": "position_1",
+      "type": "string",
       "meta": {
-        "collection": "tasks",
+        "collection": "mixed_tournament_signups",
         "conditions": null,
         "display": null,
         "display_options": null,
-        "field": "sort_order",
+        "field": "position_1",
         "group": null,
         "hidden": false,
-        "interface": "input",
+        "interface": "select-dropdown",
         "note": null,
-        "options": null,
+        "options": {
+          "choices": [
+            {
+              "text": "Setter",
+              "value": "setter"
+            },
+            {
+              "text": "Outside",
+              "value": "outside"
+            },
+            {
+              "text": "Middle",
+              "value": "middle"
+            },
+            {
+              "text": "Opposite",
+              "value": "opposite"
+            },
+            {
+              "text": "Libero",
+              "value": "libero"
+            },
+            {
+              "text": "Universal",
+              "value": "universal"
+            }
+          ]
+        },
+        "readonly": false,
+        "required": true,
+        "searchable": true,
+        "sort": 6,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "third"
+      },
+      "schema": {
+        "name": "position_1",
+        "table": "mixed_tournament_signups",
+        "data_type": "character varying",
+        "default_value": null,
+        "max_length": 255,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": false,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "mixed_tournament_signups",
+      "field": "position_2",
+      "type": "string",
+      "meta": {
+        "collection": "mixed_tournament_signups",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "position_2",
+        "group": null,
+        "hidden": false,
+        "interface": "select-dropdown",
+        "note": null,
+        "options": {
+          "choices": [
+            {
+              "text": "Setter",
+              "value": "setter"
+            },
+            {
+              "text": "Outside",
+              "value": "outside"
+            },
+            {
+              "text": "Middle",
+              "value": "middle"
+            },
+            {
+              "text": "Opposite",
+              "value": "opposite"
+            },
+            {
+              "text": "Libero",
+              "value": "libero"
+            },
+            {
+              "text": "Universal",
+              "value": "universal"
+            }
+          ]
+        },
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 7,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "third"
+      },
+      "schema": {
+        "name": "position_2",
+        "table": "mixed_tournament_signups",
+        "data_type": "character varying",
+        "default_value": null,
+        "max_length": 255,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "mixed_tournament_signups",
+      "field": "position_3",
+      "type": "string",
+      "meta": {
+        "collection": "mixed_tournament_signups",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "position_3",
+        "group": null,
+        "hidden": false,
+        "interface": "select-dropdown",
+        "note": null,
+        "options": {
+          "choices": [
+            {
+              "text": "Setter",
+              "value": "setter"
+            },
+            {
+              "text": "Outside",
+              "value": "outside"
+            },
+            {
+              "text": "Middle",
+              "value": "middle"
+            },
+            {
+              "text": "Opposite",
+              "value": "opposite"
+            },
+            {
+              "text": "Libero",
+              "value": "libero"
+            },
+            {
+              "text": "Universal",
+              "value": "universal"
+            }
+          ]
+        },
         "readonly": false,
         "required": false,
         "searchable": true,
@@ -397,11 +453,143 @@
         "translations": null,
         "validation": null,
         "validation_message": null,
+        "width": "third"
+      },
+      "schema": {
+        "name": "position_3",
+        "table": "mixed_tournament_signups",
+        "data_type": "character varying",
+        "default_value": null,
+        "max_length": 255,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "mixed_tournament_signups",
+      "field": "notes",
+      "type": "text",
+      "meta": {
+        "collection": "mixed_tournament_signups",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "notes",
+        "group": null,
+        "hidden": false,
+        "interface": "input-multiline",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 9,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
         "width": "full"
       },
       "schema": {
-        "name": "sort_order",
-        "table": "tasks",
+        "name": "notes",
+        "table": "mixed_tournament_signups",
+        "data_type": "text",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "mixed_tournament_signups",
+      "field": "is_member",
+      "type": "boolean",
+      "meta": {
+        "collection": "mixed_tournament_signups",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "is_member",
+        "group": null,
+        "hidden": false,
+        "interface": "boolean",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 10,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "half"
+      },
+      "schema": {
+        "name": "is_member",
+        "table": "mixed_tournament_signups",
+        "data_type": "boolean",
+        "default_value": false,
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "mixed_tournament_signups",
+      "field": "member_id",
+      "type": "integer",
+      "meta": {
+        "collection": "mixed_tournament_signups",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "member_id",
+        "group": null,
+        "hidden": false,
+        "interface": "input",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 11,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "half"
+      },
+      "schema": {
+        "name": "member_id",
+        "table": "mixed_tournament_signups",
         "data_type": "integer",
         "default_value": null,
         "max_length": null,
@@ -419,155 +607,11 @@
       }
     },
     {
-      "collection": "tasks",
-      "field": "assigned_to",
-      "type": "integer",
-      "meta": {
-        "collection": "tasks",
-        "conditions": null,
-        "display": "related-values",
-        "display_options": {
-          "template": "{{first_name}} {{last_name}}"
-        },
-        "field": "assigned_to",
-        "group": null,
-        "hidden": false,
-        "interface": "select-dropdown-m2o",
-        "note": null,
-        "options": null,
-        "readonly": false,
-        "required": false,
-        "searchable": true,
-        "sort": 9,
-        "special": [
-          "m2o"
-        ],
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "full"
-      },
-      "schema": {
-        "name": "assigned_to",
-        "table": "tasks",
-        "data_type": "integer",
-        "default_value": null,
-        "max_length": null,
-        "numeric_precision": 32,
-        "numeric_scale": 0,
-        "is_nullable": true,
-        "is_unique": false,
-        "is_indexed": true,
-        "is_primary_key": false,
-        "is_generated": false,
-        "generation_expression": null,
-        "has_auto_increment": false,
-        "foreign_key_table": null,
-        "foreign_key_column": null
-      }
-    },
-    {
-      "collection": "tasks",
-      "field": "claimed_by",
-      "type": "integer",
-      "meta": {
-        "collection": "tasks",
-        "conditions": null,
-        "display": "related-values",
-        "display_options": {
-          "template": "{{first_name}} {{last_name}}"
-        },
-        "field": "claimed_by",
-        "group": null,
-        "hidden": false,
-        "interface": "select-dropdown-m2o",
-        "note": null,
-        "options": null,
-        "readonly": false,
-        "required": false,
-        "searchable": true,
-        "sort": 10,
-        "special": [
-          "m2o"
-        ],
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "full"
-      },
-      "schema": {
-        "name": "claimed_by",
-        "table": "tasks",
-        "data_type": "integer",
-        "default_value": null,
-        "max_length": null,
-        "numeric_precision": 32,
-        "numeric_scale": 0,
-        "is_nullable": true,
-        "is_unique": false,
-        "is_indexed": true,
-        "is_primary_key": false,
-        "is_generated": false,
-        "generation_expression": null,
-        "has_auto_increment": false,
-        "foreign_key_table": null,
-        "foreign_key_column": null
-      }
-    },
-    {
-      "collection": "tasks",
-      "field": "created_by",
-      "type": "integer",
-      "meta": {
-        "collection": "tasks",
-        "conditions": null,
-        "display": "related-values",
-        "display_options": {
-          "template": "{{first_name}} {{last_name}}"
-        },
-        "field": "created_by",
-        "group": null,
-        "hidden": false,
-        "interface": "select-dropdown-m2o",
-        "note": null,
-        "options": null,
-        "readonly": false,
-        "required": false,
-        "searchable": true,
-        "sort": 11,
-        "special": [
-          "m2o"
-        ],
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "full"
-      },
-      "schema": {
-        "name": "created_by",
-        "table": "tasks",
-        "data_type": "integer",
-        "default_value": null,
-        "max_length": null,
-        "numeric_precision": 32,
-        "numeric_scale": 0,
-        "is_nullable": true,
-        "is_unique": false,
-        "is_indexed": true,
-        "is_primary_key": false,
-        "is_generated": false,
-        "generation_expression": null,
-        "has_auto_increment": false,
-        "foreign_key_table": null,
-        "foreign_key_column": null
-      }
-    },
-    {
-      "collection": "tasks",
+      "collection": "mixed_tournament_signups",
       "field": "date_created",
       "type": "timestamp",
       "meta": {
-        "collection": "tasks",
+        "collection": "mixed_tournament_signups",
         "conditions": null,
         "display": null,
         "display_options": null,
@@ -587,57 +631,11 @@
         "translations": null,
         "validation": null,
         "validation_message": null,
-        "width": "half"
+        "width": "full"
       },
       "schema": {
         "name": "date_created",
-        "table": "tasks",
-        "data_type": "timestamp with time zone",
-        "default_value": "CURRENT_TIMESTAMP",
-        "max_length": null,
-        "numeric_precision": null,
-        "numeric_scale": null,
-        "is_nullable": true,
-        "is_unique": false,
-        "is_indexed": false,
-        "is_primary_key": false,
-        "is_generated": false,
-        "generation_expression": null,
-        "has_auto_increment": false,
-        "foreign_key_table": null,
-        "foreign_key_column": null
-      }
-    },
-    {
-      "collection": "tasks",
-      "field": "date_updated",
-      "type": "timestamp",
-      "meta": {
-        "collection": "tasks",
-        "conditions": null,
-        "display": null,
-        "display_options": null,
-        "field": "date_updated",
-        "group": null,
-        "hidden": true,
-        "interface": "datetime",
-        "note": null,
-        "options": null,
-        "readonly": true,
-        "required": false,
-        "searchable": true,
-        "sort": 13,
-        "special": [
-          "date-updated"
-        ],
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "half"
-      },
-      "schema": {
-        "name": "date_updated",
-        "table": "tasks",
+        "table": "mixed_tournament_signups",
         "data_type": "timestamp with time zone",
         "default_value": null,
         "max_length": null,
@@ -655,54 +653,5 @@
       }
     }
   ],
-  "relations": [
-    {
-      "collection": "tasks",
-      "field": "assigned_to",
-      "related_collection": "members",
-      "meta": {
-        "junction_field": null,
-        "many_collection": "tasks",
-        "many_field": "assigned_to",
-        "one_allowed_collections": null,
-        "one_collection": "members",
-        "one_collection_field": null,
-        "one_deselect_action": "nullify",
-        "one_field": null,
-        "sort_field": null
-      }
-    },
-    {
-      "collection": "tasks",
-      "field": "claimed_by",
-      "related_collection": "members",
-      "meta": {
-        "junction_field": null,
-        "many_collection": "tasks",
-        "many_field": "claimed_by",
-        "one_allowed_collections": null,
-        "one_collection": "members",
-        "one_collection_field": null,
-        "one_deselect_action": "nullify",
-        "one_field": null,
-        "sort_field": null
-      }
-    },
-    {
-      "collection": "tasks",
-      "field": "created_by",
-      "related_collection": "members",
-      "meta": {
-        "junction_field": null,
-        "many_collection": "tasks",
-        "many_field": "created_by",
-        "one_allowed_collections": null,
-        "one_collection": "members",
-        "one_collection_field": null,
-        "one_deselect_action": "nullify",
-        "one_field": null,
-        "sort_field": null
-      }
-    }
-  ]
+  "relations": []
 }

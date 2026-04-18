@@ -9,7 +9,7 @@
       "collapse": "open",
       "collection": "hall_slots",
       "color": null,
-      "display_template": null,
+      "display_template": "{{label}}",
       "group": null,
       "hidden": false,
       "icon": "calendar_month",
@@ -597,8 +597,10 @@
       "meta": {
         "collection": "hall_slots",
         "conditions": null,
-        "display": null,
-        "display_options": null,
+        "display": "related-values",
+        "display_options": {
+          "template": "{{name}}"
+        },
         "field": "hall",
         "group": null,
         "hidden": false,
@@ -627,89 +629,13 @@
         "numeric_scale": 0,
         "is_nullable": true,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": "halls",
-        "foreign_key_column": "id"
-      }
-    },
-    {
-      "collection": "hall_slots",
-      "field": "team",
-      "type": "integer",
-      "meta": {
-        "collection": "hall_slots",
-        "conditions": null,
-        "display": null,
-        "display_options": null,
-        "field": "team",
-        "group": null,
-        "hidden": false,
-        "interface": "select-dropdown-m2o",
-        "note": null,
-        "options": null,
-        "readonly": false,
-        "required": false,
-        "searchable": true,
-        "sort": 14,
-        "special": [
-          "m2o"
-        ],
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "full"
-      },
-      "schema": {
-        "name": "team",
-        "table": "hall_slots",
-        "data_type": "integer",
-        "default_value": null,
-        "max_length": null,
-        "numeric_precision": 32,
-        "numeric_scale": 0,
-        "is_nullable": true,
-        "is_unique": false,
-        "is_indexed": false,
-        "is_primary_key": false,
-        "is_generated": false,
-        "generation_expression": null,
-        "has_auto_increment": false,
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id"
-      }
-    },
-    {
-      "collection": "hall_slots",
-      "field": "teams",
-      "type": "alias",
-      "meta": {
-        "collection": "hall_slots",
-        "conditions": null,
-        "display": null,
-        "display_options": null,
-        "field": "teams",
-        "group": null,
-        "hidden": false,
-        "interface": "list-m2m",
-        "note": null,
-        "options": {
-          "junctionCollection": "hall_slots_teams"
-        },
-        "readonly": false,
-        "required": false,
-        "searchable": true,
-        "sort": 15,
-        "special": [
-          "m2m"
-        ],
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "full"
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
@@ -803,6 +729,38 @@
         "foreign_key_table": null,
         "foreign_key_column": null
       }
+    },
+    {
+      "collection": "hall_slots",
+      "field": "teams",
+      "type": "alias",
+      "meta": {
+        "collection": "hall_slots",
+        "conditions": null,
+        "display": "related-values",
+        "display_options": {
+          "template": "{{teams_id.name}} {{teams_id.sport}}"
+        },
+        "field": "teams",
+        "group": null,
+        "hidden": false,
+        "interface": "list-m2m",
+        "note": null,
+        "options": {
+          "template": "{{hall_slots_id.hall.name}}, {{teams_id.name}} {{teams_id.sport}}"
+        },
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 18,
+        "special": [
+          "m2m"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      }
     }
   ],
   "relations": [
@@ -820,40 +778,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "hall_slots",
-        "column": "hall",
-        "foreign_key_table": "halls",
-        "foreign_key_column": "id",
-        "constraint_name": "hall_slots_hall_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
-      }
-    },
-    {
-      "collection": "hall_slots",
-      "field": "team",
-      "related_collection": "teams",
-      "meta": {
-        "junction_field": null,
-        "many_collection": "hall_slots",
-        "many_field": "team",
-        "one_allowed_collections": null,
-        "one_collection": "teams",
-        "one_collection_field": null,
-        "one_deselect_action": "nullify",
-        "one_field": null,
-        "sort_field": null
-      },
-      "schema": {
-        "table": "hall_slots",
-        "column": "team",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "hall_slots_team_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -878,7 +802,7 @@
         "foreign_key_column": "id",
         "constraint_name": "hall_slots_teams_hall_slots_id_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "CASCADE"
+        "on_delete": "SET NULL"
       }
     },
     {
@@ -895,15 +819,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "slot_claims",
-        "column": "hall_slot",
-        "foreign_key_table": "hall_slots",
-        "foreign_key_column": "id",
-        "constraint_name": "slot_claims_hall_slot_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -920,15 +835,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "trainings",
-        "column": "hall_slot",
-        "foreign_key_table": "hall_slots",
-        "foreign_key_column": "id",
-        "constraint_name": "trainings_hall_slot_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     }
   ]

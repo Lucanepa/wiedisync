@@ -171,8 +171,10 @@
       "meta": {
         "collection": "task_templates",
         "conditions": null,
-        "display": null,
-        "display_options": null,
+        "display": "related-values",
+        "display_options": {
+          "template": "{{name}}"
+        },
         "field": "team",
         "group": null,
         "hidden": false,
@@ -201,13 +203,13 @@
         "numeric_scale": 0,
         "is_nullable": true,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id"
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
@@ -217,8 +219,10 @@
       "meta": {
         "collection": "task_templates",
         "conditions": null,
-        "display": null,
-        "display_options": null,
+        "display": "related-values",
+        "display_options": {
+          "template": "{{first_name}} {{last_name}}"
+        },
         "field": "created_by",
         "group": null,
         "hidden": false,
@@ -247,13 +251,13 @@
         "numeric_scale": 0,
         "is_nullable": true,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": "members",
-        "foreign_key_column": "id"
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
@@ -364,15 +368,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "task_templates",
-        "column": "team",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "task_templates_team_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -389,15 +384,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "task_templates",
-        "column": "created_by",
-        "foreign_key_table": "members",
-        "foreign_key_column": "id",
-        "constraint_name": "task_templates_created_by_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     }
   ]

@@ -469,7 +469,7 @@
         "foreign_key_column": "id",
         "constraint_name": "message_reactions_message_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "NO ACTION"
+        "on_delete": "CASCADE"
       }
     },
     {
@@ -494,7 +494,7 @@
         "foreign_key_column": "id",
         "constraint_name": "messages_conversation_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "NO ACTION"
+        "on_delete": "CASCADE"
       }
     },
     {
@@ -519,7 +519,7 @@
         "foreign_key_column": "id",
         "constraint_name": "messages_sender_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "NO ACTION"
+        "on_delete": "CASCADE"
       }
     },
     {
@@ -544,7 +544,7 @@
         "foreign_key_column": "id",
         "constraint_name": "messages_poll_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "NO ACTION"
+        "on_delete": "SET NULL"
       }
     },
     {
@@ -569,7 +569,7 @@
         "foreign_key_column": "id",
         "constraint_name": "reports_message_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "NO ACTION"
+        "on_delete": "SET NULL"
       }
     }
   ]

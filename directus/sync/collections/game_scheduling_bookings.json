@@ -619,13 +619,13 @@
         "numeric_scale": 0,
         "is_nullable": true,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": "game_scheduling_opponents",
-        "foreign_key_column": "id"
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
@@ -635,8 +635,10 @@
       "meta": {
         "collection": "game_scheduling_bookings",
         "conditions": null,
-        "display": null,
-        "display_options": null,
+        "display": "related-values",
+        "display_options": {
+          "template": "{{home_team}} vs {{away_team}}"
+        },
         "field": "game",
         "group": null,
         "hidden": false,
@@ -665,13 +667,13 @@
         "numeric_scale": 0,
         "is_nullable": true,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": "games",
-        "foreign_key_column": "id"
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
@@ -711,13 +713,13 @@
         "numeric_scale": 0,
         "is_nullable": true,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": "game_scheduling_slots",
-        "foreign_key_column": "id"
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
@@ -828,15 +830,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "game_scheduling_bookings",
-        "column": "opponent",
-        "foreign_key_table": "game_scheduling_opponents",
-        "foreign_key_column": "id",
-        "constraint_name": "game_scheduling_bookings_opponent_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -853,15 +846,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "game_scheduling_bookings",
-        "column": "game",
-        "foreign_key_table": "games",
-        "foreign_key_column": "id",
-        "constraint_name": "game_scheduling_bookings_game_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -878,15 +862,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "game_scheduling_bookings",
-        "column": "slot",
-        "foreign_key_table": "game_scheduling_slots",
-        "foreign_key_column": "id",
-        "constraint_name": "game_scheduling_bookings_slot_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -903,15 +878,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "game_scheduling_slots",
-        "column": "booking",
-        "foreign_key_table": "game_scheduling_bookings",
-        "foreign_key_column": "id",
-        "constraint_name": "game_scheduling_slots_booking_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     }
   ]

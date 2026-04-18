@@ -1010,8 +1010,8 @@
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": "directus_files",
-        "foreign_key_column": "id"
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
@@ -1054,8 +1054,8 @@
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": "directus_files",
-        "foreign_key_column": "id"
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
@@ -1236,6 +1236,94 @@
     },
     {
       "collection": "registrations",
+      "field": "lizenz",
+      "type": "string",
+      "meta": {
+        "collection": "registrations",
+        "conditions": null,
+        "display": "raw",
+        "display_options": null,
+        "field": "lizenz",
+        "group": null,
+        "hidden": false,
+        "interface": "input",
+        "note": "Licence type(s), comma-separated",
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 26,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "lizenz",
+        "table": "registrations",
+        "data_type": "character varying",
+        "default_value": null,
+        "max_length": 255,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "registrations",
+      "field": "schiedsrichter_stufe",
+      "type": "string",
+      "meta": {
+        "collection": "registrations",
+        "conditions": null,
+        "display": "raw",
+        "display_options": null,
+        "field": "schiedsrichter_stufe",
+        "group": null,
+        "hidden": false,
+        "interface": "input",
+        "note": "Referee level (N4-3 to N1)",
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 27,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "schiedsrichter_stufe",
+        "table": "registrations",
+        "data_type": "character varying",
+        "default_value": null,
+        "max_length": 255,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "registrations",
       "field": "bb_doc_lizenz",
       "type": "uuid",
       "meta": {
@@ -1388,15 +1476,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "registrations",
-        "column": "id_upload_front",
-        "foreign_key_table": "directus_files",
-        "foreign_key_column": "id",
-        "constraint_name": "registrations_id_upload_front_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "NO ACTION"
       }
     },
     {
@@ -1413,15 +1492,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "registrations",
-        "column": "id_upload_back",
-        "foreign_key_table": "directus_files",
-        "foreign_key_column": "id",
-        "constraint_name": "registrations_id_upload_back_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "NO ACTION"
       }
     }
   ]

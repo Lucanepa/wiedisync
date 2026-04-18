@@ -642,50 +642,6 @@
     },
     {
       "collection": "members",
-      "field": "yob",
-      "type": "integer",
-      "meta": {
-        "collection": "members",
-        "conditions": null,
-        "display": null,
-        "display_options": null,
-        "field": "yob",
-        "group": null,
-        "hidden": false,
-        "interface": "input",
-        "note": null,
-        "options": null,
-        "readonly": false,
-        "required": false,
-        "searchable": true,
-        "sort": 13,
-        "special": null,
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "full"
-      },
-      "schema": {
-        "name": "yob",
-        "table": "members",
-        "data_type": "integer",
-        "default_value": null,
-        "max_length": null,
-        "numeric_precision": 32,
-        "numeric_scale": 0,
-        "is_nullable": true,
-        "is_unique": false,
-        "is_indexed": false,
-        "is_primary_key": false,
-        "is_generated": false,
-        "generation_expression": null,
-        "has_auto_increment": false,
-        "foreign_key_table": null,
-        "foreign_key_column": null
-      }
-    },
-    {
-      "collection": "members",
       "field": "licences",
       "type": "json",
       "meta": {
@@ -2372,7 +2328,7 @@
         "foreign_key_column": "id",
         "constraint_name": "blocks_blocker_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "NO ACTION"
+        "on_delete": "CASCADE"
       }
     },
     {
@@ -2397,7 +2353,7 @@
         "foreign_key_column": "id",
         "constraint_name": "blocks_blocked_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "NO ACTION"
+        "on_delete": "CASCADE"
       }
     },
     {
@@ -2472,7 +2428,7 @@
         "foreign_key_column": "id",
         "constraint_name": "conversation_members_member_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
+        "on_delete": "CASCADE"
       }
     },
     {
@@ -2497,7 +2453,7 @@
         "foreign_key_column": "id",
         "constraint_name": "conversations_created_by_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "RESTRICT"
+        "on_delete": "SET NULL"
       }
     },
     {
@@ -2716,7 +2672,7 @@
         "foreign_key_column": "id",
         "constraint_name": "message_reactions_member_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "NO ACTION"
+        "on_delete": "CASCADE"
       }
     },
     {
@@ -2741,7 +2697,7 @@
         "foreign_key_column": "id",
         "constraint_name": "message_requests_sender_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "NO ACTION"
+        "on_delete": "CASCADE"
       }
     },
     {
@@ -2766,7 +2722,7 @@
         "foreign_key_column": "id",
         "constraint_name": "message_requests_recipient_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "NO ACTION"
+        "on_delete": "CASCADE"
       }
     },
     {
@@ -2791,7 +2747,7 @@
         "foreign_key_column": "id",
         "constraint_name": "messages_sender_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "NO ACTION"
+        "on_delete": "CASCADE"
       }
     },
     {
@@ -2964,7 +2920,7 @@
         "foreign_key_column": "id",
         "constraint_name": "reports_reporter_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "NO ACTION"
+        "on_delete": "SET NULL"
       }
     },
     {
@@ -2989,7 +2945,7 @@
         "foreign_key_column": "id",
         "constraint_name": "reports_reported_member_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "NO ACTION"
+        "on_delete": "SET NULL"
       }
     },
     {
@@ -3014,7 +2970,7 @@
         "foreign_key_column": "id",
         "constraint_name": "reports_resolved_by_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "NO ACTION"
+        "on_delete": "SET NULL"
       }
     },
     {

@@ -632,7 +632,7 @@
         "foreign_key_column": "id",
         "constraint_name": "reports_reporter_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "NO ACTION"
+        "on_delete": "SET NULL"
       }
     },
     {
@@ -657,7 +657,7 @@
         "foreign_key_column": "id",
         "constraint_name": "reports_reported_member_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "NO ACTION"
+        "on_delete": "SET NULL"
       }
     },
     {
@@ -682,7 +682,7 @@
         "foreign_key_column": "id",
         "constraint_name": "reports_message_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "NO ACTION"
+        "on_delete": "SET NULL"
       }
     },
     {
@@ -707,7 +707,7 @@
         "foreign_key_column": "id",
         "constraint_name": "reports_conversation_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "NO ACTION"
+        "on_delete": "SET NULL"
       }
     },
     {
@@ -732,7 +732,7 @@
         "foreign_key_column": "id",
         "constraint_name": "reports_resolved_by_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "NO ACTION"
+        "on_delete": "SET NULL"
       }
     }
   ]

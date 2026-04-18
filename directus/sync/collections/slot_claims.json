@@ -413,8 +413,10 @@
       "meta": {
         "collection": "slot_claims",
         "conditions": null,
-        "display": null,
-        "display_options": null,
+        "display": "related-values",
+        "display_options": {
+          "template": "{{label}}"
+        },
         "field": "hall_slot",
         "group": null,
         "hidden": false,
@@ -443,13 +445,13 @@
         "numeric_scale": 0,
         "is_nullable": true,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": "hall_slots",
-        "foreign_key_column": "id"
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
@@ -459,8 +461,10 @@
       "meta": {
         "collection": "slot_claims",
         "conditions": null,
-        "display": null,
-        "display_options": null,
+        "display": "related-values",
+        "display_options": {
+          "template": "{{name}}"
+        },
         "field": "hall",
         "group": null,
         "hidden": false,
@@ -489,13 +493,13 @@
         "numeric_scale": 0,
         "is_nullable": true,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": "halls",
-        "foreign_key_column": "id"
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
@@ -505,8 +509,10 @@
       "meta": {
         "collection": "slot_claims",
         "conditions": null,
-        "display": null,
-        "display_options": null,
+        "display": "related-values",
+        "display_options": {
+          "template": "{{name}}"
+        },
         "field": "claimed_by_team",
         "group": null,
         "hidden": false,
@@ -535,13 +541,13 @@
         "numeric_scale": 0,
         "is_nullable": true,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id"
+        "foreign_key_table": null,
+        "foreign_key_column": null
       }
     },
     {
@@ -551,8 +557,10 @@
       "meta": {
         "collection": "slot_claims",
         "conditions": null,
-        "display": null,
-        "display_options": null,
+        "display": "related-values",
+        "display_options": {
+          "template": "{{first_name}} {{last_name}}"
+        },
         "field": "claimed_by_member",
         "group": null,
         "hidden": false,
@@ -581,7 +589,7 @@
         "numeric_scale": 0,
         "is_nullable": true,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
@@ -698,15 +706,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "slot_claims",
-        "column": "hall_slot",
-        "foreign_key_table": "hall_slots",
-        "foreign_key_column": "id",
-        "constraint_name": "slot_claims_hall_slot_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -723,15 +722,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "slot_claims",
-        "column": "hall",
-        "foreign_key_table": "halls",
-        "foreign_key_column": "id",
-        "constraint_name": "slot_claims_hall_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {
@@ -748,15 +738,6 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
-      },
-      "schema": {
-        "table": "slot_claims",
-        "column": "claimed_by_team",
-        "foreign_key_table": "teams",
-        "foreign_key_column": "id",
-        "constraint_name": "slot_claims_claimed_by_team_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
       }
     },
     {

@@ -449,6 +449,21 @@ export default {
       }
     })
 
+    // Count of non-member mixed tournament signups (for event participant count boost).
+    // Non-members can't get a participations row (FK to members), so the kscw-website
+    // form writes them to mixed_tournament_signups with is_member=false. This endpoint
+    // lets the frontend add those to the event's confirmed count.
+    router.get('/public/mixed-tournament/non-member-count', async (_req, res) => {
+      try {
+        const row = await database('mixed_tournament_signups')
+          .where('is_member', false).count({ n: 'id' }).first()
+        res.json({ count: Number(row?.n ?? 0) })
+      } catch (err) {
+        logEndpointError(log, 'public/mixed-tournament/non-member-count', err, _req)
+        res.status(500).json({ error: 'Internal error' })
+      }
+    })
+
     // ── Admin Sync Triggers ─────────────────────────────────────
 
     router.post('/admin/sv-sync', async (req, res) => {

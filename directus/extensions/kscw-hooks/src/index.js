@@ -1834,5 +1834,33 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     }
   })
 
+  // Messaging retention (Plan 05 / spec §9)
+  // Runs nightly at 03:00 UTC. Failures isolated via try/catch.
+  schedule('0 3 * * *', async () => {
+    try {
+      const db = database
+      const now = new Date()
+
+      const r1 = await db('messages')
+        .whereRaw(`created_at < NOW() - INTERVAL '12 months'`)
+        .del()
+      const r2 = await db('messages')
+        .whereRaw(`deleted_at IS NOT NULL AND deleted_at < NOW() - INTERVAL '30 days'`)
+        .del()
+      const r3 = await db('message_requests')
+        .where('status', 'declined')
+        .andWhereRaw(`resolved_at < NOW() - INTERVAL '90 days'`)
+        .del()
+
+      logger.info({
+        plan: 'messaging-05-retention',
+        at: now.toISOString(),
+        purged: { old_messages: r1, soft_deleted_messages: r2, declined_requests: r3 },
+      }, 'messaging retention cron complete')
+    } catch (err) {
+      logger.error({ err: err?.message ?? String(err) }, 'messaging retention cron failed')
+    }
+  })
+
   log.info('KSCW hooks loaded: role-sync (5 actions, 2 filters), Turnstile, member privacy, registration approval, 11 crons (validations+notifications in Postgres)')
 }

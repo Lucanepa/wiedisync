@@ -13,6 +13,7 @@ import {
   requireRequestRecipient,
   requireMessageOwner, requireTeamModerator, snapshotMessage, requireAdmin,
   resolveRecipientsForPush, buildPushPreview,
+  checkExportRateLimit, markExportDone,
 } from './messaging-helpers.js'
 
 const stub = (name) => (req, res) => res.status(501).json({
@@ -903,6 +904,70 @@ export function registerMessaging(router, ctx) {
     } catch (e) { sendError(res, log, e) }
   })
 
-  // ── The rest stay 501 for Plans 03-05 ───────────────────────────────
-  router.post('/messaging/export',                        stub('POST /export'))
+  // ── POST /messaging/export ──────────────────────────────────────────
+  router.post('/messaging/export', async (req, res) => {
+    try {
+      const userId = requireAuth(req)
+      const me = await requireMember(db, userId)
+
+      const cachedAt = await checkExportRateLimit(db, me.id)
+      if (cachedAt) {
+        return res.status(200).json({
+          cached: true, last_export_at: cachedAt,
+          message: 'Rate-limited to 1 export per 24h. Re-request after 24h from last_export_at.',
+        })
+      }
+
+      const myConvs = await db('conversation_members as cm')
+        .join('conversations as c', 'c.id', 'cm.conversation')
+        .where('cm.member', me.id)
+        .select('c.id', 'c.type', 'c.team', 'c.title', 'c.created_at', 'c.last_message_at',
+                'cm.joined_at', 'cm.last_read_at', 'cm.muted', 'cm.archived')
+
+      const convIds = myConvs.map(c => c.id)
+
+      const messages = convIds.length > 0
+        ? await db('messages').whereIn('conversation', convIds)
+            .select('id', 'conversation', 'sender', 'type', 'body', 'poll',
+                    'created_at', 'edited_at', 'deleted_at')
+        : []
+
+      const reactions = convIds.length > 0
+        ? await db('message_reactions as mr')
+            .join('messages as m', 'm.id', 'mr.message')
+            .whereIn('m.conversation', convIds)
+            .andWhere(function () {
+              this.where('mr.member', me.id).orWhere('m.sender', me.id)
+            })
+            .select('mr.id', 'mr.message', 'mr.member', 'mr.emoji', 'mr.created_at')
+        : []
+
+      const blocks = await db('blocks').where('blocker', me.id)
+        .select('id', 'blocker', 'blocked', 'created_at')
+
+      const settingsRow = await db('members').where('id', me.id)
+        .select('communications_team_chat_enabled', 'communications_dm_enabled',
+                'communications_banned', 'push_preview_content',
+                'consent_decision', 'consent_prompted_at', 'last_export_at')
+        .first()
+
+      const reportsFiled = await db('reports').where('reporter', me.id)
+        .select('id', 'reported_member', 'message', 'conversation',
+                'reason', 'note', 'message_snapshot', 'status', 'created_at')
+
+      const bundle = {
+        generated_at: new Date().toISOString(),
+        member_id: me.id,
+        conversations: myConvs,
+        messages,
+        reactions,
+        blocks,
+        settings: settingsRow,
+        reports_filed: reportsFiled,
+      }
+
+      await markExportDone(db, me.id)
+      res.json(bundle)
+    } catch (e) { sendError(res, log, e) }
+  })
 }

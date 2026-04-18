@@ -29,6 +29,7 @@ import bugfixes from './locales/en/bugfixes'
 import guide from './locales/en/guide'
 import invitations from './locales/en/invitations'
 import announcements from './locales/en/announcements'
+import messaging from './locales/en/messaging'
 
 import deCommon from './locales/de/common'
 import deNav from './locales/de/nav'
@@ -58,6 +59,7 @@ import deBugfixes from './locales/de/bugfixes'
 import deGuide from './locales/de/guide'
 import deInvitations from './locales/de/invitations'
 import deAnnouncements from './locales/de/announcements'
+import deMessaging from './locales/de/messaging'
 
 import frCommon from './locales/fr/common'
 import frNav from './locales/fr/nav'
@@ -86,6 +88,7 @@ import frBugfixes from './locales/fr/bugfixes'
 import frGuide from './locales/fr/guide'
 import frInvitations from './locales/fr/invitations'
 import frAnnouncements from './locales/fr/announcements'
+import frMessaging from './locales/fr/messaging'
 
 import itCommon from './locales/it/common'
 import itNav from './locales/it/nav'
@@ -114,6 +117,7 @@ import itBugfixes from './locales/it/bugfixes'
 import itGuide from './locales/it/guide'
 import itInvitations from './locales/it/invitations'
 import itAnnouncements from './locales/it/announcements'
+import itMessaging from './locales/it/messaging'
 
 import gswCommon from './locales/gsw/common'
 import gswNav from './locales/gsw/nav'
@@ -143,6 +147,7 @@ import gswBugfixes from './locales/gsw/bugfixes'
 import gswGuide from './locales/gsw/guide'
 import gswInvitations from './locales/gsw/invitations'
 import gswAnnouncements from './locales/gsw/announcements'
+import gswMessaging from './locales/gsw/messaging'
 
 function getInitialLanguage(): string {
   if (typeof window === 'undefined') return 'de'
@@ -191,6 +196,7 @@ i18n.use(initReactI18next).init({
     'guide',
     'invitations',
     'announcements',
+    'messaging',
   ],
   defaultNS: 'common',
   resources: {
@@ -223,6 +229,7 @@ i18n.use(initReactI18next).init({
       guide,
       invitations,
       announcements,
+      messaging,
     },
     de: {
       common: deCommon,
@@ -253,6 +260,7 @@ i18n.use(initReactI18next).init({
       guide: deGuide,
       invitations: deInvitations,
       announcements: deAnnouncements,
+      messaging: deMessaging,
     },
     fr: {
       common: frCommon,
@@ -282,6 +290,7 @@ i18n.use(initReactI18next).init({
       guide: frGuide,
       invitations: frInvitations,
       announcements: frAnnouncements,
+      messaging: frMessaging,
     },
     it: {
       common: itCommon,
@@ -311,6 +320,7 @@ i18n.use(initReactI18next).init({
       guide: itGuide,
       invitations: itInvitations,
       announcements: itAnnouncements,
+      messaging: itMessaging,
     },
     gsw: {
       common: gswCommon,
@@ -341,6 +351,7 @@ i18n.use(initReactI18next).init({
       guide: gswGuide,
       invitations: gswInvitations,
       announcements: gswAnnouncements,
+      messaging: gswMessaging,
     },
   },
   interpolation: {

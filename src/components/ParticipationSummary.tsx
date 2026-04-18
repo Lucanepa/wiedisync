@@ -1,8 +1,12 @@
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Check, X, HelpCircle, Hourglass, Award } from 'lucide-react'
 import { useCollection } from '../lib/query'
 import { useRealtime } from '../hooks/useRealtime'
+import { kscwApi } from '../lib/api'
 import type { Participation } from '../types'
+
+const MIXED_TOURNAMENT_EVENT_ID = '5'
 
 interface ParticipationSummaryProps {
   activityType: Participation['activity_type']
@@ -44,6 +48,19 @@ export default function ParticipationSummary({
   // Auto-refresh when participations change (create/update/delete)
   useRealtime('participations', () => { if (!skipFetch) refetch() })
 
+  // Mixed tournament: non-member signups (kscw-website form) don't create a
+  // participations row (FK to members), so fetch them separately and add to confirmed.
+  const isMixedTournament = activityType === 'event' && String(activityId) === MIXED_TOURNAMENT_EVENT_ID
+  const [extraConfirmed, setExtraConfirmed] = useState(0)
+  useEffect(() => {
+    if (!isMixedTournament) { setExtraConfirmed(0); return }
+    let cancelled = false
+    kscwApi<{ count: number }>('/public/mixed-tournament/non-member-count')
+      .then((r) => { if (!cancelled) setExtraConfirmed(r?.count ?? 0) })
+      .catch(() => { /* silent — count stays at 0 */ })
+    return () => { cancelled = true }
+  }, [isMixedTournament])
+
   const data = prefetched ?? fetched
 
   // Deduplicate by member: when an event has multiple sessions, a member may
@@ -82,14 +99,15 @@ export default function ParticipationSummary({
   const staffConfirmed = staffOnlyConfirmed.length + playerCoachConfirmed.length
   const staffConfirmedGuests = staffOnlyConfirmed.reduce((sum, p) => sum + (p.guest_count ?? 0), 0)
 
-  // Total for green counter = players + all guests (coaches excluded from number)
+  // Total for green counter = players + all guests + extra non-member signups
+  // (coaches excluded from number; extraConfirmed is only > 0 for the mixed tournament event)
   const allGuests = confirmedGuests + staffConfirmedGuests
-  const confirmedTotal = confirmed + allGuests
+  const confirmedTotal = confirmed + allGuests + extraConfirmed
   const hasGuestBreakdown = allGuests > 0
 
   // Don't hide during loading — only hide when fetch completed with no data
-  if (data.length === 0 && !isLoading) return null
-  if (data.length === 0) return <span className="text-xs text-gray-400">…</span>
+  if (data.length === 0 && extraConfirmed === 0 && !isLoading) return null
+  if (data.length === 0 && extraConfirmed === 0) return <span className="text-xs text-gray-400">…</span>
 
   if (bars) {
     return (

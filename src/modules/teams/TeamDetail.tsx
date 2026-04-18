@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams, Link } from 'react-router-dom'
-import { Move, Check, X as XIcon, XCircle, User, ZoomIn, ZoomOut } from 'lucide-react'
+import { Move, Check, X as XIcon, XCircle, User, ZoomIn, ZoomOut, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react'
 import { logActivity } from '../../utils/logActivity'
 import { useTeamMembers } from '../../hooks/useTeamMembers'
 import { useAuth } from '../../hooks/useAuth'
@@ -23,6 +23,8 @@ import type { Team, Member, Sponsor } from '../../types'
 import { asObj } from '../../utils/relations'
 import PollsSection from '../polls/PollsSection'
 import { isFeatureEnabled } from '../../utils/featureToggles'
+import { messagingFeatureEnabled } from '../../utils/messagingFeatureFlag'
+import TeamMessagesTab from '../messaging/components/TeamMessagesTab'
 import { createRecord, deleteRecord, fetchAllItems, fetchItems, updateRecord } from '../../lib/api'
 
 type SortKey = 'name' | 'number' | 'position' | 'email' | 'phone' | 'birthdate' | 'role'
@@ -600,6 +602,11 @@ export default function TeamDetail() {
         </div>
       )}
 
+      {/* Nachrichten */}
+      {messagingFeatureEnabled() && team && (
+        <TeamMessagesSection teamId={String(team.id)} />
+      )}
+
       {/* Sponsors */}
       {teamSponsors.length > 0 && (
         <div className="mt-8">
@@ -649,5 +656,27 @@ function SortHeader({ label, sortKey: key, current, dir, onClick, className = ''
         )}
       </span>
     </th>
+  )
+}
+
+function TeamMessagesSection({ teamId }: { teamId: string }) {
+  const { t } = useTranslation('messaging')
+  const [open, setOpen] = useState(true)
+  return (
+    <section className="mt-6 rounded-lg border border-border bg-card">
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center justify-between px-4 py-3 text-left"
+        aria-expanded={open}
+      >
+        <span className="flex items-center gap-2 font-semibold text-sm">
+          <MessageSquare className="h-4 w-4" />
+          {t('tabLabel')}
+        </span>
+        {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+      </button>
+      {open && <div className="border-t border-border"><TeamMessagesTab teamId={teamId} /></div>}
+    </section>
   )
 }

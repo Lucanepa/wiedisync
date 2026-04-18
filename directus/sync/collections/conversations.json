@@ -1,20 +1,20 @@
 {
   "collection": {
-    "collection": "polls",
+    "collection": "conversations",
     "meta": {
       "accountability": "all",
       "archive_app_filter": true,
       "archive_field": null,
       "archive_value": null,
       "collapse": "open",
-      "collection": "polls",
+      "collection": "conversations",
       "color": null,
       "display_template": null,
       "group": null,
       "hidden": false,
-      "icon": "poll",
+      "icon": "chat",
       "item_duplication_fields": null,
-      "note": null,
+      "note": "Messaging v1 conversations",
       "preview_url": null,
       "singleton": false,
       "sort": null,
@@ -24,30 +24,32 @@
       "versioning": false
     },
     "schema": {
-      "name": "polls"
+      "name": "conversations"
     }
   },
   "fields": [
     {
-      "collection": "polls",
+      "collection": "conversations",
       "field": "id",
-      "type": "integer",
+      "type": "uuid",
       "meta": {
-        "collection": "polls",
+        "collection": "conversations",
         "conditions": null,
         "display": null,
         "display_options": null,
         "field": "id",
         "group": null,
         "hidden": true,
-        "interface": "numeric",
+        "interface": "input",
         "note": null,
         "options": null,
         "readonly": true,
         "required": false,
         "searchable": true,
         "sort": 1,
-        "special": null,
+        "special": [
+          "uuid"
+        ],
         "translations": null,
         "validation": null,
         "validation_message": null,
@@ -55,40 +57,55 @@
       },
       "schema": {
         "name": "id",
-        "table": "polls",
-        "data_type": "integer",
-        "default_value": "nextval('polls_id_seq'::regclass)",
+        "table": "conversations",
+        "data_type": "uuid",
+        "default_value": null,
         "max_length": null,
-        "numeric_precision": 32,
-        "numeric_scale": 0,
+        "numeric_precision": null,
+        "numeric_scale": null,
         "is_nullable": false,
         "is_unique": true,
         "is_indexed": false,
         "is_primary_key": true,
         "is_generated": false,
         "generation_expression": null,
-        "has_auto_increment": true,
+        "has_auto_increment": false,
         "foreign_key_table": null,
         "foreign_key_column": null
       }
     },
     {
-      "collection": "polls",
-      "field": "question",
+      "collection": "conversations",
+      "field": "type",
       "type": "string",
       "meta": {
-        "collection": "polls",
+        "collection": "conversations",
         "conditions": null,
         "display": null,
         "display_options": null,
-        "field": "question",
+        "field": "type",
         "group": null,
         "hidden": false,
-        "interface": "input",
+        "interface": "select-dropdown",
         "note": null,
-        "options": null,
+        "options": {
+          "choices": [
+            {
+              "text": "Team",
+              "value": "team"
+            },
+            {
+              "text": "DM",
+              "value": "dm"
+            },
+            {
+              "text": "DM request",
+              "value": "dm_request"
+            }
+          ]
+        },
         "readonly": false,
-        "required": false,
+        "required": true,
         "searchable": true,
         "sort": 2,
         "special": null,
@@ -98,14 +115,14 @@
         "width": "full"
       },
       "schema": {
-        "name": "question",
-        "table": "polls",
+        "name": "type",
+        "table": "conversations",
         "data_type": "character varying",
         "default_value": null,
         "max_length": 255,
         "numeric_precision": null,
         "numeric_scale": null,
-        "is_nullable": true,
+        "is_nullable": false,
         "is_unique": false,
         "is_indexed": false,
         "is_primary_key": false,
@@ -117,83 +134,24 @@
       }
     },
     {
-      "collection": "polls",
-      "field": "options",
-      "type": "json",
+      "collection": "conversations",
+      "field": "title",
+      "type": "string",
       "meta": {
-        "collection": "polls",
+        "collection": "conversations",
         "conditions": null,
         "display": null,
         "display_options": null,
-        "field": "options",
+        "field": "title",
         "group": null,
         "hidden": false,
-        "interface": "input-code",
+        "interface": "input",
         "note": null,
-        "options": {
-          "language": "json"
-        },
+        "options": null,
         "readonly": false,
         "required": false,
         "searchable": true,
         "sort": 3,
-        "special": [
-          "cast-json"
-        ],
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "full"
-      },
-      "schema": {
-        "name": "options",
-        "table": "polls",
-        "data_type": "json",
-        "default_value": null,
-        "max_length": null,
-        "numeric_precision": null,
-        "numeric_scale": null,
-        "is_nullable": true,
-        "is_unique": false,
-        "is_indexed": false,
-        "is_primary_key": false,
-        "is_generated": false,
-        "generation_expression": null,
-        "has_auto_increment": false,
-        "foreign_key_table": null,
-        "foreign_key_column": null
-      }
-    },
-    {
-      "collection": "polls",
-      "field": "mode",
-      "type": "string",
-      "meta": {
-        "collection": "polls",
-        "conditions": null,
-        "display": null,
-        "display_options": null,
-        "field": "mode",
-        "group": null,
-        "hidden": false,
-        "interface": "select-dropdown",
-        "note": null,
-        "options": {
-          "choices": [
-            {
-              "text": "single",
-              "value": "single"
-            },
-            {
-              "text": "multi",
-              "value": "multi"
-            }
-          ]
-        },
-        "readonly": false,
-        "required": false,
-        "searchable": true,
-        "sort": 4,
         "special": null,
         "translations": null,
         "validation": null,
@@ -201,11 +159,11 @@
         "width": "full"
       },
       "schema": {
-        "name": "mode",
-        "table": "polls",
+        "name": "title",
+        "table": "conversations",
         "data_type": "character varying",
         "default_value": null,
-        "max_length": 255,
+        "max_length": 120,
         "numeric_precision": null,
         "numeric_scale": null,
         "is_nullable": true,
@@ -220,15 +178,61 @@
       }
     },
     {
-      "collection": "polls",
-      "field": "deadline",
+      "collection": "conversations",
+      "field": "created_at",
       "type": "timestamp",
       "meta": {
-        "collection": "polls",
+        "collection": "conversations",
         "conditions": null,
         "display": null,
         "display_options": null,
-        "field": "deadline",
+        "field": "created_at",
+        "group": null,
+        "hidden": false,
+        "interface": "datetime",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 4,
+        "special": [
+          "date-created"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "created_at",
+        "table": "conversations",
+        "data_type": "timestamp with time zone",
+        "default_value": "CURRENT_TIMESTAMP",
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": false,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "conversations",
+      "field": "last_message_at",
+      "type": "timestamp",
+      "meta": {
+        "collection": "conversations",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "last_message_at",
         "group": null,
         "hidden": false,
         "interface": "datetime",
@@ -245,8 +249,8 @@
         "width": "full"
       },
       "schema": {
-        "name": "deadline",
-        "table": "polls",
+        "name": "last_message_at",
+        "table": "conversations",
         "data_type": "timestamp with time zone",
         "default_value": null,
         "max_length": null,
@@ -254,7 +258,7 @@
         "numeric_scale": null,
         "is_nullable": true,
         "is_unique": false,
-        "is_indexed": false,
+        "is_indexed": true,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
@@ -264,31 +268,20 @@
       }
     },
     {
-      "collection": "polls",
-      "field": "status",
+      "collection": "conversations",
+      "field": "last_message_preview",
       "type": "string",
       "meta": {
-        "collection": "polls",
+        "collection": "conversations",
         "conditions": null,
         "display": null,
         "display_options": null,
-        "field": "status",
+        "field": "last_message_preview",
         "group": null,
         "hidden": false,
-        "interface": "select-dropdown",
+        "interface": "input",
         "note": null,
-        "options": {
-          "choices": [
-            {
-              "text": "open",
-              "value": "open"
-            },
-            {
-              "text": "closed",
-              "value": "closed"
-            }
-          ]
-        },
+        "options": null,
         "readonly": false,
         "required": false,
         "searchable": true,
@@ -300,11 +293,11 @@
         "width": "full"
       },
       "schema": {
-        "name": "status",
-        "table": "polls",
+        "name": "last_message_preview",
+        "table": "conversations",
         "data_type": "character varying",
         "default_value": null,
-        "max_length": 255,
+        "max_length": 120,
         "numeric_precision": null,
         "numeric_scale": null,
         "is_nullable": true,
@@ -319,60 +312,14 @@
       }
     },
     {
-      "collection": "polls",
-      "field": "anonymous",
-      "type": "boolean",
-      "meta": {
-        "collection": "polls",
-        "conditions": null,
-        "display": null,
-        "display_options": null,
-        "field": "anonymous",
-        "group": null,
-        "hidden": false,
-        "interface": "boolean",
-        "note": null,
-        "options": null,
-        "readonly": false,
-        "required": false,
-        "searchable": true,
-        "sort": 7,
-        "special": null,
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "full"
-      },
-      "schema": {
-        "name": "anonymous",
-        "table": "polls",
-        "data_type": "boolean",
-        "default_value": false,
-        "max_length": null,
-        "numeric_precision": null,
-        "numeric_scale": null,
-        "is_nullable": false,
-        "is_unique": false,
-        "is_indexed": false,
-        "is_primary_key": false,
-        "is_generated": false,
-        "generation_expression": null,
-        "has_auto_increment": false,
-        "foreign_key_table": null,
-        "foreign_key_column": null
-      }
-    },
-    {
-      "collection": "polls",
+      "collection": "conversations",
       "field": "team",
       "type": "integer",
       "meta": {
-        "collection": "polls",
+        "collection": "conversations",
         "conditions": null,
-        "display": "related-values",
-        "display_options": {
-          "template": "{{name}}"
-        },
+        "display": null,
+        "display_options": null,
         "field": "team",
         "group": null,
         "hidden": false,
@@ -381,6 +328,52 @@
         "options": null,
         "readonly": false,
         "required": false,
+        "searchable": true,
+        "sort": 7,
+        "special": [
+          "m2o"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      },
+      "schema": {
+        "name": "team",
+        "table": "conversations",
+        "data_type": "integer",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": true,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": "teams",
+        "foreign_key_column": "id"
+      }
+    },
+    {
+      "collection": "conversations",
+      "field": "created_by",
+      "type": "integer",
+      "meta": {
+        "collection": "conversations",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "created_by",
+        "group": null,
+        "hidden": false,
+        "interface": "select-dropdown-m2o",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": true,
         "searchable": true,
         "sort": 8,
         "special": [
@@ -392,39 +385,37 @@
         "width": "full"
       },
       "schema": {
-        "name": "team",
-        "table": "polls",
+        "name": "created_by",
+        "table": "conversations",
         "data_type": "integer",
         "default_value": null,
         "max_length": null,
         "numeric_precision": 32,
         "numeric_scale": 0,
-        "is_nullable": true,
+        "is_nullable": false,
         "is_unique": false,
-        "is_indexed": true,
+        "is_indexed": false,
         "is_primary_key": false,
         "is_generated": false,
         "generation_expression": null,
         "has_auto_increment": false,
-        "foreign_key_table": null,
-        "foreign_key_column": null
+        "foreign_key_table": "members",
+        "foreign_key_column": "id"
       }
     },
     {
-      "collection": "polls",
-      "field": "created_by",
-      "type": "integer",
+      "collection": "conversations",
+      "field": "members",
+      "type": "alias",
       "meta": {
-        "collection": "polls",
+        "collection": "conversations",
         "conditions": null,
-        "display": "related-values",
-        "display_options": {
-          "template": "{{first_name}} {{last_name}}"
-        },
-        "field": "created_by",
+        "display": null,
+        "display_options": null,
+        "field": "members",
         "group": null,
         "hidden": false,
-        "interface": "select-dropdown-m2o",
+        "interface": "list-m2m",
         "note": null,
         "options": null,
         "readonly": false,
@@ -432,229 +423,48 @@
         "searchable": true,
         "sort": 9,
         "special": [
-          "m2o"
+          "m2m"
         ],
         "translations": null,
         "validation": null,
         "validation_message": null,
         "width": "full"
-      },
-      "schema": {
-        "name": "created_by",
-        "table": "polls",
-        "data_type": "integer",
-        "default_value": null,
-        "max_length": null,
-        "numeric_precision": 32,
-        "numeric_scale": 0,
-        "is_nullable": true,
-        "is_unique": false,
-        "is_indexed": true,
-        "is_primary_key": false,
-        "is_generated": false,
-        "generation_expression": null,
-        "has_auto_increment": false,
-        "foreign_key_table": null,
-        "foreign_key_column": null
-      }
-    },
-    {
-      "collection": "polls",
-      "field": "date_created",
-      "type": "timestamp",
-      "meta": {
-        "collection": "polls",
-        "conditions": null,
-        "display": null,
-        "display_options": null,
-        "field": "date_created",
-        "group": null,
-        "hidden": true,
-        "interface": "datetime",
-        "note": null,
-        "options": null,
-        "readonly": true,
-        "required": false,
-        "searchable": true,
-        "sort": 10,
-        "special": [
-          "date-created"
-        ],
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "half"
-      },
-      "schema": {
-        "name": "date_created",
-        "table": "polls",
-        "data_type": "timestamp with time zone",
-        "default_value": null,
-        "max_length": null,
-        "numeric_precision": null,
-        "numeric_scale": null,
-        "is_nullable": true,
-        "is_unique": false,
-        "is_indexed": false,
-        "is_primary_key": false,
-        "is_generated": false,
-        "generation_expression": null,
-        "has_auto_increment": false,
-        "foreign_key_table": null,
-        "foreign_key_column": null
-      }
-    },
-    {
-      "collection": "polls",
-      "field": "date_updated",
-      "type": "timestamp",
-      "meta": {
-        "collection": "polls",
-        "conditions": null,
-        "display": null,
-        "display_options": null,
-        "field": "date_updated",
-        "group": null,
-        "hidden": true,
-        "interface": "datetime",
-        "note": null,
-        "options": null,
-        "readonly": true,
-        "required": false,
-        "searchable": true,
-        "sort": 11,
-        "special": [
-          "date-updated"
-        ],
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "half"
-      },
-      "schema": {
-        "name": "date_updated",
-        "table": "polls",
-        "data_type": "timestamp with time zone",
-        "default_value": null,
-        "max_length": null,
-        "numeric_precision": null,
-        "numeric_scale": null,
-        "is_nullable": true,
-        "is_unique": false,
-        "is_indexed": false,
-        "is_primary_key": false,
-        "is_generated": false,
-        "generation_expression": null,
-        "has_auto_increment": false,
-        "foreign_key_table": null,
-        "foreign_key_column": null
-      }
-    },
-    {
-      "collection": "polls",
-      "field": "conversation",
-      "type": "uuid",
-      "meta": {
-        "collection": "polls",
-        "conditions": null,
-        "display": null,
-        "display_options": null,
-        "field": "conversation",
-        "group": null,
-        "hidden": false,
-        "interface": "select-dropdown-m2o",
-        "note": "If set, poll is scoped to a conversation instead of a team",
-        "options": null,
-        "readonly": false,
-        "required": false,
-        "searchable": true,
-        "sort": 12,
-        "special": [
-          "m2o"
-        ],
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "full"
-      },
-      "schema": {
-        "name": "conversation",
-        "table": "polls",
-        "data_type": "uuid",
-        "default_value": null,
-        "max_length": null,
-        "numeric_precision": null,
-        "numeric_scale": null,
-        "is_nullable": true,
-        "is_unique": false,
-        "is_indexed": false,
-        "is_primary_key": false,
-        "is_generated": false,
-        "generation_expression": null,
-        "has_auto_increment": false,
-        "foreign_key_table": "conversations",
-        "foreign_key_column": "id"
       }
     }
   ],
   "relations": [
     {
-      "collection": "messages",
-      "field": "poll",
-      "related_collection": "polls",
+      "collection": "conversation_members",
+      "field": "conversation",
+      "related_collection": "conversations",
       "meta": {
-        "junction_field": null,
-        "many_collection": "messages",
-        "many_field": "poll",
+        "junction_field": "member",
+        "many_collection": "conversation_members",
+        "many_field": "conversation",
         "one_allowed_collections": null,
-        "one_collection": "polls",
+        "one_collection": "conversations",
         "one_collection_field": null,
         "one_deselect_action": "nullify",
-        "one_field": null,
+        "one_field": "members",
         "sort_field": null
       },
       "schema": {
-        "table": "messages",
-        "column": "poll",
-        "foreign_key_table": "polls",
+        "table": "conversation_members",
+        "column": "conversation",
+        "foreign_key_table": "conversations",
         "foreign_key_column": "id",
-        "constraint_name": "messages_poll_foreign",
+        "constraint_name": "conversation_members_conversation_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "NO ACTION"
+        "on_delete": "SET NULL"
       }
     },
     {
-      "collection": "poll_votes",
-      "field": "poll",
-      "related_collection": "polls",
-      "meta": {
-        "junction_field": null,
-        "many_collection": "poll_votes",
-        "many_field": "poll",
-        "one_allowed_collections": null,
-        "one_collection": "polls",
-        "one_collection_field": null,
-        "one_deselect_action": "nullify",
-        "one_field": null,
-        "sort_field": null
-      },
-      "schema": {
-        "table": "poll_votes",
-        "column": "poll",
-        "foreign_key_table": "polls",
-        "foreign_key_column": "id",
-        "constraint_name": "poll_votes_poll_foreign",
-        "on_update": "NO ACTION",
-        "on_delete": "CASCADE"
-      }
-    },
-    {
-      "collection": "polls",
+      "collection": "conversations",
       "field": "team",
       "related_collection": "teams",
       "meta": {
         "junction_field": null,
-        "many_collection": "polls",
+        "many_collection": "conversations",
         "many_field": "team",
         "one_allowed_collections": null,
         "one_collection": "teams",
@@ -662,15 +472,24 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
+      },
+      "schema": {
+        "table": "conversations",
+        "column": "team",
+        "foreign_key_table": "teams",
+        "foreign_key_column": "id",
+        "constraint_name": "conversations_team_foreign",
+        "on_update": "NO ACTION",
+        "on_delete": "SET NULL"
       }
     },
     {
-      "collection": "polls",
+      "collection": "conversations",
       "field": "created_by",
       "related_collection": "members",
       "meta": {
         "junction_field": null,
-        "many_collection": "polls",
+        "many_collection": "conversations",
         "many_field": "created_by",
         "one_allowed_collections": null,
         "one_collection": "members",
@@ -678,6 +497,65 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
+      },
+      "schema": {
+        "table": "conversations",
+        "column": "created_by",
+        "foreign_key_table": "members",
+        "foreign_key_column": "id",
+        "constraint_name": "conversations_created_by_foreign",
+        "on_update": "NO ACTION",
+        "on_delete": "RESTRICT"
+      }
+    },
+    {
+      "collection": "message_requests",
+      "field": "conversation",
+      "related_collection": "conversations",
+      "meta": {
+        "junction_field": null,
+        "many_collection": "message_requests",
+        "many_field": "conversation",
+        "one_allowed_collections": null,
+        "one_collection": "conversations",
+        "one_collection_field": null,
+        "one_deselect_action": "nullify",
+        "one_field": null,
+        "sort_field": null
+      },
+      "schema": {
+        "table": "message_requests",
+        "column": "conversation",
+        "foreign_key_table": "conversations",
+        "foreign_key_column": "id",
+        "constraint_name": "message_requests_conversation_foreign",
+        "on_update": "NO ACTION",
+        "on_delete": "NO ACTION"
+      }
+    },
+    {
+      "collection": "messages",
+      "field": "conversation",
+      "related_collection": "conversations",
+      "meta": {
+        "junction_field": null,
+        "many_collection": "messages",
+        "many_field": "conversation",
+        "one_allowed_collections": null,
+        "one_collection": "conversations",
+        "one_collection_field": null,
+        "one_deselect_action": "nullify",
+        "one_field": null,
+        "sort_field": null
+      },
+      "schema": {
+        "table": "messages",
+        "column": "conversation",
+        "foreign_key_table": "conversations",
+        "foreign_key_column": "id",
+        "constraint_name": "messages_conversation_foreign",
+        "on_update": "NO ACTION",
+        "on_delete": "NO ACTION"
       }
     },
     {
@@ -701,6 +579,31 @@
         "foreign_key_table": "conversations",
         "foreign_key_column": "id",
         "constraint_name": "polls_conversation_foreign",
+        "on_update": "NO ACTION",
+        "on_delete": "NO ACTION"
+      }
+    },
+    {
+      "collection": "reports",
+      "field": "conversation",
+      "related_collection": "conversations",
+      "meta": {
+        "junction_field": null,
+        "many_collection": "reports",
+        "many_field": "conversation",
+        "one_allowed_collections": null,
+        "one_collection": "conversations",
+        "one_collection_field": null,
+        "one_deselect_action": "nullify",
+        "one_field": null,
+        "sort_field": null
+      },
+      "schema": {
+        "table": "reports",
+        "column": "conversation",
+        "foreign_key_table": "conversations",
+        "foreign_key_column": "id",
+        "constraint_name": "reports_conversation_foreign",
         "on_update": "NO ACTION",
         "on_delete": "NO ACTION"
       }

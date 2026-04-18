@@ -104,6 +104,7 @@ export default {
   settingsExportHint: 'Exportiere alli dini Nachrichte und Iistellige als JSON-Datei.',
   settingsExportButton: 'Exportiere',
   settingsExportCached: 'Export scho vorhande ({{time}}). Spöter nomol versuche.',
+  settingsExportError: 'Export fehlgeschlagen',
   settingsClearInfo: 'Um dini eigene Nachrichte im Chat z\'lösche, öffne de Chat und nutze s\'Menü.',
   settingsOpenPage: 'Iistellige öffne',
 }

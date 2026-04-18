@@ -104,6 +104,7 @@ export default {
   settingsExportHint: 'Export all your messages and settings as a JSON file.',
   settingsExportButton: 'Export',
   settingsExportCached: 'Export already available ({{time}}). Try again later.',
+  settingsExportError: 'Export failed',
   settingsClearInfo: 'To delete your own messages in a chat, open the chat and use the menu.',
   settingsOpenPage: 'Open settings',
 }

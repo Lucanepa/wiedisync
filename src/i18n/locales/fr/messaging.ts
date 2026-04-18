@@ -104,6 +104,7 @@ export default {
   settingsExportHint: 'Exporte tous tes messages et paramètres sous forme de fichier JSON.',
   settingsExportButton: 'Exporter',
   settingsExportCached: 'Export déjà disponible ({{time}}). Réessaie plus tard.',
+  settingsExportError: 'Export échoué',
   settingsClearInfo: 'Pour supprimer tes propres messages dans un chat, ouvre le chat et utilise le menu.',
   settingsOpenPage: 'Ouvrir les paramètres',
 }

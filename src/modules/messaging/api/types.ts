@@ -45,6 +45,8 @@ export type ConversationSummary = {
   unread_count: number
   muted: boolean
   request_status: MessageRequestStatus | null
+  /** For DM / dm_request: the other participant's member id. null for team conversations. */
+  other_member: string | null
 }
 
 export type MessagingError = { code: string; message: string; details?: unknown }

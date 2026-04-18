@@ -31,7 +31,7 @@ vi.mock('react', async (importOriginal) => {
 const mockConvRow = (overrides = {}) => ({
   id: 'a', type: 'team' as const, team: 't', title: null,
   last_message_at: null, last_message_preview: null,
-  unread_count: 0, muted: false, request_status: null,
+  unread_count: 0, muted: false, request_status: null, other_member: null,
   ...overrides,
 })
 

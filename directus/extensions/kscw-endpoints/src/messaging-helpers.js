@@ -105,6 +105,7 @@ export function shapeConversationSummary({ conv, membership, unread_count }) {
     unread_count: Number.isFinite(unread_count) ? unread_count : 0,
     muted: membership.muted === true,
     request_status: null, // Plan 03 fills this for dm_request conversations
+    other_member: null,   // Plan 03 fills this for dm / dm_request conversations
   }
 }
 

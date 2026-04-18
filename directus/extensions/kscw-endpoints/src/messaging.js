@@ -30,7 +30,6 @@ export function registerMessaging(router, ctx) {
       const userId = requireAuth(req)
       const member = await requireMember(db, userId)
 
-      // All non-archived memberships for this member
       const rows = await db('conversation_members as cm')
         .join('conversations as c', 'c.id', 'cm.conversation')
         .where('cm.member', member.id)
@@ -44,17 +43,59 @@ export function registerMessaging(router, ctx) {
 
       if (rows.length === 0) return res.json([])
 
-      // Batch unread counts in one SQL: count messages per conversation
-      // newer than last_read_at, exclude caller's own + soft-deleted.
-      const convIds = rows.map(r => r.id)
+      // Load blocks once (for DM invisibility)
+      const { either: blockedEither } = await loadBlocks(db, member.id)
+
+      // Batch "other member" lookup for all dm / dm_request conversations
+      const dmLikeIds = rows
+        .filter(r => r.type === 'dm' || r.type === 'dm_request')
+        .map(r => r.id)
+      const otherByConv = new Map()
+      if (dmLikeIds.length > 0) {
+        const otherRows = await db('conversation_members')
+          .whereIn('conversation', dmLikeIds)
+          .andWhere('member', '<>', member.id)
+          .select('conversation', 'member')
+        for (const r of otherRows) otherByConv.set(String(r.conversation), String(r.member))
+      }
+
+      // Batch message_requests rows for dm_request conversations
+      const requestIds = rows.filter(r => r.type === 'dm_request').map(r => r.id)
+      const reqByConv = new Map()
+      if (requestIds.length > 0) {
+        const reqRows = await db('message_requests')
+          .whereIn('conversation', requestIds)
+          .select('conversation', 'sender', 'recipient', 'status')
+        for (const r of reqRows) reqByConv.set(String(r.conversation), r)
+      }
+
+      // Visibility filter
+      const visible = rows.filter(r => {
+        if (r.type === 'dm' || r.type === 'dm_request') {
+          const other = otherByConv.get(String(r.id))
+          if (!other) return false
+          if (blockedEither.has(other)) return false
+        }
+        if (r.type === 'dm_request') {
+          const rq = reqByConv.get(String(r.id))
+          if (!rq) return false
+          // Sender-silent on decline: don't surface declined requests to the sender
+          if (rq.status === 'declined' && String(rq.sender) === String(member.id)) return false
+        }
+        return true
+      })
+
+      if (visible.length === 0) return res.json([])
+
+      // Batch unread counts — scoped to visible ids (preserves Plan 02's pattern)
+      const visibleIds = visible.map(r => r.id)
       const unreadRows = await db('messages')
-        .whereIn('conversation', convIds)
+        .whereIn('conversation', visibleIds)
         .andWhereRaw('sender <> ?', [member.id])
         .andWhereRaw('deleted_at IS NULL')
         .andWhere(function () {
-          // only count msgs after the caller's last_read_at for that conv
           this.where(function () {
-            for (const r of rows) {
+            for (const r of visible) {
               if (r.last_read_at) {
                 this.orWhere(function () {
                   this.where('conversation', r.id).andWhere('created_at', '>', r.last_read_at)
@@ -70,14 +111,22 @@ export function registerMessaging(router, ctx) {
         .groupBy('conversation')
       const unreadByConv = new Map(unreadRows.map(r => [String(r.conversation), Number(r.n)]))
 
-      const summaries = rows.map(r => shapeConversationSummary({
-        conv: {
-          id: r.id, type: r.type, team: r.team, title: r.title,
-          last_message_at: r.last_message_at, last_message_preview: r.last_message_preview,
-        },
-        membership: { muted: r.muted },
-        unread_count: unreadByConv.get(String(r.id)) ?? 0,
-      }))
+      const summaries = visible.map(r => {
+        const rq = r.type === 'dm_request' ? reqByConv.get(String(r.id)) : null
+        const summary = shapeConversationSummary({
+          conv: {
+            id: r.id, type: r.type, team: r.team, title: r.title,
+            last_message_at: r.last_message_at, last_message_preview: r.last_message_preview,
+          },
+          membership: { muted: r.muted },
+          unread_count: unreadByConv.get(String(r.id)) ?? 0,
+        })
+        if (rq) summary.request_status = rq.status
+        if (r.type === 'dm' || r.type === 'dm_request') {
+          summary.other_member = otherByConv.get(String(r.id)) ?? null
+        }
+        return summary
+      })
 
       res.json(summaries)
     } catch (e) { sendError(res, log, e) }

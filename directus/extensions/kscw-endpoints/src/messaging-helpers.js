@@ -121,3 +121,119 @@ export function sendError(res, logger, err) {
     code: 'messaging/internal', message: 'Internal server error',
   })
 }
+
+// ─── Plan 03: DM / request / block helpers ───────────────────────────────────
+
+/**
+ * For DM conversations, require the caller has DM enabled.
+ * Symmetric to requireTeamChatEnabled.
+ */
+export function requireDmEnabled(member) {
+  if (member.communications_dm_enabled !== true) {
+    throw new MessagingError(403, 'messaging/comms_disabled',
+      'Direct messages are disabled in your settings')
+  }
+}
+
+/**
+ * Load blocks relevant to `memberId`: who I've blocked + who has blocked me.
+ * Plan 03 uses this for:
+ *   • GET /conversations — hide DMs where a block exists in either direction.
+ *   • POST /messages — 403 `messaging/blocked` when DM is blocked.
+ *   • GET /conversations/:id/messages — filter out blocker's messages in shared team chats.
+ *
+ * Returns two Sets of string member ids for O(1) lookups.
+ */
+export async function loadBlocks(db, memberId) {
+  const rows = await db('blocks')
+    .where('blocker', memberId).orWhere('blocked', memberId)
+    .select('blocker', 'blocked')
+  const outgoing = new Set()   // members *I* have blocked
+  const incoming = new Set()   // members who have blocked *me*
+  for (const r of rows) {
+    if (String(r.blocker) === String(memberId)) outgoing.add(String(r.blocked))
+    else if (String(r.blocked) === String(memberId)) incoming.add(String(r.blocker))
+  }
+  const either = new Set([...outgoing, ...incoming])
+  return { outgoing, incoming, either }
+}
+
+/**
+ * Do members A and B share at least one active team this season?
+ * member_teams.season is filtered to the current season — matches the frontend
+ * `loadTeamContext` convention (see src/hooks/useAuth.tsx:106).
+ *
+ * Season threshold: Aug 1 UTC. Year-crossing: Aug 2026 → season '2026/27'.
+ * If Swiss season rules ever shift, update both src/utils/dateHelpers.ts
+ * (frontend) and this helper in lock-step.
+ */
+export async function shareTeam(db, memberIdA, memberIdB) {
+  const now = new Date()
+  const year = now.getUTCFullYear()
+  const startYear = now.getUTCMonth() >= 7 ? year : year - 1   // Aug = 7 (0-indexed)
+  const season = `${startYear}/${String((startYear + 1) % 100).padStart(2, '0')}`
+  const row = await db('member_teams as mt1')
+    .join('member_teams as mt2', function () {
+      this.on('mt1.team', '=', 'mt2.team').andOn('mt1.season', '=', 'mt2.season')
+    })
+    .where('mt1.member', memberIdA)
+    .andWhere('mt2.member', memberIdB)
+    .andWhere('mt1.season', season)
+    .select('mt1.team').first()
+  return !!row
+}
+
+/**
+ * Find an existing (dm|dm_request) conversation between two members.
+ * Returns the conversations row (incl. type) or null.
+ * Uses conversation_members as the join predicate; DMs have no `team` FK.
+ */
+export async function findExistingDmConversation(db, memberIdA, memberIdB) {
+  const row = await db('conversations as c')
+    .join('conversation_members as cm1', 'cm1.conversation', 'c.id')
+    .join('conversation_members as cm2', 'cm2.conversation', 'c.id')
+    .whereIn('c.type', ['dm', 'dm_request'])
+    .andWhere('cm1.member', memberIdA)
+    .andWhere('cm2.member', memberIdB)
+    .select('c.id', 'c.type', 'c.last_message_at', 'c.last_message_preview')
+    .first()
+  return row ?? null
+}
+
+/**
+ * Per spec §7: after a decline, the sender cannot re-request for 30 days.
+ * Throws 429 messaging/request_cooldown if a declined request exists from
+ * `senderId` → `recipientId` with `resolved_at` within the last 30 days.
+ */
+export async function checkDeclineCooldown(db, senderId, recipientId) {
+  const cutoffMs = Date.now() - 30 * 24 * 3600 * 1000
+  const row = await db('message_requests')
+    .where('sender', senderId).andWhere('recipient', recipientId)
+    .andWhere('status', 'declined')
+    .andWhere('resolved_at', '>', new Date(cutoffMs).toISOString())
+    .select('resolved_at').first()
+  if (row) {
+    throw new MessagingError(429, 'messaging/request_cooldown',
+      'You must wait 30 days before sending another request to this member',
+      { resolved_at: row.resolved_at })
+  }
+}
+
+/**
+ * Verify the caller is the **recipient** of a message_requests row.
+ * Only the recipient can accept/decline. Returns { req, conv }.
+ * Throws 403 not_a_member if anything doesn't line up.
+ */
+export async function requireRequestRecipient(db, requestId, memberId) {
+  const req = await db('message_requests').where('id', requestId).first()
+  if (!req || String(req.recipient) !== String(memberId)) {
+    throw new MessagingError(403, 'messaging/not_a_member', 'Request not found or access denied')
+  }
+  if (req.status !== 'pending') {
+    throw new MessagingError(409, 'messaging/request_already_resolved', 'This request was already resolved',
+      { status: req.status })
+  }
+  const conv = await db('conversations').where('id', req.conversation).first()
+  if (!conv) throw new MessagingError(403, 'messaging/not_a_member', 'Conversation not found')
+  return { req, conv }
+}

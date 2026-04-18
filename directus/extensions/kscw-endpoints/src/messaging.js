@@ -11,6 +11,7 @@ import {
   sendError, shapeConversationSummary,
   loadBlocks, shareTeam, findExistingDmConversation, checkDeclineCooldown,
   requireRequestRecipient,
+  requireMessageOwner, requireTeamModerator, snapshotMessage, requireAdmin,
 } from './messaging-helpers.js'
 
 const stub = (name) => (req, res) => res.status(501).json({
@@ -488,14 +489,327 @@ export function registerMessaging(router, ctx) {
     } catch (e) { sendError(res, log, e) }
   })
 
+  // ── POST /messaging/messages/:id/reactions ──────────────────────────
+  router.post('/messaging/messages/:id/reactions', async (req, res) => {
+    try {
+      const userId = requireAuth(req)
+      const me = await requireMember(db, userId)
+
+      const emoji = typeof req.body?.emoji === 'string' ? req.body.emoji : ''
+      if (emoji.length < 1 || emoji.length > 8) {
+        throw new MessagingError(400, 'messaging/invalid_body', 'emoji must be 1..8 chars')
+      }
+
+      const msg = await db('messages').where('id', req.params.id).first()
+      if (!msg) throw new MessagingError(404, 'messaging/not_found', 'Message not found')
+      // Caller must be in the conversation
+      await loadConversationMembership(db, msg.conversation, me.id)
+      // Block filter
+      const { either } = await loadBlocks(db, me.id)
+      if (either.has(String(msg.sender))) {
+        throw new MessagingError(403, 'messaging/blocked', 'Cannot react on a blocked sender\u2019s message')
+      }
+
+      const existing = await db('message_reactions')
+        .where({ message: msg.id, member: me.id, emoji }).first()
+
+      const schema = await getSchema()
+      const reactionsService = new ItemsService('message_reactions', { schema, knex: db })
+
+      if (existing) {
+        await reactionsService.deleteOne(existing.id)
+        return res.json({ added: false, emoji })
+      }
+      await reactionsService.createOne({
+        id: crypto.randomUUID(), message: msg.id, member: me.id,
+        emoji, created_at: new Date().toISOString(),
+      })
+      res.json({ added: true, emoji })
+    } catch (e) { sendError(res, log, e) }
+  })
+
+  // ── PATCH /messaging/messages/:id ───────────────────────────────────
+  router.patch('/messaging/messages/:id', async (req, res) => {
+    try {
+      const userId = requireAuth(req)
+      const me = await requireMember(db, userId)
+      const msg = await requireMessageOwner(db, req.params.id, me.id)
+
+      if (msg.deleted_at != null)
+        throw new MessagingError(400, 'messaging/invalid_body', 'Cannot edit a deleted message')
+      if (msg.type !== 'text')
+        throw new MessagingError(400, 'messaging/invalid_body', 'Only text messages can be edited')
+
+      const body = typeof req.body?.body === 'string' ? req.body.body.trim() : ''
+      if (body.length < 1 || body.length > 4000)
+        throw new MessagingError(400, 'messaging/invalid_body', 'body must be 1..4000 chars')
+
+      const schema = await getSchema()
+      const messagesService = new ItemsService('messages', { schema, knex: db })
+      const nowIso = new Date().toISOString()
+      await messagesService.updateOne(msg.id, { body, edited_at: nowIso })
+
+      res.json({ id: msg.id, body, edited_at: nowIso })
+    } catch (e) { sendError(res, log, e) }
+  })
+
+  // ── DELETE /messaging/messages/:id ──────────────────────────────────
+  router.delete('/messaging/messages/:id', async (req, res) => {
+    try {
+      const userId = requireAuth(req)
+      const me = await requireMember(db, userId)
+
+      const msg = await db('messages').where('id', req.params.id).first()
+      if (!msg) throw new MessagingError(404, 'messaging/not_found', 'Message not found')
+      if (msg.deleted_at != null)
+        throw new MessagingError(400, 'messaging/invalid_body', 'Already deleted')
+
+      const isSelf = String(msg.sender) === String(me.id)
+      if (!isSelf) {
+        // Moderator path — only valid for team conversations
+        await requireTeamModerator(db, msg.id, me.id)
+      }
+
+      const schema = await getSchema()
+      const messagesService = new ItemsService('messages', { schema, knex: db })
+      const reportsService  = new ItemsService('reports',  { schema, knex: db })
+      const nowIso = new Date().toISOString()
+
+      await messagesService.updateOne(msg.id, { deleted_at: nowIso })
+
+      if (!isSelf) {
+        // Moderator audit — auto-close report row
+        await reportsService.createOne({
+          id: crypto.randomUUID(),
+          reporter: me.id,
+          reported_member: msg.sender,
+          message: msg.id,
+          conversation: msg.conversation,
+          reason: 'moderator_delete',
+          note: null,
+          message_snapshot: msg.body ?? null,
+          status: 'resolved',
+          resolved_by: me.id,
+          resolved_at: nowIso,
+        })
+      }
+
+      res.json({ id: msg.id, deleted_at: nowIso, moderator_delete: !isSelf })
+    } catch (e) { sendError(res, log, e) }
+  })
+
+  // ── POST /messaging/reports ─────────────────────────────────────────
+  const ALLOWED_REPORT_REASONS = new Set(['harassment', 'spam', 'inappropriate', 'other'])
+
+  router.post('/messaging/reports', async (req, res) => {
+    try {
+      const userId = requireAuth(req)
+      const me = await requireMember(db, userId)
+
+      const b = req.body ?? {}
+      const reportedMember = b.reported_member != null ? Number(b.reported_member) : null
+      const messageId = typeof b.message === 'string' ? b.message : null
+      const conversationId = typeof b.conversation === 'string' ? b.conversation : null
+      const reason = typeof b.reason === 'string' ? b.reason : null
+      const note = typeof b.note === 'string' ? b.note.slice(0, 500) : null
+
+      if (!reportedMember) throw new MessagingError(400, 'messaging/invalid_body', 'reported_member required')
+      if (reportedMember === me.id) throw new MessagingError(400, 'messaging/invalid_body', 'cannot report yourself')
+      if (!messageId && !conversationId) throw new MessagingError(400, 'messaging/invalid_body', 'message or conversation required')
+      if (!reason || !ALLOWED_REPORT_REASONS.has(reason))
+        throw new MessagingError(400, 'messaging/invalid_body', `reason must be one of ${[...ALLOWED_REPORT_REASONS].join(',')}`)
+
+      const snapshot = messageId ? await snapshotMessage(db, messageId) : null
+
+      const schema = await getSchema()
+      const reportsService = new ItemsService('reports', { schema, knex: db })
+      const id = crypto.randomUUID()
+      await reportsService.createOne({
+        id,
+        reporter: me.id,
+        reported_member: reportedMember,
+        message: messageId, conversation: conversationId,
+        reason, note,
+        message_snapshot: snapshot,
+        status: 'open',
+      })
+
+      // Admin in-app notifications — fan out to every member with role containing
+      // 'admin' or 'superuser'. Fetch all members with a non-null role and filter
+      // in JS to avoid knex-vs-Postgres `?|` operator bind-parameter conflicts.
+      //
+      // Notifications column shape: type/title/body/activity_type/activity_id/
+      // read/member/team/date_created (DB default CURRENT_TIMESTAMP). Do NOT pass
+      // created_at. Matches existing fan-out in src/index.js:1051.
+      const allMembersWithRole = await db('members').whereNotNull('role').select('id', 'role')
+      const admins = allMembersWithRole.filter(m => {
+        const roles = Array.isArray(m.role) ? m.role : (typeof m.role === 'string' ? JSON.parse(m.role) : [])
+        return roles.includes('admin') || roles.includes('superuser')
+      })
+      if (admins.length > 0) {
+        const notifRows = admins.map(a => ({
+          member: a.id,
+          type: 'new_report',
+          title: 'new_report',
+          body: JSON.stringify({ reportId: id, reason }),
+          activity_type: 'report',
+          activity_id: id,
+          read: false,
+        }))
+        await db('notifications').insert(notifRows)
+      }
+
+      res.json({ id })
+    } catch (e) { sendError(res, log, e) }
+  })
+
+  // ── GET /messaging/reports ──────────────────────────────────────────
+  router.get('/messaging/reports', async (req, res) => {
+    try {
+      const userId = requireAuth(req)
+      // System admins (DIRECTUS_ADMIN_TOKEN) have no members row; try lookup but
+      // allow null — requireAdmin will short-circuit via accountability.admin.
+      const me = await db('members').where('user', userId)
+        .select('id', 'role').first().then(r => r ?? null)
+      await requireAdmin(db, me?.id ?? null, req.accountability)
+
+      const limit = Math.min(Math.max(Number(req.query.limit) || 200, 1), 500)
+      const statusFilter = typeof req.query.status === 'string' ? req.query.status : null
+
+      let q = db('reports as r')
+        .leftJoin('members as rep', 'rep.id', 'r.reporter')
+        .leftJoin('members as rm',  'rm.id',  'r.reported_member')
+        .orderBy('r.created_at', 'desc')
+        .limit(limit)
+        .select(
+          'r.id', 'r.reporter', 'r.reported_member', 'r.message', 'r.conversation',
+          'r.reason', 'r.note', 'r.message_snapshot', 'r.status',
+          'r.resolved_by', 'r.resolved_at', 'r.created_at',
+          'rep.first_name as reporter_first_name', 'rep.last_name as reporter_last_name',
+          'rm.first_name as reported_first_name', 'rm.last_name as reported_last_name',
+        )
+      if (statusFilter) q = q.where('r.status', statusFilter)
+      const rows = await q
+
+      const reports = rows.map(r => ({
+        id: r.id, reporter: r.reporter, reported_member: r.reported_member,
+        message: r.message, conversation: r.conversation,
+        reason: r.reason, note: r.note, message_snapshot: r.message_snapshot,
+        status: r.status, resolved_by: r.resolved_by, resolved_at: r.resolved_at, created_at: r.created_at,
+        reporter_name: [r.reporter_first_name, r.reporter_last_name].filter(Boolean).join(' ') || null,
+        reported_name: [r.reported_first_name, r.reported_last_name].filter(Boolean).join(' ') || null,
+      }))
+
+      res.json({ reports })
+    } catch (e) { sendError(res, log, e) }
+  })
+
+  // ── PATCH /messaging/reports/:id ────────────────────────────────────
+  const ALLOWED_REPORT_STATUSES = new Set(['resolved', 'dismissed'])
+
+  router.patch('/messaging/reports/:id', async (req, res) => {
+    try {
+      const userId = requireAuth(req)
+      // System admins (DIRECTUS_ADMIN_TOKEN) have no members row; try lookup but
+      // allow null — requireAdmin will short-circuit via accountability.admin.
+      const me = await db('members').where('user', userId)
+        .select('id', 'role').first().then(r => r ?? null)
+      await requireAdmin(db, me?.id ?? null, req.accountability)
+
+      const b = req.body ?? {}
+      if (!ALLOWED_REPORT_STATUSES.has(b.status))
+        throw new MessagingError(400, 'messaging/invalid_body', 'status must be resolved or dismissed')
+      const deleteMessage = b.delete_message === true
+      const ban = b.ban === true
+
+      const report = await db('reports').where('id', req.params.id).first()
+      if (!report) throw new MessagingError(404, 'messaging/not_found', 'Report not found')
+
+      const schema = await getSchema()
+      const reportsService = new ItemsService('reports', { schema, knex: db })
+      const messagesService = new ItemsService('messages', { schema, knex: db })
+      const membersService = new ItemsService('members', { schema, knex: db })
+      const nowIso = new Date().toISOString()
+
+      await reportsService.updateOne(report.id, {
+        status: b.status, resolved_by: me?.id ?? null, resolved_at: nowIso,
+      })
+
+      if (deleteMessage && report.message) {
+        const msg = await db('messages').where('id', report.message).first()
+        if (msg && msg.deleted_at == null) {
+          await messagesService.updateOne(msg.id, { deleted_at: nowIso })
+        }
+      }
+
+      if (ban && report.reported_member) {
+        await membersService.updateOne(report.reported_member, {
+          communications_banned: true,
+          communications_team_chat_enabled: false,
+          communications_dm_enabled: false,
+        })
+      }
+
+      res.json({ id: report.id, status: b.status, delete_message: deleteMessage, ban })
+    } catch (e) { sendError(res, log, e) }
+  })
+
+  // ── POST /messaging/polls ───────────────────────────────────────────
+  router.post('/messaging/polls', async (req, res) => {
+    try {
+      const userId = requireAuth(req)
+      const me = await requireMember(db, userId)
+
+      const b = req.body ?? {}
+      const conversationId = typeof b.conversation === 'string' ? b.conversation : null
+      const question = typeof b.question === 'string' ? b.question.trim() : ''
+      const options = Array.isArray(b.options) ? b.options.map(String).map(s => s.trim()).filter(Boolean) : []
+      const mode = b.mode === 'multi' ? 'multi' : 'single'
+      const anonymous = b.anonymous === true
+      const deadline = typeof b.deadline === 'string' && b.deadline.length > 0 ? b.deadline : null
+
+      if (!conversationId) throw new MessagingError(400, 'messaging/invalid_body', 'conversation required')
+      if (question.length < 1 || question.length > 255)
+        throw new MessagingError(400, 'messaging/invalid_body', 'question must be 1..255 chars')
+      if (options.length < 2 || options.length > 10)
+        throw new MessagingError(400, 'messaging/invalid_body', 'options must be 2..10 non-empty strings')
+
+      const { conv } = await loadConversationMembership(db, conversationId, me.id)
+      if (conv.type === 'team') requireTeamChatEnabled(me)
+      else if (conv.type === 'dm' || conv.type === 'dm_request') requireDmEnabled(me)
+      else throw new MessagingError(400, 'messaging/invalid_body', `Unsupported conversation type: ${conv.type}`)
+
+      const schema = await getSchema()
+      const pollsService = new ItemsService('polls', { schema, knex: db })
+      const messagesService = new ItemsService('messages', { schema, knex: db })
+      const conversationsService = new ItemsService('conversations', { schema, knex: db })
+      const nowIso = new Date().toISOString()
+
+      // polls.id is integer (serial). ItemsService.createOne returns the PK.
+      const pollId = await pollsService.createOne({
+        conversation: conversationId,
+        team: null,
+        question, options, mode, deadline, anonymous,
+        created_by: me.id, status: 'open',
+      })
+
+      const messageId = crypto.randomUUID()
+      await messagesService.createOne({
+        id: messageId, conversation: conversationId, sender: me.id,
+        type: 'poll', body: null, poll: pollId, created_at: nowIso,
+      })
+
+      const preview = `📊 ${question.length > 100 ? question.slice(0, 97) + '...' : question}`
+      await conversationsService.updateOne(conversationId, {
+        last_message_at: nowIso, last_message_preview: preview,
+      })
+
+      res.json({ poll_id: pollId, message_id: messageId })
+    } catch (e) { sendError(res, log, e) }
+  })
+
   // ── The rest stay 501 for Plans 03-05 ───────────────────────────────
   router.post('/messaging/conversations/:id/clear',       stub('POST /conversations/:id/clear'))
-  router.patch('/messaging/messages/:id',                 stub('PATCH /messages/:id'))
-  router.delete('/messaging/messages/:id',                stub('DELETE /messages/:id'))
-  router.post('/messaging/messages/:id/reactions',        stub('POST /messages/:id/reactions'))
-  router.post('/messaging/reports',                       stub('POST /reports'))
-  router.get('/messaging/reports',                        stub('GET /reports'))
-  router.patch('/messaging/reports/:id',                  stub('PATCH /reports/:id'))
   router.post('/messaging/settings/consent',              stub('POST /settings/consent'))
   router.post('/messaging/export',                        stub('POST /export'))
 }

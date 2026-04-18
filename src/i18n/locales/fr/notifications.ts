@@ -44,6 +44,7 @@ export default {
   carpool_joined: '{{passenger}} a rejoint votre trajet pour {{game}}',
   carpool_cancelled: '{{driver}} a annulé le trajet pour {{game}}',
   task_assigned: 'Une tâche vous a été assignée : {{label}}',
+  new_report: 'Nouveau signalement : {{reason}}',
   pollCreated: 'Sondage',
   carpoolUpdate: 'Covoiturage',
   taskAssigned: 'Tâche',

@@ -7,9 +7,11 @@ type Props = {
   messages: MessageRow[]
   currentMemberId: string | null
   isLoading: boolean
+  isTeamModerator: boolean
+  onReport?: (message: MessageRow) => void
 }
 
-export default function ConversationThread({ messages, currentMemberId, isLoading }: Props) {
+export default function ConversationThread({ messages, currentMemberId, isLoading, isTeamModerator, onReport }: Props) {
   const { t } = useTranslation('messaging')
   const bottomRef = useRef<HTMLDivElement>(null)
 
@@ -37,7 +39,14 @@ export default function ConversationThread({ messages, currentMemberId, isLoadin
   return (
     <div className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-2">
       {messages.map(m => (
-        <MessageBubble key={m.id} message={m} isOwn={m.sender === currentMemberId} />
+        <MessageBubble
+            key={m.id}
+            message={m}
+            isOwn={m.sender === currentMemberId}
+            currentMemberId={currentMemberId}
+            isTeamModerator={isTeamModerator}
+            onReport={onReport}
+          />
       ))}
       <div ref={bottomRef} />
     </div>

@@ -1,8 +1,8 @@
 import { kscwApi } from '../../../lib/api'
 import type {
   BlockBody, ConsentBody, ConversationSummary, CreateDmBody, CreateDmResponse,
-  ListMessagesResponse, MessageRow, ReactionBody, ReportBody,
-  SendMessageBody, SettingsBody,
+  ListMessagesResponse, MessageRow, ReactionBody, ReactionToggleResponse, ReportBody, ReportRow,
+  SendMessageBody, SettingsBody, CreatePollBody,
 } from './types'
 
 export const messagingApi = {
@@ -41,14 +41,16 @@ export const messagingApi = {
     kscwApi<MessageRow>('/messaging/messages', { method: 'POST', body }),
 
   edit: (id: string, body: { body: string }) =>
-    kscwApi<void>(`/messaging/messages/${id}`, { method: 'PATCH', body }),
+    kscwApi<{ id: string; body: string; edited_at: string }>(
+      `/messaging/messages/${id}`, { method: 'PATCH', body }),
 
   delete: (id: string) =>
-    kscwApi<void>(`/messaging/messages/${id}`, { method: 'DELETE' }),
+    kscwApi<{ id: string; deleted_at: string; moderator_delete: boolean }>(
+      `/messaging/messages/${id}`, { method: 'DELETE' }),
 
-  // Reactions (signature preserved; endpoint stays 501 until Plan 04)
+  // Reactions
   react: (messageId: string, body: ReactionBody) =>
-    kscwApi<{ added: boolean }>(`/messaging/messages/${messageId}/reactions`, { method: 'POST', body }),
+    kscwApi<ReactionToggleResponse>(`/messaging/messages/${messageId}/reactions`, { method: 'POST', body }),
 
   // Requests & blocks (Plan 03 fills)
   acceptRequest: (id: string) =>
@@ -63,10 +65,21 @@ export const messagingApi = {
     kscwApi<{ unblocked: string; removed: boolean }>(`/messaging/blocks/${memberId}`, { method: 'DELETE' }),
 
   // Moderation (Plan 04)
-  createReport: (body: ReportBody) => kscwApi<{ id: string }>('/messaging/reports', { method: 'POST', body }),
-  listReports: () => kscwApi<unknown[]>('/messaging/reports'),
-  resolveReport: (id: string, body: { status: 'resolved' | 'dismissed'; delete_message?: boolean }) =>
-    kscwApi<void>(`/messaging/reports/${id}`, { method: 'PATCH', body }),
+  createReport: (body: ReportBody) =>
+    kscwApi<{ id: string }>('/messaging/reports', { method: 'POST', body }),
+
+  listReports: (params?: { status?: 'open' | 'resolved' | 'dismissed' }) => {
+    const qs = params?.status ? `?status=${params.status}` : ''
+    return kscwApi<{ reports: ReportRow[] }>(`/messaging/reports${qs}`)
+  },
+
+  resolveReport: (id: string, body: { status: 'resolved' | 'dismissed'; delete_message?: boolean; ban?: boolean }) =>
+    kscwApi<{ id: string; status: 'resolved' | 'dismissed'; delete_message: boolean; ban: boolean }>(
+      `/messaging/reports/${id}`, { method: 'PATCH', body }),
+
+  // Polls (Plan 04)
+  createPoll: (body: CreatePollBody) =>
+    kscwApi<{ poll_id: number; message_id: string }>('/messaging/polls', { method: 'POST', body }),
 
   // Settings (Plan 05)
   updateSettings: (body: SettingsBody) =>

@@ -15,6 +15,7 @@ import { formatDate, getCurrentSeason, getSeasonDateRange, todayLocal } from '..
 import ImageLightbox from '../../components/ImageLightbox'
 import type { Member, MemberTeam, Team, Absence, Participation } from '../../types'
 import { fetchAllItems, fetchItem } from '../../lib/api'
+import StartDmButton from '../messaging/components/StartDmButton'
 
 type ExpandedMemberTeam = MemberTeam & { team: Team | string }
 
@@ -269,6 +270,11 @@ export default function PlayerProfile() {
                   )}
                 </div>
               )}
+
+              {/* Start DM entry point — self-hides when viewing own profile, feature flag off, or DMs disabled */}
+              <div className="mt-3">
+                <StartDmButton recipientId={String(member.id)} />
+              </div>
             </div>
           </div>
         </div>

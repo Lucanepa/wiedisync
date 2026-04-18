@@ -44,6 +44,7 @@ export default {
   carpool_joined: '{{passenger}} fährt bei deiner Fahrt zu {{game}} mit',
   carpool_cancelled: '{{driver}} hat die Fahrt zu {{game}} abgesagt',
   task_assigned: 'Dir wurde eine Aufgabe zugewiesen: {{label}}',
+  new_report: 'Neue Meldung: {{reason}}',
   // Typ-Labels für neue Features
   pollCreated: 'Umfrage',
   carpoolUpdate: 'Fahrgemeinschaft',

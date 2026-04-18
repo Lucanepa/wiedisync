@@ -3,13 +3,15 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Send } from 'lucide-react'
 import { shouldSubmitOnKeyDown } from '../utils/composerSubmit'
+import ComposerExtrasMenu from './ComposerExtrasMenu'
 
 type Props = {
   onSend: (body: string) => Promise<void> | void
   disabled?: boolean
+  conversationId?: string
 }
 
-export default function MessageComposer({ onSend, disabled = false }: Props) {
+export default function MessageComposer({ onSend, disabled = false, conversationId }: Props) {
   const { t } = useTranslation('messaging')
   const [value, setValue] = useState('')
   const [sending, setSending] = useState(false)
@@ -35,6 +37,7 @@ export default function MessageComposer({ onSend, disabled = false }: Props) {
 
   return (
     <div className="flex gap-2 items-end border-t border-border bg-background p-3">
+      {conversationId && <ComposerExtrasMenu conversationId={conversationId} />}
       <textarea
         value={value}
         onChange={(e) => setValue(e.target.value)}

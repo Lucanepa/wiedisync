@@ -22,7 +22,7 @@ export default function AnnouncementDetailModal({ announcement, onClose }: Props
   if (!announcement) return null
 
   const heroUrl = announcement.image
-    ? assetUrl(announcement.image, 'width=1200&height=600&fit=cover&format=webp')
+    ? assetUrl(announcement.image, 'width=1200&format=webp')
     : ''
 
   const publishedDate = announcement.published_at ? formatDate(announcement.published_at) : ''
@@ -45,8 +45,7 @@ export default function AnnouncementDetailModal({ announcement, onClose }: Props
           <img
             src={heroUrl}
             alt=""
-            className="w-full rounded-lg object-cover"
-            style={{ aspectRatio: '2 / 1' }}
+            className="w-full rounded-lg"
           />
         )}
 

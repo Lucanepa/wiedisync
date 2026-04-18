@@ -94,3 +94,39 @@ export type MessageRequestRow = {
   created_at: string
   resolved_at: string | null
 }
+
+export type ReactionRow = {
+  id: string
+  message: string
+  member: string
+  emoji: string
+  created_at: string
+}
+
+export type ReactionToggleResponse = { added: boolean; emoji: string }
+
+export type ReportRow = {
+  id: string
+  reporter: string | null
+  reported_member: string | null
+  message: string | null
+  conversation: string | null
+  reason: 'harassment' | 'spam' | 'inappropriate' | 'other' | 'moderator_delete'
+  note: string | null
+  message_snapshot: string | null
+  status: 'open' | 'resolved' | 'dismissed'
+  resolved_by: string | null
+  resolved_at: string | null
+  created_at: string
+  reporter_name?: string | null
+  reported_name?: string | null
+}
+
+export type CreatePollBody = {
+  conversation: string
+  question: string
+  options: string[]
+  mode: 'single' | 'multi'
+  deadline?: string
+  anonymous?: boolean
+}

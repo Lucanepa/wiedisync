@@ -238,3 +238,89 @@ export async function requireRequestRecipient(db, requestId, memberId) {
   if (!conv) throw new MessagingError(403, 'messaging/not_a_member', 'Conversation not found')
   return { req, conv }
 }
+
+// ─── Plan 04: message-action + moderation helpers ────────────────────────────
+
+/**
+ * Fail fast if caller isn't the sender. Used by PATCH /messages/:id and by
+ * DELETE /messages/:id's self-delete path.
+ */
+export async function requireMessageOwner(db, messageId, memberId) {
+  const msg = await db('messages').where('id', messageId).first()
+  if (!msg) throw new MessagingError(404, 'messaging/not_found', 'Message not found')
+  if (String(msg.sender) !== String(memberId)) {
+    throw new MessagingError(403, 'messaging/forbidden', 'You can only modify your own messages')
+  }
+  return msg
+}
+
+/**
+ * For DELETE /messages/:id — allow coach OR team_responsible of the team
+ * that owns the conversation. DM conversations never have moderators (spec §8:
+ * admin via report flow only). Returns { msg, conv } on allow, throws on deny.
+ *
+ * The caller is allowed if:
+ *   - conversation is type='team' AND caller is in teams_coaches OR teams_responsibles
+ *     for that team.
+ * DM / dm_request → moderator path is disallowed. Reports handle DM moderation.
+ */
+export async function requireTeamModerator(db, messageId, memberId) {
+  const msg = await db('messages').where('id', messageId).first()
+  if (!msg) throw new MessagingError(404, 'messaging/not_found', 'Message not found')
+  const conv = await db('conversations').where('id', msg.conversation).first()
+  if (!conv) throw new MessagingError(404, 'messaging/not_found', 'Conversation not found')
+
+  if (conv.type !== 'team' || !conv.team) {
+    throw new MessagingError(403, 'messaging/forbidden', 'Moderator delete is only available in team chats')
+  }
+  const isCoach = await db('teams_coaches')
+    .where({ teams_id: conv.team, members_id: memberId }).first()
+  const isTR = await db('teams_responsibles')
+    .where({ teams_id: conv.team, members_id: memberId }).first()
+  if (!isCoach && !isTR) {
+    throw new MessagingError(403, 'messaging/forbidden', 'You must be a coach or team responsible')
+  }
+  return { msg, conv }
+}
+
+/**
+ * Snapshot a message body for audit retention in a report.
+ * Returns the stored body verbatim (may be null for poll messages).
+ *
+ * Called at report-file time (POST /reports), not at resolution time.
+ * The snapshot is stored on reports.message_snapshot and survives later
+ * message purge (Plan 05's retention cron hard-deletes messages but leaves
+ * report.message_snapshot intact per spec §9).
+ *
+ * If the message is already soft-deleted when the report is filed, body
+ * is still non-null (soft-delete only sets deleted_at, doesn't clear body).
+ * The hard-purge in Plan 05 is what ultimately removes messages.body.
+ */
+export async function snapshotMessage(db, messageId) {
+  const row = await db('messages').where('id', messageId).select('body', 'type', 'poll').first()
+  if (!row) return null
+  // For poll messages, snapshot the question instead of null.
+  if (row.type === 'poll' && row.poll != null) {
+    const poll = await db('polls').where('id', row.poll).select('question').first()
+    return poll?.question ?? null
+  }
+  return row.body ?? null
+}
+
+/**
+ * Admin gate — passes if:
+ *   (a) req.accountability.admin === true  (Directus system-admin token with no member row), OR
+ *   (b) the caller's members.role JSONB array contains 'admin' or 'superuser'.
+ *
+ * Pass `accountability` from `req.accountability` so system admins bypass the member-role lookup.
+ * `memberId` may be null when the caller has no members row but is a Directus admin.
+ */
+export async function requireAdmin(db, memberId, accountability) {
+  if (accountability?.admin === true) return   // Directus system-admin short-circuit
+  if (!memberId) throw new MessagingError(403, 'messaging/forbidden', 'Admin access required')
+  const row = await db('members').where('id', memberId).select('role').first()
+  const roles = Array.isArray(row?.role) ? row.role : (typeof row?.role === 'string' ? JSON.parse(row.role) : [])
+  if (!roles.includes('admin') && !roles.includes('superuser')) {
+    throw new MessagingError(403, 'messaging/forbidden', 'Admin access required')
+  }
+}

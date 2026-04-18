@@ -44,4 +44,5 @@ export default {
   guide: 'Aleitig',
   adminExplorer: 'Dateni-Explorer',
   announcements: 'Vereinsnews',
+  news: 'News',
 } as const

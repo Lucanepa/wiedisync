@@ -45,4 +45,5 @@ export default {
   guide: 'Anleitung',
   adminExplorer: 'Daten-Explorer',
   announcements: 'Vereinsnews',
+  news: 'News',
 } as const

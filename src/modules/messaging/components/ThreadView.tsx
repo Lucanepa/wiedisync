@@ -1,12 +1,13 @@
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../../hooks/useAuth'
 import { useConversation } from '../hooks/useConversation'
 import ConversationThread from './ConversationThread'
 import MessageComposer from './MessageComposer'
+import ReportMessageDialog from './ReportMessageDialog'
 import { Bell, BellOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import type { ConversationSummary } from '../api/types'
+import type { ConversationSummary, MessageRow } from '../api/types'
 
 type Props = {
   conversation: ConversationSummary
@@ -22,8 +23,14 @@ type Props = {
 
 export default function ThreadView({ conversation, onMarkRead, onToggleMute, header, composerDisabled, title }: Props) {
   const { t } = useTranslation('messaging')
-  const { user } = useAuth()
+  const { user, coachTeamIds, teamResponsibleIds } = useAuth()
   const { messages, isLoading, send, sendError } = useConversation(conversation.id)
+  const [reportingMessage, setReportingMessage] = useState<MessageRow | null>(null)
+
+  const isTeamModerator = conversation.type === 'team' && conversation.team != null && (
+    coachTeamIds.includes(String(conversation.team)) ||
+    teamResponsibleIds.includes(String(conversation.team))
+  )
 
   useEffect(() => {
     if (conversation.id && conversation.unread_count > 0) onMarkRead(conversation.id)
@@ -47,10 +54,18 @@ export default function ThreadView({ conversation, onMarkRead, onToggleMute, hea
         messages={messages}
         currentMemberId={user?.id ?? null}
         isLoading={isLoading}
+        isTeamModerator={isTeamModerator}
+        onReport={setReportingMessage}
       />
-      <MessageComposer onSend={send} disabled={composerDisabled} />
+      <MessageComposer onSend={send} disabled={composerDisabled} conversationId={conversation.id} />
       {sendError && (
         <div className="text-xs text-destructive px-3 pb-2">{t('failedToSend')}</div>
+      )}
+      {reportingMessage && (
+        <ReportMessageDialog
+          message={reportingMessage}
+          onClose={() => setReportingMessage(null)}
+        />
       )}
     </div>
   )

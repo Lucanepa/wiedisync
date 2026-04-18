@@ -681,11 +681,11 @@ export default ({ action, filter, init, schedule }, { services, database, logger
               const isGerman = !r.language || r.language === 'german' || r.language === 'swiss_german'
               const ctaLabel = isGerman ? 'Auf WiediSync ansehen' : 'View on WiediSync'
 
+              // Gate: never render `ann.link` inline in the email. External/CTA
+              // links stay behind wiedisync login — recipients click the layout
+              // CTA ("Auf WiediSync ansehen") to reach the full post + link.
               const emailBody =
-                `<div style="font-size:14px;color:#e2e8f0;line-height:1.6">${bodyHtml}</div>` +
-                (ann.link
-                  ? `<div style="text-align:center;margin-top:24px"><a href="${ann.link}" style="display:inline-block;padding:12px 24px;background:#FFC832;color:#1a1a1a;text-decoration:none;border-radius:8px;font-weight:600">${isGerman ? 'Mehr erfahren' : 'Read more'}</a></div>`
-                  : '')
+                `<div style="font-size:14px;color:#e2e8f0;line-height:1.6">${bodyHtml}</div>`
 
               const html = buildEmailLayout(emailBody, {
                 title: isGerman ? 'Vereinsnews' : 'Club news',

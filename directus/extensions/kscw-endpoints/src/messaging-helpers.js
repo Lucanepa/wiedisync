@@ -324,3 +324,76 @@ export async function requireAdmin(db, memberId, accountability) {
     throw new MessagingError(403, 'messaging/forbidden', 'Admin access required')
   }
 }
+
+// ─── Plan 05: push recipients, preview, export rate-limit ────────────────────
+
+/**
+ * Recipients who should get a push when `sender` posts in `conv`.
+ * Excludes:
+ *   - sender themselves
+ *   - conversation_members where muted=true or archived=true
+ *   - For DM/dm_request conv types: any pair where blocks exists either direction
+ *     (team conversations never skip pushes on block — block only filters READS)
+ *
+ * Returns an array of numeric member ids.
+ */
+export async function resolveRecipientsForPush(db, conv, senderMemberId) {
+  const members = await db('conversation_members')
+    .where('conversation', conv.id)
+    .andWhere('archived', false)
+    .andWhere('muted', false)
+    .andWhere('member', '<>', senderMemberId)
+    .select('member')
+
+  let ids = members.map(m => m.member)
+
+  if ((conv.type === 'dm' || conv.type === 'dm_request') && ids.length > 0) {
+    const blockRows = await db('blocks')
+      .where(function () {
+        this.whereIn('blocker', ids).andWhere('blocked', senderMemberId)
+      })
+      .orWhere(function () {
+        this.where('blocker', senderMemberId).whereIn('blocked', ids)
+      })
+      .select('blocker', 'blocked')
+    const blockedIds = new Set()
+    for (const b of blockRows) {
+      if (String(b.blocker) === String(senderMemberId)) blockedIds.add(String(b.blocked))
+      else blockedIds.add(String(b.blocker))
+    }
+    ids = ids.filter(id => !blockedIds.has(String(id)))
+  }
+
+  return ids
+}
+
+/**
+ * Build the push preview string per the recipient's push_preview_content flag.
+ * Falls back to generic copy when body is missing or preview is disabled.
+ */
+export function buildPushPreview(recipient, senderName, body) {
+  const generic = 'Neue Nachricht in KSCW'
+  const showContent = recipient?.push_preview_content === true
+  if (!showContent) return generic
+  if (!body || typeof body !== 'string' || body.length === 0) return generic
+  const truncated = body.length > 80 ? body.slice(0, 77) + '…' : body
+  return `${senderName}: ${truncated}`
+}
+
+/**
+ * 1/day export rate-limit on members.last_export_at.
+ * Returns the existing timestamp (for `cached` responses) or null when fresh.
+ */
+export async function checkExportRateLimit(db, memberId) {
+  const row = await db('members').where('id', memberId).select('last_export_at').first()
+  if (!row?.last_export_at) return null
+  const elapsedMs = Date.now() - new Date(row.last_export_at).getTime()
+  if (elapsedMs < 24 * 3600 * 1000) {
+    return row.last_export_at
+  }
+  return null
+}
+
+export async function markExportDone(db, memberId) {
+  await db('members').where('id', memberId).update({ last_export_at: new Date().toISOString() })
+}

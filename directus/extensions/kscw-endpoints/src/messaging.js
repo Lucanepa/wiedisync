@@ -11,6 +11,7 @@ import {
   sendError, shapeConversationSummary,
   loadBlocks, shareTeam, findExistingDmConversation, checkDeclineCooldown,
   requireRequestRecipient,
+  requireMessageOwner, requireTeamModerator, snapshotMessage, requireAdmin,
 } from './messaging-helpers.js'
 
 const stub = (name) => (req, res) => res.status(501).json({
@@ -488,11 +489,49 @@ export function registerMessaging(router, ctx) {
     } catch (e) { sendError(res, log, e) }
   })
 
+  // ── POST /messaging/messages/:id/reactions ──────────────────────────
+  router.post('/messaging/messages/:id/reactions', async (req, res) => {
+    try {
+      const userId = requireAuth(req)
+      const me = await requireMember(db, userId)
+
+      const emoji = typeof req.body?.emoji === 'string' ? req.body.emoji : ''
+      if (emoji.length < 1 || emoji.length > 8) {
+        throw new MessagingError(400, 'messaging/invalid_body', 'emoji must be 1..8 chars')
+      }
+
+      const msg = await db('messages').where('id', req.params.id).first()
+      if (!msg) throw new MessagingError(404, 'messaging/not_found', 'Message not found')
+      // Caller must be in the conversation
+      await loadConversationMembership(db, msg.conversation, me.id)
+      // Block filter
+      const { either } = await loadBlocks(db, me.id)
+      if (either.has(String(msg.sender))) {
+        throw new MessagingError(403, 'messaging/blocked', 'Cannot react on a blocked sender\u2019s message')
+      }
+
+      const existing = await db('message_reactions')
+        .where({ message: msg.id, member: me.id, emoji }).first()
+
+      const schema = await getSchema()
+      const reactionsService = new ItemsService('message_reactions', { schema, knex: db })
+
+      if (existing) {
+        await reactionsService.deleteOne(existing.id)
+        return res.json({ added: false, emoji })
+      }
+      await reactionsService.createOne({
+        id: crypto.randomUUID(), message: msg.id, member: me.id,
+        emoji, created_at: new Date().toISOString(),
+      })
+      res.json({ added: true, emoji })
+    } catch (e) { sendError(res, log, e) }
+  })
+
   // ── The rest stay 501 for Plans 03-05 ───────────────────────────────
   router.post('/messaging/conversations/:id/clear',       stub('POST /conversations/:id/clear'))
   router.patch('/messaging/messages/:id',                 stub('PATCH /messages/:id'))
   router.delete('/messaging/messages/:id',                stub('DELETE /messages/:id'))
-  router.post('/messaging/messages/:id/reactions',        stub('POST /messages/:id/reactions'))
   router.post('/messaging/reports',                       stub('POST /reports'))
   router.get('/messaging/reports',                        stub('GET /reports'))
   router.patch('/messaging/reports/:id',                  stub('PATCH /reports/:id'))

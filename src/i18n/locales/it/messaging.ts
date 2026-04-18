@@ -21,4 +21,7 @@ export default {
   unreadBadge: '{{count}} non letto',
   unreadBadge_one: '{{count}} non letto',
   unreadBadge_other: '{{count}} non letti',
+  inboxTitle: 'Messaggi diretti',
+  requestsSectionTitle: 'Richieste in sospeso',
+  dmsSectionTitle: 'Messaggi diretti',
 }

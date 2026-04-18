@@ -21,4 +21,7 @@ export default {
   unreadBadge: '{{count}} ungelesen',
   unreadBadge_one: '{{count}} ungelesen',
   unreadBadge_other: '{{count}} ungelesen',
+  inboxTitle: 'Direktnachrichten',
+  requestsSectionTitle: 'Ausstehende Anfragen',
+  dmsSectionTitle: 'Direktnachrichten',
 }

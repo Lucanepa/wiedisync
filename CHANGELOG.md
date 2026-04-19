@@ -2,6 +2,30 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.14.0] — 2026-04-19
+
+### Added
+
+- **Broadcast — In-App Chat channel (event-only)** — the broadcast dialog gains a third channel alongside email + push: `inApp`. When enabled, the endpoint finds-or-creates a persistent `activity_chat` conversation for the event and posts the broadcast as a message there. Participants (`confirmed` / `tentative`) auto-join via a Postgres trigger on `participations`; declining auto-archives the member's row (history preserved). The success toast shows an "Open chat" action that deep-links to `/inbox/:conversation_id`. Bidirectional: participants can reply in the thread (`POST /messaging/messages` accepts `activity_chat` type).
+- **Event-only by design** — `inApp=true` is rejected with 400 `broadcast/inapp_events_only` for games/trainings (schema CHECK + endpoint guard). Per team feedback: activity chats only exist where commitment is event-level, not team-schedule-level.
+- **Honors the global messaging opt-out** — users with `communications_team_chat_enabled=false` are auto-archived in new event chats (same rule as team chats). The broadcast sender is always force-unarchived so they see the thread they just sent. Banned users are excluded entirely.
+- **Feature-flag gated in UI** — inApp checkbox stays disabled with "Bald verfügbar" tooltip unless `VITE_FEATURE_MESSAGING=true` or the sender is on the messaging allowlist. Backend endpoint runs independent of the flag.
+
+### Changed
+
+- **`conversations` schema**: new `activity_type` + `activity_id` columns, new shape CHECK enforcing exactly one of (team / DM pair / activity_chat), event-only activity_type CHECK, partial unique index `uq_conversations_one_per_activity` (one chat per event).
+- **`conversation_members` sync**: new trigger `trg_participations_activity_chat_sync` on `participations` (INSERT / UPDATE / DELETE) keeps membership aligned with RSVP state. No-op when no activity_chat exists yet — broadcast endpoint is sole provisioner.
+- **Event-delete cleanup**: new `trg_activity_chat_event_delete` AFTER DELETE on `events` removes the corresponding activity_chat conversation (FK CASCADE handles messages, members, reactions, polls, reports).
+
+### Technical
+
+- Migrations: `015-conversations-activity-chat.sql`, `016-participations-activity-chat-sync.sql`, `017-activity-chat-cleanup-triggers.sql` — all idempotent, applied to dev + prod.
+- Tests: 25/25 unit (was 19 — 5 new for `findOrCreateActivityConversation`, 1 payload test replaced). 23/23 integration (13 Plan 01 + 10 Plan 02 — inApp happy path, training/game rejection, inbox surfacing, reply, 3 trigger paths, cleanup trigger, audit-row integrity).
+- Audit row: `channels_sent.in_app` + `delivery_results.in_app { sent, failed, conversation_id, message_id }`.
+- No push duplication: broadcast writes messages via `ItemsService` directly, bypassing the `POST /messaging/messages` route's `firePushForMessage` hook. When sender selects `push=true + inApp=true`, only the broadcast's own push fires (linking to `/events/:id`).
+
+---
+
 ## [3.13.0] — 2026-04-19
 
 ### Added

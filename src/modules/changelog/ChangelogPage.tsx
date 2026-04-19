@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.13.0'
+const APP_VERSION = '3.14.0'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,21 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.14.0',
+    date: '2026-04-19',
+    sections: [
+      {
+        title: 'Neu',
+        items: [
+          'Kontaktieren-Funktion: zusätzlicher Kanal „In-App-Chat" für Event-Broadcasts. Bei aktivierter Option wird pro Event ein persistenter Chat erstellt, in dem Trainer:innen & Admins schreiben und Teilnehmende direkt antworten können. RSVPs steuern automatisch, wer den Chat sieht: bei „Dabei"/„Vielleicht" wird man hinzugefügt, bei „Abgesagt" archiviert.',
+          'Der Broadcast-Erfolgs-Toast zeigt neu eine „Chat öffnen"-Aktion, die direkt in den Event-Chat springt.',
+          'Event-Chats folgen dem persönlichen „Team-Chat"-Schalter: wer Chat global ausgeschaltet hat, sieht Event-Chats nicht im Posteingang (können pro Chat wieder sichtbar gemacht werden).',
+          'In-App-Kanal ist nur für Events verfügbar — für Spiele und Trainings bleibt es bei E-Mail + Push.',
+        ],
+      },
+    ],
+  },
   {
     version: '3.13.0',
     date: '2026-04-19',

@@ -2,9 +2,12 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../../hooks/useAuth'
 import { useConversation } from '../hooks/useConversation'
+import { useConversationMembers } from '../hooks/useConversationMembers'
 import ConversationThread from './ConversationThread'
 import MessageComposer from './MessageComposer'
 import ReportMessageDialog from './ReportMessageDialog'
+import GroupDmMenu from './GroupDmMenu'
+import Avatar, { AvatarGroup } from './Avatar'
 import { Bell, BellOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { ConversationSummary, MessageRow } from '../api/types'
@@ -27,6 +30,13 @@ export default function ThreadView({ conversation, onMarkRead, onToggleMute, hea
   const { messages, isLoading, send, sendError } = useConversation(conversation.id)
   const [reportingMessage, setReportingMessage] = useState<MessageRow | null>(null)
 
+  const isGroupDm = conversation.type === 'group_dm'
+  const isDmLike = conversation.type === 'dm' || conversation.type === 'dm_request'
+
+  const { members, refetch: refetchMembers } = useConversationMembers(
+    isGroupDm || isDmLike ? conversation.id : null,
+  )
+
   const isTeamModerator = conversation.type === 'team' && conversation.team != null && (
     coachTeamIds.includes(String(conversation.team)) ||
     teamResponsibleIds.includes(String(conversation.team))
@@ -36,18 +46,60 @@ export default function ThreadView({ conversation, onMarkRead, onToggleMute, hea
     if (conversation.id && conversation.unread_count > 0) onMarkRead(conversation.id)
   }, [conversation.id, conversation.unread_count, onMarkRead])
 
+  const displayTitle = (() => {
+    if (title) return title
+    if (isGroupDm) {
+      return conversation.title
+        || (members.length > 0
+          ? members.map(m => `${m.first_name ?? ''}`.trim()).filter(Boolean).slice(0, 3).join(', ')
+          : t('groupChat.defaultName', { defaultValue: 'Gruppe' }))
+    }
+    if (isDmLike) {
+      const other = members.find(m => String(m.id) !== String(user?.id))
+      if (other) return `${other.first_name ?? ''} ${other.last_name ?? ''}`.trim() || t('threadTitle')
+    }
+    return t('threadTitle')
+  })()
+
+  const peer = isDmLike ? members.find(m => String(m.id) !== String(user?.id)) : null
+  const groupAvatars = isGroupDm
+    ? members.map(m => ({
+        src: m.photo,
+        alt: `${m.first_name ?? ''} ${m.last_name ?? ''}`.trim() || '—',
+      }))
+    : []
+
   return (
     <div className="flex flex-col h-full min-h-[60vh] md:min-h-[500px]">
-      <div className="flex items-center justify-between px-3 py-2 border-b border-border">
-        <h3 className="font-semibold text-sm truncate">{title ?? t('threadTitle')}</h3>
-        <Button
-          variant="ghost" size="sm"
-          onClick={() => onToggleMute(conversation.id)}
-          aria-label={conversation.muted ? t('unmute') : t('mute')}
-          title={conversation.muted ? t('unmute') : t('mute')}
-        >
-          {conversation.muted ? <BellOff className="h-4 w-4" /> : <Bell className="h-4 w-4" />}
-        </Button>
+      <div className="flex items-center justify-between px-3 py-2 border-b border-border gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          {peer && <Avatar src={peer.photo} alt={displayTitle} size="sm" />}
+          {isGroupDm && groupAvatars.length > 0 && (
+            <AvatarGroup items={groupAvatars} max={3} size="sm" />
+          )}
+          <h3 className="font-semibold text-sm truncate">{displayTitle}</h3>
+          {isGroupDm && members.length > 0 && (
+            <span className="text-[10px] text-muted-foreground">({members.length})</span>
+          )}
+        </div>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost" size="sm"
+            onClick={() => onToggleMute(conversation.id)}
+            aria-label={conversation.muted ? t('unmute') : t('mute')}
+            title={conversation.muted ? t('unmute') : t('mute')}
+            className="min-h-11"
+          >
+            {conversation.muted ? <BellOff className="h-4 w-4" /> : <Bell className="h-4 w-4" />}
+          </Button>
+          {isGroupDm && (
+            <GroupDmMenu
+              conversationId={conversation.id}
+              currentMemberIds={members.map(m => m.id)}
+              onMemberAdded={refetchMembers}
+            />
+          )}
+        </div>
       </div>
       {header}
       <ConversationThread

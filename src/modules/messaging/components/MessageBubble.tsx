@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { MessageRow } from '../api/types'
+import Avatar from './Avatar'
 import EditMessageInline from './EditMessageInline'
 import MessageActions from './MessageActions'
 import ReactionBar from './ReactionBar'
@@ -29,7 +30,8 @@ export default function MessageBubble({ message, isOwn, currentMemberId, isTeamM
   // Tombstone
   if (message.deleted_at != null) {
     return (
-      <div className={`flex flex-col max-w-[85%] ${isOwn ? 'self-end items-end' : 'self-start items-start'}`}>
+      <div className={`flex max-w-[85%] gap-2 ${isOwn ? 'self-end flex-row-reverse' : 'self-start'}`}>
+        {!isOwn && <div className="w-6 shrink-0" />}
         <div className="rounded-2xl px-3 py-2 text-xs italic text-muted-foreground bg-muted">
           {t('messageDeleted')}
         </div>
@@ -37,8 +39,19 @@ export default function MessageBubble({ message, isOwn, currentMemberId, isTeamM
     )
   }
 
+  const avatar = !isOwn ? (
+    <Avatar
+      src={message.sender_photo ?? null}
+      alt={message.sender_name ?? '—'}
+      size="xs"
+      className="mt-0.5"
+    />
+  ) : null
+
   return (
-    <div className={`group flex flex-col max-w-[85%] ${isOwn ? 'self-end items-end' : 'self-start items-start'}`}>
+    <div className={`group flex gap-2 max-w-[85%] ${isOwn ? 'self-end' : 'self-start'}`}>
+      {avatar}
+      <div className={`flex flex-col min-w-0 ${isOwn ? 'items-end' : 'items-start'}`}>
       {!isOwn && message.sender_name && (
         <div className="text-xs text-muted-foreground mb-0.5 px-2">{message.sender_name}</div>
       )}
@@ -68,6 +81,7 @@ export default function MessageBubble({ message, isOwn, currentMemberId, isTeamM
         />
       </div>
       {message.type !== 'poll' && <ReactionBar messageId={message.id} />}
+      </div>
     </div>
   )
 }

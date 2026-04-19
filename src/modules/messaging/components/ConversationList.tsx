@@ -3,23 +3,24 @@ import { useTranslation } from 'react-i18next'
 import { formatDistanceToNowStrict } from 'date-fns'
 import { BellOff, Calendar, Users } from 'lucide-react'
 import type { ConversationSummary } from '../api/types'
-import { useMemberDisplayNames } from '../hooks/useMemberDisplayNames'
+import { useMemberProfiles } from '../hooks/useMemberProfiles'
+import Avatar from './Avatar'
 
 type Props = { conversations: ConversationSummary[] }
 
 export default function ConversationList({ conversations }: Props) {
   const { t } = useTranslation('messaging')
   const memberIds = conversations.map(c => c.other_member).filter((x): x is string => !!x)
-  const names = useMemberDisplayNames(memberIds)
+  const profiles = useMemberProfiles(memberIds)
 
   return (
     <ul className="divide-y divide-border rounded-md border border-border bg-background">
       {conversations.map((c) => {
         const isGroupDm = c.type === 'group_dm'
         const isActivityChat = c.type === 'activity_chat'
-        const displayName = c.other_member
-          ? (names.get(c.other_member) ?? '—')
-          : (c.title ?? (isGroupDm ? t('groupChat.defaultName', { defaultValue: 'Gruppe' }) : '—'))
+        const peer = c.other_member ? profiles.get(c.other_member) : undefined
+        const displayName = peer?.name
+          ?? (c.title ?? (isGroupDm ? t('groupChat.defaultName', { defaultValue: 'Gruppe' }) : '—'))
         const rel = c.last_message_at
           ? formatDistanceToNowStrict(new Date(c.last_message_at), { addSuffix: true })
           : ''
@@ -29,17 +30,24 @@ export default function ConversationList({ conversations }: Props) {
               to={`/inbox/${c.id}`}
               className="flex items-center gap-3 px-3 py-3 hover:bg-muted focus:bg-muted focus:outline-none"
             >
+              {peer && (
+                <Avatar src={peer.photo} alt={peer.name} size="md" />
+              )}
               {isActivityChat && (
-                <Calendar
-                  className="h-4 w-4 shrink-0 text-muted-foreground"
-                  aria-label={t('activityChat.label', { defaultValue: 'Event-Chat' })}
-                />
+                <div className="h-10 w-10 shrink-0 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
+                  <Calendar
+                    className="h-5 w-5"
+                    aria-label={t('activityChat.label', { defaultValue: 'Event-Chat' })}
+                  />
+                </div>
               )}
               {isGroupDm && (
-                <Users
-                  className="h-4 w-4 shrink-0 text-muted-foreground"
-                  aria-label={t('groupChat.label', { defaultValue: 'Gruppen-Chat' })}
-                />
+                <div className="h-10 w-10 shrink-0 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
+                  <Users
+                    className="h-5 w-5"
+                    aria-label={t('groupChat.label', { defaultValue: 'Gruppen-Chat' })}
+                  />
+                </div>
               )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">

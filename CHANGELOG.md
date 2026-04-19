@@ -2,6 +2,25 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.15.0] — 2026-04-19
+
+### Changed
+
+- **Datetime convention: proper UTC everywhere** — migrated from "wall-clock-labelled-UTC" (Wiedisync `parseWallClock` stripped the offset; Directus admin converted it; the two disagreed) to proper UTC stored in `timestamptz` + rendered via `Intl.DateTimeFormat({ timeZone: 'Europe/Zurich', … })`. All five surfaces (Directus admin, Wiedisync UI, email, iCal, push) now agree on the Zurich-local hour for every event, training, game, and announcement. DST transitions are handled natively by the Intl layer.
+- **Frontend** — 9 new Intl-Zurich helpers in `src/utils/dateHelpers.ts` (`formatTimeZurich`, `formatDateZurich`, `formatDateCompactZurich`, `formatDateShortZurich`, `formatWeekdayZurich`, `formatDateTimeCompactZurich`, `formatRelativeTimeZurich`, `toUtcIsoFromDatetimeLocal`, `toDatetimeLocalFromUtcIso`). The 7 legacy public formatters now one-line-delegate to them, so call sites kept their imports. 13 render-sites, 6 form writers (`EventForm`, `AnnouncementsPage`, `RecordEditModal`, `AwayProposalForm`, `TrainingForm`, `RecurringTrainingModal`), and 3 string-split hacks (`EventCard`, `TrainingCard`, `TrainingDetailModal`) migrated. `parseWallClock` and `toApiDatetime` removed.
+- **Round-trip helpers are DST-aware** — `toUtcIsoFromDatetimeLocal` computes the Europe/Zurich offset twice (guess instant + corrected instant) and uses the corrected-instant offset when they differ, so spring-forward gaps and fall-back ambiguity resolve to the same values browsers produce for `new Date('2026-03-29T02:30')` in a Zurich locale.
+- **Backend** — `directus/extensions/kscw-endpoints/src/email-template.js` (`formatDateCH`, `weekday`, `buildBroadcastEmail` time extraction) and `ical-feed.js` events path (`toZurichICSLocal`) replaced `.getUTC*()` accessors and `String(ev.start_date).split(' ')[1]` hacks with `Intl.DateTimeFormat` on `Europe/Zurich`. Games path (reads TZ-naive `games.date` + `games.time` columns) untouched; same for `gcal-sync.js`, `bp-sync.js`, `sv-sync.js`.
+- **One-shot DB migration** — `UPDATE <table> SET <col> = <col>::timestamp AT TIME ZONE 'Europe/Zurich' WHERE <col> IS NOT NULL` applied to both dev and prod across 6 columns (`events.start_date/end_date/respond_by`, `trainings.respond_by`, `games.respond_by`, `announcements.expires_at`). 14 non-midnight + 26 midnight row updates per environment. Midnight rows included so the `getDeadlineDate` Zurich h:m:s=00:00:00 end-of-day sentinel keeps working after the stored value becomes real UTC.
+
+### Technical
+
+- **Tests**: 18 new vitest cases for the Intl helpers (CEST, CET, DST spring-forward gap, DST fall-back ambiguity, Directus `YYYY-MM-DD HH:MM:SS` space format, bare `HH:MM` passthrough, null/invalid) + 7 for the rewritten `parseRespondByTime` + `getDeadlineDate`. 202/202 frontend + 25/25 backend broadcast-helpers green. `tsc -b --noEmit` + `vite build` clean.
+- **Spec SQL direction was inverted** — `<col> AT TIME ZONE 'Europe/Zurich' AT TIME ZONE 'UTC'` shifts +2h (wrong direction); correct is `<col>::timestamp AT TIME ZONE 'Europe/Zurich'` which reinterprets the stored digits as Zurich-local and shifts -2h in CEST. Caught by the pre-migration dry-run.
+- **Prod DB requires `supabase_admin`** — `events` (and likely other KSCW tables) are owned by `supabase_admin` with RLS enabled and zero grants to the `postgres` user. Migration path: `ssh hetzner "sudo docker exec -i supabase-db-vek42jyj0owoutoouq29aisq psql -U supabase_admin -d postgres"`.
+- **Rollout timing** — rolled out mid-event (Mixed-Turnier 2026 active 12:30–16:00 Zurich) with user approval. The concurrent v3.14.0 broadcast-02 release had already merged the new Intl code to prod before the DB migration, so there was a brief window where prod served new-frontend-on-old-DB (displayed 14:30 instead of 12:30). Closed by applying the SQL UPDATE immediately after dry-run confirmation.
+
+---
+
 ## [3.14.0] — 2026-04-19
 
 ### Added

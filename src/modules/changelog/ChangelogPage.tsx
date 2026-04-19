@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.14.0'
+const APP_VERSION = '3.15.0'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,18 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.15.0',
+    date: '2026-04-19',
+    sections: [
+      {
+        title: 'Under the hood',
+        items: [
+          'Internal datetime handling switched to proper UTC storage with Europe/Zurich rendering. Nothing changes in the times you see — but now the app, Directus admin, email notifications, and iCal calendar subscriptions all agree on the same Zurich-local hour, and DST transitions are handled precisely.',
+        ],
+      },
+    ],
+  },
   {
     version: '3.14.0',
     date: '2026-04-19',

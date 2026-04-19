@@ -52,5 +52,6 @@ export default {
     rateLimitedTimed: 'Bitte warte {{minutes}} Minute(n) und versuche es erneut.',
     invalidField: 'Ungültiger Wert für „{{field}}".',
     notImplemented: 'In-App-Kanal ist noch nicht verfügbar.',
+    openConversation: 'Chat öffnen',
   },
 }

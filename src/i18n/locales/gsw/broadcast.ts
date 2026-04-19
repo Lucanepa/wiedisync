@@ -52,5 +52,6 @@ export default {
     rateLimitedTimed: 'Bitte warti {{minutes}} Minute(n) und probier’s nomal.',
     invalidField: 'Ungültige Wärt für „{{field}}".',
     notImplemented: 'De In-App-Kanal isch no nöd verfüegbar.',
+    openConversation: 'Chat öffne',
   },
 }

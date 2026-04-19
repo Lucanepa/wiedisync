@@ -3,7 +3,20 @@
  * POST /kscw/contact — public, Turnstile protected
  */
 
+import { bucketEmailsByLocale } from './email-template.js'
+
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET || ''
+
+const T = {
+  de: {
+    subject: (subj, name) => `[KSCW Kontakt] ${subj || 'Anfrage'} von ${name}`,
+    nameLabel: 'Name', emailLabel: 'E-Mail', subjectLabel: 'Betreff',
+  },
+  en: {
+    subject: (subj, name) => `[KSCW Contact] ${subj || 'Inquiry'} from ${name}`,
+    nameLabel: 'Name', emailLabel: 'Email', subjectLabel: 'Subject',
+  },
+}
 
 const SPORT_EMAILS = {
   volleyball: process.env.CONTACT_EMAIL_VB || 'volleyball@kscw.ch',
@@ -74,11 +87,20 @@ export function registerContactForm(router, { database, logger, services, getSch
       const { MailService } = services
       const mail = new MailService({ schema, knex: database })
 
-      await mail.send({
-        to: toEmail,
-        subject: `[KSCW Kontakt] ${subject || 'Anfrage'} von ${name}`,
-        text: `Name: ${name}\nEmail: ${email}\nBetreff: ${subject || '-'}\n\n${message}`,
-      })
+      // Per-recipient locale: members get their preferred language, alias
+      // addresses (kontakt@/volleyball@/basketball@) fall back to DE.
+      const recipientList = toEmail.split(',').map(s => s.trim()).filter(Boolean)
+      const buckets = await bucketEmailsByLocale(database, recipientList)
+      for (const loc of ['de', 'en']) {
+        const tos = buckets[loc]
+        if (!tos.length) continue
+        const tt = T[loc] || T.de
+        await mail.send({
+          to: tos.join(','),
+          subject: tt.subject(subject, name),
+          text: `${tt.nameLabel}: ${name}\n${tt.emailLabel}: ${email}\n${tt.subjectLabel}: ${subject || '-'}\n\n${message}`,
+        })
+      }
 
       log.info(`Contact form sent to team ${team_id} contact`)
       res.json({ success: true })

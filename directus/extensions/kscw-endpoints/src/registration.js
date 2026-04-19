@@ -4,7 +4,7 @@
  * POST /kscw/registration/:id/files — public, upload ID files after registration
  */
 
-import { buildEmailLayout, buildInfoCard, formatDateCH } from './email-template.js'
+import { buildEmailLayout, buildInfoCard, formatDateCH, bucketEmailsByLocale } from './email-template.js'
 import crypto from 'crypto'
 
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET || ''
@@ -96,6 +96,18 @@ const T = {
     name: 'Name', team: 'Team', fee: 'Beitragskategorie', dob: 'Geburtsdatum',
     email: 'E-Mail', phone: 'Telefon', address: 'Adresse', nationality: 'Nationalität',
     gender: 'Geschlecht', licence: 'Lizenz', refLevel: 'Schiedsrichter-Stufe', ref: 'Referenz',
+    // Admin notification labels + copy
+    adminTitle: 'Neue Anmeldung',
+    adminCta: 'Im Admin prüfen',
+    adminSubject: (vorname, nachname, type) => `[KSCW] Neue Anmeldung: ${vorname} ${nachname} (${type})`,
+    adminType: 'Typ',
+    adminAhv: 'AHV',
+    adminKantonsschule: 'Kantonsschule',
+    adminBemerkungen: 'Bemerkungen',
+    adminNextSteps: 'Nächste Schritte:',
+    adminStep1: 'Daten im Admin-Bereich prüfen und ggf. bearbeiten',
+    adminStep2: 'Anmeldung bestätigen oder ablehnen',
+    adminStep3: 'Nach Bestätigung wird automatisch eine CSV-Datei generiert',
   },
   en: {
     greeting: name => `Hello ${name},`,
@@ -129,6 +141,18 @@ const T = {
     name: 'Name', team: 'Team', fee: 'Fee Category', dob: 'Date of Birth',
     email: 'Email', phone: 'Phone', address: 'Address', nationality: 'Nationality',
     gender: 'Sex', licence: 'Licence', refLevel: 'Referee Level', ref: 'Reference',
+    // Admin notification labels + copy
+    adminTitle: 'New Registration',
+    adminCta: 'Review in admin',
+    adminSubject: (vorname, nachname, type) => `[KSCW] New registration: ${vorname} ${nachname} (${type})`,
+    adminType: 'Type',
+    adminAhv: 'AHV',
+    adminKantonsschule: 'Cantonal School',
+    adminBemerkungen: 'Notes',
+    adminNextSteps: 'Next steps:',
+    adminStep1: 'Review the data in the admin area and edit if needed',
+    adminStep2: 'Approve or reject the registration',
+    adminStep3: 'After approval, a CSV file is automatically generated',
   },
 }
 
@@ -229,47 +253,48 @@ function buildPassiveEmail(reg, locale) {
 
 // ── Admin notification email ────────────────────────────────────
 
-function buildAdminNotificationEmail(reg) {
+function buildAdminNotificationEmail(reg, locale = 'de') {
+  const l = t(locale)
   const dob = reg.geburtsdatum ? formatDateCH(reg.geburtsdatum) : '-'
   const sport = reg.membership_type === 'volleyball' ? 'volleyball' : reg.membership_type === 'basketball' ? 'basketball' : null
 
   const summary = buildInfoCard([
-    { label: 'Name', value: `${reg.vorname} ${reg.nachname}`, halfWidth: true },
-    { label: 'Typ', value: reg.membership_type, halfWidth: true },
-    { label: 'Team', value: reg.team || '-', halfWidth: true },
-    { label: 'Beitragskategorie', value: reg.beitragskategorie || '-', halfWidth: true },
-    { label: 'E-Mail', value: reg.email, halfWidth: true },
-    { label: 'Telefon', value: reg.telefon_mobil || '-', halfWidth: true },
-    { label: 'Adresse', value: `${reg.adresse || ''}, ${reg.plz || ''} ${reg.ort || ''}` },
-    { label: 'Geburtsdatum', value: dob, halfWidth: true },
-    { label: 'Nationalität', value: reg.nationalitaet || '-', halfWidth: true },
-    { label: 'AHV', value: reg.ahv_nummer || '-', halfWidth: true },
-    { label: 'Kantonsschule', value: reg.kantonsschule || '-', halfWidth: true },
-    ...(reg.lizenz ? [{ label: 'Lizenz', value: reg.lizenz }] : []),
-    ...(reg.schiedsrichter_stufe ? [{ label: 'Schiedsrichter-Stufe', value: reg.schiedsrichter_stufe }] : []),
-    { label: 'Referenz', value: reg.reference_number },
+    { label: l.name, value: `${reg.vorname} ${reg.nachname}`, halfWidth: true },
+    { label: l.adminType, value: reg.membership_type, halfWidth: true },
+    { label: l.team, value: reg.team || '-', halfWidth: true },
+    { label: l.fee, value: reg.beitragskategorie || '-', halfWidth: true },
+    { label: l.email, value: reg.email, halfWidth: true },
+    { label: l.phone, value: reg.telefon_mobil || '-', halfWidth: true },
+    { label: l.address, value: `${reg.adresse || ''}, ${reg.plz || ''} ${reg.ort || ''}` },
+    { label: l.dob, value: dob, halfWidth: true },
+    { label: l.nationality, value: reg.nationalitaet || '-', halfWidth: true },
+    { label: l.adminAhv, value: reg.ahv_nummer || '-', halfWidth: true },
+    { label: l.adminKantonsschule, value: reg.kantonsschule || '-', halfWidth: true },
+    ...(reg.lizenz ? [{ label: l.licence, value: reg.lizenz }] : []),
+    ...(reg.schiedsrichter_stufe ? [{ label: l.refLevel, value: reg.schiedsrichter_stufe }] : []),
+    { label: l.ref, value: reg.reference_number },
   ])
 
   const instructions = `
 <div style="font-size:13px;color:#94a3b8;line-height:1.7;margin-top:12px">
-  <p><strong style="color:#e2e8f0">Nächste Schritte:</strong></p>
+  <p><strong style="color:#e2e8f0">${l.adminNextSteps}</strong></p>
   <ol style="padding-left:20px;margin:8px 0">
-    <li>Daten im Admin-Bereich prüfen und ggf. bearbeiten</li>
-    <li>Anmeldung bestätigen oder ablehnen</li>
-    <li>Nach Bestätigung wird automatisch eine CSV-Datei generiert</li>
+    <li>${l.adminStep1}</li>
+    <li>${l.adminStep2}</li>
+    <li>${l.adminStep3}</li>
   </ol>
 </div>`
 
   const body = summary +
-    (reg.bemerkungen ? `<div style="font-size:13px;color:#94a3b8;margin-top:12px"><strong style="color:#e2e8f0">Bemerkungen:</strong><br>${reg.bemerkungen}</div>` : '') +
+    (reg.bemerkungen ? `<div style="font-size:13px;color:#94a3b8;margin-top:12px"><strong style="color:#e2e8f0">${l.adminBemerkungen}:</strong><br>${reg.bemerkungen}</div>` : '') +
     instructions
 
   return buildEmailLayout(body, {
-    title: 'Neue Anmeldung',
+    title: l.adminTitle,
     subtitle: `${reg.vorname} ${reg.nachname} — ${reg.membership_type}`,
     sport,
     ctaUrl: 'https://wiedisync.kscw.ch/admin/anmeldungen',
-    ctaLabel: 'Im Admin prüfen',
+    ctaLabel: l.adminCta,
   })
 }
 
@@ -359,17 +384,37 @@ export function registerRegistration(router, { database, logger, services, getSc
           html: emailHtml,
         })
 
-        // Notify sport admins (from DB) + always CC owner
+        // Notify sport admins (from DB) + always CC owner.
+        // Per-recipient locale: members.language → DE bucket vs EN bucket.
+        // Owner is CC'd on the bucket matching its own locale (or DE fallback).
         const adminEmails = await getSportAdminEmails(database, body.membership_type)
-        // Ensure owner is always included (as CC if not already in TO)
-        const adminTo = adminEmails.filter(e => e !== OWNER_EMAIL.toLowerCase())
-        const ccList = adminTo.length ? [OWNER_EMAIL] : []
-        await mail.send({
-          to: adminTo.length ? adminTo : [OWNER_EMAIL],
-          cc: ccList,
-          subject: `[KSCW] Neue Anmeldung: ${reg.vorname} ${reg.nachname} (${reg.membership_type})`,
-          html: buildAdminNotificationEmail(reg),
-        })
+        const ownerLower = OWNER_EMAIL.toLowerCase()
+        const adminTo = adminEmails.filter(e => e !== ownerLower)
+        const adminBuckets = await bucketEmailsByLocale(database, adminTo)
+        const ownerBuckets = await bucketEmailsByLocale(database, [OWNER_EMAIL])
+        const ownerLocale = ownerBuckets.en.length ? 'en' : 'de'
+        const totalAdmins = adminBuckets.de.length + adminBuckets.en.length
+
+        // Fallback: no admins → send owner-only in owner's locale
+        if (totalAdmins === 0) {
+          adminBuckets[ownerLocale].push(OWNER_EMAIL)
+        }
+        // Pick which bucket owner is CC'd on (prefer same locale; else whichever has people)
+        const ownerCcBucket = totalAdmins > 0
+          ? (adminBuckets[ownerLocale].length ? ownerLocale : (adminBuckets.de.length ? 'de' : 'en'))
+          : null
+
+        for (const loc of ['de', 'en']) {
+          const tos = adminBuckets[loc]
+          if (!tos.length) continue
+          const lAdmin = T[loc] || T.de
+          await mail.send({
+            to: tos,
+            cc: (loc === ownerCcBucket) ? [OWNER_EMAIL] : [],
+            subject: lAdmin.adminSubject(reg.vorname, reg.nachname, reg.membership_type),
+            html: buildAdminNotificationEmail(reg, loc),
+          })
+        }
       } catch (emailErr) {
         log.warn({ msg: `Confirmation email failed: ${emailErr.message}`, id })
         // Don't fail the registration if email fails

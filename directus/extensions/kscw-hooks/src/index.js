@@ -21,7 +21,7 @@
 
 import { logCronError, logWarning, logAuthDenial, cleanOldLogs, writeErrorLog } from '../../kscw-endpoints/src/error-log.js'
 import { initSentry } from '../../kscw-endpoints/src/sentry.js'
-import { buildEmailLayout, buildInfoCard, buildAlertBox } from '../../kscw-endpoints/src/email-template.js'
+import { buildEmailLayout, buildInfoCard, buildAlertBox, bucketEmailsByLocale } from '../../kscw-endpoints/src/email-template.js'
 
 // Frontend URL — env var or auto-detect from Directus PUBLIC_URL
 const FRONTEND_URL = process.env.FRONTEND_URL
@@ -1791,32 +1791,61 @@ export default ({ action, filter, init, schedule }, { services, database, logger
             log.error({ msg: `Member creation failed: ${memberErr.message}`, id, stack: memberErr.stack })
           }
 
-          // ── 4. CSV email to sport-specific admins ──
+          // ── 4. CSV email to sport-specific admins (per-recipient locale) ──
           const csv = buildRegistrationCSV(reg)
           const csvBuffer = Buffer.from(csv, 'utf-8')
           const filename = `anmeldung_${reg.nachname}_${reg.vorname}_${reg.reference_number}.csv`
           const recipients = getApprovalRecipients(reg.membership_type)
-          const adminCsvBody = buildInfoCard([
-            { label: 'Name', value: `${reg.vorname} ${reg.nachname}`, halfWidth: true },
-            { label: 'Typ', value: reg.membership_type, halfWidth: true },
-            { label: 'Team', value: reg.team || '-', halfWidth: true },
-            { label: 'E-Mail', value: reg.email, halfWidth: true },
-            { label: 'Referenz', value: reg.reference_number },
-          ]) + `<div style="font-size:13px;color:#94a3b8;line-height:1.7;margin-top:12px;text-align:justify"><p>Die Anmeldung wurde bestätigt. Die CSV-Datei für den ClubDesk-Import ist im Anhang.</p></div>`
-          const adminCsvHtml = buildEmailLayout(adminCsvBody, {
-            title: 'Anmeldung bestätigt',
-            subtitle: `${reg.vorname} ${reg.nachname} — ${reg.membership_type}`,
-            sport,
-            ctaUrl: 'https://wiedisync.kscw.ch/admin/anmeldungen',
-            ctaLabel: 'Im Admin öffnen',
-          })
-          await mail.send({
-            to: recipients.to,
-            ...(recipients.cc.length ? { cc: recipients.cc } : {}),
-            subject: `[KSCW] Anmeldung bestätigt: ${reg.vorname} ${reg.nachname} (${reg.membership_type})`,
-            html: adminCsvHtml,
-            attachments: [{ filename, content: csvBuffer, contentType: 'application/vnd.ms-excel' }],
-          })
+          const adminCsvCopy = {
+            de: {
+              name: 'Name', type: 'Typ', team: 'Team', email: 'E-Mail', ref: 'Referenz',
+              intro: 'Die Anmeldung wurde bestätigt. Die CSV-Datei für den ClubDesk-Import ist im Anhang.',
+              title: 'Anmeldung bestätigt', cta: 'Im Admin öffnen',
+              subject: `[KSCW] Anmeldung bestätigt: ${reg.vorname} ${reg.nachname} (${reg.membership_type})`,
+            },
+            en: {
+              name: 'Name', type: 'Type', team: 'Team', email: 'Email', ref: 'Reference',
+              intro: 'The registration has been approved. The CSV file for the ClubDesk import is attached.',
+              title: 'Registration approved', cta: 'Open in admin',
+              subject: `[KSCW] Registration approved: ${reg.vorname} ${reg.nachname} (${reg.membership_type})`,
+            },
+          }
+          const ccLower = (recipients.cc || []).map(e => e.toLowerCase())
+          const toLower = (recipients.to || []).map(e => e.toLowerCase())
+          const toBuckets = await bucketEmailsByLocale(database, toLower)
+          const ccBuckets = await bucketEmailsByLocale(database, ccLower)
+          // CC riders on the same locale bucket; if their bucket has no TO, promote them to TO
+          for (const loc of ['de', 'en']) {
+            let tos = toBuckets[loc]
+            const ccs = ccBuckets[loc].filter(e => !tos.includes(e))
+            if (!tos.length && !ccs.length) continue
+            if (!tos.length) {
+              tos = ccs
+              ccBuckets[loc] = []
+            }
+            const c = adminCsvCopy[loc]
+            const adminCsvBody = buildInfoCard([
+              { label: c.name, value: `${reg.vorname} ${reg.nachname}`, halfWidth: true },
+              { label: c.type, value: reg.membership_type, halfWidth: true },
+              { label: c.team, value: reg.team || '-', halfWidth: true },
+              { label: c.email, value: reg.email, halfWidth: true },
+              { label: c.ref, value: reg.reference_number },
+            ]) + `<div style="font-size:13px;color:#94a3b8;line-height:1.7;margin-top:12px;text-align:justify"><p>${c.intro}</p></div>`
+            const adminCsvHtml = buildEmailLayout(adminCsvBody, {
+              title: c.title,
+              subtitle: `${reg.vorname} ${reg.nachname} — ${reg.membership_type}`,
+              sport,
+              ctaUrl: 'https://wiedisync.kscw.ch/admin/anmeldungen',
+              ctaLabel: c.cta,
+            })
+            await mail.send({
+              to: tos,
+              ...(ccBuckets[loc].length ? { cc: ccBuckets[loc] } : {}),
+              subject: c.subject,
+              html: adminCsvHtml,
+              attachments: [{ filename, content: csvBuffer, contentType: 'application/vnd.ms-excel' }],
+            })
+          }
           log.info({ msg: 'Approval CSV sent', id, ref: reg.reference_number })
 
         } else if (payload.status === 'rejected') {

@@ -3,25 +3,42 @@
  * POST /kscw/clubdesk-update — authenticated
  */
 
-import { buildEmailLayout, buildInfoCard } from './email-template.js'
+import { buildEmailLayout, buildInfoCard, bucketEmailsByLocale } from './email-template.js'
 
 const OWNER_EMAIL = 'luca.canepa@gmail.com'
 const ADMIN_EMAIL = 'kontakt@kscw.ch'
 
-/** German display labels for DB field names */
+/** Per-locale display labels for DB field names */
 const FIELD_LABELS = {
-  first_name: 'Vorname',
-  last_name: 'Nachname',
-  email: 'E-Mail',
-  phone: 'Telefon',
-  birthdate: 'Geburtsdatum',
-  anrede: 'Anrede',
-  adresse: 'Adresse',
-  plz: 'PLZ',
-  ort: 'Ort',
-  nationalitaet: 'Nationalität',
-  sex: 'Geschlecht',
-  ahv_nummer: 'AHV-Nummer',
+  de: {
+    first_name: 'Vorname', last_name: 'Nachname', email: 'E-Mail', phone: 'Telefon',
+    birthdate: 'Geburtsdatum', anrede: 'Anrede', adresse: 'Adresse', plz: 'PLZ', ort: 'Ort',
+    nationalitaet: 'Nationalität', sex: 'Geschlecht', ahv_nummer: 'AHV-Nummer',
+  },
+  en: {
+    first_name: 'First name', last_name: 'Last name', email: 'Email', phone: 'Phone',
+    birthdate: 'Date of birth', anrede: 'Salutation', adresse: 'Address', plz: 'Zip', ort: 'City',
+    nationalitaet: 'Nationality', sex: 'Sex', ahv_nummer: 'AHV number',
+  },
+}
+
+const T = {
+  de: {
+    title: 'ClubDesk Datenanpassung',
+    subject: name => `[KSCW] Datenanpassung: ${name}`,
+    intro: 'Folgende Daten wurden vom Mitglied aktualisiert und müssen in ClubDesk übernommen werden:',
+    currentData: 'Aktuelle Daten',
+    name: 'Name', email: 'E-Mail', phone: 'Telefon', team: 'Team',
+    field: 'Feld', oldValue: 'Alt', newValue: 'Neu',
+  },
+  en: {
+    title: 'ClubDesk Data Update',
+    subject: name => `[KSCW] Data update: ${name}`,
+    intro: 'The following data was updated by the member and needs to be applied in ClubDesk:',
+    currentData: 'Current data',
+    name: 'Name', email: 'Email', phone: 'Phone', team: 'Team',
+    field: 'Field', oldValue: 'Old', newValue: 'New',
+  },
 }
 
 const CSV_HEADERS = [
@@ -45,9 +62,11 @@ function buildCsv(data, teamNames) {
   return CSV_HEADERS.join(',') + '\n' + row.map(escCsv).join(',')
 }
 
-function buildChangesTable(changes) {
+function buildChangesTable(changes, locale = 'de') {
+  const labels = FIELD_LABELS[locale] || FIELD_LABELS.de
+  const t = T[locale] || T.de
   const rows = changes.map(c => {
-    const label = FIELD_LABELS[c.field] || c.field
+    const label = labels[c.field] || c.field
     return `<tr>
       <td style="padding:6px 12px;border-bottom:1px solid #334155;color:#e2e8f0;font-size:13px">${label}</td>
       <td style="padding:6px 12px;border-bottom:1px solid #334155;color:#ef4444;font-size:13px;text-decoration:line-through">${c.old_value || '—'}</td>
@@ -58,9 +77,9 @@ function buildChangesTable(changes) {
   return `
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#0f172a;border:1px solid #334155;border-radius:8px;overflow:hidden;margin:12px 0">
   <tr>
-    <th style="padding:8px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:#64748b;border-bottom:1px solid #334155">Feld</th>
-    <th style="padding:8px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:#64748b;border-bottom:1px solid #334155">Alt</th>
-    <th style="padding:8px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:#64748b;border-bottom:1px solid #334155">Neu</th>
+    <th style="padding:8px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:#64748b;border-bottom:1px solid #334155">${t.field}</th>
+    <th style="padding:8px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:#64748b;border-bottom:1px solid #334155">${t.oldValue}</th>
+    <th style="padding:8px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:#64748b;border-bottom:1px solid #334155">${t.newValue}</th>
   </tr>
   ${rows}
 </table>`
@@ -104,51 +123,39 @@ export function registerClubdeskUpdate(router, { database, logger, services, get
       const sport = teamSports.includes('volleyball') ? 'volleyball'
         : teamSports.includes('basketball') ? 'basketball' : null
 
-      // Build email
+      // Build email — per-recipient locale via members.language
       const name = `${current_data.first_name} ${current_data.last_name}`
-      const changesHtml = buildChangesTable(changes)
-
-      const summaryCard = buildInfoCard([
-        { label: 'Name', value: name, halfWidth: true },
-        { label: 'E-Mail', value: current_data.email, halfWidth: true },
-        { label: 'Telefon', value: current_data.phone || '—', halfWidth: true },
-        { label: 'Team', value: teamNames || '—', halfWidth: true },
-      ])
-
-      const body = `
-<div style="font-size:13px;color:#94a3b8;margin-bottom:12px">
-  Folgende Daten wurden vom Mitglied aktualisiert und müssen in ClubDesk übernommen werden:
-</div>
-${changesHtml}
-<div style="margin-top:16px">
-  <div style="font-size:11px;text-transform:uppercase;color:#64748b;letter-spacing:0.5px;margin-bottom:8px;font-weight:700">Aktuelle Daten</div>
-  ${summaryCard}
-</div>`
-
-      const emailHtml = buildEmailLayout(body, {
-        title: 'ClubDesk Datenanpassung',
-        subtitle: name,
-        sport,
-      })
-
-      // Build CSV
       const csvString = buildCsv(current_data, teamNames)
       const dateStr = new Date().toISOString().slice(0, 10)
       const filename = `clubdesk-update-${current_data.last_name}-${current_data.first_name}-${dateStr}.csv`
 
-      // Send email with CSV attachment
       const mail = new MailService({ schema, knex: database })
-      await mail.send({
-        to: OWNER_EMAIL,
-        cc: ADMIN_EMAIL,
-        subject: `[KSCW] Datenanpassung: ${name}`,
-        html: emailHtml,
-        attachments: [{
-          filename,
-          content: csvString,
-          contentType: 'text/csv',
-        }],
-      })
+      const buckets = await bucketEmailsByLocale(database, [OWNER_EMAIL, ADMIN_EMAIL])
+      for (const loc of ['de', 'en']) {
+        const tos = buckets[loc]
+        if (!tos.length) continue
+        const tt = T[loc] || T.de
+        const summaryCard = buildInfoCard([
+          { label: tt.name, value: name, halfWidth: true },
+          { label: tt.email, value: current_data.email, halfWidth: true },
+          { label: tt.phone, value: current_data.phone || '—', halfWidth: true },
+          { label: tt.team, value: teamNames || '—', halfWidth: true },
+        ])
+        const body = `
+<div style="font-size:13px;color:#94a3b8;margin-bottom:12px">${tt.intro}</div>
+${buildChangesTable(changes, loc)}
+<div style="margin-top:16px">
+  <div style="font-size:11px;text-transform:uppercase;color:#64748b;letter-spacing:0.5px;margin-bottom:8px;font-weight:700">${tt.currentData}</div>
+  ${summaryCard}
+</div>`
+        const emailHtml = buildEmailLayout(body, { title: tt.title, subtitle: name, sport })
+        await mail.send({
+          to: tos,
+          subject: tt.subject(name),
+          html: emailHtml,
+          attachments: [{ filename, content: csvString, contentType: 'text/csv' }],
+        })
+      }
 
       log.info({ msg: 'ClubDesk update email sent', member_id, changes: changes.length })
       res.json({ success: true })

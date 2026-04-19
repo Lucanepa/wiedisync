@@ -273,3 +273,38 @@ export function buildBroadcastEmail({
     ctaLabel: L.cta,
   })
 }
+
+/**
+ * Bucket admin/staff email recipients by their preferred locale.
+ *
+ * Resolves each address against `directus_users.email` (case-insensitive) and
+ * reads `members.language` via the `members.user` FK. Addresses without a
+ * matching member, or with `german`/`swiss_german`/null, fall in the `de`
+ * bucket; everything else (`english`/`french`/`italian`/...) falls in `en`.
+ * Mirrors the resolution used by team-join-request and announcement fanout.
+ *
+ * @param {object} database - knex instance
+ * @param {string[]} emails - recipient addresses (any case)
+ * @returns {Promise<{de: string[], en: string[]}>}
+ */
+export async function bucketEmailsByLocale(database, emails) {
+  const buckets = { de: [], en: [] }
+  if (!Array.isArray(emails) || emails.length === 0) return buckets
+  const lower = [...new Set(emails.map(e => String(e || '').trim().toLowerCase()).filter(Boolean))]
+  if (lower.length === 0) return buckets
+  const placeholders = lower.map(() => '?').join(',')
+  const rows = await database('directus_users as du')
+    .leftJoin('members as m', 'm.user', 'du.id')
+    .whereRaw(`LOWER(du.email) IN (${placeholders})`, lower)
+    .select(database.raw('LOWER(du.email) as email'), 'm.language')
+  const langMap = new Map()
+  for (const r of rows) {
+    if (!langMap.has(r.email)) langMap.set(r.email, r.language)
+  }
+  for (const email of lower) {
+    const lang = langMap.get(email)
+    const isGerman = !lang || lang === 'german' || lang === 'swiss_german'
+    buckets[isGerman ? 'de' : 'en'].push(email)
+  }
+  return buckets
+}

@@ -400,3 +400,47 @@ export async function checkExportRateLimit(db, memberId) {
 export async function markExportDone(db, memberId) {
   await db('members').where('id', memberId).update({ last_export_at: new Date().toISOString() })
 }
+
+// ─── Member search for "Neue Nachricht" (DM / group DM pickers) ──────────────
+
+/**
+ * Search members the caller can DM: `dm_enabled=true`, `wiedisync_active=true`,
+ * not banned, not self, not in a block relationship with the caller (either
+ * direction).
+ *
+ * `q` is a trimmed query string (first_name / last_name / email `ILIKE %q%`).
+ * Empty `q` returns an empty result set — we don't leak the entire directory
+ * on an empty query.
+ *
+ * Returns `{id, first_name, last_name, photo}` tuples. `photo` is the
+ * directus_files uuid — frontend resolves to an image URL via its helper.
+ */
+export async function searchMembersForDm(db, callerMemberId, q, limit = 20) {
+  const trimmed = (q ?? '').trim()
+  if (trimmed.length < 1) return []
+  const needle = `%${trimmed.replace(/[%_]/g, '\\$&')}%`
+  const cap = Math.min(Math.max(Number(limit) || 20, 1), 50)
+
+  // Pre-compute block ids to exclude
+  const { either } = await loadBlocks(db, callerMemberId)
+  const blockedIds = [...either].map(Number).filter(Number.isFinite)
+
+  let qry = db('members')
+    .where('wiedisync_active', true)
+    .andWhere('communications_dm_enabled', true)
+    .andWhere('communications_banned', false)
+    .andWhere('id', '<>', callerMemberId)
+    .andWhere(function () {
+      this.whereILike('first_name', needle)
+        .orWhereILike('last_name', needle)
+        .orWhereILike('email', needle)
+    })
+    .orderBy('last_name', 'asc')
+    .orderBy('first_name', 'asc')
+    .limit(cap)
+    .select('id', 'first_name', 'last_name', 'photo')
+
+  if (blockedIds.length > 0) qry = qry.whereNotIn('id', blockedIds)
+
+  return qry
+}

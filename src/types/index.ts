@@ -618,7 +618,7 @@ export interface PollVote extends BaseRecord {
 
 // ─── Messaging ───────────────────────────────────────────────
 
-export type ConversationType = 'team' | 'dm' | 'dm_request' | 'activity_chat'
+export type ConversationType = 'team' | 'dm' | 'dm_request' | 'activity_chat' | 'group_dm'
 
 export type ConversationActivityType = 'event'
 

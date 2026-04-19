@@ -14,6 +14,7 @@ import {
   requireMessageOwner, requireTeamModerator, snapshotMessage, requireAdmin,
   resolveRecipientsForPush, buildPushPreview,
   checkExportRateLimit, markExportDone,
+  searchMembersForDm,
 } from './messaging-helpers.js'
 
 const stub = (name) => (req, res) => res.status(501).json({
@@ -217,6 +218,13 @@ export function registerMessaging(router, ctx) {
         // Membership was already validated by loadConversationMembership above;
         // communications_banned was enforced by requireMember. No block check:
         // activity chats aren't DMs.
+      } else if (conv.type === 'group_dm') {
+        // Group DMs: require dm_enabled (entry point into the group was gated
+        // by it; keep the gate here too so opt-out mid-conversation stops sends).
+        // Block check: we don't reject the send if some *other* member has a
+        // block with the sender — block only filters reads (same rule as team
+        // chats). This is different from 1-on-1 DM.
+        requireDmEnabled(member)
       } else {
         throw new MessagingError(400, 'messaging/invalid_body',
           `Unsupported conversation type: ${conv.type}`)
@@ -975,6 +983,166 @@ export function registerMessaging(router, ctx) {
 
       await markExportDone(db, me.id)
       res.json(bundle)
+    } catch (e) { sendError(res, log, e) }
+  })
+
+  // ── GET /messaging/searchable-members ───────────────────────────────
+  // Returns members who are DM-reachable for the caller. Used by the
+  // "Neue Nachricht" picker. Caller must have dm_enabled=true themselves
+  // (if you're not reachable, you can't initiate either).
+  router.get('/messaging/searchable-members', async (req, res) => {
+    try {
+      const userId = requireAuth(req)
+      const me = await requireMember(db, userId)
+      requireDmEnabled(me)
+      const q = typeof req.query?.q === 'string' ? req.query.q : ''
+      const limit = req.query?.limit != null ? Number(req.query.limit) : 20
+      const rows = await searchMembersForDm(db, me.id, q, limit)
+      res.json({ members: rows })
+    } catch (e) { sendError(res, log, e) }
+  })
+
+  // ── POST /messaging/conversations/group-dm ──────────────────────────
+  // Create a group DM. Body: { member_ids: number[], title?: string }.
+  // Rules:
+  //   • 2..∞ other members (3+ total counting sender).
+  //   • Each target must have dm_enabled=true, be wiedisync_active, not banned.
+  //   • No block between sender and any target.
+  //   • Self is excluded automatically if present in member_ids.
+  //   • Auto-accept for everyone: no request flow (consistent with spec).
+  router.post('/messaging/conversations/group-dm', async (req, res) => {
+    try {
+      const userId = requireAuth(req)
+      const me = await requireMember(db, userId)
+      requireDmEnabled(me)
+
+      const b = req.body ?? {}
+      const rawIds = Array.isArray(b.member_ids) ? b.member_ids : []
+      const memberIds = Array.from(new Set(
+        rawIds.map(v => Number(v)).filter(n => Number.isFinite(n) && n !== me.id)
+      ))
+      const title = typeof b.title === 'string' ? b.title.trim().slice(0, 120) : null
+
+      if (memberIds.length < 2) {
+        throw new MessagingError(400, 'messaging/invalid_body',
+          'member_ids must contain at least 2 other members')
+      }
+
+      const targets = await db('members').whereIn('id', memberIds)
+        .select('id', 'communications_dm_enabled', 'communications_banned', 'wiedisync_active')
+      if (targets.length !== memberIds.length) {
+        throw new MessagingError(400, 'messaging/invalid_body', 'one or more member_ids not found')
+      }
+      for (const t of targets) {
+        if (!t.wiedisync_active || !t.communications_dm_enabled || t.communications_banned) {
+          throw new MessagingError(403, 'messaging/comms_disabled',
+            `Member ${t.id} cannot be added to a group DM (opt-out or banned)`)
+        }
+      }
+
+      // Block check — any block in either direction against any invitee = reject.
+      const { either } = await loadBlocks(db, me.id)
+      for (const id of memberIds) {
+        if (either.has(String(id))) {
+          throw new MessagingError(403, 'messaging/blocked',
+            `Blocked relationship prevents this group DM (member ${id})`)
+        }
+      }
+
+      const schema = await getSchema()
+      const conversationsService = new ItemsService('conversations', { schema, knex: db })
+      const convMembersService = new ItemsService('conversation_members', { schema, knex: db })
+
+      const convId = crypto.randomUUID()
+      const nowIso = new Date().toISOString()
+      await conversationsService.createOne({
+        id: convId, type: 'group_dm', team: null, title,
+        created_by: me.id, created_at: nowIso,
+      })
+      const rows = [
+        { id: crypto.randomUUID(), conversation: convId, member: me.id, archived: false, role: 'member', joined_at: nowIso },
+        ...memberIds.map(mid => ({
+          id: crypto.randomUUID(), conversation: convId, member: mid,
+          archived: false, role: 'member', joined_at: nowIso,
+        })),
+      ]
+      await convMembersService.createMany(rows)
+
+      res.json({ conversation_id: convId, created: true, type: 'group_dm', member_count: rows.length })
+    } catch (e) { sendError(res, log, e) }
+  })
+
+  // ── POST /messaging/conversations/:id/members ───────────────────────
+  // Add a member to an existing group_dm. Any current member can invite.
+  // Body: { member: number }. Respects dm_enabled + blocks per spec.
+  router.post('/messaging/conversations/:id/members', async (req, res) => {
+    try {
+      const userId = requireAuth(req)
+      const me = await requireMember(db, userId)
+      requireDmEnabled(me)
+      const { conv } = await loadConversationMembership(db, req.params.id, me.id)
+      if (conv.type !== 'group_dm') {
+        throw new MessagingError(400, 'messaging/invalid_body',
+          'Only group_dm conversations accept members additions')
+      }
+      const newMemberId = Number(req.body?.member)
+      if (!Number.isFinite(newMemberId) || newMemberId === me.id) {
+        throw new MessagingError(400, 'messaging/invalid_body', 'member required')
+      }
+      const target = await db('members').where('id', newMemberId)
+        .select('id', 'communications_dm_enabled', 'communications_banned', 'wiedisync_active').first()
+      if (!target) throw new MessagingError(400, 'messaging/invalid_body', 'member not found')
+      if (!target.wiedisync_active || !target.communications_dm_enabled || target.communications_banned) {
+        throw new MessagingError(403, 'messaging/comms_disabled',
+          'Target cannot be added (opt-out or banned)')
+      }
+      const { either } = await loadBlocks(db, me.id)
+      if (either.has(String(newMemberId))) {
+        throw new MessagingError(403, 'messaging/blocked',
+          'Blocked relationship prevents adding this member')
+      }
+      const existing = await db('conversation_members')
+        .where({ conversation: conv.id, member: newMemberId }).first()
+      if (existing) {
+        // Already a member — un-archive if archived, else no-op.
+        if (existing.archived) {
+          await db('conversation_members').where('id', existing.id).update({ archived: false })
+        }
+        return res.json({ added: false, unarchived: !!existing.archived, member: newMemberId })
+      }
+      const schema = await getSchema()
+      const convMembersService = new ItemsService('conversation_members', { schema, knex: db })
+      await convMembersService.createOne({
+        id: crypto.randomUUID(), conversation: conv.id, member: newMemberId,
+        archived: false, role: 'member', joined_at: new Date().toISOString(),
+      })
+      res.json({ added: true, member: newMemberId })
+    } catch (e) { sendError(res, log, e) }
+  })
+
+  // ── DELETE /messaging/conversations/:id/members/me ──────────────────
+  // Self-leave a group_dm. Hard-deletes the caller's conversation_members
+  // row. If no members remain, the conversation is deleted (cascades).
+  router.delete('/messaging/conversations/:id/members/me', async (req, res) => {
+    try {
+      const userId = requireAuth(req)
+      const me = await requireMember(db, userId)
+      const { conv } = await loadConversationMembership(db, req.params.id, me.id)
+      if (conv.type !== 'group_dm') {
+        throw new MessagingError(400, 'messaging/invalid_body',
+          'Self-leave is only valid on group_dm conversations')
+      }
+      await db('conversation_members')
+        .where({ conversation: conv.id, member: me.id })
+        .del()
+      const remaining = await db('conversation_members')
+        .where({ conversation: conv.id })
+        .count('* as n').first()
+      if (Number(remaining?.n ?? 0) === 0) {
+        await db('conversations').where('id', conv.id).del()
+        return res.json({ left: true, conversation_deleted: true })
+      }
+      res.json({ left: true, conversation_deleted: false })
     } catch (e) { sendError(res, log, e) }
   })
 }

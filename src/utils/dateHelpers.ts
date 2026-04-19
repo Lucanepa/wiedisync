@@ -1,3 +1,125 @@
+// --- Intl-Zurich helpers (proper UTC convention) ---
+
+const ZURICH = 'Europe/Zurich';
+
+function formatZurichParts(d: Date): Record<string, string> {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: ZURICH,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false, weekday: 'short',
+  }).formatToParts(d);
+  return Object.fromEntries(parts.map(p => [p.type, p.value]));
+}
+
+/** Format HH:mm in Europe/Zurich, accepts ISO UTC, "YYYY-MM-DD HH:MM:SS" (treated as UTC), or bare "HH:MM". */
+export function formatTimeZurich(input: string | Date | null | undefined): string {
+  if (!input) return '';
+  if (typeof input === 'string' && /^\d{2}:\d{2}(:\d{2})?$/.test(input)) return input.slice(0, 5);
+  const d = typeof input === 'string'
+    ? new Date(input.includes('T') ? input : input.replace(' ', 'T') + 'Z')
+    : input;
+  if (Number.isNaN(d.getTime())) return '';
+  return new Intl.DateTimeFormat('de-CH', {
+    timeZone: ZURICH, hour: '2-digit', minute: '2-digit', hour12: false,
+  }).format(d);
+}
+
+/** Format dd.mm.yyyy in Europe/Zurich. */
+export function formatDateZurich(input: string | Date | null | undefined, locale: string = 'de-CH'): string {
+  if (!input) return '';
+  const d = typeof input === 'string'
+    ? new Date(input.includes('T') ? input : input.replace(' ', 'T') + 'Z')
+    : input;
+  if (Number.isNaN(d.getTime())) return '';
+  return new Intl.DateTimeFormat(locale, {
+    timeZone: ZURICH, day: '2-digit', month: '2-digit', year: 'numeric',
+  }).format(d);
+}
+
+/** Format dd.mm.yy (compact) in Europe/Zurich. */
+export function formatDateCompactZurich(input: string | Date | null | undefined): string {
+  if (!input) return '';
+  const d = typeof input === 'string'
+    ? new Date(input.includes('T') ? input : input.replace(' ', 'T') + 'Z')
+    : input;
+  if (Number.isNaN(d.getTime())) return '';
+  return new Intl.DateTimeFormat('de-CH', {
+    timeZone: ZURICH, day: '2-digit', month: '2-digit', year: '2-digit',
+  }).format(d);
+}
+
+/** Format MM-DD in Europe/Zurich (replaces old formatDateShort). */
+export function formatDateShortZurich(input: string | Date | null | undefined): string {
+  if (!input) return '';
+  const d = typeof input === 'string'
+    ? new Date(input.includes('T') ? input : input.replace(' ', 'T') + 'Z')
+    : input;
+  if (Number.isNaN(d.getTime())) return '';
+  const p = formatZurichParts(d);
+  return `${p.month}-${p.day}`;
+}
+
+/** Format short weekday ("Mo", "Di", ...) in Europe/Zurich. */
+export function formatWeekdayZurich(input: string | Date | null | undefined, locale: string = 'de-CH'): string {
+  if (!input) return '';
+  const d = typeof input === 'string'
+    ? new Date(input.includes('T') ? input : input.replace(' ', 'T') + 'Z')
+    : input;
+  if (Number.isNaN(d.getTime())) return '';
+  return new Intl.DateTimeFormat(locale, { timeZone: ZURICH, weekday: 'short' }).format(d);
+}
+
+/** "dd.mm.yy HH:mm" compact datetime in Europe/Zurich. */
+export function formatDateTimeCompactZurich(input: string | Date | null | undefined): string {
+  if (!input) return '';
+  const d = typeof input === 'string'
+    ? new Date(input.includes('T') ? input : input.replace(' ', 'T') + 'Z')
+    : input;
+  if (Number.isNaN(d.getTime())) return '';
+  return `${formatDateCompactZurich(d)} ${formatTimeZurich(d)}`;
+}
+
+/** Relative time ("vor 2 Std.", "in 3 Tagen"). Uses actual UTC-stored instant. */
+export function formatRelativeTimeZurich(input: string | Date | null | undefined, locale: string = 'de'): string {
+  if (!input) return '';
+  const d = typeof input === 'string'
+    ? new Date(input.includes('T') ? input : input.replace(' ', 'T') + 'Z')
+    : input;
+  if (Number.isNaN(d.getTime())) return '';
+  const diffMs = d.getTime() - Date.now();
+  const absSec = Math.abs(diffMs) / 1000;
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
+  if (absSec < 60)      return rtf.format(Math.round(diffMs / 1000), 'second');
+  if (absSec < 3600)    return rtf.format(Math.round(diffMs / 60_000), 'minute');
+  if (absSec < 86400)   return rtf.format(Math.round(diffMs / 3_600_000), 'hour');
+  if (absSec < 2592000) return rtf.format(Math.round(diffMs / 86_400_000), 'day');
+  if (absSec < 31_536_000) return rtf.format(Math.round(diffMs / 2_592_000_000), 'month');
+  return rtf.format(Math.round(diffMs / 31_536_000_000), 'year');
+}
+
+/** Round-trip: datetime-local input value ("2026-04-19T12:30") interpreted as Europe/Zurich -> UTC ISO. */
+export function toUtcIsoFromDatetimeLocal(localStr: string): string {
+  const [date, time] = localStr.split('T');
+  const [y, mo, d] = date.split('-').map(Number);
+  const [h, mi] = (time || '00:00').split(':').map(Number);
+  const guessUtcMs = Date.UTC(y, mo - 1, d, h, mi, 0);
+  const zp = formatZurichParts(new Date(guessUtcMs));
+  const shownUtcMs = Date.UTC(+zp.year, +zp.month - 1, +zp.day, +zp.hour, +zp.minute, +zp.second);
+  const offsetMs = shownUtcMs - guessUtcMs;
+  return new Date(guessUtcMs - offsetMs).toISOString();
+}
+
+/** Inverse: UTC ISO -> "YYYY-MM-DDTHH:MM" for datetime-local input, in Europe/Zurich. */
+export function toDatetimeLocalFromUtcIso(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const p = formatZurichParts(d);
+  return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`;
+}
+
+// --- Legacy wall-clock helpers (kept for backward compat — A2/A3 will migrate call sites) ---
+
 const dateFmt = new Intl.DateTimeFormat('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
 const dateShortFmt = new Intl.DateTimeFormat('en-US', { day: '2-digit', month: '2-digit' })
 const weekdayFmt = new Intl.DateTimeFormat('en-US', { weekday: 'short' })

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { createRecord, updateRecord, deleteRecord } from '../../../lib/api'
 import { logActivity } from '../../../utils/logActivity'
-import { formatDateTimeCompactZurich, toApiDatetime } from '../../../utils/dateHelpers'
+import { formatDateTimeCompactZurich, toUtcIsoFromDatetimeLocal, toDatetimeLocalFromUtcIso } from '../../../utils/dateHelpers'
 import Modal from '@/components/Modal'
 import { Button } from '@/components/ui/button'
 import ConfirmDialog from '@/components/ConfirmDialog'
@@ -233,8 +233,16 @@ export default function RecordEditModal({
         return (
           <input
             type="datetime-local"
-            value={String(value ?? '').slice(0, 16)}
-            onChange={(e) => setField(field.name, toApiDatetime(e.target.value))}
+            value={
+              (() => {
+                const v = String(value ?? '')
+                if (!v) return ''
+                // If already a datetime-local string (no Z/offset), use as-is
+                if (!v.includes('Z') && !/[+-]\d{2}:?\d{2}$/.test(v)) return v.slice(0, 16)
+                return toDatetimeLocalFromUtcIso(v)
+              })()
+            }
+            onChange={(e) => setField(field.name, e.target.value ? toUtcIsoFromDatetimeLocal(e.target.value) : '')}
             className={inputClass}
           />
         )

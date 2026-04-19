@@ -4,6 +4,7 @@ import {
   formatDateShortZurich, formatWeekdayZurich,
   formatDateTimeCompactZurich, formatRelativeTimeZurich,
   toUtcIsoFromDatetimeLocal, toDatetimeLocalFromUtcIso,
+  parseRespondByTime, getDeadlineDate,
 } from '../dateHelpers';
 
 describe('formatTimeZurich', () => {
@@ -97,5 +98,39 @@ describe('formatRelativeTimeZurich', () => {
 describe('formatDateShortZurich', () => {
   it('renders MM/DD', () => {
     expect(formatDateShortZurich('2026-06-15T12:00:00.000Z')).toBe('06/15');
+  });
+});
+
+describe('parseRespondByTime', () => {
+  it('returns Zurich-local date + time from UTC ISO (CEST)', () => {
+    expect(parseRespondByTime('2026-04-19T10:30:00.000Z')).toEqual({ date: '2026-04-19', time: '12:30' });
+  });
+  it('returns Zurich-local date + time from UTC ISO (CET)', () => {
+    expect(parseRespondByTime('2026-01-15T09:30:00.000Z')).toEqual({ date: '2026-01-15', time: '10:30' });
+  });
+  it('accepts legacy "YYYY-MM-DD HH:MM:SS" format, interpreted as UTC', () => {
+    expect(parseRespondByTime('2026-04-19 10:30:00')).toEqual({ date: '2026-04-19', time: '12:30' });
+  });
+  it('returns null on null/invalid', () => {
+    expect(parseRespondByTime(null)).toBeNull();
+    expect(parseRespondByTime(undefined)).toBeNull();
+    expect(parseRespondByTime('not-a-date')).toBeNull();
+  });
+});
+
+describe('getDeadlineDate', () => {
+  it('passes through non-sentinel times unchanged', () => {
+    // 10:30Z = 12:30 Zurich CEST, non-sentinel
+    const d = getDeadlineDate('2026-04-19T10:30:00.000Z', '09:00');
+    expect(formatTimeZurich(d.toISOString())).toBe('12:30');
+  });
+  it('falls back to activityStartTime when Zurich h:m:s are 00:00:00', () => {
+    // 22:00Z on 2026-04-18 = 00:00 Zurich CEST on 2026-04-19 (sentinel)
+    const d = getDeadlineDate('2026-04-18T22:00:00.000Z', '09:00');
+    expect(formatTimeZurich(d.toISOString())).toBe('09:00');
+  });
+  it('falls back to 23:59 when no activityStartTime given and Zurich h:m:s are zero', () => {
+    const d = getDeadlineDate('2026-04-18T22:00:00.000Z');
+    expect(formatTimeZurich(d.toISOString())).toBe('23:59');
   });
 });

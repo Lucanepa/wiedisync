@@ -13,7 +13,7 @@ import { useMutation } from '../../../hooks/useMutation'
 import { fetchItem } from '../../../lib/api'
 import { sanitizeUrl } from '../../../utils/sanitizeUrl'
 import DatePicker from '@/components/ui/DatePicker'
-import { formatDate, formatTime, parseRespondByTime } from '../../../utils/dateHelpers'
+import { formatDate, formatTime, parseRespondByTime, toUtcIsoFromDatetimeLocal } from '../../../utils/dateHelpers'
 import RefereeExpenseSection from './RefereeExpenseSection'
 import TasksSection from '../../tasks/TasksSection'
 import CarpoolSection from '../../carpool/CarpoolSection'
@@ -67,10 +67,13 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
   const { user, isCoachOf, isStaffOnly, canParticipateIn, isGuestIn, coachTeamIds, teamResponsibleIds } = useAuth()
   const [rosterOpen, setRosterOpen] = useState(false)
   const [editingDeadline, setEditingDeadline] = useState(false)
-  const [deadlineValue, setDeadlineValue] = useState(game?.respond_by?.split(' ')[0] ?? '')
+  const [deadlineValue, setDeadlineValue] = useState(() => {
+    const parsed = parseRespondByTime(game?.respond_by, game?.time)
+    return parsed?.date ?? ''
+  })
   const [deadlineTime, setDeadlineTime] = useState(() => {
     const parsed = parseRespondByTime(game?.respond_by, game?.time)
-    return parsed.time
+    return parsed?.time ?? ''
   })
   const [fullGame, setFullGame] = useState<Game | null>(null)
   const { update: updateGame } = useMutation<Game>('games')
@@ -541,7 +544,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
         {game.status === 'scheduled' && (
           <div className="space-y-3 border-t dark:border-gray-700 px-6 py-4">
             {game.respond_by && !editingDeadline && (
-              <DetailRow label={t('respondBy')} value={`${formatDate(game.respond_by.split(' ')[0])}${(() => { const { time } = parseRespondByTime(game.respond_by, game.time); return time ? `, ${time}` : '' })()}`} />
+              <DetailRow label={t('respondBy')} value={`${formatDate(game.respond_by)}${(() => { const p = parseRespondByTime(game.respond_by, game.time); return p?.time ? `, ${p.time}` : '' })()}`} />
             )}
             {!readOnly && isCoachOf(kscwTeamId) && (
               editingDeadline ? (
@@ -560,7 +563,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
                   <Button
                     size="sm"
                     onClick={async () => {
-                      await updateGame(game.id, { respond_by: deadlineValue ? `${deadlineValue} ${deadlineTime || game?.time?.slice(0, 5) || '23:59'}:00` : null })
+                      await updateGame(game.id, { respond_by: deadlineValue ? toUtcIsoFromDatetimeLocal(`${deadlineValue}T${deadlineTime || game?.time?.slice(0, 5) || '23:59'}`) : null })
                       setEditingDeadline(false)
                     }}
                   >
@@ -577,8 +580,8 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
                 <button
                   onClick={() => {
                     const parsed = parseRespondByTime(game.respond_by, game.time)
-                    setDeadlineValue(parsed.date)
-                    setDeadlineTime(parsed.time)
+                    setDeadlineValue(parsed?.date ?? '')
+                    setDeadlineTime(parsed?.time ?? '')
                     setEditingDeadline(true)
                   }}
                   className="text-xs text-brand-600 hover:underline dark:text-brand-400"

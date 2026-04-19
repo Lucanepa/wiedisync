@@ -7,7 +7,7 @@ import { useAdminMode } from '../../hooks/useAdminMode'
 import { useMutation } from '../../hooks/useMutation'
 import { useCollection } from '../../lib/query'
 import { logActivity } from '../../utils/logActivity'
-import { parseRespondByTime, todayLocal } from '../../utils/dateHelpers'
+import { parseRespondByTime, toUtcIsoFromDatetimeLocal, todayLocal } from '../../utils/dateHelpers'
 import { Button } from '@/components/ui/button'
 import { FormInput, FormTextarea, FormField } from '@/components/FormField'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -221,8 +221,8 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
       setCancelled(training.cancelled)
       setCancelReason(training.cancel_reason ?? '')
       const rbParsed = parseRespondByTime(training.respond_by, training.start_time)
-      setRespondBy(rbParsed.date)
-      setRespondByTime(rbParsed.time)
+      setRespondBy(rbParsed?.date ?? '')
+      setRespondByTime(rbParsed?.time ?? '')
       setMinParticipants(training.min_participants ? String(training.min_participants) : '')
       setMaxParticipants(training.max_participants ? String(training.max_participants) : '')
       setRequireNoteIfAbsent(!!training.require_note_if_absent)
@@ -294,7 +294,9 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
       notes,
       cancelled,
       cancel_reason: cancelled ? cancelReason : '',
-      respond_by: respondBy ? `${respondBy} ${respondByTime || startTime || '23:59'}:00` : null,
+      respond_by: respondBy
+        ? toUtcIsoFromDatetimeLocal(`${respondBy}T${respondByTime || startTime || '23:59'}`)
+        : null,
       min_participants: minParticipants ? Number(minParticipants) : null,
       max_participants: maxParticipants ? Number(maxParticipants) : null,
       require_note_if_absent: requireNoteIfAbsent,

@@ -128,17 +128,6 @@ export function toDatetimeLocalFromUtcIso(iso: string): string {
   return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`;
 }
 
-// --- Legacy wall-clock helpers (kept for backward compat — A3 will finish migration) ---
-
-// parseWallClock: un-exported; A3 will rewrite parseRespondByTime / getDeadlineDate and delete this.
-// @ts-ignore — intentionally kept but unused until A3 removes callers
-function parseWallClock(input: string | Date | null | undefined): Date {
-  if (input instanceof Date) return input
-  if (!input) return new Date(NaN)
-  const stripped = input.replace(/(\.\d+)?(Z|[+-]\d{2}:?\d{2})$/i, '')
-  const withT = stripped.includes('T') ? stripped : stripped.replace(' ', 'T')
-  return new Date(withT)
-}
 
 /** Swiss compact: dd.mm.yy */
 export function formatDateCompact(d: string): string {
@@ -197,18 +186,6 @@ export function todayLocal(): string {
   return toISODate(new Date())
 }
 
-/** Normalize a date/datetime string to API format "YYYY-MM-DD HH:MM:SS".
- *  Handles datetime-local values ("2026-08-26T18:00"), existing API datetimes, and date-only strings. */
-export function toApiDatetime(d: string): string {
-  if (!d) return d
-  const normalized = d.replace('T', ' ')
-  if (normalized.includes(' ')) {
-    const [date, time] = normalized.split(' ')
-    const parts = time.split(':')
-    return `${date} ${parts[0]}:${parts[1]}:${parts[2] ?? '00'}`
-  }
-  return `${d} 00:00:00`
-}
 
 // --- Hallenplan utilities ---
 
@@ -282,30 +259,29 @@ export function getDayName(dayOfWeek: number): string {
   return DAY_NAMES_SHORT[dayOfWeek]
 }
 
-/**
- * Parse a respond_by datetime into { date, time } with backward-compatible fallback.
- * Legacy records have 00:00:00 (midnight) — treat as "no time set".
- */
-export function parseRespondByTime(respondBy: string | undefined | null, fallbackTime?: string): { date: string; time: string } {
-  if (!respondBy) return { date: '', time: '' }
-  const normalized = respondBy.replace('T', ' ')
-  const [date, rawTime] = normalized.split(' ')
-  const hasExplicitTime = rawTime && rawTime !== '00:00:00'
-  const time = hasExplicitTime ? rawTime.slice(0, 5) : (fallbackTime || '')
-  return { date: date || '', time }
+/** Parse a respond_by datetime into { date, time } in Europe/Zurich.
+ * Accepts ISO UTC or the legacy "YYYY-MM-DD HH:MM:SS" space format. */
+export function parseRespondByTime(
+  respondBy: string | null | undefined,
+  _fallbackStartTime?: string
+): { date: string; time: string } | null {
+  if (!respondBy) return null;
+  const d = new Date(respondBy.includes('T') ? respondBy : respondBy.replace(' ', 'T') + 'Z');
+  if (Number.isNaN(d.getTime())) return null;
+  const p = formatZurichParts(d);
+  return { date: `${p.year}-${p.month}-${p.day}`, time: `${p.hour}:${p.minute}` };
 }
 
-/**
- * Compute deadline Date from respond_by string with backward-compatible fallback.
- * Legacy 00:00:00 records fall back to activityStartTime or 23:59.
- * Handles both "YYYY-MM-DD HH:MM:SS" and ISO "YYYY-MM-DDTHH:MM:SS(.sss)Z" inputs.
- */
+/** Compute deadline Date from respond_by ISO string.
+ * When stored h+m+s in Europe/Zurich are all zero (sentinel for "unset"),
+ * fall back to activityStartTime (HH:MM) or 23:59 on the Zurich-local date. */
 export function getDeadlineDate(respondBy: string, activityStartTime?: string): Date {
-  // Normalize away TZ marker + T separator so we can split on space
-  const normalized = respondBy
-    .replace('T', ' ')
-    .replace(/(\.\d+)?(Z|[+-]\d{2}:?\d{2})$/i, '')
-  const [rbDate, rbTime] = normalized.split(' ')
-  const effectiveTime = rbTime && rbTime !== '00:00:00' ? rbTime.slice(0, 5) : (activityStartTime || '23:59')
-  return new Date(`${rbDate}T${effectiveTime}`)
+  const d = new Date(respondBy.includes('T') ? respondBy : respondBy.replace(' ', 'T') + 'Z');
+  if (Number.isNaN(d.getTime())) return new Date(NaN);
+  const p = formatZurichParts(d);
+  if (p.hour === '00' && p.minute === '00' && p.second === '00') {
+    const fallback = activityStartTime && /^\d{2}:\d{2}$/.test(activityStartTime) ? activityStartTime : '23:59';
+    return new Date(toUtcIsoFromDatetimeLocal(`${p.year}-${p.month}-${p.day}T${fallback}`));
+  }
+  return d;
 }

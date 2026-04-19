@@ -16,6 +16,20 @@ const fmtLocal = (d, t) => { const [h, m] = String(t).split(':'); return fmtDate
 const fmtOff = (d, t, off) => { const [h, m] = String(t).split(':'); return fmtDate(d) + 'T' + pad(+h + off) + pad(+m) + '00' }
 const esc = (s) => String(s || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n')
 
+// Convert a UTC-stored timestamptz value to a Zurich-local iCal datetime string (YYYYMMDDTHHMMSS).
+// Used for events path only — games/trainings/hall-events use TZ-naive date+time columns via fmtLocal.
+function toZurichICSLocal(input) {
+  const d = input instanceof Date ? input : new Date(input)
+  if (Number.isNaN(d.getTime())) return ''
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Zurich',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+  }).formatToParts(d)
+  const g = (t) => parts.find((x) => x.type === t).value
+  return `${g('year')}${g('month')}${g('day')}T${g('hour')}${g('minute')}${g('second')}`
+}
+
 function nextDay(dateStr) {
   const d = new Date(dateStr); d.setDate(d.getDate() + 1); return isoDate(d)
 }
@@ -119,12 +133,16 @@ export function registerICalFeed(router, { database, logger }) {
             const end = ev.end_date ? nextDay(toISO(ev.end_date)) : nextDay(d)
             lines.push(`DTEND;VALUE=DATE:${fmtDate(end)}`)
           } else {
-            const st = ev.start_date instanceof Date ? `${pad(ev.start_date.getHours())}:${pad(ev.start_date.getMinutes())}` : String(ev.start_date).split(' ')[1]?.slice(0, 5)
-            if (st && st !== '00:00') {
-              lines.push(`DTSTART;TZID=Europe/Zurich:${fmtLocal(d, st)}`)
-              const et = ev.end_date ? (ev.end_date instanceof Date ? `${pad(ev.end_date.getHours())}:${pad(ev.end_date.getMinutes())}` : String(ev.end_date).split(' ')[1]?.slice(0, 5)) : null
-              if (et) { const ed = toISO(ev.end_date); lines.push(`DTEND;TZID=Europe/Zurich:${fmtLocal(ed, et)}`) }
-              else lines.push(`DTEND;TZID=Europe/Zurich:${fmtOff(d, st, 2)}`)
+            const dtStart = toZurichICSLocal(ev.start_date)
+            if (dtStart) {
+              lines.push(`DTSTART;TZID=Europe/Zurich:${dtStart}`)
+              if (ev.end_date) {
+                lines.push(`DTEND;TZID=Europe/Zurich:${toZurichICSLocal(ev.end_date)}`)
+              } else {
+                // Fallback: 2-hour duration derived from Zurich-local start
+                const startMs = (ev.start_date instanceof Date ? ev.start_date : new Date(ev.start_date)).getTime()
+                lines.push(`DTEND;TZID=Europe/Zurich:${toZurichICSLocal(new Date(startMs + 2 * 60 * 60 * 1000))}`)
+              }
             } else {
               lines.push(`DTSTART;VALUE=DATE:${fmtDate(d)}`, `DTEND;VALUE=DATE:${fmtDate(nextDay(d))}`)
             }

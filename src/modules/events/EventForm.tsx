@@ -14,7 +14,7 @@ import LocationCombobox from '@/components/LocationCombobox'
 import { Switch } from '@/components/ui/switch'
 import { teamNameToColorKey } from '../../utils/teamColors'
 import { formatDateLocale } from '../../utils/dateUtils'
-import { parseRespondByTime, toApiDatetime } from '../../utils/dateHelpers'
+import { parseRespondByTime, toUtcIsoFromDatetimeLocal, toDatetimeLocalFromUtcIso } from '../../utils/dateHelpers'
 import type { Event, EventSession, Team } from '../../types'
 import RoleChipPicker from '@/components/RoleChipPicker'
 import MemberMultiSelect from '@/components/MemberMultiSelect'
@@ -125,10 +125,10 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
       setEventType(event.event_type)
       setStartDate(event.all_day
         ? (event.start_date?.split('T')[0] ?? '')
-        : (event.start_date?.slice(0, 16) ?? ''))
+        : (event.start_date ? toDatetimeLocalFromUtcIso(event.start_date) : ''))
       setEndDate(event.all_day
         ? (event.end_date?.split('T')[0] ?? '')
-        : (event.end_date?.slice(0, 16) ?? ''))
+        : (event.end_date ? toDatetimeLocalFromUtcIso(event.end_date) : ''))
       setAllDay(event.all_day)
       setLocation(event.location ?? '')
       setDescription(event.description ?? '')
@@ -139,8 +139,8 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
         return String(typeof tid === 'object' ? tid?.id : tid ?? t?.id ?? t)
       }))
       const rbParsed = parseRespondByTime(event.respond_by)
-      setRespondBy(rbParsed.date)
-      setRespondByTime(rbParsed.time)
+      setRespondBy(rbParsed?.date ?? '')
+      setRespondByTime(rbParsed?.time ?? '')
       setMaxPlayers(event.max_players ? String(event.max_players) : '')
       setMinParticipants(event.min_participants ? String(event.min_participants) : '')
       setRequireNoteIfAbsent(!!event.require_note_if_absent)
@@ -273,14 +273,16 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
     const data = {
       title,
       event_type: eventType,
-      start_date: toApiDatetime(startDate),
-      end_date: toApiDatetime(endDate || startDate),
+      start_date: allDay ? startDate : toUtcIsoFromDatetimeLocal(startDate),
+      end_date: allDay ? (endDate || startDate) : toUtcIsoFromDatetimeLocal(endDate || startDate),
       all_day: allDay,
       location,
       description,
       teams: selectedTeams,
       created_by: user?.id,
-      respond_by: respondBy ? `${respondBy.split('T')[0].split(' ')[0]} ${respondByTime || '23:59'}:00` : null,
+      respond_by: respondBy
+        ? toUtcIsoFromDatetimeLocal(`${respondBy}T${respondByTime || '23:59'}`)
+        : null,
       max_players: maxPlayers ? Number(maxPlayers) : null,
       min_participants: minParticipants ? Number(minParticipants) : null,
       require_note_if_absent: requireNoteIfAbsent,
@@ -419,7 +421,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
             onCheckedChange={(checked) => {
               setAllDay(checked)
               if (!checked) {
-                // Switching to datetime-local: append T00:00 so browser input accepts the value
+                // Switching to datetime-local: convert date-only to Zurich-local datetime-local string
                 if (startDate && !startDate.includes('T')) setStartDate(`${startDate}T00:00`)
                 if (endDate && !endDate.includes('T')) setEndDate(`${endDate}T00:00`)
               } else {

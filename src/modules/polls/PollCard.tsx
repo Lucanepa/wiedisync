@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Clock, Lock, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { Poll } from '../../types'
-import { parseWallClock } from '../../utils/dateHelpers'
+import { formatDateZurich } from '../../utils/dateHelpers'
 import { usePollVotes } from './hooks/usePoll'
 
 interface PollCardProps {
@@ -20,7 +20,7 @@ export default function PollCard({ poll, canManage, onClose, onDelete }: PollCar
 
   const isOpen = poll.status === 'open'
   const hasVoted = !!myVote
-  const deadlinePassed = poll.deadline ? parseWallClock(poll.deadline) < new Date() : false
+  const deadlinePassed = poll.deadline ? new Date(poll.deadline) < new Date() : false
   const canVote = isOpen && !hasVoted && !deadlinePassed
   const showResults = hasVoted || !isOpen || deadlinePassed
 
@@ -84,7 +84,7 @@ export default function PollCard({ poll, canManage, onClose, onDelete }: PollCar
             <span className="text-red-500 dark:text-red-400">{t('deadlinePassed')}</span>
           ) : (
             <span>
-              {t('deadline')}: {parseWallClock(poll.deadline).toLocaleDateString()}
+              {t('deadline')}: {formatDateZurich(poll.deadline)}
             </span>
           )}
         </div>

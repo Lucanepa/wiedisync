@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { BarChart3 } from 'lucide-react'
 import { useAttendanceStats } from './useAttendanceStats'
 import EmptyState from '../../components/EmptyState'
-import { getCurrentSeason, parseWallClock } from '../../utils/dateHelpers'
+import { getCurrentSeason, formatDateZurich, formatTimeZurich } from '../../utils/dateHelpers'
 
 interface CoachDashboardProps {
   teamId: string
@@ -142,8 +142,8 @@ export default function CoachDashboard({ teamId }: CoachDashboardProps) {
                 </div>
                 {player.lastResponseAt && (
                   <div className="mt-0.5 text-[11px] text-gray-400 dark:text-gray-500">
-                    {parseWallClock(player.lastResponseAt).toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit' })}{' '}
-                    {parseWallClock(player.lastResponseAt).toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' })}
+                    {formatDateZurich(player.lastResponseAt)}{' '}
+                    {formatTimeZurich(player.lastResponseAt)}
                   </div>
                 )}
               </div>

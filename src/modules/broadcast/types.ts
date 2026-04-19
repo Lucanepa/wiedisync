@@ -21,7 +21,7 @@ export interface BroadcastActivity {
 export interface BroadcastChannels {
   email?: boolean
   push?: boolean
-  /** Currently unsupported on the backend (501 not_implemented). Forward-compat only. */
+  /** Event-only. Creates/reuses an activity_chat conversation and posts the message there. */
   inApp?: boolean
 }
 
@@ -52,6 +52,12 @@ export interface BroadcastResponse {
   delivery: {
     email: { sent: number; failed: number; errors?: Array<{ recipient: string; error: string }> }
     push: { sent: number; failed: number; expired: number }
+    in_app?: {
+      sent: number
+      failed: number
+      conversation_id: string | null
+      message_id: string | null
+    }
   }
   auditFailed?: boolean
 }

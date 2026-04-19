@@ -5,7 +5,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useCollection } from '../../lib/query'
 import { useNotifications } from '../../hooks/useNotifications'
 import { useSportPreference } from '../../hooks/useSportPreference'
-import { formatDate, formatDateCompact, formatTime, formatWeekday, parseWallClock, todayLocal } from '../../utils/dateHelpers'
+import { formatDate, formatDateCompact, formatTime, formatWeekday, todayLocal } from '../../utils/dateHelpers'
 import { asObj, relId } from '../../utils/relations'
 import TeamChip from '../../components/TeamChip'
 import StatusBadge from '../../components/StatusBadge'
@@ -629,7 +629,7 @@ function NewsRow({ notification, onMarkAsRead }: { notification: Notification; o
   })()
 
   const timeAgo = (() => {
-    const diff = Date.now() - parseWallClock(notification.created ?? notification.date_created ?? '').getTime()
+    const diff = Date.now() - new Date(notification.created ?? notification.date_created ?? '').getTime()
     const minutes = Math.floor(diff / 60000)
     if (minutes < 1) return String(t('justNow'))
     if (minutes < 60) return String(t('minutesAgo', { count: minutes }))
@@ -1134,10 +1134,10 @@ function EventRow({ event, onClick, participationStatus }: { event: EventExpande
         <div className="flex items-start gap-2.5">
           <div className="flex h-9 w-9 shrink-0 flex-col items-center justify-center rounded-lg bg-brand-50 dark:bg-brand-900/40">
             <span className="text-sm font-bold leading-none text-brand-600 dark:text-brand-400">
-              {parseWallClock(event.start_date).getDate()}
+              {new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Zurich', day: 'numeric' }).format(new Date(event.start_date))}
             </span>
             <span className="text-[9px] font-medium uppercase text-brand-500 dark:text-brand-400">
-              {parseWallClock(event.start_date).toLocaleString(i18n.language, { month: 'short' })}
+              {new Intl.DateTimeFormat(i18n.language, { timeZone: 'Europe/Zurich', month: 'short' }).format(new Date(event.start_date))}
             </span>
           </div>
 

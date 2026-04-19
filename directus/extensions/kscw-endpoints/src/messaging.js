@@ -73,6 +73,7 @@ export function registerMessaging(router, ctx) {
         .select(
           'c.id as id', 'c.type', 'c.team', 'c.title',
           'c.last_message_at', 'c.last_message_preview',
+          'c.activity_type', 'c.activity_id',
           'cm.muted', 'cm.last_read_at',
         )
         .orderByRaw('c.last_message_at DESC NULLS LAST')
@@ -153,6 +154,7 @@ export function registerMessaging(router, ctx) {
           conv: {
             id: r.id, type: r.type, team: r.team, title: r.title,
             last_message_at: r.last_message_at, last_message_preview: r.last_message_preview,
+            activity_type: r.activity_type, activity_id: r.activity_id,
           },
           membership: { muted: r.muted },
           unread_count: unreadByConv.get(String(r.id)) ?? 0,
@@ -210,6 +212,11 @@ export function registerMessaging(router, ctx) {
               'Messaging is blocked between you and this member')
           }
         }
+      } else if (conv.type === 'activity_chat') {
+        // Activity chats are event-commitment-tied, not team-chat-opt-in-tied.
+        // Membership was already validated by loadConversationMembership above;
+        // communications_banned was enforced by requireMember. No block check:
+        // activity chats aren't DMs.
       } else {
         throw new MessagingError(400, 'messaging/invalid_body',
           `Unsupported conversation type: ${conv.type}`)

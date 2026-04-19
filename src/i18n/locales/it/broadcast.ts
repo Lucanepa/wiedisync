@@ -52,5 +52,6 @@ export default {
     rateLimitedTimed: 'Attendi {{minutes}} minuto/i e riprova.',
     invalidField: 'Valore non valido per «{{field}}».',
     notImplemented: 'Il canale In-App non è ancora disponibile.',
+    openConversation: 'Apri chat',
   },
 }

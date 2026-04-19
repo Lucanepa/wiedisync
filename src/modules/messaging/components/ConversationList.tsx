@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { formatDistanceToNowStrict } from 'date-fns'
-import { BellOff } from 'lucide-react'
+import { BellOff, Calendar } from 'lucide-react'
 import type { ConversationSummary } from '../api/types'
 import { useMemberDisplayNames } from '../hooks/useMemberDisplayNames'
 
@@ -19,15 +19,27 @@ export default function ConversationList({ conversations }: Props) {
         const rel = c.last_message_at
           ? formatDistanceToNowStrict(new Date(c.last_message_at), { addSuffix: true })
           : ''
+        const isActivityChat = c.type === 'activity_chat'
         return (
           <li key={c.id}>
             <Link
               to={`/inbox/${c.id}`}
               className="flex items-center gap-3 px-3 py-3 hover:bg-muted focus:bg-muted focus:outline-none"
             >
+              {isActivityChat && (
+                <Calendar
+                  className="h-4 w-4 shrink-0 text-muted-foreground"
+                  aria-label={t('activityChat.label', { defaultValue: 'Event-Chat' })}
+                />
+              )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="truncate font-medium text-sm text-foreground">{displayName}</span>
+                  {isActivityChat && (
+                    <span className="shrink-0 text-[10px] uppercase tracking-wide text-muted-foreground">
+                      {t('activityChat.badge', { defaultValue: 'Event' })}
+                    </span>
+                  )}
                   {c.muted && <BellOff className="h-3.5 w-3.5 text-muted-foreground" aria-label={t('muted')} />}
                 </div>
                 <div className="truncate text-xs text-muted-foreground">

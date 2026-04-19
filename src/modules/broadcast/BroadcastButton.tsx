@@ -47,7 +47,12 @@ export default function BroadcastButton({
         <span className="hidden md:inline">{label ?? t('button.label')}</span>
       </Button>
       {open && (
-        <BroadcastDialog open={open} onOpenChange={setOpen} activity={activity} />
+        <BroadcastDialog
+          open={open}
+          onOpenChange={setOpen}
+          activity={activity}
+          senderMemberId={member?.id ?? null}
+        />
       )}
     </>
   )

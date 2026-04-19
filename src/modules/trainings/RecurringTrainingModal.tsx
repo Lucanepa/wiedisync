@@ -5,7 +5,7 @@ import { flattenM2MTeams } from '../../lib/api'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import { useCollection } from '../../lib/query'
-import { formatDate, formatDateCompact, toISODate } from '../../utils/dateHelpers'
+import { formatDate, formatDateCompact, toISODate, toUtcIsoFromDatetimeLocal } from '../../utils/dateHelpers'
 import { logActivity } from '../../utils/logActivity'
 import type { HallSlot, HallClosure, Team, Hall } from '../../types'
 import type { TeamSettings } from '../../types'
@@ -231,20 +231,16 @@ export default function RecurringTrainingModal({ open, onClose, onGenerated, sel
     if (!respondByAmount) return ''
     const amount = Number(respondByAmount)
     if (!amount || amount <= 0) return ''
-    // Use full datetime to avoid UTC/local timezone mismatch with date-only strings
-    const d = new Date(`${trainingDate}T${trainingStartTime || '23:59'}`)
+    const time = trainingStartTime || '23:59'
+    // Start from the UTC instant that corresponds to the training's Zurich-local start
+    const startUtc = new Date(toUtcIsoFromDatetimeLocal(`${trainingDate}T${time}`))
     switch (respondByUnit) {
-      case 'hours': d.setHours(d.getHours() - amount); break
-      case 'days': d.setDate(d.getDate() - amount); break
-      case 'weeks': d.setDate(d.getDate() - amount * 7); break
-      case 'months': d.setMonth(d.getMonth() - amount); break
+      case 'hours': startUtc.setHours(startUtc.getHours() - amount); break
+      case 'days': startUtc.setDate(startUtc.getDate() - amount); break
+      case 'weeks': startUtc.setDate(startUtc.getDate() - amount * 7); break
+      case 'months': startUtc.setMonth(startUtc.getMonth() - amount); break
     }
-    // For 'hours', date may change so compute both date and time
-    // For days/weeks/months, keep the training start time as the deadline time
-    if (respondByUnit === 'hours') {
-      return `${toISODate(d)} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:00`
-    }
-    return `${toISODate(d)} ${trainingStartTime || '23:59'}:00`
+    return startUtc.toISOString()
   }
 
   async function handleGenerate() {

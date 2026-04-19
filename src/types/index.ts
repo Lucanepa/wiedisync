@@ -618,7 +618,9 @@ export interface PollVote extends BaseRecord {
 
 // ─── Messaging ───────────────────────────────────────────────
 
-export type ConversationType = 'team' | 'dm' | 'dm_request'
+export type ConversationType = 'team' | 'dm' | 'dm_request' | 'activity_chat'
+
+export type ConversationActivityType = 'event'
 
 export interface Conversation extends BaseRecord {
   type: ConversationType
@@ -628,6 +630,10 @@ export interface Conversation extends BaseRecord {
   created_at: string
   last_message_at: string | null
   last_message_preview: string | null
+  /** activity_chat only — 'event' in Plan 02. */
+  activity_type?: ConversationActivityType | null
+  /** activity_chat only — integer FK at DB level (string in client-side JSON). */
+  activity_id?: number | string | null
 }
 
 export type ConversationMemberRole = 'member' | 'moderator'

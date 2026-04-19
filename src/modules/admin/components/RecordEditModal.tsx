@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { createRecord, updateRecord, deleteRecord } from '../../../lib/api'
 import { logActivity } from '../../../utils/logActivity'
-import { parseWallClock, toApiDatetime } from '../../../utils/dateHelpers'
+import { formatDateTimeCompactZurich, toUtcIsoFromDatetimeLocal, toDatetimeLocalFromUtcIso } from '../../../utils/dateHelpers'
 import Modal from '@/components/Modal'
 import { Button } from '@/components/ui/button'
 import ConfirmDialog from '@/components/ConfirmDialog'
@@ -233,8 +233,16 @@ export default function RecordEditModal({
         return (
           <input
             type="datetime-local"
-            value={String(value ?? '').slice(0, 16)}
-            onChange={(e) => setField(field.name, toApiDatetime(e.target.value))}
+            value={
+              (() => {
+                const v = String(value ?? '')
+                if (!v) return ''
+                // If already a datetime-local string (no Z/offset), use as-is
+                if (!v.includes('Z') && !/[+-]\d{2}:?\d{2}$/.test(v)) return v.slice(0, 16)
+                return toDatetimeLocalFromUtcIso(v)
+              })()
+            }
+            onChange={(e) => setField(field.name, e.target.value ? toUtcIsoFromDatetimeLocal(e.target.value) : '')}
             className={inputClass}
           />
         )
@@ -356,8 +364,8 @@ export default function RecordEditModal({
           {isEdit && record && (
             <div className="flex flex-wrap gap-x-6 gap-y-1 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-500 dark:bg-gray-800 dark:text-gray-400">
               <span>ID: <code className="font-mono">{String(record.id)}</code></span>
-              <span>Created: {parseWallClock(String(record.date_created ?? record.created ?? '')).toLocaleString('de-CH')}</span>
-              <span>Updated: {parseWallClock(String(record.date_updated ?? record.updated ?? '')).toLocaleString('de-CH')}</span>
+              <span>Created: {formatDateTimeCompactZurich(String(record.date_created ?? record.created ?? ''))}</span>
+              <span>Updated: {formatDateTimeCompactZurich(String(record.date_updated ?? record.updated ?? ''))}</span>
             </div>
           )}
 

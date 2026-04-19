@@ -213,7 +213,7 @@ function EventCardParticipation({ event, existingParticipation, onSaved }: { eve
   const { create, update } = useMutation<Participation>('participations')
 
   const deadlinePassed = event.respond_by
-    ? getDeadlineDate(event.respond_by, event.start_date?.split('T')[1]?.slice(0, 5)) < new Date()
+    ? getDeadlineDate(event.respond_by, event.start_date ? formatTime(event.start_date) : undefined) < new Date()
     : false
 
   const [optimisticStatus, setOptimisticStatus] = useState<Participation['status'] | null>(null)

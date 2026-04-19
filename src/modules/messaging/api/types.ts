@@ -47,6 +47,10 @@ export type ConversationSummary = {
   request_status: MessageRequestStatus | null
   /** For DM / dm_request: the other participant's member id. null for team conversations. */
   other_member: string | null
+  /** For activity_chat: the linked activity type. null otherwise. */
+  activity_type?: 'event' | null
+  /** For activity_chat: the linked activity id. null otherwise. */
+  activity_id?: number | null
 }
 
 export type MessagingError = { code: string; message: string; details?: unknown }

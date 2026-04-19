@@ -491,3 +491,66 @@ export function validateBroadcastPayload(body) {
       { field: 'audience.includeExternals' })
   }
 }
+
+// ─── 7. Activity-chat conversation helper ────────────────────────────────────
+
+/**
+ * Find the existing activity_chat conversation for an activity, or create one.
+ *
+ * Event-only (Plan 02 scope — games/trainings rejected by schema CHECK in
+ * migration 015). Race-safe via the partial unique index
+ * `uq_conversations_one_per_activity`: concurrent creators hit Postgres error
+ * 23505 → we re-select and return the winner's row.
+ *
+ * `services` is the Directus services object (carries ItemsService).
+ * `schema` is from `await getSchema()`.
+ * `sender` is the member row (for created_by).
+ *
+ * Returns the conversations row as stored in the DB.
+ */
+export async function findOrCreateActivityConversation(database, services, schema, activity, sender) {
+  const { ItemsService } = services || {}
+  if (!ItemsService) {
+    throw new BroadcastError(500, 'broadcast/services_missing',
+      'ItemsService not available')
+  }
+  if (activity?.type !== 'event') {
+    throw new BroadcastError(400, 'broadcast/inapp_events_only',
+      'activity_chat conversations are event-only',
+      { activityType: activity?.type })
+  }
+
+  // 1. Try existing
+  let row = await database('conversations')
+    .where({ type: 'activity_chat', activity_type: 'event', activity_id: activity.id })
+    .first()
+  if (row) return row
+
+  // 2. Create — via ItemsService so Directus realtime + hooks fire.
+  const conversationsService = new ItemsService('conversations', { schema, knex: database })
+  const newId = crypto.randomUUID()
+  try {
+    await conversationsService.createOne({
+      id: newId,
+      type: 'activity_chat',
+      team: null,
+      activity_type: 'event',
+      activity_id: activity.id,
+      title: activity.title ?? null,
+      created_by: sender?.id ?? null,
+      created_at: new Date().toISOString(),
+    })
+    row = await database('conversations').where('id', newId).first()
+    return row
+  } catch (e) {
+    const msg = e?.message ?? String(e)
+    const isDupe = e?.code === '23505' || /duplicate key|unique|already exists/i.test(msg)
+    if (isDupe) {
+      row = await database('conversations')
+        .where({ type: 'activity_chat', activity_type: 'event', activity_id: activity.id })
+        .first()
+      if (row) return row
+    }
+    throw e
+  }
+}

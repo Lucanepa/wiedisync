@@ -28,12 +28,12 @@ import { asObj } from '../utils/relations'
 import {
   Home, Calendar, Trophy, UserX, PenSquare, PartyPopper, Users,
   ClipboardList, Building2, CalendarClock, Activity,
-  HeartPulse, Settings, ChevronDown, MessageSquare, Banknote, BarChart3, UserPlus, Bug, GraduationCap, Database, Megaphone, Newspaper, Flag,
+  HeartPulse, Settings, ChevronDown, MessageSquare, MessageCircle, Inbox, Banknote, BarChart3, UserPlus, Bug, GraduationCap, Database, Megaphone, Newspaper, Flag,
 } from 'lucide-react'
 
 type ExpandedMemberTeam = MemberTeam & { team: Team | string }
 
-function useNavItems(isLoggedIn: boolean, isApproved: boolean) {
+function useNavItems(isLoggedIn: boolean, isApproved: boolean, memberId?: number | string | null) {
   const { t } = useTranslation('nav')
   const { memberTeamIds } = useAuth()
   const { effectiveIsAdmin, effectiveIsVorstand } = useAdminMode()
@@ -58,6 +58,9 @@ function useNavItems(isLoggedIn: boolean, isApproved: boolean) {
       ),
     },
     { to: '/events', label: t('events'), icon: <PartyPopper className={iconClass} /> },
+    ...(messagingFeatureEnabled(memberId)
+      ? [{ to: '/inbox', label: t('inbox'), icon: <Inbox className={iconClass} /> }]
+      : []),
     { to: '/teams', label: t(showTeamsPlural ? 'teams' : 'team'), icon: <Users className={iconClass} /> },
     { to: '/absences', label: t('absences'), icon: <UserX className={iconClass} /> },
     { to: '/scorer', label: t('scorer'), icon: <PenSquare className={iconClass} /> },
@@ -158,7 +161,7 @@ function SidebarOptions({ isAdmin, theme, toggleTheme, onClose, memberId }: { is
                   }`
                 }
               >
-                <MessageSquare className="h-4 w-4" />
+                <MessageCircle className="h-4 w-4" />
                 {t('messagingSettings')}
               </NavLink>
             )}
@@ -181,7 +184,7 @@ export default function Layout() {
   const isDesktop = useIsDesktop()
   const location = useLocation()
   const { isAdminMode, setAdminMode } = useAdminMode()
-  const { navItems, adminItems, superadminItems } = useNavItems(!!user, isApproved)
+  const { navItems, adminItems, superadminItems } = useNavItems(!!user, isApproved, user?.id)
   const messagingOn = messagingFeatureEnabled(user?.id)
   const unreadMessages = useUnreadTotal()
 

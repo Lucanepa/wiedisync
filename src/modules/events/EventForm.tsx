@@ -278,7 +278,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
       all_day: allDay,
       location,
       description,
-      teams: selectedTeams,
+      teams: selectedTeams.map((id) => ({ teams_id: id })),
       created_by: user?.id,
       respond_by: respondBy
         ? toUtcIsoFromDatetimeLocal(`${respondBy}T${respondByTime || '23:59'}`)
@@ -290,7 +290,7 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
       participation_mode: effectiveMode,
       features_enabled: { tasks: enableTasks, position_preferences: enablePositions },
       invited_roles: invitedRoles.length > 0 ? invitedRoles : null,
-      invited_members: invitedMembers,
+      invited_members: invitedMembers.map((id) => ({ members_id: id })),
       send_email_invite: sendEmailInvite,
     }
 

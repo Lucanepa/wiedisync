@@ -4,6 +4,7 @@ import { formatDistanceToNowStrict } from 'date-fns'
 import { BellOff, Calendar, Users } from 'lucide-react'
 import type { ConversationSummary } from '../api/types'
 import { useMemberProfiles } from '../hooks/useMemberProfiles'
+import { useTeamProfiles } from '../hooks/useTeamProfiles'
 import Avatar from './Avatar'
 
 type Props = { conversations: ConversationSummary[] }
@@ -12,14 +13,19 @@ export default function ConversationList({ conversations }: Props) {
   const { t } = useTranslation('messaging')
   const memberIds = conversations.map(c => c.other_member).filter((x): x is string => !!x)
   const profiles = useMemberProfiles(memberIds)
+  const teamIds = conversations.filter(c => c.type === 'team').map(c => c.team)
+  const teams = useTeamProfiles(teamIds)
 
   return (
     <ul className="divide-y divide-border rounded-md border border-border bg-background">
       {conversations.map((c) => {
         const isGroupDm = c.type === 'group_dm'
         const isActivityChat = c.type === 'activity_chat'
+        const isTeam = c.type === 'team'
         const peer = c.other_member ? profiles.get(c.other_member) : undefined
+        const teamProfile = isTeam && c.team ? teams.get(String(c.team)) : undefined
         const displayName = peer?.name
+          ?? teamProfile?.name
           ?? (c.title ?? (isGroupDm ? t('groupChat.defaultName', { defaultValue: 'Gruppe' }) : '—'))
         const rel = c.last_message_at
           ? formatDistanceToNowStrict(new Date(c.last_message_at), { addSuffix: true })
@@ -32,6 +38,9 @@ export default function ConversationList({ conversations }: Props) {
             >
               {peer && (
                 <Avatar src={peer.photo} alt={peer.name} size="md" />
+              )}
+              {teamProfile && (
+                <Avatar src={teamProfile.picture} alt={teamProfile.name} size="md" />
               )}
               {isActivityChat && (
                 <div className="h-10 w-10 shrink-0 rounded-full bg-muted flex items-center justify-center text-muted-foreground">

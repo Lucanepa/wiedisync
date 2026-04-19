@@ -3,7 +3,7 @@ import { Megaphone, Pin } from 'lucide-react'
 import { assetUrl } from '../../../lib/api'
 import { stripHtml } from '../../../components/RichText'
 import { pickTranslation } from '../../../hooks/useAnnouncements'
-import { parseWallClock } from '../../../utils/dateHelpers'
+import { formatRelativeTimeZurich } from '../../../utils/dateHelpers'
 import type { Announcement } from '../../../types'
 
 interface Props {
@@ -12,20 +12,13 @@ interface Props {
 }
 
 export default function AnnouncementRow({ announcement, onClick }: Props) {
-  const { i18n, t } = useTranslation('notifications')
+  const { i18n } = useTranslation('notifications')
   const tr = pickTranslation(announcement.translations, i18n.language)
 
   const timeAgo = (() => {
     const ts = announcement.published_at ?? announcement.date_created
     if (!ts) return ''
-    const diff = Date.now() - parseWallClock(ts).getTime()
-    const minutes = Math.floor(diff / 60000)
-    if (minutes < 1) return String(t('justNow'))
-    if (minutes < 60) return String(t('minutesAgo', { count: minutes }))
-    const hours = Math.floor(minutes / 60)
-    if (hours < 24) return String(t('hoursAgo', { count: hours }))
-    const days = Math.floor(hours / 24)
-    return String(t('daysAgo', { count: days }))
+    return formatRelativeTimeZurich(ts, i18n.language)
   })()
 
   const excerpt = tr.body ? stripHtml(tr.body) : ''

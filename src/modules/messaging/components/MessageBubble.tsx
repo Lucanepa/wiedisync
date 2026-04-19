@@ -1,12 +1,11 @@
 import { useState } from 'react'
-import { format } from 'date-fns'
 import { useTranslation } from 'react-i18next'
 import type { MessageRow } from '../api/types'
 import EditMessageInline from './EditMessageInline'
 import MessageActions from './MessageActions'
 import ReactionBar from './ReactionBar'
 import { messagingApi } from '../api/messaging'
-import { parseWallClock } from '../../../utils/dateHelpers'
+import { formatTimeZurich } from '../../../utils/dateHelpers'
 import PollMessage from './PollMessage'
 
 type Props = {
@@ -20,7 +19,7 @@ type Props = {
 export default function MessageBubble({ message, isOwn, currentMemberId, isTeamModerator, onReport }: Props) {
   const { t } = useTranslation('messaging')
   const [editing, setEditing] = useState(false)
-  const timestamp = message.created_at ? format(parseWallClock(message.created_at), 'HH:mm') : ''
+  const timestamp = message.created_at ? formatTimeZurich(message.created_at) : ''
 
   const onDelete = async () => {
     if (!confirm(t('confirmDelete'))) return

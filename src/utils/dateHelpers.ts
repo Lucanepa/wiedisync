@@ -128,17 +128,11 @@ export function toDatetimeLocalFromUtcIso(iso: string): string {
   return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`;
 }
 
-// --- Legacy wall-clock helpers (kept for backward compat — A2/A3 will migrate call sites) ---
+// --- Legacy wall-clock helpers (kept for backward compat — A3 will finish migration) ---
 
-const dateFmt = new Intl.DateTimeFormat('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
-const dateShortFmt = new Intl.DateTimeFormat('en-US', { day: '2-digit', month: '2-digit' })
-const weekdayFmt = new Intl.DateTimeFormat('en-US', { weekday: 'short' })
-
-// Convention: API datetimes are "wall-clock time labeled as UTC" (admin typed 12:30
-// Swiss → DB stores 12:30Z → we must render hours/minutes verbatim, NOT convert TZ).
-// parseWallClock strips any trailing Z/offset so `new Date()` parses as LOCAL,
-// making `.getHours()`, Intl formatters, etc. return the stored wall-clock values.
-export function parseWallClock(input: string | Date | null | undefined): Date {
+// parseWallClock: un-exported; A3 will rewrite parseRespondByTime / getDeadlineDate and delete this.
+// @ts-ignore — intentionally kept but unused until A3 removes callers
+function parseWallClock(input: string | Date | null | undefined): Date {
   if (input instanceof Date) return input
   if (!input) return new Date(NaN)
   const stripped = input.replace(/(\.\d+)?(Z|[+-]\d{2}:?\d{2})$/i, '')
@@ -147,35 +141,24 @@ export function parseWallClock(input: string | Date | null | undefined): Date {
 }
 
 /** Swiss compact: dd.mm.yy */
-export function formatDateCompact(date: string): string {
-  const d = parseWallClock(date)
-  const dd = String(d.getDate()).padStart(2, '0')
-  const mm = String(d.getMonth() + 1).padStart(2, '0')
-  const yy = String(d.getFullYear()).slice(-2)
-  return `${dd}.${mm}.${yy}`
+export function formatDateCompact(d: string): string {
+  return formatDateCompactZurich(d)
 }
 
-export function formatDate(date: string): string {
-  return dateFmt.format(parseWallClock(date))
+export function formatDate(d: string, locale: string = 'de-CH'): string {
+  return formatDateZurich(d, locale)
 }
 
-export function formatDateShort(date: string): string {
-  return dateShortFmt.format(parseWallClock(date))
+export function formatDateShort(d: string): string {
+  return formatDateShortZurich(d)
 }
 
-export function formatWeekday(date: string): string {
-  return weekdayFmt.format(parseWallClock(date))
+export function formatWeekday(d: string): string {
+  return formatWeekdayZurich(d)
 }
 
-export function formatTime(time: string): string {
-  // For ISO/datetime strings, parse as wall-clock (stored times are admin-typed, TZ-naive)
-  if (time.includes('T') || (time.includes(' ') && time.includes('-'))) {
-    const d = parseWallClock(time)
-    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-  }
-  // Plain time string (e.g. "20:00" or "20:00:00")
-  const [h, m] = time.split(':')
-  return `${h.padStart(2, '0')}:${m}`
+export function formatTime(t: string): string {
+  return formatTimeZurich(t)
 }
 
 export function isDateInRange(date: string, start: string, end: string): boolean {
@@ -275,37 +258,12 @@ export function addDays(date: Date, days: number): Date {
 
 /** Format a datetime as dd.mm.yy HH:mm */
 export function formatDateTimeCompact(datetime: string): string {
-  const d = parseWallClock(datetime)
-  const dd = String(d.getDate()).padStart(2, '0')
-  const mm = String(d.getMonth() + 1).padStart(2, '0')
-  const yy = String(d.getFullYear()).slice(-2)
-  const hh = String(d.getHours()).padStart(2, '0')
-  const min = String(d.getMinutes()).padStart(2, '0')
-  return `${dd}.${mm}.${yy} ${hh}:${min}`
-}
-
-/** Map i18n language codes to Intl-compatible locales (gsw isn't supported by browsers) */
-function toIntlLocale(locale: string): string {
-  if (locale === 'gsw') return 'de-CH'
-  return locale
+  return formatDateTimeCompactZurich(datetime)
 }
 
 /** Format a datetime as locale-aware relative time (e.g. "vor 2 Std.", "2 hr. ago"). */
-export function formatRelativeTime(datetime: string, locale: string = 'de-CH'): string {
-  // Use wall-clock parse so the stored "admin-typed time labeled as UTC" matches the local "now" frame.
-  const diffMs = Date.now() - parseWallClock(datetime).getTime()
-  const diffMin = Math.floor(diffMs / 60000)
-  const diffHr = Math.floor(diffMin / 60)
-  const diffDay = Math.floor(diffHr / 24)
-  const rtf = new Intl.RelativeTimeFormat(toIntlLocale(locale), { numeric: 'auto', style: 'short' })
-  if (diffMin < 1) {
-    const justNow: Record<string, string> = { de: 'Gerade eben', gsw: 'Grad ebe', fr: "A l'instant", it: 'Proprio ora', en: 'Just now' }
-    return justNow[locale.split('-')[0]] ?? justNow.en!
-  }
-  if (diffMin < 60) return rtf.format(-diffMin, 'minute')
-  if (diffHr < 24) return rtf.format(-diffHr, 'hour')
-  if (diffDay < 7) return rtf.format(-diffDay, 'day')
-  return formatDateCompact(datetime)
+export function formatRelativeTime(datetime: string, locale: string = 'de'): string {
+  return formatRelativeTimeZurich(datetime, locale)
 }
 
 /** Returns ISO week number */

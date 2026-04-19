@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { createRecord, updateRecord, deleteRecord } from '../../../lib/api'
 import { logActivity } from '../../../utils/logActivity'
-import { parseWallClock, toApiDatetime } from '../../../utils/dateHelpers'
+import { formatDateTimeCompactZurich, toApiDatetime } from '../../../utils/dateHelpers'
 import Modal from '@/components/Modal'
 import { Button } from '@/components/ui/button'
 import ConfirmDialog from '@/components/ConfirmDialog'
@@ -356,8 +356,8 @@ export default function RecordEditModal({
           {isEdit && record && (
             <div className="flex flex-wrap gap-x-6 gap-y-1 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-500 dark:bg-gray-800 dark:text-gray-400">
               <span>ID: <code className="font-mono">{String(record.id)}</code></span>
-              <span>Created: {parseWallClock(String(record.date_created ?? record.created ?? '')).toLocaleString('de-CH')}</span>
-              <span>Updated: {parseWallClock(String(record.date_updated ?? record.updated ?? '')).toLocaleString('de-CH')}</span>
+              <span>Created: {formatDateTimeCompactZurich(String(record.date_created ?? record.created ?? ''))}</span>
+              <span>Updated: {formatDateTimeCompactZurich(String(record.date_updated ?? record.updated ?? ''))}</span>
             </div>
           )}
 

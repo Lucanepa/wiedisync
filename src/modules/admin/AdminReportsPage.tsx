@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import { formatDistanceToNowStrict } from 'date-fns'
 import { Button } from '@/components/ui/button'
 import { useReports } from '../messaging/hooks/useReports'
-import { parseWallClock } from '../../utils/dateHelpers'
 import type { ReportRow } from '../messaging/api/types'
 
 type Tab = 'open' | 'resolved' | 'dismissed'
@@ -64,7 +63,7 @@ function ReportCard(props: {
 }) {
   const { t } = useTranslation('messaging')
   const r = props.report
-  const rel = formatDistanceToNowStrict(parseWallClock(r.created_at), { addSuffix: true })
+  const rel = formatDistanceToNowStrict(new Date(r.created_at), { addSuffix: true })
   return (
     <li className="rounded-lg border border-border bg-background p-4">
       <div className="flex items-center gap-2 text-xs text-muted-foreground">

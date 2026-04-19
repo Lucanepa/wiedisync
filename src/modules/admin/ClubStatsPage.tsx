@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { kscwApi } from '../../lib/api'
-import { parseWallClock } from '../../utils/dateHelpers'
+import { formatDateZurich } from '../../utils/dateHelpers'
 import DashboardSection from './components/DashboardSection'
 import TeamChip from '../../components/TeamChip'
 
@@ -468,7 +468,7 @@ export default function ClubStatsPage() {
           <div className="space-y-2">
             {filtered.missing.map(m => (
               <div key={m.game_id} className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 p-2 rounded-lg bg-destructive/10 border border-destructive/20">
-                <span className="text-sm font-medium">{parseWallClock(m.game_date).toLocaleDateString('de-CH')} {m.game_time?.slice(0, 5)}</span>
+                <span className="text-sm font-medium">{formatDateZurich(m.game_date)} {m.game_time?.slice(0, 5)}</span>
                 <TeamChip team={m.team_name} size="sm" />
                 <span className="text-sm">{m.home_team} vs {m.away_team}</span>
                 <span className="text-xs text-destructive font-medium ml-auto">{m.missing_roles}</span>

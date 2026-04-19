@@ -25,7 +25,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '../../components/ui/alert-dialog'
-import { parseWallClock } from '../../utils/dateHelpers'
+import { formatDateTimeCompactZurich } from '../../utils/dateHelpers'
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -35,7 +35,7 @@ function makeRTF(lang: string) {
 
 function relativeTime(iso: string, lang = 'en'): string {
   const rtf = makeRTF(lang)
-  const diff = Date.now() - parseWallClock(iso).getTime()
+  const diff = Date.now() - new Date(iso).getTime()
   const seconds = Math.round(diff / 1000)
   if (seconds < 60) return rtf.format(-seconds, 'second')
   const minutes = Math.round(seconds / 60)
@@ -47,10 +47,7 @@ function relativeTime(iso: string, lang = 'en'): string {
 }
 
 function absoluteTime(iso: string): string {
-  return parseWallClock(iso).toLocaleString('de-CH', {
-    day: '2-digit', month: '2-digit', year: '2-digit',
-    hour: '2-digit', minute: '2-digit',
-  })
+  return formatDateTimeCompactZurich(iso)
 }
 
 function parseUserAgent(ua: string): string {

@@ -12,7 +12,7 @@ import Modal from '../../components/Modal'
 import RichTextEditor from '../../components/RichTextEditor'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import { stripHtml } from '../../components/RichText'
-import { formatDate, parseWallClock, toApiDatetime } from '../../utils/dateHelpers'
+import { formatDate, toApiDatetime } from '../../utils/dateHelpers'
 import type { Announcement, AnnouncementLocale, AnnouncementTranslation, AnnouncementAudienceType } from '../../types'
 
 const LOCALES: AnnouncementLocale[] = ['de', 'en', 'fr', 'gsw', 'it']
@@ -179,7 +179,7 @@ export default function AnnouncementsPage() {
       link: trimmedLink,
       pinned: form.pinned,
       published_at: form.publishNow
-        ? (form.published_at && parseWallClock(form.published_at) <= new Date() ? form.published_at : new Date().toISOString())
+        ? (form.published_at && new Date(form.published_at) <= new Date() ? form.published_at : new Date().toISOString())
         : null,
       expires_at: form.expires_at,
       audience_type: form.audience_type,
@@ -264,8 +264,8 @@ export default function AnnouncementsPage() {
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
           {items.map((a) => {
             const trItem = pickTranslation(a.translations, i18n.language)
-            const isPublished = !!a.published_at && parseWallClock(a.published_at) <= new Date()
-            const isExpired = !!a.expires_at && parseWallClock(a.expires_at) <= new Date()
+            const isPublished = !!a.published_at && new Date(a.published_at) <= new Date()
+            const isExpired = !!a.expires_at && new Date(a.expires_at) <= new Date()
             return (
               <div key={a.id} className="flex items-start gap-3 border-b border-gray-100 p-4 last:border-b-0 dark:border-gray-700">
                 {a.image ? (

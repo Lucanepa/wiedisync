@@ -26,6 +26,7 @@ import { registerClubdeskUpdate } from './clubdesk-update.js'
 import { registerBugfixes } from './bugfixes.js'
 import { registerEventNotify } from './event-notify.js'
 import { registerMessaging } from './messaging.js'
+import { registerBroadcastRoutes } from './broadcast.js'
 
 // ── Helpers ──────────────────────────────────────────────────────
 
@@ -1614,7 +1615,8 @@ export default {
     registerBugfixes(router, ctx)
     registerEventNotify(router, ctx)
     registerMessaging(router, ctx)
+    registerBroadcastRoutes(router, ctx)
 
-    log.info('KSCW endpoints loaded: ~49 routes')
+    log.info('KSCW endpoints loaded: ~51 routes')
   },
 }

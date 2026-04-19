@@ -49,7 +49,7 @@ export function formatDateCompactZurich(input: string | Date | null | undefined)
   }).format(d);
 }
 
-/** Format MM-DD in Europe/Zurich (replaces old formatDateShort). */
+/** Format MM/DD in Europe/Zurich (matches legacy formatDateShort en-US format). */
 export function formatDateShortZurich(input: string | Date | null | undefined): string {
   if (!input) return '';
   const d = typeof input === 'string'
@@ -57,7 +57,7 @@ export function formatDateShortZurich(input: string | Date | null | undefined): 
     : input;
   if (Number.isNaN(d.getTime())) return '';
   const p = formatZurichParts(d);
-  return `${p.month}-${p.day}`;
+  return `${p.month}/${p.day}`;
 }
 
 /** Format short weekday ("Mo", "Di", ...) in Europe/Zurich. */
@@ -104,10 +104,20 @@ export function toUtcIsoFromDatetimeLocal(localStr: string): string {
   const [y, mo, d] = date.split('-').map(Number);
   const [h, mi] = (time || '00:00').split(':').map(Number);
   const guessUtcMs = Date.UTC(y, mo - 1, d, h, mi, 0);
-  const zp = formatZurichParts(new Date(guessUtcMs));
-  const shownUtcMs = Date.UTC(+zp.year, +zp.month - 1, +zp.day, +zp.hour, +zp.minute, +zp.second);
-  const offsetMs = shownUtcMs - guessUtcMs;
+
+  const offset1 = getZurichOffsetMs(guessUtcMs);
+  const corrected1 = guessUtcMs - offset1;
+  const offset2 = getZurichOffsetMs(corrected1);
+  // Non-DST-transition times: offset1 === offset2, single pass is correct.
+  // DST transition: offset2 reflects the actual zone at the corrected instant; use it.
+  const offsetMs = offset1 === offset2 ? offset1 : offset2;
   return new Date(guessUtcMs - offsetMs).toISOString();
+}
+
+function getZurichOffsetMs(instantMs: number): number {
+  const p = formatZurichParts(new Date(instantMs));
+  const shownMs = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute, +p.second);
+  return shownMs - instantMs;
 }
 
 /** Inverse: UTC ISO -> "YYYY-MM-DDTHH:MM" for datetime-local input, in Europe/Zurich. */

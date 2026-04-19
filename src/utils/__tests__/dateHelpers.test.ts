@@ -72,17 +72,11 @@ describe('toUtcIsoFromDatetimeLocal <-> toDatetimeLocalFromUtcIso', () => {
     expect(utc).toBe('2026-01-15T09:30:00.000Z');
     expect(toDatetimeLocalFromUtcIso(utc)).toBe('2026-01-15T10:30');
   });
-  it('DST spring-forward gap (2026-03-29 02:30 Zurich) produces deterministic ISO', () => {
-    const utc = toUtcIsoFromDatetimeLocal('2026-03-29T02:30');
-    expect(typeof utc).toBe('string');
-    expect(utc).toMatch(/^2026-03-29T0[01]:30:00\.000Z$/);
+  it('DST spring-forward gap: maps non-existent 02:30 to post-fold 01:30Z (matches browser Date normalization)', () => {
+    expect(toUtcIsoFromDatetimeLocal('2026-03-29T02:30')).toBe('2026-03-29T01:30:00.000Z');
   });
-  it('DST fall-back (2026-10-25 02:30 Zurich) produces deterministic ISO', () => {
-    // 2026-10-25 02:30 is ambiguous (fall-back hour exists in both CEST and CET).
-    // V8 Intl resolves guessUtcMs=02:30Z (already past the fold in CET territory)
-    // and produces 01:30Z (= 02:30 CET, second occurrence). Accept either valid mapping.
-    const utc = toUtcIsoFromDatetimeLocal('2026-10-25T02:30');
-    expect(utc).toMatch(/^2026-10-25T0[01]:30:00\.000Z$/);
+  it('DST fall-back: maps ambiguous 02:30 to second occurrence 01:30Z (CET, after fall-back)', () => {
+    expect(toUtcIsoFromDatetimeLocal('2026-10-25T02:30')).toBe('2026-10-25T01:30:00.000Z');
   });
 });
 
@@ -101,7 +95,7 @@ describe('formatRelativeTimeZurich', () => {
 });
 
 describe('formatDateShortZurich', () => {
-  it('renders MM-DD', () => {
-    expect(formatDateShortZurich('2026-06-15T12:00:00.000Z')).toBe('06-15');
+  it('renders MM/DD', () => {
+    expect(formatDateShortZurich('2026-06-15T12:00:00.000Z')).toBe('06/15');
   });
 });

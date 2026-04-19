@@ -51,6 +51,8 @@ export type ConversationSummary = {
   activity_type?: 'event' | null
   /** For activity_chat: the linked activity id. null otherwise. */
   activity_id?: number | null
+  /** For group_dm: member ids of participants. Undefined until fetched on demand. */
+  members?: number[] | undefined
 }
 
 export type MessagingError = { code: string; message: string; details?: unknown }
@@ -67,6 +69,8 @@ export type MessageRow = {
   deleted_at: string | null
   /** Resolved at read-time, not stored. Denormalized for UI. */
   sender_name?: string
+  /** Directus file uuid of sender's photo. Denormalized for UI. */
+  sender_photo?: string | null
 }
 
 export type ListMessagesResponse = {

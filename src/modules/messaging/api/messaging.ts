@@ -5,6 +5,12 @@ import type {
   ReportBody, ReportRow, SendMessageBody, SettingsBody, CreatePollBody,
 } from './types'
 
+export type SearchableMember = { id: number; first_name: string; last_name: string; photo: string | null }
+export type CreateGroupDmBody = { member_ids: number[]; title?: string }
+export type CreateGroupDmResponse = { conversation_id: string; created: true; type: 'group_dm'; member_count: number }
+export type AddGroupMemberResponse = { added: boolean; unarchived?: boolean; member: number }
+export type LeaveGroupResponse = { left: true; conversation_deleted: boolean }
+
 export const messagingApi = {
   // Conversations
   listConversations: () =>
@@ -91,4 +97,25 @@ export const messagingApi = {
 
   exportData: () =>
     kscwApi<ExportBundle>('/messaging/export', { method: 'POST' }),
+
+  // Group DMs + member search (new)
+  searchMembers: (q: string, limit = 20) => {
+    const qs = new URLSearchParams({ q, limit: String(limit) })
+    return kscwApi<{ members: SearchableMember[] }>(`/messaging/searchable-members?${qs.toString()}`)
+  },
+
+  createGroupDm: (body: CreateGroupDmBody) =>
+    kscwApi<CreateGroupDmResponse>('/messaging/conversations/group-dm', { method: 'POST', body }),
+
+  addGroupMember: (conversationId: string, memberId: number) =>
+    kscwApi<AddGroupMemberResponse>(
+      `/messaging/conversations/${conversationId}/members`,
+      { method: 'POST', body: { member: memberId } },
+    ),
+
+  leaveGroup: (conversationId: string) =>
+    kscwApi<LeaveGroupResponse>(
+      `/messaging/conversations/${conversationId}/members/me`,
+      { method: 'DELETE' },
+    ),
 }

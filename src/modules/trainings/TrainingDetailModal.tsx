@@ -8,6 +8,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useParticipation } from '../../hooks/useParticipation'
 import { formatDate, formatWeekday, formatTime, getDeadlineDate } from '../../utils/dateHelpers'
 import TasksSection from '../tasks/TasksSection'
+import BroadcastButton from '../broadcast/BroadcastButton'
 import { sanitizeUrl } from '../../utils/sanitizeUrl'
 import { isFeatureEnabled } from '../../utils/featureToggles'
 import type { Training, Team, Hall, Member } from '../../types'
@@ -27,7 +28,7 @@ interface TrainingDetailModalProps {
 
 export default function TrainingDetailModal({ training, onClose }: TrainingDetailModalProps) {
   const { t } = useTranslation('trainings')
-  const { user, canParticipateIn, isCoachOf, isStaffOnly } = useAuth()
+  const { user, canParticipateIn, isCoachOf, isStaffOnly, coachTeamIds, teamResponsibleIds } = useAuth()
   const [rosterOpen, setRosterOpen] = useState(false)
 
   const teamId = relId(training?.team)
@@ -137,13 +138,35 @@ export default function TrainingDetailModal({ training, onClose }: TrainingDetai
                 <div className="min-w-0 flex-1">
                   <ParticipationSummary activityType="training" activityId={training.id} coachMemberIds={[...flattenMemberIds(team?.coach), ...flattenMemberIds(team?.captain), ...flattenMemberIds(team?.team_responsible)]} />
                 </div>
-                <button
-                  onClick={() => setRosterOpen(true)}
-                  className="flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-900/20"
-                >
-                  <Users className="h-4 w-4" />
-                  {t('participation')}
-                </button>
+                <div className="flex shrink-0 items-center gap-1">
+                  <BroadcastButton
+                    activity={{
+                      type: 'training',
+                      id: Number(training.id),
+                      title: team?.name ?? t('title'),
+                      start_date: training.date && training.start_time
+                        ? `${training.date}T${training.start_time}`
+                        : training.date,
+                      location: hall?.name ?? training.hall_name,
+                      teamName: team?.name,
+                      sport: (team?.sport as 'volleyball' | 'basketball' | undefined) ?? null,
+                      teamId: teamId ? Number(teamId) : undefined,
+                    }}
+                    member={user ? {
+                      id: user.id,
+                      role: user.role ?? null,
+                      isCoachOf: coachTeamIds,
+                      isResponsibleOf: teamResponsibleIds,
+                    } : null}
+                  />
+                  <button
+                    onClick={() => setRosterOpen(true)}
+                    className="flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-900/20"
+                  >
+                    <Users className="h-4 w-4" />
+                    {t('participation')}
+                  </button>
+                </div>
               </div>
             </div>
           )}

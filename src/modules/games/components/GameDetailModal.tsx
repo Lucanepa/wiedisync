@@ -17,6 +17,7 @@ import { formatDate, formatTime, parseRespondByTime } from '../../../utils/dateH
 import RefereeExpenseSection from './RefereeExpenseSection'
 import TasksSection from '../../tasks/TasksSection'
 import CarpoolSection from '../../carpool/CarpoolSection'
+import BroadcastButton from '../../broadcast/BroadcastButton'
 import { isFeatureEnabled } from '../../../utils/featureToggles'
 import { asObj, relId, flattenMemberIds } from '../../../utils/relations'
 
@@ -63,7 +64,7 @@ const dateFormatOptions: Intl.DateTimeFormatOptions = {
 
 export default function GameDetailModal({ game, onClose, readOnly }: GameDetailModalProps) {
   const { t, i18n } = useTranslation('games')
-  const { user, isCoachOf, isStaffOnly, canParticipateIn, isGuestIn } = useAuth()
+  const { user, isCoachOf, isStaffOnly, canParticipateIn, isGuestIn, coachTeamIds, teamResponsibleIds } = useAuth()
   const [rosterOpen, setRosterOpen] = useState(false)
   const [editingDeadline, setEditingDeadline] = useState(false)
   const [deadlineValue, setDeadlineValue] = useState(game?.respond_by?.split(' ')[0] ?? '')
@@ -586,13 +587,35 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
                 </button>
               )
             )}
-            <Button
-              variant="outline"
-              onClick={() => setRosterOpen(true)}
-              className="w-full"
-            >
-              {t('participationRoster')}
-            </Button>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button
+                variant="outline"
+                onClick={() => setRosterOpen(true)}
+                className="w-full"
+              >
+                {t('participationRoster')}
+              </Button>
+              <BroadcastButton
+                activity={{
+                  type: 'game',
+                  id: Number(game.id),
+                  title: `${game.home_team} vs ${game.away_team}`,
+                  start_date: game.date && game.time ? `${game.date}T${game.time}` : game.date,
+                  location: hall?.name ?? undefined,
+                  teamName: rawKscwTeam || undefined,
+                  sport: kscwSport ?? null,
+                  teamId: kscwTeamId ? Number(kscwTeamId) : undefined,
+                }}
+                member={user ? {
+                  id: user.id,
+                  role: user.role ?? null,
+                  isCoachOf: coachTeamIds,
+                  isResponsibleOf: teamResponsibleIds,
+                } : null}
+                size="default"
+                className="w-full sm:w-auto"
+              />
+            </div>
           </div>
         )}
       </div>

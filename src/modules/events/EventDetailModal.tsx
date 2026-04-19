@@ -13,6 +13,7 @@ import { useCollection } from '../../lib/query'
 import { useMutation } from '../../hooks/useMutation'
 import { formatDate, formatTime } from '../../utils/dateHelpers'
 import TasksSection from '../tasks/TasksSection'
+import BroadcastButton from '../broadcast/BroadcastButton'
 import { isFeatureEnabled } from '../../utils/featureToggles'
 import { Calendar, Clock, MapPin, Users, Check, MessageSquare, UserPlus } from 'lucide-react'
 import { flattenMemberIds } from '../../utils/relations'
@@ -57,7 +58,7 @@ interface EventDetailModalProps {
 export default function EventDetailModal({ event, onClose }: EventDetailModalProps) {
   const { t } = useTranslation('events')
   const { t: tP } = useTranslation('participation')
-  const { user, canParticipateIn, isCoachOf, isStaffOnly } = useAuth()
+  const { user, canParticipateIn, isCoachOf, isStaffOnly, coachTeamIds, teamResponsibleIds } = useAuth()
   const [rosterOpen, setRosterOpen] = useState(false)
   const [sessionSheetOpen, setSessionSheetOpen] = useState(false)
 
@@ -199,13 +200,31 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
               <div className="min-w-0 flex-1">
                 <ParticipationSummary activityType="event" activityId={event.id} coachMemberIds={teams.flatMap(t => [...flattenMemberIds(t.coach), ...flattenMemberIds(t.captain), ...flattenMemberIds(t.team_responsible)])} />
               </div>
-              <button
-                onClick={() => setRosterOpen(true)}
-                className="flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-900/20"
-              >
-                <Users className="h-4 w-4" />
-                {tP('participation')}
-              </button>
+              <div className="flex shrink-0 items-center gap-1">
+                <BroadcastButton
+                  activity={{
+                    type: 'event',
+                    id: Number(event.id),
+                    title: event.title,
+                    start_date: event.start_date,
+                    location: event.location,
+                    sport: null,
+                  }}
+                  member={user ? {
+                    id: user.id,
+                    role: user.role ?? null,
+                    isCoachOf: coachTeamIds,
+                    isResponsibleOf: teamResponsibleIds,
+                  } : null}
+                />
+                <button
+                  onClick={() => setRosterOpen(true)}
+                  className="flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-900/20"
+                >
+                  <Users className="h-4 w-4" />
+                  {tP('participation')}
+                </button>
+              </div>
             </div>
           </div>
         </div>

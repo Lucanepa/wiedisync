@@ -73,6 +73,7 @@ export function registerMessaging(router, ctx) {
         .select(
           'c.id as id', 'c.type', 'c.team', 'c.title',
           'c.last_message_at', 'c.last_message_preview',
+          'c.activity_type', 'c.activity_id',
           'cm.muted', 'cm.last_read_at',
         )
         .orderByRaw('c.last_message_at DESC NULLS LAST')
@@ -153,6 +154,7 @@ export function registerMessaging(router, ctx) {
           conv: {
             id: r.id, type: r.type, team: r.team, title: r.title,
             last_message_at: r.last_message_at, last_message_preview: r.last_message_preview,
+            activity_type: r.activity_type, activity_id: r.activity_id,
           },
           membership: { muted: r.muted },
           unread_count: unreadByConv.get(String(r.id)) ?? 0,

@@ -106,6 +106,9 @@ export function shapeConversationSummary({ conv, membership, unread_count }) {
     muted: membership.muted === true,
     request_status: null, // Plan 03 fills this for dm_request conversations
     other_member: null,   // Plan 03 fills this for dm / dm_request conversations
+    // Broadcast Plan 02 — activity_chat metadata (null for team/dm/dm_request).
+    activity_type: conv.activity_type ?? null,
+    activity_id: conv.activity_id ?? null,
   }
 }
 

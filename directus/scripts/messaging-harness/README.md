@@ -108,3 +108,57 @@ restores them at the end of the block. Safe to re-run.
 
 After Plan 05 completes, `EXPECTED_ENDPOINTS` is empty — all messaging endpoints
 are live.
+
+## Broadcast harness (Plan 01 / Phase B / Task B7)
+
+Separate, standalone runner for the broadcast (contact-all) endpoints. Lives
+in this directory but is independent of the messaging assertions — run it
+directly:
+
+```bash
+cd /path/to/wiedisync
+set -a && source .env.local && set +a
+node directus/scripts/messaging-harness/broadcast-int.mjs
+```
+
+Asserts 13 scenarios against `https://directus-dev.kscw.ch/kscw/activities/*`
+covering happy-path send, preview, audience expansion, externals, RBAC,
+rate-limit, payload validation, audit-row, 404 handling, and empty audience.
+
+### Required env vars
+
+- `DIRECTUS_DEV_DB_URL` — same as the messaging harness.
+- `DIRECTUS_DEV_USER_TOKEN_LUCA` — static token for `luca.canepa@gmail.com`
+  (member 8). Member's `role` includes `'admin'`, so RBAC short-circuits for
+  any activity. Acts as the **COACH_TOKEN_X** in the spec.
+- `DIRECTUS_DEV_USER_TOKEN_MEMBER` — static token for
+  `federico.felician@gmail.com` (member 9, role=`['user']`, no team junction
+  on the test team). Acts as **MEMBER_TOKEN_X** for the 403 assertions.
+
+Both tokens already exist in dev — mint a fresh one if either gets revoked
+via Directus admin: **Users → find user → Token → Generate → Save → copy.**
+
+### Seed (`seed-broadcast.mjs`)
+
+Idempotent. Provisions:
+- Test team `__broadcast_test_team__` (volleyball, 2025/26)
+- Test event `__broadcast_test_event__` linked to the team
+- Test training (`notes='__broadcast_test_training__'`) for assertions 1-6, 8-12
+- Rate-limit training (`notes='__broadcast_ratelimit_training__'`) used by
+  assertion 7 (3 fake audit rows pre-seeded by the harness) and assertion 13
+  (empty-audience send)
+- 5 test members on the team with `.kscw.test` (RFC 2606 reserved) emails:
+  `broadcast-test-{a,b,c,d,e}@kscw.test` — 3 confirmed (A, D, E), 1 tentative
+  (B), 1 declined (C). The fake TLD ensures fan-outs never reach a real inbox
+  even though SMTP submission succeeds.
+- 1 external signup on the test event (`broadcast-ext@example.com`,
+  `form_slug='broadcast-test'`, `is_member=false`).
+
+Wipes `broadcasts` audit rows for the three test activities on every run so
+the rate-limit gate starts from a clean slate.
+
+### Real-email impact per run
+
+3 emails attempted to `.kscw.test` addresses (assertion 1 happy path). The
+SMTP relay accepts submission and the addresses bounce silently downstream
+— **no real human inbox is hit**.

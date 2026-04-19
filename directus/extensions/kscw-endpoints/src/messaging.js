@@ -210,6 +210,11 @@ export function registerMessaging(router, ctx) {
               'Messaging is blocked between you and this member')
           }
         }
+      } else if (conv.type === 'activity_chat') {
+        // Activity chats are event-commitment-tied, not team-chat-opt-in-tied.
+        // Membership was already validated by loadConversationMembership above;
+        // communications_banned was enforced by requireMember. No block check:
+        // activity chats aren't DMs.
       } else {
         throw new MessagingError(400, 'messaging/invalid_body',
           `Unsupported conversation type: ${conv.type}`)

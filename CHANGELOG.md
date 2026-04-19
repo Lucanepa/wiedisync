@@ -2,6 +2,14 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.15.1] — 2026-04-19
+
+### Fixed
+
+- **Coaches could not create events for their team** — save returned `403 FORBIDDEN "You don't have permission to access this."` whenever the event payload contained a non-empty `teams` (or `invited_members`) array. Two independent causes stacked on top of each other: (1) the frontend sent M2M relations as flat primary-key arrays (`teams: ["3"]`), which Directus 11 interprets as "link existing junction rows by PK" and 403s when the junction PK doesn't exist; (2) the `KSCW Coach` policy had CRUD on `events` but only `read` on the `events_teams` and `events_members` junction tables. Fixed the frontend (`EventForm`) to submit junction-object format (`teams: [{ teams_id: id }]`, `invited_members: [{ members_id: id }]`) for both create and update, and granted CRUD on both junction tables to the `KSCW Coach` and `Administrator` policies via `directus/scripts/019-events-junctions-permissions.sql` (idempotent). Applied to dev + prod DBs; prod Directus container restarted to refresh the permission cache.
+
+---
+
 ## [3.15.0] — 2026-04-19
 
 ### Changed

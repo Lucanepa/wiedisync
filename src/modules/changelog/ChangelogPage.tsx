@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.15.0'
+const APP_VERSION = '3.15.1'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,18 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.15.1',
+    date: '2026-04-19',
+    sections: [
+      {
+        title: 'Fix',
+        items: [
+          'Trainer:innen konnten keine Events für ihr Team erstellen — der Speichern-Button warf „Keine Berechtigung". Behoben: das Event-Formular schickt Teams/Eingeladene jetzt im Directus-Junction-Format, und den Rollen-Policies fehlten Create/Update/Delete-Rechte auf den M2M-Tabellen events_teams und events_members.',
+        ],
+      },
+    ],
+  },
   {
     version: '3.15.0',
     date: '2026-04-19',

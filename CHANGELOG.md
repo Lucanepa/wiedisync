@@ -2,6 +2,28 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.13.0] — 2026-04-19
+
+### Added
+
+- **Broadcast (Contact-All) feature** — coaches, team-responsibles, sport-admins, vorstand, and admins can send a one-click broadcast to all participants of an event, game, or training. New endpoint `POST /kscw/activities/:type/:id/broadcast` (+ `/preview` for live recipient count) supports email + push channels, selectable audience by participation status (confirmed / tentative / declined / waitlist / interested / invited), include-externals toggle for events, 2000-char message + optional subject (required for email). RBAC enforced server-side. Per-recipient locale-picked email via existing `buildEmailLayout` template. Push fan-out via existing `sendPushToMembers` worker. Frontend `<BroadcastButton />` (gated by `canBroadcast` predicate) wired into Event / Game / Training detail modals; opens shadcn Modal with channel checkboxes, status multi-select, externals toggle (event only), subject input (email only), 2000-char message textarea, and live "Empfänger: N (M Mitglieder · E Extern)" preview (300ms debounced). i18n: `broadcast` namespace in de/en/fr/gsw/it. Phase B (in-app chat channel) deferred until messaging feature flag flip is broader.
+
+### Changed
+
+- **Generic external signups** — replaced single-purpose `mixed_tournament_signups` table with `event_signups` (polymorphic via `event` FK + `form_slug` discriminator + `form_data` jsonb). Existing 8 prod / 5 dev rows migrated. `kscw-website` mixed-tournament form repointed to write `event_signups` with `event=5, form_slug='mixed_tournament_2026'`. Turnstile guard hook + `/public/mixed-tournament/non-member-count` endpoint cut over. Old `mixed_tournament_signups` table left in place as fallback (drop deferred). Future public signup forms (gala, summer camp, …) just pick a new `form_slug`.
+
+### Audit
+
+- **Broadcasts audit table** — every broadcast send writes a `broadcasts` row: sender, audience snapshot, recipient IDs (members + externals), channels used, message body, subject, delivery results (per-channel sent/failed). Indexed by `(activity_type, activity_id, sent_at)` for the rate-limit lookup (max 3/hour per activity, ≥20 min between broadcasts).
+
+### Technical
+
+- **`event_signups`** schema: `event` FK (nullable for standalone forms), `form_slug` discriminator, `name`, `email`, `sex`, `language`, `is_member`, `member` FK, `form_data` jsonb, `consent` jsonb, `date_created`, `date_updated`. Indexes on `event`, `form_slug`, `LOWER(email)`.
+- **`broadcasts`** schema: `id`, `activity_type` (CHECK constraint: event|game|training), `activity_id`, `sender` FK, `channels_sent` jsonb, `audience_filter` jsonb, `recipient_count`, `recipient_ids` jsonb, `subject`, `message`, `delivery_results` jsonb, `sent_at`.
+- **Tests**: 19 backend unit tests for helpers; 13 backend integration assertions against dev (happy path, preview, audience expand, externals, RBAC, rate-limit, validation, audit, 404, empty audience). 15 frontend `canBroadcast` predicate tests. Real test emails routed to `.kscw.test` reserved domain.
+
+---
+
 ## [3.12.0] — 2026-04-19
 
 ### Added

@@ -1,0 +1,56 @@
+export default {
+  button: {
+    label: 'Contact',
+  },
+  dialog: {
+    title: 'Contact',
+    cancel: 'Cancel',
+    send: 'Send',
+    sending: 'Sending…',
+    confirmTitle: 'Send broadcast?',
+    confirm: 'You are sending to {{count}} person(s). Continue?',
+    confirmCta: 'Send',
+  },
+  channels: {
+    label: 'Channel',
+    email: 'Email',
+    push: 'Push',
+    inApp: 'In-App',
+    inAppComingSoon: 'Coming soon',
+    error_atLeastOne: 'At least one channel must be enabled.',
+  },
+  audience: {
+    label: 'Recipients',
+    confirmed: 'Confirmed',
+    tentative: 'Maybe',
+    declined: 'Declined',
+    waitlist: 'Waitlist',
+    interested: 'Interested',
+    invited: 'Invited',
+    includeExternals: 'Include external sign-ups',
+  },
+  preview: {
+    recipients: 'Recipients: {{total}} ({{members}} members · {{externals}} external)',
+    empty: 'Nobody matches these filters.',
+    loading: 'Counting recipients …',
+    sample: 'Examples: {{names}}',
+    error: 'Could not load preview.',
+  },
+  subject: {
+    label: 'Subject',
+    placeholder: 'Short subject (3-200 chars)',
+  },
+  message: {
+    label: 'Message',
+    placeholder: 'Your message …',
+    counter: '{{used}} / {{max}}',
+  },
+  toast: {
+    sent: 'Broadcast sent: {{count}} recipients',
+    error: 'Sending failed',
+    rateLimited: 'Please wait a few minutes and try again.',
+    rateLimitedTimed: 'Please wait {{minutes}} minute(s) and try again.',
+    invalidField: 'Invalid value for "{{field}}".',
+    notImplemented: 'In-App channel is not yet available.',
+  },
+}

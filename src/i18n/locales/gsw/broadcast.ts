@@ -1,0 +1,56 @@
+export default {
+  button: {
+    label: 'Kontaktiere',
+  },
+  dialog: {
+    title: 'Kontaktiere',
+    cancel: 'Abbreche',
+    send: 'Sände',
+    sending: 'Wird gsändet…',
+    confirmTitle: 'Broadcast sände?',
+    confirm: 'Du sändsch an {{count}} Person(e). Witer?',
+    confirmCta: 'Sände',
+  },
+  channels: {
+    label: 'Kanal',
+    email: 'Email',
+    push: 'Push',
+    inApp: 'In-App',
+    inAppComingSoon: 'Bald verfüegbar',
+    error_atLeastOne: 'Mindestens ei Kanal muess aktiv si.',
+  },
+  audience: {
+    label: 'Empfänger',
+    confirmed: 'Bestätigt',
+    tentative: 'Vielicht',
+    declined: 'Abglehnt',
+    waitlist: 'Warteliste',
+    interested: 'Interessiert',
+    invited: 'Iiglade',
+    includeExternals: 'Externi Aamäldige iibezieh',
+  },
+  preview: {
+    recipients: 'Empfänger: {{total}} ({{members}} Mitglieder · {{externals}} Extern)',
+    empty: 'Niemer erfüllt die Filter.',
+    loading: 'Empfänger wärded zählt …',
+    sample: 'Bispiele: {{names}}',
+    error: 'Vorschau het nöd chönne glade wärde.',
+  },
+  subject: {
+    label: 'Betreff',
+    placeholder: 'Churze Betreff (3-200 Zeiche)',
+  },
+  message: {
+    label: 'Nachricht',
+    placeholder: 'Dini Nachricht …',
+    counter: '{{used}} / {{max}}',
+  },
+  toast: {
+    sent: 'Broadcast gsändet: {{count}} Empfänger',
+    error: 'Sände hät nöd klappet',
+    rateLimited: 'Bitte warti es paar Minute und probier’s nomal.',
+    rateLimitedTimed: 'Bitte warti {{minutes}} Minute(n) und probier’s nomal.',
+    invalidField: 'Ungültige Wärt für „{{field}}".',
+    notImplemented: 'De In-App-Kanal isch no nöd verfüegbar.',
+  },
+}

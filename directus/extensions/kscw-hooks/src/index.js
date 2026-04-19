@@ -175,10 +175,10 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     })
   })
 
-  // Block unauthenticated members.create / feedback.create / mixed_tournament_signups.create without valid Turnstile
+  // Block unauthenticated members.create / feedback.create / event_signups.create without valid Turnstile
   filter('items.create', async (payload, meta, context) => {
     const collection = meta.collection
-    if (collection !== 'members' && collection !== 'feedback' && collection !== 'mixed_tournament_signups') return payload
+    if (collection !== 'members' && collection !== 'feedback' && collection !== 'event_signups') return payload
 
     // Skip for authenticated users (admins creating members, logged-in feedback)
     if (context.accountability?.user) return payload

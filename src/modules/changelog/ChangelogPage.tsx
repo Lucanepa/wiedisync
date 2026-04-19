@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.12.0'
+const APP_VERSION = '3.13.0'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,21 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.13.0',
+    date: '2026-04-19',
+    sections: [
+      {
+        title: 'Neu',
+        items: [
+          'Kontaktieren-Funktion: Trainer:innen, Team-Verantwortliche, Vorstand und Admins können jetzt direkt aus der Anlass-Detailansicht (Event, Spiel, Training) per E-Mail oder Push-Benachrichtigung an alle Teilnehmenden schreiben — mit Audience-Filter (z. B. nur Bestätigte) und Live-Empfängerzahl.',
+          'Externe Anmeldungen (z. B. Mixed-Turnier-Form auf der Website) sind nun in einer generischen Tabelle event_signups gebündelt — bereit für künftige öffentliche Anmeldeformulare. Sie können bei Event-Broadcasts mit einbezogen werden.',
+          'Audit-Trail für Broadcasts: jede Aussendung wird mit Sender, Empfänger-Snapshot, Kanälen und Zustellungs-Ergebnissen protokolliert (nFADP-konform).',
+          'Rate-Limit für Broadcasts: max. 3 pro Anlass pro Stunde, mind. 20 Min. Abstand — schützt vor versehentlichem Spam.',
+        ],
+      },
+    ],
+  },
   {
     version: '3.12.0',
     date: '2026-04-19',

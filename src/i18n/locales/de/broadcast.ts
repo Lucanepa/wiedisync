@@ -1,0 +1,56 @@
+export default {
+  button: {
+    label: 'Kontaktieren',
+  },
+  dialog: {
+    title: 'Kontaktieren',
+    cancel: 'Abbrechen',
+    send: 'Senden',
+    sending: 'Wird gesendet…',
+    confirmTitle: 'Broadcast senden?',
+    confirm: 'Du sendest an {{count}} Person(en). Fortfahren?',
+    confirmCta: 'Senden',
+  },
+  channels: {
+    label: 'Kanal',
+    email: 'Email',
+    push: 'Push',
+    inApp: 'In-App',
+    inAppComingSoon: 'Bald verfügbar',
+    error_atLeastOne: 'Mindestens ein Kanal muss aktiviert sein.',
+  },
+  audience: {
+    label: 'Empfänger',
+    confirmed: 'Bestätigt',
+    tentative: 'Vielleicht',
+    declined: 'Abgelehnt',
+    waitlist: 'Warteliste',
+    interested: 'Interessiert',
+    invited: 'Eingeladen',
+    includeExternals: 'Externe Anmeldungen einbeziehen',
+  },
+  preview: {
+    recipients: 'Empfänger: {{total}} ({{members}} Mitglieder · {{externals}} Extern)',
+    empty: 'Niemand erfüllt diese Filter.',
+    loading: 'Empfänger werden gezählt …',
+    sample: 'Beispiele: {{names}}',
+    error: 'Vorschau konnte nicht geladen werden.',
+  },
+  subject: {
+    label: 'Betreff',
+    placeholder: 'Kurzer Betreff (3-200 Zeichen)',
+  },
+  message: {
+    label: 'Nachricht',
+    placeholder: 'Deine Nachricht …',
+    counter: '{{used}} / {{max}}',
+  },
+  toast: {
+    sent: 'Broadcast gesendet: {{count}} Empfänger',
+    error: 'Senden fehlgeschlagen',
+    rateLimited: 'Bitte warte ein paar Minuten und versuche es erneut.',
+    rateLimitedTimed: 'Bitte warte {{minutes}} Minute(n) und versuche es erneut.',
+    invalidField: 'Ungültiger Wert für „{{field}}".',
+    notImplemented: 'In-App-Kanal ist noch nicht verfügbar.',
+  },
+}

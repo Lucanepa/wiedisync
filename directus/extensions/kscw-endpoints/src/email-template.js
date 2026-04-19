@@ -146,3 +146,130 @@ export function formatDateCH(isoDate) {
 export function weekday(isoDate) {
   return ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'][new Date(isoDate).getUTCDay()]
 }
+
+/**
+ * Build a broadcast ("Contact-All") email — used by the per-activity
+ * Plan 01 Phase B endpoint to email participants of an event/game/training
+ * with a free-form message authored by an organiser.
+ *
+ * Rendering shape:
+ *   - Sport-coloured accent stripe (vb=#FFC832, bb=#F97316, neutral=#4A55A2)
+ *   - Header: localised title ("Nachricht zum Anlass" / "Message about the event") + subject
+ *   - Greeting: localised ("Hallo {name}," / "Hi {name},")
+ *   - Sender info card: Von/From → "First Last"
+ *   - Activity info card: Anlass/Event + Datum/Date + Ort/Location? + Team?
+ *   - Body: HTML-escaped message with newlines → <br>
+ *   - CTA: "Im Wiedisync öffnen" / "Open in Wiedisync" → /events|games|trainings/:id
+ *
+ * @param {object} args
+ * @param {{type:'event'|'game'|'training', id:string|number, title:string, start_date:string, location?:string, teamName?:string, sport?:string}} args.activity
+ * @param {{first_name:string, last_name:string}} args.sender
+ * @param {string} args.subject
+ * @param {string} args.message — plain text, newlines preserved
+ * @param {string} args.recipientFirstName
+ * @param {'de'|'en'|'fr'|'gsw'|'it'} [args.lang='de']
+ * @returns {string} full HTML email document
+ */
+export function buildBroadcastEmail({
+  activity,
+  sender,
+  subject,
+  message,
+  recipientFirstName,
+  lang = 'de',
+}) {
+  // Resolve language bucket. gsw (Swiss German) falls back to de per project
+  // i18n convention; fr/it fall back to de (the canonical club language)
+  // rather than en — the club operates in Zürich and most members read German.
+  const isEnglish = lang === 'en'
+  const L = isEnglish
+    ? {
+        title: 'Message about the event',
+        greeting: (n) => (n ? `Hi ${n},` : 'Hi,'),
+        from: 'From',
+        eventLabel: 'Event',
+        gameLabel: 'Game',
+        trainingLabel: 'Training',
+        date: 'Date',
+        location: 'Location',
+        team: 'Team',
+        cta: 'Open in Wiedisync',
+      }
+    : {
+        title: 'Nachricht zum Anlass',
+        greeting: (n) => (n ? `Hallo ${n},` : 'Hallo,'),
+        from: 'Von',
+        eventLabel: 'Anlass',
+        gameLabel: 'Spiel',
+        trainingLabel: 'Training',
+        date: 'Datum',
+        location: 'Ort',
+        team: 'Team',
+        cta: 'Im Wiedisync öffnen',
+      }
+
+  // Activity-type label — game/training get specific labels, event uses generic
+  const activityLabel =
+    activity?.type === 'game'
+      ? L.gameLabel
+      : activity?.type === 'training'
+        ? L.trainingLabel
+        : L.eventLabel
+
+  // Date formatting — reuse existing Swiss formatter (DD.MM.YYYY) plus a
+  // locale-aware time so recipients see e.g. "20.04.2026 · 19:30".
+  let dateValue = ''
+  if (activity?.start_date) {
+    try {
+      const dateStr = formatDateCH(activity.start_date)
+      const d = new Date(activity.start_date)
+      const hh = String(d.getUTCHours()).padStart(2, '0')
+      const mm = String(d.getUTCMinutes()).padStart(2, '0')
+      dateValue = `${dateStr} · ${hh}:${mm}`
+    } catch {
+      dateValue = String(activity.start_date)
+    }
+  }
+
+  // Sender + activity info cards
+  const senderName = `${sender?.first_name || ''} ${sender?.last_name || ''}`.trim() || '—'
+  const senderCard = buildInfoCard([{ label: L.from, value: senderName }])
+
+  const activityRows = []
+  activityRows.push({ label: activityLabel, value: activity?.title || '—' })
+  if (dateValue) activityRows.push({ label: L.date, value: dateValue })
+  if (activity?.location) activityRows.push({ label: L.location, value: activity.location })
+  if ((activity?.type === 'game' || activity?.type === 'training') && activity?.teamName) {
+    activityRows.push({ label: L.team, value: activity.teamName })
+  }
+  const activityCard = buildInfoCard(activityRows)
+
+  // Message body — escape, then convert newlines to <br>. Wrap each paragraph
+  // (split on blank lines) in its own <p> for readable spacing.
+  const safeMsg = escHtml(message || '')
+  const paragraphs = safeMsg
+    .split(/\n{2,}/)
+    .map((p) => `<p style="font-size:14px;color:#e2e8f0;line-height:1.6;margin:0 0 12px">${p.replace(/\n/g, '<br>')}</p>`)
+    .join('')
+
+  // Combine sender card → activity card → spacing → message body
+  const bodyHtml =
+    `${senderCard}<div style="height:10px;font-size:0;line-height:0">&nbsp;</div>` +
+    `${activityCard}<div style="height:14px;font-size:0;line-height:0">&nbsp;</div>` +
+    paragraphs
+
+  // Build CTA URL — /events|games|trainings/:id on the production frontend.
+  // We hardcode the production host because broadcast emails always link to
+  // the canonical frontend (matches Plan 01 Phase A spec).
+  const typeSegment = activity?.type === 'game' ? 'games' : activity?.type === 'training' ? 'trainings' : 'events'
+  const ctaUrl = `https://wiedisync.kscw.ch/${typeSegment}/${activity?.id ?? ''}`
+
+  return buildEmailLayout(bodyHtml, {
+    title: L.title,
+    subtitle: subject,
+    sport: activity?.sport,
+    greeting: L.greeting(recipientFirstName),
+    ctaUrl,
+    ctaLabel: L.cta,
+  })
+}

@@ -1,0 +1,56 @@
+export default {
+  button: {
+    label: 'Contacter',
+  },
+  dialog: {
+    title: 'Contacter',
+    cancel: 'Annuler',
+    send: 'Envoyer',
+    sending: 'Envoi…',
+    confirmTitle: 'Envoyer le broadcast ?',
+    confirm: 'Tu envoies à {{count}} personne(s). Continuer ?',
+    confirmCta: 'Envoyer',
+  },
+  channels: {
+    label: 'Canal',
+    email: 'Email',
+    push: 'Push',
+    inApp: 'In-App',
+    inAppComingSoon: 'Bientôt disponible',
+    error_atLeastOne: 'Au moins un canal doit être activé.',
+  },
+  audience: {
+    label: 'Destinataires',
+    confirmed: 'Confirmé',
+    tentative: 'Peut-être',
+    declined: 'Refusé',
+    waitlist: 'Liste d’attente',
+    interested: 'Intéressé',
+    invited: 'Invité',
+    includeExternals: 'Inclure les inscriptions externes',
+  },
+  preview: {
+    recipients: 'Destinataires : {{total}} ({{members}} membres · {{externals}} externes)',
+    empty: 'Personne ne correspond à ces filtres.',
+    loading: 'Comptage des destinataires …',
+    sample: 'Exemples : {{names}}',
+    error: 'Impossible de charger l’aperçu.',
+  },
+  subject: {
+    label: 'Sujet',
+    placeholder: 'Sujet court (3-200 caractères)',
+  },
+  message: {
+    label: 'Message',
+    placeholder: 'Ton message …',
+    counter: '{{used}} / {{max}}',
+  },
+  toast: {
+    sent: 'Broadcast envoyé : {{count}} destinataires',
+    error: 'Échec de l’envoi',
+    rateLimited: 'Patiente quelques minutes et réessaie.',
+    rateLimitedTimed: 'Patiente {{minutes}} minute(s) et réessaie.',
+    invalidField: 'Valeur invalide pour « {{field}} ».',
+    notImplemented: 'Le canal In-App n’est pas encore disponible.',
+  },
+}

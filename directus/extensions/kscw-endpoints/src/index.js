@@ -26,6 +26,7 @@ import { registerClubdeskUpdate } from './clubdesk-update.js'
 import { registerBugfixes } from './bugfixes.js'
 import { registerEventNotify } from './event-notify.js'
 import { registerMessaging } from './messaging.js'
+import { registerBroadcastRoutes } from './broadcast.js'
 
 // ── Helpers ──────────────────────────────────────────────────────
 
@@ -451,16 +452,18 @@ export default {
 
     // Count of non-member mixed tournament signups (for event participant count boost).
     // Non-members can't get a participations row (FK to members), so the kscw-website
-    // form writes them to mixed_tournament_signups with is_member=false. This endpoint
+    // form writes them to event_signups with is_member=false. This endpoint
     // lets the frontend add those to the event's confirmed count.
     router.get('/public/mixed-tournament/non-member-count', async (_req, res) => {
       try {
-        const row = await database('mixed_tournament_signups')
-          .where('is_member', false).count({ n: 'id' }).first()
-        res.json({ count: Number(row?.n ?? 0) })
+        const row = await database('event_signups')
+          .where('form_slug', 'mixed_tournament_2026')
+          .where('is_member', false)
+          .count('* as count').first()
+        res.json({ count: Number(row?.count ?? 0) })
       } catch (err) {
         logEndpointError(log, 'public/mixed-tournament/non-member-count', err, _req)
-        res.status(500).json({ error: 'Internal error' })
+        res.status(500).json({ error: 'failed' })
       }
     })
 
@@ -1612,7 +1615,8 @@ export default {
     registerBugfixes(router, ctx)
     registerEventNotify(router, ctx)
     registerMessaging(router, ctx)
+    registerBroadcastRoutes(router, ctx)
 
-    log.info('KSCW endpoints loaded: ~49 routes')
+    log.info('KSCW endpoints loaded: ~51 routes')
   },
 }

@@ -1,0 +1,56 @@
+export default {
+  button: {
+    label: 'Contatta',
+  },
+  dialog: {
+    title: 'Contatta',
+    cancel: 'Annulla',
+    send: 'Invia',
+    sending: 'Invio…',
+    confirmTitle: 'Inviare il broadcast?',
+    confirm: 'Stai inviando a {{count}} persona/e. Continuare?',
+    confirmCta: 'Invia',
+  },
+  channels: {
+    label: 'Canale',
+    email: 'Email',
+    push: 'Push',
+    inApp: 'In-App',
+    inAppComingSoon: 'In arrivo',
+    error_atLeastOne: 'Almeno un canale deve essere attivo.',
+  },
+  audience: {
+    label: 'Destinatari',
+    confirmed: 'Confermato',
+    tentative: 'Forse',
+    declined: 'Rifiutato',
+    waitlist: 'Lista d’attesa',
+    interested: 'Interessato',
+    invited: 'Invitato',
+    includeExternals: 'Includi iscrizioni esterne',
+  },
+  preview: {
+    recipients: 'Destinatari: {{total}} ({{members}} membri · {{externals}} esterni)',
+    empty: 'Nessuno corrisponde a questi filtri.',
+    loading: 'Conteggio destinatari …',
+    sample: 'Esempi: {{names}}',
+    error: 'Impossibile caricare l’anteprima.',
+  },
+  subject: {
+    label: 'Oggetto',
+    placeholder: 'Oggetto breve (3-200 caratteri)',
+  },
+  message: {
+    label: 'Messaggio',
+    placeholder: 'Il tuo messaggio …',
+    counter: '{{used}} / {{max}}',
+  },
+  toast: {
+    sent: 'Broadcast inviato: {{count}} destinatari',
+    error: 'Invio fallito',
+    rateLimited: 'Attendi qualche minuto e riprova.',
+    rateLimitedTimed: 'Attendi {{minutes}} minuto/i e riprova.',
+    invalidField: 'Valore non valido per «{{field}}».',
+    notImplemented: 'Il canale In-App non è ancora disponibile.',
+  },
+}

@@ -334,6 +334,7 @@ export function registerMessaging(router, ctx) {
           'm.id', 'm.conversation', 'm.sender', 'm.type', 'm.body',
           'm.poll', 'm.created_at', 'm.edited_at', 'm.deleted_at',
           's.first_name as sender_first_name', 's.last_name as sender_last_name',
+          's.photo as sender_photo',
         )
       if (blockedIds.length > 0) q = q.whereNotIn('m.sender', blockedIds)
       if (before) q = q.andWhere('m.created_at', '<', before)
@@ -349,6 +350,7 @@ export function registerMessaging(router, ctx) {
         type: r.type, body: r.body, poll: r.poll,
         created_at: r.created_at, edited_at: r.edited_at, deleted_at: r.deleted_at,
         sender_name: [r.sender_first_name, r.sender_last_name].filter(Boolean).join(' ') || null,
+        sender_photo: r.sender_photo ?? null,
       }))
 
       res.json({ messages, has_more })
@@ -1117,6 +1119,25 @@ export function registerMessaging(router, ctx) {
         archived: false, role: 'member', joined_at: new Date().toISOString(),
       })
       res.json({ added: true, member: newMemberId })
+    } catch (e) { sendError(res, log, e) }
+  })
+
+  // ── GET /messaging/conversations/:id/members ────────────────────────
+  // Return the full roster of a conversation (currently only used by
+  // group_dm ThreadView, but works for any conv type the caller is in).
+  router.get('/messaging/conversations/:id/members', async (req, res) => {
+    try {
+      const userId = requireAuth(req)
+      const me = await requireMember(db, userId)
+      await loadConversationMembership(db, req.params.id, me.id)
+      const rows = await db('conversation_members as cm')
+        .join('members as m', 'm.id', 'cm.member')
+        .where('cm.conversation', req.params.id)
+        .andWhere('cm.archived', false)
+        .select('m.id', 'm.first_name', 'm.last_name', 'm.photo', 'cm.role', 'cm.joined_at')
+        .orderBy('m.last_name')
+        .orderBy('m.first_name')
+      res.json({ members: rows })
     } catch (e) { sendError(res, log, e) }
   })
 

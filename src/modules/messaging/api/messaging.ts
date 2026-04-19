@@ -10,6 +10,15 @@ export type CreateGroupDmBody = { member_ids: number[]; title?: string }
 export type CreateGroupDmResponse = { conversation_id: string; created: true; type: 'group_dm'; member_count: number }
 export type AddGroupMemberResponse = { added: boolean; unarchived?: boolean; member: number }
 export type LeaveGroupResponse = { left: true; conversation_deleted: boolean }
+export type ConversationMemberRow = {
+  id: number
+  first_name: string | null
+  last_name: string | null
+  photo: string | null
+  role: string
+  joined_at: string
+}
+export type ListConversationMembersResponse = { members: ConversationMemberRow[] }
 
 export const messagingApi = {
   // Conversations
@@ -117,5 +126,10 @@ export const messagingApi = {
     kscwApi<LeaveGroupResponse>(
       `/messaging/conversations/${conversationId}/members/me`,
       { method: 'DELETE' },
+    ),
+
+  listConversationMembers: (conversationId: string) =>
+    kscwApi<ListConversationMembersResponse>(
+      `/messaging/conversations/${conversationId}/members`,
     ),
 }

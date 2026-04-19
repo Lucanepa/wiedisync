@@ -136,15 +136,22 @@ export function buildAlertBox(type, title, text) {
   return `<table width="100%" cellpadding="0" cellspacing="0" style="background:${s.bg};border:1px solid ${s.border};border-radius:8px;margin-bottom:12px"><tr><td style="padding:12px 16px"><div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:${s.title};font-weight:700;margin-bottom:4px">${escHtml(title)}</div><div style="font-size:13px;color:${s.text}">${escHtml(text)}</div></td></tr></table>`
 }
 
-/** Format date as DD.MM.YYYY (Swiss) */
-export function formatDateCH(isoDate) {
-  const d = new Date(isoDate)
-  return `${String(d.getUTCDate()).padStart(2, '0')}.${String(d.getUTCMonth() + 1).padStart(2, '0')}.${d.getUTCFullYear()}`
+/** Format date as DD.MM.YYYY (Swiss), rendered in Europe/Zurich local time */
+export function formatDateCH(d) {
+  const x = d instanceof Date ? d : new Date(d)
+  if (Number.isNaN(x.getTime())) return ''
+  return new Intl.DateTimeFormat('de-CH', {
+    timeZone: 'Europe/Zurich',
+    day: '2-digit', month: '2-digit', year: 'numeric',
+  }).format(x)
 }
 
-/** Swiss weekday abbreviation */
-export function weekday(isoDate) {
-  return ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'][new Date(isoDate).getUTCDay()]
+/** Weekday abbreviation rendered in Europe/Zurich local time */
+export function weekday(d, lang = 'de') {
+  const x = d instanceof Date ? d : new Date(d)
+  if (Number.isNaN(x.getTime())) return ''
+  const loc = lang === 'en' ? 'en' : lang === 'fr' ? 'fr' : lang === 'it' ? 'it' : 'de'
+  return new Intl.DateTimeFormat(loc, { timeZone: 'Europe/Zurich', weekday: 'short' }).format(x)
 }
 
 /**
@@ -222,10 +229,10 @@ export function buildBroadcastEmail({
   if (activity?.start_date) {
     try {
       const dateStr = formatDateCH(activity.start_date)
-      const d = new Date(activity.start_date)
-      const hh = String(d.getUTCHours()).padStart(2, '0')
-      const mm = String(d.getUTCMinutes()).padStart(2, '0')
-      dateValue = `${dateStr} · ${hh}:${mm}`
+      const timeStr = new Intl.DateTimeFormat('de-CH', {
+        timeZone: 'Europe/Zurich', hour: '2-digit', minute: '2-digit', hour12: false,
+      }).format(new Date(activity.start_date))
+      dateValue = `${dateStr} · ${timeStr}`
     } catch {
       dateValue = String(activity.start_date)
     }

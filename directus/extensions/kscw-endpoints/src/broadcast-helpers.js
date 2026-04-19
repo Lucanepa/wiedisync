@@ -441,12 +441,8 @@ export function validateBroadcastPayload(body) {
     throw new BroadcastError(400, 'broadcast/invalid_payload',
       'At least one channel must be true', { field: 'channels' })
   }
-  if (inApp) {
-    // Phase B blocks in-app sends until the messaging feature flag is flipped.
-    throw new BroadcastError(501, 'broadcast/not_implemented',
-      'In-app broadcast channel is not yet available',
-      { field: 'channels.inApp' })
-  }
+  // Note: inApp is allowed at the payload layer. Event-only enforcement
+  // happens in broadcast.js after loadActivity() resolves the activity type.
 
   // — message —
   if (typeof body.message !== 'string') {

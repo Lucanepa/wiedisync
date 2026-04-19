@@ -169,6 +169,26 @@ async function clearBroadcastAudit(activityType, activityIds) {
   )
 }
 
+async function clearActivityChat(activityType, activityId) {
+  // Delete any existing activity_chat conversation for this activity.
+  // Messages are FK ON DELETE CASCADE from conversations, so this also
+  // removes all messages and conversation_members for the conversation.
+  await c.query(
+    `DELETE FROM conversations
+      WHERE type = 'activity_chat'
+        AND activity_type = $1
+        AND activity_id   = $2`,
+    [activityType, activityId]
+  )
+}
+
+async function ensureEventParticipations(eventId, memberIds) {
+  // Ensure each memberId has a confirmed participation on the event.
+  for (const memberId of memberIds) {
+    await ensureParticipation('event', eventId, memberId, 'confirmed')
+  }
+}
+
 try {
   const memberA = await ensureMember(EMAIL_A, 'Alpha')
   const memberB = await ensureMember(EMAIL_B, 'Bravo')
@@ -195,10 +215,20 @@ try {
   // External signup on the test event
   const externalId = await ensureExternalSignup(eventId)
 
+  // Ensure the event has ≥2 confirmed participations (for inApp assertions).
+  // Members A and D are already confirmed on the training; add them to the
+  // event as well. This is idempotent — ensureParticipation UPSERTs.
+  await ensureEventParticipations(eventId, [memberA, memberD])
+
   // Wipe audit history on the three test activities so prior runs don't leak
   // into rate-limit assertions.
   await clearBroadcastAudit('training', [trainingId, rateLimitTraining])
   await clearBroadcastAudit('event',    [eventId])
+
+  // Wipe any prior activity_chat conversation for the test event so the
+  // inApp happy-path assertion always starts from a clean state and doesn't
+  // hit the 20-min rate-limit gap from a previous run.
+  await clearActivityChat('event', eventId)
 
   console.log(JSON.stringify({
     teamId,

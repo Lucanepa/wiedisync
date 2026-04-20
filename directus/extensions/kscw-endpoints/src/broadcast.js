@@ -126,8 +126,8 @@ export function registerBroadcastRoutes(router, ctx) {
           { activityType: activity.type })
       }
 
-      // 5. rate limit
-      const rate = await checkRateLimit(database, type, activityId)
+      // 5. rate limit (per-activity soft limit + per-sender global limit)
+      const rate = await checkRateLimit(database, type, activityId, sender?.id)
       if (!rate.allowed) {
         const err = new BroadcastError(429, 'broadcast/rate_limited',
           'Too many broadcasts for this activity — please wait',

@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.16.4'
+const APP_VERSION = '3.16.5'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,24 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.16.5',
+    date: '2026-04-20',
+    sections: [
+      {
+        title: 'Security',
+        items: [
+          'Messages, conversations, and reports are now strictly scoped: only the people involved can read them. Previously, any logged-in member could call the raw data API and read every message and report in the system. Fixed server-side.',
+          'Other members\' email and phone are no longer exposed through the raw data API. You still see your own contact details, and the app still fetches what it needs through the proper endpoints.',
+          'Rate-limited message reports (max 5 per hour per member) to prevent spam flooding the moderation inbox.',
+          'Deleted messages now clear their body on the server — not just hide it — so the content can\'t be retrieved through other data-API paths.',
+          'Broadcast sends now have a per-sender global cap (max 10 broadcasts per sender per hour) on top of the existing per-activity limit.',
+          'Anonymous feedback can no longer pre-set the "status" field when submitting (prevented suppression of complaints).',
+          'Updated Vite and DOMPurify to patched versions (CVE fixes).',
+        ],
+      },
+    ],
+  },
   {
     version: '3.16.4',
     date: '2026-04-20',

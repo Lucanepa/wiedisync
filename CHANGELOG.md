@@ -2,6 +2,34 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.16.5] — 2026-04-20
+
+### Security
+
+- **RBAC row filters on messaging collections (critical data leak).** The KSCW Member policy had empty row filters (`{}`) on `messages`, `conversations`, `message_reactions`, and `reports` — meaning any authenticated member could hit the raw Directus REST `/items/<collection>` and enumerate every DM, every team message, and every moderation report in the system. The `/kscw/messaging/*` server-endpoints correctly scoped things, but the raw REST path was wide open. Confirmed exploitable with a live member token (see `/tmp/audit-directus-rbac.md`). Migration 023 scopes the filters:
+  - `conversations`: `{"members":{"member":{"user":{"_eq":"$CURRENT_USER"}}}}`
+  - `messages`: `{"conversation":{"members":{"member":{"user":{"_eq":"$CURRENT_USER"}}}}}`
+  - `message_reactions`: the same chain via `message → conversation → members`
+  - `reports`: `{"_or":[{"reporter":{"user":{"_eq":"$CURRENT_USER"}}},{"reported_member":{"user":{"_eq":"$CURRENT_USER"}}}]}`
+  Admin policies (`admin_access=true`) bypass filters and still see everything. Applied to prod + dev, both Directus containers restarted to flush the permissions cache. Verified with a member token: `/items/messages` now returns `[]`, `/items/reports` returns `[]`, `/items/conversations` returns only convs the caller is a member of.
+
+- **Member PII scoping.** The KSCW Member policy's non-self read row on `members` exposed `email` + `phone` of every member to every other member. The `hide_phone` user preference was checked only in the UI — direct API calls bypassed it. Migration 024 removes `email` + `phone` from the non-self read field list; they remain on the self-read row (`user = $CURRENT_USER`), so `/users/me`-keyed fetches still surface own contact details. Teammate contact UI is expected to be restored via a scoped `/kscw/*` endpoint later.
+
+- **Report creation rate limit.** `POST /kscw/messaging/reports` now rejects with 429 `messaging/rate_limited` when a member has filed ≥ 5 reports in the last hour. Prevents a single member from flooding the reports table + admin notification fan-out.
+
+- **Soft-delete redacts body.** `DELETE /kscw/messaging/messages/:id` now writes `body = NULL` and `original_body = NULL` alongside `deleted_at`, so a later `/items/messages` read cannot resurrect the content. The moderator-audit `reports` row still snapshots the pre-redaction body (moderators see evidence of what they removed). Existing soft-deleted rows retain their body — this only applies to deletions from here on.
+
+- **Broadcast per-sender global rate limit.** `checkRateLimit()` now also rejects when a single sender has emitted ≥ 10 broadcasts in the last hour across all activities, on top of the existing per-activity soft cap (3/hour + 20 min spacing). Prevents a coordinator from rotating through activities to spam the club.
+
+- **Public feedback: `status` no longer client-settable.** The anonymous-create whitelist on `feedback` dropped `status`, so a drive-by poster can't submit `{status: 'resolved'}` to suppress their own complaint. Same tightening applied to Member policy. Migration 025.
+
+- **Vite + DOMPurify advisories.** `npm audit fix` bumped Vite 8.0.2 → 8.0.9 (GHSA-4w7w-66w2-5vf9 path traversal in dev `.map` handling; GHSA-v2wj-q39q-566r `server.fs.deny` bypass) and DOMPurify to a patched ≥ 3.3.4 (GHSA-39q2-94rc-95cp `ADD_TAGS` short-circuit). Zero vulns remaining in `npm audit`.
+
+### Notes
+
+- Sport Admin unscoped writes + Coach unscoped writes on events/games/trainings flagged by the audit were not fixed in this release — they require per-role row filters that depend on relation aliases not currently defined on `teams` (no M2M alias back from `teams` to `teams_coaches` for filtering). Deferred to a follow-up; current mitigation relies on role trust.
+- CSP `style-src 'unsafe-inline'` retained — removing it requires a pass over every inline style in the app. Low risk since there is no user-controlled HTML rendered without DOMPurify.
+
 ## [3.16.4] — 2026-04-20
 
 ### Changed

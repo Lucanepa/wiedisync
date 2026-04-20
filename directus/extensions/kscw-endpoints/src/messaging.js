@@ -637,10 +637,23 @@ export function registerMessaging(router, ctx) {
       const reportsService  = new ItemsService('reports',  { schema, knex: db })
       const nowIso = new Date().toISOString()
 
-      await messagesService.updateOne(msg.id, { deleted_at: nowIso })
+      // Snapshot the body for moderator audit BEFORE we null it out, so the
+      // report row still has the evidence the moderator saw.
+      const preBody = msg.body ?? null
+      const preOriginal = msg.original_body ?? null
+
+      // Redact on soft-delete: clear `body` and `original_body` so a later
+      // direct /items/messages read can't resurrect the content. The row
+      // itself is kept (id, sender, conversation, created_at, deleted_at)
+      // for thread continuity / audit.
+      await messagesService.updateOne(msg.id, {
+        deleted_at: nowIso,
+        body: null,
+        original_body: null,
+      })
 
       if (!isSelf) {
-        // Moderator audit — auto-close report row
+        // Moderator audit — auto-close report row (snapshot pre-redaction body)
         await reportsService.createOne({
           id: crypto.randomUUID(),
           reporter: me.id,
@@ -648,8 +661,10 @@ export function registerMessaging(router, ctx) {
           message: msg.id,
           conversation: msg.conversation,
           reason: 'moderator_delete',
-          note: null,
-          message_snapshot: msg.body ?? null,
+          note: preOriginal && preOriginal !== preBody
+            ? `original: ${String(preOriginal).slice(0, 400)}`
+            : null,
+          message_snapshot: preBody,
           status: 'resolved',
           resolved_by: me.id,
           resolved_at: nowIso,
@@ -680,6 +695,18 @@ export function registerMessaging(router, ctx) {
       if (!messageId && !conversationId) throw new MessagingError(400, 'messaging/invalid_body', 'message or conversation required')
       if (!reason || !ALLOWED_REPORT_REASONS.has(reason))
         throw new MessagingError(400, 'messaging/invalid_body', `reason must be one of ${[...ALLOWED_REPORT_REASONS].join(',')}`)
+
+      // Rate limit: max 5 reports per member per hour. Prevents a single member
+      // from flooding the admin inbox + reports table via the `reason` enum loop.
+      const oneHourAgoIso = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+      const recent = await db('reports')
+        .where('reporter', me.id)
+        .andWhere('created_at', '>=', oneHourAgoIso)
+        .count({ n: '*' }).first()
+      if (Number(recent?.n ?? 0) >= 5) {
+        throw new MessagingError(429, 'messaging/rate_limited',
+          'Too many reports filed in the last hour — please wait before filing more')
+      }
 
       const snapshot = messageId ? await snapshotMessage(db, messageId) : null
 

@@ -362,22 +362,24 @@ export async function resolveAudience(database, activityType, activityId, audien
  * after a successful send. Concurrent calls could race past this gate; spec
  * accepts that for a soft limit (audit table catches abuse).
  */
-export async function checkRateLimit(database, activityType, activityId) {
+export async function checkRateLimit(database, activityType, activityId, senderMemberId) {
   if (!VALID_ACTIVITY_TYPES.has(activityType)) {
     throw new BroadcastError(400, 'broadcast/invalid_type', `Invalid activity type: ${activityType}`)
   }
-  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+  const oneHourAgoIso = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+  const now = Date.now()
+
+  // Per-activity soft limit (applies to all senders): 3/hour with 20-min spacing.
+  // Keeps the activity chat from being spammed even across multiple coordinators.
   const rows = await database('broadcasts')
     .where('activity_type', activityType)
     .andWhere('activity_id', activityId)
-    .andWhere('sent_at', '>', oneHourAgo)
+    .andWhere('sent_at', '>', oneHourAgoIso)
     .orderBy('sent_at', 'desc')
     .limit(3)
     .select('sent_at')
 
-  const now = Date.now()
   if (rows.length >= 3) {
-    // The oldest of the 3 most-recent ages out first.
     const oldest = new Date(rows[rows.length - 1].sent_at).getTime()
     const retryAfterSec = Math.max(1, Math.ceil((oldest + 60 * 60 * 1000 - now) / 1000))
     return { allowed: false, retryAfterSec }
@@ -389,6 +391,20 @@ export async function checkRateLimit(database, activityType, activityId) {
     if (sinceLastSec < 20 * 60) {
       const retryAfterSec = Math.max(1, 20 * 60 - sinceLastSec)
       return { allowed: false, retryAfterSec }
+    }
+  }
+
+  // Per-sender global limit: max 10 broadcasts per sender per hour across ALL
+  // activities. Prevents one coordinator from spamming the club by rotating
+  // through activities (e.g. 3 games × 3/hour = 9 emails/hour to overlapping audiences).
+  // Skipped when senderMemberId is not supplied (backward-compat).
+  if (senderMemberId != null) {
+    const senderRecent = await database('broadcasts')
+      .where('sender', senderMemberId)
+      .andWhere('sent_at', '>', oneHourAgoIso)
+      .count({ n: '*' }).first()
+    if (Number(senderRecent?.n ?? 0) >= 10) {
+      return { allowed: false, retryAfterSec: 60 * 60 }
     }
   }
 

@@ -41,9 +41,25 @@ export function useReactions(messageId: string | null) {
 
   const toggle = useCallback(async (emoji: string) => {
     if (!enabled || !messageId) return
-    await messagingApi.react(messageId, { emoji })
-    // Realtime event will reconcile; no optimistic update.
-  }, [enabled, messageId])
+    const userId = user?.id
+    // Optimistic toggle so tap feels instant; realtime/refetch reconciles truth.
+    setRows(prev => {
+      const hasMine = prev.some(r => r.emoji === emoji && String(r.member) === String(userId))
+      if (hasMine) {
+        return prev.filter(r => !(r.emoji === emoji && String(r.member) === String(userId)))
+      }
+      return [...prev, {
+        id: `optimistic-${Date.now()}`,
+        message: messageId, member: String(userId ?? ''), emoji,
+        created_at: new Date().toISOString(),
+      }]
+    })
+    try {
+      await messagingApi.react(messageId, { emoji })
+    } finally {
+      refetch()
+    }
+  }, [enabled, messageId, user?.id, refetch])
 
   const myReactions = useMemo(
     () => new Set(rows.filter(r => String(r.member) === String(user?.id)).map(r => r.emoji)),

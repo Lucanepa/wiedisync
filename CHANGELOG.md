@@ -2,6 +2,23 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.16.0] — 2026-04-20
+
+### Chat
+
+- **Other users' messages now render on the right; your own stay on the left.** Reverses the prior layout where both sides appeared on the left — caused by `m.sender === currentMemberId` failing when one side was a number and the other a string (Postgres/Directus returned the FK as a number). Fixed the comparison in `ConversationThread` with `String(...)` coercion and flipped the alignment + popover directions in `MessageBubble` + `MessageActions`.
+- **Edit history on "edited" tag.** Messages can still be edited at any time, but the "edited" tag is now a clickable button that reveals the original body in a popover. Column `messages.original_body` added (migration 022) — the PATCH endpoint snapshots the pre-edit body on first edit only, so the original (not the last) version stays visible. `MessageBubble` renders a lightweight popover anchored left/right to match the bubble side.
+
+### Fixed
+
+- **Reaction button + ⋮ actions now visible on mobile.** Both used `opacity-0 group-hover:opacity-100`, which never fires on touch devices — so reactions looked broken and message actions (edit/delete/report) were unreachable. Switched to `opacity-60 hover:opacity-100` so they stay visible, slightly dimmed. Fixed in `ReactionBar.tsx` + `MessageActions.tsx`.
+- **Editing a message now updates the bubble immediately.** Directus realtime `update` events deliver *only the changed fields*, so `setMessages(prev.map(m => m.id === e.record.id ? e.record : m))` replaced the row with a partial object, dropping `sender`/`created_at`/etc. Fix: merge (`{...m, ...e.record}`) instead of replace. Additionally, `useConversation` now exposes an `editMessage` action that performs the PATCH and applies `body`/`edited_at`/`original_body` optimistically, so the UI updates even if realtime lags or is dropped. `EditMessageInline` now surfaces save errors under the textarea (previously swallowed by a bare `catch {}`).
+- **Reactions now reconcile even when realtime misses the event.** `useReactions.toggle` applies an optimistic change (so the tap feels instant) and triggers a `refetch()` afterwards, so the bar always ends up in sync with the server.
+
+### Schema
+
+- `messages.original_body text NULL` — applied on dev (`directus_kscw_dev`) and prod (`postgres`) via migration 022.
+
 ## [3.15.9] — 2026-04-20
 
 ### Fixed

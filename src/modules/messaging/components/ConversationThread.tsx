@@ -9,9 +9,10 @@ type Props = {
   isLoading: boolean
   isTeamModerator: boolean
   onReport?: (message: MessageRow) => void
+  onEdit?: (id: string, body: string) => Promise<void>
 }
 
-export default function ConversationThread({ messages, currentMemberId, isLoading, isTeamModerator, onReport }: Props) {
+export default function ConversationThread({ messages, currentMemberId, isLoading, isTeamModerator, onReport, onEdit }: Props) {
   const { t } = useTranslation('messaging')
   const bottomRef = useRef<HTMLDivElement>(null)
 
@@ -42,10 +43,11 @@ export default function ConversationThread({ messages, currentMemberId, isLoadin
         <MessageBubble
             key={m.id}
             message={m}
-            isOwn={m.sender === currentMemberId}
+            isOwn={currentMemberId != null && String(m.sender) === String(currentMemberId)}
             currentMemberId={currentMemberId}
             isTeamModerator={isTeamModerator}
             onReport={onReport}
+            onEdit={onEdit}
           />
       ))}
       <div ref={bottomRef} />

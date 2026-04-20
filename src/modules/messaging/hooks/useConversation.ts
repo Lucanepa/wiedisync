@@ -77,7 +77,8 @@ export function useConversation(
         return [...prev, e.record]
       })
     } else if (e.action === 'update') {
-      setMessages(prev => prev.map(m => m.id === e.record.id ? e.record : m))
+      // Directus realtime `update` payloads contain only changed fields — merge, don't replace.
+      setMessages(prev => prev.map(m => m.id === e.record.id ? { ...m, ...e.record } : m))
     } else if (e.action === 'delete') {
       setMessages(prev => prev.filter(m => m.id !== e.record.id))
     }
@@ -98,5 +99,16 @@ export function useConversation(
     }
   }, [conversationId, enabled])
 
-  return { messages, isLoading, sendError, hasMore, refetch, send }
+  const editMessage = useCallback(async (id: string, body: string) => {
+    const trimmed = body.trim()
+    if (!trimmed) return
+    const res = await messagingApi.edit(id, { body: trimmed })
+    setMessages(prev => prev.map(m =>
+      m.id === id
+        ? { ...m, body: res.body, edited_at: res.edited_at, original_body: res.original_body ?? m.original_body ?? null }
+        : m,
+    ))
+  }, [])
+
+  return { messages, isLoading, sendError, hasMore, refetch, send, editMessage }
 }

@@ -27,7 +27,7 @@ type Props = {
 export default function ThreadView({ conversation, onMarkRead, onToggleMute, header, composerDisabled, title }: Props) {
   const { t } = useTranslation('messaging')
   const { user, coachTeamIds, teamResponsibleIds } = useAuth()
-  const { messages, isLoading, send, sendError } = useConversation(conversation.id)
+  const { messages, isLoading, send, sendError, editMessage } = useConversation(conversation.id)
   const [reportingMessage, setReportingMessage] = useState<MessageRow | null>(null)
 
   const isGroupDm = conversation.type === 'group_dm'
@@ -108,6 +108,7 @@ export default function ThreadView({ conversation, onMarkRead, onToggleMute, hea
         isLoading={isLoading}
         isTeamModerator={isTeamModerator}
         onReport={setReportingMessage}
+        onEdit={editMessage}
       />
       <MessageComposer onSend={send} disabled={composerDisabled} conversationId={conversation.id} />
       {sendError && (

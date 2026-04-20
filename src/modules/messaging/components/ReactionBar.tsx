@@ -19,7 +19,7 @@ export default function ReactionBar({ messageId, className = '' }: Props) {
       <button
         type="button"
         onClick={() => setPickerOpen(true)}
-        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity ${className}`}
+        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] text-muted-foreground opacity-60 hover:opacity-100 focus:opacity-100 transition-opacity ${className}`}
         aria-label={t('addReaction')}
       >
         <SmilePlus className="h-3.5 w-3.5" />

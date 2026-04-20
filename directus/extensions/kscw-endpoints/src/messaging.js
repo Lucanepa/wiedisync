@@ -332,7 +332,7 @@ export function registerMessaging(router, ctx) {
         .limit(limit + 1)  // +1 to detect has_more
         .select(
           'm.id', 'm.conversation', 'm.sender', 'm.type', 'm.body',
-          'm.poll', 'm.created_at', 'm.edited_at', 'm.deleted_at',
+          'm.original_body', 'm.poll', 'm.created_at', 'm.edited_at', 'm.deleted_at',
           's.first_name as sender_first_name', 's.last_name as sender_last_name',
           's.photo as sender_photo',
         )
@@ -347,7 +347,8 @@ export function registerMessaging(router, ctx) {
       slice.reverse()
       const messages = slice.map(r => ({
         id: r.id, conversation: r.conversation, sender: r.sender,
-        type: r.type, body: r.body, poll: r.poll,
+        type: r.type, body: r.body, original_body: r.original_body ?? null,
+        poll: r.poll,
         created_at: r.created_at, edited_at: r.edited_at, deleted_at: r.deleted_at,
         sender_name: [r.sender_first_name, r.sender_last_name].filter(Boolean).join(' ') || null,
         sender_photo: r.sender_photo ?? null,
@@ -601,9 +602,16 @@ export function registerMessaging(router, ctx) {
       const schema = await getSchema()
       const messagesService = new ItemsService('messages', { schema, knex: db })
       const nowIso = new Date().toISOString()
-      await messagesService.updateOne(msg.id, { body, edited_at: nowIso })
+      // Snapshot the ORIGINAL body on first edit so readers can inspect it via "edited"
+      // on the UI. Subsequent edits leave it untouched (keeps original, not last version).
+      const patch = { body, edited_at: nowIso }
+      if (msg.original_body == null) patch.original_body = msg.body
+      await messagesService.updateOne(msg.id, patch)
 
-      res.json({ id: msg.id, body, edited_at: nowIso })
+      res.json({
+        id: msg.id, body, edited_at: nowIso,
+        original_body: patch.original_body ?? msg.original_body ?? null,
+      })
     } catch (e) { sendError(res, log, e) }
   })
 

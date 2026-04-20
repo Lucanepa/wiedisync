@@ -16,6 +16,12 @@ const CHANGELOG: ChangelogEntry[] = [
     date: '2026-04-20',
     sections: [
       {
+        title: 'Performance',
+        items: [
+          'Games and trainings pages load in a single request. Previously the cards appeared empty for about a second on mobile while participations loaded separately — now everything arrives together.',
+        ],
+      },
+      {
         title: 'Improved',
         items: [
           'Games page: upcoming and results now split into separate "Meisterschaft" and "Cup" sections, so cup games (Mobiliar Volley Cup, Züri Cup) no longer get mixed in with regular league games.',

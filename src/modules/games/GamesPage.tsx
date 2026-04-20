@@ -5,7 +5,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import { useSportPreference } from '../../hooks/useSportPreference'
 import type { Game, Ranking, Team, Participation, ParticipationWithMember } from '../../types'
-import { useCollection } from '../../lib/query'
+import { useCollection, useActivitiesWithParticipations } from '../../lib/query'
 import { useRealtime } from '../../hooks/useRealtime'
 import { teamIds } from '../../utils/teamColors'
 import { todayLocal } from '../../utils/dateHelpers'
@@ -129,30 +129,24 @@ export default function GamesPage() {
 
   const perPage = showAll ? 500 : INITIAL_LIMIT
 
-  const { data: gamesRaw, isLoading: gamesLoading } = useCollection<Game>(
-    'games',
-    gameQuery && !teamsLoading
-      ? { filter: gameQuery.filter, sort: gameQuery.sort.split(','), limit: perPage, fields: ['*', 'kscw_team.*', 'hall.*'] }
-      : { filter: { id: { _eq: -1 } }, limit: 1 },
-  )
-  const games = gamesRaw ?? []
-
-  // Batch-fetch ALL participations for visible games in ONE request
-  const gameIds = useMemo(() => games.map((g) => g.id), [games])
-  const participationFilter = useMemo((): Record<string, unknown> | string => {
-    if (gameIds.length === 0) return ''
-    return { _and: [{ activity_type: { _eq: 'game' } }, { activity_id: { _in: gameIds } }] }
-  }, [gameIds])
-
-  const { data: allParticipationsRaw, refetch: refetchParticipations } = useCollection<Participation>('participations', {
-    filter: participationFilter as Record<string, unknown> | undefined,
-    fields: ['id', 'activity_id', 'activity_type', 'member', 'status', 'note', 'session_id', 'guest_count', 'is_staff', 'waitlisted_at', 'date_created', 'date_updated'],
-    all: true,
-    enabled: gameIds.length > 0,
+  // Single round-trip: games + their participations in one request.
+  // Eliminates the old waterfall (games → gameIds → participations) that
+  // caused ~1s of empty cards on mobile.
+  const {
+    data: combined,
+    isLoading: gamesLoading,
+    refetch: refetchCombined,
+  } = useActivitiesWithParticipations<Game, Participation>('game', {
+    filter: gameQuery?.filter,
+    sort: gameQuery?.sort.split(','),
+    limit: perPage,
+    fields: ['*', 'kscw_team.*', 'hall.*'],
+    enabled: !!gameQuery && !teamsLoading,
   })
-  const allParticipations = allParticipationsRaw ?? []
+  const games = combined?.items ?? []
+  const allParticipations = combined?.participations ?? []
 
-  useRealtime('participations', () => refetchParticipations())
+  useRealtime('participations', () => refetchCombined())
 
   // Build maps: gameId → participations[], gameId → user's participation
   const { participationsByGame, myParticipationByGame, warningsByGame } = useMemo(() => {
@@ -284,7 +278,7 @@ export default function GamesPage() {
                       )}
                       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" data-tour={section.key === 'league' ? 'game-card' : undefined}>
                         {section.items.map((g) => (
-                          <GameCard key={g.id} game={g} onClick={setSelectedGame} participations={participationsByGame.get(g.id)} myParticipation={myParticipationByGame.get(g.id)} warnings={warningsByGame.get(g.id)} onParticipationSaved={refetchParticipations} />
+                          <GameCard key={g.id} game={g} onClick={setSelectedGame} participations={participationsByGame.get(g.id)} myParticipation={myParticipationByGame.get(g.id)} warnings={warningsByGame.get(g.id)} onParticipationSaved={refetchCombined} />
                         ))}
                       </div>
                     </div>

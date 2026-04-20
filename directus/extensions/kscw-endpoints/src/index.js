@@ -27,6 +27,7 @@ import { registerBugfixes } from './bugfixes.js'
 import { registerEventNotify } from './event-notify.js'
 import { registerMessaging } from './messaging.js'
 import { registerBroadcastRoutes } from './broadcast.js'
+import { registerActivitiesWithParticipations } from './activities.js'
 
 // ── Helpers ──────────────────────────────────────────────────────
 
@@ -1616,7 +1617,8 @@ export default {
     registerEventNotify(router, ctx)
     registerMessaging(router, ctx)
     registerBroadcastRoutes(router, ctx)
+    registerActivitiesWithParticipations(router, ctx)
 
-    log.info('KSCW endpoints loaded: ~51 routes')
+    log.info('KSCW endpoints loaded: ~52 routes')
   },
 }

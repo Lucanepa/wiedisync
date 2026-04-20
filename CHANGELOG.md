@@ -2,6 +2,27 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.16.6] — 2026-04-20
+
+### Security
+
+- **Coach scoping on write actions (migration 026).** The KSCW Coach policy previously had `{}` (fully open) row filters on create/update/delete for `trainings`, `games`, `events`, `event_sessions`, `slot_claims`, `task_templates`, `referee_expenses`, and `scorer_delegations`. A coach from team A could therefore modify team B's games via the raw Directus REST path. Filters now use the `teams.coach` M2M alias:
+  - `trainings` / `task_templates` / `referee_expenses` → `{team: {coach: {members_id: {user: {_eq: "$CURRENT_USER"}}}}}`
+  - `games` (update) → same chain via `kscw_team`
+  - `slot_claims` → via `claimed_by_team`
+  - `events` (and `event_sessions`) → `_or` of (created_by = me) OR (one of the invited `teams` has me as coach)
+  - `scorer_delegations` → `from_member.user = me` (delegator scopes to their own delegation)
+  Total: 20 permission rows updated. Applied prod + dev, containers restarted.
+
+- **Sport Admin: dropped `members.delete` + `teams.delete` (migration 027).** Two actions with club-wide blast radius. Deleting a member wipes licence + membership history; deleting a team cascades to games/trainings/rankings. Sport Admin keeps create + update on both (intake + profile edits still work); only `KSCW Admin` (full `admin_access`) can delete. Other Sport Admin write perms left as-is for now — scoping the remaining 60+ collections per sport is a larger design change (one shared policy for both vb_admin and bb_admin).
+
+- **CSP tightened on `connect-src`.** Dropped `https://*.sentry.io`, `https://*.ingest.sentry.io`, and `https://*.ingest.de.sentry.io` from `connect-src` in `public/_headers`. Sentry events go through `https://sentry-tunnel.kscw.ch/tunnel` (our own Cloudflare Worker), so the browser never needs to reach Sentry subdomains directly. Reduces the blast radius of a hypothetical wildcard/subdomain takeover.
+
+### Notes
+
+- CSP `style-src 'unsafe-inline'` retained — 83 dynamic inline styles in React components (team colors from DB, computed transforms) would need to move to Tailwind/CSS-module equivalents. Accepted risk: no user-controlled HTML is rendered without DOMPurify, so inline-style injection requires XSS (already blocked at the source).
+- Sport Admin scoping beyond deletes is deferred — splitting `KSCW Sport Admin` into two policies (one per sport) would require reassigning all vb_admin/bb_admin users. Follow-up.
+
 ## [3.16.5] — 2026-04-20
 
 ### Security

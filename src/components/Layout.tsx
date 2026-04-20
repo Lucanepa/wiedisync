@@ -27,9 +27,10 @@ import type { MemberTeam, Team } from '../types'
 import { asObj } from '../utils/relations'
 import {
   Home, Calendar, Trophy, UserX, PenSquare, PartyPopper, Users,
-  ClipboardList, Building2, CalendarClock, Activity, Inbox,
-  HeartPulse, Settings, ChevronDown, MessageSquare, MessageCircle, Banknote, BarChart3, UserPlus, Bug, GraduationCap, Database, Megaphone, Newspaper, Flag,
+  ClipboardList, Building2, CalendarClock, Activity,
+  HeartPulse, Settings, ChevronDown, MessageSquare, MessageCircle, Inbox, Banknote, BarChart3, UserPlus, Bug, GraduationCap, Database, Megaphone, Newspaper, Flag, ScrollText,
 } from 'lucide-react'
+import { APP_VERSION } from '../modules/changelog/ChangelogPage'
 
 type ExpandedMemberTeam = MemberTeam & { team: Team | string }
 
@@ -165,6 +166,31 @@ function SidebarOptions({ isAdmin, theme, toggleTheme, onClose, memberId }: { is
                 {t('messagingSettings')}
               </NavLink>
             )}
+            <NavLink
+              to="/status"
+              onClick={onClose}
+              className={({ isActive }) =>
+                `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/50 dark:text-gold-400'
+                    : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+                }`
+              }
+            >
+              <Activity className="h-4 w-4" />
+              {t('status', 'Status')}
+            </NavLink>
+            <NavLink
+              to="/changelog"
+              onClick={onClose}
+              className="flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+            >
+              <span className="flex items-center gap-3">
+                <ScrollText className="h-4 w-4" />
+                {t('whatsNew', "What's New")}
+              </span>
+              <span className="font-mono text-xs text-gray-400 dark:text-gray-500">v{APP_VERSION}</span>
+            </NavLink>
           </div>
         </div>
       </div>

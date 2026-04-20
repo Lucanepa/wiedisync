@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.0.0'
+const APP_VERSION = '4.0.1'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,18 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.0.1',
+    date: '2026-04-20',
+    sections: [
+      {
+        title: 'Fixed',
+        items: [
+          'Critical fix for the messaging consent modal. Members could tap "Accept" but the dialog kept reappearing after every page reload, effectively blocking them from reaching the rest of the app. The backend was recording the decision correctly — the member record just didn\'t expose the consent fields to the owner, so the frontend never saw that consent had been granted. Now fixed for everyone.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.0.0',
     date: '2026-04-20',

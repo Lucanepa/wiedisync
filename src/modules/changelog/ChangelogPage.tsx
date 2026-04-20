@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.15.4'
+const APP_VERSION = '3.15.5'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,20 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.15.5',
+    date: '2026-04-20',
+    sections: [
+      {
+        title: 'Fix',
+        items: [
+          'Conversation page no longer crashes when tapping the back button. The shadcn Button wrapper was injecting an extra (empty) slot child, which tripped a Radix assertion and blanked the page.',
+          'Cloudflare analytics beacon now allowed by CSP (no more blocked-connection warnings in the console).',
+          'Added the standards-compliant `mobile-web-app-capable` meta tag alongside the Apple-specific one (removes the browser deprecation warning).',
+        ],
+      },
+    ],
+  },
   {
     version: '3.15.4',
     date: '2026-04-20',

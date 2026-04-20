@@ -1,6 +1,18 @@
 // --- Intl-Zurich helpers (proper UTC convention) ---
 
+import i18n from '../i18n'
+
 const ZURICH = 'Europe/Zurich';
+
+/** Map the current i18next language to a BCP-47 tag Intl understands.
+ *  `gsw` (Swiss German) has no widely-supported Intl data — fall back to `de-CH`. */
+function currentLocale(): string {
+  const lng = (i18n.language || 'de').toLowerCase()
+  if (lng.startsWith('gsw') || lng === 'de') return 'de-CH'
+  if (lng.startsWith('de')) return lng
+  if (lng.startsWith('en')) return 'en-GB' // keep dd/mm order + 24h closer to Swiss expectations
+  return lng
+}
 
 function formatZurichParts(d: Date): Record<string, string> {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -142,8 +154,8 @@ export function formatDateShort(d: string): string {
   return formatDateShortZurich(d)
 }
 
-export function formatWeekday(d: string): string {
-  return formatWeekdayZurich(d)
+export function formatWeekday(d: string, locale?: string): string {
+  return formatWeekdayZurich(d, locale ?? currentLocale())
 }
 
 export function formatTime(t: string): string {

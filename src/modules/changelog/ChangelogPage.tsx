@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.0.1'
+const APP_VERSION = '4.0.2'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,18 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.0.2',
+    date: '2026-04-20',
+    sections: [
+      {
+        title: 'Fixed',
+        items: [
+          'Follow-up to the 4.0.1 consent fix: audited every other field the frontend reads from member records and closed more silent gaps. The Spielplaner menu now appears for members flagged as Spielplaner (not only for admins). Coaches now see the full roster when assigning scorers or delegating games — previously the list rendered empty because the active-membership flag wasn\'t exposed. Your own profile now correctly shows "Aktiv" / "Passiv" and your Beitragskategorie. Shell-member badges (amber border) now render on team rosters for everyone.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.0.1',
     date: '2026-04-20',

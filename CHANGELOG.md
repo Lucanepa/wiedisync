@@ -2,6 +2,19 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [4.0.2] — 2026-04-20
+
+### Fixed
+
+- **Follow-up audit after 4.0.1 — close remaining member-field gaps on KSCW Member `members.read`.** Found 4 additional columns the frontend reads but the policy silently strips. Migration `030-member-read-field-gaps.sql`:
+  - **Self-read row (prod 7295 / dev 7046)** gains `is_spielplaner`, `kscw_membership_active`, `beitragskategorie`.
+    - `is_spielplaner` was the most impactful gap: 7 members have `is_spielplaner=true`, but `useAuth.tsx:174,228` sets `setIsSpielplaner(!!member.is_spielplaner)` from a field that Directus was stripping → Spielplaner menu was invisible for every non-admin Spielplaner.
+    - `kscw_membership_active` + `beitragskategorie` fix the `ProfileEditModal` displaying "Passiv" and an empty Beitragskategorie for everyone.
+  - **Cross-member read row (prod 7294 / dev 7045)** gains `kscw_membership_active`, `shell`, `shell_expires`.
+    - `kscw_membership_active` broke `AssignmentEditor.tsx:63` and `DelegationModal.tsx:72` — both filter with `m.kscw_membership_active && …`. Coaches (who fall back to the Member policy since KSCW Coach has no `members.read` row of its own) saw empty member lists in scorer-assignment and delegation modals. TRs/admins unaffected (their policies have `fields='*'`).
+    - `shell` + `shell_expires` fix the amber shell-member badge in `MemberRow.tsx` for non-admin viewers.
+  - Idempotent, applied to dev + prod, both Directus containers restarted.
+
 ## [4.0.1] — 2026-04-20
 
 ### Fixed

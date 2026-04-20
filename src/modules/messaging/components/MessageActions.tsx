@@ -9,12 +9,13 @@ type Props = {
   message: MessageRow
   currentMemberId: string | null
   isTeamModerator: boolean
+  isOwn?: boolean
   onEdit?: () => void
   onDelete?: () => void
   onReport?: () => void
 }
 
-export default function MessageActions({ message, currentMemberId, isTeamModerator, onEdit, onDelete, onReport }: Props) {
+export default function MessageActions({ message, currentMemberId, isTeamModerator, isOwn, onEdit, onDelete, onReport }: Props) {
   const { t } = useTranslation('messaging')
   const [open, setOpen] = useState(false)
   const actions = resolveMessageActions(message, currentMemberId, { isTeamModerator })
@@ -33,7 +34,7 @@ export default function MessageActions({ message, currentMemberId, isTeamModerat
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-6 z-50 min-w-[160px] rounded-md border border-border bg-background shadow-md text-sm">
+          <div className={`absolute top-6 z-50 min-w-[160px] rounded-md border border-border bg-background shadow-md text-sm ${isOwn ? 'right-0' : 'left-0'}`}>
             {actions.has('edit') && (
               <button type="button"
                 className="flex w-full items-center gap-2 px-3 py-2 hover:bg-muted text-foreground"

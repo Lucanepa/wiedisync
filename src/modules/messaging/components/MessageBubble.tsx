@@ -75,6 +75,7 @@ export default function MessageBubble({ message, isOwn, currentMemberId, isTeamM
           message={message}
           currentMemberId={currentMemberId}
           isTeamModerator={isTeamModerator}
+          isOwn={isOwn}
           onEdit={() => setEditing(true)}
           onDelete={onDelete}
           onReport={() => onReport?.(message)}

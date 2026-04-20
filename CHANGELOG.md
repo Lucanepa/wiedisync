@@ -2,6 +2,17 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.15.7] — 2026-04-20
+
+### Fixed
+
+- **Inbox race conditions.** Three fetch/realtime races in `src/modules/messaging/hooks/`:
+  1. `useConversation.refetch` had no stale-response guard — switching conversations A→B while A was slow could let A's response land after B's and overwrite B's thread.
+  2. The same resolver replaced the `messages` array with the server snapshot, dropping any realtime `create` events that had already appended during the in-flight fetch.
+  3. `useConversations.refetch` and `useConversationMembers.refetch` had the same stale-response shape (less visible, but present).
+  Fix: added a monotonic `fetchSeqRef` to each hook; late resolvers short-circuit when their seq no longer matches. `useConversation` also now synchronously clears messages on conv switch (so the old thread doesn't flash) and merges realtime extras with the server list instead of overwriting.
+- **Sentry tunnel opaque 400s.** `workers/sentry-tunnel/src/index.ts` had a single bare `catch {}` returning `Bad envelope` for everything — including the real cause of the 400 the user reported from `button-*.js`. Replaced with distinct, logged reasons (`gzip-decode-failed`, `empty-body`, `header-json-invalid`, `no-dsn`, `invalid-dsn-url`, `unexpected`) so `wrangler tail` surfaces which branch is firing next time. Worker redeployed.
+
 ## [3.15.6] — 2026-04-20
 
 ### Fixed

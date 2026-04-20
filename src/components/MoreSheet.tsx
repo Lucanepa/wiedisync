@@ -9,9 +9,11 @@ import LanguageDropdown from '@/components/LanguageDropdown'
 import { getFileUrl } from '../utils/fileUrl'
 import AdminToggle from './AdminToggle'
 import { useAdminMode } from '../hooks/useAdminMode'
-import { Bell, UserX, PenSquare, CalendarDays, ClipboardList, Building2, CalendarClock, HeartPulse, LogIn, User, Users, Settings, ChevronDown, ScrollText, MessageSquare, Banknote, BarChart3, UserPlus, Bug, Activity, GraduationCap, Database } from 'lucide-react'
+import { Bell, UserX, PenSquare, PartyPopper, ClipboardList, Building2, CalendarClock, HeartPulse, LogIn, User, Users, Settings, ChevronDown, ScrollText, MessageSquare, MessageCircle, Inbox, Banknote, BarChart3, UserPlus, Bug, Activity, GraduationCap, Database, Megaphone, Newspaper, Flag } from 'lucide-react'
 import type { MemberTeam, Team } from '../types'
 import { asObj } from '../utils/relations'
+import { messagingFeatureEnabled } from '../utils/messagingFeatureFlag'
+import { APP_VERSION } from '../modules/changelog/ChangelogPage'
 
 type ExpandedMemberTeam = MemberTeam & { team: Team | string }
 
@@ -29,12 +31,19 @@ function useAnimatedClose(onClose: () => void) {
 
 const iconClass = 'h-5 w-5'
 
-const secondaryItems = [
-  { to: '/teams', labelKey: 'teams', icon: <Users className={iconClass} /> },
-  { to: '/absences', labelKey: 'absences', icon: <UserX className={iconClass} /> },
-  { to: '/scorer', labelKey: 'scorer', icon: <PenSquare className={iconClass} /> },
-  { to: '/events', labelKey: 'events', icon: <CalendarDays className={iconClass} /> },
-]
+function buildSecondaryItems(memberId: number | string | undefined | null) {
+  const items = [
+    { to: '/events', labelKey: 'events', icon: <PartyPopper className={iconClass} /> },
+    ...(messagingFeatureEnabled(memberId)
+      ? [{ to: '/inbox', labelKey: 'inbox', icon: <Inbox className={iconClass} /> }]
+      : []),
+    { to: '/teams', labelKey: 'teams', icon: <Users className={iconClass} /> },
+    { to: '/absences', labelKey: 'absences', icon: <UserX className={iconClass} /> },
+    { to: '/scorer', labelKey: 'scorer', icon: <PenSquare className={iconClass} /> },
+    { to: '/news', labelKey: 'news', icon: <Newspaper className={iconClass} /> },
+  ]
+  return items
+}
 
 const adminItems = [
   { to: '/admin/spielplanung', labelKey: 'gameplan', icon: <ClipboardList className={iconClass} /> },
@@ -45,9 +54,11 @@ const adminItems = [
   { to: '/admin/club-stats', labelKey: 'clubStats', icon: <BarChart3 className={iconClass} /> },
   { to: '/admin/volley-feedback', labelKey: 'volleyFeedback', icon: <MessageSquare className={iconClass} /> },
   { to: '/admin/explore', labelKey: 'adminExplorer', icon: <Database className={iconClass} /> },
+  { to: '/admin/announcements', labelKey: 'announcements', icon: <Megaphone className={iconClass} /> },
+  { to: '/admin/reports', labelKey: 'moderationReports', icon: <Flag className={iconClass} /> },
 ]
 
-function OptionsAccordion({ theme, toggleTheme, onClose }: { theme: string; toggleTheme: () => void; onClose?: () => void }) {
+function OptionsAccordion({ theme, toggleTheme, onClose, memberId }: { theme: string; toggleTheme: () => void; onClose?: () => void; memberId?: number | string | null }) {
   const [open, setOpen] = useState(false)
   const { t } = useTranslation('nav')
 
@@ -136,8 +147,25 @@ function OptionsAccordion({ theme, toggleTheme, onClose }: { theme: string; togg
                 <ScrollText className="h-4 w-4" />
                 {t('whatsNew', "What's New")}
               </span>
-              <span className="text-xs font-mono text-gray-400 dark:text-gray-500">v1.0.0</span>
+              <span className="text-xs font-mono text-gray-400 dark:text-gray-500">v{APP_VERSION}</span>
             </NavLink>
+            {/* Messaging settings row */}
+            {messagingFeatureEnabled(memberId) && (
+              <NavLink
+                to="/options/messaging"
+                onClick={onClose}
+                className={({ isActive }) =>
+                  `flex min-h-[48px] items-center gap-3 rounded-lg px-4 py-3 transition-colors ${
+                    isActive
+                      ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/50 dark:text-gold-400'
+                      : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+                  }`
+                }
+              >
+                <MessageCircle className="h-4 w-4" />
+                <span className="text-base font-medium">{t('messagingSettings')}</span>
+              </NavLink>
+            )}
             {/* Guide row */}
             <NavLink
               to="/guide"
@@ -217,7 +245,7 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
               <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
             </>
           )}
-          {(!user || !isApproved) ? null : secondaryItems.map((item) => (
+          {(!user || !isApproved) ? null : buildSecondaryItems(user.id).map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -282,6 +310,20 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
                 {t('dataHealth')}
               </NavLink>
               <NavLink
+                to="/admin/infra"
+                onClick={startClose}
+                className={({ isActive }) =>
+                  `flex min-h-[48px] items-center gap-4 rounded-lg px-4 py-3 text-base font-medium transition-colors ${
+                    isActive
+                      ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/50 dark:text-gold-400'
+                      : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+                  }`
+                }
+              >
+                <Activity className={iconClass} />
+                {t('infraHealth')}
+              </NavLink>
+              <NavLink
                 to="/admin/audit-log"
                 onClick={startClose}
                 className={({ isActive }) =>
@@ -320,36 +362,38 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
         {user ? (
           <>
             <div className="px-4 py-3">
-              {/* Profile link + name + teams */}
+              {/* Profile link + name + teams — whole row opens profile */}
               <div className="flex items-center gap-3">
                 <NavLink
                   to="/profile"
                   onClick={startClose}
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-600 dark:bg-brand-900/30 dark:text-brand-400 overflow-hidden"
+                  className="flex min-w-0 flex-1 items-center gap-3 rounded-lg -mx-2 px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700"
                   aria-label={t('myProfile')}
                 >
-                  {user.photo ? (
-                    <img
-                      src={getFileUrl('members', user.id, user.photo)}
-                      alt=""
-                      className="h-10 w-10 rounded-full object-cover"
-                    />
-                  ) : (
-                    <User className={iconClass} />
-                  )}
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-50 text-brand-600 dark:bg-brand-900/30 dark:text-brand-400">
+                    {user.photo ? (
+                      <img
+                        src={getFileUrl('members', user.id, user.photo)}
+                        alt=""
+                        className="h-10 w-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <User className={iconClass} />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium text-gray-900 dark:text-gray-100">
+                      {user.first_name} {user.last_name}
+                    </span>
+                    {memberTeams.length > 0 && (
+                      <div className="mt-0.5 flex flex-wrap gap-1">
+                        {memberTeams.map((mt) => (
+                          <TeamChip key={mt.id} team={asObj<Team>(mt.team)?.name ?? '?'} size="sm" />
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </NavLink>
-                <div className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {user.first_name} {user.last_name}
-                  </span>
-                  {memberTeams.length > 0 && (
-                    <div className="mt-0.5 flex flex-wrap gap-1">
-                      {memberTeams.map((mt) => (
-                        <TeamChip key={mt.id} team={asObj<Team>(mt.team)?.name ?? '?'} size="sm" />
-                      ))}
-                    </div>
-                  )}
-                </div>
                 <button
                   onClick={() => {
                     logout()
@@ -364,7 +408,7 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
 
             {/* Options section — expandable */}
             <div className="mx-4 border-t border-gray-200 dark:border-gray-700" />
-            <OptionsAccordion theme={theme} toggleTheme={toggleTheme} onClose={startClose} />
+            <OptionsAccordion theme={theme} toggleTheme={toggleTheme} onClose={startClose} memberId={user?.id} />
           </>
         ) : (
           <>
@@ -380,7 +424,7 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
               </NavLink>
 
               {/* Toggles — expandable */}
-              <OptionsAccordion theme={theme} toggleTheme={toggleTheme} onClose={startClose} />
+              <OptionsAccordion theme={theme} toggleTheme={toggleTheme} onClose={startClose} memberId={null} />
             </div>
           </>
         )}

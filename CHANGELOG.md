@@ -2,6 +2,22 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [4.0.3] — 2026-04-20
+
+### Navigation
+
+- **Mobile More sheet parity with desktop sidebar.** `MoreSheet.tsx` was missing several routes the desktop `<SidebarOptions>` exposes. Added: `/inbox` (under the messaging flag), `/news`, `/admin/announcements`, `/admin/reports`, `/admin/infra`, and a `/options/messaging` row inside the Options accordion. Replaced the hardcoded `v1.0.0` label on the "What's New" row with the real `APP_VERSION` import from `ChangelogPage`.
+- **Full-row profile link in More sheet.** The user block used to make only the 40px avatar tappable, which was an easy miss on a phone. The whole picture + name + team-chips area now wraps in a single `NavLink` to `/profile`. The red "Logout" button on the right stays as a separate button.
+- **Desktop sidebar gained Status + What's New.** Added the same two entries mobile already had (`/status` + `/changelog` with version), inside `SidebarOptions` in `Layout.tsx`, so the two layouts don't diverge.
+
+### Status page
+
+- **`/status` is now a user-friendly health dashboard.** Previously it only listed the recent-fixes feed (`/bugfixes/public`). Rewrote to open with a banner — green ✓ "Alle Systeme laufen" / amber/red on trouble — and a 4-row checklist (App server, Swiss Volley sync, Basketplan sync, Hallenplan/GCal sync) driven by the existing `useInfraHealth()` hook. Recent fixes list preserved below.
+
+### Changelog
+
+- **Justified changelog copy.** `ChangelogPage` items now use `text-justify hyphens-auto` + `leading-relaxed` so paragraphs no longer look ragged on narrow screens (especially for the long German entries).
+
 ## [4.0.2] — 2026-04-20
 
 ### Fixed

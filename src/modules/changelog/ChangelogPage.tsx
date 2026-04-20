@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.0.2'
+const APP_VERSION = '4.0.3'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,32 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.0.3',
+    date: '2026-04-20',
+    sections: [
+      {
+        title: 'Navigation',
+        items: [
+          'Mobile More sheet now mirrors the desktop sidebar. Inbox, News, Announcements, Moderation Reports, Infra Health and the Messaging Settings row were missing — they are now all there. The "What\'s New" row finally shows the real version number instead of a hardcoded v1.0.0.',
+          'Tapping anywhere on the user row in the More sheet now opens your profile. Only the red "Logout" button on the right still logs you out.',
+          'Desktop sidebar gained the Status and What\'s New entries the mobile menu already had, so the two layouts now expose the same options.',
+        ],
+      },
+      {
+        title: 'Status page',
+        items: [
+          'The public /status page now opens with an at-a-glance health banner — green "Alle Systeme laufen" when everything is fine, amber/red when the API is slow, a sync is stale, or a service is down. The recent-fixes list is kept below so you can still see what changed this week.',
+        ],
+      },
+      {
+        title: 'Changelog',
+        items: [
+          'Changelog entries are now justified with automatic hyphenation — blocks of German text look much tidier on narrow screens.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.0.2',
     date: '2026-04-20',
@@ -858,9 +884,9 @@ export default function ChangelogPage() {
                   </h3>
                   <ul className="space-y-1">
                     {section.items.map((item, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                      <li key={i} className="flex items-start gap-2 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
                         <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500 dark:bg-gold-400" />
-                        {item}
+                        <span className="text-justify hyphens-auto">{item}</span>
                       </li>
                     ))}
                   </ul>

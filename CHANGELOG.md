@@ -2,6 +2,12 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.15.8] — 2026-04-20
+
+### Fixed
+
+- **Rankings side-banner colours now follow SVRZ Art. 102a.** Per the Volleyballreglement 25/26 every regional group (2L–5L) has 1st = direct promotion, 2nd = barrage up, 2nd-to-last = barrage down, last = direct relegation. The previous mapping was missing orange for the 2nd-to-last in 3L and blue for the 2nd in 4L/5L, so teams in a barrage spot were rendered as if they were safe. Also made men's 4L the bottom league (men have no 5L per the reglement's referee/scorer tables), so men's 4L last place no longer shows red. Fixed in `src/utils/leaguePromotion.ts`.
+
 ## [3.15.7] — 2026-04-20
 
 ### Fixed

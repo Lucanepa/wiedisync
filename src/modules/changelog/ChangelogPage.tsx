@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.15.7'
+const APP_VERSION = '3.15.8'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,19 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.15.8',
+    date: '2026-04-20',
+    sections: [
+      {
+        title: 'Fix',
+        items: [
+          'Rankings side-banner colours now match the SVRZ regulation. Every regional league shows the 2nd place (barrage up) in blue and the 2nd-to-last (barrage down) in orange — previously these were missing in 3. Liga and 4. Liga, so barrage teams looked safe.',
+          'Men\'s 4. Liga is the bottom men\'s league and no longer shows a relegation marker on the last place (there is no 5. Liga for Herren).',
+        ],
+      },
+    ],
+  },
   {
     version: '3.15.7',
     date: '2026-04-20',

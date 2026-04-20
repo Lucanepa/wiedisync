@@ -2,6 +2,18 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [4.0.0] — 2026-04-20
+
+### Added
+
+- **Messaging is now live for all club members.** The staged-rollout gate (`VITE_FEATURE_MESSAGING_ALLOWLIST`) is retired in favour of the global flag `VITE_FEATURE_MESSAGING=true` on both Cloudflare Pages environments (Preview + Production). Team chats, DMs, requests/blocks, reactions, edit/delete, polls, reports and nFADP export — all previously shipped in v3.11.x–v3.12.x behind the allowlist — are now available to everyone. No code changes; this is a configuration flip plus rebuild.
+- **4.0 marks the completion of the messaging milestone.** The platform is now a full club-communication hub alongside scheduling, rostering and broadcast — the original scope of the PocketBase→Directus rewrite is delivered.
+
+### Notes
+
+- `messagingFeatureEnabled()` in `src/utils/messagingFeatureFlag.ts` short-circuits on the global flag, so the existing allowlist env var can be removed from CF Pages at the next convenient moment (it is now a no-op).
+- Vite inlines `import.meta.env.*` at build time — the flip only takes effect on a fresh deployment.
+
 ## [3.17.1] — 2026-04-20
 
 ### Fixed

@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.17.1'
+const APP_VERSION = '4.0.0'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,18 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.0.0',
+    date: '2026-04-20',
+    sections: [
+      {
+        title: 'Added',
+        items: [
+          'Messaging is now available to everyone in the club. Team chats, direct messages, reactions, edits, polls and reports are no longer behind the test-group allowlist. Staged rollout is over — the platform now doubles as the club\'s primary communication channel.',
+        ],
+      },
+    ],
+  },
   {
     version: '3.17.1',
     date: '2026-04-20',

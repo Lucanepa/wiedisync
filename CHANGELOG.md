@@ -2,6 +2,12 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.16.7] — 2026-04-20
+
+### Fixed
+
+- **Participation roster: response-time now shows for confirmed + maybe, not just declined.** In Directus, `date_updated` is only populated on UPDATE (never on CREATE), so members who set status once and never changed it had `date_updated = NULL`. Declined members often flipped from an earlier status so theirs was populated, which made it look like the toggle only worked for declined. Both player and staff rows now fall back to `date_created` — the original response time — when `date_updated` is missing.
+
 ## [3.16.6] — 2026-04-20
 
 ### Security

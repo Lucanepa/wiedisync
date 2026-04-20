@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.16.6'
+const APP_VERSION = '3.16.7'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,18 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.16.7',
+    date: '2026-04-20',
+    sections: [
+      {
+        title: 'Fixed',
+        items: [
+          'Response-time on the participation roster now shows for confirmed and maybe responses too, not just declined. Previously it only appeared when someone had changed their answer at least once.',
+        ],
+      },
+    ],
+  },
   {
     version: '3.16.6',
     date: '2026-04-20',

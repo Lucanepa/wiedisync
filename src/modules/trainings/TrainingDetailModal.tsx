@@ -41,9 +41,32 @@ export default function TrainingDetailModal({ training, onClose }: TrainingDetai
   const hall = asObj<Hall>(training.hall)
   const coach = asObj<Member>(training.coach)
 
+  const headerBroadcast = user ? (
+    <BroadcastButton
+      activity={{
+        type: 'training',
+        id: Number(training.id),
+        title: team?.name ?? t('title'),
+        start_date: training.date && training.start_time
+          ? `${training.date}T${training.start_time}`
+          : training.date,
+        location: hall?.name ?? training.hall_name,
+        teamName: team?.name,
+        sport: (team?.sport as 'volleyball' | 'basketball' | undefined) ?? null,
+        teamId: teamId ? Number(teamId) : undefined,
+      }}
+      member={{
+        id: user.id,
+        role: user.role ?? null,
+        isCoachOf: coachTeamIds,
+        isResponsibleOf: teamResponsibleIds,
+      }}
+    />
+  ) : null
+
   return (
     <>
-      <Modal open={!!training} onClose={onClose} title={t('title')} size="sm">
+      <Modal open={!!training} onClose={onClose} title={t('title')} size="sm" headerAction={headerBroadcast}>
         <div className="space-y-4">
           {/* Team + Date header */}
           <div className="flex items-center gap-2">
@@ -136,37 +159,16 @@ export default function TrainingDetailModal({ training, onClose }: TrainingDetai
               {/* Summary + roster button */}
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <ParticipationSummary activityType="training" activityId={training.id} coachMemberIds={[...flattenMemberIds(team?.coach), ...flattenMemberIds(team?.captain), ...flattenMemberIds(team?.team_responsible)]} />
+                  <ParticipationSummary activityType="training" activityId={training.id} bars coachMemberIds={[...flattenMemberIds(team?.coach), ...flattenMemberIds(team?.captain), ...flattenMemberIds(team?.team_responsible)]} />
                 </div>
-                <div className="flex shrink-0 items-center gap-1">
-                  <BroadcastButton
-                    activity={{
-                      type: 'training',
-                      id: Number(training.id),
-                      title: team?.name ?? t('title'),
-                      start_date: training.date && training.start_time
-                        ? `${training.date}T${training.start_time}`
-                        : training.date,
-                      location: hall?.name ?? training.hall_name,
-                      teamName: team?.name,
-                      sport: (team?.sport as 'volleyball' | 'basketball' | undefined) ?? null,
-                      teamId: teamId ? Number(teamId) : undefined,
-                    }}
-                    member={user ? {
-                      id: user.id,
-                      role: user.role ?? null,
-                      isCoachOf: coachTeamIds,
-                      isResponsibleOf: teamResponsibleIds,
-                    } : null}
-                  />
-                  <button
-                    onClick={() => setRosterOpen(true)}
-                    className="flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-900/20"
-                  >
-                    <Users className="h-4 w-4" />
-                    {t('participation')}
-                  </button>
-                </div>
+                <button
+                  onClick={() => setRosterOpen(true)}
+                  aria-label={t('participation')}
+                  title={t('participation')}
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-900/20"
+                >
+                  <Users className="h-5 w-5" />
+                </button>
               </div>
             </div>
           )}

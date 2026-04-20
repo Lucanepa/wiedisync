@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.15.2'
+const APP_VERSION = '3.15.4'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,30 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.15.4',
+    date: '2026-04-20',
+    sections: [
+      {
+        title: 'Improved',
+        items: [
+          'Games page: upcoming and results now split into separate "Meisterschaft" and "Cup" sections, so cup games (Mobiliar Volley Cup, Züri Cup) no longer get mixed in with regular league games.',
+        ],
+      },
+    ],
+  },
+  {
+    version: '3.15.3',
+    date: '2026-04-20',
+    sections: [
+      {
+        title: 'Improved',
+        items: [
+          'Event, training, and game detail modals — cleaner mobile layout. The RSVP summary at the bottom now uses the same 3-bar visual as the cards, the broadcast (paper-plane) button moved to the top-right of the modal header, and the "Teilnahme" roster button is now a compact icon.',
+        ],
+      },
+    ],
+  },
   {
     version: '3.15.2',
     date: '2026-04-20',

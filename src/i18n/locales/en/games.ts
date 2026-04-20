@@ -9,6 +9,10 @@ export default {
   tabRankings: 'Rankings',
   tabScoreboard: 'Scoreboard',
 
+  // Results sections
+  sectionLeague: 'League',
+  sectionCup: 'Cup',
+
   // Statuses
   statusLive: 'Live',
   statusPostponed: 'Postponed',

@@ -9,6 +9,10 @@ export default {
   tabRankings: 'Ranglischtä',
   tabScoreboard: 'Scoreboard',
 
+  // Results sections
+  sectionLeague: 'Meisterschaft',
+  sectionCup: 'Cup',
+
   // Statuses
   statusLive: 'Live',
   statusPostponed: 'Verschobe',

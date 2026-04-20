@@ -29,6 +29,11 @@ function buildTeamFilter(teamPbIds: string[]): Record<string, unknown> | null {
   return { kscw_team: { _in: teamPbIds } }
 }
 
+function isCupGame(league: string | null | undefined): boolean {
+  if (!league) return false
+  return /Cup|Pokal|Turnier/i.test(league)
+}
+
 export default function GamesPage() {
   const { t } = useTranslation('games')
   const { user, memberTeamIds, memberTeamNames, coachTeamIds, coachTeamNames, primarySport, teamsLoading } = useAuth()
@@ -256,18 +261,35 @@ export default function GamesPage() {
       <div className="mt-6">
         {isLoading && <LoadingSpinner />}
 
-        {/* Upcoming: card grid */}
+        {/* Upcoming: card grid, split by league vs Cup */}
         {showGames && activeTab === 'upcoming' && (
           <>
             {games.length === 0 ? (
               <EmptyState tab={activeTab} />
             ) : (
               <>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" data-tour="game-card">
-                  {games.map((g) => (
-                    <GameCard key={g.id} game={g} onClick={setSelectedGame} participations={participationsByGame.get(g.id)} myParticipation={myParticipationByGame.get(g.id)} warnings={warningsByGame.get(g.id)} onParticipationSaved={refetchParticipations} />
-                  ))}
-                </div>
+                {(() => {
+                  const leagueGames = games.filter((g) => !isCupGame(g.league))
+                  const cupGames = games.filter((g) => isCupGame(g.league))
+                  const showHeadings = leagueGames.length > 0 && cupGames.length > 0
+                  const sections: Array<{ key: 'league' | 'cup'; label: string; items: typeof games }> = []
+                  if (leagueGames.length > 0) sections.push({ key: 'league', label: t('sectionLeague'), items: leagueGames })
+                  if (cupGames.length > 0) sections.push({ key: 'cup', label: t('sectionCup'), items: cupGames })
+                  return sections.map((section) => (
+                    <div key={section.key} className="mb-6 last:mb-0">
+                      {showHeadings && (
+                        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                          {section.label}
+                        </h2>
+                      )}
+                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" data-tour={section.key === 'league' ? 'game-card' : undefined}>
+                        {section.items.map((g) => (
+                          <GameCard key={g.id} game={g} onClick={setSelectedGame} participations={participationsByGame.get(g.id)} myParticipation={myParticipationByGame.get(g.id)} warnings={warningsByGame.get(g.id)} onParticipationSaved={refetchParticipations} />
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                })()}
                 {!showAll && games.length >= INITIAL_LIMIT && (
                   <button
                     onClick={() => setShowAll(true)}
@@ -281,18 +303,35 @@ export default function GamesPage() {
           </>
         )}
 
-        {/* Results: compact list */}
+        {/* Results: compact list, split by league vs Cup */}
         {showGames && activeTab === 'results' && (
           <>
             {games.length === 0 ? (
               <EmptyState tab={activeTab} />
             ) : (
               <>
-                <div data-tour="game-results" className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white md:mx-auto md:w-fit dark:bg-gray-800 md:grid md:grid-cols-[auto_auto_auto_auto_auto_auto_auto_1fr]">
-                  {games.map((g) => (
-                    <GameCard key={g.id} game={g} onClick={setSelectedGame} variant="compact" participations={participationsByGame.get(g.id)} myParticipation={myParticipationByGame.get(g.id)} warnings={warningsByGame.get(g.id)} />
-                  ))}
-                </div>
+                {(() => {
+                  const leagueGames = games.filter((g) => !isCupGame(g.league))
+                  const cupGames = games.filter((g) => isCupGame(g.league))
+                  const showHeadings = leagueGames.length > 0 && cupGames.length > 0
+                  const sections: Array<{ key: 'league' | 'cup'; label: string; items: typeof games }> = []
+                  if (leagueGames.length > 0) sections.push({ key: 'league', label: t('sectionLeague'), items: leagueGames })
+                  if (cupGames.length > 0) sections.push({ key: 'cup', label: t('sectionCup'), items: cupGames })
+                  return sections.map((section) => (
+                    <div key={section.key} className="mb-6 last:mb-0">
+                      {showHeadings && (
+                        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-500 md:text-center dark:text-gray-400">
+                          {section.label}
+                        </h2>
+                      )}
+                      <div data-tour={section.key === 'league' ? 'game-results' : undefined} className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white md:mx-auto md:w-fit dark:bg-gray-800 md:grid md:grid-cols-[auto_auto_auto_auto_auto_auto_auto_1fr]">
+                        {section.items.map((g) => (
+                          <GameCard key={g.id} game={g} onClick={setSelectedGame} variant="compact" participations={participationsByGame.get(g.id)} myParticipation={myParticipationByGame.get(g.id)} warnings={warningsByGame.get(g.id)} />
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                })()}
                 {!showAll && games.length >= INITIAL_LIMIT && (
                   <button
                     onClick={() => setShowAll(true)}

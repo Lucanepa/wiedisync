@@ -10,6 +10,7 @@ import type { ExpandedMemberTeam } from '../../hooks/useTeamMembers'
 import type { Team, Member, MemberTeam } from '../../types'
 import { cn } from '@/lib/utils'
 import { asObj, memberName, flattenMemberIds } from '../../utils/relations'
+import { formatDate } from '../../utils/dateHelpers'
 import { Button } from '../../components/ui/button'
 import { updateRecord } from '../../lib/api'
 
@@ -68,7 +69,7 @@ export default function MemberRow({ memberTeam, teamId: _teamId, teamSlug, team,
   const birthdateDisplay = (() => {
     if (member.birthdate_visibility === 'hidden' || !member.birthdate) return null
     if (member.birthdate_visibility === 'year_only') return new Date(member.birthdate).getFullYear().toString()
-    return new Date(member.birthdate).toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    return formatDate(member.birthdate)
   })()
 
   async function saveField(field: string, value: string | number | string[]) {

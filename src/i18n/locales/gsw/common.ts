@@ -5,6 +5,7 @@ export default {
   cancel: 'Abbräche',
   delete: 'Lösche',
   edit: 'Bearbeite',
+  create: 'Erstelle',
   remove: 'Ewägneh',
   add: 'Dezuetuä',
   confirm: 'Bestätige',

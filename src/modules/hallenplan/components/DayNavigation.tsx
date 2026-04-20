@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { Hall, HallSlot } from '../../../types'
 import Modal from '@/components/Modal'
 import type { FreedSlotInfo, SportFilter } from '../HallenplanPage'
+import { currentLocale } from '../../../utils/dateHelpers'
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const
 
@@ -62,7 +63,7 @@ export default function DayNavigation({
 
   const selectedDay = weekDays[selectedDayIndex]
   const dateStr = selectedDay
-    ? `${DAY_FULL[selectedDayIndex]}, ${selectedDay.getDate()} ${selectedDay.toLocaleString('en-US', { month: 'short' })}`
+    ? `${DAY_FULL[selectedDayIndex]}, ${selectedDay.getDate()} ${selectedDay.toLocaleString(currentLocale(), { month: 'short' })}`
     : ''
 
   const todayStr = new Date().toDateString()

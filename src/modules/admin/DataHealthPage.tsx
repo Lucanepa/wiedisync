@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
+import { currentLocale } from '../../utils/dateHelpers'
 import {
   AlertTriangle, CheckCircle2, ChevronDown, ChevronRight,
   Wrench, XCircle, RefreshCcw, ScrollText,
@@ -202,7 +203,7 @@ export default function DataHealthPage() {
     try {
       const data = await runAllChecks()
       setResults(data)
-      setLastCheck(new Date().toLocaleTimeString())
+      setLastCheck(new Date().toLocaleTimeString(currentLocale()))
     } catch (err) {
       toast.error(String(err))
     } finally {

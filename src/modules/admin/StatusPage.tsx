@@ -1,10 +1,10 @@
 import { useTranslation } from 'react-i18next'
 import { usePublicStatus } from '../../hooks/useBugfixes'
 import { Loader2 } from 'lucide-react'
+import { formatDateCompact } from '../../utils/dateHelpers'
 
 function relativeDate(iso: string): string {
-  const d = new Date(iso)
-  return d.toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit', year: '2-digit' })
+  return formatDateCompact(iso)
 }
 
 export default function StatusPage() {

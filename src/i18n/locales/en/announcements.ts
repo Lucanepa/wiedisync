@@ -35,6 +35,8 @@ export default {
 
   titleRequired: 'German title is required',
   sportRequired: 'Pick a sport',
+  linkInvalid: 'Link must start with https:// or /',
+  confirmMassEmail: 'This club news will be emailed to ALL active members. Continue?',
   imageType: 'Only PNG, JPEG or WebP allowed',
   imageSize: 'Image too large (max 5 MB)',
   imageUploaded: 'Image uploaded',

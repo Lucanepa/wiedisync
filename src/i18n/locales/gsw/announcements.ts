@@ -35,6 +35,8 @@ export default {
 
   titleRequired: 'Dütsche Titel isch Pflicht',
   sportRequired: 'Sport useswähle',
+  linkInvalid: 'De Link muess mit https:// oder / afange',
+  confirmMassEmail: 'Die Vereinsnews wird per E-Mail an ALLI aktivi Mitglieder gschickt. Wiiter?',
   imageType: 'Nur PNG, JPEG oder WebP erlaubt',
   imageSize: 'S\'Bild isch z\'gross (max 5 MB)',
   imageUploaded: 'Bild hochglade',

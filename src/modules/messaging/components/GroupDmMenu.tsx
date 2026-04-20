@@ -164,20 +164,18 @@ export default function GroupDmMenu({ conversationId, onMemberAdded, currentMemb
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {t('group.leaveTitle', { defaultValue: 'Gruppe verlassen?' })}
+              {t('group.leaveTitle')}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {t('group.leaveBody', { defaultValue: 'Du bekommst keine neuen Nachrichten mehr aus dieser Gruppe.' })}
+              {t('group.leaveBody')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={leaving}>
-              {t('newMessage.cancel', { defaultValue: 'Abbrechen' })}
+              {t('newMessage.cancel')}
             </AlertDialogCancel>
             <AlertDialogAction onClick={handleLeave} disabled={leaving}>
-              {leaving
-                ? t('group.leaving', { defaultValue: 'Wird verlassen …' })
-                : t('group.leave', { defaultValue: 'Verlassen' })}
+              {leaving ? t('group.leaving') : t('group.leave')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

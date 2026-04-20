@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import i18n from '../../i18n'
 import { getSeasonDateRange, todayLocal } from '../../utils/dateHelpers'
 import type { Training, Participation, Absence, Member, MemberTeam } from '../../types'
 import { fetchAllItems } from '../../lib/api'
@@ -177,7 +178,7 @@ export function useAttendanceStats(teamId: string | null, season: string) {
           percentage: countable > 0 ? Math.round((s.present / (countable - s.excused || 1)) * 100) : 0,
         }
       })
-      result.sort((a, b) => b.percentage - a.percentage || a.memberName.localeCompare(b.memberName, 'de'))
+      result.sort((a, b) => b.percentage - a.percentage || a.memberName.localeCompare(b.memberName, i18n.language))
 
       setStats(result)
     } catch (err) {

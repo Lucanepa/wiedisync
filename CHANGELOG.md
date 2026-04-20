@@ -2,6 +2,18 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.16.4] — 2026-04-20
+
+### Changed
+
+- **Full i18n sweep of hardcoded German/Swiss dates + labels.** Extension of the 3.16.2 `formatWeekday` fix to every other user-visible `de-CH` / hardcoded-German site across the app.
+  - `src/utils/dateHelpers.ts`: `formatDate`, `formatDateCompact`, `formatTime` (+ their `…Zurich` originals) now accept an optional locale and default to `currentLocale()` (exported); `en-GB` is used for EN users to keep dd/mm + 24h expectations.
+  - Localized: Hallenplan `DayNavigation` month abbreviation (was hardcoded `en-US`), `ProfilePage` birthdate, `MemberRow` birthdate, `StatusPage` public page dates, admin `ResultsTable`, `AuditLogPage`, `InfraHealthPage` (last-check + slow-query call counts), `DataHealthPage`, `ExplorePage` refreshed-at, and scorer helpers (`TeamOverview`, `ScorerRow`, `DelegationRequestBanner`) which now fall through to `fr` / `it` instead of always using `en-GB`.
+  - `VolleyFeedbackPage` was bilingual only (`lang === 'de' ? … : en`) — now fully i18n with 20 new `vf*` keys added to all 5 `admin` locale bundles.
+  - Stripped German `defaultValue: '...'` fallbacks from 48 `t()` calls across `DeleteAccountModal`, `GroupDmMenu`, `NewMessageDialog`, `BlockMemberDialog`, and `AnnouncementsPage` — these fell back to German labels for non-German users when the key was actually missing. Raw literal `'Speichern'` in `SpielsamstageEditor` replaced with `t('common:save')`.
+  - Added missing keys: `common.create` (all 5 locales), `announcements.linkInvalid` + `announcements.confirmMassEmail` (all 5 locales).
+  - Sorting: `localeCompare` / `Intl.Collator` in `RefereeExpenseSection`, `useAttendanceStats`, `AssignmentEditor`, `DelegationModal`, scorer `TeamOverview` now use `i18n.language` instead of always `'de'`.
+
 ## [3.16.3] — 2026-04-20
 
 ### Fixed

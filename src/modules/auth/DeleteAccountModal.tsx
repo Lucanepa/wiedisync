@@ -75,7 +75,7 @@ export default function DeleteAccountModal({ open, onClose, userEmail }: DeleteA
             disabled={isDeleting}
             className="flex-1"
           >
-            {t('cancel', { defaultValue: 'Abbrechen' })}
+            {t('common:cancel')}
           </Button>
           <Button
             variant="destructive"

@@ -35,6 +35,8 @@ export default {
 
   titleRequired: 'Il titolo tedesco è obbligatorio',
   sportRequired: 'Scegli uno sport',
+  linkInvalid: 'Il link deve iniziare con https:// o /',
+  confirmMassEmail: 'Questa notizia verrà inviata via email a TUTTI i membri attivi. Continuare?',
   imageType: 'Solo PNG, JPEG o WebP consentiti',
   imageSize: 'Immagine troppo grande (max 5 MB)',
   imageUploaded: 'Immagine caricata',

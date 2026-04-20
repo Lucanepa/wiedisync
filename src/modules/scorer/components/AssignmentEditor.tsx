@@ -57,7 +57,7 @@ export default function AssignmentEditor({
   dutyConfirmed,
   onHide,
 }: AssignmentEditorProps) {
-  const { t } = useTranslation('scorer')
+  const { t, i18n } = useTranslation('scorer')
 
   const filteredMembers = useMemo(() => {
     let list = members.filter((m) => m.kscw_membership_active && !guestMemberIds?.has(m.id))
@@ -77,7 +77,7 @@ export default function AssignmentEditor({
       if (assigned) list.push(assigned)
     }
     return list.sort((a, b) =>
-      `${a.last_name} ${a.first_name}`.localeCompare(`${b.last_name} ${b.first_name}`, 'de'),
+      `${a.last_name} ${a.first_name}`.localeCompare(`${b.last_name} ${b.first_name}`, i18n.language),
     )
   }, [members, requiredLicence, teamValue, teamMemberIds, personValue, guestMemberIds])
 

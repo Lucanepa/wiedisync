@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useInfraHealth } from '../../hooks/useInfraHealth'
 import { API_URL, fetchItems, countItems, getAccessToken } from '../../lib/api'
+import { currentLocale } from '../../utils/dateHelpers'
 
 const PROD_URL = API_URL
 const DEV_URL = 'https://directus-dev.kscw.ch'
@@ -400,7 +401,7 @@ export default function InfraHealthPage() {
       }
     } catch { /* skip slow queries on error */ }
 
-    setLastCheck(new Date().toLocaleTimeString())
+    setLastCheck(new Date().toLocaleTimeString(currentLocale()))
     setLoading(false)
   }, [t])
 
@@ -471,7 +472,7 @@ export default function InfraHealthPage() {
                       {q.avg_ms}ms
                     </td>
                     <td className="px-3 py-2 font-mono tabular-nums text-gray-600 dark:text-gray-400">{q.max_ms}ms</td>
-                    <td className="px-3 py-2 font-mono tabular-nums text-gray-600 dark:text-gray-400">{q.calls.toLocaleString('de-CH')}</td>
+                    <td className="px-3 py-2 font-mono tabular-nums text-gray-600 dark:text-gray-400">{q.calls.toLocaleString(currentLocale())}</td>
                     <td className="px-3 py-2 font-mono tabular-nums text-gray-600 dark:text-gray-400">{q.total_ms > 1000 ? `${(q.total_ms / 1000).toFixed(1)}s` : `${q.total_ms}ms`}</td>
                     <td className="max-w-xs truncate px-3 py-2 font-mono text-gray-500 dark:text-gray-400" title={q.query}>
                       {q.query}

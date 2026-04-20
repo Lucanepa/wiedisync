@@ -42,6 +42,8 @@ export default {
   // Validation + toast
   titleRequired: 'Deutscher Titel ist Pflicht',
   sportRequired: 'Sport wählen',
+  linkInvalid: 'Link muss mit https:// oder / beginnen',
+  confirmMassEmail: 'Diese Vereinsnews wird per E-Mail an ALLE aktiven Mitglieder versendet. Fortfahren?',
   imageType: 'Nur PNG, JPEG oder WebP erlaubt',
   imageSize: 'Bild ist zu gross (max 5 MB)',
   imageUploaded: 'Bild hochgeladen',

@@ -5,6 +5,7 @@ export default {
   cancel: 'Cancel',
   delete: 'Delete',
   edit: 'Edit',
+  create: 'Create',
   remove: 'Remove',
   add: 'Add',
   confirm: 'Confirm',

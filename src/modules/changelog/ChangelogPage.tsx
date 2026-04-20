@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.16.3'
+const APP_VERSION = '3.16.4'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,21 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.16.4',
+    date: '2026-04-20',
+    sections: [
+      {
+        title: 'Languages',
+        items: [
+          'Dates, times, birthdates and member-row timestamps now all follow your selected app language instead of always being German/Swiss. Profile, team rosters, public status page, admin audit log, data-health + infra-health dashboards, explore page, results table and Hallenplan month abbreviations are all localized.',
+          'Volley-feedback admin dashboard was bilingual only (de / en). It is now fully translated into de, en, fr, it, and gsw.',
+          'Cancel / Save / Delete / Create buttons and confirm dialogs across club news editor, delete-account, group chat menu, new-message dialog, block-member dialog and Spielsamstag editor no longer fall back to German labels for non-German users.',
+          'Roster and scorer-assignment sorting now uses your language\'s alphabet rules (e.g. ö / è / ä sort correctly) instead of always German.',
+        ],
+      },
+    ],
+  },
   {
     version: '3.16.3',
     date: '2026-04-20',

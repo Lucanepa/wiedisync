@@ -63,6 +63,8 @@ export type MessageRow = {
   sender: string
   type: MessageType
   body: string | null
+  /** Original body captured on first edit — null if never edited. */
+  original_body?: string | null
   poll: string | null
   created_at: string
   edited_at: string | null

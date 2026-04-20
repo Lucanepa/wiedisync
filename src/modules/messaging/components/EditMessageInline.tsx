@@ -8,22 +8,29 @@ type Props = {
   messageId: string
   initialBody: string
   onDone: () => void
+  /** If provided, used instead of the direct messagingApi.edit call — enables optimistic local updates. */
+  onSave?: (id: string, body: string) => Promise<void>
 }
 
-export default function EditMessageInline({ messageId, initialBody, onDone }: Props) {
+export default function EditMessageInline({ messageId, initialBody, onDone, onSave }: Props) {
   const { t } = useTranslation('messaging')
   const [value, setValue] = useState(initialBody)
   const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const save = async () => {
     const trimmed = value.trim()
     if (!trimmed || busy) return
+    if (trimmed === initialBody) { onDone(); return }
     setBusy(true)
+    setError(null)
     try {
-      await messagingApi.edit(messageId, { body: trimmed })
+      if (onSave) await onSave(messageId, trimmed)
+      else await messagingApi.edit(messageId, { body: trimmed })
       onDone()
-    } catch { /* toast later */ }
-    finally { setBusy(false) }
+    } catch (e) {
+      setError((e as Error)?.message || t('failedToSave', { defaultValue: 'Failed to save' }))
+    } finally { setBusy(false) }
   }
 
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -43,6 +50,7 @@ export default function EditMessageInline({ messageId, initialBody, onDone }: Pr
         className="w-full min-h-[44px] max-h-40 resize-none rounded-md border border-input bg-background text-foreground text-sm p-2 focus:outline-none focus:ring-2 focus:ring-ring"
         aria-label={t('editMessage')}
       />
+      {error && <div className="text-[10px] text-destructive px-1">{error}</div>}
       <div className="flex gap-1 self-end">
         <Button size="sm" variant="ghost" onClick={onDone} disabled={busy} aria-label={t('cancel')}>
           <X className="h-3.5 w-3.5" />

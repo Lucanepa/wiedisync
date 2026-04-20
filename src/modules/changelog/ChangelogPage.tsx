@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.15.9'
+const APP_VERSION = '3.16.0'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,27 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.16.0',
+    date: '2026-04-20',
+    sections: [
+      {
+        title: 'Chat',
+        items: [
+          'The other person\'s messages now appear on the right. Your own messages stay on the left.',
+          'Tap the "edited" tag on any edited message to see the original version. Your message can still be edited any time.',
+        ],
+      },
+      {
+        title: 'Fix',
+        items: [
+          'Reaction button (SmilePlus) and message actions menu (⋮) are now visible on mobile — previously hover-only, so touch devices could not reach them.',
+          'Editing a message now updates immediately instead of appearing to do nothing. Errors during save are now shown under the textarea instead of being swallowed.',
+          'Own vs other-user detection now coerces IDs, so your messages are correctly distinguished even when the backend returns numeric IDs.',
+        ],
+      },
+    ],
+  },
   {
     version: '3.15.9',
     date: '2026-04-20',

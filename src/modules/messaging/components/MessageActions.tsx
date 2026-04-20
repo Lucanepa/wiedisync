@@ -25,7 +25,7 @@ export default function MessageActions({ message, currentMemberId, isTeamModerat
     <div className="relative inline-block">
       <Button
         variant="ghost" size="sm"
-        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 focus:opacity-100"
+        className="h-6 w-6 p-0 opacity-60 hover:opacity-100 focus:opacity-100"
         onClick={() => setOpen(o => !o)}
         aria-label={t('messageActions')}
       >
@@ -34,7 +34,7 @@ export default function MessageActions({ message, currentMemberId, isTeamModerat
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className={`absolute top-6 z-50 min-w-[160px] rounded-md border border-border bg-background shadow-md text-sm ${isOwn ? 'right-0' : 'left-0'}`}>
+          <div className={`absolute top-6 z-50 min-w-[160px] rounded-md border border-border bg-background shadow-md text-sm ${isOwn ? 'left-0' : 'right-0'}`}>
             {actions.has('edit') && (
               <button type="button"
                 className="flex w-full items-center gap-2 px-3 py-2 hover:bg-muted text-foreground"

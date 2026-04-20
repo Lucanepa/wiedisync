@@ -53,7 +53,7 @@ export const messagingApi = {
     kscwApi<MessageRow>('/messaging/messages', { method: 'POST', body }),
 
   edit: (id: string, body: { body: string }) =>
-    kscwApi<{ id: string; body: string; edited_at: string }>(
+    kscwApi<{ id: string; body: string; edited_at: string; original_body: string | null }>(
       `/messaging/messages/${id}`, { method: 'PATCH', body }),
 
   delete: (id: string) =>

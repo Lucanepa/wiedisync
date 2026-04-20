@@ -31,21 +31,42 @@ export function useConversation(
   convIdRef.current = conversationId
   const blockedRef = useRef(new Set(effectiveBlocked))
   blockedRef.current = new Set(effectiveBlocked)
+  // Monotonic fetch counter — any resolver whose seq no longer matches is stale.
+  const fetchSeqRef = useRef(0)
 
   const refetch = useCallback(async () => {
     if (!enabled || !conversationId) { setMessages([]); return }
+    const mySeq = ++fetchSeqRef.current
+    const myConvId = conversationId
     setIsLoading(true)
     try {
       const { messages, has_more } = await messagingApi.listMessages(conversationId, { limit: 50 })
-      // Client-side filter: blocked senders never show up (server-side filter arrives in Plan 03).
-      setMessages(messages.filter(m => !blockedRef.current.has(String(m.sender))))
+      // Stale: a newer fetch started (conv switch or concurrent refetch) — bail.
+      if (fetchSeqRef.current !== mySeq || convIdRef.current !== myConvId) return
+      // Merge: keep realtime messages that arrived during the fetch and aren't
+      // in the server snapshot. Client-side block filter stays until Plan 03.
+      setMessages(prev => {
+        const filtered = messages.filter(m => !blockedRef.current.has(String(m.sender)))
+        const ids = new Set(filtered.map(m => m.id))
+        const extras = prev.filter(m => !ids.has(m.id) && !blockedRef.current.has(String(m.sender)))
+        if (extras.length === 0) return filtered
+        return [...filtered, ...extras].sort((a, b) =>
+          String(a.created_at) < String(b.created_at) ? -1 : String(a.created_at) > String(b.created_at) ? 1 : 0,
+        )
+      })
       setHasMore(has_more)
     } finally {
-      setIsLoading(false)
+      if (fetchSeqRef.current === mySeq) setIsLoading(false)
     }
   }, [conversationId, enabled])
 
-  useEffect(() => { refetch() }, [refetch])
+  useEffect(() => {
+    // Clear prior conversation's thread immediately so the switch doesn't flash
+    // stale messages while the new fetch is in flight.
+    setMessages([])
+    setHasMore(false)
+    refetch()
+  }, [refetch])
 
   useRealtime<MessageRow>('messages', (e) => {
     if (convIdRef.current !== e.record.conversation) return

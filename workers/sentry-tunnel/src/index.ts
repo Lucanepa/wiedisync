@@ -36,35 +36,63 @@ export default {
       return new Response('Not found', { status: 404 })
     }
 
+    // Each failure path returns a distinct `Bad envelope: <reason>` so
+    // `wrangler tail` shows exactly which branch killed a request.
+    let bodyText = ''
     try {
-      // Session Replay may send gzip-compressed envelopes
       const contentEncoding = request.headers.get('Content-Encoding') || ''
-      let bodyText: string
       let rawBody: ArrayBuffer | string
 
       if (contentEncoding.includes('gzip')) {
-        const decompressed = new DecompressionStream('gzip')
-        const reader = request.body!.pipeThrough(decompressed).getReader()
-        const chunks: Uint8Array[] = []
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-          chunks.push(value)
+        try {
+          const decompressed = new DecompressionStream('gzip')
+          const reader = request.body!.pipeThrough(decompressed).getReader()
+          const chunks: Uint8Array[] = []
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+            chunks.push(value)
+          }
+          const merged = new Uint8Array(chunks.reduce((a, c) => a + c.length, 0))
+          let offset = 0
+          for (const c of chunks) { merged.set(c, offset); offset += c.length }
+          bodyText = new TextDecoder().decode(merged)
+          rawBody = bodyText
+        } catch (e) {
+          console.error('[sentry-tunnel] gzip-decode-failed:', e instanceof Error ? e.message : String(e))
+          return new Response('Bad envelope: gzip-decode-failed', { status: 400 })
         }
-        const merged = new Uint8Array(chunks.reduce((a, c) => a + c.length, 0))
-        let offset = 0
-        for (const c of chunks) { merged.set(c, offset); offset += c.length }
-        bodyText = new TextDecoder().decode(merged)
-        rawBody = bodyText
       } else {
         bodyText = await request.text()
         rawBody = bodyText
       }
 
+      if (!bodyText) {
+        return new Response('Bad envelope: empty-body', { status: 400 })
+      }
+
       // Sentry envelope: first line is JSON header with dsn
-      const header = bodyText.split('\n')[0]
-      const { dsn } = JSON.parse(header)
-      const dsnUrl = new URL(dsn)
+      const header = bodyText.split('\n')[0] ?? ''
+      let parsed: { dsn?: unknown }
+      try {
+        parsed = JSON.parse(header)
+      } catch (e) {
+        console.error('[sentry-tunnel] header-json-invalid:', e instanceof Error ? e.message : String(e), '| header:', header.slice(0, 200))
+        return new Response('Bad envelope: header-json-invalid', { status: 400 })
+      }
+      const dsn = parsed.dsn
+      if (typeof dsn !== 'string' || !dsn) {
+        console.error('[sentry-tunnel] no-dsn | header:', header.slice(0, 200))
+        return new Response('Bad envelope: no-dsn', { status: 400 })
+      }
+
+      let dsnUrl: URL
+      try {
+        dsnUrl = new URL(dsn)
+      } catch {
+        console.error('[sentry-tunnel] invalid-dsn-url | dsn:', dsn.slice(0, 200))
+        return new Response('Bad envelope: invalid-dsn-url', { status: 400 })
+      }
 
       // Validate: only allow our project
       if (dsnUrl.hostname !== env.SENTRY_HOST || !dsnUrl.pathname.includes(env.SENTRY_PROJECT_ID)) {
@@ -86,8 +114,10 @@ export default {
           'Content-Type': 'application/json',
         },
       })
-    } catch {
-      return new Response('Bad envelope', { status: 400 })
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err)
+      console.error('[sentry-tunnel] unexpected:', reason, '| body snippet:', bodyText.slice(0, 200))
+      return new Response(`Bad envelope: unexpected (${reason})`, { status: 400 })
     }
   },
 }

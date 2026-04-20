@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.15.6'
+const APP_VERSION = '3.15.7'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,20 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.15.7',
+    date: '2026-04-20',
+    sections: [
+      {
+        title: 'Fix',
+        items: [
+          'Inbox: switching between conversations no longer briefly shows the previous conversation\'s messages, and messages that arrive in the moment the thread opens are no longer dropped when the initial load finishes.',
+          'Inbox list and member list behave the same way — the result of a stale fetch can no longer overwrite a newer one.',
+          'Sentry error tunnel now reports a specific reason when it rejects an event (gzip decode, empty body, missing DSN, …) instead of a generic 400, so future tunnel regressions are diagnosable.',
+        ],
+      },
+    ],
+  },
   {
     version: '3.15.6',
     date: '2026-04-20',

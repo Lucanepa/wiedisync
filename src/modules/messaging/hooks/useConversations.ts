@@ -33,18 +33,22 @@ export function useConversations({ blockedSenderIds }: UseConversationsOptions =
   const [error, setError] = useState<Error | null>(null)
   const blockedRef = useRef(new Set(effectiveBlocked))
   blockedRef.current = new Set(effectiveBlocked)
+  const fetchSeqRef = useRef(0)
 
   const refetch = useCallback(async () => {
     if (!enabled) { setConversations([]); return }
+    const mySeq = ++fetchSeqRef.current
     setIsLoading(true)
     try {
       const list = await messagingApi.listConversations()
+      // Stale: a newer fetch superseded this one (e.g. login/logout toggled enabled).
+      if (fetchSeqRef.current !== mySeq) return
       setConversations(list)
       setError(null)
     } catch (e) {
-      setError(e as Error)
+      if (fetchSeqRef.current === mySeq) setError(e as Error)
     } finally {
-      setIsLoading(false)
+      if (fetchSeqRef.current === mySeq) setIsLoading(false)
     }
   }, [enabled])
 

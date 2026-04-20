@@ -2,6 +2,12 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [4.0.1] — 2026-04-20
+
+### Fixed
+
+- **Consent modal acceptance loop.** Members tapping "Accept" on the messaging consent modal saw the POST to `/kscw/messaging/settings/consent` succeed (200) and the page reload, but the modal re-appeared every time — hard-blocking the rest of the app. Root cause: `fetchMember()` in `src/hooks/useAuth.tsx` fetches `/items/members` without an explicit `fields=` list, so Directus applies the KSCW Member policy's self-read field list. That list (last touched by migration 024) never had `consent_decision`, `consent_prompted_at`, `communications_dm_enabled`, `communications_team_chat_enabled`, `communications_banned`, or `push_preview_content` added when Plan 01 introduced those columns. Result: `user.consent_decision` was `undefined` on the client, `resolveConsentState()` treated that as `'pending'`, and the modal re-rendered forever. Same root cause silently broke the DM button, team-chat tab and messaging settings toggles (they all read `user.communications_*`). Fix: migration `029-member-messaging-self-read.sql` appends the six fields to the self-scoped `members.read` permission row. Applied to dev + prod, both Directus containers restarted.
+
 ## [4.0.0] — 2026-04-20
 
 ### Added

@@ -118,24 +118,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ])
 
       const teamMap = new Map(allTeams.map(t => [String(t.id), t]))
-      const coachIdSet = new Set([...coachRows.map(r => String(r.teams_id)), ...trRows.map(r => String(r.teams_id))])
+      // Skip rows with null team FKs — they shouldn't exist, but if a coach/TR/member_teams row
+      // is partially populated, `String(null)` = "null" pollutes _in arrays and trips Directus'
+      // `Invalid numeric value` on integer-typed kscw_team filters.
+      const coachTeamIdsRaw = coachRows.map(r => r.teams_id).filter((id): id is number => id != null)
+      const trTeamIdsRaw = trRows.map(r => r.teams_id).filter((id): id is number => id != null)
+      const memberTeamIdsRaw = memberTeams.map(mt => mt.team).filter((id): id is number => id != null)
+      const captainTeamIdsRaw = captainTeams.map(t => t.id).filter((id): id is number => id != null)
+      const coachIdSet = new Set([...coachTeamIdsRaw.map(String), ...trTeamIdsRaw.map(String)])
 
       setCoachTeamIds([...coachIdSet])
       setCoachTeamNames([...coachIdSet].map(id => teamMap.get(id)?.name).filter((n): n is string => !!n))
-      setTeamResponsibleIds(trRows.map(r => String(r.teams_id)))
-      setCaptainTeamIds(captainTeams.map(t => String(t.id)))
-      setMemberTeamIds(memberTeams.map(mt => String(mt.team)))
-      setMemberTeamNames(memberTeams.map(mt => teamMap.get(String(mt.team))?.name).filter((n): n is string => !!n))
+      setTeamResponsibleIds(trTeamIdsRaw.map(String))
+      setCaptainTeamIds(captainTeamIdsRaw.map(String))
+      setMemberTeamIds(memberTeamIdsRaw.map(String))
+      setMemberTeamNames(memberTeamIdsRaw.map(id => teamMap.get(String(id))?.name).filter((n): n is string => !!n))
 
       const sports = new Set<'volleyball' | 'basketball'>()
       for (const mt of memberTeams) {
+        if (mt.team == null) continue
         const s = teamMap.get(String(mt.team))?.sport
         if (s === 'volleyball' || s === 'basketball') sports.add(s)
       }
       setMemberSports(sports)
 
       const glMap: Record<string, number> = {}
-      for (const mt of memberTeams) glMap[String(mt.team)] = mt.guest_level ?? 0
+      for (const mt of memberTeams) {
+        if (mt.team == null) continue
+        glMap[String(mt.team)] = mt.guest_level ?? 0
+      }
       setGuestLevelByTeam(glMap)
 
       const sportById: Record<string, 'volleyball' | 'basketball'> = {}

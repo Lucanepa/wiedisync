@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.15.5'
+const APP_VERSION = '3.15.6'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,18 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.15.6',
+    date: '2026-04-20',
+    sections: [
+      {
+        title: 'Fix',
+        items: [
+          'Games page no longer fails to load. When a coach role was orphaned (team deleted, but the coach assignment left behind), the filter contained an invalid team reference and the server rejected the whole request. Now we skip orphaned assignments and cleaned up the leftover data.',
+        ],
+      },
+    ],
+  },
   {
     version: '3.15.5',
     date: '2026-04-20',

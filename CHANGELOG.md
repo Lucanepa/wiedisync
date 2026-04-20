@@ -2,6 +2,16 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.15.6] — 2026-04-20
+
+### Fixed
+
+- **Games page 400 `Invalid numeric value.`** Orphan coach/TR junction rows (`teams_coaches` / `teams_responsibles`) with `teams_id = NULL` leaked `String(null)` = `"null"` into the frontend's `kscw_team: { _in: [...] }` filter. Directus 11.17 `castToNumber` throws on any non-numeric element of `_in` for an integer-typed column, so the whole `POST /kscw/activities/game/with-participations` request failed. Previously masked by the old waterfall (which silently swallowed the games fetch error and rendered empty cards); the v3.15.4 consolidation surfaced it as a hard crash. Fixed in `src/hooks/useAuth.tsx`: drop null team FKs before `String(...)` on coach/TR/member_teams/captain arrays, and guard the two downstream `memberTeams` loops.
+
+### Infrastructure
+
+- **Junction tables now `ON DELETE CASCADE`.** `teams_coaches` + `teams_responsibles` FKs on both `teams_id` and `members_id` were `ON DELETE SET NULL`, which left 13 zombie rows (7 + 6) when a team was deleted over the project lifetime. Migration `directus/scripts/021-junction-cascade.sql` deletes the orphans, rebuilds the FKs with `CASCADE`, renames the constraints off the legacy `teams_members_3/4_*` names, and syncs `directus_relations.one_deselect_action` to `delete`. Applied to prod + dev. Snapshot updated.
+
 ## [3.15.5] — 2026-04-20
 
 ### Fixed

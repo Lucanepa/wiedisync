@@ -24,7 +24,9 @@ export function useConversation(
   const effectiveBlocked = blockedSenderIds ?? blockedMemberIds
   const enabled = messagingFeatureEnabled(user?.id) && !!user?.id && !!conversationId
   const [messages, setMessages] = useState<MessageRow[]>([])
-  const [isLoading, setIsLoading] = useState(false)
+  // Initial mount: we know the effect will fire a refetch in the next tick.
+  // Start "loading" so the first render doesn't briefly look "ready with 0 messages".
+  const [isLoading, setIsLoading] = useState(true)
   const [sendError, setSendError] = useState<Error | null>(null)
   const [hasMore, setHasMore] = useState(false)
   const convIdRef = useRef(conversationId)
@@ -35,7 +37,7 @@ export function useConversation(
   const fetchSeqRef = useRef(0)
 
   const refetch = useCallback(async () => {
-    if (!enabled || !conversationId) { setMessages([]); return }
+    if (!enabled || !conversationId) { setMessages([]); setIsLoading(false); return }
     const mySeq = ++fetchSeqRef.current
     const myConvId = conversationId
     setIsLoading(true)

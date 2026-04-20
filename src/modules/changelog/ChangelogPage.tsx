@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.16.0'
+const APP_VERSION = '3.16.1'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,19 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.16.1',
+    date: '2026-04-20',
+    sections: [
+      {
+        title: 'Fix',
+        items: [
+          'Opening a chat no longer loads in stages — the header (peer name + avatar), the thread, and the composer now all appear together after a single spinner, instead of the header filling in after the messages.',
+          'Admin notifications for new reports ("New report: spam", etc.) now open the admin report page when tapped. Previously they navigated to the home screen because the notification type was not routed.',
+        ],
+      },
+    ],
+  },
   {
     version: '3.16.0',
     date: '2026-04-20',

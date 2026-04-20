@@ -3,12 +3,14 @@ import { messagingApi, type ConversationMemberRow } from '../api/messaging'
 
 export function useConversationMembers(conversationId: string | null | undefined) {
   const [members, setMembers] = useState<ConversationMemberRow[]>([])
-  const [loading, setLoading] = useState(false)
+  // Initial mount: we know the effect will fire a refetch. Start "loading" so
+  // the first render doesn't look "ready with 0 members" for a frame.
+  const [loading, setLoading] = useState(!!conversationId)
   const [error, setError] = useState<string | null>(null)
   const fetchSeqRef = useRef(0)
 
   const refetch = useCallback(async () => {
-    if (!conversationId) { setMembers([]); return }
+    if (!conversationId) { setMembers([]); setLoading(false); return }
     const mySeq = ++fetchSeqRef.current
     setLoading(true)
     setError(null)

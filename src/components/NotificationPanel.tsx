@@ -47,6 +47,9 @@ function timeAgo(dateStr: string, t: (key: string, opts?: Record<string, unknown
 function getNavigationPath(n: Notification): string {
   if (n.type === 'duty_delegation_request' || n.activity_type === 'scorer_duty') return '/scorer'
   if (n.type === 'member_join_request' && n.activity_id) return `/teams/${n.activity_id}`
+  // Messaging moderation: admins get `new_report` notifications when a member
+  // submits a report. The report list + resolution UI lives at /admin/reports.
+  if (n.type === 'new_report' || n.activity_type === 'report') return '/admin/reports'
   switch (n.activity_type) {
     case 'game': return '/games'
     case 'training': return '/trainings'

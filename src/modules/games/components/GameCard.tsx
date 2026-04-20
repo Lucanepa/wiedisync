@@ -13,7 +13,7 @@ import type { Warning } from '../../../utils/participationWarnings'
 import { useAuth } from '../../../hooks/useAuth'
 import { useMutation } from '../../../hooks/useMutation'
 import type { Participation } from '../../../types'
-import { asObj } from '../../../utils/relations'
+import { asObj, teamCoachIds } from '../../../utils/relations'
 
 function parseSets(json: unknown): Array<{ home: number; away: number }> {
   if (!Array.isArray(json)) return []
@@ -304,7 +304,7 @@ export default function GameCard({ game, onClick, variant = 'card', participatio
                 <GameCardParticipation game={game} existingParticipation={myParticipation} onSaved={onParticipationSaved} />
               )}
               {participations && participations.length > 0 && (
-                <ParticipationSummary activityType="game" activityId={game.id} bars participations={participations} />
+                <ParticipationSummary activityType="game" activityId={game.id} bars participations={participations} coachMemberIds={teamCoachIds(kscwTeamObj)} />
               )}
             </div>
           )}

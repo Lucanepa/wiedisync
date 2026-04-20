@@ -6,7 +6,7 @@ import { useCollection } from '../../lib/query'
 import { useNotifications } from '../../hooks/useNotifications'
 import { useSportPreference } from '../../hooks/useSportPreference'
 import { formatDate, formatDateCompact, formatTime, formatWeekday, todayLocal } from '../../utils/dateHelpers'
-import { asObj, relId } from '../../utils/relations'
+import { asObj, relId, teamCoachIds } from '../../utils/relations'
 import TeamChip from '../../components/TeamChip'
 import StatusBadge from '../../components/StatusBadge'
 import { stripHtml } from '../../components/RichText'
@@ -723,7 +723,7 @@ function CompactGameRow({ game, showScore, onClick, participationStatus }: { gam
         {/* Participation bars — own row beneath info */}
         {game.status === 'scheduled' && (
           <div className="mt-1.5 pl-[calc(3.5rem+0.75rem)]">
-            <ParticipationSummary activityType="game" activityId={game.id} bars />
+            <ParticipationSummary activityType="game" activityId={game.id} bars coachMemberIds={teamCoachIds(asObj<Team>(game.kscw_team))} />
           </div>
         )}
       </div>
@@ -779,7 +779,7 @@ function CompactTrainingRow({ training, onClick, participationStatus }: { traini
 
         {/* Participation bars — own row beneath info */}
         <div className="mt-1.5 pl-[calc(6rem+0.75rem)]">
-          <ParticipationSummary activityType="training" activityId={training.id} bars />
+          <ParticipationSummary activityType="training" activityId={training.id} bars coachMemberIds={teamCoachIds(team)} />
         </div>
       </div>
     </div>
@@ -828,16 +828,19 @@ function AppointmentRow({ appointment, onClick, participationStatus }: {
 
   let label = ''
   let timeStr = ''
+  let coachIds: string[] | undefined
   if (appointment.type === 'game') {
     const g = appointment.data as ExpandedGame
     label = `${g.home_team} vs ${g.away_team}`
     if (g.time) timeStr = formatTime(g.time)
+    coachIds = teamCoachIds(asObj<Team>(g.kscw_team))
   } else if (appointment.type === 'training') {
     const tr = appointment.data as TrainingExpanded
     const team = asObj<Team>(tr.team)
     const hall = asObj<Hall>(tr.hall)
     label = [team?.name, hall?.name].filter(Boolean).join(' · ')
     if (tr.start_time) timeStr = formatTime(tr.start_time)
+    coachIds = teamCoachIds(team)
   } else {
     const ev = appointment.data as EventExpanded
     label = ev.title
@@ -871,7 +874,7 @@ function AppointmentRow({ appointment, onClick, participationStatus }: {
             <p className="min-w-0 truncate px-2 text-sm text-gray-900 dark:text-gray-100">{label}</p>
           </div>
           <div className="pb-2 pl-[calc(5.75rem+10px)]">
-            <ParticipationSummary activityType={appointment.type} activityId={appointment.data.id} bars />
+            <ParticipationSummary activityType={appointment.type} activityId={appointment.data.id} bars coachMemberIds={coachIds} />
           </div>
         </div>
       </div>
@@ -907,16 +910,19 @@ function AppointmentTableRow({ appointment, onClick, participationStatus }: {
 
   let label = ''
   let timeStr = ''
+  let coachIds: string[] | undefined
   if (appointment.type === 'game') {
     const g = appointment.data as ExpandedGame
     label = `${g.home_team} vs ${g.away_team}`
     if (g.time) timeStr = formatTime(g.time)
+    coachIds = teamCoachIds(asObj<Team>(g.kscw_team))
   } else if (appointment.type === 'training') {
     const tr = appointment.data as TrainingExpanded
     const team = asObj<Team>(tr.team)
     const hall = asObj<Hall>(tr.hall)
     label = [team?.name, hall?.name].filter(Boolean).join(' · ')
     if (tr.start_time) timeStr = formatTime(tr.start_time)
+    coachIds = teamCoachIds(team)
   } else {
     const ev = appointment.data as EventExpanded
     label = ev.title
@@ -945,7 +951,7 @@ function AppointmentTableRow({ appointment, onClick, participationStatus }: {
         {label}
       </td>
       <td className="py-3.5 pr-3">
-        <ParticipationSummary activityType={appointment.type} activityId={appointment.data.id} bars />
+        <ParticipationSummary activityType={appointment.type} activityId={appointment.data.id} bars coachMemberIds={coachIds} />
       </td>
     </tr>
   )

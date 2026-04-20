@@ -10,7 +10,7 @@ import { formatDate, formatWeekday, formatTime, getDeadlineDate } from '../../ut
 import ParticipationWarningBadge from '../../components/ParticipationWarningBadge'
 import { getTrainingWarnings } from '../../utils/participationWarnings'
 import type { Training, Team, Hall, Member, Participation } from '../../types'
-import { asObj, relId, memberName } from '../../utils/relations'
+import { asObj, relId, memberName, teamCoachIds } from '../../utils/relations'
 
 type TrainingExpanded = Training & {
   team: Team | string
@@ -100,7 +100,7 @@ export default function TrainingCard({ training, participations, myParticipation
           </div>
           {participations && participations.length > 0 && (
             <div data-tour="participation-dots">
-              <ParticipationSummary activityType="training" activityId={training.id} bars participations={participations} />
+              <ParticipationSummary activityType="training" activityId={training.id} bars participations={participations} coachMemberIds={teamCoachIds(team)} />
             </div>
           )}
           <div className="flex shrink-0 items-center gap-1">

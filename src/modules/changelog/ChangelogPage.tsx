@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.15.1'
+const APP_VERSION = '3.15.2'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,19 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.15.2',
+    date: '2026-04-20',
+    sections: [
+      {
+        title: 'Fix',
+        items: [
+          'Coaches now have all the permissions they need to manage their team: assign coach/team-responsible roles, change the team photo, accept or reject member requests, create polls, and edit their own Hallenplan slots. Previously some of these actions failed with a "No permission" error.',
+          'Rejecting a pending member request no longer hard-deletes the account — it deactivates it instead (audit trail preserved).',
+        ],
+      },
+    ],
+  },
   {
     version: '3.15.1',
     date: '2026-04-19',

@@ -73,7 +73,7 @@ See `INFRA.md → Domains & Hosting Overview` for full map.
 ## Session Workflow
 1. **Start**: Read `CLAUDE.md` + `INFRA.md` before doing anything.
 2. **End**: Append a short line to Changelog (date + summary). Overwrite stale/redundant entries.
-3. **Before finishing**: Ask "Should this commit be added to the changelog and version bumped?" If yes: update `CHANGELOG.md`, bump `package.json` (semver), and update `APP_VERSION` + `CHANGELOG` array in `src/modules/changelog/ChangelogPage.tsx` (in-app via Options → What's New).
+3. **Before finishing**: Ask "Should this commit be added to the changelog and version bumped?" If yes: update `CHANGELOG.md`, bump `package.json` (semver), and update `APP_VERSION` + `CHANGELOG` array in `src/modules/changelog/ChangelogPage.tsx` (in-app via Options → What's New). **Always write ChangelogPage entries in English** (UI is German, but this is the rule). `CHANGELOG.md` is also English.
 
 ## Changelog
 <!-- Keep entries to one line. For full details see git log. -->

@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.15.8'
+const APP_VERSION = '3.15.9'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,19 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.15.9',
+    date: '2026-04-20',
+    sections: [
+      {
+        title: 'Fix',
+        items: [
+          '2. Liga rankings now show the 2nd place with the blue barrage-up marker, completing the SVRZ regulation alignment started in 3.15.8.',
+          'Talents (RTZ) teams no longer hide promotion or relegation markers from eligible teams. Since talents cannot promote or relegate, the green/red/orange/blue markers now fall on the next eligible team — e.g. if a talents team is in 1st place, the 2nd-placed team gets the green promotion marker instead.',
+        ],
+      },
+    ],
+  },
   {
     version: '3.15.8',
     date: '2026-04-20',

@@ -127,7 +127,7 @@ export default function RankingsTable({ league, rankings, compact }: RankingsTab
               {sorted.map((row) => {
                 const kscwTeam = teamIds[row.team_id]
                 const isKscw = !!kscwTeam
-                const promoColor = getPromotionColor(league, row.rank, totalTeams, row.team_name)
+                const promoColor = getPromotionColor(league, row.rank, totalTeams, row.team_name, sorted)
                 const promoBorder = promoColor ? promotionBorderColors[promoColor] : ''
                 const canShowBreakdown = !compact && !isBasketball && hasBreakdownData(row)
                 const isExpanded = !compact && expandedTeamId === row.team_id

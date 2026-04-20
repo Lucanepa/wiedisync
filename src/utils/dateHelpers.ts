@@ -6,7 +6,7 @@ const ZURICH = 'Europe/Zurich';
 
 /** Map the current i18next language to a BCP-47 tag Intl understands.
  *  `gsw` (Swiss German) has no widely-supported Intl data — fall back to `de-CH`. */
-function currentLocale(): string {
+export function currentLocale(): string {
   const lng = (i18n.language || 'de').toLowerCase()
   if (lng.startsWith('gsw') || lng === 'de') return 'de-CH'
   if (lng.startsWith('de')) return lng
@@ -25,14 +25,14 @@ function formatZurichParts(d: Date): Record<string, string> {
 }
 
 /** Format HH:mm in Europe/Zurich, accepts ISO UTC, "YYYY-MM-DD HH:MM:SS" (treated as UTC), or bare "HH:MM". */
-export function formatTimeZurich(input: string | Date | null | undefined): string {
+export function formatTimeZurich(input: string | Date | null | undefined, locale?: string): string {
   if (!input) return '';
   if (typeof input === 'string' && /^\d{2}:\d{2}(:\d{2})?$/.test(input)) return input.slice(0, 5);
   const d = typeof input === 'string'
     ? new Date(input.includes('T') ? input : input.replace(' ', 'T') + 'Z')
     : input;
   if (Number.isNaN(d.getTime())) return '';
-  return new Intl.DateTimeFormat('de-CH', {
+  return new Intl.DateTimeFormat(locale ?? currentLocale(), {
     timeZone: ZURICH, hour: '2-digit', minute: '2-digit', hour12: false,
   }).format(d);
 }
@@ -50,13 +50,13 @@ export function formatDateZurich(input: string | Date | null | undefined, locale
 }
 
 /** Format dd.mm.yy (compact) in Europe/Zurich. */
-export function formatDateCompactZurich(input: string | Date | null | undefined): string {
+export function formatDateCompactZurich(input: string | Date | null | undefined, locale?: string): string {
   if (!input) return '';
   const d = typeof input === 'string'
     ? new Date(input.includes('T') ? input : input.replace(' ', 'T') + 'Z')
     : input;
   if (Number.isNaN(d.getTime())) return '';
-  return new Intl.DateTimeFormat('de-CH', {
+  return new Intl.DateTimeFormat(locale ?? currentLocale(), {
     timeZone: ZURICH, day: '2-digit', month: '2-digit', year: '2-digit',
   }).format(d);
 }
@@ -141,13 +141,13 @@ export function toDatetimeLocalFromUtcIso(iso: string): string {
 }
 
 
-/** Swiss compact: dd.mm.yy */
-export function formatDateCompact(d: string): string {
-  return formatDateCompactZurich(d)
+/** Compact dd.mm.yy (or the locale-equivalent short form). */
+export function formatDateCompact(d: string, locale?: string): string {
+  return formatDateCompactZurich(d, locale)
 }
 
-export function formatDate(d: string, locale: string = 'de-CH'): string {
-  return formatDateZurich(d, locale)
+export function formatDate(d: string, locale?: string): string {
+  return formatDateZurich(d, locale ?? currentLocale())
 }
 
 export function formatDateShort(d: string): string {
@@ -158,8 +158,8 @@ export function formatWeekday(d: string, locale?: string): string {
   return formatWeekdayZurich(d, locale ?? currentLocale())
 }
 
-export function formatTime(t: string): string {
-  return formatTimeZurich(t)
+export function formatTime(t: string, locale?: string): string {
+  return formatTimeZurich(t, locale)
 }
 
 export function isDateInRange(date: string, start: string, end: string): boolean {

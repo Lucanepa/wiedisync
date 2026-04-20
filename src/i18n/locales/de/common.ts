@@ -5,6 +5,7 @@ export default {
   cancel: 'Abbrechen',
   delete: 'Löschen',
   edit: 'Bearbeiten',
+  create: 'Erstellen',
   remove: 'Entfernen',
   add: 'Hinzufügen',
   confirm: 'Bestätigen',

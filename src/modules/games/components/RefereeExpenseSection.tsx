@@ -22,7 +22,7 @@ type ExpandedExpense = RefereeExpense & {
 const OTHER_VALUE = '__other__'
 
 export default function RefereeExpenseSection({ gameId, teamId, canEdit }: RefereeExpenseSectionProps) {
-  const { t } = useTranslation('games')
+  const { t, i18n } = useTranslation('games')
   const { user, isApproved } = useAuth()
   const { members } = useTeamMembers(teamId)
   const { create, update } = useMutation<RefereeExpense>('referee_expenses')
@@ -111,7 +111,7 @@ export default function RefereeExpenseSection({ gameId, teamId, canEdit }: Refer
       options.push({ value: m.id, label: `${m.first_name} ${m.last_name}` })
     }
 
-    options.sort((a, b) => a.label.localeCompare(b.label, 'de'))
+    options.sort((a, b) => a.label.localeCompare(b.label, i18n.language))
     options.push({ value: OTHER_VALUE, label: t('refereeExpensesOtherPerson') })
     return options
   }, [members, coaches, t])

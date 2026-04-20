@@ -9,7 +9,7 @@
 
 import { QueryClient, QueryClientProvider, useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
-import { fetchItems, fetchAllItems, fetchItem, countItems, createRecord, updateRecord, deleteRecord, kscwApi } from './api'
+import { fetchItems, fetchAllItems, fetchItem, countItems, createRecord, updateRecord, deleteRecord, kscwApi, stringifyIds } from './api'
 import { captureApiError } from './sentry'
 
 // ── Query Client ────────────────────────────────────────────────────
@@ -142,7 +142,13 @@ export function useActivitiesWithParticipations<T = Record<string, unknown>, P =
         `/activities/${type}/with-participations`,
         { method: 'POST', body },
       )
-      return resp.data
+      // Match the rest of the app's convention (see fetchItems → stringifyIds):
+      // stringify integer FKs so comparisons like `p.member === user.id` work
+      // across both the standard REST path and this custom endpoint.
+      return {
+        items: stringifyIds(resp.data.items),
+        participations: stringifyIds(resp.data.participations),
+      }
     },
     enabled,
     staleTime,

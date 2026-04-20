@@ -12,7 +12,7 @@ interface DelegationRequestBannerProps {
 }
 
 function getDateFormatter(locale: string) {
-  const loc = locale === 'de' ? 'de-CH' : 'en-GB'
+  const loc = locale.startsWith('gsw') || locale === 'de' ? 'de-CH' : locale === 'en' ? 'en-GB' : locale
   return new Intl.DateTimeFormat(loc, { weekday: 'short', day: 'numeric', month: 'short' })
 }
 

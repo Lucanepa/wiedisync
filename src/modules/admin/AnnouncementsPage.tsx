@@ -73,7 +73,7 @@ export default function AnnouncementsPage() {
       })
       setItems(result)
     } catch (err) {
-      toast.error(t('loadError', { defaultValue: 'Konnte Vereinsnews nicht laden' }))
+      toast.error(t('loadError'))
       console.error(err)
     } finally {
       setIsLoading(false)
@@ -109,11 +109,11 @@ export default function AnnouncementsPage() {
 
   const handleImageUpload = async (file: File) => {
     if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-      toast.error(t('imageType', { defaultValue: 'Nur PNG, JPEG oder WebP erlaubt' }))
+      toast.error(t('imageType'))
       return
     }
     if (file.size > MAX_IMAGE_SIZE) {
-      toast.error(t('imageSize', { defaultValue: 'Bild ist zu gross (max 5 MB)' }))
+      toast.error(t('imageSize'))
       return
     }
     setUploading(true)
@@ -129,9 +129,9 @@ export default function AnnouncementsPage() {
       if (!res.ok) throw new Error(`Upload failed: ${res.status}`)
       const { data } = await res.json()
       setForm((f) => ({ ...f, image: data.id }))
-      toast.success(t('imageUploaded', { defaultValue: 'Bild hochgeladen' }))
+      toast.success(t('imageUploaded'))
     } catch (err) {
-      toast.error(t('imageUploadError', { defaultValue: 'Upload fehlgeschlagen' }))
+      toast.error(t('imageUploadError'))
       console.error(err)
     } finally {
       setUploading(false)
@@ -140,17 +140,17 @@ export default function AnnouncementsPage() {
 
   const handleSubmit = async () => {
     if (!form.translations.de?.title?.trim()) {
-      toast.error(t('titleRequired', { defaultValue: 'Deutscher Titel ist Pflicht' }))
+      toast.error(t('titleRequired'))
       setActiveLocale('de')
       return
     }
     if (form.audience_type === 'sport' && !form.audience_sport) {
-      toast.error(t('sportRequired', { defaultValue: 'Sport wählen' }))
+      toast.error(t('sportRequired'))
       return
     }
     const trimmedLink = form.link.trim()
     if (trimmedLink && !isSafeAppLink(trimmedLink)) {
-      toast.error(t('linkInvalid', { defaultValue: 'Link muss mit https:// oder / beginnen' }))
+      toast.error(t('linkInvalid'))
       return
     }
 
@@ -158,9 +158,7 @@ export default function AnnouncementsPage() {
     // Single point of friction modeled on the /events/test-email CLAUDE.md guideline.
     if (form.notify_email && form.audience_type === 'all' && (form.publishNow || form.published_at)) {
       const ok = window.confirm(
-        t('confirmMassEmail', {
-          defaultValue: 'Diese Vereinsnews wird per E-Mail an ALLE aktiven Mitglieder versendet. Fortfahren?',
-        }),
+        t('confirmMassEmail'),
       )
       if (!ok) return
     }
@@ -196,15 +194,15 @@ export default function AnnouncementsPage() {
     try {
       if (form.id) {
         await updateRecord('announcements', form.id, payload)
-        toast.success(t('updated', { defaultValue: 'Vereinsnews aktualisiert' }))
+        toast.success(t('updated'))
       } else {
         await createRecord('announcements', payload)
-        toast.success(t('created', { defaultValue: 'Vereinsnews erstellt' }))
+        toast.success(t('created'))
       }
       setEditorOpen(false)
       refresh()
     } catch (err) {
-      toast.error(t('saveError', { defaultValue: 'Speichern fehlgeschlagen' }))
+      toast.error(t('saveError'))
       console.error(err)
     } finally {
       setSubmitting(false)
@@ -214,11 +212,11 @@ export default function AnnouncementsPage() {
   const handleDelete = async (id: string) => {
     try {
       await deleteRecord('announcements', id)
-      toast.success(t('deleted', { defaultValue: 'Vereinsnews gelöscht' }))
+      toast.success(t('deleted'))
       setConfirmDeleteId(null)
       refresh()
     } catch (err) {
-      toast.error(t('deleteError', { defaultValue: 'Löschen fehlgeschlagen' }))
+      toast.error(t('deleteError'))
       console.error(err)
     }
   }
@@ -246,13 +244,13 @@ export default function AnnouncementsPage() {
   return (
     <div className="mx-auto max-w-4xl">
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{t('pageTitle', { defaultValue: 'Vereinsnews' })}</h1>
+        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{t('pageTitle')}</h1>
         <button
           onClick={openCreate}
           className="inline-flex items-center gap-1.5 rounded-md bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700"
         >
           <Plus className="h-4 w-4" />
-          {t('newAnnouncement', { defaultValue: 'Neue News' })}
+          {t('newAnnouncement')}
         </button>
       </div>
 
@@ -260,7 +258,7 @@ export default function AnnouncementsPage() {
         <LoadingSpinner />
       ) : items.length === 0 ? (
         <div className="rounded-xl border border-dashed border-gray-300 px-6 py-10 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
-          {t('empty', { defaultValue: 'Noch keine Vereinsnews. Klicke „Neue News" um zu starten.' })}
+          {t('empty')}
         </div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
@@ -284,7 +282,7 @@ export default function AnnouncementsPage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
                     {a.pinned && <Pin className="h-3.5 w-3.5 shrink-0 text-gold-500 dark:text-gold-400" />}
-                    <h3 className="truncate font-medium text-gray-900 dark:text-gray-100">{trItem.title || <span className="italic text-gray-400">({t('noTitle', { defaultValue: 'Kein Titel' })})</span>}</h3>
+                    <h3 className="truncate font-medium text-gray-900 dark:text-gray-100">{trItem.title || <span className="italic text-gray-400">({t('noTitle')})</span>}</h3>
                   </div>
                   {trItem.body && (
                     <p className="mt-0.5 line-clamp-2 text-sm text-gray-500 dark:text-gray-400">
@@ -302,10 +300,10 @@ export default function AnnouncementsPage() {
                       }`}
                     >
                       {isExpired
-                        ? t('statusExpired', { defaultValue: 'Abgelaufen' })
+                        ? t('statusExpired')
                         : isPublished
-                          ? t('statusPublished', { defaultValue: 'Veröffentlicht' })
-                          : t('statusDraft', { defaultValue: 'Entwurf' })}
+                          ? t('statusPublished')
+                          : t('statusDraft')}
                     </span>
                     {a.published_at && (
                       <span className="inline-flex items-center gap-1">
@@ -313,7 +311,7 @@ export default function AnnouncementsPage() {
                         {formatDate(a.published_at)}
                       </span>
                     )}
-                    <span>{t('audienceLabel', { defaultValue: 'Zielgruppe' })}: {audienceLabel(a, t)}</span>
+                    <span>{t('audienceLabel')}: {audienceLabel(a, t)}</span>
                   </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
@@ -339,12 +337,12 @@ export default function AnnouncementsPage() {
       )}
 
       {/* ─── Editor modal ─── */}
-      <Modal open={editorOpen} onClose={() => setEditorOpen(false)} title={form.id ? t('editTitle', { defaultValue: 'Vereinsnews bearbeiten' }) : t('createTitle', { defaultValue: 'Neue Vereinsnews' })} size="lg">
+      <Modal open={editorOpen} onClose={() => setEditorOpen(false)} title={form.id ? t('editTitle') : t('createTitle')} size="lg">
         <div className="space-y-4">
           {/* Hero image */}
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              {t('image', { defaultValue: 'Titelbild' })}
+              {t('image')}
             </label>
             {form.image ? (
               <div className="relative inline-block">
@@ -367,7 +365,7 @@ export default function AnnouncementsPage() {
                 {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
                   <>
                     <ImageIcon className="mr-2 h-4 w-4" />
-                    {t('uploadImage', { defaultValue: 'Bild hochladen' })}
+                    {t('uploadImage')}
                   </>
                 )}
                 <input
@@ -413,13 +411,13 @@ export default function AnnouncementsPage() {
                 type="text"
                 value={tr.title}
                 onChange={(e) => updateTranslation({ title: e.target.value })}
-                placeholder={t('titlePlaceholder', { defaultValue: 'Titel' })}
+                placeholder={t('titlePlaceholder')}
                 className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
               />
               <RichTextEditor
                 value={tr.body}
                 onChange={(html) => updateTranslation({ body: html })}
-                placeholder={t('bodyPlaceholder', { defaultValue: 'Text…' })}
+                placeholder={t('bodyPlaceholder')}
                 minHeight="10rem"
               />
             </div>
@@ -428,7 +426,7 @@ export default function AnnouncementsPage() {
           {/* Optional CTA link */}
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              {t('link', { defaultValue: 'Link (optional)' })}
+              {t('link')}
             </label>
             <input
               type="text"
@@ -443,21 +441,21 @@ export default function AnnouncementsPage() {
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                {t('audience', { defaultValue: 'Zielgruppe' })}
+                {t('audience')}
               </label>
               <select
                 value={form.audience_type}
                 onChange={(e) => setForm((f) => ({ ...f, audience_type: e.target.value as AnnouncementAudienceType }))}
                 className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
               >
-                <option value="all">{t('audienceAll', { defaultValue: 'Alle Mitglieder' })}</option>
-                <option value="sport">{t('audienceSport', { defaultValue: 'Eine Sportart' })}</option>
+                <option value="all">{t('audienceAll')}</option>
+                <option value="sport">{t('audienceSport')}</option>
               </select>
             </div>
             {form.audience_type === 'sport' && (
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t('sport', { defaultValue: 'Sportart' })}
+                  {t('sport')}
                 </label>
                 <select
                   value={form.audience_sport ?? ''}
@@ -465,8 +463,8 @@ export default function AnnouncementsPage() {
                   className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
                 >
                   <option value="">—</option>
-                  <option value="volleyball">{t('volleyball', { defaultValue: 'Volleyball' })}</option>
-                  <option value="basketball">{t('basketball', { defaultValue: 'Basketball' })}</option>
+                  <option value="volleyball">{t('volleyball')}</option>
+                  <option value="basketball">{t('basketball')}</option>
                 </select>
               </div>
             )}
@@ -482,11 +480,11 @@ export default function AnnouncementsPage() {
                 className="h-4 w-4 rounded text-brand-600"
               />
               <Pin className="h-3.5 w-3.5" />
-              {t('pin', { defaultValue: 'Anheften (oben in News-Karte)' })}
+              {t('pin')}
             </label>
             <div>
               <label className="mb-1 block text-sm text-gray-700 dark:text-gray-300">
-                {t('expires', { defaultValue: 'Ablaufdatum (optional)' })}
+                {t('expires')}
               </label>
               <input
                 type="datetime-local"
@@ -507,7 +505,7 @@ export default function AnnouncementsPage() {
                 className="h-4 w-4 rounded text-brand-600"
               />
               <Send className="h-3.5 w-3.5" />
-              {t('publish', { defaultValue: 'Veröffentlichen (sofort sichtbar)' })}
+              {t('publish')}
             </label>
             <label className="ml-6 flex cursor-pointer items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
               <input
@@ -518,7 +516,7 @@ export default function AnnouncementsPage() {
                 className="h-4 w-4 rounded text-brand-600"
               />
               <Bell className="h-3.5 w-3.5" />
-              {t('notifyPush', { defaultValue: 'Push-Benachrichtigung senden' })}
+              {t('notifyPush')}
             </label>
             <label className="ml-6 flex cursor-pointer items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
               <input
@@ -529,7 +527,7 @@ export default function AnnouncementsPage() {
                 className="h-4 w-4 rounded text-brand-600"
               />
               <Mail className="h-3.5 w-3.5" />
-              {t('notifyEmail', { defaultValue: 'E-Mail senden' })}
+              {t('notifyEmail')}
             </label>
           </div>
 
@@ -541,7 +539,7 @@ export default function AnnouncementsPage() {
               disabled={submitting}
               className="rounded-md px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
             >
-              {t('cancel', { defaultValue: 'Abbrechen' })}
+              {t('cancel')}
             </button>
             <button
               type="button"
@@ -550,7 +548,7 @@ export default function AnnouncementsPage() {
               className="inline-flex items-center gap-1.5 rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
             >
               {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-              {form.id ? t('save', { defaultValue: 'Speichern' }) : t('create', { defaultValue: 'Erstellen' })}
+              {form.id ? t('save') : t('create')}
             </button>
           </div>
         </div>
@@ -558,23 +556,23 @@ export default function AnnouncementsPage() {
 
       {/* Delete confirm */}
       {confirmDeleteId && (
-        <Modal open onClose={() => setConfirmDeleteId(null)} title={t('confirmDeleteTitle', { defaultValue: 'Vereinsnews löschen?' })} size="sm">
+        <Modal open onClose={() => setConfirmDeleteId(null)} title={t('confirmDeleteTitle')} size="sm">
           <div className="space-y-4">
             <p className="text-sm text-gray-700 dark:text-gray-300">
-              {t('confirmDeleteBody', { defaultValue: 'Diese Aktion kann nicht rückgängig gemacht werden.' })}
+              {t('confirmDeleteBody')}
             </p>
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setConfirmDeleteId(null)}
                 className="rounded-md px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
               >
-                {t('cancel', { defaultValue: 'Abbrechen' })}
+                {t('cancel')}
               </button>
               <button
                 onClick={() => handleDelete(confirmDeleteId)}
                 className="rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700"
               >
-                {t('delete', { defaultValue: 'Löschen' })}
+                {t('delete')}
               </button>
             </div>
           </div>
@@ -585,12 +583,12 @@ export default function AnnouncementsPage() {
 }
 
 function audienceLabel(a: Announcement, t: (k: string, o?: Record<string, unknown>) => string): string {
-  if (a.audience_type === 'all') return t('audienceAll', { defaultValue: 'Alle' })
+  if (a.audience_type === 'all') return t('audienceAll')
   if (a.audience_type === 'sport') {
     return a.audience_sport === 'volleyball'
-      ? t('volleyball', { defaultValue: 'Volleyball' })
+      ? t('volleyball')
       : a.audience_sport === 'basketball'
-        ? t('basketball', { defaultValue: 'Basketball' })
+        ? t('basketball')
         : '—'
   }
   return a.audience_type

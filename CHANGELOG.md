@@ -2,6 +2,25 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.16.4] — 2026-04-20
+
+### Changed
+
+- **Full i18n sweep of hardcoded German/Swiss dates + labels.** Extension of the 3.16.2 `formatWeekday` fix to every other user-visible `de-CH` / hardcoded-German site across the app.
+  - `src/utils/dateHelpers.ts`: `formatDate`, `formatDateCompact`, `formatTime` (+ their `…Zurich` originals) now accept an optional locale and default to `currentLocale()` (exported); `en-GB` is used for EN users to keep dd/mm + 24h expectations.
+  - Localized: Hallenplan `DayNavigation` month abbreviation (was hardcoded `en-US`), `ProfilePage` birthdate, `MemberRow` birthdate, `StatusPage` public page dates, admin `ResultsTable`, `AuditLogPage`, `InfraHealthPage` (last-check + slow-query call counts), `DataHealthPage`, `ExplorePage` refreshed-at, and scorer helpers (`TeamOverview`, `ScorerRow`, `DelegationRequestBanner`) which now fall through to `fr` / `it` instead of always using `en-GB`.
+  - `VolleyFeedbackPage` was bilingual only (`lang === 'de' ? … : en`) — now fully i18n with 20 new `vf*` keys added to all 5 `admin` locale bundles.
+  - Stripped German `defaultValue: '...'` fallbacks from 48 `t()` calls across `DeleteAccountModal`, `GroupDmMenu`, `NewMessageDialog`, `BlockMemberDialog`, and `AnnouncementsPage` — these fell back to German labels for non-German users when the key was actually missing. Raw literal `'Speichern'` in `SpielsamstageEditor` replaced with `t('common:save')`.
+  - Added missing keys: `common.create` (all 5 locales), `announcements.linkInvalid` + `announcements.confirmMassEmail` (all 5 locales).
+  - Sorting: `localeCompare` / `Intl.Collator` in `RefereeExpenseSection`, `useAttendanceStats`, `AssignmentEditor`, `DelegationModal`, scorer `TeamOverview` now use `i18n.language` instead of always `'de'`.
+
+## [3.16.3] — 2026-04-20
+
+### Fixed
+
+- **Own RSVP not reflected on `/trainings` and `/games` cards.** The Yes / Maybe / No buttons on the trainings + games lists rendered in the default grey "no response" state even when the current user had already responded — the colored left banner was also missing. `useActivitiesWithParticipations` (introduced in 3.15.4) calls `kscwApi` directly, which does not run responses through `stringifyIds` like the rest of the data layer does. Result: `p.member` came back as a Postgres integer (e.g. `8`) while `user.id` was `"8"` (string, normalised on its way in). The strict-equality `p.member === user.id` mapping in `TrainingsPage` and `GamesPage` therefore never matched, so `myParticipation` was always `undefined`. Fixed by exporting `stringifyIds` from `src/lib/api.ts` and applying it to both `items` and `participations` in `useActivitiesWithParticipations` — same convention as the standard REST path. The participation roster modal already worked because it goes through `useCollection`.
+- **"Show response time" toggle had no effect.** `ParticipationRosterModal` read `participation.updated` / `sp.updated` — the PocketBase field name. After the Directus migration the field is `date_updated` (already returned by both the standard REST path and the `/with-participations` endpoint, where it's in `DEFAULT_PARTICIPATION_FIELDS`). The check `showRsvpTime && participation?.updated` was therefore always falsy, so the timestamp row never rendered regardless of the toggle. Renamed both call-sites to `participation.date_updated` / `sp.date_updated`.
+
 ## [3.16.2] — 2026-04-20
 
 ### Fixed

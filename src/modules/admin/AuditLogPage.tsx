@@ -3,6 +3,7 @@ import { kscwApi } from '../../lib/api'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
+import { currentLocale } from '../../utils/dateHelpers'
 import {
   ScrollText, RefreshCcw, ChevronDown, ChevronRight,
   Search, X, ChevronLeft, ChevronsLeft, ChevronsRight,
@@ -63,7 +64,7 @@ function actionBadge(action: string) {
 function formatTs(ts: string) {
   try {
     const d = new Date(ts)
-    return d.toLocaleString('de-CH', {
+    return d.toLocaleString(currentLocale(), {
       day: '2-digit', month: '2-digit', year: '2-digit',
       hour: '2-digit', minute: '2-digit', second: '2-digit',
     })

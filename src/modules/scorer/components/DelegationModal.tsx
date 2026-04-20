@@ -40,7 +40,7 @@ export default function DelegationModal({
   onDelegate,
   onClose,
 }: DelegationModalProps) {
-  const { t } = useTranslation('scorer')
+  const { t, i18n } = useTranslation('scorer')
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState<{ memberId: string; teamId: string; sameTeam: boolean } | null>(null)
 
@@ -89,7 +89,7 @@ export default function DelegationModal({
       if (dutyTeamMemberIds.has(m.id)) same.push(m)
       else cross.push(m)
     }
-    const collator = new Intl.Collator('de')
+    const collator = new Intl.Collator(i18n.language)
     const sortFn = (a: Member, b: Member) =>
       collator.compare(`${a.last_name} ${a.first_name}`, `${b.last_name} ${b.first_name}`)
     same.sort(sortFn)

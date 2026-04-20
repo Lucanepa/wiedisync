@@ -165,11 +165,11 @@ const KEEP_AS_NUMBER = new Set([
 ])
 
 /** Coerce Directus integer IDs/FKs to strings for frontend compat. */
-function stringifyIds<T>(items: T[]): T[] {
+export function stringifyIds<T>(items: T[]): T[] {
   return items.map(item => stringifyId(item))
 }
 
-function stringifyId<T>(item: T): T {
+export function stringifyId<T>(item: T): T {
   if (item && typeof item === 'object') {
     const obj = { ...item } as Record<string, unknown>
     for (const key of Object.keys(obj)) {

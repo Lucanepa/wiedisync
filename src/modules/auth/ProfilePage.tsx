@@ -252,7 +252,7 @@ export default function ProfilePage() {
               )}
             </div>
             <p className="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">
-              {user.birthdate ? new Date(user.birthdate).toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'}
+              {user.birthdate ? formatDate(user.birthdate) : '—'}
             </p>
           </div>
           <div className="rounded-lg border bg-white p-4 dark:border-gray-700 dark:bg-gray-800">

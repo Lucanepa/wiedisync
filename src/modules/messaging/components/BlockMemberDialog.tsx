@@ -44,10 +44,10 @@ export default function BlockMemberDialog({ memberId, memberName, onBlocked, var
             <p className="mt-2 text-sm text-muted-foreground">{t('blockDialogBody')}</p>
             <div className="mt-4 flex justify-end gap-2">
               <Button variant="ghost" onClick={() => setOpen(false)} disabled={busy}>
-                {t('common:cancel', 'Abbrechen')}
+                {t('common:cancel')}
               </Button>
               <Button variant="destructive" onClick={confirm} disabled={busy}>
-                {busy ? t('common:loading', 'Lädt…') : t('blockConfirm')}
+                {busy ? t('common:loading') : t('blockConfirm')}
               </Button>
             </div>
           </div>

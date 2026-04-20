@@ -184,21 +184,21 @@ export default function NewMessageDialog({ open, onOpenChange }: NewMessageDialo
         {groupMode && selected.length >= 2 && (
           <div className="space-y-2">
             <Label htmlFor="group-title" className="text-xs font-medium text-foreground">
-              {t('newMessage.titleLabel', { defaultValue: 'Gruppenname (optional)' })}
+              {t('newMessage.titleLabel')}
             </Label>
             <Input
               id="group-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               maxLength={120}
-              placeholder={t('newMessage.titlePlaceholder', { defaultValue: 'z. B. Vorstand 2026' })}
+              placeholder={t('newMessage.titlePlaceholder')}
             />
           </div>
         )}
 
         <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2 border-t border-border">
           <Button type="button" variant="ghost" onClick={close} disabled={submitting}>
-            {t('newMessage.cancel', { defaultValue: 'Abbrechen' })}
+            {t('newMessage.cancel')}
           </Button>
           {groupMode && (
             <Button
@@ -208,9 +208,8 @@ export default function NewMessageDialog({ open, onOpenChange }: NewMessageDialo
               disabled={submitting || selected.length < 2}
             >
               {submitting
-                ? t('newMessage.creating', { defaultValue: 'Wird erstellt …' })
+                ? t('newMessage.creating')
                 : t('newMessage.createGroup', {
-                    defaultValue: 'Gruppe erstellen ({{count}})',
                     count: selected.length,
                   })}
             </Button>

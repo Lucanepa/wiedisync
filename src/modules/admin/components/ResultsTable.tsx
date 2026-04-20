@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { currentLocale } from '../../../utils/dateHelpers'
 
 interface ResultsTableProps {
   columns: string[]
@@ -23,7 +24,7 @@ function formatCell(value: unknown, labelMap?: Record<string, string>): React.Re
     if (!isNaN(d.getTime())) {
       return (
         <span className="text-gray-500 dark:text-gray-400" title={value}>
-          {d.toLocaleString('de-CH', { dateStyle: 'short', timeStyle: 'short' })}
+          {d.toLocaleString(currentLocale(), { dateStyle: 'short', timeStyle: 'short' })}
         </span>
       )
     }

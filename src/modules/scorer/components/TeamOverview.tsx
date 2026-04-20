@@ -23,7 +23,7 @@ interface DutyEntry {
 }
 
 function getDateFormatter(locale: string) {
-  const loc = locale === 'de' ? 'de-CH' : 'en-GB'
+  const loc = locale.startsWith('gsw') || locale === 'de' ? 'de-CH' : locale === 'en' ? 'en-GB' : locale
   return new Intl.DateTimeFormat(loc, { weekday: 'short', day: 'numeric', month: 'short' })
 }
 
@@ -91,7 +91,7 @@ export default function TeamOverview({ games, members, sport }: TeamOverviewProp
       entries.sort((a, b) => a.game.date.localeCompare(b.game.date) || a.game.time.localeCompare(b.game.time))
     }
 
-    return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b, 'de'))
+    return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b, i18n.language))
   }, [games, memberMap, sport])
 
   if (teamDuties.length === 0) {

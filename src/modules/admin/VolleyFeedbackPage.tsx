@@ -35,12 +35,12 @@ const RATING_KEYS = [
   'rating_kommunikation',
 ] as const
 
-const RATING_LABELS: Record<string, { de: string; en: string }> = {
-  rating_verein: { de: 'Verein', en: 'Club' },
-  rating_vorstand: { de: 'Vorstand', en: 'Board' },
-  rating_tk_leitung: { de: 'TK Ltg.', en: 'TK Lead' },
-  rating_training: { de: 'Training', en: 'Training' },
-  rating_kommunikation: { de: 'Komm.', en: 'Comm.' },
+const RATING_I18N_KEYS: Record<(typeof RATING_KEYS)[number], string> = {
+  rating_verein: 'vfRatingClub',
+  rating_vorstand: 'vfRatingBoard',
+  rating_tk_leitung: 'vfRatingTk',
+  rating_training: 'vfRatingTraining',
+  rating_kommunikation: 'vfRatingComm',
 }
 
 const TEAM_COLORS: Record<string, { bg: string; text: string }> = {
@@ -96,8 +96,7 @@ function TeamChips({ teams }: { teams: string[] | null }) {
 // ── Component ───────────────────────────────────────────────────
 
 export default function VolleyFeedbackPage() {
-  const { i18n } = useTranslation('admin')
-  const lang = i18n.language === 'en' ? 'en' : 'de'
+  const { t } = useTranslation('admin')
   const [teamFilter, setTeamFilter] = useState('')
   const [selectedItem, setSelectedItem] = useState<VolleyFeedback | null>(null)
 
@@ -124,8 +123,8 @@ export default function VolleyFeedbackPage() {
     const headers = ['Date', 'Name', 'Anonymous', 'Functions', 'Teams', 'Club', 'Board', 'TK Leadership', 'Training', 'Communication', 'Feedback', 'Ideas', 'Other']
     const rows = filtered.map(i => [
       i.date_created ? formatDateZurich(i.date_created) : '',
-      i.is_anonymous ? 'Anonym' : (i.name || ''),
-      i.is_anonymous ? 'Ja' : 'Nein',
+      i.is_anonymous ? t('vfAnon') : (i.name || ''),
+      i.is_anonymous ? t('vfYes') : t('vfNo'),
       i.functions?.join(', ') || '',
       i.teams?.join(', ') || '',
       i.rating_verein ?? '', i.rating_vorstand ?? '', i.rating_tk_leitung ?? '',
@@ -150,22 +149,22 @@ export default function VolleyFeedbackPage() {
       <h1 className="text-xl font-bold">Volley Feedback</h1>
 
       {/* Summary + rating cards */}
-      <DashboardSection id="vf-summary" title={lang === 'de' ? 'Übersicht' : 'Overview'} icon="📊" isLoading={isLoading} error={error?.message}>
+      <DashboardSection id="vf-summary" title={t('vfOverview')} icon="📊" isLoading={isLoading} error={error?.message}>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div className="rounded-lg bg-primary/5 p-3 text-center">
             <div className="text-2xl font-bold text-primary">{items.length}</div>
-            <div className="text-xs text-muted-foreground">{lang === 'de' ? 'Antworten' : 'Responses'}</div>
+            <div className="text-xs text-muted-foreground">{t('vfResponses')}</div>
           </div>
           <div className="rounded-lg bg-primary/5 p-3 text-center">
             <div className="text-2xl font-bold text-primary">{anonCount}</div>
-            <div className="text-xs text-muted-foreground">{lang === 'de' ? 'Anonym' : 'Anonymous'}</div>
+            <div className="text-xs text-muted-foreground">{t('vfAnonymous')}</div>
           </div>
           {RATING_KEYS.map(key => {
             const avg = averages[key] || 0
             return (
               <div key={key} className="rounded-lg bg-primary/5 p-3 text-center">
                 <div className="text-2xl font-bold text-primary">{avg ? avg.toFixed(1) : '–'}</div>
-                <div className="text-xs text-muted-foreground">⌀ {RATING_LABELS[key][lang]}</div>
+                <div className="text-xs text-muted-foreground">⌀ {t(RATING_I18N_KEYS[key])}</div>
               </div>
             )
           })}
@@ -173,15 +172,15 @@ export default function VolleyFeedbackPage() {
       </DashboardSection>
 
       {/* Response table */}
-      <DashboardSection id="vf-responses" title={lang === 'de' ? 'Einzelne Antworten' : 'Individual Responses'} icon="💬" isLoading={isLoading} isEmpty={items.length === 0} emptyMessage={lang === 'de' ? 'Noch keine Antworten' : 'No responses yet'}>
+      <DashboardSection id="vf-responses" title={t('vfIndividualResponses')} icon="💬" isLoading={isLoading} isEmpty={items.length === 0} emptyMessage={t('vfEmpty')}>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <select
             value={teamFilter}
             onChange={e => setTeamFilter(e.target.value)}
             className="rounded-md border border-input bg-background px-2 py-1 text-sm"
           >
-            <option value="">{lang === 'de' ? 'Alle Teams' : 'All Teams'}</option>
-            {allTeams.map(t => <option key={t} value={t}>{t}</option>)}
+            <option value="">{t('vfAllTeams')}</option>
+            {allTeams.map(team => <option key={team} value={team}>{team}</option>)}
           </select>
           <button
             onClick={exportCSV}
@@ -195,11 +194,11 @@ export default function VolleyFeedbackPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b text-left text-xs text-muted-foreground">
-                <th className="p-2">{lang === 'de' ? 'Datum' : 'Date'}</th>
+                <th className="p-2">{t('vfDate')}</th>
                 <th className="p-2">Name</th>
                 <th className="p-2">Team</th>
                 {RATING_KEYS.map(k => (
-                  <th key={k} className="p-2 text-center">{RATING_LABELS[k][lang]}</th>
+                  <th key={k} className="p-2 text-center">{t(RATING_I18N_KEYS[k])}</th>
                 ))}
                 <th className="p-2 text-center">Text</th>
               </tr>
@@ -215,7 +214,7 @@ export default function VolleyFeedbackPage() {
                     <td className="p-2 whitespace-nowrap">{formatDate(item.date_created)}</td>
                     <td className="p-2">
                       {item.is_anonymous
-                        ? <em className="text-muted-foreground">Anonym</em>
+                        ? <em className="text-muted-foreground">{t('vfAnon')}</em>
                         : (item.name || '—')}
                     </td>
                     <td className="p-2">{item.is_anonymous ? '—' : <TeamChips teams={item.teams} />}</td>
@@ -227,7 +226,7 @@ export default function VolleyFeedbackPage() {
                         <button
                           onClick={() => setSelectedItem(item)}
                           className="cursor-pointer hover:opacity-70"
-                          title={lang === 'de' ? 'Text lesen' : 'Read text'}
+                          title={t('vfReadText')}
                         >
                           💬
                         </button>
@@ -252,7 +251,7 @@ export default function VolleyFeedbackPage() {
             onClick={e => e.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Feedback Details</h3>
+              <h3 className="text-lg font-semibold">{t('vfFeedbackDetails')}</h3>
               <button
                 onClick={() => setSelectedItem(null)}
                 className="text-2xl leading-none text-muted-foreground hover:text-foreground"
@@ -266,15 +265,15 @@ export default function VolleyFeedbackPage() {
               </p>
             )}
             <div className="mb-4">
-              <p className="mb-1 text-sm font-semibold">{lang === 'de' ? 'Feedback:' : 'Feedback:'}</p>
+              <p className="mb-1 text-sm font-semibold">{t('vfFeedback')}:</p>
               <p className="whitespace-pre-wrap text-sm">{selectedItem.feedback_text && selectedItem.feedback_text !== 'undefined' ? selectedItem.feedback_text : '-'}</p>
             </div>
             <div className="mb-4">
-              <p className="mb-1 text-sm font-semibold">{lang === 'de' ? 'Ideen / Vorschläge:' : 'Ideas / Suggestions:'}</p>
+              <p className="mb-1 text-sm font-semibold">{t('vfIdeas')}:</p>
               <p className="whitespace-pre-wrap text-sm">{selectedItem.ideas_text && selectedItem.ideas_text !== 'undefined' ? selectedItem.ideas_text : '-'}</p>
             </div>
             <div>
-              <p className="mb-1 text-sm font-semibold">{lang === 'de' ? 'Weiteres:' : 'Other:'}</p>
+              <p className="mb-1 text-sm font-semibold">{t('vfOther')}:</p>
               <p className="whitespace-pre-wrap text-sm">{selectedItem.other_text && selectedItem.other_text !== 'undefined' ? selectedItem.other_text : '-'}</p>
             </div>
           </div>

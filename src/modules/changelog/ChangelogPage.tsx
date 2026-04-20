@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.16.1'
+const APP_VERSION = '3.16.2'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,18 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.16.2',
+    date: '2026-04-20',
+    sections: [
+      {
+        title: 'Fix',
+        items: [
+          'Weekday abbreviations in the upcoming appointments list (Mo / Di / Mi …) now follow your selected app language instead of being locked to German. English, French, and Italian users will see the right abbreviations.',
+        ],
+      },
+    ],
+  },
   {
     version: '3.16.1',
     date: '2026-04-20',

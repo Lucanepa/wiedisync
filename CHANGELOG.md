@@ -2,6 +2,12 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.16.2] — 2026-04-20
+
+### Fixed
+
+- **Weekday abbreviations now localized.** `formatWeekday()` in `src/utils/dateHelpers.ts` was hardcoded to `de-CH`, so EN/FR/IT users still saw "Mo / Di / Mi …" in the upcoming appointments list on `/` (`AppointmentTableRow`, `AppointmentRow`, `CompactTrainingRow`). Added a `currentLocale()` helper that reads `i18n.language` (gsw → de-CH, en → en-GB to keep dd/mm + 24h expectations); `formatWeekday` now resolves it automatically. Parent `HomePage` already uses `useTranslation`, so children re-render on language switch and pick up the new abbreviations without further changes. Date + time formats are still Swiss-format intentionally.
+
 ## [3.16.1] — 2026-04-20
 
 ### Fixed

@@ -31,7 +31,7 @@ const CHANGELOG: ChangelogEntry[] = [
       {
         title: 'Fix',
         items: [
-          'Trainer:innen konnten keine Events für ihr Team erstellen — der Speichern-Button warf „Keine Berechtigung". Behoben: das Event-Formular schickt Teams/Eingeladene jetzt im Directus-Junction-Format, und den Rollen-Policies fehlten Create/Update/Delete-Rechte auf den M2M-Tabellen events_teams und events_members.',
+          'Coaches could not create events for their team — the save button threw a "No permission" error. Fixed: the event form now sends teams and invitees in the Directus junction format, and the role policies were missing create/update/delete permissions on the events_teams and events_members M2M tables.',
         ],
       },
     ],
@@ -53,12 +53,12 @@ const CHANGELOG: ChangelogEntry[] = [
     date: '2026-04-19',
     sections: [
       {
-        title: 'Neu',
+        title: 'New',
         items: [
-          'Kontaktieren-Funktion: zusätzlicher Kanal „In-App-Chat" für Event-Broadcasts. Bei aktivierter Option wird pro Event ein persistenter Chat erstellt, in dem Trainer:innen & Admins schreiben und Teilnehmende direkt antworten können. RSVPs steuern automatisch, wer den Chat sieht: bei „Dabei"/„Vielleicht" wird man hinzugefügt, bei „Abgesagt" archiviert.',
-          'Der Broadcast-Erfolgs-Toast zeigt neu eine „Chat öffnen"-Aktion, die direkt in den Event-Chat springt.',
-          'Event-Chats folgen dem persönlichen „Team-Chat"-Schalter: wer Chat global ausgeschaltet hat, sieht Event-Chats nicht im Posteingang (können pro Chat wieder sichtbar gemacht werden).',
-          'In-App-Kanal ist nur für Events verfügbar — für Spiele und Trainings bleibt es bei E-Mail + Push.',
+          'Broadcast feature: additional "In-App Chat" channel for event broadcasts. When enabled, a persistent chat is created per event where coaches and admins can post and participants can reply directly. RSVPs automatically control chat membership: "Going"/"Maybe" adds you, "Declined" archives you.',
+          'The broadcast success toast now shows an "Open chat" action that jumps straight to the event chat.',
+          'Event chats follow the personal "Team chat" toggle: if you have globally disabled chat, event chats will not appear in your inbox (can be un-archived per chat).',
+          'The in-app channel is available for events only — games and trainings remain on email + push.',
         ],
       },
     ],
@@ -68,12 +68,12 @@ const CHANGELOG: ChangelogEntry[] = [
     date: '2026-04-19',
     sections: [
       {
-        title: 'Neu',
+        title: 'New',
         items: [
-          'Kontaktieren-Funktion: Trainer:innen, Team-Verantwortliche, Vorstand und Admins können jetzt direkt aus der Anlass-Detailansicht (Event, Spiel, Training) per E-Mail oder Push-Benachrichtigung an alle Teilnehmenden schreiben — mit Audience-Filter (z. B. nur Bestätigte) und Live-Empfängerzahl.',
-          'Externe Anmeldungen (z. B. Mixed-Turnier-Form auf der Website) sind nun in einer generischen Tabelle event_signups gebündelt — bereit für künftige öffentliche Anmeldeformulare. Sie können bei Event-Broadcasts mit einbezogen werden.',
-          'Audit-Trail für Broadcasts: jede Aussendung wird mit Sender, Empfänger-Snapshot, Kanälen und Zustellungs-Ergebnissen protokolliert (nFADP-konform).',
-          'Rate-Limit für Broadcasts: max. 3 pro Anlass pro Stunde, mind. 20 Min. Abstand — schützt vor versehentlichem Spam.',
+          'Broadcast feature: coaches, team responsibles, the board and admins can now write to all participants directly from the activity detail view (event, game, training) via email or push notification — with an audience filter (e.g. confirmed only) and a live recipient count.',
+          'External signups (e.g. the Mixed-Tournament form on the website) are now bundled in a generic event_signups table — ready for future public signup forms. They can be included in event broadcasts.',
+          'Broadcast audit trail: every send is logged with sender, recipient snapshot, channels, and delivery results (nFADP-compliant).',
+          'Broadcast rate limit: max. 3 per activity per hour, minimum 20-minute gap — protects against accidental spam.',
         ],
       },
     ],
@@ -83,20 +83,20 @@ const CHANGELOG: ChangelogEntry[] = [
     date: '2026-04-19',
     sections: [
       {
-        title: 'Neu',
+        title: 'New',
         items: [
-          'Nachrichten-Feature ist komplett gebaut und auf dem Server live — Team-Chats, Direktnachrichten, Umfragen, Reaktionen, Meldungen, Einverständnis, Datenexport und Push-Benachrichtigungen. Aktivierung für Mitglieder erfolgt in einem nächsten Schritt (Test-Gruppe zuerst, dann alle).',
-          'Datenschutzerklärung: neuer Abschnitt „Nachrichten" unter /datenschutz#nachrichten mit Details zu gespeicherten Daten, Aufbewahrungsfristen (12 Monate / 30 Tage / 90 Tage), Zugriff und Rechten.',
-          'Test-Rollout-Modus: einzelne Mitglieder können das Feature vor der offiziellen Freigabe testen (Admin-gesteuerte Allowlist).',
+          'Messaging feature is fully built and live on the server — team chats, direct messages, polls, reactions, reports, consent, data export, and push notifications. Activation for members happens in a next step (test group first, then everyone).',
+          'Privacy policy: new "Messages" section at /datenschutz#nachrichten with details on stored data, retention periods (12 months / 30 days / 90 days), access, and rights.',
+          'Test rollout mode: individual members can try the feature before the official release (admin-managed allowlist).',
         ],
       },
       {
-        title: 'Sicherheit',
+        title: 'Security',
         items: [
-          'Datenbank-Zugriff für die Supabase-anon- und -authenticated-Rollen auf allen Tabellen gesperrt (Defense-in-Depth).',
-          'Nicht genutzte Supabase-Dienste (REST, Auth, Edge Functions, Studio, Storage, MinIO u. a.) abgeschaltet — weniger Angriffsfläche.',
-          'Nachrichten: Berechtigungen auf Zeilenebene verschärft — Mitglieder sehen nur ihre eigenen Blocks, Nachrichtenanfragen und Konversations-Mitgliedschaften über die REST-API.',
-          'Admin-Hygiene: nicht genutzte Test-Accounts entfernt, Drift zwischen Dev und Prod ausgeglichen, alter Static-Token eines Members rotiert.',
+          'Database access for the Supabase anon and authenticated roles has been revoked on all tables (defense-in-depth).',
+          'Unused Supabase services (REST, Auth, Edge Functions, Studio, Storage, MinIO, etc.) have been shut down — smaller attack surface.',
+          'Messaging: row-level permissions tightened — members only see their own blocks, message requests, and conversation memberships through the REST API.',
+          'Admin hygiene: removed unused test accounts, reconciled drift between dev and prod, rotated a member\'s old static token.',
         ],
       },
     ],

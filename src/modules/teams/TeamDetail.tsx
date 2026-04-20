@@ -25,7 +25,7 @@ import PollsSection from '../polls/PollsSection'
 import { isFeatureEnabled } from '../../utils/featureToggles'
 import { messagingFeatureEnabled } from '../../utils/messagingFeatureFlag'
 import TeamMessagesTab from '../messaging/components/TeamMessagesTab'
-import { createRecord, deleteRecord, fetchAllItems, fetchItems, updateRecord } from '../../lib/api'
+import { createRecord, fetchAllItems, fetchItems, updateRecord } from '../../lib/api'
 
 type SortKey = 'name' | 'number' | 'position' | 'email' | 'phone' | 'birthdate' | 'role'
 type SortDir = 'asc' | 'desc'
@@ -206,8 +206,12 @@ export default function TeamDetail() {
 
   async function handleReject(memberId: string) {
     try {
-      await deleteRecord('members', memberId)
-      logActivity('delete', 'members', memberId)
+      await updateRecord('members', memberId, {
+        kscw_membership_active: false,
+        wiedisync_active: false,
+        requested_team: null,
+      })
+      logActivity('update', 'members', memberId, { rejected: true })
       refetchPending()
     } catch {
       // ignore

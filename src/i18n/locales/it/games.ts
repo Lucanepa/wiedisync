@@ -9,6 +9,10 @@ export default {
   tabRankings: 'Classifiche',
   tabScoreboard: 'Tabellone',
 
+  // Results sections
+  sectionLeague: 'Campionato',
+  sectionCup: 'Coppa',
+
   // Statuses
   statusLive: 'In diretta',
   statusPostponed: 'Rinviata',

@@ -2,6 +2,14 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.15.4] — 2026-04-20
+
+### Changed
+
+- **Games page — separate League vs Cup sections.** On `/games`, both the Kommende (upcoming) and Resultate (results) tabs now split games into two stacked sections: "Meisterschaft" (regular championship) and "Cup" (Mobiliar Volley Cup, Züri Cup, and any `Cup|Pokal|Turnier` league string). Section headings only appear when both categories have entries — single-category views look identical to before. Same sort order (ascending for upcoming, descending for results), team filter and sport toggle still apply to both sections. Implemented in `GamesPage.tsx` via `isCupGame()` regex on `game.league`; i18n keys `sectionLeague` + `sectionCup` added to de/en/fr/it/gsw.
+
+---
+
 ## [3.15.3] — 2026-04-20
 
 ### Changed

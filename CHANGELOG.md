@@ -4,6 +4,10 @@ All notable changes to Wiedisync are documented in this file.
 
 ## [3.15.4] — 2026-04-20
 
+### Performance
+
+- **Games + Trainings: single round-trip load (no more empty-card flash on mobile).** `/games` and `/trainings` previously fetched activities first, then derived IDs and issued a second request for participations — ~500ms–1s of cards rendering without RSVP bars on mobile. Collapsed into one request via new endpoint `POST /kscw/activities/:type/with-participations` (`type` ∈ `game`|`training`), which runs both reads server-side under the requester's Directus accountability (RBAC parity with `/items/games`). Frontend exposes it as `useActivitiesWithParticipations` in `src/lib/query.tsx`, replacing the two chained `useCollection` calls on each page.
+
 ### Changed
 
 - **Games page — separate League vs Cup sections.** On `/games`, both the Kommende (upcoming) and Resultate (results) tabs now split games into two stacked sections: "Meisterschaft" (regular championship) and "Cup" (Mobiliar Volley Cup, Züri Cup, and any `Cup|Pokal|Turnier` league string). Section headings only appear when both categories have entries — single-category views look identical to before. Same sort order (ascending for upcoming, descending for results), team filter and sport toggle still apply to both sections. Implemented in `GamesPage.tsx` via `isCupGame()` regex on `game.league`; i18n keys `sectionLeague` + `sectionCup` added to de/en/fr/it/gsw.

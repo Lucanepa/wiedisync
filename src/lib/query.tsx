@@ -9,7 +9,7 @@
 
 import { QueryClient, QueryClientProvider, useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
-import { fetchItems, fetchAllItems, fetchItem, countItems, createRecord, updateRecord, deleteRecord } from './api'
+import { fetchItems, fetchAllItems, fetchItem, countItems, createRecord, updateRecord, deleteRecord, kscwApi } from './api'
 import { captureApiError } from './sentry'
 
 // ── Query Client ────────────────────────────────────────────────────
@@ -89,6 +89,61 @@ export function useCollection<T = Record<string, unknown>>(
     queryFn: () => all
       ? fetchAllItems<T>(collection, { filter, sort: sortArr, fields, deep })
       : fetchItems<T>(collection, { filter, sort: sortArr, fields, limit, offset, deep, search }),
+    enabled,
+    staleTime,
+  })
+}
+
+// ── Combined activity + participations hook ─────────────────────────
+
+interface UseActivitiesWithParticipationsOptions {
+  filter?: Record<string, unknown>
+  sort?: string | string[]
+  fields?: string[]
+  limit?: number
+  offset?: number
+  /** Fields to fetch on each participation row. Endpoint has a safe default. */
+  participationFields?: string[]
+  enabled?: boolean
+  staleTime?: number
+}
+
+/**
+ * Fetch activities (games or trainings) AND their participations in one
+ * HTTP round-trip via `POST /kscw/activities/:type/with-participations`.
+ *
+ * Eliminates the waterfall where the client fetches activities first, then
+ * issues a second request for participations keyed by activity IDs.
+ * Permissions are enforced server-side with the requester's accountability.
+ */
+export function useActivitiesWithParticipations<T = Record<string, unknown>, P = Record<string, unknown>>(
+  type: 'game' | 'training',
+  options?: UseActivitiesWithParticipationsOptions,
+) {
+  const {
+    filter, sort, fields, limit, offset, participationFields,
+    enabled = true, staleTime,
+  } = options ?? {}
+
+  const sortArr = sort ? (Array.isArray(sort) ? sort : sort.split(',').map(s => s.trim())) : undefined
+  const body = {
+    filter,
+    sort: sortArr,
+    fields,
+    limit,
+    offset,
+    participation_fields: participationFields,
+  }
+
+  return useQuery<{ items: T[]; participations: P[] }>({
+    queryKey: ['activities-with-participations', type, body],
+    queryFn: async () => {
+      const resp = await kscwApi<{ data: { items: T[]; participations: P[] } }>(
+        `/activities/${type}/with-participations`,
+        { method: 'POST', body },
+      )
+      return resp.data
+    },
     enabled,
     staleTime,
   })

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
-import { useCollection } from '../../lib/query'
+import { useActivitiesWithParticipations } from '../../lib/query'
 import { useRealtime } from '../../hooks/useRealtime'
 import { useMutation } from '../../hooks/useMutation'
 import { todayLocal } from '../../utils/dateHelpers'
@@ -78,29 +78,22 @@ export default function TrainingsPage() {
   const [rosterTraining, setRosterTraining] = useState<{ id: string; teamId: string; date: string; showRsvpTime?: boolean } | null>(null)
   const recurringSelectionMade = useRef(false)
 
-  const { data: trainingsRaw, isLoading, refetch } = useCollection<TrainingExpanded>('trainings', {
+  // Single round-trip: trainings + their participations in one request.
+  // Eliminates the old waterfall (trainings → trainingIds → participations)
+  // that caused ~1s of empty cards on mobile.
+  const {
+    data: combined,
+    isLoading,
+    refetch,
+  } = useActivitiesWithParticipations<TrainingExpanded, Participation>('training', {
     filter: effectiveFilter,
     sort: ['date'],
     limit: 50,
     fields: ['*', 'team.*', 'hall.*', 'coach.*'],
     enabled: !teamsLoading,
   })
-  const trainings = trainingsRaw ?? []
-
-  // Batch-fetch ALL participations for visible trainings in ONE request (fixes N+1 / 429 storm)
-  const trainingIds = useMemo(() => trainings.map((t) => t.id), [trainings])
-  const participationFilter = useMemo((): Record<string, unknown> | string => {
-    if (trainingIds.length === 0) return ''
-    return { _and: [{ activity_type: { _eq: 'training' } }, { activity_id: { _in: trainingIds } }] }
-  }, [trainingIds])
-
-  const { data: allParticipationsRaw, refetch: refetchParticipations } = useCollection<Participation>('participations', {
-    filter: participationFilter as Record<string, unknown> | undefined,
-    fields: ['id', 'activity_id', 'activity_type', 'member', 'status', 'note', 'session_id', 'guest_count', 'is_staff', 'waitlisted_at', 'date_created', 'date_updated'],
-    all: true,
-    enabled: trainingIds.length > 0,
-  })
-  const allParticipations = allParticipationsRaw ?? []
+  const trainings = combined?.items ?? []
+  const allParticipations = combined?.participations ?? []
 
   // Build maps: activityId → participations[], activityId → user's participation
   const { participationsByActivity, myParticipationByActivity } = useMemo(() => {
@@ -120,7 +113,7 @@ export default function TrainingsPage() {
   const { remove } = useMutation<Training>('trainings')
 
   useRealtime('trainings', () => refetch())
-  useRealtime('participations', () => refetchParticipations())
+  useRealtime('participations', () => refetch())
 
   function handleEdit(training: Training) {
     setEditingTraining(training)
@@ -251,7 +244,7 @@ export default function TrainingsPage() {
                 training={training}
                 participations={participationsByActivity.get(training.id)}
                 myParticipation={myParticipationByActivity.get(training.id)}
-                onParticipationSaved={refetchParticipations}
+                onParticipationSaved={refetch}
                 onOpenRoster={(id, teamId, date) => setRosterTraining({ id, teamId, date, showRsvpTime: isFeatureEnabled(asObj<Team>(training.team)?.features_enabled, 'show_rsvp_time') })}
                 onEdit={(effectiveIsAdmin || isCoachOf(relId(training.team))) ? handleEdit : undefined}
                 onDelete={(effectiveIsAdmin || isCoachOf(relId(training.team))) ? setDeletingId : undefined}

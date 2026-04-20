@@ -2,6 +2,19 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.15.5] — 2026-04-20
+
+### Fixed
+
+- **ConversationPage crash on load.** `<Button asChild><Link>…</Link></Button>` passed `[null, <Link/>]` to Radix's `Slot`, which trips `React.Children.only` in `SlotClone` (at `@radix-ui/react-slot/dist/index.mjs:56`). The blank-screen fallback on `/inbox/:conversationId` was caused by the ErrorBoundary catching this. Fixed in `src/components/ui/button.tsx`: when `asChild` is true, skip the icon/loading fragment entirely and pass `children` as the single Slot child. Icon/loading with `asChild` was never meaningful anyway (Slot only renders the child element). Same pattern fixes `MessagingDisabledBanner` and `MessagingSettingsCard` which also use `<Button asChild>`.
+
+### Changed
+
+- **CSP `connect-src` allows `https://cloudflareinsights.com`.** Cloudflare's RUM beacon (injected by CF Pages) was being blocked — harmless but noisy in the console. `script-src` already allowed `static.cloudflareinsights.com` for the script itself; added the beacon endpoint to `public/_headers`.
+- **`mobile-web-app-capable` meta tag added.** The Apple-specific `apple-mobile-web-app-capable` is deprecated in favor of the standardized name; added the standard one alongside the Apple one in `index.html` to silence Chrome's warning.
+
+---
+
 ## [3.15.4] — 2026-04-20
 
 ### Performance

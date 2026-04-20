@@ -46,6 +46,11 @@ export function initSentry() {
       // Suppress browser-extension DOM manipulation errors (Google Translate, Grammarly, etc.)
       if (errMsg.includes("removeChild' on 'Node'") ||
           errMsg.includes("insertBefore' on 'Node'")) return null
+      // Suppress Directus's generic "public role" rejection — raised when a fetch
+      // fires before the SDK finishes (re)hydrating its auth token. Callers that
+      // care (e.g. useBlocks) already catch and treat as empty; a real permission
+      // misconfig would surface via the admin UI, not here.
+      if (/permission to access collection .* or it does not exist/i.test(errMsg)) return null
       // Strip email-like strings from breadcrumb messages
       if (event.breadcrumbs) {
         for (const bc of event.breadcrumbs) {

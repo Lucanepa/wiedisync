@@ -2,6 +2,16 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.15.2] — 2026-04-20
+
+### Fixed
+
+- **Coach policy parity — closed remaining 403 gaps on team management.** Following the pattern of v3.15.1, the `KSCW Coach` policy was missing write perms on several collections the coach UI already exposes. Granted 12 perms via `directus/scripts/020-coach-policy-parity.sql` (idempotent, applied to dev + prod, both containers restarted): `teams.update` (RosterEditor role/team_picture writes, TeamDetail banner crop), `member_teams.create/update` (approve pending member, edit guest_level), `team_requests.update` (approve/reject join requests), `hall_slots.create/update` + `hall_slots_teams` CRUD (SlotEditor own-team writes), and `polls.create/update/delete` (PollsSection on team page).
+- **Soft-reject pending member signups** — `TeamDetail.handleReject` no longer hard-deletes the member record. It now updates the member with `kscw_membership_active=false`, `wiedisync_active=false`, and `requested_team=null`, which drops them off the pending list (filter requires `requested_team=teamId`) while preserving the record for audit. Avoids granting coaches unrestricted `members.delete`.
+- **Changelog convention** — All entries in `ChangelogPage.tsx` (and `CHANGELOG.md`) must be written in English, even though the app UI is German. Documented in both `CLAUDE.md` and `INFRA.md`.
+
+---
+
 ## [3.15.1] — 2026-04-19
 
 ### Fixed

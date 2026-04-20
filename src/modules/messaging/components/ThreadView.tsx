@@ -32,10 +32,15 @@ export default function ThreadView({ conversation, onMarkRead, onToggleMute, hea
 
   const isGroupDm = conversation.type === 'group_dm'
   const isDmLike = conversation.type === 'dm' || conversation.type === 'dm_request'
+  const needsMembers = isGroupDm || isDmLike
 
-  const { members, refetch: refetchMembers } = useConversationMembers(
-    isGroupDm || isDmLike ? conversation.id : null,
+  const { members, loading: membersLoading, refetch: refetchMembers } = useConversationMembers(
+    needsMembers ? conversation.id : null,
   )
+
+  // One gate for the whole page so header + thread + composer arrive together
+  // instead of filling in at different times.
+  const isReady = !isLoading && (!needsMembers || !membersLoading)
 
   const isTeamModerator = conversation.type === 'team' && conversation.team != null && (
     coachTeamIds.includes(String(conversation.team)) ||
@@ -68,6 +73,18 @@ export default function ThreadView({ conversation, onMarkRead, onToggleMute, hea
         alt: `${m.first_name ?? ''} ${m.last_name ?? ''}`.trim() || '—',
       }))
     : []
+
+  if (!isReady) {
+    return (
+      <div className="flex flex-col h-full min-h-[60vh] md:min-h-[500px] items-center justify-center">
+        <div
+          className="h-6 w-6 rounded-full border-2 border-muted border-t-primary animate-spin"
+          role="status"
+          aria-label={t('loading')}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col h-full min-h-[60vh] md:min-h-[500px]">

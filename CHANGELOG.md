@@ -2,6 +2,13 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.16.1] — 2026-04-20
+
+### Fixed
+
+- **Staggered load on the conversation page.** `ThreadView` used to render as each of its sub-hooks resolved independently — first `!conv` → "loading", then the thread appeared with the header title still set to `'—'` (display-names not yet back), then the peer avatar + thread header title filled in after `useConversationMembers` resolved. Also `useConversation.isLoading` + `useConversationMembers.loading` both initialized to `false`, so the very first render briefly looked "ready with 0 messages / 0 members" before the mount-effect's `refetch()` flipped them true. Fix: initialize both to `true` (guard `useConversationMembers` with `!!conversationId` so disabled callers don't stick), and gate the entire `ThreadView` render on a consolidated `isReady = !isLoading && (!needsMembers || !membersLoading)` — single spinner up, full UI comes in at once.
+- **Notification click does nothing for admin report alerts.** Admin `new_report` notifications (type `new_report`, activity_type `report`) weren't handled by `NotificationPanel.getNavigationPath`, so they fell through to `/`. Added an explicit case that routes to `/admin/reports`, where the resolve-or-dismiss UI lives. Also added `'new_report'` and `'report'` to the `Notification` type union so the compiler can guide future additions.
+
 ## [3.16.0] — 2026-04-20
 
 ### Chat

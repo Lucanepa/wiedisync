@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.16.5'
+const APP_VERSION = '3.16.6'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,20 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.16.6',
+    date: '2026-04-20',
+    sections: [
+      {
+        title: 'Security',
+        items: [
+          'Coaches can now only modify data belonging to the teams they coach. Previously a coach could edit or delete trainings, games, events, hall slot claims, task templates, referee expenses and scorer delegations for any team in the club.',
+          'Sport Admins can no longer delete member accounts or teams. They can still edit and create (intake workflows are preserved); only full KSC Wiedikon admins can delete.',
+          'Tightened the Content-Security-Policy: removed wildcard Sentry subdomains from the allowlist since error reports go through our own tunnel worker. No user-facing change; reduces the blast radius of a hypothetical Sentry subdomain compromise.',
+        ],
+      },
+    ],
+  },
   {
     version: '3.16.5',
     date: '2026-04-20',

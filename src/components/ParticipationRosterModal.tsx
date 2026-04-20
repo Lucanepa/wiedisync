@@ -615,8 +615,8 @@ export default function ParticipationRosterModal({
                       </span>
                     )}
                   </p>
-                  {showRsvpTime && participation?.updated && (
-                    <RsvpTimestamp datetime={participation.updated} locale={i18n.language} />
+                  {showRsvpTime && participation?.date_updated && (
+                    <RsvpTimestamp datetime={participation.date_updated} locale={i18n.language} />
                   )}
                   {participation?.position_1 && (
                     <p className="truncate text-xs text-gray-400">
@@ -803,8 +803,8 @@ export default function ParticipationRosterModal({
                       </p>
                       {showRsvpTime && (() => {
                         const sp = staffParticipations.find(p => p.member === member.id)
-                        return sp?.updated ? (
-                          <RsvpTimestamp datetime={sp.updated} locale={i18n.language} />
+                        return sp?.date_updated ? (
+                          <RsvpTimestamp datetime={sp.date_updated} locale={i18n.language} />
                         ) : null
                       })()}
                     </div>

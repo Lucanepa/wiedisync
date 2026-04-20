@@ -2,6 +2,13 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.16.3] — 2026-04-20
+
+### Fixed
+
+- **Own RSVP not reflected on `/trainings` and `/games` cards.** The Yes / Maybe / No buttons on the trainings + games lists rendered in the default grey "no response" state even when the current user had already responded — the colored left banner was also missing. `useActivitiesWithParticipations` (introduced in 3.15.4) calls `kscwApi` directly, which does not run responses through `stringifyIds` like the rest of the data layer does. Result: `p.member` came back as a Postgres integer (e.g. `8`) while `user.id` was `"8"` (string, normalised on its way in). The strict-equality `p.member === user.id` mapping in `TrainingsPage` and `GamesPage` therefore never matched, so `myParticipation` was always `undefined`. Fixed by exporting `stringifyIds` from `src/lib/api.ts` and applying it to both `items` and `participations` in `useActivitiesWithParticipations` — same convention as the standard REST path. The participation roster modal already worked because it goes through `useCollection`.
+- **"Show response time" toggle had no effect.** `ParticipationRosterModal` read `participation.updated` / `sp.updated` — the PocketBase field name. After the Directus migration the field is `date_updated` (already returned by both the standard REST path and the `/with-participations` endpoint, where it's in `DEFAULT_PARTICIPATION_FIELDS`). The check `showRsvpTime && participation?.updated` was therefore always falsy, so the timestamp row never rendered regardless of the toggle. Renamed both call-sites to `participation.date_updated` / `sp.date_updated`.
+
 ## [3.16.2] — 2026-04-20
 
 ### Fixed

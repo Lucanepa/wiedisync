@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.16.2'
+const APP_VERSION = '3.16.3'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,19 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.16.3',
+    date: '2026-04-20',
+    sections: [
+      {
+        title: 'Fix',
+        items: [
+          'Your own Yes / Maybe / No on the trainings and games lists is highlighted again. The buttons used to render in the default grey state and the colored left banner was missing, even when you had already responded.',
+          'The "Show response time" toggle in team settings now actually shows when each member responded in the participation roster.',
+        ],
+      },
+    ],
+  },
   {
     version: '3.16.2',
     date: '2026-04-20',

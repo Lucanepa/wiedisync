@@ -2,6 +2,12 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [4.0.4] — 2026-04-20
+
+### Navigation
+
+- **Mobile More sheet: Messaging/Inbox moved to top of secondary list.** User reported it was getting visually lost below Events. Reordered `buildSecondaryItems()` in `MoreSheet.tsx` so `/inbox` renders first (before `/events`, `/teams`, etc.) when the messaging feature is enabled.
+
 ## [4.0.3] — 2026-04-20
 
 ### Navigation

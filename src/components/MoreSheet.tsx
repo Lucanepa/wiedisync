@@ -33,10 +33,10 @@ const iconClass = 'h-5 w-5'
 
 function buildSecondaryItems(memberId: number | string | undefined | null) {
   const items = [
-    { to: '/events', labelKey: 'events', icon: <PartyPopper className={iconClass} /> },
     ...(messagingFeatureEnabled(memberId)
       ? [{ to: '/inbox', labelKey: 'inbox', icon: <Inbox className={iconClass} /> }]
       : []),
+    { to: '/events', labelKey: 'events', icon: <PartyPopper className={iconClass} /> },
     { to: '/teams', labelKey: 'teams', icon: <Users className={iconClass} /> },
     { to: '/absences', labelKey: 'absences', icon: <UserX className={iconClass} /> },
     { to: '/scorer', labelKey: 'scorer', icon: <PenSquare className={iconClass} /> },

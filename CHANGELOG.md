@@ -2,6 +2,14 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.15.3] — 2026-04-20
+
+### Changed
+
+- **Event / Training / Game detail modal — mobile decluttering.** The RSVP summary row at the bottom (previously "4 Confirmed / 0 Maybe / 5 Declined" text) now uses the same 3-rectangle `bars` variant shown on cards, so the visual language is consistent between list and detail views. The broadcast (paper-plane) button moved from the inline footer to the upper-right of the modal header. The "Teilnahme" roster button lost its text label and is now a 44×44 icon-only button (`aria-label` preserved). Applies on both mobile and desktop. Same treatment rolled into the Game detail modal (custom header), with `ParticipationSummary` switched from `compact` to `bars` and the duplicate footer broadcast button removed. `Modal.tsx` gained a `headerAction` prop used by the event + training modals to inject the broadcast button into the dialog/drawer header.
+
+---
+
 ## [3.15.2] — 2026-04-20
 
 ### Fixed

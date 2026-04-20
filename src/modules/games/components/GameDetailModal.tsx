@@ -196,6 +196,26 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
           </div>
           <div className="flex items-center gap-2">
             {kscwTeam && <TeamChip team={kscwTeam} size="sm" />}
+            {game.status === 'scheduled' && (
+              <BroadcastButton
+                activity={{
+                  type: 'game',
+                  id: Number(game.id),
+                  title: `${game.home_team} vs ${game.away_team}`,
+                  start_date: game.date && game.time ? `${game.date}T${game.time}` : game.date,
+                  location: hall?.name ?? undefined,
+                  teamName: rawKscwTeam || undefined,
+                  sport: kscwSport ?? null,
+                  teamId: kscwTeamId ? Number(kscwTeamId) : undefined,
+                }}
+                member={user ? {
+                  id: user.id,
+                  role: user.role ?? null,
+                  isCoachOf: coachTeamIds,
+                  isResponsibleOf: teamResponsibleIds,
+                } : null}
+              />
+            )}
             <button
               onClick={onClose}
               className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 sm:min-h-0 sm:min-w-0 sm:p-1 dark:hover:bg-gray-700"
@@ -352,7 +372,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
               </>
             )}
             <div className="ml-auto border-l pl-3 dark:border-gray-600">
-              <ParticipationSummary activityType="game" activityId={game.id} compact coachMemberIds={[...flattenMemberIds(kscwTeamObj?.coach), ...flattenMemberIds(kscwTeamObj?.captain), ...flattenMemberIds(kscwTeamObj?.team_responsible)]} />
+              <ParticipationSummary activityType="game" activityId={game.id} bars coachMemberIds={[...flattenMemberIds(kscwTeamObj?.coach), ...flattenMemberIds(kscwTeamObj?.captain), ...flattenMemberIds(kscwTeamObj?.team_responsible)]} />
             </div>
             {/* Participation note */}
             {!hasAbsence && effectiveStatus && (
@@ -590,35 +610,13 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
                 </button>
               )
             )}
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <Button
-                variant="outline"
-                onClick={() => setRosterOpen(true)}
-                className="w-full"
-              >
-                {t('participationRoster')}
-              </Button>
-              <BroadcastButton
-                activity={{
-                  type: 'game',
-                  id: Number(game.id),
-                  title: `${game.home_team} vs ${game.away_team}`,
-                  start_date: game.date && game.time ? `${game.date}T${game.time}` : game.date,
-                  location: hall?.name ?? undefined,
-                  teamName: rawKscwTeam || undefined,
-                  sport: kscwSport ?? null,
-                  teamId: kscwTeamId ? Number(kscwTeamId) : undefined,
-                }}
-                member={user ? {
-                  id: user.id,
-                  role: user.role ?? null,
-                  isCoachOf: coachTeamIds,
-                  isResponsibleOf: teamResponsibleIds,
-                } : null}
-                size="default"
-                className="w-full sm:w-auto"
-              />
-            </div>
+            <Button
+              variant="outline"
+              onClick={() => setRosterOpen(true)}
+              className="w-full"
+            >
+              {t('participationRoster')}
+            </Button>
           </div>
         )}
       </div>

@@ -23,6 +23,8 @@ interface ModalProps {
   children: ReactNode
   size?: 'sm' | 'md' | 'lg'
   hideClose?: boolean
+  /** Optional node rendered in the upper-right of the header (e.g. action button). */
+  headerAction?: ReactNode
 }
 
 const sizeClasses = {
@@ -31,7 +33,7 @@ const sizeClasses = {
   lg: 'sm:max-w-2xl',
 }
 
-export default function Modal({ open, onClose, title, children, size = 'md', hideClose }: ModalProps) {
+export default function Modal({ open, onClose, title, children, size = 'md', hideClose, headerAction }: ModalProps) {
   const isDesktop = useMediaQuery('(min-width: 640px)')
 
   if (isDesktop) {
@@ -49,9 +51,17 @@ export default function Modal({ open, onClose, title, children, size = 'md', hid
           }}
           hideClose={hideClose}
         >
-          <DialogHeader>
-            <DialogTitle>{title}</DialogTitle>
-            <DialogDescription className="sr-only">{title}</DialogDescription>
+          <DialogHeader
+            className={cn(
+              headerAction && 'flex-row items-center gap-2 space-y-0',
+              headerAction && !hideClose && 'pr-8',
+            )}
+          >
+            <div className="min-w-0 flex-1">
+              <DialogTitle>{title}</DialogTitle>
+              <DialogDescription className="sr-only">{title}</DialogDescription>
+            </div>
+            {headerAction && <div className="shrink-0">{headerAction}</div>}
           </DialogHeader>
           {children}
         </DialogContent>
@@ -62,9 +72,14 @@ export default function Modal({ open, onClose, title, children, size = 'md', hid
   return (
     <Drawer open={open} onOpenChange={(o) => !o && !hideClose && onClose()}>
       <DrawerContent>
-        <DrawerHeader>
-          <DrawerTitle>{title}</DrawerTitle>
-          <DrawerDescription className="sr-only">{title}</DrawerDescription>
+        <DrawerHeader
+          className={cn(headerAction && 'flex flex-row items-center gap-2 space-y-0 text-left')}
+        >
+          <div className="min-w-0 flex-1">
+            <DrawerTitle>{title}</DrawerTitle>
+            <DrawerDescription className="sr-only">{title}</DrawerDescription>
+          </div>
+          {headerAction && <div className="shrink-0">{headerAction}</div>}
         </DrawerHeader>
         <div className="max-h-[calc(100dvh-8rem)] overflow-y-auto overscroll-contain px-4 pb-4">
           {children}

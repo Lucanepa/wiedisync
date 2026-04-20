@@ -82,9 +82,28 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
 
   const teams = asTeams(event.teams)
 
+  const headerBroadcast = user ? (
+    <BroadcastButton
+      activity={{
+        type: 'event',
+        id: Number(event.id),
+        title: event.title,
+        start_date: event.start_date,
+        location: event.location,
+        sport: null,
+      }}
+      member={{
+        id: user.id,
+        role: user.role ?? null,
+        isCoachOf: coachTeamIds,
+        isResponsibleOf: teamResponsibleIds,
+      }}
+    />
+  ) : null
+
   return (
     <>
-      <Modal open={!!event} onClose={onClose} title={event.title} size="sm">
+      <Modal open={!!event} onClose={onClose} title={event.title} size="sm" headerAction={headerBroadcast}>
         <div className="space-y-4">
           {/* Type badge + teams */}
           <div className="flex flex-wrap items-center gap-2">
@@ -198,33 +217,16 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
             {/* Summary + roster button */}
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <ParticipationSummary activityType="event" activityId={event.id} coachMemberIds={teams.flatMap(t => [...flattenMemberIds(t.coach), ...flattenMemberIds(t.captain), ...flattenMemberIds(t.team_responsible)])} />
+                <ParticipationSummary activityType="event" activityId={event.id} bars coachMemberIds={teams.flatMap(t => [...flattenMemberIds(t.coach), ...flattenMemberIds(t.captain), ...flattenMemberIds(t.team_responsible)])} />
               </div>
-              <div className="flex shrink-0 items-center gap-1">
-                <BroadcastButton
-                  activity={{
-                    type: 'event',
-                    id: Number(event.id),
-                    title: event.title,
-                    start_date: event.start_date,
-                    location: event.location,
-                    sport: null,
-                  }}
-                  member={user ? {
-                    id: user.id,
-                    role: user.role ?? null,
-                    isCoachOf: coachTeamIds,
-                    isResponsibleOf: teamResponsibleIds,
-                  } : null}
-                />
-                <button
-                  onClick={() => setRosterOpen(true)}
-                  className="flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-900/20"
-                >
-                  <Users className="h-4 w-4" />
-                  {tP('participation')}
-                </button>
-              </div>
+              <button
+                onClick={() => setRosterOpen(true)}
+                aria-label={tP('participation')}
+                title={tP('participation')}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-900/20"
+              >
+                <Users className="h-5 w-5" />
+              </button>
             </div>
           </div>
         </div>

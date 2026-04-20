@@ -215,6 +215,39 @@ function isClosedOnDate(
   )
 }
 
+// Priority ladder for closure sources. Higher wins — when multiple closures
+// cover the same (hall, date) we keep the highest-priority one and suppress
+// the others so "Sportferien" eats a redundant "Halle geschlossen", and a
+// school-holiday "Ferien" eats everything else.
+const CLOSURE_SOURCE_PRIORITY: Record<HallClosure['source'], number> = {
+  school_holidays: 5,
+  admin: 4,
+  hauswart: 3,
+  gcal: 2,
+  auto: 1,
+}
+
+/**
+ * Dedupes closures by source priority per (hall, date). If a higher-priority
+ * closure covers a given hall+date, any lower-priority closure overlapping
+ * that same hall+date is dropped from the result. Non-overlapping closures
+ * are preserved.
+ */
+export function dedupeClosuresByPriority(closures: HallClosure[]): HallClosure[] {
+  if (closures.length < 2) return closures
+  const prio = (c: HallClosure) => CLOSURE_SOURCE_PRIORITY[c.source] ?? 0
+  return closures.filter((c) => {
+    // Drop c only if another closure fully covers (hall + every date in c's span)
+    // with strictly higher priority.
+    for (const other of closures) {
+      if (other === c || other.hall !== c.hall) continue
+      if (prio(other) <= prio(c)) continue
+      if (other.start_date <= c.start_date && other.end_date >= c.end_date) return false
+    }
+    return true
+  })
+}
+
 /**
  * Annotates virtual slots with isFreed/isClaimed metadata based on
  * cancelled trainings and active claims.

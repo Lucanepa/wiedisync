@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '3.16.7'
+const APP_VERSION = '3.17.1'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,40 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '3.17.1',
+    date: '2026-04-20',
+    sections: [
+      {
+        title: 'Fixed',
+        items: [
+          'The "Coach da" indicator now appears on game and training cards and on the homepage appointment rows when a player-coach has confirmed — not only when someone explicitly responded as staff. Detail modals already worked; the list views have been brought in line.',
+        ],
+      },
+    ],
+  },
+  {
+    version: '3.17.0',
+    date: '2026-04-20',
+    sections: [
+      {
+        title: 'Added',
+        items: [
+          'Trainings are now automatically cancelled when a hall closure covers their date. Delete or shorten the closure and the trainings are restored — unless a coach manually re-cancelled them in the meantime, in which case the manual decision is preserved.',
+          'Hallenplan now deduplicates overlapping closures: Sportferien beats "Halle geschlossen", and a Ferien closure hides any lower-priority closure covering the same date. No more doubled-up labels.',
+          'New events now auto-decline for members already on absence (previously only trainings and games did this at create time; events waited for the nightly sweep).',
+          'When a training, game, or event is rescheduled, participation is re-evaluated against existing absences: stale auto-declines for the old date are reversed, and new ones for the new date are added if the member is still absent.',
+          'Deleting or shortening an absence now reverses the auto-declined participations it had created. Manual overrides (members who changed their own answer) are kept untouched.',
+        ],
+      },
+      {
+        title: 'Technical',
+        items: [
+          'Migration 028 adds two marker columns: `participations.auto_declined_by` (→ absences.id) and `trainings.auto_cancelled_by_closure` (→ hall_closures.id). BEFORE UPDATE triggers auto-clear the markers on manual edits so reversals never touch user-owned rows.',
+        ],
+      },
+    ],
+  },
   {
     version: '3.16.7',
     date: '2026-04-20',

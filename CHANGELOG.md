@@ -2,6 +2,13 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.15.9] — 2026-04-20
+
+### Fixed
+
+- **2. Liga rankings now mark the 2nd place as barrage up (blue).** Completes the SVRZ Art. 102a alignment from 3.15.8 — Art. 102a.4 grants every regional group's 2nd place a barrage match, and 2L was still missing the blue marker. 1L left unchanged (Final-Four mechanics, Art. 168–170, are not standard 102a).
+- **Talents (RTZ) teams now shift promotion/relegation markers to the next eligible team.** Per Art. 102a.7 talents teams cannot promote or relegate, so they never get a marker themselves — but previously they still occupied the "1st" or "last" slot in the colour logic, hiding the marker from the team that actually qualifies. `getPromotionColor` now computes each team's effective position among non-talents teams, so e.g. if 1st is Talents the 2nd-placed non-talents team gets green, and if last is Talents the 2nd-to-last non-talents team gets red. Fixed in `src/utils/leaguePromotion.ts` + `RankingsTable.tsx`.
+
 ## [3.15.8] — 2026-04-20
 
 ### Fixed

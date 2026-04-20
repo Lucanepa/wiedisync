@@ -2,6 +2,27 @@
 
 All notable changes to Wiedisync are documented in this file.
 
+## [3.17.1] — 2026-04-20
+
+### Fixed
+
+- **"Coach da" badge now shows on game/training cards and home appointment rows.** `ParticipationSummary` needs `coachMemberIds` to detect player-coaches who RSVP as players (coaches who register explicitly as staff were already counted via `is_staff`). Detail modals passed this prop, but the list cards + homepage rows did not — so the badge only appeared for explicit staff responses. Added `teamCoachIds(team)` helper in `src/utils/relations.ts` (unions `team.coach` + `team.captain` + `team.team_responsible`) and wired it into `TrainingCard.tsx`, `GameCard.tsx`, and four homepage callsites (`CompactGameRow`, `CompactTrainingRow`, `AppointmentRow`, `AppointmentTableRow`). `EventCard` + event-appointment rows kept `hideExtras` — multi-team events have ambiguous "coach present" semantics, deferred.
+
+## [3.17.0] — 2026-04-20
+
+### Added
+
+- **Auto-cancel trainings on hall closure.** `hall_closures.items.create|update|delete` hooks in `kscw-hooks` now flip `trainings.cancelled=true` for future trainings in the closure's hall+date range, and reverse the cancel on closure delete / shrink. Cancelled rows are tagged with `auto_cancelled_by_closure` so manual coach cancels (which clear the marker via a BEFORE UPDATE trigger) are never overwritten on reversal.
+- **Closure source priority in hallenplan display.** `dedupeClosuresByPriority` in `src/modules/hallenplan/utils/virtualSlots.ts` keeps the highest-priority closure per (hall, date) and drops overlapping lower-priority ones: `school_holidays` > `admin` > `hauswart` > `gcal` > `auto`. A Sportferien record covering the same date+hall as a "Halle geschlossen" now wins; a Ferien row suppresses everything else it covers.
+- **`events.items.create` auto-decline hook.** Mirrors the existing trainings/games hook — new events immediately decline members who are on an overlapping absence, instead of waiting for the 01:30 UTC sweep.
+- **Activity date-change re-evaluation.** `trainings.items.update`, `games.items.update`, and `events.items.update` now trigger `reEvalActivityAutoDeclines` when the date field changes: stale `auto_declined_by` rows that no longer match the new date (or `affects` scope) are deleted, and fresh auto-declines are inserted for the new date. Manual overrides (status edits clear `auto_declined_by` via trigger) are preserved.
+- **Absence delete + shorten unwind.** `absences.items.delete` deletes all `participations WHERE auto_declined_by = ?`. `absences.items.update` now runs the same unwind before re-inserting, so shortening an absence cleanly reverses declines outside the new window.
+
+### Technical
+
+- **Migration 028 (`028-auto-action-markers.sql`).** Adds two nullable integer marker columns with partial indexes: `participations.auto_declined_by` and `trainings.auto_cancelled_by_closure`. Two BEFORE UPDATE triggers (`trg_participations_clear_auto_marker`, `trg_trainings_clear_auto_cancel_marker`) auto-null the marker on user-driven status/cancelled changes so unwind queries never touch manually-edited rows.
+- All create-time hooks (trainings/games/events) + the nightly sweep now set `auto_declined_by = a.id` in their INSERT column list.
+
 ## [3.16.7] — 2026-04-20
 
 ### Fixed

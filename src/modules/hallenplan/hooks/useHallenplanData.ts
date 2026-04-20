@@ -10,6 +10,7 @@ import {
   CLOSURE_PATTERN,
   BB_GAME_PATTERN,
   resolveHallEventHalls,
+  dedupeClosuresByPriority,
 } from '../utils/virtualSlots'
 
 export function useHallenplanData(
@@ -131,7 +132,10 @@ export function useHallenplanData(
         } as HallClosure)
       }
     }
-    return [...closures, ...syntheticClosures]
+    // Dedupe by source priority: school_holidays > admin > hauswart > gcal > auto.
+    // A Sportferien/Ferien closure suppresses any lower-priority closure on
+    // the same hall that it fully covers, so the display never doubles up.
+    return dedupeClosuresByPriority([...closures, ...syntheticClosures])
   }, [closures, hallEvents, halls])
 
   // Convert and merge virtual slots

@@ -437,13 +437,22 @@ export default ({ action, filter, init, schedule }, { services, database, logger
         ? `AND EXTRACT(DOW FROM d.date) IN (${daysOfWeek.map(d => (d + 1) % 7).join(',')})`
         : ''
 
+      // Unwind: reverse any auto-declines this absence previously created
+      // that no longer match the (possibly shortened / re-scoped) window.
+      // Manual overrides are safe — the BEFORE UPDATE trigger on participations
+      // clears auto_declined_by as soon as a user flips `status`.
+      await database.raw(
+        `DELETE FROM participations WHERE auto_declined_by = ?::integer`,
+        [absenceId],
+      )
+
       let declined = 0
 
       // Trainings
       if (allTypes || affects.includes('trainings')) {
         const res = await database.raw(`
-          INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff)
-          SELECT ?::integer, 'training', t.id::text, 'declined', ?, 0, false
+          INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff, auto_declined_by)
+          SELECT ?::integer, 'training', t.id::text, 'declined', ?, 0, false, ?::integer
           FROM trainings t
           WHERE t.date >= ?::date AND t.date <= ?::date
             AND t.cancelled = false
@@ -453,15 +462,15 @@ export default ({ action, filter, init, schedule }, { services, database, logger
               SELECT 1 FROM participations p
               WHERE p.activity_type = 'training' AND p.activity_id = t.id::text AND p.member = ?::integer
             )
-        `, [memberId, absence.reason || '', effectiveStart, endDate, memberId, memberId])
+        `, [memberId, absence.reason || '', absenceId, effectiveStart, endDate, memberId, memberId])
         declined += res?.rowCount || 0
       }
 
       // Games
       if (allTypes || affects.includes('games')) {
         const res = await database.raw(`
-          INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff)
-          SELECT ?::integer, 'game', g.id::text, 'declined', ?, 0, false
+          INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff, auto_declined_by)
+          SELECT ?::integer, 'game', g.id::text, 'declined', ?, 0, false, ?::integer
           FROM games g
           WHERE g.date >= ?::date AND g.date <= ?::date
             AND g.kscw_team IS NOT NULL
@@ -472,15 +481,15 @@ export default ({ action, filter, init, schedule }, { services, database, logger
               SELECT 1 FROM participations p
               WHERE p.activity_type = 'game' AND p.activity_id = g.id::text AND p.member = ?::integer
             )
-        `, [memberId, absence.reason || '', effectiveStart, endDate, memberId, memberId])
+        `, [memberId, absence.reason || '', absenceId, effectiveStart, endDate, memberId, memberId])
         declined += res?.rowCount || 0
       }
 
       // Events
       if (allTypes || affects.includes('events')) {
         const res = await database.raw(`
-          INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff)
-          SELECT ?::integer, 'event', e.id::text, 'declined', ?, 0, false
+          INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff, auto_declined_by)
+          SELECT ?::integer, 'event', e.id::text, 'declined', ?, 0, false, ?::integer
           FROM events e
           JOIN events_teams et ON et.events_id = e.id
           WHERE e.start_date::date >= ?::date AND e.start_date::date <= ?::date
@@ -490,7 +499,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
               SELECT 1 FROM participations p
               WHERE p.activity_type = 'event' AND p.activity_id = e.id::text AND p.member = ?::integer
             )
-        `, [memberId, absence.reason || '', effectiveStart, endDate, memberId, memberId])
+        `, [memberId, absence.reason || '', absenceId, effectiveStart, endDate, memberId, memberId])
         declined += res?.rowCount || 0
       }
 
@@ -503,6 +512,21 @@ export default ({ action, filter, init, schedule }, { services, database, logger
 
   action('absences.items.create', async ({ key }) => { await autoDeclineForAbsence(key) })
   action('absences.items.update', async ({ keys }) => { for (const k of keys) await autoDeclineForAbsence(k) })
+  action('absences.items.delete', async ({ keys }) => {
+    // Reverse any auto-declines this absence had created. Manual overrides are
+    // protected by the clear-marker trigger.
+    try {
+      for (const k of keys) {
+        const res = await database.raw(
+          `DELETE FROM participations WHERE auto_declined_by = ?::integer`,
+          [k],
+        )
+        if (res?.rowCount > 0) log.info(`[absence-auto-decline] Absence ${k} deleted: ${res.rowCount} auto-declines reversed`)
+      }
+    } catch (err) {
+      log.error({ msg: `[absence-auto-decline] delete: ${err.message}`, event: 'absence_auto_decline_delete', stack: err.stack })
+    }
+  })
 
   // ── Team join request notifications ──────────────────────────────
   // Notify coaches + team responsibles when a member requests to join a team.
@@ -826,8 +850,8 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       const pgDow = `EXTRACT(DOW FROM DATE '${dateStr}')`
 
       const res = await database.raw(`
-        INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff)
-        SELECT mt.member, 'training', ?::text, 'declined', COALESCE(a.reason, ''), 0, false
+        INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff, auto_declined_by)
+        SELECT mt.member, 'training', ?::text, 'declined', COALESCE(a.reason, ''), 0, false, a.id
         FROM member_teams mt
         JOIN absences a ON a.member = mt.member
         WHERE mt.team = ?::integer
@@ -853,8 +877,8 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       const pgDow = `EXTRACT(DOW FROM DATE '${dateStr}')`
 
       const res = await database.raw(`
-        INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff)
-        SELECT mt.member, 'game', ?::text, 'declined', COALESCE(a.reason, ''), 0, false
+        INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff, auto_declined_by)
+        SELECT mt.member, 'game', ?::text, 'declined', COALESCE(a.reason, ''), 0, false, a.id
         FROM member_teams mt
         JOIN absences a ON a.member = mt.member
         WHERE mt.team = ?::integer
@@ -872,6 +896,191 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     }
   })
 
+  // Events — mirror trainings/games: decline for members already on absence
+  action('events.items.create', async ({ key }) => {
+    try {
+      const event = await database('events').where('id', key).first()
+      if (!event || !event.start_date) return
+      const dateStr = event.start_date.toISOString?.().split('T')[0]
+        || String(event.start_date).split('T')[0]
+      const pgDow = `EXTRACT(DOW FROM DATE '${dateStr}')`
+
+      const res = await database.raw(`
+        INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff, auto_declined_by)
+        SELECT DISTINCT ON (mt.member) mt.member, 'event', ?::text, 'declined', COALESCE(a.reason, ''), 0, false, a.id
+        FROM events_teams et
+        JOIN member_teams mt ON mt.team = et.teams_id
+        JOIN absences a ON a.member = mt.member
+        WHERE et.events_id = ?::integer
+          AND a.start_date::date <= ?::date AND a.end_date::date >= ?::date
+          AND (a.affects::jsonb @> '"all"' OR a.affects::jsonb @> '"events"')
+          AND (a.type != 'weekly' OR (a.days_of_week::jsonb @> to_jsonb((${pgDow}::int + 6) % 7)))
+          AND NOT EXISTS (
+            SELECT 1 FROM participations p
+            WHERE p.activity_type = 'event' AND p.activity_id = ?::text AND p.member = mt.member
+          )
+      `, [String(key), key, dateStr, dateStr, String(key)])
+      if (res?.rowCount > 0) log.info(`[absence-auto-decline] Event ${key}: ${res.rowCount} members auto-declined`)
+    } catch (err) {
+      log.error({ msg: `[absence-auto-decline] Event create: ${err.message}`, event: 'absence_auto_decline_event', key, stack: err.stack })
+    }
+  })
+
+  // ── Activity date-change re-evaluation ─────────────────────────
+  // When a training/game/event date moves, reverse stale auto-declines that
+  // no longer apply (activity moved OUT of absence window), then insert fresh
+  // ones for the new date (activity moved INTO a window). Manual overrides
+  // are safe — the BEFORE UPDATE trigger on participations detaches them.
+
+  async function reEvalActivityAutoDeclines(activityType, activityId, teamFilterSql, teamFilterParams, dateStr) {
+    const pgDow = `EXTRACT(DOW FROM DATE '${dateStr}')`
+    // 1. Remove auto-declines that no longer match (new date outside window)
+    await database.raw(`
+      DELETE FROM participations p
+      USING absences a
+      WHERE p.activity_type = ?
+        AND p.activity_id = ?::text
+        AND p.auto_declined_by = a.id
+        AND (
+          a.start_date::date > ?::date OR a.end_date::date < ?::date
+          OR (
+            NOT (a.affects::jsonb @> '"all"' OR a.affects::jsonb @> ?)
+          )
+          OR (
+            a.type = 'weekly' AND NOT (a.days_of_week::jsonb @> to_jsonb((${pgDow}::int + 6) % 7))
+          )
+        )
+    `, [activityType, String(activityId), dateStr, dateStr, `"${activityType}s"`])
+    // 2. Insert fresh auto-declines for the new date (NOT EXISTS skips manual overrides)
+    await database.raw(`
+      INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff, auto_declined_by)
+      SELECT mt.member, ?, ?::text, 'declined', COALESCE(a.reason, ''), 0, false, a.id
+      FROM member_teams mt
+      JOIN absences a ON a.member = mt.member
+      WHERE ${teamFilterSql}
+        AND a.start_date::date <= ?::date AND a.end_date::date >= ?::date
+        AND (a.affects::jsonb @> '"all"' OR a.affects::jsonb @> ?)
+        AND (a.type != 'weekly' OR (a.days_of_week::jsonb @> to_jsonb((${pgDow}::int + 6) % 7)))
+        AND NOT EXISTS (
+          SELECT 1 FROM participations p
+          WHERE p.activity_type = ? AND p.activity_id = ?::text AND p.member = mt.member
+        )
+    `, [activityType, String(activityId), ...teamFilterParams, dateStr, dateStr, `"${activityType}s"`, activityType, String(activityId)])
+  }
+
+  action('trainings.items.update', async ({ keys, payload }) => {
+    // Only re-eval when date changed — cancelled flips handled by the separate closure logic
+    if (!payload || !('date' in payload)) return
+    try {
+      for (const k of keys) {
+        const t = await database('trainings').where('id', k).first()
+        if (!t || t.cancelled || !t.team || !t.date) continue
+        const dateStr = t.date.toISOString?.().split('T')[0] || String(t.date).split('T')[0]
+        await reEvalActivityAutoDeclines('training', k, 'mt.team = ?::integer', [t.team], dateStr)
+      }
+    } catch (err) {
+      log.error({ msg: `[absence-auto-decline] Training update: ${err.message}`, event: 'absence_auto_decline_training_update', keys, stack: err.stack })
+    }
+  })
+
+  action('games.items.update', async ({ keys, payload }) => {
+    if (!payload || !('date' in payload)) return
+    try {
+      for (const k of keys) {
+        const g = await database('games').where('id', k).first()
+        if (!g || !g.kscw_team || !g.date) continue
+        if (['completed', 'postponed', 'cancelled'].includes(g.status)) continue
+        const dateStr = g.date.toISOString?.().split('T')[0] || String(g.date).split('T')[0]
+        await reEvalActivityAutoDeclines('game', k, 'mt.team = ?::integer', [g.kscw_team], dateStr)
+      }
+    } catch (err) {
+      log.error({ msg: `[absence-auto-decline] Game update: ${err.message}`, event: 'absence_auto_decline_game_update', keys, stack: err.stack })
+    }
+  })
+
+  action('events.items.update', async ({ keys, payload }) => {
+    if (!payload || !('start_date' in payload)) return
+    try {
+      for (const k of keys) {
+        const e = await database('events').where('id', k).first()
+        if (!e || !e.start_date) continue
+        const dateStr = e.start_date.toISOString?.().split('T')[0]
+          || String(e.start_date).split('T')[0]
+        await reEvalActivityAutoDeclines(
+          'event',
+          k,
+          'EXISTS (SELECT 1 FROM events_teams et WHERE et.events_id = ?::integer AND et.teams_id = mt.team)',
+          [k],
+          dateStr,
+        )
+      }
+    } catch (err) {
+      log.error({ msg: `[absence-auto-decline] Event update: ${err.message}`, event: 'absence_auto_decline_event_update', keys, stack: err.stack })
+    }
+  })
+
+  // ── Hall Closure → Training Auto-Cancel ────────────────────────
+  // When a hall_closures record is created or moved, cancel all future trainings
+  // in that hall+date range. When the closure is deleted (or no longer covers
+  // a training's date), reverse any trainings this closure had auto-cancelled.
+  // Manual cancels are protected by the clear-marker trigger.
+
+  async function applyClosureAutoCancel(closureId) {
+    try {
+      const c = await database('hall_closures').where('id', closureId).first()
+      if (!c) return
+      const start = c.start_date?.toISOString?.().split('T')[0]
+        || String(c.start_date).split('T')[0]
+      const end = c.end_date?.toISOString?.().split('T')[0]
+        || String(c.end_date).split('T')[0]
+      const today = new Date().toISOString().split('T')[0]
+      const effectiveStart = start > today ? start : today
+      const reason = c.reason || 'Halle geschlossen'
+
+      // 1. Reverse trainings this closure had previously cancelled that no
+      //    longer fall in its (new) window — covers date-range edits.
+      await database.raw(`
+        UPDATE trainings
+        SET cancelled = false,
+            cancel_reason = '',
+            auto_cancelled_by_closure = NULL
+        WHERE auto_cancelled_by_closure = ?::integer
+          AND (hall != ? OR date < ?::date OR date > ?::date)
+      `, [closureId, c.hall, start, end])
+
+      // 2. Auto-cancel non-cancelled future trainings newly covered.
+      const res = await database.raw(`
+        UPDATE trainings
+        SET cancelled = true,
+            cancel_reason = ?,
+            auto_cancelled_by_closure = ?::integer
+        WHERE hall = ?
+          AND date >= ?::date AND date <= ?::date
+          AND cancelled = false
+      `, [reason, closureId, c.hall, effectiveStart, end])
+      if (res?.rowCount > 0) log.info(`[closure-auto-cancel] Closure ${closureId}: ${res.rowCount} trainings auto-cancelled`)
+    } catch (err) {
+      log.error({ msg: `[closure-auto-cancel] ${err.message}`, event: 'closure_auto_cancel', closureId, stack: err.stack })
+    }
+  }
+
+  action('hall_closures.items.create', async ({ key }) => { await applyClosureAutoCancel(key) })
+  action('hall_closures.items.update', async ({ keys }) => { for (const k of keys) await applyClosureAutoCancel(k) })
+  action('hall_closures.items.delete', async ({ keys }) => {
+    try {
+      for (const k of keys) {
+        const res = await database.raw(`
+          UPDATE trainings
+          SET cancelled = false, cancel_reason = '', auto_cancelled_by_closure = NULL
+          WHERE auto_cancelled_by_closure = ?::integer
+        `, [k])
+        if (res?.rowCount > 0) log.info(`[closure-auto-cancel] Closure ${k} deleted: ${res.rowCount} trainings reversed`)
+      }
+    } catch (err) {
+      log.error({ msg: `[closure-auto-cancel] delete: ${err.message}`, event: 'closure_auto_cancel_delete', stack: err.stack })
+    }
+  })
+
   // ── Cron: Absence Auto-Decline Sweep (01:30 UTC) ────────────────
   // Catches gaps: existing absences + newly generated recurring trainings,
   // or any edge case missed by the create/update hooks above.
@@ -881,8 +1090,8 @@ export default ({ action, filter, init, schedule }, { services, database, logger
 
       // Trainings: decline for absent members who have no participation yet
       const t1 = await database.raw(`
-        INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff)
-        SELECT mt.member, 'training', t.id::text, 'declined', COALESCE(a.reason, ''), 0, false
+        INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff, auto_declined_by)
+        SELECT mt.member, 'training', t.id::text, 'declined', COALESCE(a.reason, ''), 0, false, a.id
         FROM trainings t
         JOIN member_teams mt ON mt.team = t.team
         JOIN absences a ON a.member = mt.member
@@ -899,8 +1108,8 @@ export default ({ action, filter, init, schedule }, { services, database, logger
 
       // Games
       const t2 = await database.raw(`
-        INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff)
-        SELECT mt.member, 'game', g.id::text, 'declined', COALESCE(a.reason, ''), 0, false
+        INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff, auto_declined_by)
+        SELECT mt.member, 'game', g.id::text, 'declined', COALESCE(a.reason, ''), 0, false, a.id
         FROM games g
         JOIN member_teams mt ON mt.team = g.kscw_team
         JOIN absences a ON a.member = mt.member
@@ -916,10 +1125,10 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       `)
       total += t2?.rowCount || 0
 
-      // Events
+      // Events — note DISTINCT ON so multi-team events produce one row per member
       const t3 = await database.raw(`
-        INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff)
-        SELECT DISTINCT mt.member, 'event', e.id::text, 'declined', COALESCE(a.reason, ''), 0, false
+        INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff, auto_declined_by)
+        SELECT DISTINCT ON (mt.member, e.id) mt.member, 'event', e.id::text, 'declined', COALESCE(a.reason, ''), 0, false, a.id
         FROM events e
         JOIN events_teams et ON et.events_id = e.id
         JOIN member_teams mt ON mt.team = et.teams_id

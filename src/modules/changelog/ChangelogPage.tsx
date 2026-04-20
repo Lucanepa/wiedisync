@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.0.3'
+const APP_VERSION = '4.0.4'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,18 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.0.4',
+    date: '2026-04-20',
+    sections: [
+      {
+        title: 'Navigation',
+        items: [
+          'Inbox (Messaging) now sits at the top of the mobile More sheet secondary list, above Events. It was getting lost below the other entries.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.0.3',
     date: '2026-04-20',

@@ -295,4 +295,29 @@ export function registerGameScheduling(router, { database, logger, services, get
       res.status(500).json({ error: 'Internal error' })
     }
   })
+
+  // POST /kscw/admin/terminplanung/svrz-sync — manual trigger for bulk SVRZ sync
+  router.post('/admin/terminplanung/svrz-sync', async (req, res) => {
+    if (!req.accountability?.admin) return res.status(403).json({ error: 'Admin only' })
+    try {
+      const { season_uuid, season_name, cutoff_date } = req.body || {}
+      const { spawn } = await import('node:child_process')
+      const child = spawn('node', ['/directus/scripts/svrz-scheduling-sync.mjs'], {
+        env: {
+          ...process.env,
+          SVRZ_SEASON_UUID: season_uuid || 'dcafddfe-8139-4e02-baad-d3f88ec00cd0',
+          SVRZ_SEASON_NAME: season_name || '2025/2026',
+          ...(cutoff_date ? { SVRZ_CUTOFF_DATE: cutoff_date } : {}),
+        },
+        detached: true,
+        stdio: 'ignore',
+      })
+      child.unref()
+      log.info({ msg: `svrz-sync spawned`, pid: child.pid, userId: req.accountability?.user })
+      res.json({ started: true, pid: child.pid })
+    } catch (err) {
+      log.error({ msg: `svrz-sync: ${err.message}`, endpoint: 'admin/terminplanung/svrz-sync', userId: req.accountability?.user || null, method: req.method, stack: err.stack })
+      res.status(500).json({ error: 'Internal error' })
+    }
+  })
 }

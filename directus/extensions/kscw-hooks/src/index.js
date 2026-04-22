@@ -1568,6 +1568,38 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     }
   })
 
+  // ── 10b. Cron: SVRZ scheduling sync (daily 04:30 UTC) ──
+  schedule('30 4 * * *', async () => {
+    if (!process.env.VM_USERNAME || !process.env.VM_PASSWORD) {
+      log.warn('SVRZ sync skipped: VM_USERNAME or VM_PASSWORD not set')
+      return
+    }
+    try {
+      const token = await getCronAccessToken(log, 'SVRZ sync')
+      if (!token) return
+      const { execSync } = await import('node:child_process')
+      const env = {
+        HOME: process.env.HOME,
+        PATH: process.env.PATH,
+        VM_USERNAME: process.env.VM_USERNAME,
+        VM_PASSWORD: process.env.VM_PASSWORD,
+        DIRECTUS_URL: 'http://127.0.0.1:8055',
+        DIRECTUS_TOKEN: token,
+        SVRZ_SEASON_UUID: 'dcafddfe-8139-4e02-baad-d3f88ec00cd0',
+        SVRZ_SEASON_NAME: '2025/2026',
+      }
+      const output = execSync('node /directus/scripts/svrz-scheduling-sync.mjs', {
+        env,
+        timeout: 300_000,
+        encoding: 'utf-8',
+      })
+      log.info(`SVRZ sync cron: ${output.split('\n').slice(-6).join(' | ')}`)
+    } catch (err) {
+      log.error({ msg: `SVRZ sync cron: ${err.message}`, exitCode: err.status, event: 'cron.svrz_sync' })
+      logCronError('svrz_sync', new Error(err.message))
+    }
+  })
+
   // ── 10c. Cron: Refresh teams.season dropdown choices (May 1 annually, 03:00 UTC) ──
   // Earliest allowed season is the one currently "live": Jan-Apr → last autumn's; May onwards → this autumn's.
   // The window only shifts on May 1 (old season ends), so one run per year is enough.

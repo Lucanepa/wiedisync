@@ -9,6 +9,102 @@
 import { vmLogin, csrfFromPage, VM_BASE, UA } from './vm-client.mjs';
 
 /**
+ * Build the URL-encoded POST body for the SVRZ /search endpoint.
+ * Supports text, boolean, and values[] property filters.
+ */
+export function buildSearchBody({ properties = [], propertyFilters = [], offset = 0, limit = 200, csrf }) {
+  const p = new URLSearchParams();
+  propertyFilters.forEach((f, i) => {
+    p.set(`searchConfiguration[propertyFilters][${i}][propertyName]`, f.propertyName);
+    if (f.text !== undefined) p.set(`searchConfiguration[propertyFilters][${i}][text]`, String(f.text));
+    if (f.boolean !== undefined) p.set(`searchConfiguration[propertyFilters][${i}][boolean]`, String(f.boolean));
+    if (Array.isArray(f.values)) {
+      f.values.forEach((v, j) => p.set(`searchConfiguration[propertyFilters][${i}][values][${j}]`, String(v)));
+    }
+  });
+  p.set('searchConfiguration[customFilters]', '');
+  p.set('searchConfiguration[propertyOrderings]', '');
+  p.set('searchConfiguration[offset]', String(offset));
+  p.set('searchConfiguration[limit]', String(limit));
+  p.set('searchConfiguration[textSearchOperator]', 'AND');
+  properties.forEach((pr, i) => p.set(`propertyRenderConfiguration[${i}]`, pr));
+  p.set('__csrfToken', csrf);
+  return p.toString();
+}
+
+/**
+ * Fetch all pages from an SVRZ /search endpoint. Iterates offset until
+ * totalItemsCount is reached. `ctx` comes from csrfFromPage().
+ */
+export async function fetchAllPaged(jar, ctx, resourcePath, { properties = [], propertyFilters = [], referer, batchSize = 200, maxBatches = 100 } = {}) {
+  const base = `${VM_BASE}${resourcePath}/search`;
+  const headers = {
+    'User-Agent': UA,
+    'Content-Type': 'text/plain;charset=UTF-8',
+    Accept: '*/*',
+    Origin: VM_BASE,
+    Referer: `${VM_BASE}${referer}`,
+    Cookie: jar.header(),
+  };
+  if (ctx.wuid) headers['Window-Unique-Id'] = ctx.wuid;
+  const all = [];
+  let total = Infinity, offset = 0, batches = 0;
+  while (offset < total && batches < maxBatches) {
+    const body = buildSearchBody({ properties, propertyFilters, offset, limit: batchSize, csrf: ctx.csrf });
+    const r = await fetch(base, { method: 'POST', headers, body });
+    if (!r.ok) {
+      const text = await r.text();
+      throw new Error(`${resourcePath}: HTTP ${r.status} — ${text.slice(0, 300)}`);
+    }
+    const j = await r.json();
+    total = j.totalItemsCount ?? 0;
+    const items = j.items ?? [];
+    if (items.length === 0) break;
+    all.push(...items);
+    offset += items.length;
+    batches += 1;
+  }
+  return { total, items: all };
+}
+
+/**
+ * Curated property paths for the SVRZ games entity (api\gamewithresult).
+ * Verified against live dry-run on 2026-04-22.
+ */
+export const GAME_PROPERTIES = [
+  'number',
+  'status',
+  'displayName',
+  'shortDisplayName',
+  'startingDateTime',
+  'playingWeekday',
+  'isForfeitGame',
+  'encounter.teamHome.club.identifier',
+  'encounter.teamHome.club.name',
+  'encounter.teamHome.name',
+  'encounter.teamHomeName',
+  'encounter.teamAway.club.identifier',
+  'encounter.teamAway.club.name',
+  'encounter.teamAway.name',
+  'encounter.teamAwayName',
+  'encounter.teamHome.leagueCategory.name',
+  'encounter.teamAway.leagueCategory.name',
+  'group.phase.league.season.name',
+  'group.phase.league.displayName',
+  'group.phase.league.gender',
+  'group.phase.name',
+  'group.name',
+];
+
+export async function fetchAllGames(jar, ctx) {
+  return fetchAllPaged(jar, ctx, '/api/sportmanager.indoorvolleyball/api%5cgamewithresult', {
+    properties: GAME_PROPERTIES,
+    referer: '/sportmanager.indoorvolleyball/game/index',
+    batchSize: 200,
+  });
+}
+
+/**
  * Filter games down to those that are schedulable — i.e. status is "open" or
  * "waitingForApproval", AND either has no start date yet or starts on/after cutoff.
  */

@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { filterSchedulableGames, gameToSvrzRow } from '../svrz-scheduling-sync.mjs';
+import { buildSearchBody, GAME_PROPERTIES } from '../svrz-scheduling-sync.mjs';
 
 const fixture = JSON.parse(readFileSync(new URL('./fixtures/games-sample.json', import.meta.url)));
 
@@ -62,4 +63,44 @@ test('gameToSvrzRow tolerates missing encounter/club fields gracefully', () => {
   assert.equal(row.home_club_id, '');
   assert.equal(row.home_club_name, '');
   assert.equal(row.league_short, '');
+});
+
+test('buildSearchBody encodes properties + propertyFilters (values array) + csrf', () => {
+  const body = buildSearchBody({
+    properties: ['number', 'status'],
+    propertyFilters: [{ propertyName: 'team.season.Persistence_Object_Identifier', values: ['uuid-1', 'uuid-2'] }],
+    offset: 0, limit: 100, csrf: 'csrf-x',
+  });
+  assert.match(body, /propertyRenderConfiguration(?:%5B|\[)0(?:%5D|\])=number/);
+  assert.match(body, /propertyRenderConfiguration(?:%5B|\[)1(?:%5D|\])=status/);
+  assert.match(body, /propertyFilters(?:%5D|\])(?:%5B|\[)0(?:%5D|\])(?:%5B|\[)propertyName(?:%5D|\])=team\.season\.Persistence_Object_Identifier/);
+  assert.match(body, /values(?:%5D|\])(?:%5B|\[)0(?:%5D|\])=uuid-1/);
+  assert.match(body, /values(?:%5D|\])(?:%5B|\[)1(?:%5D|\])=uuid-2/);
+  assert.match(body, /offset(?:%5D|\])=0/);
+  assert.match(body, /limit(?:%5D|\])=100/);
+  assert.match(body, /textSearchOperator(?:%5D|\])=AND/);
+  assert.match(body, /__csrfToken=csrf-x/);
+});
+
+test('buildSearchBody encodes text + boolean filter variants', () => {
+  const body = buildSearchBody({
+    properties: ['x'],
+    propertyFilters: [
+      { propertyName: 'person.deceased', boolean: false },
+      { propertyName: 'club.name', text: 'Wiedikon' },
+    ],
+    offset: 0, limit: 50, csrf: 'c',
+  });
+  assert.match(body, /boolean(?:%5D|\])=false/);
+  assert.match(body, /text(?:%5D|\])=Wiedikon/);
+});
+
+test('GAME_PROPERTIES is a non-empty array including encounter club ids + status', () => {
+  assert.ok(Array.isArray(GAME_PROPERTIES));
+  assert.ok(GAME_PROPERTIES.length > 10);
+  assert.ok(GAME_PROPERTIES.includes('encounter.teamHome.club.identifier'));
+  assert.ok(GAME_PROPERTIES.includes('encounter.teamAway.club.identifier'));
+  assert.ok(GAME_PROPERTIES.includes('status'));
+  assert.ok(GAME_PROPERTIES.includes('number'));
+  assert.ok(GAME_PROPERTIES.includes('startingDateTime'));
 });

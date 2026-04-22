@@ -1634,7 +1634,7 @@
     "scoresheet": null,
     "shortDisplayName": "#367152 | 02.09.2024 00:00 | Fixture Verein 1 1 — KSC Wiedikon H3",
     "shortDisplayNameWithoutStartingDate": "#367152 | Fixture Verein 1 1 — KSC Wiedikon H3",
-    "startingDateTime": "2024-09-01T22:00:00.000000+00:00",
+    "startingDateTime": null,
     "status": "open",
     "updatedAt": "2024-08-30T07:22:39.000000+00:00",
     "updatedBy": "fixture_user",

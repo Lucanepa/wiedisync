@@ -11,15 +11,20 @@ test('filterSchedulableGames keeps open + waitingForApproval, drops approved', (
   assert.ok(out.every(g => ['open', 'waitingForApproval'].includes(g.status)));
 });
 
-test('filterSchedulableGames honors cutoffDate — drops games before cutoff unless startingDateTime is null', () => {
-  const cutoff = new Date('2200-01-01'); // future cutoff
+test('filterSchedulableGames with future cutoff keeps null-date rows, drops dated rows', () => {
+  const cutoff = new Date('2200-01-01');
   const out = filterSchedulableGames(fixture, { cutoffDate: cutoff });
-  // Only games with status in [open, waitingForApproval] AND (starting null OR >= cutoff) survive
+  // Must have at least one surviving row — the null-date one
+  assert.ok(out.length > 0, 'null-startingDateTime row should survive future cutoff');
+  // Every survivor: status is schedulable AND (startingDateTime is null OR >= cutoff)
   out.forEach(g => {
-    if (g.startingDateTime) {
-      assert.ok(new Date(g.startingDateTime) >= cutoff, `game ${g.number} survived but starts before cutoff`);
+    assert.ok(['open', 'waitingForApproval'].includes(g.status));
+    if (g.startingDateTime !== null) {
+      assert.ok(new Date(g.startingDateTime) >= cutoff, `game ${g.number} survived but starts ${g.startingDateTime} which is before cutoff`);
     }
   });
+  // At least one of the survivors had a null startingDateTime — proves the null branch worked
+  assert.ok(out.some(g => g.startingDateTime === null), 'expected at least one null-date survivor to prove null-path coverage');
 });
 
 test('gameToSvrzRow extracts all fields, club identifier as string', () => {
@@ -40,6 +45,15 @@ test('gameToSvrzRow extracts all fields, club identifier as string', () => {
   assert.equal(row.season_name, game.group.phase.league.season.name);
   // raw should contain the full original game
   assert.equal(row.raw.number, game.number);
+  // Full key set — catches schema drift
+  const EXPECTED_KEYS = [
+    'svrz_persistence_id', 'svrz_number', 'status',
+    'display_name', 'short_display_name', 'starting_date_time', 'playing_weekday',
+    'home_club_id', 'home_club_name', 'home_team_name',
+    'away_club_id', 'away_club_name', 'away_team_name',
+    'league_name', 'league_short', 'gender', 'season_name', 'raw',
+  ];
+  assert.deepEqual(Object.keys(row).sort(), [...EXPECTED_KEYS].sort(), 'row must have exactly the 18 expected keys');
 });
 
 test('gameToSvrzRow tolerates missing encounter/club fields gracefully', () => {

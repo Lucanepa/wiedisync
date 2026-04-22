@@ -77,6 +77,7 @@ See `INFRA.md → Domains & Hosting Overview` for full map.
 
 ## Changelog
 <!-- Keep entries one line. For full details see CHANGELOG.md or git log. -->
+- **2026-04-23** v4.1.0 — SVRZ game-scheduling invites: admin-issued per-verein tokenized links (3-tier contact match from SVRZ game + club feeds), manual CSV paste fallback, invite lifecycle (invited → viewed → booked) with reissue/revoke, schema extended on `game_scheduling_opponents`.
 - **2026-04-20** v4.0.4 — Mobile More sheet: `/inbox` first in secondary list (was getting lost below `/events`).
 - **2026-04-20** v4.0.3 — Mobile/desktop nav parity: More sheet + SidebarOptions aligned; `/status` is a friendly health dashboard; changelog justified.
 - **2026-04-20** v4.0.2 — Migration 030 — 4 more `members.read` gaps (Spielplaner menu / coach scorer-assignment / shell badge / Aktiv-Passiv + Beitragskategorie display).

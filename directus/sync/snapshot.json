@@ -8544,50 +8544,6 @@
     },
     {
       "collection": "game_scheduling_opponents",
-      "field": "season",
-      "type": "string",
-      "meta": {
-        "collection": "game_scheduling_opponents",
-        "conditions": null,
-        "display": null,
-        "display_options": null,
-        "field": "season",
-        "group": null,
-        "hidden": false,
-        "interface": "input",
-        "note": null,
-        "options": null,
-        "readonly": false,
-        "required": false,
-        "searchable": true,
-        "sort": 2,
-        "special": null,
-        "translations": null,
-        "validation": null,
-        "validation_message": null,
-        "width": "full"
-      },
-      "schema": {
-        "name": "season",
-        "table": "game_scheduling_opponents",
-        "data_type": "character varying",
-        "default_value": null,
-        "max_length": 255,
-        "numeric_precision": null,
-        "numeric_scale": null,
-        "is_nullable": true,
-        "is_unique": false,
-        "is_indexed": false,
-        "is_primary_key": false,
-        "is_generated": false,
-        "generation_expression": null,
-        "has_auto_increment": false,
-        "foreign_key_table": null,
-        "foreign_key_column": null
-      }
-    },
-    {
-      "collection": "game_scheduling_opponents",
       "field": "club_name",
       "type": "string",
       "meta": {
@@ -8996,6 +8952,362 @@
         "has_auto_increment": false,
         "foreign_key_table": null,
         "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "game_scheduling_opponents",
+      "field": "status",
+      "type": "string",
+      "meta": {
+        "collection": "game_scheduling_opponents",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "status",
+        "group": null,
+        "hidden": false,
+        "interface": "select-dropdown",
+        "note": null,
+        "options": {
+          "choices": [
+            {
+              "text": "invited",
+              "value": "invited"
+            },
+            {
+              "text": "viewed",
+              "value": "viewed"
+            },
+            {
+              "text": "booked",
+              "value": "booked"
+            },
+            {
+              "text": "revoked",
+              "value": "revoked"
+            },
+            {
+              "text": "active",
+              "value": "active"
+            },
+            {
+              "text": "expired",
+              "value": "expired"
+            }
+          ]
+        },
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 12,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "half"
+      },
+      "schema": {
+        "name": "status",
+        "table": "game_scheduling_opponents",
+        "data_type": "character varying",
+        "default_value": "active",
+        "max_length": 32,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": false,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "game_scheduling_opponents",
+      "field": "created_by_admin",
+      "type": "boolean",
+      "meta": {
+        "collection": "game_scheduling_opponents",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "created_by_admin",
+        "group": null,
+        "hidden": false,
+        "interface": "boolean",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 13,
+        "special": [
+          "cast-boolean"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "half"
+      },
+      "schema": {
+        "name": "created_by_admin",
+        "table": "game_scheduling_opponents",
+        "data_type": "boolean",
+        "default_value": false,
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": false,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "game_scheduling_opponents",
+      "field": "source",
+      "type": "string",
+      "meta": {
+        "collection": "game_scheduling_opponents",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "source",
+        "group": null,
+        "hidden": false,
+        "interface": "select-dropdown",
+        "note": null,
+        "options": {
+          "choices": [
+            {
+              "text": "self_registration",
+              "value": "self_registration"
+            },
+            {
+              "text": "manual",
+              "value": "manual"
+            },
+            {
+              "text": "svrz",
+              "value": "svrz"
+            }
+          ]
+        },
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 14,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "half"
+      },
+      "schema": {
+        "name": "source",
+        "table": "game_scheduling_opponents",
+        "data_type": "character varying",
+        "default_value": "self_registration",
+        "max_length": 32,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": false,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "game_scheduling_opponents",
+      "field": "first_viewed_at",
+      "type": "timestamp",
+      "meta": {
+        "collection": "game_scheduling_opponents",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "first_viewed_at",
+        "group": null,
+        "hidden": false,
+        "interface": "datetime",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 15,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "half"
+      },
+      "schema": {
+        "name": "first_viewed_at",
+        "table": "game_scheduling_opponents",
+        "data_type": "timestamp with time zone",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "game_scheduling_opponents",
+      "field": "expires_at",
+      "type": "timestamp",
+      "meta": {
+        "collection": "game_scheduling_opponents",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "expires_at",
+        "group": null,
+        "hidden": false,
+        "interface": "datetime",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 16,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "half"
+      },
+      "schema": {
+        "name": "expires_at",
+        "table": "game_scheduling_opponents",
+        "data_type": "timestamp with time zone",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "game_scheduling_opponents",
+      "field": "team_name",
+      "type": "string",
+      "meta": {
+        "collection": "game_scheduling_opponents",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "team_name",
+        "group": null,
+        "hidden": false,
+        "interface": "input",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 17,
+        "special": null,
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "half"
+      },
+      "schema": {
+        "name": "team_name",
+        "table": "game_scheduling_opponents",
+        "data_type": "character varying",
+        "default_value": null,
+        "max_length": 255,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": null,
+        "foreign_key_column": null
+      }
+    },
+    {
+      "collection": "game_scheduling_opponents",
+      "field": "season",
+      "type": "integer",
+      "meta": {
+        "collection": "game_scheduling_opponents",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "season",
+        "group": null,
+        "hidden": false,
+        "interface": "select-dropdown-m2o",
+        "note": null,
+        "options": {
+          "template": "{{label}}"
+        },
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 18,
+        "special": [
+          "m2o"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "half"
+      },
+      "schema": {
+        "name": "season",
+        "table": "game_scheduling_opponents",
+        "data_type": "integer",
+        "default_value": null,
+        "max_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "is_nullable": true,
+        "is_unique": false,
+        "is_indexed": false,
+        "is_primary_key": false,
+        "is_generated": false,
+        "generation_expression": null,
+        "has_auto_increment": false,
+        "foreign_key_table": "game_scheduling_seasons",
+        "foreign_key_column": "id"
       }
     },
     {
@@ -35265,6 +35577,31 @@
         "one_deselect_action": "nullify",
         "one_field": null,
         "sort_field": null
+      }
+    },
+    {
+      "collection": "game_scheduling_opponents",
+      "field": "season",
+      "related_collection": "game_scheduling_seasons",
+      "meta": {
+        "junction_field": null,
+        "many_collection": "game_scheduling_opponents",
+        "many_field": "season",
+        "one_allowed_collections": null,
+        "one_collection": "game_scheduling_seasons",
+        "one_collection_field": null,
+        "one_deselect_action": "nullify",
+        "one_field": null,
+        "sort_field": null
+      },
+      "schema": {
+        "table": "game_scheduling_opponents",
+        "column": "season",
+        "foreign_key_table": "game_scheduling_seasons",
+        "foreign_key_column": "id",
+        "constraint_name": "game_scheduling_opponents_season_foreign",
+        "on_update": "NO ACTION",
+        "on_delete": "SET NULL"
       }
     },
     {

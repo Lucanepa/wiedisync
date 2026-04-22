@@ -408,5 +408,31 @@
       }
     }
   ],
-  "relations": []
+  "relations": [
+    {
+      "collection": "game_scheduling_opponents",
+      "field": "season",
+      "related_collection": "game_scheduling_seasons",
+      "meta": {
+        "junction_field": null,
+        "many_collection": "game_scheduling_opponents",
+        "many_field": "season",
+        "one_allowed_collections": null,
+        "one_collection": "game_scheduling_seasons",
+        "one_collection_field": null,
+        "one_deselect_action": "nullify",
+        "one_field": null,
+        "sort_field": null
+      },
+      "schema": {
+        "table": "game_scheduling_opponents",
+        "column": "season",
+        "foreign_key_table": "game_scheduling_seasons",
+        "foreign_key_column": "id",
+        "constraint_name": "game_scheduling_opponents_season_foreign",
+        "on_update": "NO ACTION",
+        "on_delete": "SET NULL"
+      }
+    }
+  ]
 }

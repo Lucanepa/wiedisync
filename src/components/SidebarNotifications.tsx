@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ClipboardList, Clock, AlertTriangle, Trophy, Bell, ArrowRightLeft, ArrowLeft, BellRing, BellOff } from 'lucide-react'
+import { ClipboardList, Clock, AlertTriangle, Trophy, Bell, ArrowRightLeft, ArrowLeft, BellRing, BellOff, UserPlus, Flag } from 'lucide-react'
 import type { Notification } from '../types'
 import { usePushNotifications } from '../hooks/usePushNotifications'
 
@@ -20,6 +20,9 @@ const typeIcons: Record<string, React.ReactNode> = {
   deadline_reminder: <AlertTriangle className="h-4 w-4" />,
   result_available: <Trophy className="h-4 w-4" />,
   duty_delegation_request: <ArrowRightLeft className="h-4 w-4" />,
+  member_join_request: <UserPlus className="h-4 w-4" />,
+  event_invite: <Bell className="h-4 w-4" />,
+  new_report: <Flag className="h-4 w-4" />,
 }
 
 const typeLabels: Record<string, string> = {
@@ -28,6 +31,9 @@ const typeLabels: Record<string, string> = {
   deadline_reminder: 'deadlineReminder',
   result_available: 'resultAvailable',
   duty_delegation_request: 'dutyDelegation',
+  member_join_request: 'memberJoinRequest',
+  event_invite: 'eventInvite',
+  new_report: 'newReport',
 }
 
 function timeAgo(dateStr: string, t: (key: string, opts?: Record<string, unknown>) => string): string {
@@ -43,6 +49,10 @@ function timeAgo(dateStr: string, t: (key: string, opts?: Record<string, unknown
 
 function getNavigationPath(n: Notification): string {
   if (n.type === 'duty_delegation_request' || n.activity_type === 'scorer_duty') return '/scorer'
+  if (n.type === 'member_join_request' && n.activity_id) return `/teams/${n.activity_id}`
+  // Messaging moderation: admins get `new_report` notifications when a member
+  // submits a report. The report list + resolution UI lives at /admin/reports.
+  if (n.type === 'new_report' || n.activity_type === 'report') return '/admin/reports'
   switch (n.activity_type) {
     case 'game': return '/games'
     case 'training': return '/trainings'
@@ -61,6 +71,7 @@ export default function SidebarNotifications({
   theme,
 }: SidebarNotificationsProps) {
   const { t } = useTranslation('notifications')
+  const { t: tMessaging } = useTranslation('messaging')
   const navigate = useNavigate()
   const push = usePushNotifications()
 
@@ -73,6 +84,9 @@ export default function SidebarNotifications({
   function renderMessage(n: Notification): string {
     try {
       const data = n.body ? JSON.parse(n.body) : {}
+      if (data.reason) {
+        data.reason = tMessaging(`reportReason_${data.reason}`, { defaultValue: data.reason })
+      }
       const noLocation = (!data.hall && !data.location) || (data.hall === '' && data.location == null) || (data.location === '' && data.hall == null)
       const key = noLocation && t(`${n.title}_no_hall`, { defaultValue: '' }) ? `${n.title}_no_hall` : n.title
       // Strip :SS seconds from legacy times (e.g. "19:00:00" → "19:00")

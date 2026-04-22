@@ -12,6 +12,7 @@ export default {
   dutyDelegation: 'Schreiberdienst',
   memberJoinRequest: 'Beitrittsanfrage',
   eventInvite: 'Anlass-Einladung',
+  newReport: 'Meldung',
   member_join_request: '{{memberName}} möchte {{teamName}} beitreten',
   // Delegation notification messages
   duty_delegation_request: '{{from}} möchte dir den {{role}}-Einsatz für {{game}} am {{date}} übergeben.',

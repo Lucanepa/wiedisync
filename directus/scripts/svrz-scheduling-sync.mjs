@@ -105,6 +105,63 @@ export async function fetchAllGames(jar, ctx) {
 }
 
 /**
+ * Curated property paths for the SVRZ Spielplaner contacts entity
+ * (api\playingscheduleresponsibleaddressviewer). Requires a season filter
+ * at fetch time or the endpoint 500s.
+ * Verified against live dry-run on 2026-04-22.
+ */
+export const CONTACT_PROPERTIES = [
+  'person.lastName',
+  'person.firstName',
+  'person.primaryEmailAddress.emailAddress',
+  'person.primaryPhoneNumber.normalizedLocalNumber',
+  'club.identifier',
+  'club.name',
+  'club.teams.*.leagueCategory.name',
+  'club.teams.*.leagueCategory.displayNameWithManagingAssociationShortName',
+  'club.teams.*.gender',
+  'club.teams.*.leagueCategory.sorting',
+];
+
+/**
+ * Fetch all Spielplaner contacts for a given SVRZ season.
+ * `seasonUuid` is the `Persistence_Object_Identifier` of the season (per SVRZ).
+ */
+export async function fetchAllContacts(jar, ctx, seasonUuid) {
+  return fetchAllPaged(jar, ctx, '/api/sportmanager.indoorvolleyball/api%5cplayingscheduleresponsibleaddressviewer', {
+    properties: CONTACT_PROPERTIES,
+    propertyFilters: [{ propertyName: 'club.teams.season.Persistence_Object_Identifier', values: [seasonUuid] }],
+    referer: '/sportmanager.indoorvolleyball/playingscheduleresponsibleaddressviewer/index',
+    batchSize: 200,
+  });
+}
+
+/**
+ * Map a contact record to the flat row shape for Directus.
+ * Dedupes + sorts `club_league_categories` and `club_team_genders`.
+ */
+export function contactToSvrzRow(c, seasonUuid, seasonName = '') {
+  const club = c.club || {};
+  const person = c.person || {};
+  const teams = club.teams || [];
+  return {
+    svrz_persistence_id: c.__identity,
+    season_uuid: seasonUuid,
+    season_name: seasonName,
+    club_id: club.identifier == null ? '' : String(club.identifier),
+    club_name: club.name || '',
+    person_first_name: person.firstName || '',
+    person_last_name: person.lastName || '',
+    contact_name: `${person.firstName || ''} ${person.lastName || ''}`.trim(),
+    contact_email: (person.primaryEmailAddress?.emailAddress || '').toLowerCase().trim(),
+    contact_phone: person.primaryPhoneNumber?.normalizedLocalNumber || '',
+    club_league_categories: [...new Set(teams.map(t => t.leagueCategory?.name).filter(Boolean))].sort(),
+    club_team_genders: [...new Set(teams.map(t => t.gender).filter(Boolean))].sort(),
+    raw: c,
+  };
+}
+
+/**
  * Filter games down to those that are schedulable — i.e. status is "open" or
  * "waitingForApproval", AND either has no start date yet or starts on/after cutoff.
  */

@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { filterSchedulableGames, gameToSvrzRow } from '../svrz-scheduling-sync.mjs';
 import { buildSearchBody, GAME_PROPERTIES } from '../svrz-scheduling-sync.mjs';
+import { contactToSvrzRow, CONTACT_PROPERTIES } from '../svrz-scheduling-sync.mjs';
+const contactsFixture = JSON.parse(readFileSync(new URL('./fixtures/contacts-sample.json', import.meta.url)));
 
 const fixture = JSON.parse(readFileSync(new URL('./fixtures/games-sample.json', import.meta.url)));
 
@@ -103,4 +105,45 @@ test('GAME_PROPERTIES is a non-empty array including encounter club ids + status
   assert.ok(GAME_PROPERTIES.includes('status'));
   assert.ok(GAME_PROPERTIES.includes('number'));
   assert.ok(GAME_PROPERTIES.includes('startingDateTime'));
+});
+
+test('CONTACT_PROPERTIES includes club.identifier, person email, and teams leagueCategory wildcard', () => {
+  assert.ok(Array.isArray(CONTACT_PROPERTIES));
+  assert.ok(CONTACT_PROPERTIES.includes('club.identifier'));
+  assert.ok(CONTACT_PROPERTIES.includes('club.name'));
+  assert.ok(CONTACT_PROPERTIES.includes('person.primaryEmailAddress.emailAddress'));
+  assert.ok(CONTACT_PROPERTIES.some(p => p.includes('club.teams.*.leagueCategory.name')));
+  assert.ok(CONTACT_PROPERTIES.some(p => p.includes('club.teams.*.gender')));
+});
+
+test('contactToSvrzRow maps person + club + dedups/sorts league categories', () => {
+  const c = contactsFixture[0];
+  const row = contactToSvrzRow(c, 'dcafddfe-8139-4e02-baad-d3f88ec00cd0', '2025/2026');
+  assert.equal(row.svrz_persistence_id, c.__identity);
+  assert.equal(row.season_uuid, 'dcafddfe-8139-4e02-baad-d3f88ec00cd0');
+  assert.equal(row.season_name, '2025/2026');
+  assert.equal(row.club_id, String(c.club.identifier));
+  assert.equal(row.club_name, c.club.name);
+  assert.equal(row.person_first_name, c.person.firstName);
+  assert.equal(row.person_last_name, c.person.lastName);
+  assert.equal(row.contact_name, `${c.person.firstName} ${c.person.lastName}`);
+  assert.equal(row.contact_email, c.person.primaryEmailAddress.emailAddress.toLowerCase());
+  assert.equal(row.contact_phone, c.person.primaryPhoneNumber.normalizedLocalNumber);
+  assert.ok(Array.isArray(row.club_league_categories));
+  // Must be deduped + sorted
+  assert.deepEqual(row.club_league_categories, [...new Set(row.club_league_categories)].sort());
+  assert.ok(Array.isArray(row.club_team_genders));
+});
+
+test('contactToSvrzRow lowercases email and trims whitespace', () => {
+  const c = { __identity: 'x', club: { identifier: '1', name: 'X', teams: [] }, person: { firstName: 'A', lastName: 'B', primaryEmailAddress: { emailAddress: '  Jane.DOE@Example.CH  ' } } };
+  const row = contactToSvrzRow(c, 'uuid', 'name');
+  assert.equal(row.contact_email, 'jane.doe@example.ch');
+});
+
+test('contactToSvrzRow handles missing person.primaryPhoneNumber / primaryEmailAddress gracefully', () => {
+  const c = { __identity: 'y', club: { identifier: '2', name: 'Y', teams: [] }, person: { firstName: 'A', lastName: 'B' } };
+  const row = contactToSvrzRow(c, 'uuid', 'name');
+  assert.equal(row.contact_email, '');
+  assert.equal(row.contact_phone, '');
 });

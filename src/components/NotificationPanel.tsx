@@ -66,6 +66,7 @@ export default function NotificationPanel({
   onClose,
 }: NotificationPanelProps) {
   const { t } = useTranslation('notifications')
+  const { t: tMessaging } = useTranslation('messaging')
   const navigate = useNavigate()
   const push = usePushNotifications()
 
@@ -118,6 +119,9 @@ export default function NotificationPanel({
   function renderMessage(n: Notification): string {
     try {
       const data = n.body ? JSON.parse(n.body) : {}
+      if (data.reason) {
+        data.reason = tMessaging(`reportReason_${data.reason}`, { defaultValue: data.reason })
+      }
       const noLocation = (!data.hall && !data.location) || (data.hall === '' && data.location == null) || (data.location === '' && data.hall == null)
       const key = noLocation && t(`${n.title}_no_hall`, { defaultValue: '' }) ? `${n.title}_no_hall` : n.title
       // Strip :SS seconds from legacy times (e.g. "19:00:00" → "19:00")

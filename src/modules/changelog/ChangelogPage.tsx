@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.0.4'
+const APP_VERSION = '4.0.5'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,20 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.0.5',
+    date: '2026-04-22',
+    sections: [
+      {
+        title: 'Moderation notifications',
+        items: [
+          'Tapping a "New report" notification in the desktop sidebar now opens /admin/reports instead of silently routing to the homepage. The desktop panel was missing the route handler that the mobile panel already had.',
+          'The reason label inside the notification ("Neue Meldung: spam") is now properly translated and capitalised ("Neue Meldung: Spam" / "Belästigung" / "Unangemessen" / "Sonstiges") in all five languages. Was rendering the raw enum value.',
+          'Desktop sidebar also gained the correct activity label ("Meldung" instead of the generic "Aktivität" fallback) and a Flag icon for report notifications.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.0.4',
     date: '2026-04-20',

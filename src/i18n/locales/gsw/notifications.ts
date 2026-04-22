@@ -12,6 +12,7 @@ export default {
   dutyDelegation: 'Schriiberdienst',
   memberJoinRequest: 'Biträttsaafrag',
   eventInvite: 'Aalass-Iiladig',
+  newReport: 'Meldig',
   member_join_request: '{{memberName}} möcht {{teamName}} biträte',
   // Delegation notification messages
   duty_delegation_request: '{{from}} möcht dir de {{role}}-Iisatz für {{game}} am {{date}} übergäh.',

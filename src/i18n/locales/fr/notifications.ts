@@ -12,6 +12,7 @@ export default {
   dutyDelegation: 'Service de marqueur',
   memberJoinRequest: 'Demande d\'adhésion',
   eventInvite: 'Invitation à un événement',
+  newReport: 'Signalement',
   member_join_request: '{{memberName}} souhaite rejoindre {{teamName}}',
   // Delegation notification messages
   duty_delegation_request: '{{from}} souhaite vous deleguer le service de {{role}} pour {{game}} le {{date}}.',

@@ -12,6 +12,7 @@ export default {
   dutyDelegation: 'Scorer duty',
   memberJoinRequest: 'Join request',
   eventInvite: 'Event invitation',
+  newReport: 'Report',
   member_join_request: '{{memberName}} wants to join {{teamName}}',
   // Delegation notification messages
   duty_delegation_request: '{{from}} wants to delegate the {{role}} duty for {{game}} on {{date}} to you.',

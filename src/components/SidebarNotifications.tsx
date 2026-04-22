@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ClipboardList, Clock, AlertTriangle, Trophy, Bell, ArrowRightLeft, ArrowLeft, BellRing, BellOff, UserPlus, Flag } from 'lucide-react'
+import { ClipboardList, Clock, AlertTriangle, Trophy, Bell, ArrowRightLeft, ArrowLeft, BellRing, BellOff, UserPlus, Flag, Trash2 } from 'lucide-react'
 import type { Notification } from '../types'
 import { usePushNotifications } from '../hooks/usePushNotifications'
 
@@ -9,6 +9,8 @@ interface SidebarNotificationsProps {
   unreadCount: number
   onMarkAsRead: (id: string) => void
   onMarkAllAsRead: () => void
+  onDelete?: (id: string) => void
+  onClearRead?: () => void
   onBack: () => void
   onCloseSidebar: () => void
   theme: string
@@ -66,6 +68,8 @@ export default function SidebarNotifications({
   unreadCount,
   onMarkAsRead,
   onMarkAllAsRead,
+  onDelete,
+  onClearRead,
   onBack,
   onCloseSidebar,
   theme,
@@ -126,6 +130,16 @@ export default function SidebarNotifications({
             {t('markAllRead')}
           </button>
         )}
+        {onClearRead && notifications.some((n) => n.read) && (
+          <button
+            onClick={onClearRead}
+            className={`text-xs font-medium ${
+              isLight ? 'text-gray-500 hover:text-red-600' : 'text-gray-400 hover:text-red-400'
+            }`}
+          >
+            {t('clearRead')}
+          </button>
+        )}
       </div>
 
       {/* Notification list */}
@@ -139,45 +153,62 @@ export default function SidebarNotifications({
           </div>
         ) : (
           notifications.map((n) => (
-            <button
+            <div
               key={n.id}
-              onClick={() => handleClick(n)}
-              className={`flex w-full items-start gap-2.5 px-4 py-2.5 text-left transition-colors ${
+              className={`flex w-full items-start transition-colors ${
                 isLight
-                  ? `border-b border-gray-100 hover:bg-gray-50 active:bg-gray-100 ${!n.read ? 'bg-brand-50/50' : ''}`
-                  : `border-b border-brand-800/50 hover:bg-brand-800/50 active:bg-brand-800 ${!n.read ? 'bg-brand-900/40' : ''}`
+                  ? `border-b border-gray-100 hover:bg-gray-50 ${!n.read ? 'bg-brand-50/50' : ''}`
+                  : `border-b border-brand-800/50 hover:bg-brand-800/50 ${!n.read ? 'bg-brand-900/40' : ''}`
               }`}
             >
-              {/* Unread dot */}
-              <div className="flex shrink-0 items-center pt-1.5">
-                {!n.read ? (
-                  <div className="h-1.5 w-1.5 rounded-full bg-brand-500" />
-                ) : (
-                  <div className="h-1.5 w-1.5" />
-                )}
-              </div>
-
-              {/* Icon */}
-              <span className={`shrink-0 pt-0.5 ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>
-                {typeIcons[n.type] ?? <Bell className="h-4 w-4" />}
-              </span>
-
-              {/* Content */}
-              <div className="min-w-0 flex-1 pr-px">
-                <p className={`break-words text-xs leading-snug ${
-                  isLight ? 'text-gray-900' : 'text-gray-100'
-                } ${!n.read ? 'font-medium' : ''}`}>
-                  {renderMessage(n)}
-                </p>
-                <div className={`mt-0.5 flex items-center gap-1.5 text-[10px] ${
-                  isLight ? 'text-gray-400' : 'text-gray-500'
-                }`}>
-                  <span>{t(typeLabels[n.type] ?? 'activityChange')}</span>
-                  <span>·</span>
-                  <span>{timeAgo(n.created ?? n.date_created ?? '', t)}</span>
+              <button
+                onClick={() => handleClick(n)}
+                className={`flex min-w-0 flex-1 items-start gap-2.5 px-4 py-2.5 text-left ${
+                  isLight ? 'active:bg-gray-100' : 'active:bg-brand-800'
+                }`}
+              >
+                {/* Unread dot */}
+                <div className="flex shrink-0 items-center pt-1.5">
+                  {!n.read ? (
+                    <div className="h-1.5 w-1.5 rounded-full bg-brand-500" />
+                  ) : (
+                    <div className="h-1.5 w-1.5" />
+                  )}
                 </div>
-              </div>
-            </button>
+
+                {/* Icon */}
+                <span className={`shrink-0 pt-0.5 ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>
+                  {typeIcons[n.type] ?? <Bell className="h-4 w-4" />}
+                </span>
+
+                {/* Content */}
+                <div className="min-w-0 flex-1 pr-px">
+                  <p className={`break-words text-xs leading-snug ${
+                    isLight ? 'text-gray-900' : 'text-gray-100'
+                  } ${!n.read ? 'font-medium' : ''}`}>
+                    {renderMessage(n)}
+                  </p>
+                  <div className={`mt-0.5 flex items-center gap-1.5 text-[10px] ${
+                    isLight ? 'text-gray-400' : 'text-gray-500'
+                  }`}>
+                    <span>{t(typeLabels[n.type] ?? 'activityChange')}</span>
+                    <span>·</span>
+                    <span>{timeAgo(n.created ?? n.date_created ?? '', t)}</span>
+                  </div>
+                </div>
+              </button>
+              {onDelete && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onDelete(n.id) }}
+                  className={`flex shrink-0 items-center justify-center p-2.5 transition-colors ${
+                    isLight ? 'text-gray-400 hover:text-red-600' : 'text-gray-500 hover:text-red-400'
+                  }`}
+                  aria-label={t('delete')}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
           ))
         )}
       </div>

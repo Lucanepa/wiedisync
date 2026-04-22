@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.0.5'
+const APP_VERSION = '4.0.6'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,20 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.0.6',
+    date: '2026-04-22',
+    sections: [
+      {
+        title: 'Notifications',
+        items: [
+          'You can now delete individual notifications — a small trash icon appears on each row in both the mobile panel and the desktop sidebar.',
+          'New "Clear read" button in the header wipes all already-read notifications in one click. Unread ones are left alone, so nothing urgent gets thrown away accidentally.',
+          'Available in all five languages (DE / GSW / EN / FR / IT).',
+        ],
+      },
+    ],
+  },
   {
     version: '4.0.5',
     date: '2026-04-22',

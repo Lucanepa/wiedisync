@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { fetchItems, updateRecord } from '../lib/api'
+import { fetchItems, updateRecord, deleteRecord } from '../lib/api'
 import { useAuth } from './useAuth'
 import { useRealtime } from './useRealtime'
 import type { Notification } from '../types'
@@ -78,5 +78,31 @@ export function useNotifications() {
     }
   }, [notifications])
 
-  return { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, refetch: fetchNotifications }
+  const deleteNotification = useCallback(async (id: string) => {
+    // Optimistic: remove first, roll back on failure
+    const prev = notifications
+    const target = prev.find((n) => n.id === id)
+    setNotifications((list) => list.filter((n) => n.id !== id))
+    if (target && !target.read) setUnreadCount((c) => Math.max(0, c - 1))
+    try {
+      await deleteRecord('notifications', id)
+    } catch {
+      setNotifications(prev)
+      if (target && !target.read) setUnreadCount((c) => c + 1)
+    }
+  }, [notifications])
+
+  const clearAllRead = useCallback(async () => {
+    const read = notifications.filter((n) => n.read)
+    if (read.length === 0) return
+    const prev = notifications
+    setNotifications((list) => list.filter((n) => !n.read))
+    try {
+      await Promise.all(read.map((n) => deleteRecord('notifications', n.id)))
+    } catch {
+      setNotifications(prev)
+    }
+  }, [notifications])
+
+  return { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, deleteNotification, clearAllRead, refetch: fetchNotifications }
 }

@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ClipboardList, Clock, AlertTriangle, Trophy, Bell, ArrowRightLeft, BellRing, BellOff, UserPlus } from 'lucide-react'
+import { ClipboardList, Clock, AlertTriangle, Trophy, Bell, ArrowRightLeft, BellRing, BellOff, UserPlus, Trash2 } from 'lucide-react'
 import type { Notification } from '../types'
 import { usePushNotifications } from '../hooks/usePushNotifications'
 
@@ -10,6 +10,8 @@ interface NotificationPanelProps {
   unreadCount: number
   onMarkAsRead: (id: string) => void
   onMarkAllAsRead: () => void
+  onDelete?: (id: string) => void
+  onClearRead?: () => void
   onClose: () => void
 }
 
@@ -63,6 +65,8 @@ export default function NotificationPanel({
   unreadCount,
   onMarkAsRead,
   onMarkAllAsRead,
+  onDelete,
+  onClearRead,
   onClose,
 }: NotificationPanelProps) {
   const { t } = useTranslation('notifications')
@@ -154,18 +158,28 @@ export default function NotificationPanel({
           </div>
 
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-gray-200 px-4 pb-3 pt-2 dark:border-gray-700 lg:pt-4">
+          <div className="flex items-center justify-between gap-2 border-b border-gray-200 px-4 pb-3 pt-2 dark:border-gray-700 lg:pt-4">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
               {t('title')}
             </h2>
-            {unreadCount > 0 && (
-              <button
-                onClick={onMarkAllAsRead}
-                className="text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
-              >
-                {t('markAllRead')}
-              </button>
-            )}
+            <div className="flex items-center gap-3">
+              {unreadCount > 0 && (
+                <button
+                  onClick={onMarkAllAsRead}
+                  className="text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
+                >
+                  {t('markAllRead')}
+                </button>
+              )}
+              {onClearRead && notifications.some((n) => n.read) && (
+                <button
+                  onClick={onClearRead}
+                  className="text-sm font-medium text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
+                >
+                  {t('clearRead')}
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -177,37 +191,50 @@ export default function NotificationPanel({
         ) : (
           <div>
             {notifications.map((n) => (
-              <button
+              <div
                 key={n.id}
-                onClick={() => handleClick(n)}
-                className={`flex w-full items-start gap-3 border-b border-gray-100 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-gray-50 active:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-700/50 dark:active:bg-gray-700 ${
+                className={`flex w-full items-start border-b border-gray-100 transition-colors last:border-b-0 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700/50 ${
                   !n.read ? 'bg-brand-50/50 dark:bg-brand-900/20' : ''
                 }`}
               >
-                {/* Unread dot */}
-                <div className="flex shrink-0 items-center pt-1.5">
-                  {!n.read ? (
-                    <div className="h-2 w-2 rounded-full bg-brand-500" />
-                  ) : (
-                    <div className="h-2 w-2" />
-                  )}
-                </div>
-
-                {/* Icon */}
-                <span className="shrink-0 pt-0.5 text-gray-500 dark:text-gray-400">{typeIcons[n.type] ?? <Bell className="h-4 w-4" />}</span>
-
-                {/* Content */}
-                <div className="min-w-0 flex-1 pr-px">
-                  <p className={`break-words text-sm text-gray-900 dark:text-gray-100 ${!n.read ? 'font-medium' : ''}`}>
-                    {renderMessage(n)}
-                  </p>
-                  <div className="mt-0.5 flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
-                    <span>{t(typeLabels[n.type] ?? 'activityChange')}</span>
-                    <span>·</span>
-                    <span>{timeAgo(n.created ?? n.date_created ?? '', t)}</span>
+                <button
+                  onClick={() => handleClick(n)}
+                  className="flex min-w-0 flex-1 items-start gap-3 px-4 py-3 text-left active:bg-gray-100 dark:active:bg-gray-700"
+                >
+                  {/* Unread dot */}
+                  <div className="flex shrink-0 items-center pt-1.5">
+                    {!n.read ? (
+                      <div className="h-2 w-2 rounded-full bg-brand-500" />
+                    ) : (
+                      <div className="h-2 w-2" />
+                    )}
                   </div>
-                </div>
-              </button>
+
+                  {/* Icon */}
+                  <span className="shrink-0 pt-0.5 text-gray-500 dark:text-gray-400">{typeIcons[n.type] ?? <Bell className="h-4 w-4" />}</span>
+
+                  {/* Content */}
+                  <div className="min-w-0 flex-1 pr-px">
+                    <p className={`break-words text-sm text-gray-900 dark:text-gray-100 ${!n.read ? 'font-medium' : ''}`}>
+                      {renderMessage(n)}
+                    </p>
+                    <div className="mt-0.5 flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
+                      <span>{t(typeLabels[n.type] ?? 'activityChange')}</span>
+                      <span>·</span>
+                      <span>{timeAgo(n.created ?? n.date_created ?? '', t)}</span>
+                    </div>
+                  </div>
+                </button>
+                {onDelete && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onDelete(n.id) }}
+                    className="flex shrink-0 items-center justify-center p-3 text-gray-400 transition-colors hover:text-red-600 dark:text-gray-500 dark:hover:text-red-400"
+                    aria-label={t('delete')}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
             ))}
           </div>
         )}

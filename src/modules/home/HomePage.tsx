@@ -58,7 +58,7 @@ export default function HomePage() {
   const [showCategorized, setShowCategorized] = useState(false)
   const [notifPanelOpen, setNotifPanelOpen] = useState(false)
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null)
-  const { notifications: allNotifs, unreadCount, markAsRead, markAllAsRead } = useNotifications()
+  const { notifications: allNotifs, unreadCount, markAsRead, markAllAsRead, deleteNotification, clearAllRead } = useNotifications()
   const { announcements } = useAnnouncements({ limit: 10 })
 
   // Unified news feed: pinned announcements first, then notifications + remaining
@@ -545,6 +545,8 @@ export default function HomePage() {
           unreadCount={unreadCount}
           onMarkAsRead={markAsRead}
           onMarkAllAsRead={markAllAsRead}
+          onDelete={deleteNotification}
+          onClearRead={clearAllRead}
           onClose={() => setNotifPanelOpen(false)}
         />
       )}

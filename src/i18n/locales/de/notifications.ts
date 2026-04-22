@@ -1,6 +1,8 @@
 export default {
   title: 'Benachrichtigungen',
   markAllRead: 'Alle gelesen',
+  clearRead: 'Gelesene löschen',
+  delete: 'Löschen',
   noNotifications: 'Keine neuen Benachrichtigungen.',
   news: 'Neuigkeiten',
   showAll: 'Alle anzeigen',

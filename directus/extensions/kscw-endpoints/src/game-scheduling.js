@@ -297,18 +297,31 @@ export function registerGameScheduling(router, { database, logger, services, get
   })
 
   // POST /kscw/admin/terminplanung/svrz-sync — manual trigger for bulk SVRZ sync
+  // Spawns the sync script detached; the HTTP caller returns immediately. Errors inside
+  // the child are NOT reported back (stdio: 'ignore') — the try/catch here only covers
+  // spawn-fork failures. Observability comes from the daily cron's log output.
   router.post('/admin/terminplanung/svrz-sync', async (req, res) => {
     if (!req.accountability?.admin) return res.status(403).json({ error: 'Admin only' })
     try {
-      const { season_uuid, season_name, cutoff_date } = req.body || {}
+      const { season_uuid, season_name } = req.body || {}
+      const auth = req.headers?.authorization || ''
+      const token = auth.startsWith('Bearer ') ? auth.slice(7) : ''
+      if (!token) return res.status(401).json({ error: 'Missing bearer token' })
+
       const { spawn } = await import('node:child_process')
+      // Scoped env — do NOT spread process.env; forward only the secrets the child needs
+      const env = {
+        HOME: process.env.HOME,
+        PATH: process.env.PATH,
+        VM_USERNAME: process.env.VM_USERNAME,
+        VM_PASSWORD: process.env.VM_PASSWORD,
+        DIRECTUS_URL: 'http://127.0.0.1:8055',
+        DIRECTUS_TOKEN: token,
+        SVRZ_SEASON_UUID: season_uuid || 'dcafddfe-8139-4e02-baad-d3f88ec00cd0',
+        SVRZ_SEASON_NAME: season_name || '2025/2026',
+      }
       const child = spawn('node', ['/directus/scripts/svrz-scheduling-sync.mjs'], {
-        env: {
-          ...process.env,
-          SVRZ_SEASON_UUID: season_uuid || 'dcafddfe-8139-4e02-baad-d3f88ec00cd0',
-          SVRZ_SEASON_NAME: season_name || '2025/2026',
-          ...(cutoff_date ? { SVRZ_CUTOFF_DATE: cutoff_date } : {}),
-        },
+        env,
         detached: true,
         stdio: 'ignore',
       })

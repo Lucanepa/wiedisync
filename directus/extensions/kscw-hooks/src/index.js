@@ -1568,7 +1568,8 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     }
   })
 
-  // ── 10b. Cron: SVRZ scheduling sync (daily 04:30 UTC) ──
+  // ── 10c. Cron: SVRZ scheduling sync (daily 04:30 UTC) ──
+  // Calls svrz-scheduling-sync.mjs — walks SVRZ JSON API, upserts games + contacts
   schedule('30 4 * * *', async () => {
     if (!process.env.VM_USERNAME || !process.env.VM_PASSWORD) {
       log.warn('SVRZ sync skipped: VM_USERNAME or VM_PASSWORD not set')
@@ -1600,7 +1601,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     }
   })
 
-  // ── 10c. Cron: Refresh teams.season dropdown choices (May 1 annually, 03:00 UTC) ──
+  // ── 10d. Cron: Refresh teams.season dropdown choices (May 1 annually, 03:00 UTC) ──
   // Earliest allowed season is the one currently "live": Jan-Apr → last autumn's; May onwards → this autumn's.
   // The window only shifts on May 1 (old season ends), so one run per year is enough.
   // Past seasons are removed so admins can't accidentally assign a team to a finished season.

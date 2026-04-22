@@ -204,7 +204,7 @@ export default function Layout() {
   const [notifPanelOpen, setNotifPanelOpen] = useState(false)
   const sidebarExpanded = sidebarView !== 'closed'
   const { user, isAdmin, isApproved, isProfileComplete, isSuperAdmin, isLoading, teamsLoading, logout } = useAuth()
-  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications()
+  const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification, clearAllRead } = useNotifications()
   const { theme, toggleTheme } = useTheme()
   const { t } = useTranslation('nav')
   const isDesktop = useIsDesktop()
@@ -288,6 +288,8 @@ export default function Layout() {
                 unreadCount={unreadCount}
                 onMarkAsRead={markAsRead}
                 onMarkAllAsRead={markAllAsRead}
+                onDelete={deleteNotification}
+                onClearRead={clearAllRead}
                 onBack={() => setSidebarView('nav')}
                 onCloseSidebar={() => setSidebarView('closed')}
                 theme={theme}
@@ -574,6 +576,8 @@ export default function Layout() {
           unreadCount={unreadCount}
           onMarkAsRead={markAsRead}
           onMarkAllAsRead={markAllAsRead}
+          onDelete={deleteNotification}
+          onClearRead={clearAllRead}
           onClose={() => setNotifPanelOpen(false)}
         />
       )}

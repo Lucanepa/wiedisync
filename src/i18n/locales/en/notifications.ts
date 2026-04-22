@@ -1,6 +1,8 @@
 export default {
   title: 'Notifications',
   markAllRead: 'Mark all read',
+  clearRead: 'Clear read',
+  delete: 'Delete',
   noNotifications: 'No new notifications.',
   news: 'News',
   showAll: 'Show all',

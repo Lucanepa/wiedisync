@@ -2,6 +2,10 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## [4.0.6] — 2026-04-22
+
+- **Delete individual notifications + clear-read bulk action.** Each row in the mobile `NotificationPanel` and desktop `SidebarNotifications` now has a trash icon that calls `deleteNotification(id)` (optimistic remove + rollback on 4xx). The header gained a "Gelesene löschen" / "Clear read" button next to "Alle gelesen" which only appears when there's at least one read notification — deletes all read ones in parallel via `clearAllRead()`. Unread are left alone so nothing urgent disappears. Member policy already had `delete` on own notifications (setup-permissions.mjs:411), so no Directus change needed. Strings added in all 5 locales.
+
 ## [4.0.5] — 2026-04-22
 
 - **Report notification routing (desktop) + capitalised reason.** The desktop `SidebarNotifications.getNavigationPath` was missing the `new_report` / `activity_type === 'report'` case the mobile panel already had, so clicking "New report: spam" silently navigated to `/` instead of `/admin/reports`. Added the route + `member_join_request` → `/teams/:id` (also missing on desktop), plus Flag icon and `newReport` activity label in all 5 locales. Separately, the notification body's raw reason enum (`spam`, `harassment`, `inappropriate`, `other`) was interpolated verbatim into the message template; `renderMessage` now resolves each through `messaging:reportReason_*` before interpolation, so "Neue Meldung: spam" becomes "Neue Meldung: Spam". Applied in both `NotificationPanel` (mobile) and `SidebarNotifications` (desktop).

@@ -1,6 +1,8 @@
 export default {
   title: 'Notifiche',
   markAllRead: 'Segna tutto come letto',
+  clearRead: 'Elimina lette',
+  delete: 'Elimina',
   noNotifications: 'Nessuna nuova notifica.',
   news: 'Novità',
   showAll: 'Mostra tutto',

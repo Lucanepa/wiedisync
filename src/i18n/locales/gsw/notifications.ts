@@ -1,6 +1,8 @@
 export default {
   title: 'Benachrichtigunge',
   markAllRead: 'Alli gläse',
+  clearRead: 'Glesni lösche',
+  delete: 'Lösche',
   noNotifications: 'Nüt Neus.',
   news: 'Neuigkeite',
   showAll: 'Alli zeige',

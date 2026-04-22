@@ -177,7 +177,7 @@
         "one_allowed_collections": null,
         "one_collection": "members",
         "one_collection_field": null,
-        "one_deselect_action": "nullify",
+        "one_deselect_action": "delete",
         "one_field": null,
         "sort_field": null
       },
@@ -186,9 +186,9 @@
         "column": "members_id",
         "foreign_key_table": "members",
         "foreign_key_column": "id",
-        "constraint_name": "teams_members_4_members_id_foreign",
+        "constraint_name": "teams_responsibles_members_id_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
+        "on_delete": "CASCADE"
       }
     },
     {
@@ -202,7 +202,7 @@
         "one_allowed_collections": null,
         "one_collection": "teams",
         "one_collection_field": null,
-        "one_deselect_action": "nullify",
+        "one_deselect_action": "delete",
         "one_field": "team_responsible",
         "sort_field": null
       },
@@ -211,9 +211,9 @@
         "column": "teams_id",
         "foreign_key_table": "teams",
         "foreign_key_column": "id",
-        "constraint_name": "teams_members_4_teams_id_foreign",
+        "constraint_name": "teams_responsibles_teams_id_foreign",
         "on_update": "NO ACTION",
-        "on_delete": "SET NULL"
+        "on_delete": "CASCADE"
       }
     }
   ]

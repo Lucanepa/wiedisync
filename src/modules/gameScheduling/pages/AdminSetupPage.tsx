@@ -11,6 +11,7 @@ import SpielsamstageEditor from '../components/SpielsamstageEditor'
 import SlotGenerationPanel from '../components/SlotGenerationPanel'
 import TeamSlotConfigPanel from '../components/TeamSlotConfigPanel'
 import ExcelImportPanel from '../components/ExcelImportPanel'
+import InvitesPanel from '../components/InvitesPanel'
 import type { SpielsamstagConfig, TeamSlotConfig } from '../../../types'
 
 export default function AdminSetupPage() {
@@ -106,6 +107,15 @@ export default function AdminSetupPage() {
             genResult={genResult}
             onGenerate={handleGenerate}
           />
+
+          {/* Invites (admin-issued per-verein links) */}
+          {season.status === 'open' && (
+            <InvitesPanel
+              teams={volleyballTeams}
+              seasonId={season.id}
+              seasonName={season.season || ''}
+            />
+          )}
         </>
       )}
     </div>

@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.0.6'
+const APP_VERSION = '4.1.0'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,23 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.1.0',
+    date: '2026-04-23',
+    sections: [
+      {
+        title: 'SVRZ game-scheduling invites',
+        items: [
+          'Spielplan admins can now issue tokenized links to specific opponent clubs instead of relying on self-registration — each link opens the slot picker directly without a captcha.',
+          'New "Aus SVRZ importieren" button auto-populates the opponent list from the synced SVRZ game feed and pulls Spielplanverantwortlicher contacts via the per-game endpoint (with a club-level fallback feed for clubs without per-game entries).',
+          'Manual CSV paste is available alongside SVRZ import for opponents not in the feed.',
+          'One-click "Mail entwerfen" opens a pre-filled mailto with a DE invitation body, tokenized link, and expiry date.',
+          'Full invite lifecycle: invited → viewed (on first open) → booked (after a slot pick), with reissue + revoke actions.',
+          'Daily SVRZ sync keeps games and club contacts fresh; admins can also trigger a manual sync from the panel.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.0.6',
     date: '2026-04-22',

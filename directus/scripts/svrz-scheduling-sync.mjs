@@ -1,0 +1,325 @@
+/**
+ * SVRZ game-scheduling sync — bulk fetch of games + Spielplaner contacts
+ * from volleymanager.volleyball.ch into Directus `svrz_games` and
+ * `svrz_spielplaner_contacts` collections.
+ *
+ * See docs/superpowers/specs/2026-04-22-game-scheduling-per-verein-invites-design.md
+ */
+
+import { vmLogin, csrfFromPage, VM_BASE, UA } from './vm-client.mjs';
+
+/**
+ * Build the URL-encoded POST body for the SVRZ /search endpoint.
+ * Supports text, boolean, and values[] property filters.
+ */
+export function buildSearchBody({ properties = [], propertyFilters = [], offset = 0, limit = 200, csrf }) {
+  const p = new URLSearchParams();
+  propertyFilters.forEach((f, i) => {
+    p.set(`searchConfiguration[propertyFilters][${i}][propertyName]`, f.propertyName);
+    if (f.text !== undefined) p.set(`searchConfiguration[propertyFilters][${i}][text]`, String(f.text));
+    if (f.boolean !== undefined) p.set(`searchConfiguration[propertyFilters][${i}][boolean]`, String(f.boolean));
+    if (Array.isArray(f.values)) {
+      f.values.forEach((v, j) => p.set(`searchConfiguration[propertyFilters][${i}][values][${j}]`, String(v)));
+    }
+  });
+  p.set('searchConfiguration[customFilters]', '');
+  p.set('searchConfiguration[propertyOrderings]', '');
+  p.set('searchConfiguration[offset]', String(offset));
+  p.set('searchConfiguration[limit]', String(limit));
+  p.set('searchConfiguration[textSearchOperator]', 'AND');
+  properties.forEach((pr, i) => p.set(`propertyRenderConfiguration[${i}]`, pr));
+  p.set('__csrfToken', csrf);
+  return p.toString();
+}
+
+/**
+ * Fetch all pages from an SVRZ /search endpoint. Iterates offset until
+ * totalItemsCount is reached. `ctx` comes from csrfFromPage().
+ */
+export async function fetchAllPaged(jar, ctx, resourcePath, { properties = [], propertyFilters = [], referer, batchSize = 200, maxBatches = 100 } = {}) {
+  const base = `${VM_BASE}${resourcePath}/search`;
+  const headers = {
+    'User-Agent': UA,
+    'Content-Type': 'text/plain;charset=UTF-8',
+    Accept: '*/*',
+    Origin: VM_BASE,
+    Referer: `${VM_BASE}${referer}`,
+    Cookie: jar.header(),
+  };
+  if (ctx.wuid) headers['Window-Unique-Id'] = ctx.wuid;
+  const all = [];
+  let total = Infinity, offset = 0, batches = 0;
+  while (offset < total && batches < maxBatches) {
+    const body = buildSearchBody({ properties, propertyFilters, offset, limit: batchSize, csrf: ctx.csrf });
+    const r = await fetch(base, { method: 'POST', headers, body });
+    if (!r.ok) {
+      const text = await r.text();
+      throw new Error(`${resourcePath}: HTTP ${r.status} — ${text.slice(0, 300)}`);
+    }
+    const j = await r.json();
+    total = j.totalItemsCount ?? 0;
+    const items = j.items ?? [];
+    if (items.length === 0) break;
+    all.push(...items);
+    offset += items.length;
+    batches += 1;
+  }
+  return { total, items: all };
+}
+
+/**
+ * Curated property paths for the SVRZ games entity (api\gamewithresult).
+ * Verified against live dry-run on 2026-04-22.
+ */
+export const GAME_PROPERTIES = [
+  'number',
+  'status',
+  'displayName',
+  'shortDisplayName',
+  'startingDateTime',
+  'playingWeekday',
+  'isForfeitGame',
+  'encounter.teamHome.club.identifier',
+  'encounter.teamHome.club.name',
+  'encounter.teamHome.name',
+  'encounter.teamHomeName',
+  'encounter.teamAway.club.identifier',
+  'encounter.teamAway.club.name',
+  'encounter.teamAway.name',
+  'encounter.teamAwayName',
+  'encounter.teamHome.leagueCategory.name',
+  'encounter.teamAway.leagueCategory.name',
+  'group.phase.league.season.name',
+  'group.phase.league.displayName',
+  'group.phase.league.gender',
+  'group.phase.name',
+  'group.name',
+];
+
+export async function fetchAllGames(jar, ctx) {
+  return fetchAllPaged(jar, ctx, '/api/sportmanager.indoorvolleyball/api%5cgamewithresult', {
+    properties: GAME_PROPERTIES,
+    referer: '/sportmanager.indoorvolleyball/game/index',
+    batchSize: 200,
+  });
+}
+
+/**
+ * Curated property paths for the SVRZ Spielplaner contacts entity
+ * (api\playingscheduleresponsibleaddressviewer). Requires a season filter
+ * at fetch time or the endpoint 500s.
+ * Verified against live dry-run on 2026-04-22.
+ */
+export const CONTACT_PROPERTIES = [
+  'person.lastName',
+  'person.firstName',
+  'person.primaryEmailAddress.emailAddress',
+  'person.primaryPhoneNumber.normalizedLocalNumber',
+  'club.identifier',
+  'club.name',
+  'club.teams.*.leagueCategory.name',
+  'club.teams.*.leagueCategory.displayNameWithManagingAssociationShortName',
+  'club.teams.*.gender',
+  'club.teams.*.leagueCategory.sorting',
+];
+
+/**
+ * Fetch all Spielplaner contacts for a given SVRZ season.
+ * `seasonUuid` is the `Persistence_Object_Identifier` of the season (per SVRZ).
+ */
+export async function fetchAllContacts(jar, ctx, seasonUuid) {
+  return fetchAllPaged(jar, ctx, '/api/sportmanager.indoorvolleyball/api%5cplayingscheduleresponsibleaddressviewer', {
+    properties: CONTACT_PROPERTIES,
+    propertyFilters: [{ propertyName: 'club.teams.season.Persistence_Object_Identifier', values: [seasonUuid] }],
+    referer: '/sportmanager.indoorvolleyball/playingscheduleresponsibleaddressviewer/index',
+    batchSize: 200,
+  });
+}
+
+/**
+ * Map a contact record to the flat row shape for Directus.
+ * Dedupes + sorts `club_league_categories` and `club_team_genders`.
+ */
+export function contactToSvrzRow(c, seasonUuid, seasonName = '') {
+  const club = c.club || {};
+  const person = c.person || {};
+  const teams = club.teams || [];
+  return {
+    svrz_persistence_id: c.__identity,
+    season_uuid: seasonUuid,
+    season_name: seasonName,
+    club_id: club.identifier == null ? '' : String(club.identifier),
+    club_name: club.name || '',
+    person_first_name: person.firstName || '',
+    person_last_name: person.lastName || '',
+    contact_name: `${person.firstName || ''} ${person.lastName || ''}`.trim(),
+    contact_email: (person.primaryEmailAddress?.emailAddress || '').toLowerCase().trim(),
+    contact_phone: person.primaryPhoneNumber?.normalizedLocalNumber || '',
+    club_league_categories: [...new Set(teams.map(t => t.leagueCategory?.name).filter(Boolean))].sort(),
+    club_team_genders: [...new Set(teams.map(t => t.gender).filter(Boolean))].sort(),
+    raw: c,
+  };
+}
+
+/**
+ * Filter games down to those that are schedulable — i.e. status is "open" or
+ * "waitingForApproval", AND either has no start date yet or starts on/after cutoff.
+ */
+export function filterSchedulableGames(games, { cutoffDate = new Date('1970-01-01') } = {}) {
+  return games.filter(g => {
+    if (!['open', 'waitingForApproval'].includes(g.status)) return false;
+    const d = g.startingDateTime ? new Date(g.startingDateTime) : null;
+    return d === null || d >= cutoffDate;
+  });
+}
+
+// ─── Directus integration ──────────────────────────────────────────────
+
+const DIRECTUS_URL = process.env.DIRECTUS_URL || 'https://directus-dev.kscw.ch';
+const DIRECTUS_TOKEN = process.env.DIRECTUS_TOKEN;
+
+async function directusFetch(pathQ, init = {}) {
+  if (!DIRECTUS_TOKEN) throw new Error('DIRECTUS_TOKEN env var required');
+  const r = await fetch(`${DIRECTUS_URL}${pathQ}`, {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${DIRECTUS_TOKEN}`,
+      ...(init.headers || {}),
+    },
+  });
+  if (!r.ok) {
+    const text = await r.text();
+    throw new Error(`Directus ${pathQ}: HTTP ${r.status} — ${text.slice(0, 300)}`);
+  }
+  return r.status === 204 ? null : r.json();
+}
+
+async function fetchExistingPersistenceIds(collection) {
+  const existing = new Map();
+  for (let page = 1; ; page++) {
+    const resp = await directusFetch(`/items/${collection}?fields=id,svrz_persistence_id&limit=200&page=${page}`);
+    const data = resp?.data || [];
+    if (data.length === 0) break;
+    for (const r of data) existing.set(r.svrz_persistence_id, r.id);
+    if (data.length < 200) break;
+  }
+  return existing;
+}
+
+/**
+ * Pure planning: given the currently-known persistence→directus-id map and a
+ * list of incoming rows, produce (toCreate, toUpdate, seenIds).
+ * Adds last_synced_at to every planned row. Update rows carry __existing_id
+ * so the executor knows which PATCH URL to hit.
+ */
+export function planUpsert(existingMap, rows) {
+  const now = new Date().toISOString();
+  const toCreate = [], toUpdate = [];
+  const seenIds = new Set();
+  for (const row of rows) {
+    seenIds.add(row.svrz_persistence_id);
+    const id = existingMap.get(row.svrz_persistence_id);
+    if (id) toUpdate.push({ __existing_id: id, ...row, last_synced_at: now });
+    else toCreate.push({ ...row, last_synced_at: now });
+  }
+  return { toCreate, toUpdate, seenIds };
+}
+
+export async function upsertByPersistenceId(collection, rows) {
+  const existing = await fetchExistingPersistenceIds(collection);
+  const { toCreate, toUpdate, seenIds } = planUpsert(existing, rows);
+
+  // Batch creates in chunks of 50
+  for (let i = 0; i < toCreate.length; i += 50) {
+    await directusFetch(`/items/${collection}`, { method: 'POST', body: JSON.stringify(toCreate.slice(i, i + 50)) });
+  }
+  // Updates must go one-by-one (Directus PATCH /items/<coll>/<id>)
+  for (const row of toUpdate) {
+    const { __existing_id, ...patch } = row;
+    await directusFetch(`/items/${collection}/${__existing_id}`, { method: 'PATCH', body: JSON.stringify(patch) });
+  }
+  return { created: toCreate.length, updated: toUpdate.length, seen_count: seenIds.size };
+}
+
+// ─── Main ──────────────────────────────────────────────────────────────
+
+/**
+ * Run a full bulk sync for the given season.
+ * Fetches games (all statuses, filter happens later in the preview endpoint
+ * that calls this — we store everything so admins can debug "why didn't X show up").
+ * Fetches Spielplaner contacts filtered to the season.
+ */
+export async function runSync({ seasonUuid, seasonName = '' }) {
+  const username = process.env.VM_USERNAME;
+  const password = process.env.VM_PASSWORD;
+  if (!username || !password) throw new Error('VM_USERNAME/VM_PASSWORD env vars required');
+
+  console.log('[svrz-sync] Logging into volleymanager...');
+  const jar = await vmLogin({ username, password });
+  const gamesCtx = await csrfFromPage(jar, '/sportmanager.indoorvolleyball/game/index');
+  const contactsCtx = await csrfFromPage(jar, '/sportmanager.indoorvolleyball/playingscheduleresponsibleaddressviewer/index');
+
+  console.log('[svrz-sync] Fetching games...');
+  const games = await fetchAllGames(jar, gamesCtx);
+  const gameRows = games.items.map(gameToSvrzRow);
+  console.log(`[svrz-sync]   → ${gameRows.length}/${games.total} games`);
+  const gamesResult = await upsertByPersistenceId('svrz_games', gameRows);
+  console.log(`[svrz-sync]   games upsert: created=${gamesResult.created} updated=${gamesResult.updated}`);
+
+  console.log('[svrz-sync] Fetching contacts...');
+  const contacts = await fetchAllContacts(jar, contactsCtx, seasonUuid);
+  const contactRows = contacts.items.map(c => contactToSvrzRow(c, seasonUuid, seasonName));
+  console.log(`[svrz-sync]   → ${contactRows.length}/${contacts.total} contacts`);
+  const contactsResult = await upsertByPersistenceId('svrz_spielplaner_contacts', contactRows);
+  console.log(`[svrz-sync]   contacts upsert: created=${contactsResult.created} updated=${contactsResult.updated}`);
+
+  return {
+    games: { ...gamesResult, total_fetched: games.items.length },
+    contacts: { ...contactsResult, total_fetched: contacts.items.length },
+  };
+}
+
+// ─── CLI ───────────────────────────────────────────────────────────────
+
+// Only run if invoked directly (not imported)
+if (import.meta.url === `file://${process.argv[1]}`) {
+  const seasonUuid = process.env.SVRZ_SEASON_UUID || 'dcafddfe-8139-4e02-baad-d3f88ec00cd0';
+  const seasonName = process.env.SVRZ_SEASON_NAME || '2025/2026';
+  runSync({ seasonUuid, seasonName })
+    .then(r => { console.log('\n=== Result ==='); console.log(JSON.stringify(r, null, 2)); })
+    .catch(e => { console.error('[svrz-sync] FAILED:', e.message); console.error(e.stack); process.exit(1); });
+}
+
+/**
+ * Map a SVRZ game JSON record to a flat row for the `svrz_games` Directus collection.
+ * Club identifiers are stringified to preserve any leading zeros SVRZ may use.
+ */
+export function gameToSvrzRow(g) {
+  const enc = g.encounter || {};
+  const home = enc.teamHome || {};
+  const away = enc.teamAway || {};
+  const homeClub = home.club || {};
+  const awayClub = away.club || {};
+  const league = g.group?.phase?.league || {};
+  return {
+    svrz_persistence_id: g.persistenceObjectIdentifier,
+    svrz_number: g.number,
+    status: g.status,
+    display_name: g.displayName,
+    short_display_name: g.shortDisplayName,
+    starting_date_time: g.startingDateTime,
+    playing_weekday: g.playingWeekday,
+    home_club_id: homeClub.identifier == null ? '' : String(homeClub.identifier),
+    home_club_name: homeClub.name || '',
+    home_team_name: home.name || enc.teamHomeName || '',
+    away_club_id: awayClub.identifier == null ? '' : String(awayClub.identifier),
+    away_club_name: awayClub.name || '',
+    away_team_name: away.name || enc.teamAwayName || '',
+    league_name: league.displayName || '',
+    league_short: home.leagueCategory?.name || away.leagueCategory?.name || '',
+    gender: league.gender || '',
+    season_name: league.season?.name || '',
+    raw: g,
+  };
+}

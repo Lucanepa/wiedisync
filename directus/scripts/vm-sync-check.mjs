@@ -8,8 +8,9 @@
  * Env: VM_USERNAME, VM_PASSWORD, DIRECTUS_URL, DIRECTUS_TOKEN (or ADMIN_EMAIL+ADMIN_PASSWORD)
  */
 
+import { vmLogin, csrfFromPage, VM_BASE, UA } from './vm-client.mjs';
+
 // ─── Config ──────────────────────────────────────────────────────────
-const VM_BASE = 'https://volleymanager.volleyball.ch';
 const VM_USERNAME = process.env.VM_USERNAME;
 const VM_PASSWORD = process.env.VM_PASSWORD;
 if (!VM_USERNAME || !VM_PASSWORD) {
@@ -23,78 +24,6 @@ const DIRECTUS_PASSWORD = process.env.ADMIN_PASSWORD;
 if (!DIRECTUS_TOKEN && !DIRECTUS_PASSWORD) {
   console.error('Set DIRECTUS_TOKEN or ADMIN_PASSWORD environment variable');
   process.exit(1);
-}
-const UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36';
-
-// ─── Cookie jar ──────────────────────────────────────────────────────
-class CookieJar {
-  constructor() { this.cookies = {}; }
-  update(r) {
-    for (const h of r.headers.getSetCookie?.() ?? []) {
-      const m = h.match(/^([^=]+)=([^;]*)/);
-      if (m) this.cookies[m[1]] = m[2];
-    }
-  }
-  set(n, v) { this.cookies[n] = v; }
-  header() { return Object.entries(this.cookies).map(([k, v]) => `${k}=${v}`).join('; '); }
-}
-
-// ─── HTTP helpers ────────────────────────────────────────────────────
-async function follow(url, jar, init = {}, max = 10) {
-  let u = url, opts = init;
-  for (let i = 0; i < max; i++) {
-    const r = await fetch(u, {
-      ...opts,
-      headers: { 'User-Agent': UA, Cookie: jar.header(), ...(opts.headers ?? {}) },
-      redirect: 'manual',
-    });
-    jar.update(r);
-    const body = await r.text();
-    const loc = r.headers.get('location') || '';
-    if (r.status >= 300 && r.status < 400 && loc) {
-      u = loc.startsWith('http') ? loc : `${VM_BASE}${loc}`;
-      opts = {};
-      continue;
-    }
-    return { response: r, body };
-  }
-  throw new Error(`Too many redirects: ${url}`);
-}
-
-// ─── Auth ────────────────────────────────────────────────────────────
-async function vmLogin() {
-  const jar = new CookieJar();
-  jar.set('language', 'de');
-
-  // 1. Login page → hidden fields
-  const { body: html } = await follow(`${VM_BASE}/login`, jar);
-  const fields = {};
-  for (const m of html.matchAll(/name="([^"]+)"[^>]*value="([^"]*?)"/g))
-    fields[m[1]] = m[2];
-  fields['__authentication[Neos][Flow][Security][Authentication][Token][UsernamePassword][username]'] = VM_USERNAME;
-  fields['__authentication[Neos][Flow][Security][Authentication][Token][UsernamePassword][password]'] = VM_PASSWORD;
-
-  // 2. POST credentials
-  await follow(`${VM_BASE}/sportmanager.security/authentication/authenticate`, jar, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams(fields).toString(),
-  });
-
-  // 3. Dashboard (sets session permissions)
-  await follow(`${VM_BASE}/`, jar);
-
-  // 4. Extract CSRF from the writer index page (player index requires elevated permissions)
-  const { body: idx } = await follow(
-    `${VM_BASE}/sportmanager.indoorvolleyball/indoorwriter/index`,
-    jar,
-    { headers: { Accept: 'text/html', Referer: `${VM_BASE}/` } },
-  );
-  const csrf = idx.match(/data-csrf-token="([^"]+)"/)?.[1] || '';
-  const wuid = idx.match(/data-window-unique-id="([^"]+)"/)?.[1] || '';
-  if (!csrf) throw new Error('CSRF token extraction failed');
-
-  return { jar, csrf, wuid };
 }
 
 // ─── Generic paginated search ────────────────────────────────────────
@@ -567,7 +496,8 @@ async function syncToMembers(rows) {
 async function main() {
   const t0 = Date.now();
 
-  const { jar, csrf, wuid } = await vmLogin();
+  const jar = await vmLogin({ username: VM_USERNAME, password: VM_PASSWORD });
+  const { csrf, wuid } = await csrfFromPage(jar, '/sportmanager.indoorvolleyball/indoorwriter/index');
   console.log('✓ Logged in to Volleymanager\n');
 
   // Fetch all 4 datasets

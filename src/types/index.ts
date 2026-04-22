@@ -461,16 +461,40 @@ export interface GameSchedulingSlot extends BaseRecord {
 
 }
 
+export type InviteStatus = 'invited' | 'viewed' | 'booked' | 'revoked' | 'expired' | 'active'
+export type InviteSource = 'self_registration' | 'manual' | 'svrz'
+
 export interface GameSchedulingOpponent extends BaseRecord {
-  season: string
+  season: string | number | null
   club_name: string
+  team_name?: string | null
   contact_name: string
   contact_email: string
   kscw_team: string
   token: string
   home_game: string
   away_game: string
+  status?: InviteStatus
+  source?: InviteSource
+  created_by_admin?: boolean
+  first_viewed_at?: string | null
+  expires_at?: string | null
+}
 
+export interface OpponentInvite {
+  id: string
+  team_name: string
+  contact_name: string
+  contact_email: string
+  token: string
+  kscw_team: string
+  season: string | number | null
+  status: InviteStatus
+  source: InviteSource
+  created_by_admin: boolean
+  first_viewed_at: string | null
+  expires_at: string
+  date_created: string
 }
 
 export interface GameSchedulingBooking extends BaseRecord {

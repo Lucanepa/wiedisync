@@ -1,0 +1,332 @@
+[
+  {
+    "__identity": "a1b2c3d4-0001-4000-8000-000000000001",
+    "club": {
+      "__identity": "c1000000-0000-4000-8000-000000000001",
+      "identifier": "900010",
+      "name": "Fixture Verein A",
+      "translations": {
+        "de": { "name": "Fixture Verein A" },
+        "fr": { "name": "" },
+        "it": { "name": "" }
+      },
+      "teams": [
+        {
+          "__identity": "t1000000-0000-4000-8000-000000000001",
+          "season": {
+            "__identity": "dcafddfe-8139-4e02-baad-d3f88ec00cd0",
+            "Persistence_Object_Identifier": "dcafddfe-8139-4e02-baad-d3f88ec00cd0"
+          },
+          "leagueCategory": {
+            "__identity": "lc000001-0000-4000-8000-000000000001",
+            "name": "2L",
+            "displayNameWithManagingAssociationShortName": "2L (SVRZ)",
+            "sorting": 10
+          },
+          "gender": "m"
+        },
+        {
+          "__identity": "t1000000-0000-4000-8000-000000000002",
+          "season": {
+            "__identity": "dcafddfe-8139-4e02-baad-d3f88ec00cd0",
+            "Persistence_Object_Identifier": "dcafddfe-8139-4e02-baad-d3f88ec00cd0"
+          },
+          "leagueCategory": {
+            "__identity": "lc000002-0000-4000-8000-000000000002",
+            "name": "3L",
+            "displayNameWithManagingAssociationShortName": "3L (SVRZ)",
+            "sorting": 20
+          },
+          "gender": "f"
+        },
+        {
+          "__identity": "t1000000-0000-4000-8000-000000000003",
+          "season": {
+            "__identity": "dcafddfe-8139-4e02-baad-d3f88ec00cd0",
+            "Persistence_Object_Identifier": "dcafddfe-8139-4e02-baad-d3f88ec00cd0"
+          },
+          "leagueCategory": {
+            "__identity": "lc000002-0000-4000-8000-000000000002",
+            "name": "3L",
+            "displayNameWithManagingAssociationShortName": "3L (SVRZ)",
+            "sorting": 20
+          },
+          "gender": "m"
+        }
+      ]
+    },
+    "person": {
+      "__identity": "p1000000-0000-4000-8000-000000000001",
+      "firstName": "first1",
+      "lastName": "last1",
+      "emailAddresses": [
+        {
+          "__identity": "ea000001-0000-4000-8000-000000000001",
+          "isPrimary": true,
+          "emailAddress": "fixture1@example.com"
+        }
+      ],
+      "phoneNumbers": [
+        {
+          "__identity": "ph000001-0000-4000-8000-000000000001",
+          "isPrimary": true,
+          "localNumber": "079 000 0001",
+          "country": {
+            "__identity": "co000001-0000-4000-8000-000000000001",
+            "isoAlpha3": "CHE"
+          }
+        }
+      ],
+      "primaryEmailAddress": {
+        "__identity": "ea000001-0000-4000-8000-000000000001",
+        "isPrimary": true,
+        "emailAddress": "fixture1@example.com"
+      },
+      "primaryPhoneNumber": {
+        "__identity": "ph000001-0000-4000-8000-000000000001",
+        "isPrimary": true,
+        "localNumber": "079 000 0001",
+        "country": {
+          "__identity": "co000001-0000-4000-8000-000000000001",
+          "isoAlpha3": "CHE"
+        },
+        "normalizedLocalNumber": "+41790000001"
+      },
+      "displayName": "first1 last1"
+    },
+    "addressOrganisation": {
+      "__identity": "ao000001-0000-4000-8000-000000000001",
+      "relatedIdentifier": "c1000000-0000-4000-8000-000000000001",
+      "name": "Fixture Verein A",
+      "translations": {
+        "de": { "name": "Fixture Verein A" },
+        "fr": { "name": "" },
+        "it": { "name": "" }
+      }
+    },
+    "addressOrganisationMemberFunction": {
+      "__identity": "mf000001-0000-4000-8000-000000000001",
+      "number": 50
+    }
+  },
+  {
+    "__identity": "a1b2c3d4-0001-4000-8000-000000000002",
+    "club": {
+      "__identity": "c1000000-0000-4000-8000-000000000001",
+      "identifier": "900010",
+      "name": "Fixture Verein A",
+      "translations": {
+        "de": { "name": "Fixture Verein A" },
+        "fr": { "name": "" },
+        "it": { "name": "" }
+      },
+      "teams": [
+        {
+          "__identity": "t1000000-0000-4000-8000-000000000001",
+          "season": {
+            "__identity": "dcafddfe-8139-4e02-baad-d3f88ec00cd0",
+            "Persistence_Object_Identifier": "dcafddfe-8139-4e02-baad-d3f88ec00cd0"
+          },
+          "leagueCategory": {
+            "__identity": "lc000001-0000-4000-8000-000000000001",
+            "name": "2L",
+            "displayNameWithManagingAssociationShortName": "2L (SVRZ)",
+            "sorting": 10
+          },
+          "gender": "m"
+        },
+        {
+          "__identity": "t1000000-0000-4000-8000-000000000002",
+          "season": {
+            "__identity": "dcafddfe-8139-4e02-baad-d3f88ec00cd0",
+            "Persistence_Object_Identifier": "dcafddfe-8139-4e02-baad-d3f88ec00cd0"
+          },
+          "leagueCategory": {
+            "__identity": "lc000002-0000-4000-8000-000000000002",
+            "name": "3L",
+            "displayNameWithManagingAssociationShortName": "3L (SVRZ)",
+            "sorting": 20
+          },
+          "gender": "f"
+        },
+        {
+          "__identity": "t1000000-0000-4000-8000-000000000003",
+          "season": {
+            "__identity": "dcafddfe-8139-4e02-baad-d3f88ec00cd0",
+            "Persistence_Object_Identifier": "dcafddfe-8139-4e02-baad-d3f88ec00cd0"
+          },
+          "leagueCategory": {
+            "__identity": "lc000002-0000-4000-8000-000000000002",
+            "name": "3L",
+            "displayNameWithManagingAssociationShortName": "3L (SVRZ)",
+            "sorting": 20
+          },
+          "gender": "m"
+        }
+      ]
+    },
+    "person": {
+      "__identity": "p1000000-0000-4000-8000-000000000002",
+      "firstName": "first2",
+      "lastName": "last2",
+      "emailAddresses": [
+        {
+          "__identity": "ea000002-0000-4000-8000-000000000002",
+          "isPrimary": true,
+          "emailAddress": "fixture2@example.com"
+        }
+      ],
+      "phoneNumbers": [
+        {
+          "__identity": "ph000002-0000-4000-8000-000000000002",
+          "isPrimary": true,
+          "localNumber": "079 000 0002",
+          "country": {
+            "__identity": "co000001-0000-4000-8000-000000000001",
+            "isoAlpha3": "CHE"
+          }
+        }
+      ],
+      "primaryEmailAddress": {
+        "__identity": "ea000002-0000-4000-8000-000000000002",
+        "isPrimary": true,
+        "emailAddress": "fixture2@example.com"
+      },
+      "primaryPhoneNumber": {
+        "__identity": "ph000002-0000-4000-8000-000000000002",
+        "isPrimary": true,
+        "localNumber": "079 000 0002",
+        "country": {
+          "__identity": "co000001-0000-4000-8000-000000000001",
+          "isoAlpha3": "CHE"
+        },
+        "normalizedLocalNumber": "+41790000002"
+      },
+      "displayName": "first2 last2"
+    },
+    "addressOrganisation": {
+      "__identity": "ao000002-0000-4000-8000-000000000002",
+      "relatedIdentifier": "c1000000-0000-4000-8000-000000000001",
+      "name": "Fixture Verein A",
+      "translations": {
+        "de": { "name": "Fixture Verein A" },
+        "fr": { "name": "" },
+        "it": { "name": "" }
+      }
+    },
+    "addressOrganisationMemberFunction": {
+      "__identity": "mf000002-0000-4000-8000-000000000002",
+      "number": 50
+    }
+  },
+  {
+    "__identity": "a1b2c3d4-0001-4000-8000-000000000003",
+    "club": {
+      "__identity": "c2000000-0000-4000-8000-000000000002",
+      "identifier": "900011",
+      "name": "Fixture Verein B",
+      "translations": {
+        "de": { "name": "Fixture Verein B" },
+        "fr": { "name": "" },
+        "it": { "name": "" }
+      },
+      "teams": [
+        {
+          "__identity": "t2000000-0000-4000-8000-000000000001",
+          "season": {
+            "__identity": "dcafddfe-8139-4e02-baad-d3f88ec00cd0",
+            "Persistence_Object_Identifier": "dcafddfe-8139-4e02-baad-d3f88ec00cd0"
+          },
+          "leagueCategory": {
+            "__identity": "lc000003-0000-4000-8000-000000000003",
+            "name": "4L",
+            "displayNameWithManagingAssociationShortName": "4L (SVRZ)",
+            "sorting": 30
+          },
+          "gender": "f"
+        },
+        {
+          "__identity": "t2000000-0000-4000-8000-000000000002",
+          "season": {
+            "__identity": "dcafddfe-8139-4e02-baad-d3f88ec00cd0",
+            "Persistence_Object_Identifier": "dcafddfe-8139-4e02-baad-d3f88ec00cd0"
+          },
+          "leagueCategory": {
+            "__identity": "lc000003-0000-4000-8000-000000000003",
+            "name": "4L",
+            "displayNameWithManagingAssociationShortName": "4L (SVRZ)",
+            "sorting": 30
+          },
+          "gender": "f"
+        },
+        {
+          "__identity": "t2000000-0000-4000-8000-000000000003",
+          "season": {
+            "__identity": "dcafddfe-8139-4e02-baad-d3f88ec00cd0",
+            "Persistence_Object_Identifier": "dcafddfe-8139-4e02-baad-d3f88ec00cd0"
+          },
+          "leagueCategory": {
+            "__identity": "lc000004-0000-4000-8000-000000000004",
+            "name": "5L",
+            "displayNameWithManagingAssociationShortName": "5L (SVRZ)",
+            "sorting": 40
+          },
+          "gender": "m"
+        }
+      ]
+    },
+    "person": {
+      "__identity": "p2000000-0000-4000-8000-000000000003",
+      "firstName": "first3",
+      "lastName": "last3",
+      "emailAddresses": [
+        {
+          "__identity": "ea000003-0000-4000-8000-000000000003",
+          "isPrimary": true,
+          "emailAddress": "fixture3@example.com"
+        }
+      ],
+      "phoneNumbers": [
+        {
+          "__identity": "ph000003-0000-4000-8000-000000000003",
+          "isPrimary": true,
+          "localNumber": "079 000 0003",
+          "country": {
+            "__identity": "co000001-0000-4000-8000-000000000001",
+            "isoAlpha3": "CHE"
+          }
+        }
+      ],
+      "primaryEmailAddress": {
+        "__identity": "ea000003-0000-4000-8000-000000000003",
+        "isPrimary": true,
+        "emailAddress": "fixture3@example.com"
+      },
+      "primaryPhoneNumber": {
+        "__identity": "ph000003-0000-4000-8000-000000000003",
+        "isPrimary": true,
+        "localNumber": "079 000 0003",
+        "country": {
+          "__identity": "co000001-0000-4000-8000-000000000001",
+          "isoAlpha3": "CHE"
+        },
+        "normalizedLocalNumber": "+41790000003"
+      },
+      "displayName": "first3 last3"
+    },
+    "addressOrganisation": {
+      "__identity": "ao000003-0000-4000-8000-000000000003",
+      "relatedIdentifier": "c2000000-0000-4000-8000-000000000002",
+      "name": "Fixture Verein B",
+      "translations": {
+        "de": { "name": "Fixture Verein B" },
+        "fr": { "name": "" },
+        "it": { "name": "" }
+      }
+    },
+    "addressOrganisationMemberFunction": {
+      "__identity": "mf000003-0000-4000-8000-000000000003",
+      "number": 50
+    }
+  }
+]

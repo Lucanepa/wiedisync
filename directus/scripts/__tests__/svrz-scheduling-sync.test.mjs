@@ -147,3 +147,39 @@ test('contactToSvrzRow handles missing person.primaryPhoneNumber / primaryEmailA
   assert.equal(row.contact_email, '');
   assert.equal(row.contact_phone, '');
 });
+
+import { planUpsert } from '../svrz-scheduling-sync.mjs';
+
+test('planUpsert splits rows into toCreate + toUpdate based on known persistence ids', () => {
+  const existing = new Map([['persist-1', 'directus-id-1'], ['persist-2', 'directus-id-2']]);
+  const rows = [
+    { svrz_persistence_id: 'persist-1', foo: 'updated' },
+    { svrz_persistence_id: 'persist-2', foo: 'also-updated' },
+    { svrz_persistence_id: 'persist-3', foo: 'new' },
+  ];
+  const plan = planUpsert(existing, rows);
+  assert.equal(plan.toCreate.length, 1);
+  assert.equal(plan.toCreate[0].svrz_persistence_id, 'persist-3');
+  assert.equal(plan.toUpdate.length, 2);
+  // Existing rows get their Directus id attached
+  const updateIds = plan.toUpdate.map(r => r.__existing_id).sort();
+  assert.deepEqual(updateIds, ['directus-id-1', 'directus-id-2']);
+});
+
+test('planUpsert adds last_synced_at to every planned row', () => {
+  const existing = new Map();
+  const rows = [{ svrz_persistence_id: 'x', foo: 'y' }];
+  const plan = planUpsert(existing, rows);
+  assert.ok(plan.toCreate[0].last_synced_at);
+  assert.match(plan.toCreate[0].last_synced_at, /^\d{4}-\d{2}-\d{2}T/); // ISO
+});
+
+test('planUpsert returns the seen persistence ids for downstream soft-delete', () => {
+  const existing = new Map([['persist-1', 'id-1']]);
+  const rows = [
+    { svrz_persistence_id: 'persist-1', x: 1 },
+    { svrz_persistence_id: 'persist-2', x: 2 },
+  ];
+  const plan = planUpsert(existing, rows);
+  assert.deepEqual([...plan.seenIds].sort(), ['persist-1', 'persist-2']);
+});

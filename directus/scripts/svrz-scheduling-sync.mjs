@@ -173,6 +173,124 @@ export function filterSchedulableGames(games, { cutoffDate = new Date('1970-01-0
   });
 }
 
+// ─── Directus integration ──────────────────────────────────────────────
+
+const DIRECTUS_URL = process.env.DIRECTUS_URL || 'https://directus-dev.kscw.ch';
+const DIRECTUS_TOKEN = process.env.DIRECTUS_TOKEN;
+
+async function directusFetch(pathQ, init = {}) {
+  if (!DIRECTUS_TOKEN) throw new Error('DIRECTUS_TOKEN env var required');
+  const r = await fetch(`${DIRECTUS_URL}${pathQ}`, {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${DIRECTUS_TOKEN}`,
+      ...(init.headers || {}),
+    },
+  });
+  if (!r.ok) {
+    const text = await r.text();
+    throw new Error(`Directus ${pathQ}: HTTP ${r.status} — ${text.slice(0, 300)}`);
+  }
+  return r.status === 204 ? null : r.json();
+}
+
+async function fetchExistingPersistenceIds(collection) {
+  const existing = new Map();
+  for (let page = 1; ; page++) {
+    const resp = await directusFetch(`/items/${collection}?fields=id,svrz_persistence_id&limit=200&page=${page}`);
+    const data = resp?.data || [];
+    if (data.length === 0) break;
+    for (const r of data) existing.set(r.svrz_persistence_id, r.id);
+    if (data.length < 200) break;
+  }
+  return existing;
+}
+
+/**
+ * Pure planning: given the currently-known persistence→directus-id map and a
+ * list of incoming rows, produce (toCreate, toUpdate, seenIds).
+ * Adds last_synced_at to every planned row. Update rows carry __existing_id
+ * so the executor knows which PATCH URL to hit.
+ */
+export function planUpsert(existingMap, rows) {
+  const now = new Date().toISOString();
+  const toCreate = [], toUpdate = [];
+  const seenIds = new Set();
+  for (const row of rows) {
+    seenIds.add(row.svrz_persistence_id);
+    const id = existingMap.get(row.svrz_persistence_id);
+    if (id) toUpdate.push({ __existing_id: id, ...row, last_synced_at: now });
+    else toCreate.push({ ...row, last_synced_at: now });
+  }
+  return { toCreate, toUpdate, seenIds };
+}
+
+export async function upsertByPersistenceId(collection, rows) {
+  const existing = await fetchExistingPersistenceIds(collection);
+  const { toCreate, toUpdate, seenIds } = planUpsert(existing, rows);
+
+  // Batch creates in chunks of 50
+  for (let i = 0; i < toCreate.length; i += 50) {
+    await directusFetch(`/items/${collection}`, { method: 'POST', body: JSON.stringify(toCreate.slice(i, i + 50)) });
+  }
+  // Updates must go one-by-one (Directus PATCH /items/<coll>/<id>)
+  for (const row of toUpdate) {
+    const { __existing_id, ...patch } = row;
+    await directusFetch(`/items/${collection}/${__existing_id}`, { method: 'PATCH', body: JSON.stringify(patch) });
+  }
+  return { created: toCreate.length, updated: toUpdate.length, seen_count: seenIds.size };
+}
+
+// ─── Main ──────────────────────────────────────────────────────────────
+
+/**
+ * Run a full bulk sync for the given season.
+ * Fetches games (all statuses, filter happens later in the preview endpoint
+ * that calls this — we store everything so admins can debug "why didn't X show up").
+ * Fetches Spielplaner contacts filtered to the season.
+ */
+export async function runSync({ seasonUuid, seasonName = '' }) {
+  const username = process.env.VM_USERNAME;
+  const password = process.env.VM_PASSWORD;
+  if (!username || !password) throw new Error('VM_USERNAME/VM_PASSWORD env vars required');
+
+  console.log('[svrz-sync] Logging into volleymanager...');
+  const jar = await vmLogin({ username, password });
+  const gamesCtx = await csrfFromPage(jar, '/sportmanager.indoorvolleyball/game/index');
+  const contactsCtx = await csrfFromPage(jar, '/sportmanager.indoorvolleyball/playingscheduleresponsibleaddressviewer/index');
+
+  console.log('[svrz-sync] Fetching games...');
+  const games = await fetchAllGames(jar, gamesCtx);
+  const gameRows = games.items.map(gameToSvrzRow);
+  console.log(`[svrz-sync]   → ${gameRows.length}/${games.total} games`);
+  const gamesResult = await upsertByPersistenceId('svrz_games', gameRows);
+  console.log(`[svrz-sync]   games upsert: created=${gamesResult.created} updated=${gamesResult.updated}`);
+
+  console.log('[svrz-sync] Fetching contacts...');
+  const contacts = await fetchAllContacts(jar, contactsCtx, seasonUuid);
+  const contactRows = contacts.items.map(c => contactToSvrzRow(c, seasonUuid, seasonName));
+  console.log(`[svrz-sync]   → ${contactRows.length}/${contacts.total} contacts`);
+  const contactsResult = await upsertByPersistenceId('svrz_spielplaner_contacts', contactRows);
+  console.log(`[svrz-sync]   contacts upsert: created=${contactsResult.created} updated=${contactsResult.updated}`);
+
+  return {
+    games: { ...gamesResult, total_fetched: games.items.length },
+    contacts: { ...contactsResult, total_fetched: contacts.items.length },
+  };
+}
+
+// ─── CLI ───────────────────────────────────────────────────────────────
+
+// Only run if invoked directly (not imported)
+if (import.meta.url === `file://${process.argv[1]}`) {
+  const seasonUuid = process.env.SVRZ_SEASON_UUID || 'dcafddfe-8139-4e02-baad-d3f88ec00cd0';
+  const seasonName = process.env.SVRZ_SEASON_NAME || '2025/2026';
+  runSync({ seasonUuid, seasonName })
+    .then(r => { console.log('\n=== Result ==='); console.log(JSON.stringify(r, null, 2)); })
+    .catch(e => { console.error('[svrz-sync] FAILED:', e.message); console.error(e.stack); process.exit(1); });
+}
+
 /**
  * Map a SVRZ game JSON record to a flat row for the `svrz_games` Directus collection.
  * Club identifiers are stringified to preserve any leading zeros SVRZ may use.

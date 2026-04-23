@@ -19,7 +19,7 @@ import type { SpielsamstagConfig, TeamSlotConfig } from '../../../types'
 export default function AdminSetupPage() {
   const { t } = useTranslation('gameScheduling')
   const { hasAdminAccessToSport } = useAuth()
-  const { season, allSeasons, isLoading, createSeason, updateSeason, setSeason } = useGameSchedulingSeason()
+  const { season, allSeasons, isLoading, createSeason, updateSeason, setSeason, refetch: refetchSeasons } = useGameSchedulingSeason()
   const { generateSlots } = useAdminBookings(season?.id)
   const { data: teams } = useTeams()
   const [generating, setGenerating] = useState(false)
@@ -97,6 +97,7 @@ export default function AdminSetupPage() {
         onUpdateSeason={async (patch) => {
           if (season) await updateSeason(season.id, patch)
         }}
+        onAfterArchive={refetchSeasons}
       />
 
       {season && (

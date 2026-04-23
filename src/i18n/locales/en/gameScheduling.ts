@@ -14,6 +14,7 @@ export default {
   createSeason: 'Create New Season',
   openForBooking: 'Open for Booking',
   closeBooking: 'Close Booking',
+  closeBookingHint: 'Stops new opponents from booking; existing bookings remain.',
 
   // Spielsamstage
   spielsamstage: 'Game Saturdays',

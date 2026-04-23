@@ -14,6 +14,7 @@ export default {
   createSeason: 'Neue Saison erstellen',
   openForBooking: 'Für Buchungen öffnen',
   closeBooking: 'Buchungen schliessen',
+  closeBookingHint: 'Neue Gegner können nicht mehr buchen; bestehende Buchungen bleiben.',
 
   // Spielsamstage
   spielsamstage: 'Spielsamstage',

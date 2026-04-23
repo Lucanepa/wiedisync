@@ -21,6 +21,37 @@ export default {
     more: '+{{count}} altre',
   },
 
+  // Manual game creation modal
+  manualGame: {
+    title: 'Aggiungi partita manuale',
+    subtitle: 'Salta il flusso di invito — admin / Spielplaner imposta tutto.',
+    team: 'Squadra',
+    teamPlaceholder: 'Seleziona squadra',
+    homeAway: 'Casa / Trasferta',
+    home: 'Casa',
+    away: 'Trasferta',
+    opponent: 'Avversario',
+    opponentPlaceholder: 'es. Goldcoast Wadenswil 1',
+    date: 'Data',
+    time: 'Ora',
+    hall: 'Palestra',
+    hallPlaceholder: 'Seleziona palestra',
+    awayVenue: 'Sede trasferta',
+    venueName: 'Nome della palestra',
+    venueAddress: 'Indirizzo',
+    venueCity: 'CAP / Citta',
+    venuePlusCode: 'Plus code (opzionale)',
+    league: 'Lega',
+    leaguePlaceholder: 'Opzionale',
+    round: 'Turno',
+    create: 'Crea partita',
+    conflict: {
+      sameTeamSameDay: 'Questa squadra gioca gia lo stesso giorno ({{time}} contro {{opponent}}).',
+      hallOverlap: 'La palestra e gia occupata in un orario sovrapposto ({{time}}–{{endTime}}).',
+      sameTeamWithinTwoDays: 'Questa squadra gioca anche il {{date}} alle {{time}} ({{daysDelta}} giorni di distanza).',
+    },
+  },
+
   // Game detail drawer
   drawer: {
     vs: 'vs',

@@ -21,6 +21,37 @@ export default {
     more: '+{{count}} meh',
   },
 
+  // Manual game creation modal
+  manualGame: {
+    title: 'Manuells Spiel erfasse',
+    subtitle: 'Übergoht de Ilade-Flow — Admin / Spielplaner setzt alli Details sälber.',
+    team: 'Team',
+    teamPlaceholder: 'Team usläse',
+    homeAway: 'Heim / Uswärts',
+    home: 'Heim',
+    away: 'Uswärts',
+    opponent: 'Gägner',
+    opponentPlaceholder: 'z.B. Goldcoast Wädenswil 1',
+    date: 'Datum',
+    time: 'Ziit',
+    hall: 'Halle',
+    hallPlaceholder: 'Halle usläse',
+    awayVenue: 'Uswärts-Spielort',
+    venueName: 'Name vo de Halle',
+    venueAddress: 'Adrässe',
+    venueCity: 'PLZ / Ort',
+    venuePlusCode: 'Plus-Code (optional)',
+    league: 'Liga',
+    leaguePlaceholder: 'Optional',
+    round: 'Rundi',
+    create: 'Spiel erstelle',
+    conflict: {
+      sameTeamSameDay: 'Das Team spilt scho am gliiche Tag ({{time}} gäge {{opponent}}).',
+      hallOverlap: 'Halle isch scho zu äre überlappende Ziit bsetzt ({{time}}–{{endTime}}).',
+      sameTeamWithinTwoDays: 'Das Team spilt au am {{date}} um {{time}} ({{daysDelta}} Täg Abschtand).',
+    },
+  },
+
   // Game detail drawer
   drawer: {
     vs: 'gege',

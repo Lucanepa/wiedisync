@@ -178,4 +178,12 @@ export default {
   svrzSeasonEmpty: 'Noch keine SVRZ-Daten. Bitte zuerst SVRZ-Sync ausführen.',
   svrzSeasonLinked: '✓ verknüpft',
   save: 'Speichern',
+
+  // Season archive
+  statusArchived: 'Archiviert',
+  archiveSeason: 'Saison archivieren',
+  archiveSeasonHint: 'Deaktiviert alle Volleyball-Teams dieser Saison und beendet offene Einladungen. Reversibel über Directus Admin.',
+  archiveSeasonConfirm: 'Saison {{season}} archivieren? Alle Volleyball-Teams dieser Saison werden deaktiviert und offene Einladungen ablaufen. Fortfahren?',
+  archiveSeasonSuccess: 'Saison {{season}} archiviert — {{teams}} Teams deaktiviert, {{invites}} Einladungen abgelaufen.',
+  archiveSeasonDone: 'Diese Saison ist archiviert.',
 }

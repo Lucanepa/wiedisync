@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 import { kscwApi } from '../../../lib/api'
 import type { GameSchedulingSeason } from '../../../types'
 import { formatSeasonShort } from '../utils/formatSeason'
@@ -11,6 +12,14 @@ interface Props {
   onSelectSeason: (season: GameSchedulingSeason) => void
   onStatusChange: (status: 'setup' | 'open' | 'closed') => Promise<void>
   onUpdateSeason?: (patch: Record<string, unknown>) => Promise<void>
+  onAfterArchive?: () => Promise<void> | void
+}
+
+interface ArchiveResult {
+  success: true
+  season: string
+  teams_archived: number
+  invites_expired: number
 }
 
 interface SvrzSeasonOption {
@@ -25,6 +34,7 @@ export default function SeasonConfig({
   onSelectSeason,
   onStatusChange,
   onUpdateSeason,
+  onAfterArchive,
 }: Props) {
   const { t } = useTranslation('gameScheduling')
   const [creating, setCreating] = useState(false)
@@ -68,16 +78,40 @@ export default function SeasonConfig({
     }
   }
 
-  const statusColors = {
+  const statusColors: Record<string, string> = {
     setup: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
     open: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
     closed: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+    archived: 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300',
   }
 
-  const statusLabels = {
+  const statusLabels: Record<string, string> = {
     setup: t('statusSetup'),
     open: t('statusOpen'),
     closed: t('statusClosed'),
+    archived: t('statusArchived'),
+  }
+
+  const [archiving, setArchiving] = useState(false)
+  const handleArchive = async () => {
+    if (!season) return
+    if (!window.confirm(t('archiveSeasonConfirm', { season: formatSeasonShort(season.season) }))) return
+    setArchiving(true)
+    try {
+      const resp = await kscwApi<ArchiveResult>(`/admin/terminplanung/archive-season/${season.id}`, { method: 'POST' })
+      toast.success(
+        t('archiveSeasonSuccess', {
+          season: formatSeasonShort(resp.season),
+          teams: resp.teams_archived,
+          invites: resp.invites_expired,
+        }),
+      )
+      if (onAfterArchive) await onAfterArchive()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err))
+    } finally {
+      setArchiving(false)
+    }
   }
 
   return (
@@ -135,12 +169,25 @@ export default function SeasonConfig({
             </button>
           )}
           {season.status === 'closed' && (
-            <button
-              onClick={() => onStatusChange('setup')}
-              className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-            >
-              {t('statusSetup')}
-            </button>
+            <>
+              <button
+                onClick={() => onStatusChange('setup')}
+                className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+              >
+                {t('statusSetup')}
+              </button>
+              <button
+                onClick={handleArchive}
+                disabled={archiving}
+                className="rounded-md bg-slate-700 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 dark:bg-slate-600 dark:hover:bg-slate-500"
+                title={t('archiveSeasonHint') || ''}
+              >
+                {archiving ? '…' : t('archiveSeason')}
+              </button>
+            </>
+          )}
+          {(season.status as string) === 'archived' && (
+            <span className="text-sm text-gray-500 italic dark:text-gray-400">{t('archiveSeasonDone')}</span>
           )}
         </div>
       )}

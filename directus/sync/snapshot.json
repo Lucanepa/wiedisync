@@ -9425,6 +9425,10 @@
             {
               "text": "closed",
               "value": "closed"
+            },
+            {
+              "text": "archived",
+              "value": "archived"
             }
           ]
         },

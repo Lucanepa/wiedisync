@@ -323,6 +323,57 @@ export function registerGameScheduling(router, { database, logger, services, get
     }
   })
 
+  // POST /kscw/admin/terminplanung/archive-season/:id — volleyball-only
+  // Season must already be 'closed'. Marks teams inactive, expires lingering
+  // invites, flips season status to 'archived'. Reversible by flipping
+  // teams.active back to true in Directus admin.
+  router.post('/admin/terminplanung/archive-season/:id', async (req, res) => {
+    if (!req.accountability?.admin) return res.status(403).json({ error: 'Admin only' })
+    try {
+      const seasonId = parseInt(req.params.id, 10)
+      if (!seasonId) return res.status(400).json({ error: 'invalid season id' })
+
+      const season = await database('game_scheduling_seasons').where('id', seasonId).first()
+      if (!season) return res.status(404).json({ error: 'season not found' })
+      if (season.status !== 'closed') {
+        return res.status(400).json({ error: 'season must be closed before it can be archived' })
+      }
+      if (!season.season) return res.status(400).json({ error: 'season has no name — cannot match teams' })
+
+      // 1. Deactivate volleyball teams for this season string
+      const teamsArchived = await database('teams')
+        .where('sport', 'volleyball')
+        .where('season', season.season)
+        .where('active', true)
+        .update({ active: false })
+
+      // 2. Expire any lingering active invites for this season
+      const invitesExpired = await database('game_scheduling_opponents')
+        .where('season', seasonId)
+        .whereIn('status', ['active', 'invited', 'viewed', 'booked'])
+        .update({ status: 'expired' })
+
+      // 3. Flip season to 'archived'
+      await database('game_scheduling_seasons').where('id', seasonId).update({ status: 'archived' })
+
+      log.info({
+        msg: `archive-season id=${seasonId} (${season.season})`,
+        teams_archived: teamsArchived,
+        invites_expired: invitesExpired,
+        userId: req.accountability?.user || null,
+      })
+      res.json({
+        success: true,
+        season: season.season,
+        teams_archived: teamsArchived,
+        invites_expired: invitesExpired,
+      })
+    } catch (err) {
+      log.error({ msg: `archive-season: ${err.message}`, endpoint: 'admin/terminplanung/archive-season', userId: req.accountability?.user || null, method: req.method, stack: err.stack })
+      res.status(500).json({ error: 'Internal error' })
+    }
+  })
+
   // POST /kscw/admin/terminplanung/block-slot — block/unblock a slot
   router.post('/admin/terminplanung/block-slot', async (req, res) => {
     if (!req.accountability?.admin) return res.status(403).json({ error: 'Admin only' })

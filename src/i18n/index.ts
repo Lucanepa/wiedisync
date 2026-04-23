@@ -158,10 +158,12 @@ function getInitialLanguage(): string {
   if (typeof window === 'undefined') return 'de'
   const saved = localStorage.getItem('wiedisync-lang')
   if (saved) return saved
-  // Detect browser language, default to German for Swiss context
+  // Detect browser language. English-first: unrecognised browsers fall back
+  // to 'en' rather than 'de'. German speakers still get German because their
+  // browser.language starts with 'de'.
   const browserLang = navigator.language?.slice(0, 2)
   const supported = ['de', 'en', 'fr', 'it']
-  return supported.includes(browserLang) ? browserLang : 'de'
+  return supported.includes(browserLang) ? browserLang : 'en'
 }
 
 const savedLng = getInitialLanguage()

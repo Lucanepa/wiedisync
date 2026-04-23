@@ -8,7 +8,7 @@ All infra details (IPs, URLs, ports, credentials, deploy commands) live in **INF
 - UI: shadcn primitives in `src/components/ui/` (lowercase), KSCW wrappers in `src/components/` (PascalCase)
 - Backend: Directus (Supabase Postgres, REST, Realtime, Auth) on Hetzner VPS
 - Hosting: Cloudflare Pages (frontend), Hetzner + CF Tunnel (backend)
-- Language: German UI (Swiss German context), code in English
+- Language: **English-first**, multilingual UI (DE / EN / FR / GSW / IT). Locale defaults to browser language; unrecognised browsers fall back to English. Write new i18n strings in English first, then translate to DE at minimum. Code identifiers in English.
 
 ## Data Format: TOON
 Use `encode()` from `@toon-format/toon` when passing uniform object arrays to LLM prompts (~40% token savings vs JSON). Not for deeply nested/non-uniform data — use JSON-compact there. Syntax: `key: value`, `tags[3]: a,b,c`, `users[2]{id,name}:\n  1,Alice\n  2,Bob`. YAML-style indentation, quote strings with commas/spaces.
@@ -73,7 +73,7 @@ See `INFRA.md → Domains & Hosting Overview` for full map.
 ## Session Workflow
 1. **Start**: Read `CLAUDE.md` + `INFRA.md` before doing anything.
 2. **End**: Append a short line to Changelog (date + summary). Overwrite stale/redundant entries.
-3. **Before finishing**: Ask "Should this commit be added to the changelog and version bumped?" If yes: update `CHANGELOG.md`, bump `package.json` (semver), and update `APP_VERSION` + `CHANGELOG` array in `src/modules/changelog/ChangelogPage.tsx` (in-app via Options → What's New). **Always write ChangelogPage entries in English** (UI is German, but this is the rule). `CHANGELOG.md` is also English.
+3. **Before finishing**: Ask "Should this commit be added to the changelog and version bumped?" If yes: update `CHANGELOG.md`, bump `package.json` (semver), and update `APP_VERSION` + `CHANGELOG` array in `src/modules/changelog/ChangelogPage.tsx` (in-app via Options → What's New). `ChangelogPage` entries and `CHANGELOG.md` are both in English (consistent with the English-first convention).
 
 ## Changelog
 <!-- Keep entries one line. For full details see CHANGELOG.md or git log. -->

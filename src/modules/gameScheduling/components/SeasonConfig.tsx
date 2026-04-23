@@ -251,6 +251,21 @@ export default function SeasonConfig({
               )}
             </div>
           )}
+
+          {/* Hint when SVRZ hasn't published the KSCW season yet */}
+          {(() => {
+            const kscwShort = formatSeasonShort(season.season)
+            const linkedOption = svrzOptions.find((o) => o.uuid === currentSvrzUuid)
+            const linkedShort = linkedOption ? formatSeasonShort(linkedOption.name) : ''
+            if (currentSvrzUuid && linkedShort && kscwShort && linkedShort !== kscwShort) {
+              return (
+                <p className="mt-2 text-xs italic text-amber-600 dark:text-amber-400">
+                  {t('svrzSeasonMismatchHint', { kscw: kscwShort, svrz: linkedShort })}
+                </p>
+              )
+            }
+            return null
+          })()}
         </div>
       )}
     </div>

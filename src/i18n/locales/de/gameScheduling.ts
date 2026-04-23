@@ -177,6 +177,7 @@ export default {
   svrzSeasonNone: 'Nicht verknüpft',
   svrzSeasonEmpty: 'Noch keine SVRZ-Daten. Bitte zuerst SVRZ-Sync ausführen.',
   svrzSeasonLinked: '✓ verknüpft',
+  svrzSeasonMismatchHint: 'SVRZ {{kscw}} ist noch nicht veröffentlicht — Swiss Volley publiziert die nächste Saison jeweils im Juni. Bis dahin werden {{svrz}}-Kontakte als Fallback genutzt.',
   save: 'Speichern',
 
   // Season archive

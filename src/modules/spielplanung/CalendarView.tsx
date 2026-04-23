@@ -15,10 +15,11 @@ interface CalendarViewProps {
 }
 
 export default function CalendarView({ entries, closedDates, month, onMonthChange, onGameClick }: CalendarViewProps) {
+  // seasonMonths drives the season-month pill strip below. We intentionally
+  // stopped passing min/maxMonth to CalendarGrid so the prev/next arrows can
+  // cross season boundaries freely.
   const seasonYear = getSeasonYear(month)
   const seasonMonths = getSeasonMonths(seasonYear)
-  const minMonth = seasonMonths[0]
-  const maxMonth = seasonMonths[seasonMonths.length - 1]
 
   const itemsByDate = useMemo(() => {
     const map = new Map<string, CalendarEntry[]>()
@@ -69,8 +70,6 @@ export default function CalendarView({ entries, closedDates, month, onMonthChang
         itemsByDate={itemsByDate}
         closedDates={closedDates}
         highlightedDates={highlightedDates}
-        minMonth={minMonth}
-        maxMonth={maxMonth}
         renderDayContent={(_date, items) => {
           const visible = items.slice(0, 3)
           const hidden = items.slice(3)

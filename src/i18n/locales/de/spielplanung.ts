@@ -98,6 +98,15 @@ export default {
   },
 
   // Game detail drawer
+  // List/row status labels
+  status: {
+    scheduled: 'Geplant',
+    live: 'Live',
+    completed: 'Gespielt',
+    postponed: 'Verschoben',
+  },
+  emptyState: 'Keine Spiele gefunden',
+
   drawer: {
     vs: 'vs.',
     hall: 'Halle',

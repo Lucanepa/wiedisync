@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import TeamChip from '../../components/TeamChip'
 import type { Game, Team } from '../../types'
 import { parseDate, formatDate } from '../../utils/dateUtils'
@@ -24,21 +25,17 @@ function getHallName(game: Game): string {
 }
 
 function StatusBadge({ status }: { status: string }) {
+  const { t } = useTranslation('spielplanung')
   const styles: Record<string, string> = {
     scheduled: 'bg-brand-50 text-brand-700',
     live: 'bg-green-50 text-green-700',
     completed: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400',
     postponed: 'bg-amber-50 text-amber-700',
   }
-  const labels: Record<string, string> = {
-    scheduled: 'Planned',
-    live: 'Live',
-    completed: 'Played',
-    postponed: 'Postponed',
-  }
+  const labelKey = `status.${status}`
   return (
     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${styles[status] ?? 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'}`}>
-      {labels[status] ?? status}
+      {t(labelKey, status)}
     </span>
   )
 }
@@ -95,6 +92,7 @@ function GameRow({ game, teams, showTeam }: { game: Game; teams: Team[]; showTea
 }
 
 function ByDateView({ games, teams }: { games: Game[]; teams: Team[] }) {
+  const { t } = useTranslation('spielplanung')
   const grouped = useMemo(() => {
     const sorted = [...games].sort((a, b) => {
       const dateCmp = a.date.localeCompare(b.date)
@@ -121,7 +119,7 @@ function ByDateView({ games, teams }: { games: Game[]; teams: Team[] }) {
   }, [games])
 
   if (games.length === 0) {
-    return <div className="py-8 text-center text-gray-500 dark:text-gray-400">No games found</div>
+    return <div className="py-8 text-center text-gray-500 dark:text-gray-400">{t('emptyState')}</div>
   }
 
   return (
@@ -143,6 +141,7 @@ function ByDateView({ games, teams }: { games: Game[]; teams: Team[] }) {
 }
 
 function ByTeamView({ games, teams }: { games: Game[]; teams: Team[] }) {
+  const { t } = useTranslation('spielplanung')
   const grouped = useMemo(() => {
     const byTeam = new Map<string, { team: Team; games: Game[] }>()
 
@@ -170,7 +169,7 @@ function ByTeamView({ games, teams }: { games: Game[]; teams: Team[] }) {
   }, [games, teams])
 
   if (games.length === 0) {
-    return <div className="py-8 text-center text-gray-500 dark:text-gray-400">No games found</div>
+    return <div className="py-8 text-center text-gray-500 dark:text-gray-400">{t('emptyState')}</div>
   }
 
   return (

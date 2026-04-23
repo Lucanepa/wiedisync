@@ -97,6 +97,15 @@ export default {
     },
   },
 
+  // List/row status labels
+  status: {
+    scheduled: 'Planned',
+    live: 'Live',
+    completed: 'Played',
+    postponed: 'Postponed',
+  },
+  emptyState: 'No games found',
+
   // Game detail drawer
   drawer: {
     vs: 'vs',

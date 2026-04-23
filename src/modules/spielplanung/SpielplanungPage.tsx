@@ -4,12 +4,14 @@ import ViewToggle from '../../components/ViewToggle'
 import SpielplanungFilters from './SpielplanungFilters'
 import CalendarView from './CalendarView'
 import ListView from './ListView'
+import GameDetailDrawer from './GameDetailDrawer'
 import { useSpielplanungData } from './hooks/useSpielplanungData'
 import { useTeams } from '../../hooks/useTeams'
 import { startOfMonth, getSeasonYear } from '../../utils/dateUtils'
 import { useIsMobile } from '../../hooks/useMediaQuery'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import type { ViewMode, SpielplanungFilterState } from '../../types/calendar'
+import type { Game } from '../../types'
 import { TourPageButton } from '../guide/TourPageButton'
 
 function getInitialMonth(): Date {
@@ -30,6 +32,7 @@ export default function SpielplanungPage() {
     showAbsences: false,
   })
   const [month, setMonth] = useState<Date>(getInitialMonth)
+  const [selectedGame, setSelectedGame] = useState<Game | null>(null)
 
   const seasonYear = getSeasonYear(month)
   const seasonStart = `${seasonYear}-09-01`
@@ -92,6 +95,7 @@ export default function SpielplanungPage() {
               closedDates={closedDates}
               month={month}
               onMonthChange={setMonth}
+              onGameClick={setSelectedGame}
             />
           )}
           {viewMode === 'list-date' && (
@@ -102,6 +106,8 @@ export default function SpielplanungPage() {
           )}
         </>
       )}
+
+      <GameDetailDrawer game={selectedGame} onClose={() => setSelectedGame(null)} />
     </div>
   )
 }

@@ -14,10 +14,7 @@ export default function SlotGenerationPanel({ seasonStatus, generating, genResul
     <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
       <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">{t('generateSlots')}</h2>
 
-      <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
-        Generiert verfügbare Spieltermine basierend auf dem Hallenplan und den Spielsamstagen.
-        Bestehende, noch nicht gebuchte Termine werden überschrieben.
-      </p>
+      <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">{t('slotGenerationDescription')}</p>
 
       <button
         onClick={onGenerate}

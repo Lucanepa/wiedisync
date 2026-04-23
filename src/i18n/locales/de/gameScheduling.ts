@@ -186,4 +186,15 @@ export default {
   archiveSeasonConfirm: 'Saison {{season}} archivieren? Alle Volleyball-Teams dieser Saison werden deaktiviert und offene Einladungen ablaufen. Fortfahren?',
   archiveSeasonSuccess: 'Saison {{season}} archiviert — {{teams}} Teams deaktiviert, {{invites}} Einladungen abgelaufen.',
   archiveSeasonDone: 'Diese Saison ist archiviert.',
+
+  // English-first audit additions (German translations)
+  cancel: 'Abbrechen',
+  noSeasonConfigured: 'Keine Saison konfiguriert. Bitte zuerst eine Saison erstellen.',
+  invalidLink: 'Link ungültig',
+  tokenNotFound: 'Token nicht gefunden',
+  registrationError: 'Fehler bei der Registrierung',
+  placeholderClubName: 'z.B. VBC Zürich Affoltern',
+  placeholderAwayHall: 'z.B. Sporthalle Muster, Musterstr. 1',
+  updateProposals: 'Vorschläge aktualisieren',
+  slotGenerationDescription: 'Generiert verfügbare Spieltermine basierend auf dem Hallenplan und den Spielsamstagen. Bestehende, noch nicht gebuchte Termine werden überschrieben.',
 }

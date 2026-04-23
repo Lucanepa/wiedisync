@@ -82,7 +82,7 @@ export default function AwayProposalForm({ existingProposal, onSubmit }: Props) 
               <LocationCombobox
                 value={p.place}
                 onChange={(v) => updateProposal(i, 'place', v)}
-                placeholder="z.B. Sporthalle Muster, Musterstr. 1"
+                placeholder={t('placeholderAwayHall')}
               />
             </div>
           </div>
@@ -98,7 +98,7 @@ export default function AwayProposalForm({ existingProposal, onSubmit }: Props) 
         disabled={submitting || !allFilled}
         className="w-full rounded-md bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
       >
-        {submitting ? t('submitting') : existingProposal ? 'Vorschläge aktualisieren' : t('submitProposals')}
+        {submitting ? t('submitting') : existingProposal ? t('updateProposals') : t('submitProposals')}
       </button>
     </form>
   )

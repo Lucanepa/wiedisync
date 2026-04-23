@@ -13,23 +13,39 @@ export interface BuildMailtoArgs {
 
 export function buildInviteMailto({ invite, kscwTeam, season, frontendUrl }: BuildMailtoArgs): string {
   const link = `${frontendUrl}/terminplanung/${invite.token}`
-  const expiresDe = new Date(invite.expires_at).toLocaleDateString('de-CH', {
+  const expiresCh = new Date(invite.expires_at).toLocaleDateString('de-CH', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
   })
-  const subject = `KSC Wiedikon – Spielplanung Saison ${season.name}`
+  // Bilingual (EN + DE) — recipient is typically a Swiss volleyball club.
+  // Admin opens this in their mail client via mailto: and can trim one half
+  // before sending if they prefer single-language.
+  const subject = `KSC Wiedikon — Game Scheduling / Spielplanung ${season.name}`
   const body = [
-    `Hallo ${invite.contact_name},`,
+    `Hi ${invite.contact_name},`,
     '',
-    `KSC Wiedikon lädt euch zur Spielplanung der Saison ${season.name} ein.`,
+    `KSC Wiedikon invites you to schedule your home and away matches for the ${season.name} season against our team ${kscwTeam.name} (${kscwTeam.league}).`,
     '',
-    `Unter folgendem Link könnt ihr eure Heim- und Auswärtsspieltermine gegen unser Team ${kscwTeam.name} (${kscwTeam.league}) auswählen:`,
-    '',
+    `Open the link below to pick your slots:`,
     link,
     '',
-    `Der Link ist bis ${expiresDe} gültig.`,
+    `This link is valid until ${expiresCh}.`,
+    `If you have any questions, just reply to this email.`,
     '',
+    `Best regards,`,
+    `KSC Wiedikon`,
+    '',
+    '— — — — —',
+    '',
+    `Hallo ${invite.contact_name},`,
+    '',
+    `KSC Wiedikon lädt euch zur Spielplanung der Saison ${season.name} ein — gegen unser Team ${kscwTeam.name} (${kscwTeam.league}).`,
+    '',
+    `Unter folgendem Link könnt ihr eure Heim- und Auswärtsspieltermine auswählen:`,
+    link,
+    '',
+    `Der Link ist bis ${expiresCh} gültig.`,
     `Bei Fragen antwortet einfach auf diese E-Mail.`,
     '',
     `Sportliche Grüsse`,

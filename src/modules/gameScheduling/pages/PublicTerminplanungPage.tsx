@@ -77,7 +77,7 @@ export default function PublicTerminplanungPage() {
 
       navigate(`/terminplanung/${resp.token}`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Fehler bei der Registrierung')
+      setError(err instanceof Error ? err.message : t('registrationError'))
       turnstileRef.current?.reset()
       setTurnstileToken('')
     } finally {
@@ -158,7 +158,7 @@ export default function PublicTerminplanungPage() {
             label={t('clubName')}
             value={clubName}
             onChange={e => setClubName(e.target.value)}
-            placeholder="z.B. VBC Zürich Affoltern"
+            placeholder={t('placeholderClubName')}
             required
           />
 

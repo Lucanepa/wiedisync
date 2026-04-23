@@ -9,6 +9,7 @@ import { TourProvider } from './modules/guide/TourProvider'
 import Layout from './components/Layout'
 import AdminRoute from './components/AdminRoute'
 import SuperAdminRoute from './components/SuperAdminRoute'
+import SpielplanerOrAdminRoute from './components/SpielplanerOrAdminRoute'
 import GamesPage from './modules/games/GamesPage'
 import SpielplanungPage from './modules/spielplanung/SpielplanungPage'
 import TrainingsPage from './modules/trainings/TrainingsPage'
@@ -123,7 +124,7 @@ export default function App() {
             <Route path="inbox" element={<AuthRoute><Suspense fallback={null}><InboxPage /></Suspense></AuthRoute>} />
             <Route path="inbox/:conversationId" element={<AuthRoute><Suspense fallback={null}><ConversationPage /></Suspense></AuthRoute>} />
             <Route path="options/messaging" element={<AuthRoute><Suspense fallback={null}><MessagingSettingsPage /></Suspense></AuthRoute>} />
-            <Route path="admin/spielplanung" element={<AdminRoute><SpielplanungPage /></AdminRoute>} />
+            <Route path="admin/spielplanung" element={<SpielplanerOrAdminRoute><SpielplanungPage /></SpielplanerOrAdminRoute>} />
             <Route path="admin/hallenplan" element={<AdminRoute><HallenplanPage /></AdminRoute>} />
             <Route path="admin/terminplanung" element={<AdminRoute><AdminSetupPage /></AdminRoute>} />
             <Route path="admin/terminplanung/dashboard" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />

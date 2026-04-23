@@ -31,6 +31,7 @@ export interface AuthContextValue {
   coachTeamNames: string[]
   teamResponsibleIds: string[]
   captainTeamIds: string[]
+  spielplanerTeamIds: string[]
   is_spielplaner: boolean
   matchesRole: (role: string) => boolean
   memberTeamIds: string[]
@@ -69,6 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [guestLevelByTeam, setGuestLevelByTeam] = useState<Record<string, number>>({})
   const [teamResponsibleIds, setTeamResponsibleIds] = useState<string[]>([])
   const [captainTeamIds, setCaptainTeamIds] = useState<string[]>([])
+  const [spielplanerTeamIds, setSpielplanerTeamIds] = useState<string[]>([])
   const [isSpielplaner, setIsSpielplaner] = useState(false)
   const [teamsReady, setTeamsReady] = useState(false)
   const teamsLoading = !!user && !teamsReady
@@ -93,7 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loadTeamContext = useCallback(async (memberId: string | number) => {
     try {
-      const [coachRows, trRows, memberTeams, allTeams, captainTeams] = await Promise.all([
+      const [coachRows, trRows, memberTeams, allTeams, captainTeams, spielplanerRows] = await Promise.all([
         fetchAllItems<{ teams_id: number }>('teams_coaches', {
           filter: { members_id: { _eq: memberId } },
           fields: ['teams_id'],
@@ -115,6 +117,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           filter: { captain: { _eq: memberId }, active: { _eq: true } },
           fields: ['id'],
         }),
+        fetchAllItems<{ kscw_team: number }>('spielplaner_assignments', {
+          filter: { member: { _eq: memberId } },
+          fields: ['kscw_team'],
+        }),
       ])
 
       const teamMap = new Map(allTeams.map(t => [String(t.id), t]))
@@ -131,6 +137,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setCoachTeamNames([...coachIdSet].map(id => teamMap.get(id)?.name).filter((n): n is string => !!n))
       setTeamResponsibleIds(trTeamIdsRaw.map(String))
       setCaptainTeamIds(captainTeamIdsRaw.map(String))
+      setSpielplanerTeamIds(
+        spielplanerRows.map(r => r.kscw_team).filter((id): id is number => id != null).map(String),
+      )
       setMemberTeamIds(memberTeamIdsRaw.map(String))
       setMemberTeamNames(memberTeamIdsRaw.map(id => teamMap.get(String(id))?.name).filter((n): n is string => !!n))
 
@@ -244,6 +253,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null)
     setCoachTeamIds([]); setCoachTeamNames([])
     setTeamResponsibleIds([]); setCaptainTeamIds([])
+    setSpielplanerTeamIds([])
     setIsSpielplaner(false)
     setMemberTeamIds([]); setMemberTeamNames([])
     setMemberSports(new Set()); setGuestLevelByTeam({}); setTeamSportById({})
@@ -315,14 +325,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user, isSuperAdmin, isAdmin, isGlobalAdmin, isVbAdmin, isBbAdmin,
     hasAdminAccessToSport, hasAdminAccessToTeam, isApproved, isProfileComplete,
     isCoach, isCoachOf, canParticipateIn, isStaffOnly, coachTeamIds, coachTeamNames,
-    teamResponsibleIds, captainTeamIds, is_spielplaner: isSpielplaner, matchesRole,
+    teamResponsibleIds, captainTeamIds, spielplanerTeamIds, is_spielplaner: isSpielplaner, matchesRole,
     memberTeamIds, memberTeamNames, teamsLoading, memberSports, primarySport,
     canViewTeam, isVorstand, getGuestLevel, isGuestIn, isLoading, login, loginWithOAuth, logout,
   }), [
     user, isSuperAdmin, isAdmin, isGlobalAdmin, isVbAdmin, isBbAdmin,
     hasAdminAccessToSport, hasAdminAccessToTeam, isApproved, isProfileComplete,
     isCoach, isCoachOf, canParticipateIn, isStaffOnly, coachTeamIds, coachTeamNames,
-    teamResponsibleIds, captainTeamIds, isSpielplaner, matchesRole,
+    teamResponsibleIds, captainTeamIds, spielplanerTeamIds, isSpielplaner, matchesRole,
     memberTeamIds, memberTeamNames, teamsLoading, memberSports, primarySport,
     canViewTeam, isVorstand, getGuestLevel, isGuestIn, isLoading, login, loginWithOAuth, logout,
   ])

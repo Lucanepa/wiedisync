@@ -278,9 +278,15 @@ export interface Game extends BaseRecord {
   duty_confirmed: boolean
   referees_json: Array<{ name: string; id?: number }>
   source: 'swiss_volley' | 'manual' | 'basketplan'
+  svrz_push_status: 'pending' | 'pushed' | 'failed' | null
   respond_by: string
   min_participants: number
 
+}
+
+export interface SpielplanerAssignment extends BaseRecord {
+  member: string | number
+  kscw_team: string | number
 }
 
 export interface RefereeExpense extends BaseRecord {

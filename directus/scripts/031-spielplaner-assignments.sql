@@ -23,6 +23,29 @@ CREATE TABLE IF NOT EXISTS spielplaner_assignments (
 CREATE INDEX IF NOT EXISTS idx_spielplaner_assignments_member    ON spielplaner_assignments(member);
 CREATE INDEX IF NOT EXISTS idx_spielplaner_assignments_kscw_team ON spielplaner_assignments(kscw_team);
 
+-- Gotcha: when the collection is later registered via Directus admin UI,
+-- Directus silently recreates member/kscw_team without NOT NULL / FK / UNIQUE.
+-- Re-assert them idempotently so re-runs repair the table after registration.
+ALTER TABLE spielplaner_assignments ALTER COLUMN member    SET NOT NULL;
+ALTER TABLE spielplaner_assignments ALTER COLUMN kscw_team SET NOT NULL;
+
+DO $$ BEGIN
+  ALTER TABLE spielplaner_assignments
+    ADD CONSTRAINT spielplaner_assignments_member_fkey
+    FOREIGN KEY (member) REFERENCES members(id) ON DELETE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE spielplaner_assignments
+    ADD CONSTRAINT spielplaner_assignments_kscw_team_fkey
+    FOREIGN KEY (kscw_team) REFERENCES teams(id) ON DELETE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE spielplaner_assignments
+    ADD CONSTRAINT uq_spielplaner_assignments_member_team UNIQUE (member, kscw_team);
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
 -- ============================================================================
 -- 2. games.svrz_push_status column (Phase 2 reserved field, nullable today)
 --    Reserved for a future SVRZ Volleymanager write-back flow. Phase 1 leaves

@@ -1579,6 +1579,15 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       const token = await getCronAccessToken(log, 'SVRZ sync')
       if (!token) return
       const { execSync } = await import('node:child_process')
+      // Derive current season from date (Aug 1 cutover). Look up the matching
+      // SVRZ UUID from the most recent sync for that season; fall back to the
+      // 2025/26 UUID as a safety net.
+      const now = new Date()
+      const startYear = now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1
+      const seasonName = `${startYear}/${startYear + 1}`
+      const known = await database('svrz_spielplaner_contacts')
+        .where('season_name', seasonName).whereNotNull('season_uuid').first()
+      const seasonUuid = known?.season_uuid || 'dcafddfe-8139-4e02-baad-d3f88ec00cd0'
       const env = {
         HOME: process.env.HOME,
         PATH: process.env.PATH,
@@ -1586,8 +1595,8 @@ export default ({ action, filter, init, schedule }, { services, database, logger
         VM_PASSWORD: process.env.VM_PASSWORD,
         DIRECTUS_URL: 'http://127.0.0.1:8055',
         DIRECTUS_TOKEN: token,
-        SVRZ_SEASON_UUID: 'dcafddfe-8139-4e02-baad-d3f88ec00cd0',
-        SVRZ_SEASON_NAME: '2025/2026',
+        SVRZ_SEASON_UUID: seasonUuid,
+        SVRZ_SEASON_NAME: seasonName,
       }
       const output = execSync('node /directus/scripts/svrz-scheduling-sync.mjs', {
         env,

@@ -348,6 +348,16 @@ export function registerGameScheduling(router, { database, logger, services, get
       const token = auth.startsWith('Bearer ') ? auth.slice(7) : ''
       if (!token) return res.status(401).json({ error: 'Missing bearer token' })
 
+      // Derive defaults from the current date (Aug 1 cutover). Look up the
+      // matching SVRZ UUID from the most recent sync for that season; fall
+      // back to the 2025/26 UUID as a safety net.
+      const now = new Date()
+      const startYear = now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1
+      const defaultSeasonName = `${startYear}/${startYear + 1}`
+      const known = await database('svrz_spielplaner_contacts')
+        .where('season_name', defaultSeasonName).whereNotNull('season_uuid').first()
+      const defaultSeasonUuid = known?.season_uuid || 'dcafddfe-8139-4e02-baad-d3f88ec00cd0'
+
       const { spawn } = await import('node:child_process')
       // Scoped env — do NOT spread process.env; forward only the secrets the child needs
       const env = {
@@ -357,8 +367,8 @@ export function registerGameScheduling(router, { database, logger, services, get
         VM_PASSWORD: process.env.VM_PASSWORD,
         DIRECTUS_URL: 'http://127.0.0.1:8055',
         DIRECTUS_TOKEN: token,
-        SVRZ_SEASON_UUID: season_uuid || 'dcafddfe-8139-4e02-baad-d3f88ec00cd0',
-        SVRZ_SEASON_NAME: season_name || '2025/2026',
+        SVRZ_SEASON_UUID: season_uuid || defaultSeasonUuid,
+        SVRZ_SEASON_NAME: season_name || defaultSeasonName,
       }
       const child = spawn('node', ['/directus/scripts/svrz-scheduling-sync.mjs'], {
         env,

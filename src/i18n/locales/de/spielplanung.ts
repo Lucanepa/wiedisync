@@ -21,6 +21,21 @@ export default {
     more: '+{{count}} weitere',
   },
 
+  // Admin-only Spielplaner assignments accordion
+  assignments: {
+    title: 'Spielplaner-Zuweisungen',
+    hint: 'Weise Mitglieder spezifischen Teams zu, damit sie für diese Teams manuelle Spiele verwalten können. Mitglieder mit Club-weitem Spielplaner-Flag (★) haben bereits Zugriff auf alle Teams.',
+    member: 'Mitglied',
+    memberPlaceholder: 'Mitglied auswählen',
+    team: 'Team',
+    teamPlaceholder: 'Team auswählen',
+    add: 'Hinzufügen',
+    remove: 'Zuweisung entfernen',
+    loading: 'Lade Zuweisungen…',
+    empty: 'Noch keine teambezogenen Zuweisungen. Oben eine hinzufügen.',
+    clubWide: '(Club-weiter Spielplaner)',
+  },
+
   // Bulk import panel
   import: {
     title: 'Massen-Import',

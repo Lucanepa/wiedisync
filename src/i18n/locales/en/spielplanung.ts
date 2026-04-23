@@ -21,6 +21,21 @@ export default {
     more: '+{{count}} more',
   },
 
+  // Admin-only Spielplaner assignments accordion
+  assignments: {
+    title: 'Spielplaner assignments',
+    hint: 'Assign members to specific teams so they can manage those teams\' manual games. Members flagged as club-wide Spielplaner (★) already have access to all teams.',
+    member: 'Member',
+    memberPlaceholder: 'Select member',
+    team: 'Team',
+    teamPlaceholder: 'Select team',
+    add: 'Add',
+    remove: 'Remove assignment',
+    loading: 'Loading assignments…',
+    empty: 'No scoped assignments yet. Add one above.',
+    clubWide: '(club-wide Spielplaner)',
+  },
+
   // Bulk import panel
   import: {
     title: 'Bulk import',

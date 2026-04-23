@@ -21,6 +21,26 @@ export default {
     more: '+{{count}} weitere',
   },
 
+  // Bulk import panel
+  import: {
+    title: 'Massen-Import',
+    hint: 'Vorlage herunterladen, pro Zeile ein Spiel erfassen, dann hochladen zur Vorschau. Zeilen mit fehlenden / unbekannten Daten werden übersprungen.',
+    downloadTemplate: 'Excel-Vorlage herunterladen',
+    importing: 'Importiere…',
+    importNValid: '{{count}} gültige Spiel(e) importieren',
+    nSkipped: '{{count}} Zeile(n) werden übersprungen',
+    result: '{{created}} Spiel(e) importiert. {{failed}} fehlgeschlagen.',
+    col: {
+      team: 'Team',
+      type: 'H/A',
+      opponent: 'Gegner',
+      date: 'Datum',
+      time: 'Zeit',
+      hall: 'Halle',
+      status: 'Status',
+    },
+  },
+
   // Manual game creation modal
   manualGame: {
     title: 'Manuelles Spiel erfassen',

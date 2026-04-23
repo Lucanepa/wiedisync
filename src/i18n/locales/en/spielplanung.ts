@@ -21,6 +21,26 @@ export default {
     more: '+{{count}} more',
   },
 
+  // Bulk import panel
+  import: {
+    title: 'Bulk import',
+    hint: 'Download the template, fill in one game per row, then upload to preview. Rows with missing / unknown data will be skipped.',
+    downloadTemplate: 'Download Excel template',
+    importing: 'Importing…',
+    importNValid: 'Import {{count}} valid game(s)',
+    nSkipped: '{{count}} row(s) will be skipped',
+    result: 'Imported {{created}} game(s). {{failed}} failed.',
+    col: {
+      team: 'Team',
+      type: 'H/A',
+      opponent: 'Opponent',
+      date: 'Date',
+      time: 'Time',
+      hall: 'Hall',
+      status: 'Status',
+    },
+  },
+
   // Manual game creation modal
   manualGame: {
     title: 'Add manual game',

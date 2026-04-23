@@ -6,6 +6,13 @@ import CalendarView from './CalendarView'
 import ListView from './ListView'
 import GameDetailDrawer from './GameDetailDrawer'
 import ManualGameModal from './ManualGameModal'
+import ImportPanel from './ImportPanel'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '../../components/ui/collapsible'
+import { FileSpreadsheet, ChevronDown } from 'lucide-react'
 import { useSpielplanungData } from './hooks/useSpielplanungData'
 import { useAvailableSeasons } from './hooks/useAvailableSeasons'
 import { useTeams } from '../../hooks/useTeams'
@@ -131,6 +138,20 @@ export default function SpielplanungPage() {
       <div data-tour="spielplanung-filters">
         <SpielplanungFilters filters={filters} onChange={setFilters} />
       </div>
+
+      {/* Bulk import (only when the caller can create manual games) */}
+      {canCreateManualGames && (
+        <Collapsible>
+          <CollapsibleTrigger className="group inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
+            <FileSpreadsheet className="h-4 w-4" aria-hidden />
+            {t('import.title')}
+            <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" aria-hidden />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-2">
+            <ImportPanel editableTeamIds={editableTeamIds} />
+          </CollapsibleContent>
+        </Collapsible>
+      )}
 
       {/* Loading / Error */}
       {isLoading && <LoadingSpinner />}

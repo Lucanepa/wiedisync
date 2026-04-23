@@ -374,6 +374,21 @@ export function registerGameScheduling(router, { database, logger, services, get
     return new Date(Date.now() + INVITE_TTL_DAYS * 86400000).toISOString()
   }
 
+  // GET /admin/terminplanung/svrz-available-seasons — list seasons seen in synced data
+  router.get('/admin/terminplanung/svrz-available-seasons', async (req, res) => {
+    if (!req.accountability?.admin) return res.status(403).json({ error: 'Admin only' })
+    try {
+      const rows = await database('svrz_spielplaner_contacts')
+        .distinct('season_uuid', 'season_name')
+        .whereNotNull('season_uuid')
+        .orderBy('season_name', 'desc')
+      res.json({ data: rows.map((r) => ({ uuid: r.season_uuid, name: r.season_name })) })
+    } catch (err) {
+      log.error({ msg: `svrz-available-seasons: ${err.message}`, endpoint: 'admin/terminplanung/svrz-available-seasons', userId: req.accountability?.user || null, method: req.method, stack: err.stack })
+      res.status(500).json({ error: 'Internal error' })
+    }
+  })
+
   // POST /admin/terminplanung/invites — create tokenized invites
   router.post('/admin/terminplanung/invites', async (req, res) => {
     if (!req.accountability?.admin) return res.status(403).json({ error: 'Admin only' })

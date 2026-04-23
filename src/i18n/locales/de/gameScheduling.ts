@@ -168,4 +168,14 @@ export default {
   inviteLinkExpires: 'Gültig bis {{date}}',
   selectToInvite: 'Gegner auswählen',
   importedFromSvrz: 'Aus SVRZ übernommen',
+
+  // SVRZ season link
+  svrzSeasonLabel: 'SVRZ-Saison',
+  svrzSeasonOptional: '(optional)',
+  svrzSeasonHelp: 'Wird beim Einladungs-Import als Fallback für Kontakte genutzt.',
+  svrzSeasonSelect: 'Saison wählen…',
+  svrzSeasonNone: 'Nicht verknüpft',
+  svrzSeasonEmpty: 'Noch keine SVRZ-Daten. Bitte zuerst SVRZ-Sync ausführen.',
+  svrzSeasonLinked: '✓ verknüpft',
+  save: 'Speichern',
 }

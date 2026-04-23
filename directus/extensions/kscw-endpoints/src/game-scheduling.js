@@ -348,11 +348,11 @@ export function registerGameScheduling(router, { database, logger, services, get
       const token = auth.startsWith('Bearer ') ? auth.slice(7) : ''
       if (!token) return res.status(401).json({ error: 'Missing bearer token' })
 
-      // Derive defaults from the current date (Aug 1 cutover). Look up the
-      // matching SVRZ UUID from the most recent sync for that season; fall
-      // back to the 2025/26 UUID as a safety net.
+      // Derive defaults from the current date (Jun 1 cutover — Swiss Volley
+      // publishes new-season fixtures in June). Look up the matching SVRZ UUID
+      // from the most recent sync for that season; fall back to the 2025/26 UUID.
       const now = new Date()
-      const startYear = now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1
+      const startYear = now.getMonth() >= 5 ? now.getFullYear() : now.getFullYear() - 1
       const defaultSeasonName = `${startYear}/${startYear + 1}`
       const known = await database('svrz_spielplaner_contacts')
         .where('season_name', defaultSeasonName).whereNotNull('season_uuid').first()

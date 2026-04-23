@@ -1,6 +1,7 @@
 export default {
   title: 'Game Planning',
   subtitleSeason: 'Season overview {{season}}',
+  seasonPicker: 'Season',
 
   // View options
   viewCalendar: 'Calendar',

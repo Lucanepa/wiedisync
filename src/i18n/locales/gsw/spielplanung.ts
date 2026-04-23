@@ -1,6 +1,7 @@
 export default {
   title: 'Spielplanig',
   subtitleSeason: 'Saisonübersicht {{season}}',
+  seasonPicker: 'Saison',
 
   // View options
   viewCalendar: 'Kaländer',

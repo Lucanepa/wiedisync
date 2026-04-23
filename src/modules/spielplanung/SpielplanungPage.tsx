@@ -6,6 +6,7 @@ import CalendarView from './CalendarView'
 import ListView from './ListView'
 import GameDetailDrawer from './GameDetailDrawer'
 import { useSpielplanungData } from './hooks/useSpielplanungData'
+import { useAvailableSeasons } from './hooks/useAvailableSeasons'
 import { useTeams } from '../../hooks/useTeams'
 import { startOfMonth, getSeasonYear } from '../../utils/dateUtils'
 import { useIsMobile } from '../../hooks/useMediaQuery'
@@ -45,8 +46,26 @@ export default function SpielplanungPage() {
   })
 
   const { data: teams } = useTeams()
+  const { seasons } = useAvailableSeasons()
 
   const filteredEntries = useMemo(() => entries, [entries])
+
+  const currentSeasonLabel = `${seasonYear}/${seasonYear + 1}`
+
+  // Merge the current season into the dropdown so we always have at least one option,
+  // even before the games collection resolves.
+  const seasonOptions = useMemo(() => {
+    const set = new Set<string>([currentSeasonLabel, ...seasons])
+    return [...set].sort().reverse()
+  }, [seasons, currentSeasonLabel])
+
+  function handleSeasonChange(nextSeason: string) {
+    // Season format: 'YYYY/YYYY'. Set month to Sep of the start year.
+    const startYear = parseInt(nextSeason.split('/')[0] ?? '', 10)
+    if (Number.isFinite(startYear)) {
+      setMonth(new Date(startYear, 8, 1))
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -61,15 +80,27 @@ export default function SpielplanungPage() {
             {t('subtitleSeason', { season: `${seasonYear}/${(seasonYear + 1).toString().slice(2)}` })}
           </p>
         </div>
-        <div data-tour="view-toggle"><ViewToggle
-          options={[
-            { value: 'calendar', label: t('viewCalendar') },
-            { value: 'list-date', label: t('viewByDate') },
-            { value: 'list-team', label: t('viewByTeam') },
-          ]}
-          value={viewMode}
-          onChange={(v) => setViewMode(v as ViewMode)}
-        /></div>
+        <div className="flex items-center gap-2">
+          <select
+            value={currentSeasonLabel}
+            onChange={(e) => handleSeasonChange(e.target.value)}
+            aria-label={t('seasonPicker')}
+            className="rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-sm text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gold-400 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+          >
+            {seasonOptions.map((s) => (
+              <option key={s} value={s} className="dark:bg-gray-800">{s}</option>
+            ))}
+          </select>
+          <div data-tour="view-toggle"><ViewToggle
+            options={[
+              { value: 'calendar', label: t('viewCalendar') },
+              { value: 'list-date', label: t('viewByDate') },
+              { value: 'list-team', label: t('viewByTeam') },
+            ]}
+            value={viewMode}
+            onChange={(v) => setViewMode(v as ViewMode)}
+          /></div>
+        </div>
       </div>
 
       {/* Filters */}

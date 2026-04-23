@@ -230,9 +230,10 @@ export async function upsertByPersistenceId(collection, rows) {
   const existing = await fetchExistingPersistenceIds(collection);
   const { toCreate, toUpdate, seenIds } = planUpsert(existing, rows);
 
-  // Batch creates in chunks of 50
-  for (let i = 0; i < toCreate.length; i += 50) {
-    await directusFetch(`/items/${collection}`, { method: 'POST', body: JSON.stringify(toCreate.slice(i, i + 50)) });
+  // Batch creates in chunks of 10 — games carry a full `raw` JSON blob (~5 KB each),
+  // so a batch of 50 was hitting Directus's request-entity-too-large limit.
+  for (let i = 0; i < toCreate.length; i += 10) {
+    await directusFetch(`/items/${collection}`, { method: 'POST', body: JSON.stringify(toCreate.slice(i, i + 10)) });
   }
   // Updates must go one-by-one (Directus PATCH /items/<coll>/<id>)
   for (const row of toUpdate) {

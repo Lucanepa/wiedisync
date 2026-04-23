@@ -15,6 +15,11 @@ export default {
   filterAway: 'Exterieur',
   showAbsences: 'Afficher les absences',
 
+  // Day overflow popover (month view)
+  overflow: {
+    more: '+{{count}} autres',
+  },
+
   // Game detail drawer
   drawer: {
     vs: 'vs',

@@ -15,6 +15,11 @@ export default {
   filterAway: 'Uswärts',
   showAbsences: 'Absänze aazeige',
 
+  // Day overflow popover (month view)
+  overflow: {
+    more: '+{{count}} meh',
+  },
+
   // Game detail drawer
   drawer: {
     vs: 'gege',

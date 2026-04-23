@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import CalendarGrid from '../../components/CalendarGrid'
 import GameChip from './GameChip'
+import DayOverflowPopover from './DayOverflowPopover'
 import type { CalendarEntry } from '../../types/calendar'
 import type { Game } from '../../types'
 import { toDateKey, getSeasonMonths, getSeasonYear, formatDate } from '../../utils/dateUtils'
@@ -72,7 +73,7 @@ export default function CalendarView({ entries, closedDates, month, onMonthChang
         maxMonth={maxMonth}
         renderDayContent={(_date, items) => {
           const visible = items.slice(0, 3)
-          const overflow = items.length - 3
+          const hidden = items.slice(3)
 
           return (
             <>
@@ -84,8 +85,13 @@ export default function CalendarView({ entries, closedDates, month, onMonthChang
                   onClick={onGameClick}
                 />
               ))}
-              {overflow > 0 && (
-                <div className="text-[10px] text-gray-400">+{overflow} more</div>
+              {hidden.length > 0 && (
+                <DayOverflowPopover
+                  games={hidden.map((e) => e.source as Game)}
+                  teamNames={hidden.map((e) => e.teamNames[0] ?? '?')}
+                  count={hidden.length}
+                  onGameClick={onGameClick}
+                />
               )}
             </>
           )

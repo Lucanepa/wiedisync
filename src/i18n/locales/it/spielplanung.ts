@@ -15,6 +15,11 @@ export default {
   filterAway: 'Trasferta',
   showAbsences: 'Mostra assenze',
 
+  // Day overflow popover (month view)
+  overflow: {
+    more: '+{{count}} altre',
+  },
+
   // Game detail drawer
   drawer: {
     vs: 'vs',

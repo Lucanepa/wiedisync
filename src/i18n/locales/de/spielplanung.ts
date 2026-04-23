@@ -13,6 +13,8 @@ export default {
   weekPrev: 'Vorherige Woche',
   weekNext: 'Nächste Woche',
   weekToday: 'Heute',
+  weekMoveSuccess: 'Spiel verschoben.',
+  weekMoveFailed: 'Konnte Spiel nicht verschieben: {{message}}',
 
   // Filters
   filterAll: 'Alle',

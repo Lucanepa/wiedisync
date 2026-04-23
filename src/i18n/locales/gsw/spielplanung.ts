@@ -13,6 +13,8 @@ export default {
   weekPrev: 'Previous week',
   weekNext: 'Next week',
   weekToday: 'Today',
+  weekMoveSuccess: 'Game moved.',
+  weekMoveFailed: 'Could not move game: {{message}}',
 
   // Filters
   filterAll: 'Alli',

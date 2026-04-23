@@ -17,6 +17,8 @@ import {
 import { FileSpreadsheet, ChevronDown } from 'lucide-react'
 import { useSpielplanungData } from './hooks/useSpielplanungData'
 import { useAvailableSeasons } from './hooks/useAvailableSeasons'
+import { checkConflicts } from './utils/gameConflicts'
+import { toast } from 'sonner'
 import { useTeams } from '../../hooks/useTeams'
 import { useAuth } from '../../hooks/useAuth'
 import { useMutation } from '../../hooks/useMutation'
@@ -52,7 +54,7 @@ export default function SpielplanungPage() {
   const [editingGame, setEditingGame] = useState<Game | null>(null)
 
   const { isAdmin, is_spielplaner, spielplanerTeamIds } = useAuth()
-  const { remove: deleteGame } = useMutation('games')
+  const { remove: deleteGame, update: updateGame } = useMutation('games')
 
   const seasonYear = getSeasonYear(month)
   const seasonStart = `${seasonYear}-09-01`
@@ -92,6 +94,49 @@ export default function SpielplanungPage() {
     const set = new Set<string>([currentSeasonLabel, ...seasons])
     return [...set].sort().reverse()
   }, [seasons, currentSeasonLabel])
+
+  async function handleWeekMove(move: { gameId: string | number; newDate: string; newTime: string }) {
+    const game = games.find((g) => String(g.id) === String(move.gameId))
+    if (!game) return
+    if (game.source !== 'manual') return
+    if (!canEditGame(game)) return
+
+    const teamRel = asObj<{ id: number | string }>(game.kscw_team)
+    const teamId = String(teamRel?.id ?? game.kscw_team ?? '')
+    const hallRel = asObj<{ id: number | string }>(game.hall)
+    const hallId = hallRel?.id != null ? String(hallRel.id) : (game.hall as unknown as string) ?? null
+
+    const { errors, warnings } = checkConflicts(
+      {
+        editingId: game.id,
+        kscw_team: teamId,
+        hall: hallId,
+        date: move.newDate,
+        time: move.newTime,
+        type: game.type as 'home' | 'away',
+      },
+      games,
+    )
+
+    if (errors.length > 0) {
+      const msg = t(`manualGame.conflict.${errors[0].messageKey}`, errors[0].context)
+      toast.error(msg)
+      return
+    }
+
+    try {
+      await updateGame(game.id, { date: move.newDate, time: move.newTime })
+      if (warnings.length > 0) {
+        const msg = t(`manualGame.conflict.${warnings[0].messageKey}`, warnings[0].context)
+        toast.warning(msg)
+      } else {
+        toast.success(t('weekMoveSuccess'))
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      toast.error(t('weekMoveFailed', { message }))
+    }
+  }
 
   function handleSeasonChange(nextSeason: string) {
     // Season format: 'YYYY/YYYY'. Set month to Sep of the start year.
@@ -190,6 +235,8 @@ export default function SpielplanungPage() {
               weekStart={weekAnchor}
               onWeekChange={setWeekAnchor}
               onGameClick={setSelectedGame}
+              canEdit={canEditGame}
+              onMove={handleWeekMove}
             />
           )}
           {viewMode === 'list-date' && (

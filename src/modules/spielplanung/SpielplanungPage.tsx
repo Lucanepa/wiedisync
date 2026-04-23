@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import ViewToggle from '../../components/ViewToggle'
 import SpielplanungFilters from './SpielplanungFilters'
 import CalendarView from './CalendarView'
+import WeekView from './WeekView'
 import ListView from './ListView'
 import GameDetailDrawer from './GameDetailDrawer'
 import ManualGameModal from './ManualGameModal'
@@ -45,6 +46,7 @@ export default function SpielplanungPage() {
     showAbsences: false,
   })
   const [month, setMonth] = useState<Date>(getInitialMonth)
+  const [weekAnchor, setWeekAnchor] = useState<Date>(() => new Date())
   const [selectedGame, setSelectedGame] = useState<Game | null>(null)
   const [createFor, setCreateFor] = useState<Date | null>(null)
   const [editingGame, setEditingGame] = useState<Game | null>(null)
@@ -126,6 +128,7 @@ export default function SpielplanungPage() {
           <div data-tour="view-toggle"><ViewToggle
             options={[
               { value: 'calendar', label: t('viewCalendar') },
+              ...(isMobile ? [] : [{ value: 'week', label: t('viewWeek') }]),
               { value: 'list-date', label: t('viewByDate') },
               { value: 'list-team', label: t('viewByTeam') },
             ]}
@@ -179,6 +182,14 @@ export default function SpielplanungPage() {
               onMonthChange={setMonth}
               onGameClick={setSelectedGame}
               onEmptyDayClick={canCreateManualGames ? setCreateFor : undefined}
+            />
+          )}
+          {viewMode === 'week' && (
+            <WeekView
+              entries={filteredEntries}
+              weekStart={weekAnchor}
+              onWeekChange={setWeekAnchor}
+              onGameClick={setSelectedGame}
             />
           )}
           {viewMode === 'list-date' && (

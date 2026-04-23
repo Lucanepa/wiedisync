@@ -5,8 +5,14 @@ export default {
 
   // View options
   viewCalendar: 'Kalender',
+  viewWeek: 'Woche',
   viewByDate: 'Nach Datum',
   viewByTeam: 'Nach Team',
+
+  // Week view
+  weekPrev: 'Vorherige Woche',
+  weekNext: 'Nächste Woche',
+  weekToday: 'Heute',
 
   // Filters
   filterAll: 'Alle',

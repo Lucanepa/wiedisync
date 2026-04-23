@@ -5,9 +5,11 @@ import SpielplanungFilters from './SpielplanungFilters'
 import CalendarView from './CalendarView'
 import ListView from './ListView'
 import GameDetailDrawer from './GameDetailDrawer'
+import ManualGameModal from './ManualGameModal'
 import { useSpielplanungData } from './hooks/useSpielplanungData'
 import { useAvailableSeasons } from './hooks/useAvailableSeasons'
 import { useTeams } from '../../hooks/useTeams'
+import { useAuth } from '../../hooks/useAuth'
 import { startOfMonth, getSeasonYear } from '../../utils/dateUtils'
 import { useIsMobile } from '../../hooks/useMediaQuery'
 import LoadingSpinner from '../../components/LoadingSpinner'
@@ -34,6 +36,9 @@ export default function SpielplanungPage() {
   })
   const [month, setMonth] = useState<Date>(getInitialMonth)
   const [selectedGame, setSelectedGame] = useState<Game | null>(null)
+  const [createFor, setCreateFor] = useState<Date | null>(null)
+
+  const { isAdmin, is_spielplaner, spielplanerTeamIds } = useAuth()
 
   const seasonYear = getSeasonYear(month)
   const seasonStart = `${seasonYear}-09-01`
@@ -49,6 +54,13 @@ export default function SpielplanungPage() {
   const { seasons } = useAvailableSeasons()
 
   const filteredEntries = useMemo(() => entries, [entries])
+
+  const editableTeamIds = useMemo(() => {
+    if (isAdmin || is_spielplaner) return (teams ?? []).map((t) => String(t.id))
+    return spielplanerTeamIds
+  }, [isAdmin, is_spielplaner, spielplanerTeamIds, teams])
+
+  const canCreateManualGames = editableTeamIds.length > 0
 
   const currentSeasonLabel = `${seasonYear}/${seasonYear + 1}`
 
@@ -127,6 +139,7 @@ export default function SpielplanungPage() {
               month={month}
               onMonthChange={setMonth}
               onGameClick={setSelectedGame}
+              onEmptyDayClick={canCreateManualGames ? setCreateFor : undefined}
             />
           )}
           {viewMode === 'list-date' && (
@@ -139,6 +152,13 @@ export default function SpielplanungPage() {
       )}
 
       <GameDetailDrawer game={selectedGame} onClose={() => setSelectedGame(null)} />
+
+      <ManualGameModal
+        open={!!createFor}
+        onClose={() => setCreateFor(null)}
+        initialDate={createFor}
+        editableTeamIds={editableTeamIds}
+      />
     </div>
   )
 }

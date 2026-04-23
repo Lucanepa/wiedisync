@@ -33,18 +33,18 @@ DO $$ BEGIN
   ALTER TABLE spielplaner_assignments
     ADD CONSTRAINT spielplaner_assignments_member_fkey
     FOREIGN KEY (member) REFERENCES members(id) ON DELETE CASCADE;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+EXCEPTION WHEN duplicate_object THEN NULL; WHEN duplicate_table THEN NULL; END $$;
 
 DO $$ BEGIN
   ALTER TABLE spielplaner_assignments
     ADD CONSTRAINT spielplaner_assignments_kscw_team_fkey
     FOREIGN KEY (kscw_team) REFERENCES teams(id) ON DELETE CASCADE;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+EXCEPTION WHEN duplicate_object THEN NULL; WHEN duplicate_table THEN NULL; END $$;
 
 DO $$ BEGIN
   ALTER TABLE spielplaner_assignments
     ADD CONSTRAINT uq_spielplaner_assignments_member_team UNIQUE (member, kscw_team);
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+EXCEPTION WHEN duplicate_object THEN NULL; WHEN duplicate_table THEN NULL; END $$;
 
 -- ============================================================================
 -- 2. games.svrz_push_status column (Phase 2 reserved field, nullable today)
@@ -53,7 +53,7 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 -- ============================================================================
 DO $$ BEGIN
   CREATE TYPE svrz_push_status_enum AS ENUM ('pending', 'pushed', 'failed');
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+EXCEPTION WHEN duplicate_object THEN NULL; WHEN duplicate_table THEN NULL; END $$;
 
 ALTER TABLE games
   ADD COLUMN IF NOT EXISTS svrz_push_status svrz_push_status_enum;

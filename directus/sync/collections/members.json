@@ -2253,6 +2253,34 @@
         "foreign_key_table": null,
         "foreign_key_column": null
       }
+    },
+    {
+      "collection": "members",
+      "field": "spielplaner_assignments",
+      "type": "alias",
+      "meta": {
+        "collection": "members",
+        "conditions": null,
+        "display": null,
+        "display_options": null,
+        "field": "spielplaner_assignments",
+        "group": null,
+        "hidden": false,
+        "interface": "list-o2m",
+        "note": null,
+        "options": null,
+        "readonly": false,
+        "required": false,
+        "searchable": true,
+        "sort": 41,
+        "special": [
+          "o2m"
+        ],
+        "translations": null,
+        "validation": null,
+        "validation_message": null,
+        "width": "full"
+      }
     }
   ],
   "relations": [
@@ -3044,6 +3072,31 @@
         "foreign_key_table": "members",
         "foreign_key_column": "id",
         "constraint_name": "slot_claims_claimed_by_member_foreign",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE"
+      }
+    },
+    {
+      "collection": "spielplaner_assignments",
+      "field": "member",
+      "related_collection": "members",
+      "meta": {
+        "junction_field": null,
+        "many_collection": "spielplaner_assignments",
+        "many_field": "member",
+        "one_allowed_collections": null,
+        "one_collection": "members",
+        "one_collection_field": null,
+        "one_deselect_action": "nullify",
+        "one_field": "spielplaner_assignments",
+        "sort_field": null
+      },
+      "schema": {
+        "table": "spielplaner_assignments",
+        "column": "member",
+        "foreign_key_table": "members",
+        "foreign_key_column": "id",
+        "constraint_name": "spielplaner_assignments_member_fkey",
         "on_update": "NO ACTION",
         "on_delete": "CASCADE"
       }

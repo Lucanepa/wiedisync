@@ -1579,11 +1579,11 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       const token = await getCronAccessToken(log, 'SVRZ sync')
       if (!token) return
       const { execSync } = await import('node:child_process')
-      // Derive current season from date (Aug 1 cutover). Look up the matching
-      // SVRZ UUID from the most recent sync for that season; fall back to the
-      // 2025/26 UUID as a safety net.
+      // Derive current season from date (Jun 1 cutover — Swiss Volley publishes
+      // new-season fixtures in June). Look up the matching SVRZ UUID from the
+      // most recent sync for that season; fall back to the 2025/26 UUID.
       const now = new Date()
-      const startYear = now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1
+      const startYear = now.getMonth() >= 5 ? now.getFullYear() : now.getFullYear() - 1
       const seasonName = `${startYear}/${startYear + 1}`
       const known = await database('svrz_spielplaner_contacts')
         .where('season_name', seasonName).whereNotNull('season_uuid').first()

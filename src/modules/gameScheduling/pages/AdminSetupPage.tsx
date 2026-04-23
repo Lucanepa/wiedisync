@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Navigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import { useAuth } from '../../../hooks/useAuth'
+import { kscwApi } from '../../../lib/api'
 import { useGameSchedulingSeason } from '../hooks/useGameSchedulingSeason'
 import { useAdminBookings } from '../hooks/useAdminBookings'
 import { useTeams } from '../../../hooks/useTeams'
@@ -46,6 +48,18 @@ export default function AdminSetupPage() {
   const handleStatusChange = async (status: 'setup' | 'open' | 'closed') => {
     if (!season) return
     await updateSeason(season.id, { status } as Record<string, unknown>)
+    // When opening a season for booking, kick off an SVRZ sync in the
+    // background so games + contacts for the current season land in Directus
+    // without the admin having to click a second button. The sync runs
+    // detached server-side (~9 min) and is idempotent.
+    if (status === 'open') {
+      try {
+        await kscwApi('/admin/terminplanung/svrz-sync', { method: 'POST', body: {} })
+        toast.success(t('svrzSyncStarted'))
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : String(err))
+      }
+    }
   }
 
   const handleGenerate = async () => {

@@ -1,6 +1,9 @@
 export default {
   tabLabel: 'Nachrichten',
   threadTitle: 'Teamchat',
+  showOriginal: 'Original anzeigen',
+  originalMessage: 'Original',
+  failedToSave: 'Speichern fehlgeschlagen',
   emptyThread: 'Noch keine Nachrichten. Sag Hallo!',
   composerPlaceholder: 'Nachricht schreiben…',
   send: 'Senden',

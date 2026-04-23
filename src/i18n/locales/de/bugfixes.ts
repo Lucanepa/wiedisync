@@ -44,4 +44,17 @@ export default {
   recentFixes: 'Letzte Fehlerbehebungen',
   resolvedThisWeek: '{{count}} Fehler diese Woche behoben',
   resolvedThisMonth: '{{count}} Fehler diesen Monat behoben',
+
+  // /status health banner + service rows
+  statusApiLabel: 'App-Server',
+  statusSvLabel: 'Swiss Volley Sync',
+  statusBpLabel: 'Basketplan Sync',
+  statusGcalLabel: 'Hallenplan Sync',
+  statusAgo: 'her',
+  statusAllOk: 'Alle Systeme laufen',
+  statusAllOkSubtitle: 'App, Daten-Syncs und Kalender sind auf dem neuesten Stand.',
+  statusSomeDown: 'Ein System ist offline',
+  statusSomeStale: 'Ein Sync hängt',
+  statusChecking: 'Wird geprüft …',
+  statusDetailBelow: 'Details siehe unten.',
 }

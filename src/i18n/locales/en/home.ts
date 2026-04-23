@@ -14,4 +14,9 @@ export default {
   noTrainings: 'No upcoming trainings.',
   myTeams: 'My Teams',
   myNextAppointments: 'My next appointments',
+  loading: 'Loading…',
+  showAppointments: 'My appointments',
+  showCategories: 'By category',
+  rankings: 'Rankings',
+  showMore: 'Show more',
 } as const

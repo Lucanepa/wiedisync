@@ -36,7 +36,7 @@ export default function InboxPage() {
         <h1 className="text-lg font-semibold text-foreground">{t('inboxTitle')}</h1>
         <Button size="sm" onClick={() => setNewMsgOpen(true)} className="min-h-11">
           <Plus className="h-4 w-4 mr-1" />
-          {t('newMessage.button', { defaultValue: 'Neue Nachricht' })}
+          {t('newMessage.button')}
         </Button>
       </div>
 
@@ -63,7 +63,7 @@ export default function InboxPage() {
       {groups.length > 0 && (
         <section className="mb-6">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
-            {t('groupsSectionTitle', { defaultValue: 'Gruppen' })}
+            {t('groupsSectionTitle')}
           </h2>
           <ConversationList conversations={groups} />
         </section>

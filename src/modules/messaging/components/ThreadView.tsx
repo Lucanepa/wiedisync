@@ -57,7 +57,7 @@ export default function ThreadView({ conversation, onMarkRead, onToggleMute, hea
       return conversation.title
         || (members.length > 0
           ? members.map(m => `${m.first_name ?? ''}`.trim()).filter(Boolean).slice(0, 3).join(', ')
-          : t('groupChat.defaultName', { defaultValue: 'Gruppe' }))
+          : t('groupChat.defaultName'))
     }
     if (isDmLike) {
       const other = members.find(m => String(m.id) !== String(user?.id))

@@ -1,6 +1,9 @@
 export default {
   tabLabel: 'Messages',
   threadTitle: 'Team chat',
+  showOriginal: 'Show original message',
+  originalMessage: 'Original',
+  failedToSave: 'Failed to save',
   emptyThread: 'No messages yet. Say hi!',
   composerPlaceholder: 'Write a message…',
   send: 'Send',

@@ -55,31 +55,31 @@ export default function StatusPage() {
   const rows: ServiceRow[] = [
     {
       key: 'api',
-      label: t('statusApiLabel', 'App-Server'),
+      label: t('statusApiLabel'),
       icon: <Activity className="h-4 w-4" />,
       status: apiStatus,
       detail: apiService?.latency != null ? `${apiService.latency} ms` : undefined,
     },
     {
       key: 'sv',
-      label: t('statusSvLabel', 'Swiss Volley Sync'),
+      label: t('statusSvLabel'),
       icon: <Database className="h-4 w-4" />,
       status: syncRow(sv),
-      detail: sv?.lastUpdated ? `${relativeTime(sv.lastUpdated, '')} ${t('statusAgo', 'ago')}` : undefined,
+      detail: sv?.lastUpdated ? `${relativeTime(sv.lastUpdated, '')} ${t('statusAgo')}` : undefined,
     },
     {
       key: 'bp',
-      label: t('statusBpLabel', 'Basketplan Sync'),
+      label: t('statusBpLabel'),
       icon: <Database className="h-4 w-4" />,
       status: syncRow(bp),
-      detail: bp?.lastUpdated ? `${relativeTime(bp.lastUpdated, '')} ${t('statusAgo', 'ago')}` : undefined,
+      detail: bp?.lastUpdated ? `${relativeTime(bp.lastUpdated, '')} ${t('statusAgo')}` : undefined,
     },
     {
       key: 'gc',
-      label: t('statusGcalLabel', 'Hallenplan Sync'),
+      label: t('statusGcalLabel'),
       icon: <Calendar className="h-4 w-4" />,
       status: syncRow(gc),
-      detail: gc?.lastUpdated ? `${relativeTime(gc.lastUpdated, '')} ${t('statusAgo', 'ago')}` : undefined,
+      detail: gc?.lastUpdated ? `${relativeTime(gc.lastUpdated, '')} ${t('statusAgo')}` : undefined,
     },
   ]
 
@@ -104,15 +104,15 @@ export default function StatusPage() {
       ? <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
       : <AlertTriangle className={`h-8 w-8 ${overall === 'down' ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'}`} />
   const bannerTitle = overall === 'ok'
-    ? t('statusAllOk', 'Alle Systeme laufen')
+    ? t('statusAllOk')
     : overall === 'down'
-      ? t('statusSomeDown', 'Ein System ist offline')
+      ? t('statusSomeDown')
       : overall === 'warn'
-        ? t('statusSomeStale', 'Ein Sync hängt')
-        : t('statusChecking', 'Wird geprüft …')
+        ? t('statusSomeStale')
+        : t('statusChecking')
   const bannerSubtitle = overall === 'ok'
-    ? t('statusAllOkSubtitle', 'App, Daten-Syncs und Kalender sind auf dem neuesten Stand.')
-    : t('statusDetailBelow', 'Details siehe unten.')
+    ? t('statusAllOkSubtitle')
+    : t('statusDetailBelow')
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 p-4">
@@ -185,7 +185,7 @@ export default function StatusPage() {
       )}
 
       {healthLoading && !anyDown && (
-        <p className="text-center text-[10px] text-gray-400">{t('statusChecking', 'Wird geprüft …')}</p>
+        <p className="text-center text-[10px] text-gray-400">{t('statusChecking')}</p>
       )}
     </div>
   )

@@ -191,7 +191,7 @@ export default function CalendarPage() {
   const subtitles: Record<CalendarViewMode, string> = {
     hallenplan: t('subtitleHall'),
     month: t('subtitleMonth'),
-    week: t('subtitleWeek', { defaultValue: 'Weekly overview of all events' }),
+    week: t('subtitleWeek'),
   }
 
   return (

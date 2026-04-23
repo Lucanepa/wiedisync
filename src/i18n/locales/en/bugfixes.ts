@@ -44,4 +44,17 @@ export default {
   recentFixes: 'Recent Fixes',
   resolvedThisWeek: '{{count}} issues resolved this week',
   resolvedThisMonth: '{{count}} issues resolved this month',
+
+  // /status health banner + service rows
+  statusApiLabel: 'App server',
+  statusSvLabel: 'Swiss Volley sync',
+  statusBpLabel: 'Basketplan sync',
+  statusGcalLabel: 'Hall schedule sync',
+  statusAgo: 'ago',
+  statusAllOk: 'All systems operational',
+  statusAllOkSubtitle: 'App, data syncs, and calendar are all up to date.',
+  statusSomeDown: 'A service is offline',
+  statusSomeStale: 'A sync is lagging',
+  statusChecking: 'Checking…',
+  statusDetailBelow: 'See details below.',
 }

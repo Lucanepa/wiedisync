@@ -48,13 +48,13 @@ export default function GroupDmMenu({ conversationId, onMemberAdded, currentMemb
     setAdding(true)
     try {
       await messagingApi.addGroupMember(conversationId, m.id)
-      toast.success(t('group.memberAdded', { defaultValue: '{{name}} hinzugefügt', name: fullName(m) }))
+      toast.success(t('group.memberAdded', { name: fullName(m) }))
       setQuery('')
       setAddOpen(false)
       onMemberAdded?.()
     } catch (err: unknown) {
       const e = err as { message?: string }
-      toast.error(e?.message ?? t('group.addError', { defaultValue: 'Hinzufügen fehlgeschlagen' }))
+      toast.error(e?.message ?? t('group.addError'))
     } finally {
       setAdding(false)
     }
@@ -64,11 +64,11 @@ export default function GroupDmMenu({ conversationId, onMemberAdded, currentMemb
     setLeaving(true)
     try {
       await messagingApi.leaveGroup(conversationId)
-      toast.success(t('group.leftSuccess', { defaultValue: 'Gruppe verlassen' }))
+      toast.success(t('group.leftSuccess'))
       navigate('/inbox')
     } catch (err: unknown) {
       const e = err as { message?: string }
-      toast.error(e?.message ?? t('group.leaveError', { defaultValue: 'Verlassen fehlgeschlagen' }))
+      toast.error(e?.message ?? t('group.leaveError'))
     } finally {
       setLeaving(false)
       setLeaveConfirmOpen(false)
@@ -83,7 +83,7 @@ export default function GroupDmMenu({ conversationId, onMemberAdded, currentMemb
           variant="ghost"
           size="sm"
           onClick={() => setOpen(!open)}
-          aria-label={t('group.menuLabel', { defaultValue: 'Gruppe' })}
+          aria-label={t('group.menuLabel')}
           className="min-h-11"
         >
           <MoreHorizontal className="h-4 w-4" />
@@ -98,7 +98,7 @@ export default function GroupDmMenu({ conversationId, onMemberAdded, currentMemb
                 onClick={() => { setOpen(false); setAddOpen(true) }}
               >
                 <UserPlus className="h-4 w-4" />
-                {t('group.addMember', { defaultValue: 'Mitglied hinzufügen' })}
+                {t('group.addMember')}
               </button>
               <button
                 type="button"
@@ -106,7 +106,7 @@ export default function GroupDmMenu({ conversationId, onMemberAdded, currentMemb
                 onClick={() => { setOpen(false); setLeaveConfirmOpen(true) }}
               >
                 <LogOut className="h-4 w-4" />
-                {t('group.leave', { defaultValue: 'Gruppe verlassen' })}
+                {t('group.leave')}
               </button>
             </div>
           </>
@@ -116,28 +116,28 @@ export default function GroupDmMenu({ conversationId, onMemberAdded, currentMemb
       <Modal
         open={addOpen}
         onClose={() => { if (!adding) setAddOpen(false) }}
-        title={t('group.addMember', { defaultValue: 'Mitglied hinzufügen' })}
+        title={t('group.addMember')}
         size="md"
       >
         <div className="space-y-4">
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={t('newMessage.searchPlaceholder', { defaultValue: 'Name oder E-Mail suchen …' })}
+            placeholder={t('newMessage.searchPlaceholder')}
             autoFocus
           />
           <div className="rounded-md border border-border bg-muted/30 max-h-72 overflow-y-auto">
             {query.trim().length < 2 ? (
               <p className="px-3 py-4 text-xs text-muted-foreground">
-                {t('newMessage.minChars', { defaultValue: 'Tippe mindestens 2 Buchstaben' })}
+                {t('newMessage.minChars')}
               </p>
             ) : loading ? (
               <p className="px-3 py-4 text-xs text-muted-foreground">
-                {t('newMessage.loading', { defaultValue: 'Suche …' })}
+                {t('newMessage.loading')}
               </p>
             ) : filteredResults.length === 0 ? (
               <p className="px-3 py-4 text-xs text-muted-foreground">
-                {t('newMessage.noResults', { defaultValue: 'Keine Treffer' })}
+                {t('newMessage.noResults')}
               </p>
             ) : (
               <ul className="divide-y divide-border">

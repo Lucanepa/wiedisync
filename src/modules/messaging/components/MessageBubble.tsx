@@ -84,8 +84,8 @@ export default function MessageBubble({ message, isOwn, currentMemberId, isTeamM
                 type="button"
                 className="italic underline decoration-dotted underline-offset-2 hover:text-foreground focus:text-foreground"
                 onClick={() => setShowOriginal(s => !s)}
-                aria-label={t('showOriginal', { defaultValue: 'Show original message' })}
-                title={t('showOriginal', { defaultValue: 'Show original message' })}
+                aria-label={t('showOriginal')}
+                title={t('showOriginal')}
               >· {t('edited')}</button>
             )
             : <span className="italic">· {t('edited')}</span>
@@ -104,7 +104,7 @@ export default function MessageBubble({ message, isOwn, currentMemberId, isTeamM
             <div className="fixed inset-0 z-40" onClick={() => setShowOriginal(false)} />
             <div className={`absolute top-5 z-50 min-w-[180px] max-w-[85vw] rounded-md border border-border bg-background text-foreground shadow-md p-2 text-xs ${isOwn ? 'left-0' : 'right-0'}`}>
               <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
-                {t('originalMessage', { defaultValue: 'Original' })}
+                {t('originalMessage')}
               </div>
               <div className="whitespace-pre-wrap break-words">{message.original_body}</div>
             </div>

@@ -273,7 +273,7 @@ export default function InvitesDrawer({ open, onOpenChange, kscwTeam, api }: Pro
             </span>
             <div className="flex gap-2">
               <Button variant="ghost" onClick={() => onOpenChange(false)}>
-                {t('cancel') || 'Abbrechen'}
+                {t('cancel')}
               </Button>
               <Button onClick={submit} disabled={submitting || selectedCount === 0}>
                 {t('createInvites')}

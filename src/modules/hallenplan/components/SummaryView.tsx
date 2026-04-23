@@ -12,7 +12,7 @@ const typeLabels: Record<string, string> = {
   training: 'Training',
   game: 'Spiel',
   event: 'Event',
-  away: 'Auswärts',
+  away: 'Away',
   other: '',
 }
 

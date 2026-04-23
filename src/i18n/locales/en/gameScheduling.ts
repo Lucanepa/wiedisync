@@ -186,4 +186,15 @@ export default {
   archiveSeasonConfirm: 'Archive season {{season}}? All volleyball teams for this season will be deactivated and outstanding invites will expire. Continue?',
   archiveSeasonSuccess: 'Season {{season}} archived — {{teams}} teams deactivated, {{invites}} invites expired.',
   archiveSeasonDone: 'This season is archived.',
+
+  // English-first audit additions (previously hardcoded in components)
+  cancel: 'Cancel',
+  noSeasonConfigured: 'No season configured. Please create a season first.',
+  invalidLink: 'Invalid link',
+  tokenNotFound: 'Token not found',
+  registrationError: 'Registration failed',
+  placeholderClubName: 'e.g. VBC Zurich Affoltern',
+  placeholderAwayHall: 'e.g. Muster sports hall, Musterstr. 1',
+  updateProposals: 'Update proposals',
+  slotGenerationDescription: 'Generates available game slots from the hall plan and game Saturdays. Any existing, not-yet-booked slots get overwritten.',
 }

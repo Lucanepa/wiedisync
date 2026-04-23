@@ -62,16 +62,18 @@ const MessagingSettingsPage = lazy(() => import('./modules/messaging/pages/Messa
 const AdminReportsPage = lazy(() => import('./modules/admin/AdminReportsPage'))
 
 function SentryFallback() {
+  // Error boundary — cannot rely on i18n being loaded. Plain English + a
+  // compact DE translation as bilingual fallback for the Swiss audience.
   return (
     <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
       <div className="text-center space-y-4 p-8">
-        <h1 className="text-2xl font-bold">Etwas ist schiefgelaufen</h1>
-        <p className="text-muted-foreground">Ein unerwarteter Fehler ist aufgetreten.</p>
+        <h1 className="text-2xl font-bold">Something went wrong</h1>
+        <p className="text-muted-foreground">An unexpected error occurred. Etwas ist schiefgelaufen.</p>
         <button
           className="rounded-md bg-brand-600 px-4 py-2 text-white hover:bg-brand-700"
           onClick={() => window.location.reload()}
         >
-          Seite neu laden
+          Reload page
         </button>
       </div>
     </div>

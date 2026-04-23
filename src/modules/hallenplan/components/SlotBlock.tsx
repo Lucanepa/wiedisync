@@ -77,9 +77,9 @@ const SportIcon = ({ sport, className = '' }: { sport?: string; className?: stri
 
 const typeLabels: Record<string, string> = {
   training: 'Training',
-  game: 'Spiel',
+  game: 'Game',
   event: 'Event',
-  away: 'Auswärts',
+  away: 'Away',
   other: '',
 }
 

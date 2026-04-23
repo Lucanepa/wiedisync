@@ -323,6 +323,43 @@ export function registerGameScheduling(router, { database, logger, services, get
     }
   })
 
+  // POST /kscw/admin/terminplanung/restore-season/:id — undo an archive
+  // Reactivates volleyball teams for the season and flips status archived → closed.
+  // Does NOT reissue individual invites that were expired by the archive
+  // (those tokens stay dead — admin can reissue per invite if needed).
+  router.post('/admin/terminplanung/restore-season/:id', async (req, res) => {
+    if (!req.accountability?.admin) return res.status(403).json({ error: 'Admin only' })
+    try {
+      const seasonId = parseInt(req.params.id, 10)
+      if (!seasonId) return res.status(400).json({ error: 'invalid season id' })
+
+      const season = await database('game_scheduling_seasons').where('id', seasonId).first()
+      if (!season) return res.status(404).json({ error: 'season not found' })
+      if (season.status !== 'archived') {
+        return res.status(400).json({ error: 'only archived seasons can be restored' })
+      }
+      if (!season.season) return res.status(400).json({ error: 'season has no name — cannot match teams' })
+
+      const teamsRestored = await database('teams')
+        .where('sport', 'volleyball')
+        .where('season', season.season)
+        .where('active', false)
+        .update({ active: true })
+
+      await database('game_scheduling_seasons').where('id', seasonId).update({ status: 'closed' })
+
+      log.info({
+        msg: `restore-season id=${seasonId} (${season.season})`,
+        teams_restored: teamsRestored,
+        userId: req.accountability?.user || null,
+      })
+      res.json({ success: true, season: season.season, teams_restored: teamsRestored })
+    } catch (err) {
+      log.error({ msg: `restore-season: ${err.message}`, endpoint: 'admin/terminplanung/restore-season', userId: req.accountability?.user || null, method: req.method, stack: err.stack })
+      res.status(500).json({ error: 'Internal error' })
+    }
+  })
+
   // POST /kscw/admin/terminplanung/archive-season/:id — volleyball-only
   // Season must already be 'closed'. Marks teams inactive, expires lingering
   // invites, flips season status to 'archived'. Reversible by flipping
@@ -388,9 +425,10 @@ export function registerGameScheduling(router, { database, logger, services, get
   })
 
   // POST /kscw/admin/terminplanung/svrz-sync — manual trigger for bulk SVRZ sync
-  // Spawns the sync script detached; the HTTP caller returns immediately. Errors inside
-  // the child are NOT reported back (stdio: 'ignore') — the try/catch here only covers
-  // spawn-fork failures. Observability comes from the daily cron's log output.
+  // Spawns the sync script detached; the HTTP caller returns immediately.
+  // Child stdout + stderr are piped to /directus/logs/svrz-sync.log so failures
+  // in the detached run leave a trail. The daily cron path uses execSync and
+  // already emits to Sentry via logCronError on non-zero exit.
   router.post('/admin/terminplanung/svrz-sync', async (req, res) => {
     if (!req.accountability?.admin) return res.status(403).json({ error: 'Admin only' })
     try {
@@ -410,6 +448,17 @@ export function registerGameScheduling(router, { database, logger, services, get
       const defaultSeasonUuid = known?.season_uuid || 'dcafddfe-8139-4e02-baad-d3f88ec00cd0'
 
       const { spawn } = await import('node:child_process')
+      // Pipe child stdout + stderr to a persistent log so the detached run
+      // leaves a trail when it fails. Without this, stdio: 'ignore' would
+      // silently swallow all output and we'd never know why a sync failed.
+      const { openSync } = await import('node:fs')
+      let logOut, logErr
+      try {
+        logOut = openSync('/directus/logs/svrz-sync.log', 'a')
+        logErr = openSync('/directus/logs/svrz-sync.log', 'a')
+      } catch {
+        logOut = 'ignore'; logErr = 'ignore'
+      }
       // Scoped env — do NOT spread process.env; forward only the secrets the child needs
       const env = {
         HOME: process.env.HOME,
@@ -424,7 +473,7 @@ export function registerGameScheduling(router, { database, logger, services, get
       const child = spawn('node', ['/directus/scripts/svrz-scheduling-sync.mjs'], {
         env,
         detached: true,
-        stdio: 'ignore',
+        stdio: ['ignore', logOut, logErr],
       })
       child.unref()
       log.info({ msg: `svrz-sync spawned`, pid: child.pid, userId: req.accountability?.user })

@@ -93,6 +93,7 @@ export default function SeasonConfig({
   }
 
   const [archiving, setArchiving] = useState(false)
+  const [restoring, setRestoring] = useState(false)
   const handleArchive = async () => {
     if (!season) return
     if (!window.confirm(t('archiveSeasonConfirm', { season: formatSeasonShort(season.season) }))) return
@@ -111,6 +112,24 @@ export default function SeasonConfig({
       toast.error(err instanceof Error ? err.message : String(err))
     } finally {
       setArchiving(false)
+    }
+  }
+
+  const handleRestore = async () => {
+    if (!season) return
+    if (!window.confirm(t('restoreSeasonConfirm', { season: formatSeasonShort(season.season) }))) return
+    setRestoring(true)
+    try {
+      const resp = await kscwApi<{ success: true; season: string; teams_restored: number }>(
+        `/admin/terminplanung/restore-season/${season.id}`,
+        { method: 'POST' },
+      )
+      toast.success(t('restoreSeasonSuccess', { season: formatSeasonShort(resp.season), teams: resp.teams_restored }))
+      if (onAfterArchive) await onAfterArchive()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err))
+    } finally {
+      setRestoring(false)
     }
   }
 
@@ -187,7 +206,16 @@ export default function SeasonConfig({
             </>
           )}
           {(season.status as string) === 'archived' && (
-            <span className="text-sm text-gray-500 italic dark:text-gray-400">{t('archiveSeasonDone')}</span>
+            <>
+              <span className="flex items-center text-sm text-gray-500 italic dark:text-gray-400">{t('archiveSeasonDone')}</span>
+              <button
+                onClick={handleRestore}
+                disabled={restoring}
+                className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+              >
+                {restoring ? '…' : t('restoreSeason')}
+              </button>
+            </>
           )}
         </div>
       )}

@@ -1600,7 +1600,9 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       }
       const output = execSync('node /directus/scripts/svrz-scheduling-sync.mjs', {
         env,
-        timeout: 300_000,
+        // 10 min — the sync does serial PATCHes for ~2970 rows; cold run ≈9 min.
+        // Too-tight timeouts caused daily logCronError→Sentry noise.
+        timeout: 600_000,
         encoding: 'utf-8',
       })
       log.info(`SVRZ sync cron: ${output.split('\n').slice(-6).join(' | ')}`)

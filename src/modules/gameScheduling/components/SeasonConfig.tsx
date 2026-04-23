@@ -8,11 +8,29 @@ interface Props {
   onCreateSeason: (name: string) => Promise<void>
   onSelectSeason: (season: GameSchedulingSeason) => void
   onStatusChange: (status: 'setup' | 'open' | 'closed') => Promise<void>
+  onUpdateSeason?: (patch: Record<string, unknown>) => Promise<void>
 }
 
-export default function SeasonConfig({ season, allSeasons, onCreateSeason, onSelectSeason, onStatusChange }: Props) {
+export default function SeasonConfig({ season, allSeasons, onCreateSeason, onSelectSeason, onStatusChange, onUpdateSeason }: Props) {
   const { t } = useTranslation('gameScheduling')
   const [creating, setCreating] = useState(false)
+  const [svrzUuid, setSvrzUuid] = useState<string>(
+    typeof season?.svrz_season_uuid === 'string' ? season.svrz_season_uuid : '',
+  )
+  const [savingSvrz, setSavingSvrz] = useState(false)
+
+  const seasonUuidLinked = typeof season?.svrz_season_uuid === 'string' && season.svrz_season_uuid.length > 0
+  const dirty = (season?.svrz_season_uuid ?? '') !== svrzUuid
+
+  const handleSaveSvrzUuid = async () => {
+    if (!onUpdateSeason) return
+    setSavingSvrz(true)
+    try {
+      await onUpdateSeason({ svrz_season_uuid: svrzUuid.trim() || null })
+    } finally {
+      setSavingSvrz(false)
+    }
+  }
 
   const getNextSeasonName = () => {
     const year = new Date().getFullYear()
@@ -106,6 +124,39 @@ export default function SeasonConfig({ season, allSeasons, onCreateSeason, onSel
               {t('statusSetup')}
             </button>
           )}
+        </div>
+      )}
+
+      {/* SVRZ season link — optional UUID used by invite import for the bulk-contact fallback */}
+      {season && onUpdateSeason && (
+        <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">
+            SVRZ-Saison-UUID
+            <span className="ml-1 text-gray-400">(optional)</span>
+          </label>
+          <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+            Wird vom Import als Fallback für Kontakte genutzt, wenn keine per-Spiel-Kontakte gefunden werden.
+            Beispiel: <code className="text-[10px]">dcafddfe-8139-4e02-baad-d3f88ec00cd0</code>
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <input
+              type="text"
+              value={svrzUuid}
+              onChange={(e) => setSvrzUuid(e.target.value)}
+              placeholder="UUID"
+              className="flex-1 min-w-[240px] rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-mono text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+            />
+            <button
+              onClick={handleSaveSvrzUuid}
+              disabled={!dirty || savingSvrz}
+              className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+              {savingSvrz ? '…' : 'Speichern'}
+            </button>
+            {seasonUuidLinked && !dirty && (
+              <span className="flex items-center text-xs text-green-600 dark:text-green-400">✓ verknüpft</span>
+            )}
+          </div>
         </div>
       )}
     </div>

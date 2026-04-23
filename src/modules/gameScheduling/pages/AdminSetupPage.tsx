@@ -80,6 +80,9 @@ export default function AdminSetupPage() {
         onCreateSeason={handleCreateSeason}
         onSelectSeason={setSeason}
         onStatusChange={handleStatusChange}
+        onUpdateSeason={async (patch) => {
+          if (season) await updateSeason(season.id, patch)
+        }}
       />
 
       {season && (

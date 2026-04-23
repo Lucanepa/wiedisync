@@ -29,12 +29,12 @@ export default function AnnouncementDetailModal({ announcement, onClose }: Props
 
   const safeLink = isSafeAppLink(announcement.link) ? announcement.link : null
   const linkLabel = (() => {
-    if (!safeLink) return t('openLink', { defaultValue: 'Mehr erfahren' })
+    if (!safeLink) return t('openLink')
     try {
       const u = new URL(safeLink, window.location.origin)
       return u.hostname.replace(/^www\./, '')
     } catch {
-      return t('openLink', { defaultValue: 'Mehr erfahren' })
+      return t('openLink')
     }
   })()
 
@@ -53,7 +53,7 @@ export default function AnnouncementDetailModal({ announcement, onClose }: Props
           {announcement.pinned && (
             <span className="inline-flex items-center gap-1 rounded-full bg-gold-50 px-2 py-0.5 text-gold-700 dark:bg-gold-900/40 dark:text-gold-300">
               <Pin className="h-3 w-3" />
-              {t('pinned', { defaultValue: 'Angeheftet' })}
+              {t('pinned')}
             </span>
           )}
           {publishedDate && <span>{publishedDate}</span>}
@@ -64,7 +64,7 @@ export default function AnnouncementDetailModal({ announcement, onClose }: Props
         {safeLink && (
           <div className="space-y-2">
             <p className="text-sm text-gray-600 dark:text-gray-300">
-              {t('linkHint', { defaultValue: 'Link zum vergünstigten Ticket — der Rabatt sollte bereits angewendet sein.' })}
+              {t('linkHint')}
             </p>
             <a
               href={safeLink}

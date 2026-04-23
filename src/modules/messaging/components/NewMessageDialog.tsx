@@ -60,14 +60,14 @@ export default function NewMessageDialog({ open, onOpenChange }: NewMessageDialo
       const res = await messagingApi.createDm({ recipient: String(m.id) })
       toast.success(
         res.type === 'dm_request'
-          ? t('newMessage.requestCreated', { defaultValue: 'Anfrage gesendet' })
-          : t('newMessage.dmCreated', { defaultValue: 'Chat erstellt' }),
+          ? t('newMessage.requestCreated')
+          : t('newMessage.dmCreated'),
       )
       close()
       navigate(`/inbox/${res.conversation_id}`)
     } catch (err: unknown) {
       const e = err as { code?: string; message?: string }
-      toast.error(e?.message ?? t('newMessage.error', { defaultValue: 'Konnte Chat nicht erstellen' }))
+      toast.error(e?.message ?? t('newMessage.error'))
     } finally {
       setSubmitting(false)
     }
@@ -81,19 +81,19 @@ export default function NewMessageDialog({ open, onOpenChange }: NewMessageDialo
         member_ids: selected.map(s => s.id),
         title: title.trim() || undefined,
       })
-      toast.success(t('newMessage.groupCreated', { defaultValue: 'Gruppe erstellt' }))
+      toast.success(t('newMessage.groupCreated'))
       close()
       navigate(`/inbox/${res.conversation_id}`)
     } catch (err: unknown) {
       const e = err as { code?: string; message?: string }
-      toast.error(e?.message ?? t('newMessage.error', { defaultValue: 'Konnte Chat nicht erstellen' }))
+      toast.error(e?.message ?? t('newMessage.error'))
     } finally {
       setSubmitting(false)
     }
   }
 
   return (
-    <Modal open={open} onClose={close} title={t('newMessage.title', { defaultValue: 'Neue Nachricht' })} size="md">
+    <Modal open={open} onClose={close} title={t('newMessage.title')} size="md">
       <div className="space-y-4">
         <label className="flex items-center gap-2 cursor-pointer min-h-11">
           <Checkbox
@@ -103,11 +103,11 @@ export default function NewMessageDialog({ open, onOpenChange }: NewMessageDialo
               setGroupMode(next)
               if (!next) setSelected([])
             }}
-            aria-label={t('newMessage.groupMode', { defaultValue: 'Als Gruppe' })}
+            aria-label={t('newMessage.groupMode')}
           />
           <Users className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm text-foreground">
-            {t('newMessage.groupMode', { defaultValue: 'Als Gruppe senden' })}
+            {t('newMessage.groupMode')}
           </span>
         </label>
 
@@ -121,7 +121,7 @@ export default function NewMessageDialog({ open, onOpenChange }: NewMessageDialo
                 {displayName(s)}
                 <button
                   type="button"
-                  aria-label={t('newMessage.remove', { defaultValue: 'Entfernen' })}
+                  aria-label={t('newMessage.remove')}
                   className="hover:text-destructive"
                   onClick={() => setSelected(prev => prev.filter(p => p.id !== s.id))}
                 >
@@ -135,22 +135,22 @@ export default function NewMessageDialog({ open, onOpenChange }: NewMessageDialo
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder={t('newMessage.searchPlaceholder', { defaultValue: 'Name oder E-Mail suchen …' })}
+          placeholder={t('newMessage.searchPlaceholder')}
           autoFocus
         />
 
         <div className="rounded-md border border-border bg-muted/30 max-h-72 overflow-y-auto">
           {query.trim().length < 2 ? (
             <p className="px-3 py-4 text-xs text-muted-foreground">
-              {t('newMessage.minChars', { defaultValue: 'Tippe mindestens 2 Buchstaben' })}
+              {t('newMessage.minChars')}
             </p>
           ) : loading ? (
             <p className="px-3 py-4 text-xs text-muted-foreground">
-              {t('newMessage.loading', { defaultValue: 'Suche …' })}
+              {t('newMessage.loading')}
             </p>
           ) : results.length === 0 ? (
             <p className="px-3 py-4 text-xs text-muted-foreground">
-              {t('newMessage.noResults', { defaultValue: 'Keine Treffer' })}
+              {t('newMessage.noResults')}
             </p>
           ) : (
             <ul className="divide-y divide-border">

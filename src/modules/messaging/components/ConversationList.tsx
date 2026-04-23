@@ -26,7 +26,7 @@ export default function ConversationList({ conversations }: Props) {
         const teamProfile = isTeam && c.team ? teams.get(String(c.team)) : undefined
         const displayName = peer?.name
           ?? teamProfile?.name
-          ?? (c.title ?? (isGroupDm ? t('groupChat.defaultName', { defaultValue: 'Gruppe' }) : '—'))
+          ?? (c.title ?? (isGroupDm ? t('groupChat.defaultName') : '—'))
         const rel = c.last_message_at
           ? formatDistanceToNowStrict(new Date(c.last_message_at), { addSuffix: true })
           : ''
@@ -46,7 +46,7 @@ export default function ConversationList({ conversations }: Props) {
                 <div className="h-10 w-10 shrink-0 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
                   <Calendar
                     className="h-5 w-5"
-                    aria-label={t('activityChat.label', { defaultValue: 'Event-Chat' })}
+                    aria-label={t('activityChat.label')}
                   />
                 </div>
               )}
@@ -54,7 +54,7 @@ export default function ConversationList({ conversations }: Props) {
                 <div className="h-10 w-10 shrink-0 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
                   <Users
                     className="h-5 w-5"
-                    aria-label={t('groupChat.label', { defaultValue: 'Gruppen-Chat' })}
+                    aria-label={t('groupChat.label')}
                   />
                 </div>
               )}
@@ -63,12 +63,12 @@ export default function ConversationList({ conversations }: Props) {
                   <span className="truncate font-medium text-sm text-foreground">{displayName}</span>
                   {isActivityChat && (
                     <span className="shrink-0 text-[10px] uppercase tracking-wide text-muted-foreground">
-                      {t('activityChat.badge', { defaultValue: 'Event' })}
+                      {t('activityChat.badge')}
                     </span>
                   )}
                   {isGroupDm && (
                     <span className="shrink-0 text-[10px] uppercase tracking-wide text-muted-foreground">
-                      {t('groupChat.badge', { defaultValue: 'Gruppe' })}
+                      {t('groupChat.badge')}
                     </span>
                   )}
                   {c.muted && <BellOff className="h-3.5 w-3.5 text-muted-foreground" aria-label={t('muted')} />}

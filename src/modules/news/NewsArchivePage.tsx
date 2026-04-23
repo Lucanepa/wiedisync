@@ -57,7 +57,7 @@ export default function NewsArchivePage() {
   if (!user || !isApproved) {
     return (
       <div className="mx-auto max-w-2xl py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-        {t('signInRequired', { defaultValue: 'Bitte einloggen, um Neuigkeiten zu sehen.' })}
+        {t('signInRequired')}
       </div>
     )
   }
@@ -106,7 +106,7 @@ export default function NewsArchivePage() {
                 onClick={() => setPage((p) => p + 1)}
                 className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
               >
-                {t('loadMore', { defaultValue: 'Mehr anzeigen' })}
+                {t('loadMore')}
               </button>
             </div>
           )}

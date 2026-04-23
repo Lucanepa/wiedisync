@@ -310,7 +310,7 @@ export default function HomePage() {
   return (
     <div className="min-w-0">
       {isInitialLoading ? (
-        <LoadingSpinner label={t('loading', { defaultValue: 'Loading...' })} />
+        <LoadingSpinner label={t('loading')} />
       ) : (<>
 
       {/* Hero with sport icons flanking logo */}
@@ -411,9 +411,9 @@ export default function HomePage() {
             className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
           >
             {showCategorized ? (
-              <><List className="h-4 w-4" />{t('showAppointments', { defaultValue: 'My appointments' })}</>
+              <><List className="h-4 w-4" />{t('showAppointments')}</>
             ) : (
-              <><LayoutGrid className="h-4 w-4" />{t('showCategories', { defaultValue: 'By category' })}</>
+              <><LayoutGrid className="h-4 w-4" />{t('showCategories')}</>
             )}
           </button>
         </div>
@@ -436,7 +436,7 @@ export default function HomePage() {
           {userLeagueGroups.size > 0 && (
             <div className="hidden min-w-0 lg:block">
               <h2 className="mb-3 text-lg font-semibold text-gray-900 dark:text-gray-100">
-                {t('rankings', { defaultValue: 'Rankings' })}
+                {t('rankings')}
                 {currentSeason && (
                   <span className="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">{currentSeason}</span>
                 )}
@@ -1049,7 +1049,7 @@ function NextAppointments({
           onClick={() => setVisibleCount((v) => v + 10)}
           className="mt-2 rounded-lg px-6 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
         >
-          {t('showMore', { defaultValue: 'Show more' })}
+          {t('showMore')}
         </button>
       )}
     </div>

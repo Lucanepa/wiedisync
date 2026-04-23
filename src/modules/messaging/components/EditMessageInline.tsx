@@ -29,7 +29,7 @@ export default function EditMessageInline({ messageId, initialBody, onDone, onSa
       else await messagingApi.edit(messageId, { body: trimmed })
       onDone()
     } catch (e) {
-      setError((e as Error)?.message || t('failedToSave', { defaultValue: 'Failed to save' }))
+      setError((e as Error)?.message || t('failedToSave'))
     } finally { setBusy(false) }
   }
 

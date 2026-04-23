@@ -14,11 +14,24 @@ export interface SlotData {
 export interface OpponentData {
   id: string
   club_name: string
+  team_name: string
   contact_name: string
+  contact_email: string
   kscw_team_id: string
   kscw_team_name: string
   home_game: string
   away_game: string
+  source: 'self_registration' | 'manual' | 'svrz'
+  status: 'invited' | 'viewed' | 'booked' | 'revoked' | 'expired' | 'active'
+}
+
+export interface InviteGame {
+  id: string
+  display_name: string
+  starting_date_time: string | null
+  is_home_kscw: boolean
+  league: string | null
+  status: string
 }
 
 export interface BookingData {
@@ -37,6 +50,7 @@ export interface BookingData {
 
 interface SlotsResponse {
   opponent: OpponentData
+  games: InviteGame[]
   slots: SlotData[]
   bookings: BookingData[]
 }
@@ -91,6 +105,7 @@ export function useAvailableSlots(token: string | undefined) {
 
   return {
     opponent: data?.opponent ?? null,
+    games: data?.games ?? [],
     slots: data?.slots ?? [],
     bookings: data?.bookings ?? [],
     isLoading,

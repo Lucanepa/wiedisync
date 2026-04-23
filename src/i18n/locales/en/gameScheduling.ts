@@ -200,4 +200,14 @@ export default {
   placeholderAwayHall: 'e.g. Muster sports hall, Musterstr. 1',
   updateProposals: 'Update proposals',
   slotGenerationDescription: 'Generates available game slots from the hall plan and game Saturdays. Any existing, not-yet-booked slots get overwritten.',
+
+  // Invite-scoped opponent flow (welcome + SVRZ game context)
+  inviteGreeting: 'Hi {{name}}',
+  inviteGreetingNoName: 'Hello',
+  inviteWelcome: "You've been invited by KSCW to schedule your games against {{team}}.",
+  inviteContactHint: 'This invite was sent to {{email}}. Not the right person? Write to',
+  inviteGamesHeader_one: 'We have {{count}} game together this season',
+  inviteGamesHeader_other: 'We have {{count}} games together this season',
+  inviteGameHome: 'Home (KSCW)',
+  inviteGameAway: 'Away (you host)',
 }

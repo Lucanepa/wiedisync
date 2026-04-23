@@ -14,4 +14,19 @@ export default {
   filterHome: 'Heim',
   filterAway: 'Uswärts',
   showAbsences: 'Absänze aazeige',
+
+  // Game detail drawer
+  drawer: {
+    vs: 'gege',
+    hall: 'Halle',
+    league: 'Liga',
+    round: 'Rundi',
+    svrzPush: 'SVRZ-Übertragig',
+    notInVolleymanager: 'Nonig im Volleymanager',
+    copySvrz: 'SVRZ-Details kopiere',
+    copied: 'Kopiert!',
+    sourceSVRZ: 'Verwaltet vo SVRZ',
+    sourceBasketplan: 'Verwaltet vo Basketplan',
+    sourceManual: 'Manuell',
+  },
 } as const

@@ -77,6 +77,7 @@ See `INFRA.md → Domains & Hosting Overview` for full map.
 
 ## Changelog
 <!-- Keep entries one line. For full details see CHANGELOG.md or git log. -->
+- **2026-04-23** v4.2.0 — Spielplanung sandbox mode: manual game CRUD on calendar (create/edit/delete + bulk Excel import), scoped Spielplaner role (`spielplaner_assignments`), Week view with drag-to-reschedule on manual games (15-min snap + conflict guard), richer chips + detail drawer, season nav unclamped, SVRZ field locking.
 - **2026-04-23** v4.1.0 — SVRZ game-scheduling invites: admin-issued per-verein tokenized links (3-tier contact match from SVRZ game + club feeds), manual CSV paste fallback, invite lifecycle (invited → viewed → booked) with reissue/revoke, schema extended on `game_scheduling_opponents`.
 - **2026-04-20** v4.0.4 — Mobile More sheet: `/inbox` first in secondary list (was getting lost below `/events`).
 - **2026-04-20** v4.0.3 — Mobile/desktop nav parity: More sheet + SidebarOptions aligned; `/status` is a friendly health dashboard; changelog justified.

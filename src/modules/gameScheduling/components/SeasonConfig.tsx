@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { kscwApi } from '../../../lib/api'
 import type { GameSchedulingSeason } from '../../../types'
+import { formatSeasonShort } from '../utils/formatSeason'
 
 interface Props {
   season: GameSchedulingSeason | null
@@ -11,22 +13,38 @@ interface Props {
   onUpdateSeason?: (patch: Record<string, unknown>) => Promise<void>
 }
 
-export default function SeasonConfig({ season, allSeasons, onCreateSeason, onSelectSeason, onStatusChange, onUpdateSeason }: Props) {
+interface SvrzSeasonOption {
+  uuid: string
+  name: string
+}
+
+export default function SeasonConfig({
+  season,
+  allSeasons,
+  onCreateSeason,
+  onSelectSeason,
+  onStatusChange,
+  onUpdateSeason,
+}: Props) {
   const { t } = useTranslation('gameScheduling')
   const [creating, setCreating] = useState(false)
-  const [svrzUuid, setSvrzUuid] = useState<string>(
-    typeof season?.svrz_season_uuid === 'string' ? season.svrz_season_uuid : '',
-  )
+  const [svrzOptions, setSvrzOptions] = useState<SvrzSeasonOption[]>([])
   const [savingSvrz, setSavingSvrz] = useState(false)
 
-  const seasonUuidLinked = typeof season?.svrz_season_uuid === 'string' && season.svrz_season_uuid.length > 0
-  const dirty = (season?.svrz_season_uuid ?? '') !== svrzUuid
+  const currentSvrzUuid = typeof season?.svrz_season_uuid === 'string' ? season.svrz_season_uuid : ''
 
-  const handleSaveSvrzUuid = async () => {
+  useEffect(() => {
+    if (!onUpdateSeason) return
+    kscwApi<{ data: SvrzSeasonOption[] }>('/admin/terminplanung/svrz-available-seasons')
+      .then((resp) => setSvrzOptions(resp.data ?? []))
+      .catch(() => setSvrzOptions([]))
+  }, [onUpdateSeason])
+
+  const handleSvrzSelect = async (uuid: string) => {
     if (!onUpdateSeason) return
     setSavingSvrz(true)
     try {
-      await onUpdateSeason({ svrz_season_uuid: svrzUuid.trim() || null })
+      await onUpdateSeason({ svrz_season_uuid: uuid || null })
     } finally {
       setSavingSvrz(false)
     }
@@ -38,7 +56,7 @@ export default function SeasonConfig({ season, allSeasons, onCreateSeason, onSel
   }
 
   const nextSeason = getNextSeasonName()
-  const seasonExists = allSeasons.some(s => s.season === nextSeason)
+  const seasonExists = allSeasons.some((s) => s.season === nextSeason)
 
   const handleCreate = async () => {
     if (seasonExists) return
@@ -68,7 +86,7 @@ export default function SeasonConfig({ season, allSeasons, onCreateSeason, onSel
 
       {/* Season selector */}
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        {allSeasons.map(s => (
+        {allSeasons.map((s) => (
           <button
             key={s.id}
             onClick={() => onSelectSeason(s)}
@@ -78,7 +96,7 @@ export default function SeasonConfig({ season, allSeasons, onCreateSeason, onSel
                 : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300'
             }`}
           >
-            {s.season}
+            {formatSeasonShort(s.season)}
             <span className={`ml-2 inline-block rounded-full px-2 py-0.5 text-xs ${statusColors[s.status]}`}>
               {statusLabels[s.status]}
             </span>
@@ -127,36 +145,37 @@ export default function SeasonConfig({ season, allSeasons, onCreateSeason, onSel
         </div>
       )}
 
-      {/* SVRZ season link — optional UUID used by invite import for the bulk-contact fallback */}
+      {/* SVRZ season link — dropdown populated from synced svrz_spielplaner_contacts */}
       {season && onUpdateSeason && (
         <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
           <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">
-            SVRZ-Saison-UUID
-            <span className="ml-1 text-gray-400">(optional)</span>
+            {t('svrzSeasonLabel')} <span className="ml-1 text-gray-400">{t('svrzSeasonOptional')}</span>
           </label>
-          <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-            Wird vom Import als Fallback für Kontakte genutzt, wenn keine per-Spiel-Kontakte gefunden werden.
-            Beispiel: <code className="text-[10px]">dcafddfe-8139-4e02-baad-d3f88ec00cd0</code>
-          </p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <input
-              type="text"
-              value={svrzUuid}
-              onChange={(e) => setSvrzUuid(e.target.value)}
-              placeholder="UUID"
-              className="flex-1 min-w-[240px] rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-mono text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-            />
-            <button
-              onClick={handleSaveSvrzUuid}
-              disabled={!dirty || savingSvrz}
-              className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-            >
-              {savingSvrz ? '…' : 'Speichern'}
-            </button>
-            {seasonUuidLinked && !dirty && (
-              <span className="flex items-center text-xs text-green-600 dark:text-green-400">✓ verknüpft</span>
-            )}
-          </div>
+          <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{t('svrzSeasonHelp')}</p>
+
+          {svrzOptions.length === 0 ? (
+            <p className="mt-2 text-xs italic text-amber-600 dark:text-amber-400">{t('svrzSeasonEmpty')}</p>
+          ) : (
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <select
+                value={currentSvrzUuid}
+                onChange={(e) => handleSvrzSelect(e.target.value)}
+                disabled={savingSvrz}
+                className="min-w-[200px] rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+              >
+                <option value="">{t('svrzSeasonNone')}</option>
+                {svrzOptions.map((opt) => (
+                  <option key={opt.uuid} value={opt.uuid}>
+                    {formatSeasonShort(opt.name)}
+                  </option>
+                ))}
+              </select>
+              {savingSvrz && <span className="text-xs text-gray-500">…</span>}
+              {!savingSvrz && currentSvrzUuid && (
+                <span className="text-xs text-green-600 dark:text-green-400">{t('svrzSeasonLinked')}</span>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

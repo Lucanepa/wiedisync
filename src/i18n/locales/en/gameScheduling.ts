@@ -168,4 +168,14 @@ export default {
   inviteLinkExpires: 'Valid until {{date}}',
   selectToInvite: 'Select opponent',
   importedFromSvrz: 'Imported from SVRZ',
+
+  // SVRZ season link
+  svrzSeasonLabel: 'SVRZ season',
+  svrzSeasonOptional: '(optional)',
+  svrzSeasonHelp: 'Used as contact fallback during invite import.',
+  svrzSeasonSelect: 'Select season…',
+  svrzSeasonNone: 'Not linked',
+  svrzSeasonEmpty: 'No SVRZ data yet. Run the SVRZ sync first.',
+  svrzSeasonLinked: '✓ linked',
+  save: 'Save',
 }

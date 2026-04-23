@@ -1,11 +1,12 @@
 import { buildEmailLayout, buildInfoCard, formatDateCH, weekday, FRONTEND_URL } from './email-template.js'
 
-/** Get current volleyball season string e.g. '2025/2026' */
+/** Get current season in Wiedisync short form, e.g. '2025/26' (matches teams.season, member_teams.season) */
 function getCurrentSeason() {
   const now = new Date()
   const y = now.getFullYear()
-  const m = now.getMonth() // 0-based
-  return m >= 7 ? `${y}/${y + 1}` : `${y - 1}/${y}`
+  const m = now.getMonth() // 0-based; Aug+ counts as new season
+  const startYear = m >= 7 ? y : y - 1
+  return `${startYear}/${(startYear + 1).toString().slice(-2)}`
 }
 
 export function registerEventNotify(router, { services, database, getSchema, logger }) {

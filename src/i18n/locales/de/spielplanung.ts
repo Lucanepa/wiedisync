@@ -45,6 +45,8 @@ export default {
     leaguePlaceholder: 'Optional',
     round: 'Runde',
     create: 'Spiel erstellen',
+    editTitle: 'Manuelles Spiel bearbeiten',
+    save: 'Änderungen speichern',
     conflict: {
       sameTeamSameDay: 'Dieses Team spielt bereits am gleichen Tag ({{time}} gegen {{opponent}}).',
       hallOverlap: 'Die Halle ist zu einer überlappenden Zeit bereits belegt ({{time}}–{{endTime}}).',
@@ -65,5 +67,12 @@ export default {
     sourceSVRZ: 'Verwaltet via SVRZ',
     sourceBasketplan: 'Verwaltet via Basketplan',
     sourceManual: 'Manuell',
+    edit: 'Bearbeiten',
+    delete: 'Löschen',
+    deleteConfirmTitle: 'Manuelles Spiel löschen?',
+    deleteConfirmBody: 'Dies kann nicht rückgängig gemacht werden.',
+    confirmDelete: 'Löschen',
+    cancel: 'Abbrechen',
+    svrzReadOnlyHint: 'Offizielle Details stammen aus SVRZ. Änderungen bitte im Volleymanager vornehmen.',
   },
 } as const

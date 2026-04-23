@@ -10,6 +10,8 @@ import { useSpielplanungData } from './hooks/useSpielplanungData'
 import { useAvailableSeasons } from './hooks/useAvailableSeasons'
 import { useTeams } from '../../hooks/useTeams'
 import { useAuth } from '../../hooks/useAuth'
+import { useMutation } from '../../hooks/useMutation'
+import { asObj } from '../../utils/relations'
 import { startOfMonth, getSeasonYear } from '../../utils/dateUtils'
 import { useIsMobile } from '../../hooks/useMediaQuery'
 import LoadingSpinner from '../../components/LoadingSpinner'
@@ -37,8 +39,10 @@ export default function SpielplanungPage() {
   const [month, setMonth] = useState<Date>(getInitialMonth)
   const [selectedGame, setSelectedGame] = useState<Game | null>(null)
   const [createFor, setCreateFor] = useState<Date | null>(null)
+  const [editingGame, setEditingGame] = useState<Game | null>(null)
 
   const { isAdmin, is_spielplaner, spielplanerTeamIds } = useAuth()
+  const { remove: deleteGame } = useMutation('games')
 
   const seasonYear = getSeasonYear(month)
   const seasonStart = `${seasonYear}-09-01`
@@ -61,6 +65,14 @@ export default function SpielplanungPage() {
   }, [isAdmin, is_spielplaner, spielplanerTeamIds, teams])
 
   const canCreateManualGames = editableTeamIds.length > 0
+
+  function canEditGame(game: Game | null): boolean {
+    if (!game) return false
+    if (game.source !== 'manual') return false
+    const teamRel = asObj<{ id: number | string }>(game.kscw_team)
+    const tid = String(teamRel?.id ?? game.kscw_team ?? '')
+    return isAdmin || is_spielplaner || spielplanerTeamIds.includes(tid)
+  }
 
   const currentSeasonLabel = `${seasonYear}/${seasonYear + 1}`
 
@@ -151,12 +163,27 @@ export default function SpielplanungPage() {
         </>
       )}
 
-      <GameDetailDrawer game={selectedGame} onClose={() => setSelectedGame(null)} />
+      <GameDetailDrawer
+        game={selectedGame}
+        onClose={() => setSelectedGame(null)}
+        canEdit={canEditGame(selectedGame)}
+        onEdit={(g) => {
+          setEditingGame(g)
+          setSelectedGame(null)
+        }}
+        onDelete={async (g) => {
+          await deleteGame(g.id)
+        }}
+      />
 
       <ManualGameModal
-        open={!!createFor}
-        onClose={() => setCreateFor(null)}
+        open={!!createFor || !!editingGame}
+        onClose={() => {
+          setCreateFor(null)
+          setEditingGame(null)
+        }}
         initialDate={createFor}
+        editingGame={editingGame}
         editableTeamIds={editableTeamIds}
       />
     </div>

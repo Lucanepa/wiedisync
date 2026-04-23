@@ -19,7 +19,8 @@ import { useTeams } from '../../hooks/useTeams'
 import { useGameConflicts } from './hooks/useGameConflicts'
 import { buildManualGamePayload } from './utils/manualGamePayload'
 import { getSeasonYear, toDateKey } from '../../utils/dateUtils'
-import type { Hall, Team, ManualGameInput } from '../../types'
+import { asObj } from '../../utils/relations'
+import type { Hall, Team, ManualGameInput, Game } from '../../types'
 import { cn } from '../../lib/utils'
 
 interface ManualGameModalProps {
@@ -27,8 +28,10 @@ interface ManualGameModalProps {
   onClose: () => void
   /** Team IDs (as strings) the caller is allowed to create games for. */
   editableTeamIds: string[]
-  /** Prefills the date field when opened from a day cell. */
+  /** Prefills the date field when opened from a day cell (create mode only). */
   initialDate?: Date | null
+  /** When set, the modal opens in edit mode preloaded with this game's values. */
+  editingGame?: Game | null
 }
 
 function defaultTime(): string {
@@ -45,6 +48,7 @@ export default function ManualGameModal({
   onClose,
   editableTeamIds,
   initialDate,
+  editingGame,
 }: ManualGameModalProps) {
   const { t } = useTranslation('spielplanung')
   const { data: allTeams } = useTeams('all')
@@ -53,7 +57,8 @@ export default function ManualGameModal({
     all: true,
     fields: ['id', 'name', 'address', 'city'],
   })
-  const { create, isLoading } = useMutation('games')
+  const { create, update, isLoading } = useMutation('games')
+  const isEditMode = !!editingGame
 
   const editableTeams = useMemo(
     () => (allTeams ?? []).filter((t) => editableTeamIds.includes(String(t.id))),
@@ -74,10 +79,37 @@ export default function ManualGameModal({
   const [round, setRound] = useState('')
   const [submitError, setSubmitError] = useState<string | null>(null)
 
-  // Prefill date on (re)open
+  // Prefill date on (re)open (create mode)
   useEffect(() => {
-    if (open && initialDate) setDate(toDateKey(initialDate))
-  }, [open, initialDate])
+    if (open && initialDate && !editingGame) setDate(toDateKey(initialDate))
+  }, [open, initialDate, editingGame])
+
+  // Prefill from existing game on open (edit mode)
+  useEffect(() => {
+    if (!open || !editingGame) return
+    const teamRel = asObj<Team>(editingGame.kscw_team)
+    setTeamId(String(teamRel?.id ?? editingGame.kscw_team ?? ''))
+    setType(editingGame.type)
+    setOpponent(
+      editingGame.type === 'home'
+        ? editingGame.away_team ?? ''
+        : editingGame.home_team ?? '',
+    )
+    setDate(editingGame.date)
+    // time comes back as HH:MM:SS — trim seconds for the <input type="time">
+    setTime((editingGame.time ?? '16:00').slice(0, 5))
+    const hallRel = asObj<Hall>(editingGame.hall)
+    setHallId(hallRel ? String(hallRel.id) : editingGame.hall ? String(editingGame.hall) : '')
+    const ah = editingGame.away_hall_json
+    setAwayVenue({
+      name: ah?.name ?? '',
+      address: ah?.address ?? '',
+      city: ah?.city ?? '',
+      plus_code: ah?.plus_code ?? '',
+    })
+    setLeague(editingGame.league ?? '')
+    setRound(editingGame.round ?? '')
+  }, [open, editingGame])
 
   // Auto-select the single editable team when there's only one
   useEffect(() => {
@@ -104,6 +136,7 @@ export default function ManualGameModal({
   // ── Conflict check ────────────────────────────────────────────────
   const selectedTeam = editableTeams.find((t) => String(t.id) === teamId) as Team | undefined
   const { errors, warnings } = useGameConflicts({
+    editingId: editingGame?.id,
     kscw_team: teamId,
     hall: type === 'home' ? hallId : null,
     date,
@@ -143,7 +176,15 @@ export default function ManualGameModal({
     }
 
     try {
-      await create(buildManualGamePayload(input, selectedTeam.name, toSeasonLabel(date)))
+      const payload = buildManualGamePayload(input, selectedTeam.name, toSeasonLabel(date))
+      if (isEditMode && editingGame) {
+        // On edit, keep the original game_id + source so we don't rename in-place.
+        const { game_id: _gid, ...rest } = payload
+        void _gid
+        await update(editingGame.id, rest)
+      } else {
+        await create(payload)
+      }
       onClose()
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : String(err))
@@ -151,9 +192,14 @@ export default function ManualGameModal({
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={t('manualGame.title')} size="md">
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={isEditMode ? t('manualGame.editTitle') : t('manualGame.title')}
+      size="md"
+    >
       <form onSubmit={handleSubmit} className="space-y-4">
-        <p className="text-sm text-muted-foreground">{t('manualGame.subtitle')}</p>
+        {!isEditMode && <p className="text-sm text-muted-foreground">{t('manualGame.subtitle')}</p>}
 
         {/* Team */}
         <div>
@@ -336,7 +382,11 @@ export default function ManualGameModal({
             {t('common:cancel', 'Cancel')}
           </Button>
           <Button type="submit" disabled={blocked || !requiredFilled || isLoading}>
-            {isLoading ? t('common:saving', 'Saving…') : t('manualGame.create')}
+            {isLoading
+              ? t('common:saving', 'Saving…')
+              : isEditMode
+                ? t('manualGame.save')
+                : t('manualGame.create')}
           </Button>
         </div>
       </form>

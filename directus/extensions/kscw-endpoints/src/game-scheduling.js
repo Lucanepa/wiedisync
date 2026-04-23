@@ -114,7 +114,7 @@ export function registerGameScheduling(router, { database, logger, services, get
 
       const slots = await database('game_scheduling_slots')
         .where('kscw_team', opponent.kscw_team)
-        .where('blocked', false)
+        .whereNot('status', 'blocked')
         .orderBy('date')
 
       const bookings = await database('game_scheduling_bookings')
@@ -153,18 +153,25 @@ export function registerGameScheduling(router, { database, logger, services, get
       if (!slot_id) return res.status(400).json({ error: 'slot_id required' })
 
       const slot = await database('game_scheduling_slots').where('id', slot_id).first()
-      if (!slot || slot.blocked) return res.status(400).json({ error: 'Slot not available' })
+      if (!slot || slot.status === 'blocked' || slot.status === 'booked') {
+        return res.status(400).json({ error: 'Slot not available' })
+      }
 
       // Check no duplicate booking
       const existing = await database('game_scheduling_bookings')
         .where('slot', slot_id).where('status', 'confirmed').first()
       if (existing) return res.status(400).json({ error: 'Slot already booked' })
 
+      // Insert home booking (schema: opponent FK, slot FK, type, season, status)
       await database('game_scheduling_bookings').insert({
-        opponent: opponent.id, slot: slot_id, type: 'home',
-        date: slot.date, start_time: slot.start_time, end_time: slot.end_time,
-        hall: slot.hall, status: 'confirmed',
+        opponent: opponent.id,
+        slot: slot_id,
+        type: 'home_slot_pick',
+        season: slot.season,
+        status: 'confirmed',
       })
+      // Mark the slot itself as booked so it disappears from available lists
+      await database('game_scheduling_slots').where('id', slot_id).update({ status: 'booked' })
 
       // Status lifecycle: booking transitions invited/viewed → booked
       await database('game_scheduling_opponents')
@@ -198,14 +205,19 @@ export function registerGameScheduling(router, { database, logger, services, get
         return res.status(400).json({ error: '1-3 proposals required' })
       }
 
-      for (const p of proposals) {
-        if (!p.date) return res.status(400).json({ error: 'Each proposal needs a date' })
-        await database('game_scheduling_bookings').insert({
-          opponent: opponent.id, type: 'away',
-          date: p.date, start_time: p.start_time || null, end_time: p.end_time || null,
-          location: p.location || '', notes: p.notes || '', status: 'proposed',
-        })
+      // Schema stores up to 3 proposals as parallel columns on a single booking row
+      const row = {
+        opponent: opponent.id,
+        type: 'away_proposal',
+        status: 'pending',
       }
+      proposals.forEach((p, i) => {
+        if (!p.date) throw new Error('Each proposal needs a date')
+        const dt = p.start_time ? `${p.date}T${p.start_time}` : p.date
+        row[`proposed_datetime_${i + 1}`] = dt
+        row[`proposed_place_${i + 1}`] = p.location || p.place || ''
+      })
+      await database('game_scheduling_bookings').insert(row)
 
       // Status lifecycle: away proposal transitions invited/viewed → booked
       await database('game_scheduling_opponents')
@@ -252,7 +264,7 @@ export function registerGameScheduling(router, { database, logger, services, get
             if (!exists) {
               await database('game_scheduling_slots').insert({
                 kscw_team, date: dateStr, start_time: slot.start_time,
-                end_time: slot.end_time, hall: slot.hall, blocked: false,
+                end_time: slot.end_time, hall: slot.hall, status: 'available',
               })
               created++
             }
@@ -317,7 +329,7 @@ export function registerGameScheduling(router, { database, logger, services, get
     try {
       const { slot_id, blocked } = req.body
       if (!slot_id) return res.status(400).json({ error: 'slot_id required' })
-      await database('game_scheduling_slots').where('id', slot_id).update({ blocked: !!blocked })
+      await database('game_scheduling_slots').where('id', slot_id).update({ status: blocked ? 'blocked' : 'available' })
       res.json({ success: true })
     } catch (err) {
       res.status(500).json({ error: 'Internal error' })

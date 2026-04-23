@@ -289,6 +289,29 @@ export interface SpielplanerAssignment extends BaseRecord {
   kscw_team: string | number
 }
 
+/**
+ * Input shape for creating a manual game via the Spielplanung modal or
+ * bulk-import flow. The shape is deliberately simpler than `Game` —
+ * Directus fills defaults (status, source, svrz_push_status) in the
+ * payload builder.
+ */
+export interface ManualGameInput {
+  kscw_team: string | number
+  type: 'home' | 'away'
+  opponent: string
+  date: string // 'YYYY-MM-DD'
+  time: string // 'HH:MM' — 24h
+  hall?: string | number | null
+  away_hall_json?: {
+    name: string
+    address: string
+    city: string
+    plus_code?: string
+  } | null
+  league?: string
+  round?: string
+}
+
 export interface RefereeExpense extends BaseRecord {
   game: string
   team: string

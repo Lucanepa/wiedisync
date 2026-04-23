@@ -186,6 +186,9 @@ export default {
   archiveSeasonConfirm: 'Saison {{season}} archivieren? Alle Volleyball-Teams dieser Saison werden deaktiviert und offene Einladungen ablaufen. Fortfahren?',
   archiveSeasonSuccess: 'Saison {{season}} archiviert — {{teams}} Teams deaktiviert, {{invites}} Einladungen abgelaufen.',
   archiveSeasonDone: 'Diese Saison ist archiviert.',
+  restoreSeason: 'Saison wiederherstellen',
+  restoreSeasonConfirm: 'Saison {{season}} wiederherstellen? Volleyball-Teams werden wieder aktiviert. Abgelaufene Einladungen bleiben tot — bei Bedarf einzeln neu senden. Fortfahren?',
+  restoreSeasonSuccess: 'Saison {{season}} wiederhergestellt — {{teams}} Teams wieder aktiviert.',
 
   // English-first audit additions (German translations)
   cancel: 'Abbrechen',

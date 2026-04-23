@@ -186,6 +186,9 @@ export default {
   archiveSeasonConfirm: 'Archive season {{season}}? All volleyball teams for this season will be deactivated and outstanding invites will expire. Continue?',
   archiveSeasonSuccess: 'Season {{season}} archived — {{teams}} teams deactivated, {{invites}} invites expired.',
   archiveSeasonDone: 'This season is archived.',
+  restoreSeason: 'Restore season',
+  restoreSeasonConfirm: 'Restore season {{season}}? Volleyball teams for this season will be reactivated. Previously expired invites stay dead — reissue them individually if needed. Continue?',
+  restoreSeasonSuccess: 'Season {{season}} restored — {{teams}} teams reactivated.',
 
   // English-first audit additions (previously hardcoded in components)
   cancel: 'Cancel',

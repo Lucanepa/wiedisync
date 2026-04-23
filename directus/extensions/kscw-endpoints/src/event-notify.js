@@ -138,29 +138,38 @@ export function registerEventNotify(router, { services, database, getSchema, log
             ? `${weekday(event.start_date)}, ${formatDateCH(event.start_date)}`
             : ''
 
+          // Per-member locale: default English, switch to German for members
+          // who have explicitly set 'german' or 'swiss_german' in their profile.
+          const L = {
+            en: { greeting: 'Hi', greetingNoName: 'Hello', event: 'Event', date: 'Date', place: 'Location', title: 'Invitation', cta: 'Respond', subject: 'Invitation' },
+            de: { greeting: 'Hallo', greetingNoName: 'Hallo', event: 'Anlass', date: 'Datum', place: 'Ort', title: 'Einladung', cta: 'Antworten', subject: 'Einladung' },
+          }
+
           let emailsSent = 0
           let emailsFailed = 0
           for (const member of members) {
             try {
-              const greeting = member.first_name ? `Hallo ${member.first_name}` : 'Hallo'
+              const isGerman = ['german', 'swiss_german'].includes(member.language || '')
+              const l = isGerman ? L.de : L.en
+              const greeting = member.first_name ? `${l.greeting} ${member.first_name}` : l.greetingNoName
               const body = buildInfoCard([
-                { label: 'Anlass', value: event.title },
-                ...(dateStr ? [{ label: 'Datum', value: dateStr, halfWidth: true }] : []),
-                ...(event.location ? [{ label: 'Ort', value: event.location, halfWidth: true }] : []),
+                { label: l.event, value: event.title },
+                ...(dateStr ? [{ label: l.date, value: dateStr, halfWidth: true }] : []),
+                ...(event.location ? [{ label: l.place, value: event.location, halfWidth: true }] : []),
               ])
               + (event.description ? `<div style="font-size:14px;color:#cbd5e1;margin-top:12px">${event.description}</div>` : '')
 
               const html = buildEmailLayout(body, {
-                title: 'Einladung',
+                title: l.title,
                 subtitle: event.title,
                 greeting,
                 ctaUrl: `${FRONTEND_URL}/events`,
-                ctaLabel: 'Antworten',
+                ctaLabel: l.cta,
               })
 
               await mailService.send({
                 to: member.email,
-                subject: `Einladung: ${event.title}`,
+                subject: `${l.subject}: ${event.title}`,
                 html,
               })
               emailsSent++

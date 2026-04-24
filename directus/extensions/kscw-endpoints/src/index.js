@@ -458,13 +458,71 @@ export default {
           yob: extractYob(c.birthdate, c.birthdate_visibility),
         }))
 
+        // ── Resolve officials (referees, scorers, BB officials) for each game.
+        // SVRZ referees ride in `referees_json` ({name, id}[]); scorer/BB officials
+        // are member/team FK IDs. Batch-fetch and attach public-shaped fields.
+        const allGames = [...upcomingGames, ...completedGames]
+        const memberIds = new Set()
+        const teamIds = new Set()
+        for (const g of allGames) {
+          if (g.scorer_member) memberIds.add(g.scorer_member)
+          if (g.bb_scorer_member) memberIds.add(g.bb_scorer_member)
+          if (g.bb_timekeeper_member) memberIds.add(g.bb_timekeeper_member)
+          if (g.bb_24s_official) memberIds.add(g.bb_24s_official)
+          if (g.scorer_duty_team) teamIds.add(g.scorer_duty_team)
+        }
+        const [memberRows, teamRows] = await Promise.all([
+          memberIds.size
+            ? database('members').whereIn('id', [...memberIds])
+                .select('id', 'first_name', 'last_name')
+            : Promise.resolve([]),
+          teamIds.size
+            ? database('teams').whereIn('id', [...teamIds]).select('id', 'name')
+            : Promise.resolve([]),
+        ])
+        const memberById = new Map(memberRows.map((m) => [m.id, m]))
+        const teamById = new Map(teamRows.map((t) => [t.id, t]))
+        const memberName = (id) => {
+          const m = memberById.get(id)
+          return m ? [m.first_name, m.last_name].filter(Boolean).join(' ') : null
+        }
+
+        const splitName = (full) => {
+          if (!full) return { first_name: '', last_name: '' }
+          const parts = String(full).trim().split(/\s+/)
+          if (parts.length === 1) return { first_name: '', last_name: parts[0] }
+          return { first_name: parts.slice(0, -1).join(' '), last_name: parts[parts.length - 1] }
+        }
+
+        const enrichGame = (g) => {
+          // Referees: parse referees_json ({name,id}[]) into {first_name,last_name}[]
+          let referees = null
+          if (Array.isArray(g.referees_json) && g.referees_json.length) {
+            referees = g.referees_json.map((r) => splitName(r && r.name))
+          }
+          // Volleyball scorer team
+          const scorerTeamName = g.scorer_duty_team ? (teamById.get(g.scorer_duty_team)?.name ?? null) : null
+          // Basketball officials
+          let bbOfficials = null
+          const bbScorer = g.bb_scorer_member ? memberName(g.bb_scorer_member) : null
+          const bbTimekeeper = g.bb_timekeeper_member ? memberName(g.bb_timekeeper_member) : null
+          const bb24s = g.bb_24s_official ? memberName(g.bb_24s_official) : null
+          if (bbScorer || bbTimekeeper || bb24s) {
+            bbOfficials = { scorer: bbScorer, timekeeper: bbTimekeeper, shot_clock: bb24s }
+          }
+          return { ...g, referees, scorer_team: scorerTeamName, bb_officials: bbOfficials }
+        }
+
+        const upcomingPublic = upcomingGames.map(enrichGame)
+        const resultsPublic = completedGames.map(enrichGame)
+
         res.json({
           data: {
             ...team,
             roster: rosterPublic,
             coaches: coachesPublic,
-            upcoming_games: upcomingGames,
-            results: completedGames,
+            upcoming_games: upcomingPublic,
+            results: resultsPublic,
             upcoming_trainings: trainings,
             rankings,
             sponsors,

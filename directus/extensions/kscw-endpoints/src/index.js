@@ -392,8 +392,10 @@ export default {
             .join('members', 'members.id', 'member_teams.member')
             .where('member_teams.team', team.id)
             .where('members.kscw_membership_active', true)
-            .select('members.first_name', 'members.last_name',
-              'members.number', 'members.position', 'members.photo'),
+            .select('members.id', 'members.first_name', 'members.last_name',
+              'members.number', 'members.position', 'members.photo',
+              'members.birthdate', 'members.birthdate_visibility',
+              'member_teams.guest_level'),
           database('teams_coaches')
             .join('members', 'members.id', 'teams_coaches.members_id')
             .where('teams_coaches.teams_id', team.id)
@@ -423,10 +425,29 @@ export default {
             .select('sponsors.*'),
         ])
 
+        // Transform roster: expose yob (respecting birthdate_visibility) + guest_level,
+        // strip raw birthdate / visibility flag from the public payload.
+        const rosterPublic = roster.map((m) => {
+          let yob = null
+          if (m.birthdate && m.birthdate_visibility !== 'hidden') {
+            yob = String(m.birthdate).substring(0, 4)
+          }
+          return {
+            id: m.id,
+            first_name: m.first_name,
+            last_name: m.last_name,
+            number: m.number,
+            position: m.position,
+            photo: m.photo,
+            yob,
+            guest_level: m.guest_level || 0,
+          }
+        })
+
         res.json({
           data: {
             ...team,
-            roster,
+            roster: rosterPublic,
             coaches,
             upcoming_games: upcomingGames,
             results: completedGames,

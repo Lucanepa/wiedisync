@@ -22,6 +22,10 @@ export default {
   removeSpielssamstag: 'Entfernen',
   timeSlot: 'Zeitfenster',
   hall: 'Halle',
+  pickSaturdays: 'Samstage auswählen',
+  noSpielsamstage: 'Keine Spielsamstage ausgewählt.',
+  spielsamstageAutoHint: 'Pro Samstag werden automatisch {{count}} Slots erstellt — {{times}} × {{halls}}.',
+  noKwiHalls: 'Keine KWI-Hallen gefunden — Hallen "KWI A/B/C" anlegen, damit Slots automatisch generiert werden.',
 
   // Slot generation
   generateSlots: 'Spieltermine generieren',

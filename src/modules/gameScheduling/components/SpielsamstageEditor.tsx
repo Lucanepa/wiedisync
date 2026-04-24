@@ -1,8 +1,15 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { parseISO, isSaturday } from 'date-fns'
+import { de } from 'date-fns/locale/de'
+import { enUS } from 'date-fns/locale'
+import { Calendar as CalendarIcon, X } from 'lucide-react'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Calendar } from '@/components/ui/calendar'
+import { Button } from '@/components/ui/button'
 import type { Hall, SpielsamstagConfig } from '../../../types'
-import DatePicker from '@/components/ui/DatePicker'
 import { fetchAllItems } from '../../../lib/api'
+import { toDateKey, formatDateLocale } from '../../../utils/dateUtils'
 
 const DEFAULT_TIMES = ['11:00', '13:30', '16:00']
 
@@ -12,124 +19,145 @@ interface Props {
 }
 
 export default function SpielsamstageEditor({ spielsamstage, onUpdate }: Props) {
-  const { t } = useTranslation('gameScheduling')
+  const { t, i18n } = useTranslation('gameScheduling')
   const [halls, setHalls] = useState<Hall[]>([])
-  const [localData, setLocalData] = useState<SpielsamstagConfig[]>(spielsamstage)
+  const [dates, setDates] = useState<string[]>(
+    spielsamstage.map(s => s.date).filter(Boolean),
+  )
   const [saving, setSaving] = useState(false)
+  const [pickerOpen, setPickerOpen] = useState(false)
 
   useEffect(() => {
-    setLocalData(spielsamstage)
+    setDates(spielsamstage.map(s => s.date).filter(Boolean))
   }, [spielsamstage])
 
   useEffect(() => {
     fetchAllItems<Hall>('halls', { sort: ['name'] }).then(setHalls).catch(() => {})
   }, [])
 
-  const addSamstag = () => {
-    const newEntry: SpielsamstagConfig = {
-      date: '',
-      slots: DEFAULT_TIMES.map(time => ({ time, hall_id: '' })),
-    }
-    setLocalData([...localData, newEntry])
+  const lang = i18n.language
+  const locale = lang === 'de' ? de : enUS
+
+  const kwiHalls = useMemo(
+    () => halls.filter(h => h.name.toLowerCase().includes('kwi')),
+    [halls],
+  )
+
+  const selectedDates = useMemo(
+    () => dates.map(d => parseISO(d)).sort((a, b) => a.getTime() - b.getTime()),
+    [dates],
+  )
+
+  const handleCalendarSelect = (newDates: Date[] | undefined) => {
+    const keys = (newDates ?? []).map(toDateKey)
+    setDates(Array.from(new Set(keys)))
   }
 
-  const removeSamstag = (index: number) => {
-    setLocalData(localData.filter((_, i) => i !== index))
-  }
-
-  const updateDate = (index: number, date: string) => {
-    const updated = [...localData]
-    updated[index] = { ...updated[index], date }
-    setLocalData(updated)
-  }
-
-  const updateSlotHall = (sIdx: number, slotIdx: number, hallId: string) => {
-    const updated = [...localData]
-    const slots = [...updated[sIdx].slots]
-    slots[slotIdx] = { ...slots[slotIdx], hall_id: hallId }
-    updated[sIdx] = { ...updated[sIdx], slots }
-    setLocalData(updated)
+  const removeDate = (d: string) => {
+    setDates(dates.filter(x => x !== d))
   }
 
   const handleSave = async () => {
     setSaving(true)
     try {
-      await onUpdate(localData.filter(s => s.date))
+      const payload: SpielsamstagConfig[] = [...dates]
+        .sort()
+        .map(date => ({
+          date,
+          slots: DEFAULT_TIMES.flatMap(time =>
+            kwiHalls.map(h => ({ time, hall_id: String(h.id) })),
+          ),
+        }))
+      await onUpdate(payload)
     } finally {
       setSaving(false)
     }
   }
 
-  // KWI halls for priority display
-  const kwiHalls = halls.filter(h => h.name.toLowerCase().includes('kwi'))
+  const slotsPerDay = kwiHalls.length * DEFAULT_TIMES.length
+  const hallNames = kwiHalls.map(h => h.name).join(' / ') || 'KWI'
 
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('spielsamstage')}</h2>
-        <button
-          onClick={addSamstag}
-          className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          + {t('addSpielssamstag')}
-        </button>
-      </div>
+      <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+        {t('spielsamstage')}
+      </h2>
+      <p className="mt-1 mb-4 text-xs text-gray-500 dark:text-gray-400">
+        {t('spielsamstageAutoHint', {
+          count: slotsPerDay,
+          times: DEFAULT_TIMES.join(' / '),
+          halls: hallNames,
+          defaultValue: `Each selected Saturday auto-generates ${slotsPerDay} slots — ${DEFAULT_TIMES.join(' / ')} × ${hallNames}.`,
+        })}
+      </p>
 
-      {localData.length === 0 && (
-        <p className="text-sm text-gray-500 dark:text-gray-400">Noch keine Spielsamstage konfiguriert.</p>
-      )}
+      <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+        <PopoverTrigger asChild>
+          <Button variant="outline" size="sm" className="gap-2">
+            <CalendarIcon className="h-4 w-4" />
+            {t('pickSaturdays', { defaultValue: 'Pick Saturdays' })}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            mode="multiple"
+            selected={selectedDates}
+            onSelect={handleCalendarSelect}
+            locale={locale}
+            weekStartsOn={1}
+            showOutsideDays={false}
+            captionLayout="dropdown"
+            disabled={(date) => !isSaturday(date)}
+            startMonth={new Date(new Date().getFullYear() - 1, 0)}
+            endMonth={new Date(new Date().getFullYear() + 2, 11)}
+          />
+        </PopoverContent>
+      </Popover>
 
-      <div className="space-y-4">
-        {localData.map((ss, sIdx) => (
-          <div key={sIdx} className="rounded-md border border-gray-100 bg-gray-50 p-3 dark:border-gray-600 dark:bg-gray-700">
-            <div className="mb-3 flex items-center gap-3">
-              <DatePicker
-                value={ss.date}
-                onChange={(v) => updateDate(sIdx, v)}
-              />
-              <button
-                onClick={() => removeSamstag(sIdx)}
-                className="text-sm text-red-600 hover:text-red-800 dark:text-red-400"
+      {selectedDates.length > 0 ? (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {selectedDates.map(d => {
+            const key = toDateKey(d)
+            return (
+              <span
+                key={key}
+                className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800 dark:bg-blue-900/40 dark:text-blue-200"
               >
-                {t('removeSpielssamstag')}
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-              {ss.slots.map((slot, slotIdx) => (
-                <div key={slotIdx} className="flex items-center gap-2">
-                  <span className="w-14 text-sm font-medium text-gray-700 dark:text-gray-300">{slot.time}</span>
-                  <select
-                    value={slot.hall_id}
-                    onChange={e => updateSlotHall(sIdx, slotIdx, e.target.value)}
-                    className="flex-1 rounded-md border border-gray-300 px-2 py-1.5 text-sm dark:border-gray-500 dark:bg-gray-600 dark:text-gray-100"
-                  >
-                    <option value="">{t('hall')}...</option>
-                    {kwiHalls.map(h => (
-                      <option key={h.id} value={h.id}>{h.name}</option>
-                    ))}
-                    <optgroup label="Andere">
-                      {halls.filter(h => !h.name.toLowerCase().includes('kwi')).map(h => (
-                        <option key={h.id} value={h.id}>{h.name}</option>
-                      ))}
-                    </optgroup>
-                  </select>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {localData.length > 0 && (
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="mt-4 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-        >
-          {saving ? '...' : t('common:save')}
-        </button>
+                {formatDateLocale(d, 'd. MMM yyyy', lang)}
+                <button
+                  type="button"
+                  onClick={() => removeDate(key)}
+                  className="ml-1 rounded hover:text-blue-600 dark:hover:text-white"
+                  aria-label={t('removeSpielssamstag')}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            )
+          })}
+        </div>
+      ) : (
+        <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
+          {t('noSpielsamstage', { defaultValue: 'No game Saturdays yet.' })}
+        </p>
       )}
+
+      {kwiHalls.length === 0 && halls.length > 0 && (
+        <p className="mt-3 text-xs text-amber-600 dark:text-amber-400">
+          {t('noKwiHalls', {
+            defaultValue: 'No KWI halls found — add halls named "KWI A/B/C" to enable auto-slot generation.',
+          })}
+        </p>
+      )}
+
+      <Button
+        onClick={handleSave}
+        disabled={saving || kwiHalls.length === 0}
+        size="sm"
+        className="mt-4"
+      >
+        {saving ? '...' : t('common:save')}
+      </Button>
     </div>
   )
 }

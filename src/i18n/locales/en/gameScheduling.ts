@@ -22,6 +22,10 @@ export default {
   removeSpielssamstag: 'Remove',
   timeSlot: 'Time Slot',
   hall: 'Hall',
+  pickSaturdays: 'Pick Saturdays',
+  noSpielsamstage: 'No game Saturdays selected.',
+  spielsamstageAutoHint: 'Each Saturday auto-generates {{count}} slots — {{times}} × {{halls}}.',
+  noKwiHalls: 'No KWI halls found — add halls named "KWI A/B/C" to enable auto-slot generation.',
 
   // Slot generation
   generateSlots: 'Generate Game Slots',

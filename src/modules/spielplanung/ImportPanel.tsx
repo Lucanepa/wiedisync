@@ -54,13 +54,27 @@ function parseRow(
   if (!row.Date.trim()) return { input: {} as ManualGameInput, teamName: team.name, season: '', raw: row, error: 'missing date' }
 
   let hallId: string | number | null = null
+  let additionalHalls: string[] | null = null
   let awayVenue: ManualGameInput['away_hall_json'] = null
   if (type === 'home') {
-    const hall = hallByName.get(row.Hall.trim().toLowerCase())
-    if (!hall) {
-      return { input: {} as ManualGameInput, teamName: team.name, season: '', raw: row, error: 'unknown hall' }
+    const hallKey = row.Hall.trim().toLowerCase()
+    // Basketball combo aliases: "A+B", "KWI A+B", "A + B", "halle a+b", etc.
+    const isComboKey = /^(kwi\s*|halle\s*kwi\s*|halle\s*)?a\s*\+\s*b$/i.test(hallKey)
+    if (isComboKey && team.sport === 'basketball') {
+      const kwiA = hallByName.get('kwi a')
+      const kwiB = hallByName.get('kwi b')
+      if (!kwiA || !kwiB) {
+        return { input: {} as ManualGameInput, teamName: team.name, season: '', raw: row, error: 'unknown hall' }
+      }
+      hallId = kwiA.id
+      additionalHalls = [String(kwiB.id)]
+    } else {
+      const hall = hallByName.get(hallKey)
+      if (!hall) {
+        return { input: {} as ManualGameInput, teamName: team.name, season: '', raw: row, error: 'unknown hall' }
+      }
+      hallId = hall.id
     }
-    hallId = hall.id
   } else if (row.Hall.trim()) {
     awayVenue = { name: row.Hall.trim(), address: '', city: '', plus_code: undefined }
   }
@@ -72,6 +86,7 @@ function parseRow(
     date: row.Date.trim(),
     time: row.Time.trim() || '16:00',
     hall: hallId,
+    additional_halls: additionalHalls,
     away_hall_json: awayVenue,
     league: row.League?.trim() || '',
     round: row.Round?.trim() || '',

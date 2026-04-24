@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.2.0'
+const APP_VERSION = '4.3.0'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,35 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.3.0',
+    date: '2026-04-24',
+    sections: [
+      {
+        title: 'Basketball Halle A+B combo booking',
+        items: [
+          'Basketball home games can now block both KWI A and KWI B at once. The manual-game modal shows a "KWI A + B (Basketball)" option at the top of the hall picker for basketball teams.',
+          'Excel import recognises A+B / KWI A+B / A + B in the Hall column for basketball rows.',
+          'Game detail drawer has a one-click "Mark as KWI A + B" / "Back to single hall" toggle — works on SVRZ-synced games too.',
+          'Conflict detection is now multi-hall-aware: a basketball A+B game correctly blocks a volleyball-only game on either KWI A or KWI B at the same time.',
+        ],
+      },
+      {
+        title: 'Volleyball Saturday hall prefill',
+        items: [
+          'When creating a home game for a volleyball team on a Saturday, the hall field prefills with a priority ladder: (1) the team’s own Saturday training slot, (2) KWI C, (3) KWI A, (4) KWI B.',
+          'A muted hint explains the choice. The pick is a prefill only — admins can override it freely.',
+        ],
+      },
+      {
+        title: 'Under the hood',
+        items: [
+          'New `games.additional_halls` JSON field (nullable, cast-json, tags interface) on the games collection.',
+          'Hallenplan no longer infers basketball spans from `team.sport` — spans now come from `additional_halls`. A backward-compat fallback keeps legacy basketball rows rendering correctly until they’re re-saved.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.2.0',
     date: '2026-04-23',

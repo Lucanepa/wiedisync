@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Copy, Check, Home as HomeIcon, Pencil, Plane, Trash2 } from 'lucide-react'
+import { Copy, Check, Home as HomeIcon, Pencil, Plane, Trash2, Layers } from 'lucide-react'
+import { useCollection } from '../../lib/query'
+import { useMutation } from '../../hooks/useMutation'
 import {
   Sheet,
   SheetContent,
@@ -19,7 +21,7 @@ import {
   AlertDialogTitle,
 } from '../../components/ui/alert-dialog'
 import { Badge } from '../../components/ui/badge'
-import type { Game, Team } from '../../types'
+import type { Game, Hall, Team } from '../../types'
 import { asObj } from '../../utils/relations'
 import { formatDate, parseDate } from '../../utils/dateUtils'
 import { formatTime } from '../../utils/dateHelpers'
@@ -48,11 +50,26 @@ function sourceBadge(source: Game['source']): { key: string; variant: 'secondary
   }
 }
 
-function hallDisplay(game: Game): string {
+function hallDisplay(game: Game, halls: Hall[]): string {
   const hall = asObj<{ name: string }>(game.hall)
-  if (hall?.name) return hall.name
-  if (game.away_hall_json?.name) return game.away_hall_json.name
-  return '—'
+  const primaryName = hall?.name ?? halls.find((h) => String(h.id) === String(game.hall))?.name ?? ''
+  if (game.type === 'away') {
+    return game.away_hall_json?.name ?? primaryName ?? '—'
+  }
+  if (!primaryName) return '—'
+
+  const extraIds = (game.additional_halls ?? []).map((v) => {
+    if (v == null) return ''
+    if (typeof v === 'object' && 'id' in (v as Record<string, unknown>)) {
+      return String((v as { id: unknown }).id)
+    }
+    return String(v)
+  })
+  const extraNames = extraIds
+    .map((id) => halls.find((h) => String(h.id) === id)?.name)
+    .filter((n): n is string => !!n)
+  if (extraNames.length > 0) return [primaryName, ...extraNames].join(' + ')
+  return primaryName
 }
 
 export default function GameDetailDrawer({
@@ -66,6 +83,14 @@ export default function GameDetailDrawer({
   const [copied, setCopied] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [togglingCombo, setTogglingCombo] = useState(false)
+
+  const { data: halls } = useCollection<Hall>('halls', {
+    all: true,
+    fields: ['id', 'name'],
+    staleTime: 120_000,
+  })
+  const { update: updateGame } = useMutation('games')
 
   if (!game) return null
 
@@ -79,6 +104,38 @@ export default function GameDetailDrawer({
   const isManual = game.source === 'manual'
   const showEdit = isManual && canEdit && onEdit
   const showDelete = isManual && canEdit && onDelete
+
+  // Combo A+B action: visible only for basketball home games the caller can edit.
+  const isBasketball = team?.sport === 'basketball'
+  const hasCombo = Array.isArray(game.additional_halls) && game.additional_halls.length > 0
+  const kwiA = (halls ?? []).find((h) => h.name === 'KWI A')
+  const kwiB = (halls ?? []).find((h) => h.name === 'KWI B')
+  const showComboToggle = !!canEdit && isBasketball && isHome && !!kwiA && !!kwiB
+
+  async function handleMarkCombo() {
+    if (!game || !kwiA || !kwiB) return
+    setTogglingCombo(true)
+    try {
+      // If the primary hall is already KWI A or B, keep it; else switch to KWI A.
+      const primaryIsAorB =
+        String(game.hall) === String(kwiA.id) || String(game.hall) === String(kwiB.id)
+      const newPrimary = primaryIsAorB ? game.hall : String(kwiA.id)
+      const newExtra = String(game.hall) === String(kwiB.id) ? [String(kwiA.id)] : [String(kwiB.id)]
+      await updateGame(game.id, { hall: newPrimary, additional_halls: newExtra })
+    } finally {
+      setTogglingCombo(false)
+    }
+  }
+
+  async function handleUnmarkCombo() {
+    if (!game) return
+    setTogglingCombo(true)
+    try {
+      await updateGame(game.id, { additional_halls: null })
+    } finally {
+      setTogglingCombo(false)
+    }
+  }
 
   async function handleCopy() {
     try {
@@ -125,7 +182,7 @@ export default function GameDetailDrawer({
         <div className="mt-6 space-y-4 px-4">
           <dl className="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-2 text-sm">
             <dt className="text-muted-foreground">{t('spielplanung:drawer.hall', 'Hall')}</dt>
-            <dd>{hallDisplay(game)}</dd>
+            <dd>{hallDisplay(game, halls ?? [])}</dd>
             <dt className="text-muted-foreground">{t('spielplanung:drawer.league', 'League')}</dt>
             <dd>{game.league || '—'}</dd>
             <dt className="text-muted-foreground">{t('spielplanung:drawer.round', 'Round')}</dt>
@@ -156,6 +213,19 @@ export default function GameDetailDrawer({
             >
               <Pencil className="h-4 w-4" aria-hidden />
               {t('spielplanung:drawer.edit', 'Edit')}
+            </button>
+          )}
+          {showComboToggle && (
+            <button
+              type="button"
+              onClick={hasCombo ? handleUnmarkCombo : handleMarkCombo}
+              disabled={togglingCombo}
+              className="inline-flex items-center justify-center gap-2 rounded-md border bg-background px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
+            >
+              <Layers className="h-4 w-4" aria-hidden />
+              {hasCombo
+                ? t('spielplanung:drawer.unmarkCombo', 'Back to single hall')
+                : t('spielplanung:drawer.markAsComboAB', 'Mark as KWI A + B')}
             </button>
           )}
           <button

@@ -27,6 +27,7 @@ export function buildManualGamePayload(
     away_team,
     kscw_team: input.kscw_team,
     hall: isHome ? (input.hall ?? null) : null,
+    additional_halls: isHome ? (input.additional_halls ?? null) : null,
     away_hall_json: !isHome ? (input.away_hall_json ?? null) : null,
     date: input.date,
     time: input.time,

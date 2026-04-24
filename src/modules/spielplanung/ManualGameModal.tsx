@@ -20,8 +20,10 @@ import { useGameConflicts } from './hooks/useGameConflicts'
 import { buildManualGamePayload } from './utils/manualGamePayload'
 import { getSeasonYear, toDateKey } from '../../utils/dateUtils'
 import { asObj } from '../../utils/relations'
-import type { Hall, Team, ManualGameInput, Game } from '../../types'
+import type { Hall, Team, ManualGameInput, Game, HallSlot } from '../../types'
 import { cn } from '../../lib/utils'
+
+const HALL_COMBO_AB = 'combo:A+B'
 
 interface ManualGameModalProps {
   open: boolean
@@ -74,6 +76,8 @@ export default function ManualGameModal({
   )
   const [time, setTime] = useState<string>(defaultTime)
   const [hallId, setHallId] = useState<string>('')
+  const [additionalHalls, setAdditionalHalls] = useState<string[]>([])
+  const [saturdayHintHall, setSaturdayHintHall] = useState<string>('')
   const [awayVenue, setAwayVenue] = useState({ name: '', address: '', city: '', plus_code: '' })
   const [league, setLeague] = useState('')
   const [round, setRound] = useState('')
@@ -100,6 +104,12 @@ export default function ManualGameModal({
     setTime((editingGame.time ?? '16:00').slice(0, 5))
     const hallRel = asObj<Hall>(editingGame.hall)
     setHallId(hallRel ? String(hallRel.id) : editingGame.hall ? String(editingGame.hall) : '')
+    setAdditionalHalls(
+      Array.isArray(editingGame.additional_halls)
+        ? editingGame.additional_halls.map((v) => String(typeof v === 'object' && v !== null && 'id' in v ? (v as { id: unknown }).id : v))
+        : [],
+    )
+    setSaturdayHintHall('')
     const ah = editingGame.away_hall_json
     setAwayVenue({
       name: ah?.name ?? '',
@@ -126,6 +136,8 @@ export default function ManualGameModal({
       setOpponent('')
       setTime(defaultTime())
       setHallId('')
+      setAdditionalHalls([])
+      setSaturdayHintHall('')
       setAwayVenue({ name: '', address: '', city: '', plus_code: '' })
       setLeague('')
       setRound('')
@@ -135,13 +147,100 @@ export default function ManualGameModal({
 
   // ── Conflict check ────────────────────────────────────────────────
   const selectedTeam = editableTeams.find((t) => String(t.id) === teamId) as Team | undefined
+  const isBasketball = selectedTeam?.sport === 'basketball'
+  const kwiA = useMemo(() => (halls ?? []).find((h) => h.name === 'KWI A'), [halls])
+  const kwiB = useMemo(() => (halls ?? []).find((h) => h.name === 'KWI B'), [halls])
+  const kwiC = useMemo(() => (halls ?? []).find((h) => h.name === 'KWI C'), [halls])
+  const canOfferCombo = isBasketball && !!kwiA && !!kwiB
+
+  // Saturday training slot lookup (volleyball teams only — drives the hint)
+  const isSaturday = useMemo(() => {
+    if (!date) return false
+    return new Date(date + 'T00:00:00').getDay() === 6
+  }, [date])
+
+  const { data: saturdayTrainingSlots } = useCollection<HallSlot>('hall_slots', {
+    filter:
+      teamId && isSaturday && selectedTeam?.sport === 'volleyball'
+        ? {
+            _and: [
+              { day_of_week: { _eq: 6 } },
+              { slot_type: { _eq: 'training' } },
+              { recurring: { _eq: true } },
+              { teams: { teams_id: { _eq: teamId } } },
+            ],
+          }
+        : undefined,
+    fields: ['id', 'hall', 'start_time', 'end_time'],
+    all: true,
+    enabled: !!teamId && isSaturday && selectedTeam?.sport === 'volleyball',
+    staleTime: 60_000,
+  })
+
+  // Derived: is the current selection the A+B combo?
+  const isComboSelected =
+    !!kwiA &&
+    !!kwiB &&
+    hallId === String(kwiA.id) &&
+    additionalHalls.length === 1 &&
+    additionalHalls[0] === String(kwiB.id)
+
+  const hallSelectValue = isComboSelected ? HALL_COMBO_AB : hallId
+
+  function onHallSelectChange(value: string) {
+    setSaturdayHintHall('') // user took over
+    if (value === HALL_COMBO_AB && kwiA && kwiB) {
+      setHallId(String(kwiA.id))
+      setAdditionalHalls([String(kwiB.id)])
+      return
+    }
+    setHallId(value)
+    setAdditionalHalls([])
+  }
+
+  // ── VB Saturday prefill (create mode only) ─────────────────────────
+  useEffect(() => {
+    if (!open || editingGame) return
+    if (!selectedTeam || selectedTeam.sport !== 'volleyball') return
+    if (!isSaturday || type !== 'home') return
+    if (hallId !== '') return // don't override manual choice
+    if (!halls || halls.length === 0) return
+
+    // Priority: own Sat training slot hall → KWI C → KWI A → KWI B
+    const trainingHall =
+      saturdayTrainingSlots && saturdayTrainingSlots.length > 0
+        ? String(saturdayTrainingSlots[0].hall)
+        : ''
+    const fallback = kwiC?.id ?? kwiA?.id ?? kwiB?.id ?? ''
+    const pick = trainingHall || String(fallback)
+    if (!pick) return
+    setHallId(pick)
+    setAdditionalHalls([])
+    setSaturdayHintHall(pick)
+  }, [
+    open,
+    editingGame,
+    selectedTeam,
+    isSaturday,
+    type,
+    hallId,
+    halls,
+    saturdayTrainingSlots,
+    kwiC,
+    kwiA,
+    kwiB,
+  ])
+
   const { errors, warnings } = useGameConflicts({
     editingId: editingGame?.id,
     kscw_team: teamId,
     hall: type === 'home' ? hallId : null,
+    additional_halls: type === 'home' ? additionalHalls : null,
     date,
     time,
     type,
+    teams: allTeams,
+    halls,
     enabled: !!teamId && !!date && !!time,
   })
 
@@ -162,6 +261,8 @@ export default function ManualGameModal({
       date,
       time,
       hall: type === 'home' ? hallId : null,
+      additional_halls:
+        type === 'home' && additionalHalls.length > 0 ? additionalHalls : null,
       away_hall_json:
         type === 'away' && awayVenue.name.trim()
           ? {
@@ -286,11 +387,16 @@ export default function ManualGameModal({
         {type === 'home' ? (
           <div>
             <Label htmlFor="hall">{t('manualGame.hall')} *</Label>
-            <Select value={hallId} onValueChange={setHallId}>
+            <Select value={hallSelectValue} onValueChange={onHallSelectChange}>
               <SelectTrigger id="hall">
                 <SelectValue placeholder={t('manualGame.hallPlaceholder')} />
               </SelectTrigger>
               <SelectContent>
+                {canOfferCombo && (
+                  <SelectItem value={HALL_COMBO_AB}>
+                    {t('manualGame.hallComboAB')}
+                  </SelectItem>
+                )}
                 {(halls ?? []).map((h) => (
                   <SelectItem key={h.id} value={String(h.id)}>
                     {h.name}
@@ -298,6 +404,13 @@ export default function ManualGameModal({
                 ))}
               </SelectContent>
             </Select>
+            {saturdayHintHall && hallId === saturdayHintHall && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                {t('manualGame.saturdayHint', {
+                  hall: halls?.find((h) => String(h.id) === saturdayHintHall)?.name ?? '',
+                })}
+              </p>
+            )}
           </div>
         ) : (
           <div className="space-y-2 rounded-md border p-3">

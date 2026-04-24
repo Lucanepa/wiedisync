@@ -249,6 +249,8 @@ export interface Game extends BaseRecord {
   away_team: string
   kscw_team: string
   hall: string
+  /** Extra halls this game also blocks (e.g. basketball A+B combo). Empty/null = single-hall. */
+  additional_halls?: string[] | null
   away_hall_json: { name: string; address: string; city: string; plus_code?: string } | null
   date: string
   time: string
@@ -302,6 +304,8 @@ export interface ManualGameInput {
   date: string // 'YYYY-MM-DD'
   time: string // 'HH:MM' — 24h
   hall?: string | number | null
+  /** Extra halls this home game also blocks (e.g. basketball A+B combo). */
+  additional_halls?: string[] | null
   away_hall_json?: {
     name: string
     address: string

@@ -2,6 +2,16 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## [4.3.0] — 2026-04-24
+
+### Added
+- **Basketball Halle A+B combo booking.** New `games.additional_halls` JSON field (nullable, cast-json, tags interface) lets basketball home games block both KWI A and KWI B at once. The manual-game modal exposes a "KWI A + B (Basketball)" option at the top of the hall Select for basketball teams; the game detail drawer carries a one-click "Mark as KWI A + B" / "Back to single hall" toggle that patches the field in place (works on SVRZ-synced games too). Excel import recognises `A+B`, `KWI A+B`, `A + B` etc. for basketball rows.
+- **Volleyball Saturday hall prefill.** When a Spielplaner creates a home game for a volleyball team on a Saturday, the hall field now prefills with a priority ladder: (1) the team's own Saturday training-slot hall, (2) KWI C, (3) KWI A, (4) KWI B — with a muted hint explaining why. The pick is only a prefill — admins can override freely.
+
+### Changed
+- **Conflict detection is now multi-hall-aware.** `hall_overlap` used to check exact-match halls only; it now checks any intersection between the candidate's hall set and each existing game's hall set. A basketball A+B game on Saturday 16:00 correctly blocks a volleyball-only game on KWI A or KWI B at the same time, and vice versa.
+- **Hallenplan no longer hardcodes basketball → A+B by team sport.** The three internal helpers that used to infer the span from `team.sport === 'basketball'` now read `additional_halls`. A one-line backward-compat fallback keeps legacy basketball rows (no `additional_halls`) rendering the same span until they're re-saved — marked with a `TODO: remove after backfill` comment.
+
 ## [4.2.0] — 2026-04-23
 
 ### Added

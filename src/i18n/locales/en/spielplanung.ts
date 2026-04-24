@@ -79,6 +79,8 @@ export default {
     time: 'Time',
     hall: 'Hall',
     hallPlaceholder: 'Select hall',
+    hallComboAB: 'KWI A + B (basketball)',
+    saturdayHint: 'Prefilled: {{hall}} — Saturday prefers KWI C / own training over A/B',
     awayVenue: 'Away venue',
     venueName: 'Venue name',
     venueAddress: 'Address',
@@ -126,5 +128,7 @@ export default {
     confirmDelete: 'Delete',
     cancel: 'Cancel',
     svrzReadOnlyHint: 'Official details come from SVRZ. Edit those on Volleymanager.',
+    markAsComboAB: 'Mark as KWI A + B',
+    unmarkCombo: 'Back to single hall',
   },
 } as const

@@ -1,5 +1,6 @@
-import type { Game } from '../../../types'
+import type { Game, Hall, Team } from '../../../types'
 import { getBlockWindow, blocksOverlap } from './gameBlock'
+import { hallsIntersect } from '../../../utils/gameHalls'
 
 export interface ConflictMessage {
   kind: 'same_team_same_day' | 'hall_overlap' | 'same_team_within_two_days'
@@ -21,6 +22,7 @@ interface Candidate {
   editingId?: string | number
   kscw_team: string | number
   hall?: string | number | null
+  additional_halls?: string[] | null
   date: string // YYYY-MM-DD
   time: string // HH:MM
   type: 'home' | 'away'
@@ -45,32 +47,26 @@ function sameTeam(candidate: Candidate, game: Pick<Game, 'kscw_team'>): boolean 
   return extract(candidate.kscw_team) === extract(game.kscw_team)
 }
 
-function sameHall(candidate: Candidate, game: Pick<Game, 'hall'>): boolean {
-  if (candidate.hall == null || game.hall == null) return false
-  const extract = (v: unknown): string => {
-    if (v == null) return ''
-    if (typeof v === 'object' && 'id' in (v as Record<string, unknown>)) {
-      return String((v as { id: unknown }).id)
-    }
-    return String(v)
-  }
-  return extract(candidate.hall) === extract(game.hall)
-}
-
 /**
  * Check a candidate manual game against the relevant window of existing games.
  *
  * Rules:
  *   - ERROR `same_team_same_day`: another game for the same kscw_team on the same date
- *   - ERROR `hall_overlap`: another home game in the same hall with an overlapping
- *     2h45min window (when the candidate is also a home game — away games have no hall)
+ *   - ERROR `hall_overlap`: another home game whose hall set intersects the
+ *     candidate's, with an overlapping 2h45min window (when the candidate is
+ *     also a home game — away games have no hall). Handles multi-hall combos
+ *     like basketball A+B via `additional_halls`.
  *   - WARNING `same_team_within_two_days`: another game for the same kscw_team on
  *     date ±1 or ±2 (excludes the ±0 case already covered by the same-day error)
  *
  * `allGames` should be pre-scoped by the caller to a ±3 day window around
  * candidate.date to keep the payload small.
  */
-export function checkConflicts(candidate: Candidate, allGames: Game[]): ConflictCheckResult {
+export function checkConflicts(
+  candidate: Candidate,
+  allGames: Game[],
+  ctx?: { teams?: Team[]; halls?: Hall[] },
+): ConflictCheckResult {
   const errors: ConflictMessage[] = []
   const warnings: ConflictMessage[] = []
 
@@ -98,11 +94,11 @@ export function checkConflicts(candidate: Candidate, allGames: Game[]): Conflict
       })
     }
 
-    // Hall overlap (home only, same hall, same day, overlapping window) → ERROR
+    // Hall overlap (home only, any shared hall, same day, overlapping window) → ERROR
     if (
       candidate.type === 'home' &&
       game.type === 'home' &&
-      sameHall(candidate, game) &&
+      hallsIntersect(candidate, game, ctx) &&
       game.date === candidate.date &&
       candidateBlock &&
       game.time

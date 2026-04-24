@@ -466,6 +466,8 @@ export default {
         const teamIds = new Set()
         for (const g of allGames) {
           if (g.scorer_member) memberIds.add(g.scorer_member)
+          if (g.scoreboard_member) memberIds.add(g.scoreboard_member)
+          if (g.scorer_scoreboard_member) memberIds.add(g.scorer_scoreboard_member)
           if (g.bb_scorer_member) memberIds.add(g.bb_scorer_member)
           if (g.bb_timekeeper_member) memberIds.add(g.bb_timekeeper_member)
           if (g.bb_24s_official) memberIds.add(g.bb_24s_official)
@@ -500,8 +502,9 @@ export default {
           if (Array.isArray(g.referees_json) && g.referees_json.length) {
             referees = g.referees_json.map((r) => splitName(r && r.name))
           }
-          // Volleyball scorer team
+          // Volleyball scorer team + named scorer member (when assigned)
           const scorerTeamName = g.scorer_duty_team ? (teamById.get(g.scorer_duty_team)?.name ?? null) : null
+          const scorerName = g.scorer_member ? memberName(g.scorer_member) : null
           // Basketball officials
           let bbOfficials = null
           const bbScorer = g.bb_scorer_member ? memberName(g.bb_scorer_member) : null
@@ -510,7 +513,7 @@ export default {
           if (bbScorer || bbTimekeeper || bb24s) {
             bbOfficials = { scorer: bbScorer, timekeeper: bbTimekeeper, shot_clock: bb24s }
           }
-          return { ...g, referees, scorer_team: scorerTeamName, bb_officials: bbOfficials }
+          return { ...g, referees, scorer_team: scorerTeamName, scorer_name: scorerName, bb_officials: bbOfficials }
         }
 
         const upcomingPublic = upcomingGames.map(enrichGame)

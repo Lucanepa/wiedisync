@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { Button } from '../../../components/ui/button'
 import type { Team, TeamSlotConfig } from '../../../types'
 
 interface Props {
@@ -36,19 +37,22 @@ export default function TeamSlotConfigPanel({ teams, config, onUpdate }: Props) 
               </span>
 
               <div className="flex gap-1">
-                {(['hall_slot', 'spielsamstag', 'manual'] as const).map(source => (
-                  <button
-                    key={source}
-                    onClick={() => handleSourceChange(team.id, source)}
-                    className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
-                      teamConfig.source === source
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-300'
-                    }`}
-                  >
-                    {source === 'hall_slot' ? t('latestSlot') : source === 'spielsamstag' ? t('spielsamstagMode') : t('sourceManual')}
-                  </button>
-                ))}
+                {(['hall_slot', 'spielsamstag', 'manual'] as const).map(source => {
+                  const selected = teamConfig.source === source
+                  return (
+                    <Button
+                      key={source}
+                      type="button"
+                      size="sm"
+                      variant={selected ? 'default' : 'outline'}
+                      onClick={() => handleSourceChange(team.id, source)}
+                      aria-pressed={selected}
+                      className="h-7 px-3 text-xs"
+                    >
+                      {source === 'hall_slot' ? t('latestSlot') : source === 'spielsamstag' ? t('spielsamstagMode') : t('sourceManual')}
+                    </Button>
+                  )
+                })}
               </div>
             </div>
           )

@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
-import { Trophy, Medal } from 'lucide-react'
 import CalendarGrid from '../../components/CalendarGrid'
-import TeamChip from '../../components/TeamChip'
+import GameChip from './GameChip'
+import DayOverflowPopover from './DayOverflowPopover'
 import type { CalendarEntry } from '../../types/calendar'
 import type { Game } from '../../types'
 import { toDateKey, getSeasonMonths, getSeasonYear, formatDate } from '../../utils/dateUtils'
@@ -11,27 +11,16 @@ interface CalendarViewProps {
   closedDates: Set<string>
   month: Date
   onMonthChange: (month: Date) => void
+  onGameClick?: (game: Game) => void
+  onEmptyDayClick?: (date: Date) => void
 }
 
-function getOpponent(game: Game): string {
-  if (game.type === 'home') {
-    return game.away_team
-  }
-  return game.home_team
-}
-
-function isCupMatch(game: Game): 'gold' | 'silver' | null {
-  const league = (game.league ?? '').toLowerCase()
-  if (league.includes('swiss volley cup') || league.includes('schweizer cup')) return 'gold'
-  if (league.includes('züri cup') || league.includes('zueri cup') || league.includes('zuri cup')) return 'silver'
-  return null
-}
-
-export default function CalendarView({ entries, closedDates, month, onMonthChange }: CalendarViewProps) {
+export default function CalendarView({ entries, closedDates, month, onMonthChange, onGameClick, onEmptyDayClick }: CalendarViewProps) {
+  // seasonMonths drives the season-month pill strip below. We intentionally
+  // stopped passing min/maxMonth to CalendarGrid so the prev/next arrows can
+  // cross season boundaries freely.
   const seasonYear = getSeasonYear(month)
   const seasonMonths = getSeasonMonths(seasonYear)
-  const minMonth = seasonMonths[0]
-  const maxMonth = seasonMonths[seasonMonths.length - 1]
 
   const itemsByDate = useMemo(() => {
     const map = new Map<string, CalendarEntry[]>()
@@ -82,35 +71,28 @@ export default function CalendarView({ entries, closedDates, month, onMonthChang
         itemsByDate={itemsByDate}
         closedDates={closedDates}
         highlightedDates={highlightedDates}
-        minMonth={minMonth}
-        maxMonth={maxMonth}
+        onEmptyDayClick={onEmptyDayClick}
         renderDayContent={(_date, items) => {
           const visible = items.slice(0, 3)
-          const overflow = items.length - 3
+          const hidden = items.slice(3)
 
           return (
             <>
-              {visible.map((entry) => {
-                const game = entry.source as Game
-                const cup = isCupMatch(game)
-                const opponent = getOpponent(game)
-
-                return (
-                  <div
-                    key={entry.id}
-                    className="flex items-center gap-1 truncate text-[10px] leading-tight"
-                  >
-                    <TeamChip team={entry.teamNames[0] ?? '?'} size="sm" className="!text-[9px] !px-1.5 !py-0" />
-                    <span className="truncate text-gray-600 dark:text-gray-400">
-                      {opponent.length > 12 ? opponent.slice(0, 12) + '…' : opponent}
-                    </span>
-                    {cup === 'gold' && <Trophy className="h-3 w-3 shrink-0 text-yellow-500" />}
-                    {cup === 'silver' && <Medal className="h-3 w-3 shrink-0 text-gray-400" />}
-                  </div>
-                )
-              })}
-              {overflow > 0 && (
-                <div className="text-[10px] text-gray-400">+{overflow} more</div>
+              {visible.map((entry) => (
+                <GameChip
+                  key={entry.id}
+                  game={entry.source as Game}
+                  teamName={entry.teamNames[0] ?? '?'}
+                  onClick={onGameClick}
+                />
+              ))}
+              {hidden.length > 0 && (
+                <DayOverflowPopover
+                  games={hidden.map((e) => e.source as Game)}
+                  teamNames={hidden.map((e) => e.teamNames[0] ?? '?')}
+                  count={hidden.length}
+                  onGameClick={onGameClick}
+                />
               )}
             </>
           )

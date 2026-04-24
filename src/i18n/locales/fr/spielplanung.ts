@@ -1,11 +1,20 @@
 export default {
   title: 'Planning des matchs',
   subtitleSeason: 'Apercu de la saison {{season}}',
+  seasonPicker: 'Saison',
 
   // View options
   viewCalendar: 'Calendrier',
+  viewWeek: 'Week',
   viewByDate: 'Par date',
   viewByTeam: 'Par equipe',
+
+  // Week view
+  weekPrev: 'Previous week',
+  weekNext: 'Next week',
+  weekToday: 'Today',
+  weekMoveSuccess: 'Game moved.',
+  weekMoveFailed: 'Could not move game: {{message}}',
 
   // Filters
   filterAll: 'Tout',
@@ -14,4 +23,64 @@ export default {
   filterHome: 'Domicile',
   filterAway: 'Exterieur',
   showAbsences: 'Afficher les absences',
+
+  // Day overflow popover (month view)
+  overflow: {
+    more: '+{{count}} autres',
+  },
+
+  // Manual game creation modal
+  manualGame: {
+    title: 'Ajouter un match manuel',
+    subtitle: 'Contourne le flux d\'invitation — l\'admin / Spielplaner saisit tout.',
+    team: 'Equipe',
+    teamPlaceholder: 'Choisir une equipe',
+    homeAway: 'Domicile / Exterieur',
+    home: 'Domicile',
+    away: 'Exterieur',
+    opponent: 'Adversaire',
+    opponentPlaceholder: 'p.ex. Goldcoast Wadenswil 1',
+    date: 'Date',
+    time: 'Heure',
+    hall: 'Salle',
+    hallPlaceholder: 'Choisir une salle',
+    awayVenue: 'Lieu exterieur',
+    venueName: 'Nom de la salle',
+    venueAddress: 'Adresse',
+    venueCity: 'NPA / Ville',
+    venuePlusCode: 'Plus code (optionnel)',
+    league: 'Ligue',
+    leaguePlaceholder: 'Optionnel',
+    round: 'Tour',
+    create: 'Creer le match',
+    conflict: {
+      sameTeamSameDay: 'Cette equipe joue deja le meme jour ({{time}} contre {{opponent}}).',
+      hallOverlap: 'La salle est deja occupee a un horaire qui chevauche ({{time}}–{{endTime}}).',
+      sameTeamWithinTwoDays: 'Cette equipe joue aussi le {{date}} a {{time}} ({{daysDelta}} jours d\'ecart).',
+    },
+  },
+
+  // Game detail drawer
+  // List/row status labels
+  status: {
+    scheduled: 'Planned',
+    live: 'Live',
+    completed: 'Played',
+    postponed: 'Postponed',
+  },
+  emptyState: 'No games found',
+
+  drawer: {
+    vs: 'vs',
+    hall: 'Salle',
+    league: 'Ligue',
+    round: 'Tour',
+    svrzPush: 'Envoi SVRZ',
+    notInVolleymanager: 'Pas encore dans Volleymanager',
+    copySvrz: 'Copier les details SVRZ',
+    copied: 'Copie !',
+    sourceSVRZ: 'Gere par SVRZ',
+    sourceBasketplan: 'Gere par Basketplan',
+    sourceManual: 'Manuel',
+  },
 } as const

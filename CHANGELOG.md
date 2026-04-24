@@ -2,6 +2,23 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## [4.2.0] — 2026-04-23
+
+### Added
+- **Spielplanung sandbox mode.** Admins and Spielplaners can now create, edit, and delete manual games directly on the calendar. New `ManualGameModal` (shadcn Dialog) opens from the empty-day "+" affordance; edit/delete from the game detail drawer. Bulk Excel import for manual games with template download + per-row preview.
+- **Scoped Spielplaner role.** New `spielplaner_assignments` collection lets admins grant per-team access without making someone a club-wide Spielplaner. Admin-only accordion on `/admin/spielplanung` to manage assignments.
+- **Week view with drag-to-reschedule.** New Week option in the view toggle renders a 14:00–22:00 time rail with absolutely-positioned game blocks (2h 45min: 45min warm-up + 2h play). Manual games are draggable (`@dnd-kit` PointerSensor + TouchSensor); 15-min time snap; synchronous conflict guard against the loaded game set; toast on success / warning / error. SVRZ blocks are not draggable.
+- **Conflict checking for manual games.** `same_team_same_day` and `hall_overlap` block creation/move with errors; same team within ±2 days surfaces as a soft warning.
+
+### Changed
+- **Richer month-view chips.** Time, home/away icon, opponent and colour-coded left border (emerald = home, blue = away). Manual games carry a dashed outline.
+- **Unclamped month navigation + season dropdown.** Prev/next arrows cross season boundaries; a new season picker jumps between seasons directly.
+- **Game detail drawer gained an edit mode** with SVRZ-field locking — official fields (date, time, hall, opponent, league, round, scores) are disabled against edit for SVRZ-synced games; only duty assignments stay editable. Manual games expose full edit + delete. A "Copy SVRZ details" button makes Volleymanager paste-back a one-click operation.
+- **Route access.** Users with `is_spielplaner = true` or ≥1 row in `spielplaner_assignments` can access `/admin/spielplanung` (previously admin-only).
+
+### Deferred
+- SVRZ Volleymanager write-back (Phase 2, separate research spike). For now the drawer offers "Copy SVRZ details" for manual paste.
+
 ## [4.1.0] — 2026-04-23
 
 - **SVRZ game-scheduling invites.** New admin-issued per-verein invite flow replaces self-service opponent onboarding on `/terminplanung`. Admin picks a KSCW team, clicks "Aus SVRZ importieren" → system proposes opponent clubs + Spielplanverantwortlicher contacts (primary source: per-game `getTeamContactInfosByGame`, fallback: club-level `svrz_spielplaner_contacts` feed). Admin edits/selects rows in a shadcn `Drawer`, clicks "Einladungen erstellen" → backend generates `crypto`-random tokens with 90-day TTL in `game_scheduling_opponents` (status `invited`), idempotent on `(kscw_team, season, email)`. One-click "Mail entwerfen" opens a pre-filled DE mailto via pure `buildInviteMailto`. Manual CSV paste (`parseInviteCsv`) handles opponents not in SVRZ. Full lifecycle: `invited` → `viewed` (first open transitions + sets `first_viewed_at`) → `booked` (after slot pick / away proposal), with reissue + revoke actions. Existing `/terminplanung/slots/:token` + `/book-home` + `/propose-away` now accept the new invite statuses.

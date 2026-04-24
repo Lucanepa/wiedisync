@@ -123,11 +123,49 @@ export function registerGameScheduling(router, { database, logger, services, get
 
       const team = await database('teams').where('id', opponent.kscw_team).first()
 
+      // SVRZ fixtures between this KSCW team and this opponent
+      // Matched by opponent.team_name on home_team_name or away_team_name, filtered to games involving KSCW.
+      let svrzGames = []
+      if (opponent.team_name) {
+        const rows = await database('svrz_games')
+          .select('svrz_persistence_id', 'display_name', 'starting_date_time',
+                  'home_club_id', 'home_team_name', 'away_club_id', 'away_team_name',
+                  'league_short', 'status')
+          .where(function () {
+            this.where(function () {
+              this.where('home_club_id', KSCW_SVRZ_CLUB_ID).where('away_team_name', opponent.team_name)
+            }).orWhere(function () {
+              this.where('away_club_id', KSCW_SVRZ_CLUB_ID).where('home_team_name', opponent.team_name)
+            })
+          })
+          .orderBy('starting_date_time')
+        svrzGames = rows.map((g) => ({
+          id: g.svrz_persistence_id,
+          display_name: g.display_name,
+          starting_date_time: g.starting_date_time,
+          is_home_kscw: g.home_club_id === KSCW_SVRZ_CLUB_ID,
+          league: g.league_short,
+          status: g.status,
+        }))
+      }
+
       res.json({
-        data: {
-          team_name: team?.name || '', opponent_team: opponent.team_name,
-          slots, bookings,
+        opponent: {
+          id: opponent.id,
+          club_name: opponent.club_name || opponent.team_name || '',
+          team_name: opponent.team_name || '',
+          contact_name: opponent.contact_name || '',
+          contact_email: opponent.contact_email || '',
+          kscw_team_id: opponent.kscw_team,
+          kscw_team_name: team?.name || '',
+          home_game: opponent.home_game,
+          away_game: opponent.away_game,
+          source: opponent.source || 'self_registration',
+          status: opponent.status || 'active',
         },
+        games: svrzGames,
+        slots,
+        bookings,
       })
     } catch (err) {
       log.error({ msg: `terminplanung/slots: ${err.message}`, endpoint: 'terminplanung/slots', userId: req.accountability?.user || null, method: req.method, stack: err.stack })

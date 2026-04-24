@@ -23,6 +23,11 @@ interface CalendarGridProps<T> {
   highlightedDates?: Set<string>
   minMonth?: Date
   maxMonth?: Date
+  /**
+   * When set, a "+" button appears on empty day cells (in-month, not past)
+   * and fires with the clicked date. Useful for quick-add flows.
+   */
+  onEmptyDayClick?: (date: Date) => void
 }
 
 export default function CalendarGrid<T>({
@@ -34,6 +39,7 @@ export default function CalendarGrid<T>({
   highlightedDates,
   minMonth,
   maxMonth,
+  onEmptyDayClick,
 }: CalendarGridProps<T>) {
   const { t } = useTranslation()
   const monthStart = startOfMonth(month)
@@ -106,7 +112,7 @@ export default function CalendarGrid<T>({
           return (
             <div
               key={key}
-              className={`relative min-h-[3rem] border-b border-r border-gray-200 p-0.5 sm:min-h-[5rem] sm:p-1 lg:min-h-[6.5rem] lg:p-2 dark:border-gray-700 ${
+              className={`group relative min-h-[3rem] border-b border-r border-gray-200 p-0.5 sm:min-h-[5rem] sm:p-1 lg:min-h-[6.5rem] lg:p-2 dark:border-gray-700 ${
                 isToday ? 'ring-2 ring-inset ring-gold-400 dark:ring-gold-500' : ''
               } ${
                 !inMonth ? 'bg-gray-50 dark:bg-gray-900' : isHighlighted ? 'bg-amber-50 dark:bg-amber-950' : 'bg-white dark:bg-gray-800'
@@ -135,6 +141,21 @@ export default function CalendarGrid<T>({
                 <div className="space-y-0.5 overflow-hidden">
                   {renderDayContent(date, items)}
                 </div>
+              )}
+
+              {/* Empty-day "+" affordance (in-month, no items, not past) */}
+              {inMonth
+                && onEmptyDayClick
+                && items.length === 0
+                && date >= new Date(today.getFullYear(), today.getMonth(), today.getDate()) && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); onEmptyDayClick(date) }}
+                  aria-label="Add manual game"
+                  className="absolute bottom-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-gold-400 text-brand-900 text-base font-bold shadow opacity-0 transition-opacity hover:bg-gold-500 group-hover:opacity-100 focus-visible:opacity-100 sm:h-5 sm:w-5 sm:text-sm"
+                >
+                  +
+                </button>
               )}
             </div>
           )

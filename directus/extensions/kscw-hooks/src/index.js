@@ -2148,5 +2148,46 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     }
   })
 
-  log.info('KSCW hooks loaded: role-sync (5 actions, 2 filters), Turnstile, member privacy, registration approval, 11 crons (validations+notifications in Postgres)')
+  // ── Spielplaner scope guard on games.create ──────────────────────────────
+  // Directus permission filters on the CREATE action don't evaluate relational
+  // conditions against the incoming payload (only scalar fields work, e.g.
+  // "source == manual"). The KSCW Spielplaner policy relies on a relational
+  // filter (kscw_team ∈ caller's spielplaner_assignments) which Directus
+  // silently treats as satisfied at CREATE time. This hook enforces that check
+  // server-side for non-admin callers creating manual games.
+  //
+  // Admins and service calls (no accountability.user) bypass.
+  // Club-wide Spielplaners (members.is_spielplaner = true) bypass the team check.
+  function kscwScopeError(message, status, code) {
+    const err = new Error(message)
+    err.status = status
+    err.code = code
+    err.extensions = { code }
+    return err
+  }
+  filter('games.items.create', async (payload, _meta, { accountability, database: db }) => {
+    if (!accountability?.user) return payload
+    if (accountability.admin) return payload
+    if (payload?.source !== 'manual') return payload
+
+    const member = await db('members').where('user', accountability.user).first('id', 'is_spielplaner')
+    if (!member) return payload // not a member — let Directus deny via its own check
+    if (member.is_spielplaner === true) return payload // club-wide scope
+
+    const team = payload?.kscw_team
+    if (team == null) {
+      throw kscwScopeError('Manual game requires kscw_team', 400, 'INVALID_PAYLOAD')
+    }
+
+    const assigned = await db('spielplaner_assignments')
+      .where('member', member.id)
+      .andWhere('kscw_team', team)
+      .first('id')
+    if (!assigned) {
+      throw kscwScopeError('Team is not in your Spielplaner scope', 403, 'FORBIDDEN')
+    }
+    return payload
+  })
+
+  log.info('KSCW hooks loaded: role-sync (5 actions, 2 filters), Turnstile, member privacy, registration approval, Spielplaner scope guard, 11 crons (validations+notifications in Postgres)')
 }

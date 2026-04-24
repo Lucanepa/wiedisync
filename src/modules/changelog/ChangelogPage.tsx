@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.1.0'
+const APP_VERSION = '4.2.0'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,37 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.2.0',
+    date: '2026-04-23',
+    sections: [
+      {
+        title: 'Spielplanung sandbox mode',
+        items: [
+          'Admins and Spielplaners can now create, edit, and delete manual games directly on the calendar. Empty-day "+" affordance opens a modal with the date prefilled; edit/delete happens from the game detail drawer.',
+          'Bulk Excel import for manual games — download the template, fill in one game per row, upload to preview and import.',
+          'New scoped Spielplaner role via a `spielplaner_assignments` collection. Admins can grant per-team access without making someone a club-wide Spielplaner (admin-only accordion on the page).',
+        ],
+      },
+      {
+        title: 'Week view with drag-to-reschedule',
+        items: [
+          'New "Week" option in the view toggle shows the 14:00–22:00 time rail with game blocks sized to the full 2h 45min window (45min warm-up + 2h play).',
+          'Manual games are draggable — drop on a different day or time to reschedule. 15-minute time snap; conflicts (same team same day, hall overlap) block the move with an error toast; same-team within ±2 days shows a soft warning.',
+          'Touch drag works on phone browsers. SVRZ-synced games are not draggable.',
+          'Desktop only — mobile keeps the existing by-date / by-team list views.',
+        ],
+      },
+      {
+        title: 'Calendar refinements',
+        items: [
+          'Richer month-view chips show time, home/away icon, opponent, with a colour-coded left border (emerald = home, blue = away). Manual games carry a dashed outline.',
+          'Month navigation no longer clamps to the current Swiss Volley season — prev/next arrows cross season boundaries freely, and a new season picker jumps between seasons directly.',
+          'Game detail drawer gained edit mode with SVRZ-field locking — official fields are disabled against edit for SVRZ-synced games; only duty assignments stay editable. "Copy SVRZ details" makes Volleymanager paste-back a one-click operation.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.1.0',
     date: '2026-04-23',

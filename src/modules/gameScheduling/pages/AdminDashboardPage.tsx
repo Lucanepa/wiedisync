@@ -9,8 +9,36 @@ import LoadingSpinner from '../../../components/LoadingSpinner'
 import BookingStatusBadge from '../components/BookingStatusBadge'
 import AwayProposalReview from '../components/AwayProposalReview'
 import ExcelExportButton from '../components/ExcelExportButton'
-import type { Team } from '../../../types'
+import { Badge } from '../../../components/ui/badge'
+import type { GameSchedulingOpponent, GameSchedulingSlot, InviteStatus, InviteSource } from '../../../types'
 import type { ExpandedBooking } from '../hooks/useAdminBookings'
+import { formatSeasonShort } from '../utils/formatSeason'
+
+const INVITE_STATUS_VARIANT: Record<InviteStatus, 'info' | 'warning' | 'success' | 'danger' | 'neutral' | 'secondary'> = {
+  invited: 'info',
+  viewed: 'warning',
+  booked: 'success',
+  revoked: 'danger',
+  expired: 'neutral',
+  active: 'secondary',
+}
+
+const SOURCE_VARIANT: Record<InviteSource, 'brand' | 'neutral' | 'outline'> = {
+  svrz: 'brand',
+  self_registration: 'neutral',
+  manual: 'outline' as 'neutral',
+}
+
+function inviteStatusKey(status: InviteStatus | undefined): string {
+  const s = status || 'active'
+  return `status${s.charAt(0).toUpperCase()}${s.slice(1)}`
+}
+
+function sourceKey(source: InviteSource | undefined): string {
+  if (source === 'svrz') return 'sourceSvrz'
+  if (source === 'manual') return 'sourceManual'
+  return 'sourceSelfRegistration'
+}
 
 export default function AdminDashboardPage() {
   const { t } = useTranslation('gameScheduling')
@@ -34,20 +62,28 @@ export default function AdminDashboardPage() {
     )
   }
 
-  const volleyballTeams = (teams || []).filter(t => t.sport === 'volleyball' && t.active)
+  const volleyballTeams = (teams || []).filter(tm => tm.sport === 'volleyball' && tm.active)
 
   const getTeamOpponents = (teamId: string) =>
-    opponents.filter(o => o.kscw_team === teamId)
+    opponents.filter(o => String(o.kscw_team) === String(teamId))
 
   const getTeamSlots = (teamId: string) =>
-    slots.filter(s => s.kscw_team === teamId)
+    slots.filter(s => String(s.kscw_team) === String(teamId))
 
   const teamStats = (teamId: string) => {
     const teamSlots = getTeamSlots(teamId)
     const booked = teamSlots.filter(s => s.status === 'booked').length
-    const available = teamSlots.filter(s => s.status === 'available').length
     const opps = getTeamOpponents(teamId)
-    return { booked, available, total: teamSlots.length, opponents: opps.length }
+    const byStatus = {
+      invited: 0, viewed: 0, booked: 0, revoked: 0, expired: 0, active: 0,
+    } as Record<InviteStatus, number>
+    for (const o of opps) {
+      const s = (o.status as InviteStatus) || 'active'
+      if (s in byStatus) byStatus[s]++
+    }
+    return {
+      booked, total: teamSlots.length, opponents: opps.length, byStatus,
+    }
   }
 
   return (
@@ -55,7 +91,7 @@ export default function AdminDashboardPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-gray-100">{t('dashboardTitle')}</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{season.season}</p>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{formatSeasonShort(season.season)}</p>
         </div>
         <ExcelExportButton bookings={bookings} opponents={opponents} slots={slots} teams={volleyballTeams} />
       </div>
@@ -76,19 +112,41 @@ export default function AdminDashboardPage() {
                 onClick={() => setExpandedTeam(isExpanded ? null : team.id)}
                 className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex min-w-0 items-center gap-3">
                   <span
-                    className="inline-block h-3 w-3 rounded-full"
+                    className="inline-block h-3 w-3 flex-shrink-0 rounded-full"
                     style={{ backgroundColor: team.color || '#6b7280' }}
                   />
-                  <span className="font-semibold text-gray-900 dark:text-gray-100">{team.name}</span>
+                  <span className="truncate font-semibold text-gray-900 dark:text-gray-100">{team.name}</span>
                   {team.full_name && (
-                    <span className="text-sm text-gray-500 dark:text-gray-400">{team.full_name}</span>
+                    <span className="hidden truncate text-sm text-gray-500 sm:inline dark:text-gray-400">
+                      {team.full_name}
+                    </span>
                   )}
                 </div>
-                <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
-                  <span>{stats.opponents} {t('opponent')}</span>
-                  <span>{stats.booked}/{stats.total} {t('booked')}</span>
+                <div className="flex flex-shrink-0 items-center gap-3 text-xs text-gray-600 sm:text-sm dark:text-gray-400">
+                  {stats.opponents > 0 && (
+                    <span className="hidden sm:inline">
+                      {stats.opponents} {t('opponent')}
+                    </span>
+                  )}
+                  <div className="flex items-center gap-1">
+                    {stats.byStatus.invited > 0 && (
+                      <Badge variant="info" size="sm" title={t('statusInvited')}>
+                        {stats.byStatus.invited}
+                      </Badge>
+                    )}
+                    {stats.byStatus.viewed > 0 && (
+                      <Badge variant="warning" size="sm" title={t('statusViewed')}>
+                        {stats.byStatus.viewed}
+                      </Badge>
+                    )}
+                    {stats.byStatus.booked > 0 && (
+                      <Badge variant="success" size="sm" title={t('statusBooked')}>
+                        {stats.byStatus.booked}
+                      </Badge>
+                    )}
+                  </div>
                   <span className="text-lg">{isExpanded ? '▾' : '▸'}</span>
                 </div>
               </button>
@@ -97,7 +155,6 @@ export default function AdminDashboardPage() {
               {isExpanded && (
                 <div className="border-t border-gray-200 px-4 py-4 dark:border-gray-700">
                   <TeamBookingsContent
-                    team={team}
                     opponents={getTeamOpponents(team.id)}
                     bookings={bookings}
                     slots={getTeamSlots(team.id)}
@@ -119,10 +176,9 @@ function TeamBookingsContent({
   bookings: allBookings,
   onConfirmAway,
 }: {
-  team: Team
-  opponents: ReturnType<typeof Array.prototype.filter>
+  opponents: GameSchedulingOpponent[]
   bookings: ExpandedBooking[]
-  slots: ReturnType<typeof Array.prototype.filter>
+  slots: GameSchedulingSlot[]
   onConfirmAway: (bookingId: string, proposalNumber: number, notes?: string) => Promise<void>
   onBlockSlot: (slotId: string, action: 'block' | 'unblock') => Promise<void>
 }) {
@@ -134,22 +190,41 @@ function TeamBookingsContent({
 
   return (
     <div className="space-y-4">
-      {teamOpponents.map((opp: { id: string; club_name: string; contact_name: string; contact_email: string }) => {
-        const oppBookings = allBookings.filter(b => b.opponent === opp.id)
+      {teamOpponents.map(opp => {
+        const oppBookings = allBookings.filter(b => {
+          const oid = typeof b.opponent === 'object' ? (b.opponent as GameSchedulingOpponent).id : b.opponent
+          return String(oid) === String(opp.id)
+        })
         const homeBooking = oppBookings.find(b => b.type === 'home_slot_pick')
         const awayBooking = oppBookings.find(b => b.type === 'away_proposal')
+        const inviteStatus = (opp.status as InviteStatus) || 'active'
+        const source = (opp.source as InviteSource) || 'self_registration'
 
         return (
           <div
             key={opp.id}
             className="rounded-md border border-gray-100 bg-gray-50 p-3 dark:border-gray-600 dark:bg-gray-700"
           >
-            <div className="mb-2 flex items-center justify-between">
-              <div>
-                <span className="font-medium text-gray-900 dark:text-gray-100">{opp.club_name}</span>
-                <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
-                  {opp.contact_name} ({opp.contact_email})
-                </span>
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{opp.club_name}</span>
+                  <Badge variant={INVITE_STATUS_VARIANT[inviteStatus]} size="sm">
+                    {t(inviteStatusKey(inviteStatus))}
+                  </Badge>
+                  <Badge variant={SOURCE_VARIANT[source]} size="sm">
+                    {t(sourceKey(source))}
+                  </Badge>
+                </div>
+                <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  {opp.contact_name && <span>{opp.contact_name} </span>}
+                  <a href={`mailto:${opp.contact_email}`} className="hover:underline">
+                    ({opp.contact_email})
+                  </a>
+                </div>
+                {opp.team_name && opp.team_name !== opp.club_name && (
+                  <div className="text-xs text-gray-400 dark:text-gray-500">{opp.team_name}</div>
+                )}
               </div>
             </div>
 
@@ -162,8 +237,7 @@ function TeamBookingsContent({
                     <BookingStatusBadge status={homeBooking.status} />
                     {homeBooking.slot && (
                       <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {/* Slot details would be expanded */}
-                        Slot: {homeBooking.slot}
+                        Slot: {typeof homeBooking.slot === 'object' ? (homeBooking.slot as GameSchedulingSlot).id : homeBooking.slot}
                       </span>
                     )}
                   </div>

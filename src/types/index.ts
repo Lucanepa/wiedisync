@@ -278,9 +278,38 @@ export interface Game extends BaseRecord {
   duty_confirmed: boolean
   referees_json: Array<{ name: string; id?: number }>
   source: 'swiss_volley' | 'manual' | 'basketplan'
+  svrz_push_status: 'pending' | 'pushed' | 'failed' | null
   respond_by: string
   min_participants: number
 
+}
+
+export interface SpielplanerAssignment extends BaseRecord {
+  member: string | number
+  kscw_team: string | number
+}
+
+/**
+ * Input shape for creating a manual game via the Spielplanung modal or
+ * bulk-import flow. The shape is deliberately simpler than `Game` —
+ * Directus fills defaults (status, source, svrz_push_status) in the
+ * payload builder.
+ */
+export interface ManualGameInput {
+  kscw_team: string | number
+  type: 'home' | 'away'
+  opponent: string
+  date: string // 'YYYY-MM-DD'
+  time: string // 'HH:MM' — 24h
+  hall?: string | number | null
+  away_hall_json?: {
+    name: string
+    address: string
+    city: string
+    plus_code?: string
+  } | null
+  league?: string
+  round?: string
 }
 
 export interface RefereeExpense extends BaseRecord {

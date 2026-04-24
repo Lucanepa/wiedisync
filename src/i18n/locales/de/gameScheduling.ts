@@ -14,6 +14,7 @@ export default {
   createSeason: 'Neue Saison erstellen',
   openForBooking: 'Für Buchungen öffnen',
   closeBooking: 'Buchungen schliessen',
+  closeBookingHint: 'Neue Gegner können nicht mehr buchen; bestehende Buchungen bleiben.',
 
   // Spielsamstage
   spielsamstage: 'Spielsamstage',
@@ -177,6 +178,7 @@ export default {
   svrzSeasonNone: 'Nicht verknüpft',
   svrzSeasonEmpty: 'Noch keine SVRZ-Daten. Bitte zuerst SVRZ-Sync ausführen.',
   svrzSeasonLinked: '✓ verknüpft',
+  svrzSeasonMismatchHint: 'SVRZ {{kscw}} ist noch nicht veröffentlicht — Swiss Volley publiziert die nächste Saison jeweils im Juni. Bis dahin werden {{svrz}}-Kontakte als Fallback genutzt.',
   save: 'Speichern',
 
   // Season archive
@@ -200,4 +202,14 @@ export default {
   placeholderAwayHall: 'z.B. Sporthalle Muster, Musterstr. 1',
   updateProposals: 'Vorschläge aktualisieren',
   slotGenerationDescription: 'Generiert verfügbare Spieltermine basierend auf dem Hallenplan und den Spielsamstagen. Bestehende, noch nicht gebuchte Termine werden überschrieben.',
+
+  // Invite-scoped opponent flow (welcome + SVRZ game context)
+  inviteGreeting: 'Hallo {{name}}',
+  inviteGreetingNoName: 'Hallo',
+  inviteWelcome: 'Der KSCW hat dich eingeladen, die Spiele gegen {{team}} zu planen.',
+  inviteContactHint: 'Diese Einladung wurde an {{email}} geschickt. Falsche Person? Schreib an',
+  inviteGamesHeader_one: 'Wir haben {{count}} Spiel zusammen in dieser Saison',
+  inviteGamesHeader_other: 'Wir haben {{count}} Spiele zusammen in dieser Saison',
+  inviteGameHome: 'Heim (KSCW)',
+  inviteGameAway: 'Auswärts (ihr seid Heim)',
 }

@@ -79,6 +79,8 @@ export default {
     time: 'Zeit',
     hall: 'Halle',
     hallPlaceholder: 'Halle auswählen',
+    hallComboAB: 'KWI A + B (Basketball)',
+    saturdayHint: 'Vorbelegt: {{hall}} — Samstag empfohlen vor KWI A/B',
     awayVenue: 'Auswärts-Spielort',
     venueName: 'Name der Halle',
     venueAddress: 'Adresse',
@@ -126,5 +128,7 @@ export default {
     confirmDelete: 'Löschen',
     cancel: 'Abbrechen',
     svrzReadOnlyHint: 'Offizielle Details stammen aus SVRZ. Änderungen bitte im Volleymanager vornehmen.',
+    markAsComboAB: 'Als KWI A + B markieren',
+    unmarkCombo: 'Auf Einzelhalle zurücksetzen',
   },
 } as const

@@ -1,5 +1,6 @@
 import type { Game, Training, HallEvent, HallSlot, HallClosure, Hall, Team, SlotClaim } from '../../../types'
 import { toISODate, timeToMinutes, minutesToTime } from '../../../utils/dateHelpers'
+import { allGameHallIds } from '../../../utils/gameHalls'
 
 /** Hall events matching this pattern are treated as closures */
 export const CLOSURE_PATTERN = /geschlossen|gesperrt|closed/i
@@ -39,13 +40,11 @@ export function gameToVirtualSlots(
 
   if (!game.hall) return []
 
-  // Check if the team is basketball → spread across KWI A + KWI B
-  const team = teams.find((t) => t.id === game.kscw_team)
-  const isBB = team?.sport === 'basketball'
-
-  const hallIds = isBB
-    ? halls.filter((h) => h.name === 'KWI A' || h.name === 'KWI B').map((h) => h.id)
-    : [game.hall]
+  // Multi-hall games (e.g. basketball A+B) carry `additional_halls`.
+  // Legacy basketball rows without the field fall back to the name-match span
+  // inside allGameHallIds — see TODO there.
+  const hallIds = allGameHallIds(game, { teams, halls })
+  if (hallIds.length === 0) return []
 
   // Single slot on the first hall, with spanHallIds when spanning multiple
   return [{
@@ -383,11 +382,7 @@ export function mergeVirtualSlots(
       const gameStartMin = Math.max(timeToMinutes(gameTime) - GAME_WARMUP_MINUTES, 0)
       const gameEndMin = Math.min(gameStartMin + GAME_TOTAL_DURATION, 22 * 60)
 
-      const gameTeam = teams.find((t) => t.id === game.kscw_team)
-      const isBB = gameTeam?.sport === 'basketball'
-      const gameHallIds = isBB
-        ? halls.filter((h) => h.name === 'KWI A' || h.name === 'KWI B').map((h) => h.id)
-        : [game.hall]
+      const gameHallIds = allGameHallIds(game, { teams, halls })
 
       for (const slot of realSlots) {
         if (
@@ -559,11 +554,7 @@ export function mergeVirtualSlots(
     const gStart = Math.max(timeToMinutes(gameTime) - GAME_WARMUP_MINUTES, 0)
     const gEnd = Math.min(gStart + GAME_TOTAL_DURATION, 22 * 60)
 
-    const gameTeam = teams.find((t) => t.id === game.kscw_team)
-    const isBB = gameTeam?.sport === 'basketball'
-    const gameHallIds = isBB
-      ? halls.filter((h) => h.name === 'KWI A' || h.name === 'KWI B').map((h) => h.id)
-      : [game.hall]
+    const gameHallIds = allGameHallIds(game, { teams, halls })
 
     for (const hid of gameHallIds) {
       homeGameRanges.push({ dayIndex, hall: hid, startMin: gStart, endMin: gEnd })

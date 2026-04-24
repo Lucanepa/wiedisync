@@ -399,7 +399,8 @@ export default {
           database('teams_coaches')
             .join('members', 'members.id', 'teams_coaches.members_id')
             .where('teams_coaches.teams_id', team.id)
-            .select('members.id', 'members.first_name', 'members.last_name', 'members.photo'),
+            .select('members.id', 'members.first_name', 'members.last_name', 'members.photo',
+              'members.birthdate', 'members.birthdate_visibility'),
           database('games')
             .where('kscw_team', team.id).where('date', '>=', today)
             .where('status', '!=', 'cancelled')
@@ -425,30 +426,43 @@ export default {
             .select('sponsors.*'),
         ])
 
+        // Extract 4-digit year from birthdate (handles ISO strings and Date objects).
+        const extractYob = (birthdate, visibility) => {
+          if (!birthdate || visibility === 'hidden') return null
+          if (birthdate instanceof Date) {
+            const y = birthdate.getFullYear()
+            return Number.isFinite(y) ? String(y) : null
+          }
+          const m = String(birthdate).match(/\d{4}/)
+          return m ? m[0] : null
+        }
+
         // Transform roster: expose yob (respecting birthdate_visibility) + guest_level,
         // strip raw birthdate / visibility flag from the public payload.
-        const rosterPublic = roster.map((m) => {
-          let yob = null
-          if (m.birthdate && m.birthdate_visibility !== 'hidden') {
-            yob = String(m.birthdate).substring(0, 4)
-          }
-          return {
-            id: m.id,
-            first_name: m.first_name,
-            last_name: m.last_name,
-            number: m.number,
-            position: m.position,
-            photo: m.photo,
-            yob,
-            guest_level: m.guest_level || 0,
-          }
-        })
+        const rosterPublic = roster.map((m) => ({
+          id: m.id,
+          first_name: m.first_name,
+          last_name: m.last_name,
+          number: m.number,
+          position: m.position,
+          photo: m.photo,
+          yob: extractYob(m.birthdate, m.birthdate_visibility),
+          guest_level: m.guest_level || 0,
+        }))
+
+        const coachesPublic = coaches.map((c) => ({
+          id: c.id,
+          first_name: c.first_name,
+          last_name: c.last_name,
+          photo: c.photo,
+          yob: extractYob(c.birthdate, c.birthdate_visibility),
+        }))
 
         res.json({
           data: {
             ...team,
             roster: rosterPublic,
-            coaches,
+            coaches: coachesPublic,
             upcoming_games: upcomingGames,
             results: completedGames,
             upcoming_trainings: trainings,

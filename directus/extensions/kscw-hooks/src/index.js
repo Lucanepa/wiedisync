@@ -1578,10 +1578,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     try {
       const token = await getCronAccessToken(log, 'SVRZ sync')
       if (!token) return
-      const { execSync } = await import('node:child_process')
-      // Derive current season from date (Jun 1 cutover — Swiss Volley publishes
-      // new-season fixtures in June). Look up the matching SVRZ UUID from the
-      // most recent sync for that season; fall back to the 2025/26 UUID.
+      const { spawn } = await import('node:child_process')
       const now = new Date()
       const startYear = now.getMonth() >= 5 ? now.getFullYear() : now.getFullYear() - 1
       const seasonName = `${startYear}/${startYear + 1}`
@@ -1598,12 +1595,25 @@ export default ({ action, filter, init, schedule }, { services, database, logger
         SVRZ_SEASON_UUID: seasonUuid,
         SVRZ_SEASON_NAME: seasonName,
       }
-      const output = execSync('node /directus/scripts/svrz-scheduling-sync.mjs', {
-        env,
-        // 10 min — the sync does serial PATCHes for ~2970 rows; cold run ≈9 min.
-        // Too-tight timeouts caused daily logCronError→Sentry noise.
-        timeout: 600_000,
-        encoding: 'utf-8',
+      // Async spawn keeps the Directus event loop responsive while the sync runs
+      // (cold run ≈9 min, ~2970 serial PATCHes). execSync previously blocked
+      // /server/ping long enough to trigger uptime 503 alerts.
+      const output = await new Promise((resolve, reject) => {
+        const child = spawn('node', ['/directus/scripts/svrz-scheduling-sync.mjs'], { env })
+        let stdout = ''
+        let stderr = ''
+        child.stdout.on('data', (chunk) => { stdout += chunk.toString() })
+        child.stderr.on('data', (chunk) => { stderr += chunk.toString() })
+        const timer = setTimeout(() => {
+          child.kill('SIGKILL')
+          reject(Object.assign(new Error('SVRZ sync timed out after 15 min'), { status: null }))
+        }, 900_000)
+        child.on('error', (err) => { clearTimeout(timer); reject(err) })
+        child.on('close', (code) => {
+          clearTimeout(timer)
+          if (code === 0) resolve(stdout)
+          else reject(Object.assign(new Error(stderr.trim() || `exited ${code}`), { status: code }))
+        })
       })
       log.info(`SVRZ sync cron: ${output.split('\n').slice(-6).join(' | ')}`)
     } catch (err) {

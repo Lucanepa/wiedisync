@@ -435,7 +435,7 @@ async function syncToMembers(rows) {
   const members = [];
   let page = 1;
   while (true) {
-    const url = `${DIRECTUS_URL}/items/members?fields=id,license_nr,sex,licences,vm_email,email,first_name,last_name,birthdate,birthdate_visibility&limit=250&page=${page}`;
+    const url = `${DIRECTUS_URL}/items/members?fields=id,license_nr,sex,licences,vm_email,email,first_name,last_name,birthdate,birthdate_visibility,licence_category,licence_activated,licence_validated&limit=250&page=${page}`;
     const res = await fetch(url, { headers });
     if (!res.ok) throw new Error(`Directus members list failed: ${res.status}`);
     const { data } = await res.json();
@@ -503,7 +503,21 @@ async function syncToMembers(rows) {
       changed = true;
     }
 
-    // Licence fields — read from sv_vm_check at query time, no longer synced to members
+    // Licence fields — mirror to members so the field labels in the admin UI
+    // ("synced from Volleymanager") aren't misleading. sv_vm_check remains the
+    // source of truth; this is a denormalised cache for fast read.
+    if (row.licence_category != null && row.licence_category !== member.licence_category) {
+      payload.licence_category = row.licence_category;
+      changed = true;
+    }
+    if (row.licence_activated != null && row.licence_activated !== member.licence_activated) {
+      payload.licence_activated = row.licence_activated;
+      changed = true;
+    }
+    if (row.licence_validated != null && row.licence_validated !== member.licence_validated) {
+      payload.licence_validated = row.licence_validated;
+      changed = true;
+    }
 
     // VM email — store the email from Volleymanager
     if (row.email && row.email !== member.vm_email) {

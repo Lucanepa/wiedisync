@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import TeamChip from '../../components/TeamChip'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table'
 import type { Game, Team } from '../../types'
 import { parseDate, formatDate } from '../../utils/dateUtils'
 import { formatTime } from '../../utils/dateHelpers'
@@ -52,42 +53,42 @@ function TypeBadge({ type }: { type: string }) {
   )
 }
 
-function GameRow({ game, teams, showTeam }: { game: Game; teams: Team[]; showTeam: boolean }) {
+function GameTableRow({ game, teams, showTeam, showDate }: { game: Game; teams: Team[]; showTeam: boolean; showDate?: boolean }) {
   const teamName = getTeamName(game, teams)
   const hallName = getHallName(game)
+  const dateStr = game.date.split(' ')[0] ?? game.date
 
   return (
-    <div data-tour="spielplanung-game-card" className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700">
-      {/* Time */}
-      <div className="w-14 shrink-0 text-sm font-medium text-gray-700 dark:text-gray-300">
-        {game.time ? formatTime(game.time) : '–'}
-      </div>
-
-      {/* Team chip */}
-      {showTeam && (
-        <div className="w-16 shrink-0">
-          <TeamChip team={teamName} size="sm" />
-        </div>
+    <TableRow data-tour="spielplanung-game-card" className="align-top">
+      {showDate && (
+        <TableCell className="whitespace-nowrap text-xs text-gray-500 dark:text-gray-400">
+          {formatDate(parseDate(dateStr), 'MM/dd/yyyy')}
+        </TableCell>
       )}
-
-      {/* Matchup */}
-      <div className="min-w-0 flex-1">
-        <span className="text-sm text-gray-900 dark:text-gray-100">
-          {game.home_team} – {game.away_team}
-        </span>
-      </div>
-
-      {/* Type badge */}
-      <TypeBadge type={game.type} />
-
-      {/* Hall */}
-      <div className="hidden w-40 truncate text-xs text-gray-500 md:block">
+      <TableCell className="whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300 w-14">
+        {game.time ? formatTime(game.time) : '–'}
+      </TableCell>
+      {showTeam && (
+        <TableCell className="hidden sm:table-cell">
+          <TeamChip team={teamName} size="sm" />
+        </TableCell>
+      )}
+      <TableCell className="whitespace-normal text-sm text-gray-900 dark:text-gray-100">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1">
+          <span>{game.home_team}</span>
+          <span className="hidden sm:inline">–</span>
+          <span>{game.away_team}</span>
+        </div>
+        {showTeam && (
+          <div className="sm:hidden mt-1 inline-block"><TeamChip team={teamName} size="xs" /></div>
+        )}
+      </TableCell>
+      <TableCell className="whitespace-nowrap"><TypeBadge type={game.type} /></TableCell>
+      <TableCell className="hidden md:table-cell whitespace-nowrap text-xs text-gray-500 truncate max-w-[10rem]">
         {hallName}
-      </div>
-
-      {/* Status */}
-      <StatusBadge status={game.status} />
-    </div>
+      </TableCell>
+      <TableCell className="whitespace-nowrap"><StatusBadge status={game.status} /></TableCell>
+    </TableRow>
   )
 }
 
@@ -129,11 +130,23 @@ function ByDateView({ games, teams }: { games: Game[]; teams: Team[] }) {
           <div className="border-b border-gray-100 bg-gray-50 dark:bg-gray-900 px-4 py-2">
             <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">{group.label}</h3>
           </div>
-          <div className="divide-y divide-gray-100">
-            {group.games.map((game) => (
-              <GameRow key={game.id} game={game} teams={teams} showTeam />
-            ))}
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-14 text-xs uppercase text-gray-400">{t('colTime')}</TableHead>
+                <TableHead className="hidden sm:table-cell text-xs uppercase text-gray-400">{t('colTeam')}</TableHead>
+                <TableHead className="text-xs uppercase text-gray-400">{t('colMatchup')}</TableHead>
+                <TableHead className="text-xs uppercase text-gray-400">{t('colType')}</TableHead>
+                <TableHead className="hidden md:table-cell text-xs uppercase text-gray-400">{t('colHall')}</TableHead>
+                <TableHead className="text-xs uppercase text-gray-400">{t('colStatus')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {group.games.map((game) => (
+                <GameTableRow key={game.id} game={game} teams={teams} showTeam />
+              ))}
+            </TableBody>
+          </Table>
         </div>
       ))}
     </div>
@@ -155,7 +168,6 @@ function ByTeamView({ games, teams }: { games: Game[]; teams: Team[] }) {
       byTeam.get(teamId)!.games.push(game)
     }
 
-    // Sort games within each group chronologically
     for (const group of byTeam.values()) {
       group.games.sort((a, b) => {
         const dateCmp = a.date.localeCompare(b.date)
@@ -164,7 +176,6 @@ function ByTeamView({ games, teams }: { games: Game[]; teams: Team[] }) {
       })
     }
 
-    // Sort groups by team name
     return [...byTeam.values()].sort((a, b) => a.team.name.localeCompare(b.team.name))
   }, [games, teams])
 
@@ -181,29 +192,23 @@ function ByTeamView({ games, teams }: { games: Game[]; teams: Team[] }) {
             <span className="text-sm text-gray-500 dark:text-gray-400">{group.team.league}</span>
             <span className="text-xs text-gray-400">({group.games.length} games)</span>
           </div>
-          <div className="divide-y divide-gray-100">
-            {group.games.map((game) => (
-              <div key={game.id} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700">
-                {/* Date */}
-                <div className="w-24 shrink-0 text-xs text-gray-500 dark:text-gray-400">
-                  {formatDate(parseDate(game.date.split(' ')[0] ?? game.date), 'MM/dd/yyyy')}
-                </div>
-                {/* Time */}
-                <div className="w-14 shrink-0 text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {game.time ? formatTime(game.time) : '–'}
-                </div>
-                {/* Matchup */}
-                <div className="min-w-0 flex-1 text-sm text-gray-900 dark:text-gray-100">
-                  {game.home_team} – {game.away_team}
-                </div>
-                <TypeBadge type={game.type} />
-                <div className="hidden w-40 truncate text-xs text-gray-500 md:block">
-                  {getHallName(game)}
-                </div>
-                <StatusBadge status={game.status} />
-              </div>
-            ))}
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="text-xs uppercase text-gray-400">{t('colDate')}</TableHead>
+                <TableHead className="w-14 text-xs uppercase text-gray-400">{t('colTime')}</TableHead>
+                <TableHead className="text-xs uppercase text-gray-400">{t('colMatchup')}</TableHead>
+                <TableHead className="text-xs uppercase text-gray-400">{t('colType')}</TableHead>
+                <TableHead className="hidden md:table-cell text-xs uppercase text-gray-400">{t('colHall')}</TableHead>
+                <TableHead className="text-xs uppercase text-gray-400">{t('colStatus')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {group.games.map((game) => (
+                <GameTableRow key={game.id} game={game} teams={teams} showTeam={false} showDate />
+              ))}
+            </TableBody>
+          </Table>
         </div>
       ))}
     </div>

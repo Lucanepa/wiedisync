@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react'
+import { Fragment, useState, useMemo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Check, X, ChevronDown, ChevronUp, Save, Download, FileText, ExternalLink } from 'lucide-react'
 import { useCollection, useUpdate } from '../../lib/query'
@@ -16,6 +16,7 @@ import {
   DialogFooter,
 } from '../../components/ui/dialog'
 import type { BaseRecord, Team } from '../../types'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table'
 
 interface Registration extends BaseRecord {
   status: 'pending' | 'approved' | 'rejected'
@@ -331,36 +332,63 @@ export default function AnmeldungenPage() {
                   </span>
                 </div>
 
-                <div className="space-y-3">
-                  {items.map((reg) => {
-                    const isExpanded = expandedId === reg.id
-                    return (
-                      <div
-                        key={reg.id}
-                        className="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
-                      >
-                        {/* Summary row */}
-                        <div className="flex items-center gap-3 px-4 py-3">
-                          <input
-                            type="checkbox"
-                            checked={selectedIds.has(reg.id)}
-                            onChange={() => toggleSelect(reg.id)}
-                            className="h-4 w-4 shrink-0 rounded border-gray-300 text-blue-600 dark:border-gray-600"
-                          />
-                          <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="font-medium text-gray-900 dark:text-gray-100">
-                                {reg.vorname} {reg.nachname}
-                              </span>
-                              {statusBadge(reg.status)}
-                            </div>
-                            <div className="mt-0.5 flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                              <span>{reg.email}</span>
-                              {reg.team && (
-                                <>
-                                  <span>·</span>
-                                  {reg.team.split(',').map((t) => {
-                                    const name = t.trim()
+                <div className="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-10" />
+                        <TableHead className="text-gray-500 dark:text-gray-400">{t('anmeldungenColName')}</TableHead>
+                        <TableHead className="hidden sm:table-cell text-gray-500 dark:text-gray-400">{t('anmeldungenColStatus')}</TableHead>
+                        <TableHead className="hidden md:table-cell text-gray-500 dark:text-gray-400">{t('anmeldungenColTeam')}</TableHead>
+                        <TableHead className="hidden lg:table-cell text-gray-500 dark:text-gray-400">{t('anmeldungenColSubmitted')}</TableHead>
+                        <TableHead className="w-10" />
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {items.map((reg) => {
+                        const isExpanded = expandedId === reg.id
+                        return (
+                          <Fragment key={reg.id}>
+                            <TableRow className="align-top">
+                              <TableCell>
+                                <input
+                                  type="checkbox"
+                                  checked={selectedIds.has(reg.id)}
+                                  onChange={() => toggleSelect(reg.id)}
+                                  className="h-4 w-4 rounded border-gray-300 text-blue-600 dark:border-gray-600"
+                                />
+                              </TableCell>
+                              <TableCell className="whitespace-normal">
+                                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                                  <span className="block sm:inline font-medium text-gray-900 dark:text-gray-100">{reg.nachname}</span>
+                                  <span className="block sm:inline text-gray-600 dark:text-gray-400 sm:text-gray-900 sm:dark:text-gray-100">{reg.vorname}</span>
+                                  <span className="sm:hidden">{statusBadge(reg.status)}</span>
+                                </div>
+                                <div className="mt-0.5 text-xs text-gray-500 dark:text-gray-400 break-all">{reg.email}</div>
+                                <div className="md:hidden mt-1 flex flex-wrap items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                                  {reg.team && reg.team.split(',').map((tm) => {
+                                    const name = tm.trim()
+                                    const tObj = teamByName[name]
+                                    return tObj ? (
+                                      <TeamChip key={name} team={tObj.name} size="xs" />
+                                    ) : (
+                                      <span key={name}>{name}</span>
+                                    )
+                                  })}
+                                  {reg.membership_type === 'basketball' && reg.bb_doc_lizenz && (
+                                    <span className="inline-flex items-center gap-0.5 text-orange-600 dark:text-orange-400">
+                                      <FileText className="h-3 w-3" />
+                                      {[reg.bb_doc_lizenz, reg.bb_doc_selfdecl, reg.bb_doc_natdecl].filter(Boolean).length} docs
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="lg:hidden mt-0.5 text-[11px] text-gray-400">{formatDate(reg.submitted_at)}</div>
+                              </TableCell>
+                              <TableCell className="hidden sm:table-cell">{statusBadge(reg.status)}</TableCell>
+                              <TableCell className="hidden md:table-cell">
+                                <div className="flex flex-wrap items-center gap-1">
+                                  {reg.team && reg.team.split(',').map((tm) => {
+                                    const name = tm.trim()
                                     const tObj = teamByName[name]
                                     return tObj ? (
                                       <TeamChip key={name} team={tObj.name} size="xs" />
@@ -368,48 +396,45 @@ export default function AnmeldungenPage() {
                                       <span key={name} className="text-xs">{name}</span>
                                     )
                                   })}
-                                </>
-                              )}
-                              <span>·</span>
-                              <span>{formatDate(reg.submitted_at)}</span>
-                              {/* BB doc indicators */}
-                              {reg.membership_type === 'basketball' && reg.bb_doc_lizenz && (
-                                <>
-                                  <span>·</span>
-                                  <span className="inline-flex items-center gap-0.5 text-xs text-orange-600 dark:text-orange-400">
-                                    <FileText className="h-3 w-3" />
-                                    {[reg.bb_doc_lizenz, reg.bb_doc_selfdecl, reg.bb_doc_natdecl].filter(Boolean).length} docs
-                                  </span>
-                                </>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Expand toggle */}
-                          <button
-                            onClick={() => setExpandedId(isExpanded ? null : reg.id)}
-                            className="shrink-0 rounded-md p-2 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-                            title={t('anmeldungenDetails')}
-                          >
-                            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                          </button>
-                        </div>
-
-                        {/* Expanded details */}
-                        {isExpanded && (
-                          <ExpandedDetails
-                            reg={reg}
-                            t={t}
-                            onSave={(data) => updateReg({ id: reg.id, data }, { onSuccess: () => toast.success(t('anmeldungenUpdated')) })}
-                            onApprove={() => handleApprove(reg)}
-                            onReject={() => openRejectModal(reg)}
-                            onPreviewFile={setPreviewFile}
-                            isUpdating={isUpdating}
-                          />
-                        )}
-                      </div>
-                    )
-                  })}
+                                  {reg.membership_type === 'basketball' && reg.bb_doc_lizenz && (
+                                    <span className="inline-flex items-center gap-0.5 text-xs text-orange-600 dark:text-orange-400">
+                                      <FileText className="h-3 w-3" />
+                                      {[reg.bb_doc_lizenz, reg.bb_doc_selfdecl, reg.bb_doc_natdecl].filter(Boolean).length}
+                                    </span>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell className="hidden lg:table-cell text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{formatDate(reg.submitted_at)}</TableCell>
+                              <TableCell className="text-right">
+                                <button
+                                  onClick={() => setExpandedId(isExpanded ? null : reg.id)}
+                                  className="rounded-md p-2 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                  title={t('anmeldungenDetails')}
+                                >
+                                  {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                </button>
+                              </TableCell>
+                            </TableRow>
+                            {isExpanded && (
+                              <TableRow className="bg-gray-50/50 dark:bg-gray-900/30 hover:bg-gray-50/50 dark:hover:bg-gray-900/30">
+                                <TableCell colSpan={6} className="whitespace-normal p-0">
+                                  <ExpandedDetails
+                                    reg={reg}
+                                    t={t}
+                                    onSave={(data) => updateReg({ id: reg.id, data }, { onSuccess: () => toast.success(t('anmeldungenUpdated')) })}
+                                    onApprove={() => handleApprove(reg)}
+                                    onReject={() => openRejectModal(reg)}
+                                    onPreviewFile={setPreviewFile}
+                                    isUpdating={isUpdating}
+                                  />
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </Fragment>
+                        )
+                      })}
+                    </TableBody>
+                  </Table>
                 </div>
               </div>
             )

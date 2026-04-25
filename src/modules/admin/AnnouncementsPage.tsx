@@ -14,6 +14,7 @@ import LoadingSpinner from '../../components/LoadingSpinner'
 import { stripHtml } from '../../components/RichText'
 import { formatDate, toUtcIsoFromDatetimeLocal, toDatetimeLocalFromUtcIso } from '../../utils/dateHelpers'
 import type { Announcement, AnnouncementLocale, AnnouncementTranslation, AnnouncementAudienceType } from '../../types'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table'
 
 const LOCALES: AnnouncementLocale[] = ['de', 'en', 'fr', 'gsw', 'it']
 const LOCALE_LABEL: Record<AnnouncementLocale, string> = {
@@ -261,78 +262,104 @@ export default function AnnouncementsPage() {
           {t('empty')}
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-          {items.map((a) => {
-            const trItem = pickTranslation(a.translations, i18n.language)
-            const isPublished = !!a.published_at && new Date(a.published_at) <= new Date()
-            const isExpired = !!a.expires_at && new Date(a.expires_at) <= new Date()
-            return (
-              <div key={a.id} className="flex items-start gap-3 border-b border-gray-100 p-4 last:border-b-0 dark:border-gray-700">
-                {a.image ? (
-                  <img
-                    src={assetUrl(a.image, 'width=160&height=160&fit=cover')}
-                    alt=""
-                    className="h-14 w-14 shrink-0 rounded-md object-cover"
-                  />
-                ) : (
-                  <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-md bg-brand-50 text-brand-600 dark:bg-brand-900/40 dark:text-brand-300">
-                    <ImageIcon className="h-5 w-5" />
-                  </span>
-                )}
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    {a.pinned && <Pin className="h-3.5 w-3.5 shrink-0 text-gold-500 dark:text-gold-400" />}
-                    <h3 className="truncate font-medium text-gray-900 dark:text-gray-100">{trItem.title || <span className="italic text-gray-400">({t('noTitle')})</span>}</h3>
-                  </div>
-                  {trItem.body && (
-                    <p className="mt-0.5 line-clamp-2 text-sm text-gray-500 dark:text-gray-400">
-                      {stripHtml(trItem.body)}
-                    </p>
-                  )}
-                  <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
-                    <span
-                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${
-                        isExpired
-                          ? 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
-                          : isPublished
-                            ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
-                            : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300'
-                      }`}
-                    >
-                      {isExpired
-                        ? t('statusExpired')
-                        : isPublished
-                          ? t('statusPublished')
-                          : t('statusDraft')}
-                    </span>
-                    {a.published_at && (
-                      <span className="inline-flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {formatDate(a.published_at)}
-                      </span>
-                    )}
-                    <span>{t('audienceLabel')}: {audienceLabel(a, t)}</span>
-                  </div>
-                </div>
-                <div className="flex shrink-0 items-center gap-1">
-                  <button
-                    onClick={() => openEdit(a)}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    aria-label="Edit"
-                  >
-                    <Edit2 className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => setConfirmDeleteId(a.id)}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-md text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30"
-                    aria-label="Delete"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            )
-          })}
+        <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-gray-200 dark:border-gray-700">
+                <TableHead className="hidden sm:table-cell w-16" />
+                <TableHead className="text-gray-500 dark:text-gray-400">{t('pageTitle')}</TableHead>
+                <TableHead className="hidden md:table-cell text-gray-500 dark:text-gray-400">{t('audienceLabel')}</TableHead>
+                <TableHead className="hidden sm:table-cell text-gray-500 dark:text-gray-400">{t('statusPublished')}</TableHead>
+                <TableHead className="w-20 text-right" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {items.map((a) => {
+                const trItem = pickTranslation(a.translations, i18n.language)
+                const isPublished = !!a.published_at && new Date(a.published_at) <= new Date()
+                const isExpired = !!a.expires_at && new Date(a.expires_at) <= new Date()
+                return (
+                  <TableRow key={a.id} className="border-gray-200 dark:border-gray-700 align-top">
+                    <TableCell className="hidden sm:table-cell">
+                      {a.image ? (
+                        <img
+                          src={assetUrl(a.image, 'width=160&height=160&fit=cover')}
+                          alt=""
+                          className="h-12 w-12 rounded-md object-cover"
+                        />
+                      ) : (
+                        <span className="flex h-12 w-12 items-center justify-center rounded-md bg-brand-50 text-brand-600 dark:bg-brand-900/40 dark:text-brand-300">
+                          <ImageIcon className="h-4 w-4" />
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="whitespace-normal">
+                      <div className="flex items-center gap-1.5">
+                        {a.pinned && <Pin className="h-3.5 w-3.5 shrink-0 text-gold-500 dark:text-gold-400" />}
+                        <span className="font-medium text-gray-900 dark:text-gray-100">{trItem.title || <span className="italic text-gray-400">({t('noTitle')})</span>}</span>
+                      </div>
+                      {trItem.body && (
+                        <p className="mt-0.5 line-clamp-2 text-xs text-gray-500 dark:text-gray-400">
+                          {stripHtml(trItem.body)}
+                        </p>
+                      )}
+                      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-gray-500 dark:text-gray-400 md:hidden">
+                        <span>{audienceLabel(a, t)}</span>
+                        {a.published_at && (
+                          <span className="inline-flex items-center gap-1 sm:hidden">
+                            <Calendar className="h-3 w-3" />
+                            {formatDate(a.published_at)}
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-xs text-gray-600 dark:text-gray-400">
+                      {audienceLabel(a, t)}
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      <div className="flex flex-col items-start gap-1">
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${
+                            isExpired
+                              ? 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
+                              : isPublished
+                                ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
+                                : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300'
+                          }`}
+                        >
+                          {isExpired ? t('statusExpired') : isPublished ? t('statusPublished') : t('statusDraft')}
+                        </span>
+                        {a.published_at && (
+                          <span className="inline-flex items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400">
+                            <Calendar className="h-3 w-3" />
+                            {formatDate(a.published_at)}
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex flex-col items-end gap-1 sm:flex-row sm:justify-end">
+                        <button
+                          onClick={() => openEdit(a)}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          aria-label="Edit"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => setConfirmDeleteId(a.id)}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30"
+                          aria-label="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
         </div>
       )}
 

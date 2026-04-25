@@ -19,6 +19,26 @@ const POSITION_I18N_KEYS: Record<MemberPosition, string> = {
   other: 'positionOther',
 }
 
+const POSITION_INITIALS: Record<MemberPosition, string> = {
+  setter: 'S',
+  outside: 'O',
+  middle: 'M',
+  opposite: 'D',
+  libero: 'L',
+  point_guard: 'PG',
+  shooting_guard: 'SG',
+  small_forward: 'SF',
+  power_forward: 'PF',
+  center: 'C',
+  guest: 'G',
+  other: '·',
+}
+
+export function getPositionInitial(position?: string | null): string {
+  if (!position) return '·'
+  return POSITION_INITIALS[position as MemberPosition] ?? position.slice(0, 1).toUpperCase()
+}
+
 export function getPositionI18nKey(position?: string | null): string | null {
   if (!position) return null
   return POSITION_I18N_KEYS[position as MemberPosition] ?? null

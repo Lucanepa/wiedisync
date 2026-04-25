@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.3.0'
+const APP_VERSION = '4.4.0'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,28 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.4.0',
+    date: '2026-04-25',
+    sections: [
+      {
+        title: 'Tables everywhere data lives',
+        items: [
+          '9 list pages were converted to proper tables: roster editor, announcements, audit log, registrations, referee expenses, admin reports, absences (mine + team + weekly), Spielplanung list, calendar unified list, news archive.',
+          'Each table compacts gracefully on mobile — names wrap to two lines instead of truncating, position labels collapse to initials (S/O/M/D/L/G), optional columns hide on small screens, and action buttons stack vertically so everything stays tappable.',
+          'Cards are kept where they earn their keep — game/training/event cards (RSVP, scores, opponent logos), team cards (team photo + brand color), and the changelog itself are explicit exceptions to the new rule.',
+        ],
+      },
+      {
+        title: 'Absences page reorganised',
+        items: [
+          'New two-axis toggle: Absences | Unavailabilities × Mine | Team. The two button rows replace the previous single 3-tab bar — same visual style, four sections.',
+          'New "Team Unavailabilities" view shows everyone\'s recurring weekly schedules in your team — useful for spotting clashes without messaging around.',
+          'Team scope is now visible to every team member, not just coaches/team responsibles. The backend permission was already open; only the UI was gating it.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.3.0',
     date: '2026-04-24',

@@ -9,6 +9,7 @@ import {
   Search, X, ChevronLeft, ChevronsLeft, ChevronsRight,
   AlertCircle, Info, AlertTriangle,
 } from 'lucide-react'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table'
 
 interface AuditEntry {
   ts: string
@@ -97,71 +98,74 @@ function AuditRow({ entry, onFilterCollection, onFilterActor, onFilterRecord }: 
   const hasDetails = Object.keys(entry.details).length > 0
 
   return (
-    <div className="border-b border-gray-100 dark:border-gray-700/50">
-      <button
+    <>
+      <TableRow
         onClick={() => hasDetails && setExpanded(!expanded)}
-        className={`flex w-full items-center gap-2 px-3 py-2 text-left text-xs ${hasDetails ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50' : 'cursor-default'}`}
+        className={`border-gray-100 dark:border-gray-700/50 ${hasDetails ? 'cursor-pointer' : 'cursor-default'}`}
       >
-        {hasDetails
-          ? expanded
-            ? <ChevronDown className="h-3 w-3 shrink-0 text-gray-400" />
-            : <ChevronRight className="h-3 w-3 shrink-0 text-gray-400" />
-          : <div className="h-3 w-3 shrink-0" />
-        }
-
-        <span className="w-[120px] shrink-0 text-gray-400 dark:text-gray-500 font-mono">
+        <TableCell className="w-6 px-1">
+          {hasDetails
+            ? expanded
+              ? <ChevronDown className="h-3 w-3 text-gray-400" />
+              : <ChevronRight className="h-3 w-3 text-gray-400" />
+            : null}
+        </TableCell>
+        <TableCell className="hidden sm:table-cell font-mono text-[10px] text-gray-400 dark:text-gray-500">
           {formatTs(entry.ts)}
-        </span>
-
-        <span className="shrink-0">{levelIcon(entry.level)}</span>
-
-        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${actionBadge(entry.action)}`}>
-          {entry.action}
-        </span>
-
-        <button
-          onClick={(ev) => { ev.stopPropagation(); onFilterCollection(entry.collection) }}
-          className="shrink-0 rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-        >
-          {entry.collection}
-        </button>
-
-        {entry.record_id && (
+        </TableCell>
+        <TableCell className="w-6 px-1">{levelIcon(entry.level)}</TableCell>
+        <TableCell>
+          <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${actionBadge(entry.action)}`}>
+            {entry.action}
+          </span>
+        </TableCell>
+        <TableCell>
           <button
-            onClick={(ev) => { ev.stopPropagation(); onFilterRecord(entry.record_id) }}
-            className="shrink-0 truncate font-mono text-[10px] text-gray-400 hover:text-brand-600 dark:hover:text-brand-400"
-            title={entry.record_id}
+            onClick={(ev) => { ev.stopPropagation(); onFilterCollection(entry.collection) }}
+            className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
           >
-            {entry.record_id.substring(0, 12)}…
+            {entry.collection}
           </button>
-        )}
-
-        {entry.actor && entry.actor !== 'system' && (
-          <button
-            onClick={(ev) => { ev.stopPropagation(); onFilterActor(entry.actor) }}
-            className="ml-auto shrink-0 truncate font-mono text-[10px] text-gray-400 hover:text-brand-600 dark:hover:text-brand-400"
-            title={entry.actor}
-          >
-            actor: {entry.actor.substring(0, 10)}…
-          </button>
-        )}
-        {entry.actor === 'system' && (
-          <span className="ml-auto text-[10px] text-gray-400">system</span>
-        )}
-      </button>
-
-      {expanded && hasDetails && (
-        <div className="border-t border-gray-50 bg-gray-50/50 px-8 py-2 dark:border-gray-700/30 dark:bg-gray-900/30">
-          {entry.details.changes ? (
-            <DiffView changes={entry.details.changes as Record<string, { old: unknown; new: unknown }>} />
-          ) : (
-            <pre className="whitespace-pre-wrap text-[10px] text-gray-500 dark:text-gray-400">
-              {JSON.stringify(entry.details, null, 2)}
-            </pre>
+        </TableCell>
+        <TableCell className="hidden md:table-cell">
+          {entry.record_id && (
+            <button
+              onClick={(ev) => { ev.stopPropagation(); onFilterRecord(entry.record_id) }}
+              className="font-mono text-[10px] text-gray-400 hover:text-brand-600 dark:hover:text-brand-400"
+              title={entry.record_id}
+            >
+              {entry.record_id.substring(0, 12)}…
+            </button>
           )}
-        </div>
+        </TableCell>
+        <TableCell className="hidden lg:table-cell text-right">
+          {entry.actor && entry.actor !== 'system' ? (
+            <button
+              onClick={(ev) => { ev.stopPropagation(); onFilterActor(entry.actor) }}
+              className="font-mono text-[10px] text-gray-400 hover:text-brand-600 dark:hover:text-brand-400"
+              title={entry.actor}
+            >
+              {entry.actor.substring(0, 10)}…
+            </button>
+          ) : (
+            <span className="text-[10px] text-gray-400">system</span>
+          )}
+        </TableCell>
+      </TableRow>
+      {expanded && hasDetails && (
+        <TableRow className="border-gray-100 dark:border-gray-700/50 bg-gray-50/50 dark:bg-gray-900/30 hover:bg-gray-50/50 dark:hover:bg-gray-900/30">
+          <TableCell colSpan={7} className="whitespace-normal px-8 py-2">
+            {entry.details.changes ? (
+              <DiffView changes={entry.details.changes as Record<string, { old: unknown; new: unknown }>} />
+            ) : (
+              <pre className="whitespace-pre-wrap text-[10px] text-gray-500 dark:text-gray-400">
+                {JSON.stringify(entry.details, null, 2)}
+              </pre>
+            )}
+          </TableCell>
+        </TableRow>
       )}
-    </div>
+    </>
   )
 }
 
@@ -411,15 +415,30 @@ export default function AuditLogPage() {
         {result && result.items.length > 0 && (
           <>
             <div className="max-h-[calc(100vh-380px)] overflow-y-auto">
-              {result.items.map((entry, idx) => (
-                <AuditRow
-                  key={`${entry.ts}-${idx}`}
-                  entry={entry}
-                  onFilterCollection={(c) => setFilterAndSearch('collection', c)}
-                  onFilterActor={(a) => setFilterAndSearch('actor', a)}
-                  onFilterRecord={(r) => setFilterAndSearch('record_id', r)}
-                />
-              ))}
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-6 px-1" />
+                    <TableHead className="hidden sm:table-cell text-[10px] uppercase text-gray-400">{t('auditWhen')}</TableHead>
+                    <TableHead className="w-6 px-1" />
+                    <TableHead className="text-[10px] uppercase text-gray-400">{t('auditAction')}</TableHead>
+                    <TableHead className="text-[10px] uppercase text-gray-400">{t('auditCollection')}</TableHead>
+                    <TableHead className="hidden md:table-cell text-[10px] uppercase text-gray-400">{t('auditRecord')}</TableHead>
+                    <TableHead className="hidden lg:table-cell text-right text-[10px] uppercase text-gray-400">{t('auditActor')}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {result.items.map((entry, idx) => (
+                    <AuditRow
+                      key={`${entry.ts}-${idx}`}
+                      entry={entry}
+                      onFilterCollection={(c) => setFilterAndSearch('collection', c)}
+                      onFilterActor={(a) => setFilterAndSearch('actor', a)}
+                      onFilterRecord={(r) => setFilterAndSearch('record_id', r)}
+                    />
+                  ))}
+                </TableBody>
+              </Table>
             </div>
 
             {/* Pagination */}

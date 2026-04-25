@@ -6,7 +6,8 @@ import { useAdminMode } from '../../hooks/useAdminMode'
 import { useCollection } from '../../lib/query'
 import { useMutation } from '../../hooks/useMutation'
 import { useRealtime } from '../../hooks/useRealtime'
-import { relId } from '../../utils/relations'
+import { relId, asObj } from '../../utils/relations'
+import { useTeamAbsences } from '../../hooks/useTeamAbsences'
 import TeamFilter from '../../components/TeamFilter'
 import EmptyState from '../../components/EmptyState'
 import ConfirmDialog from '@/components/ConfirmDialog'
@@ -17,15 +18,20 @@ import TeamAbsenceView from './TeamAbsenceView'
 import WeeklyUnavailabilityCard from './WeeklyUnavailabilityCard'
 import WeeklyUnavailabilityForm from './WeeklyUnavailabilityForm'
 import { Button } from '@/components/ui/button'
+import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import TabBar from '../../components/TabBar'
-import type { Absence, Team } from '../../types'
+import type { Absence, Member, Team } from '../../types'
 import { TourPageButton } from '../guide/TourPageButton'
+
+type ViewType = 'absences' | 'weekly'
+type Scope = 'mine' | 'team'
 
 export default function AbsencesPage() {
   const { t } = useTranslation('absences')
   const { user, isCoach, memberTeamIds, coachTeamIds } = useAuth()
   const { effectiveIsAdmin, effectiveIsCoach, effectiveIsVorstand } = useAdminMode()
-  const [activeTab, setActiveTab] = useState<'mine' | 'team' | 'weekly'>('mine')
+  const [viewType, setViewType] = useState<ViewType>('absences')
+  const [scope, setScope] = useState<Scope>('mine')
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null)
   const [formOpen, setFormOpen] = useState(false)
   const [editingAbsence, setEditingAbsence] = useState<Absence | null>(null)
@@ -35,25 +41,21 @@ export default function AbsencesPage() {
   const [editingWeekly, setEditingWeekly] = useState<Absence | null>(null)
   const [showOlder, setShowOlder] = useState(false)
 
-  // Fetch all active teams (needed to resolve "Alle" selection to actual IDs)
   const { data: allTeamsRaw } = useCollection<Team>('teams', { filter: { active: { _eq: true } }, sort: ['name'], limit: 50 })
   const allTeams = allTeamsRaw ?? []
 
-  // Only show all teams when admin mode is active; otherwise scope to own teams
   const visibleTeamIds = useMemo(() => {
-    if (effectiveIsAdmin || effectiveIsVorstand) return undefined // admins/vorstand in admin mode see all teams
+    if (effectiveIsAdmin || effectiveIsVorstand) return undefined
     return [...new Set([...memberTeamIds, ...coachTeamIds])]
   }, [effectiveIsAdmin, effectiveIsVorstand, memberTeamIds, coachTeamIds])
 
-  // Resolve effective team IDs for TeamAbsenceView
   const effectiveTeamIds = useMemo(() => {
     if (selectedTeam) return [selectedTeam]
-    // "Alle" selected — use visible teams or all teams
     if (visibleTeamIds) return visibleTeamIds
     return allTeams.map((t) => t.id)
   }, [selectedTeam, visibleTeamIds, allTeams])
 
-  // Standard absences (exclude weekly)
+  // ── Personal absences (excludes weekly) ────────────────────────
   const { data: myAbsencesRaw, refetch } = useCollection<Absence>('absences', {
     filter: user ? { _and: [{ member: { _eq: user.id } }, { _or: [{ type: { _null: true } }, { type: { _neq: 'weekly' } }] }] } : { id: { _eq: -1 } },
     sort: ['-start_date'],
@@ -65,7 +67,7 @@ export default function AbsencesPage() {
   const upcomingAbsences = myAbsences.filter((a) => (a.end_date ?? '9999-12-31') >= today)
   const pastAbsences = myAbsences.filter((a) => a.end_date && a.end_date < today)
 
-  // Weekly unavailabilities
+  // ── Personal weeklies ──────────────────────────────────────────
   const { data: myWeeklyRaw, refetch: refetchWeekly } = useCollection<Absence>('absences', {
     filter: user ? { _and: [{ member: { _eq: user.id } }, { type: { _eq: 'weekly' } }] } : { id: { _eq: -1 } },
     sort: ['-start_date'],
@@ -112,8 +114,8 @@ export default function AbsencesPage() {
   }
 
   const hasTeams = memberTeamIds.length > 0 || coachTeamIds.length > 0 || effectiveIsAdmin
-  const isCoachOrResponsible = coachTeamIds.length > 0 || effectiveIsCoach
-  const showMineContent = activeTab === 'mine' || !hasTeams
+  const isTeamScope = scope === 'team' && hasTeams
+  const canEditOwn = (a: Absence) => relId(a.member) === String(user?.id) || isCoach || effectiveIsCoach
 
   return (
     <div>
@@ -126,52 +128,50 @@ export default function AbsencesPage() {
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('subtitle')}</p>
         </div>
         <div className="flex gap-2">
-          {activeTab !== 'weekly' && (activeTab !== 'team' || isCoachOrResponsible) && (
+          {viewType === 'absences' && scope === 'mine' && (
             <Button data-tour="import-absences" variant="outline" onClick={() => setImportOpen(true)}>
               <Upload className="mr-2 h-4 w-4" />
               {t('importAbsences')}
             </Button>
           )}
-          {activeTab === 'weekly' ? (
-            <Button
-              onClick={() => {
-                setEditingWeekly(null)
-                setWeeklyFormOpen(true)
-              }}
-            >
-              {t('newWeekly')}
-            </Button>
-          ) : activeTab === 'team' && !isCoachOrResponsible ? null : (
-            <Button
-              data-tour="new-absence"
-              onClick={() => {
-                setEditingAbsence(null)
-                setFormOpen(true)
-              }}
-            >
-              {t('newAbsence')}
-            </Button>
+          {scope === 'mine' && (
+            viewType === 'weekly' ? (
+              <Button onClick={() => { setEditingWeekly(null); setWeeklyFormOpen(true) }}>
+                {t('newWeekly')}
+              </Button>
+            ) : (
+              <Button data-tour="new-absence" onClick={() => { setEditingAbsence(null); setFormOpen(true) }}>
+                {t('newAbsence')}
+              </Button>
+            )
           )}
         </div>
       </div>
 
-      {/* Tabs */}
-      {hasTeams && (
-        <div className="mt-6">
+      {/* Two-axis toggle: viewType (Absences | Unavailabilities) × scope (Mine | Team) */}
+      <div className="mt-6 space-y-2">
+        <TabBar
+          tabs={[
+            { key: 'absences' as const, label: t('viewAbsences') },
+            { key: 'weekly' as const, label: t('viewUnavailabilities') },
+          ]}
+          active={viewType}
+          onChange={setViewType}
+        />
+        {hasTeams && (
           <TabBar
             tabs={[
-              { key: 'mine' as const, label: t('tabMyAbsences') },
-              { key: 'team' as const, label: t('tabTeamAbsences') },
-              { key: 'weekly' as const, label: t('tabWeeklyUnavailability') },
+              { key: 'mine' as const, label: t('scopeMine') },
+              { key: 'team' as const, label: t('scopeTeam') },
             ]}
-            active={activeTab}
-            onChange={setActiveTab}
+            active={scope}
+            onChange={setScope}
           />
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Content */}
-      {showMineContent ? (
+      {/* ─── Content quadrant ─── */}
+      {!isTeamScope && viewType === 'absences' && (
         <div className="mt-6" data-tour="my-absences">
           {myAbsences.length === 0 ? (
             <EmptyState
@@ -181,15 +181,25 @@ export default function AbsencesPage() {
             />
           ) : (
             <div className="space-y-3">
-              {upcomingAbsences.map((a) => (
-                <AbsenceCard
-                  key={a.id}
-                  absence={a}
-                  onEdit={handleEdit}
-                  onDelete={setDeletingId}
-                  canEdit={relId(a.member) === String(user?.id) || isCoach || effectiveIsCoach}
-                />
-              ))}
+              {upcomingAbsences.length > 0 && (
+                <div className="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-gray-500 dark:text-gray-400">{t('colReason')}</TableHead>
+                        <TableHead className="hidden md:table-cell text-gray-500 dark:text-gray-400">{t('colWhen')}</TableHead>
+                        <TableHead className="hidden sm:table-cell text-gray-500 dark:text-gray-400">{t('colAffects')}</TableHead>
+                        <TableHead className="w-32 text-right" />
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {upcomingAbsences.map((a) => (
+                        <AbsenceCard key={a.id} absence={a} onEdit={handleEdit} onDelete={setDeletingId} canEdit={canEditOwn(a)} />
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
               {upcomingAbsences.length === 0 && pastAbsences.length > 0 && (
                 <p className="text-sm text-muted-foreground">{t('noUpcomingAbsences')}</p>
               )}
@@ -204,16 +214,22 @@ export default function AbsencesPage() {
                     {t('showOlderAbsences', { count: pastAbsences.length })}
                   </button>
                   {showOlder && (
-                    <div className="space-y-3 mt-2">
-                      {pastAbsences.map((a) => (
-                        <AbsenceCard
-                          key={a.id}
-                          absence={a}
-                          onEdit={handleEdit}
-                          onDelete={setDeletingId}
-                          canEdit={relId(a.member) === String(user?.id) || isCoach || effectiveIsCoach}
-                        />
-                      ))}
+                    <div className="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 mt-2">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="text-gray-500 dark:text-gray-400">{t('colReason')}</TableHead>
+                            <TableHead className="hidden md:table-cell text-gray-500 dark:text-gray-400">{t('colWhen')}</TableHead>
+                            <TableHead className="hidden sm:table-cell text-gray-500 dark:text-gray-400">{t('colAffects')}</TableHead>
+                            <TableHead className="w-32 text-right" />
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {pastAbsences.map((a) => (
+                            <AbsenceCard key={a.id} absence={a} onEdit={handleEdit} onDelete={setDeletingId} canEdit={canEditOwn(a)} />
+                          ))}
+                        </TableBody>
+                      </Table>
                     </div>
                   )}
                 </div>
@@ -221,7 +237,45 @@ export default function AbsencesPage() {
             </div>
           )}
         </div>
-      ) : activeTab === 'team' ? (
+      )}
+
+      {!isTeamScope && viewType === 'weekly' && (
+        <div className="mt-6" data-tour="weekly-unavailability">
+          {myWeekly.length === 0 ? (
+            <EmptyState
+              icon={<CalendarClock className="h-10 w-10" />}
+              title={t('noWeeklyAbsences')}
+              description={t('noWeeklyAbsencesDescription')}
+            />
+          ) : (
+            <div className="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-gray-500 dark:text-gray-400">{t('colDays')}</TableHead>
+                    <TableHead className="hidden md:table-cell text-gray-500 dark:text-gray-400">{t('colWhen')}</TableHead>
+                    <TableHead className="hidden sm:table-cell text-gray-500 dark:text-gray-400">{t('colAffects')}</TableHead>
+                    <TableHead className="w-32 text-right" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {myWeekly.map((a) => (
+                    <WeeklyUnavailabilityCard
+                      key={a.id}
+                      absence={a}
+                      onEdit={handleWeeklyEdit}
+                      onDelete={setDeletingId}
+                      canEdit={canEditOwn(a)}
+                    />
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {isTeamScope && viewType === 'absences' && (
         <div className="mt-6" data-tour="team-absences">
           <TeamFilter selected={selectedTeam} onChange={setSelectedTeam} limitToTeamIds={visibleTeamIds} />
           <div className="mt-4">
@@ -233,39 +287,29 @@ export default function AbsencesPage() {
             />
           </div>
         </div>
-      ) : activeTab === 'weekly' ? (
-        <div className="mt-6" data-tour="weekly-unavailability">
-          {myWeekly.length === 0 ? (
-            <EmptyState
-              icon={<CalendarClock className="h-10 w-10" />}
-              title={t('noWeeklyAbsences')}
-              description={t('noWeeklyAbsencesDescription')}
+      )}
+
+      {isTeamScope && viewType === 'weekly' && (
+        <div className="mt-6" data-tour="team-weekly">
+          <TeamFilter selected={selectedTeam} onChange={setSelectedTeam} limitToTeamIds={visibleTeamIds} />
+          <div className="mt-4">
+            <TeamWeeklySection
+              teamIds={effectiveTeamIds}
+              onEdit={handleWeeklyEdit}
+              onDelete={setDeletingId}
+              currentUserId={String(user?.id ?? '')}
+              isCoachLike={isCoach || effectiveIsCoach}
             />
-          ) : (
-            <div className="space-y-3">
-              {myWeekly.map((a) => (
-                <WeeklyUnavailabilityCard
-                  key={a.id}
-                  absence={a}
-                  onEdit={handleWeeklyEdit}
-                  onDelete={setDeletingId}
-                  canEdit={relId(a.member) === String(user?.id) || isCoach || effectiveIsCoach}
-                />
-              ))}
-            </div>
-          )}
+          </div>
         </div>
-      ) : null}
+      )}
 
       <AbsenceForm
         open={formOpen}
         absence={editingAbsence}
         onSave={handleFormSave}
-        onCancel={() => {
-          setFormOpen(false)
-          setEditingAbsence(null)
-        }}
-        forTeam={activeTab === 'team'}
+        onCancel={() => { setFormOpen(false); setEditingAbsence(null) }}
+        forTeam={isTeamScope}
         teamIds={effectiveTeamIds}
       />
 
@@ -273,32 +317,105 @@ export default function AbsencesPage() {
         open={weeklyFormOpen}
         absence={editingWeekly}
         onSave={handleWeeklyFormSave}
-        onCancel={() => {
-          setWeeklyFormOpen(false)
-          setEditingWeekly(null)
-        }}
-        forTeam={activeTab === 'team'}
+        onCancel={() => { setWeeklyFormOpen(false); setEditingWeekly(null) }}
+        forTeam={isTeamScope}
         teamIds={effectiveTeamIds}
       />
 
       <AbsenceImportModal
         open={importOpen}
         onClose={() => setImportOpen(false)}
-        onComplete={() => {
-          setImportOpen(false)
-          refetch()
-        }}
+        onComplete={() => { setImportOpen(false); refetch() }}
       />
 
       <ConfirmDialog
         open={deletingId !== null}
         onClose={() => setDeletingId(null)}
         onConfirm={handleDelete}
-        title={activeTab === 'weekly' ? t('deleteWeeklyTitle') : t('deleteTitle')}
-        message={activeTab === 'weekly' ? t('deleteWeeklyMessage') : t('deleteMessage')}
+        title={viewType === 'weekly' ? t('deleteWeeklyTitle') : t('deleteTitle')}
+        message={viewType === 'weekly' ? t('deleteWeeklyMessage') : t('deleteMessage')}
         confirmLabel={t('common:delete')}
         danger
       />
+    </div>
+  )
+}
+
+/**
+ * Team-scoped weekly unavailabilities. Reuses useTeamAbsences (which fetches all
+ * absence types for the team) and filters client-side to type='weekly'. Date
+ * range is wide because weeklies are open-ended schedules, not point-in-time events.
+ */
+function TeamWeeklySection({
+  teamIds,
+  onEdit,
+  onDelete,
+  currentUserId,
+  isCoachLike,
+}: {
+  teamIds: string[]
+  onEdit: (a: Absence) => void
+  onDelete: (id: string) => void
+  currentUserId: string
+  isCoachLike: boolean
+}) {
+  const { t } = useTranslation('absences')
+  const today = new Date().toISOString().slice(0, 10)
+  const farFuture = (() => {
+    const d = new Date()
+    d.setFullYear(d.getFullYear() + 2)
+    return d.toISOString().slice(0, 10)
+  })()
+  const { absences, memberMap, isLoading } = useTeamAbsences(teamIds, today, farFuture)
+
+  const weeklies = useMemo(
+    () => absences.filter((a) => a.type === 'weekly'),
+    [absences],
+  )
+
+  if (isLoading) {
+    return <div className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">{t('common:loading')}</div>
+  }
+  if (weeklies.length === 0) {
+    return (
+      <EmptyState
+        icon={<CalendarClock className="h-10 w-10" />}
+        title={t('noTeamWeeklies')}
+        description={t('noTeamWeekliesDescription')}
+      />
+    )
+  }
+
+  return (
+    <div className="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="text-gray-500 dark:text-gray-400">{t('colMember')}</TableHead>
+            <TableHead className="text-gray-500 dark:text-gray-400">{t('colDays')}</TableHead>
+            <TableHead className="hidden md:table-cell text-gray-500 dark:text-gray-400">{t('colWhen')}</TableHead>
+            <TableHead className="hidden sm:table-cell text-gray-500 dark:text-gray-400">{t('colAffects')}</TableHead>
+            <TableHead className="w-32 text-right" />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {weeklies.map((a) => {
+            const m = asObj<Member>(a.member) ?? memberMap[relId(a.member)]
+            const memberName = [m?.first_name, m?.last_name].filter(Boolean).join(' ') || t('common:unknown')
+            const canEdit = relId(a.member) === currentUserId || isCoachLike
+            return (
+              <WeeklyUnavailabilityCard
+                key={a.id}
+                absence={a}
+                showMemberName={memberName !== ''}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                canEdit={canEdit}
+              />
+            )
+          })}
+        </TableBody>
+      </Table>
     </div>
   )
 }

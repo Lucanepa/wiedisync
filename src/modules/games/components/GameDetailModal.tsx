@@ -262,10 +262,10 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
           {/* Sets breakdown */}
           {sets.length > 0 && (
             <div className="mt-4 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
-              <table className="w-full text-center text-sm">
+              <table className="w-full text-center text-sm tabular-nums" style={{ tableLayout: 'fixed' }}>
                 <thead>
                   <tr className="bg-gray-50 dark:bg-gray-900 text-xs text-gray-500 dark:text-gray-400">
-                    <th className="px-3 py-2"></th>
+                    <th className="px-3 py-2 w-20 text-left"></th>
                     {sets.map((_, i) => (
                       <th key={i} className="px-3 py-2">
                         {t('set')} {i + 1}

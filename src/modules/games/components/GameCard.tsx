@@ -186,7 +186,7 @@ export default function GameCard({ game, onClick, variant = 'card', participatio
                     return (
                       <span
                         key={i}
-                        className={`rounded px-1.5 py-0.5 text-xs font-mono tabular-nums ${
+                        className={`inline-flex h-5 w-7 items-center justify-center rounded text-xs font-mono tabular-nums ${
                           homeSetWon === (game.type === 'home')
                             ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                             : 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400'
@@ -203,7 +203,7 @@ export default function GameCard({ game, onClick, variant = 'card', participatio
                     return (
                       <span
                         key={i}
-                        className={`rounded px-1.5 py-0.5 text-xs font-mono tabular-nums ${
+                        className={`inline-flex h-5 w-7 items-center justify-center rounded text-xs font-mono tabular-nums ${
                           homeSetWon !== (game.type === 'home')
                             ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                             : 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400'

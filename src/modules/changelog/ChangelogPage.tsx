@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.4.0'
+const APP_VERSION = '4.4.1'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,19 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.4.1',
+    date: '2026-04-25',
+    sections: [
+      {
+        title: 'Set-score boxes align cleanly',
+        items: [
+          'Per-set boxes in the games list and the game detail modal now share a fixed width — single-digit results (e.g. "8") no longer make the row jitter against double-digit results.',
+          'Same fix applied on kscw.ch (public game modal).',
+        ],
+      },
+    ],
+  },
   {
     version: '4.4.0',
     date: '2026-04-25',

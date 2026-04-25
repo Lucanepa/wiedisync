@@ -2,6 +2,11 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## [4.4.1] — 2026-04-25
+
+### Fixed
+- **Set-score box alignment.** Per-set boxes in `GameCard` (games list) now use a fixed `inline-flex h-5 w-7` cell so single-digit scores ("8") render at the same width as double-digit ones ("25") — rows no longer jitter. `GameDetailModal`'s sets table also gets `table-layout: fixed` + `tabular-nums`. Same fix applied on kscw.ch (`global.css → .gm-sets`) for the public game modal.
+
 ## [4.4.0] — 2026-04-25
 
 ### Added

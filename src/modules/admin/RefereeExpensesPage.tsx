@@ -7,6 +7,7 @@ import TeamChip from '../../components/TeamChip'
 import { teamNameToColorKey } from '../../utils/teamColors'
 import { formatDate } from '../../utils/dateHelpers'
 import { asObj } from '../../utils/relations'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table'
 
 type ExpandedExpense = RefereeExpense & {
   game: (Game & BaseRecord) | string
@@ -136,19 +137,19 @@ export default function RefereeExpensesPage() {
       ) : expenses.length === 0 ? (
         <div className="py-12 text-center text-sm text-gray-500 dark:text-gray-400">{t('refereeExpensesNoRecords')}</div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b bg-gray-50 text-xs font-medium uppercase tracking-wider text-gray-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400">
-                <th className="px-4 py-3">{t('refereeExpensesDate')}</th>
-                <th className="px-4 py-3">{t('refereeExpensesGame')}</th>
-                <th className="px-4 py-3">{t('refereeExpensesTeam')}</th>
-                <th className="px-4 py-3">{t('refereeExpensesPaidBy')}</th>
-                <th className="px-4 py-3 text-right">{t('refereeExpensesAmount')}</th>
-                <th className="px-4 py-3">{t('refereeExpensesNotes')}</th>
-              </tr>
-            </thead>
-            <tbody>
+        <div className="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900/40">
+                <TableHead className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">{t('refereeExpensesDate')}</TableHead>
+                <TableHead className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">{t('refereeExpensesGame')}</TableHead>
+                <TableHead className="hidden sm:table-cell text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">{t('refereeExpensesTeam')}</TableHead>
+                <TableHead className="hidden md:table-cell text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">{t('refereeExpensesPaidBy')}</TableHead>
+                <TableHead className="text-right text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">{t('refereeExpensesAmount')}</TableHead>
+                <TableHead className="hidden lg:table-cell text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">{t('refereeExpensesNotes')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {expenses.map((expense) => {
                 const game = asObj<Game & BaseRecord>(expense.game)
                 const team = asObj<Team & BaseRecord>(expense.team)
@@ -161,29 +162,27 @@ export default function RefereeExpensesPage() {
                   : expense.paid_by_other || '–'
 
                 return (
-                  <tr
-                    key={expense.id}
-                    className="border-b last:border-b-0 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                  >
-                    <td className="whitespace-nowrap px-4 py-3 text-gray-900 dark:text-gray-100">
+                  <TableRow key={expense.id} className="border-gray-200 dark:border-gray-700">
+                    <TableCell className="text-gray-900 dark:text-gray-100">
                       {game?.date ? formatDate(game.date) : '–'}
-                    </td>
-                    <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
-                      {game ? `${game.home_team} vs ${game.away_team}` : '–'}
-                    </td>
-                    <td className="px-4 py-3">
+                    </TableCell>
+                    <TableCell className="whitespace-normal text-gray-700 dark:text-gray-300">
+                      <span className="block sm:inline">{game ? `${game.home_team} vs ${game.away_team}` : '–'}</span>
+                      <span className="block sm:hidden text-xs text-gray-500 mt-0.5">{paidBy}</span>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       {teamKey && <TeamChip team={teamKey} size="xs" />}
-                    </td>
-                    <td className="px-4 py-3 text-gray-900 dark:text-gray-100">{paidBy}</td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right text-gray-900 dark:text-gray-100">
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-gray-900 dark:text-gray-100">{paidBy}</TableCell>
+                    <TableCell className="text-right text-gray-900 dark:text-gray-100">
                       {expense.amount > 0 ? `CHF ${expense.amount.toFixed(2)}` : '–'}
-                    </td>
-                    <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{expense.notes || '–'}</td>
-                  </tr>
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell whitespace-normal text-gray-500 dark:text-gray-400">{expense.notes || '–'}</TableCell>
+                  </TableRow>
                 )
               })}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
     </div>

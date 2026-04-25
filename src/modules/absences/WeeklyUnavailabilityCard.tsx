@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { formatDate } from '../../utils/dateHelpers'
+import { TableCell, TableRow } from '../../components/ui/table'
 import type { Absence, Member } from '../../types'
 import { asObj } from '../../utils/relations'
 
@@ -20,6 +21,9 @@ interface WeeklyUnavailabilityCardProps {
   canEdit: boolean
 }
 
+/**
+ * Renders a single `<TableRow>` — must be used inside a `<Table>`.
+ */
 export default function WeeklyUnavailabilityCard({ absence, onEdit, onDelete, showMemberName, canEdit }: WeeklyUnavailabilityCardProps) {
   const { t } = useTranslation('absences')
   const m = asObj<Member>(absence.member)
@@ -32,71 +36,71 @@ export default function WeeklyUnavailabilityCard({ absence, onEdit, onDelete, sh
     all: t('affectsAll'),
   }
 
+  const dateRange = `${formatDate(absence.start_date)}${
+    absence.indefinite
+      ? ` — ${t('indefinite')}`
+      : absence.start_date !== absence.end_date
+        ? ` — ${formatDate(absence.end_date)}`
+        : ''
+  }`
+
   return (
-    <div className="rounded-lg border dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3">
-      <div className="flex items-start justify-between gap-3">
-        <div className="space-y-2">
-          {/* Day pills */}
-          <div className="flex flex-wrap gap-1.5">
-            {(absence.days_of_week ?? []).sort().map((day) => (
-              <span
-                key={day}
-                className="rounded-full bg-brand-500 px-2.5 py-0.5 text-xs font-medium text-white"
-              >
-                {t(DAY_KEYS[day])}
+    <TableRow className="align-top">
+      {showMemberName && (
+        <TableCell className="whitespace-normal text-sm font-medium text-gray-900 dark:text-gray-100">
+          {memberName ?? '—'}
+        </TableCell>
+      )}
+      <TableCell className="whitespace-normal">
+        <div className="flex flex-wrap gap-1.5">
+          {(absence.days_of_week ?? []).sort().map((day) => (
+            <span
+              key={day}
+              className="rounded-full bg-brand-500 px-2.5 py-0.5 text-xs font-medium text-white"
+            >
+              {t(DAY_KEYS[day])}
+            </span>
+          ))}
+        </div>
+        <div className="md:hidden mt-1 text-xs text-gray-600 dark:text-gray-400">{dateRange}</div>
+      </TableCell>
+      <TableCell className="hidden md:table-cell whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+        {dateRange}
+      </TableCell>
+      <TableCell className="hidden sm:table-cell whitespace-normal">
+        {absence.affects && absence.affects.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {absence.affects.map((a) => (
+              <span key={a} className={`rounded px-2 py-0.5 text-xs ${AFFECTS_COLORS[a] ?? AFFECTS_COLORS.all}`}>
+                {affectsLabels[a] ?? a}
               </span>
             ))}
           </div>
-
-          {/* Date range */}
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm text-gray-700 dark:text-gray-300">
-              {formatDate(absence.start_date)}
-              {absence.indefinite
-                ? ` — ${t('indefinite')}`
-                : absence.start_date !== absence.end_date
-                  ? ` — ${formatDate(absence.end_date)}`
-                  : ''
-              }
-            </span>
-            {showMemberName && memberName && (
-              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{memberName}</span>
-            )}
-          </div>
-        </div>
-
-        {canEdit && (
-          <div className="flex gap-2">
+        )}
+        {absence.reason_detail && (
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{absence.reason_detail}</p>
+        )}
+      </TableCell>
+      {canEdit ? (
+        <TableCell className="text-right">
+          <div className="flex flex-col items-stretch gap-1 sm:flex-row sm:justify-end sm:gap-2">
             <button
               onClick={() => onEdit(absence)}
-              className="min-h-[44px] rounded px-3 py-2 text-sm text-brand-600 hover:bg-brand-50 hover:text-brand-700 sm:min-h-0 sm:py-1"
+              className="min-h-[36px] rounded px-3 py-1.5 text-sm text-brand-600 hover:bg-brand-50 hover:text-brand-700"
             >
               {t('common:edit')}
             </button>
             <button
               onClick={() => onDelete(absence.id)}
-              className="min-h-[44px] rounded px-3 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-800 sm:min-h-0 sm:py-1"
+              className="min-h-[36px] rounded px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 hover:text-red-800"
             >
               {t('common:delete')}
             </button>
           </div>
-        )}
-      </div>
-
-      {absence.reason_detail && (
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{absence.reason_detail}</p>
+        </TableCell>
+      ) : (
+        <TableCell />
       )}
-
-      {/* Affects chips */}
-      {absence.affects && absence.affects.length > 0 && (
-        <div className="mt-2 flex gap-1">
-          {absence.affects.map((a) => (
-            <span key={a} className={`rounded px-2 py-0.5 text-xs ${AFFECTS_COLORS[a] ?? AFFECTS_COLORS.all}`}>
-              {affectsLabels[a] ?? a}
-            </span>
-          ))}
-        </div>
-      )}
-    </div>
+    </TableRow>
   )
 }

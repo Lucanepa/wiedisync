@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import TeamChip from '../../components/TeamChip'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table'
 import type { CalendarEntry } from '../../types/calendar'
 import { toDateKey, formatDate } from '../../utils/dateUtils'
 
@@ -68,53 +69,68 @@ export default function UnifiedListView({ entries, onEntryClick }: UnifiedListVi
           <div className="border-b border-gray-100 bg-gray-50 dark:bg-gray-900 px-4 py-2">
             <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">{group.label}</h3>
           </div>
-          <div className="divide-y divide-gray-100 dark:divide-gray-700">
-            {group.entries.map((entry) => (
-              <button
-                type="button"
-                key={entry.id}
-                onClick={() => onEntryClick?.(entry)}
-                className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700"
-              >
-                {/* Type indicator */}
-                <div className="flex w-20 shrink-0 items-center gap-2">
-                  <div className={`h-2 w-2 shrink-0 rounded-full ${entryDot(entry)}`} />
-                  <span className="text-xs text-gray-500 dark:text-gray-400">{typeLabels[entry.type]}</span>
-                </div>
-
-                {/* Title */}
-                <div className="min-w-0 flex-1">
-                  <span className="text-sm text-gray-900 dark:text-gray-100">{entry.title}</span>
-                  {entry.description && (
-                    <span className="ml-2 text-xs text-gray-400">{entry.description}</span>
-                  )}
-                </div>
-
-                {/* Time */}
-                <div className="w-24 shrink-0 text-right text-sm text-gray-600 dark:text-gray-400">
-                  {entry.allDay
-                    ? t('common:allDay')
-                    : entry.startTime
-                      ? entry.endTime
-                        ? `${entry.startTime}–${entry.endTime}`
-                        : entry.startTime
-                      : ''}
-                </div>
-
-                {/* Location */}
-                <div className="hidden w-36 truncate text-xs text-gray-500 md:block">
-                  {entry.location}
-                </div>
-
-                {/* Team chips */}
-                <div className="flex shrink-0 gap-1">
-                  {entry.teamNames.map((name) => (
-                    <TeamChip key={name} team={name} size="sm" />
-                  ))}
-                </div>
-              </button>
-            ))}
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-24 text-xs uppercase text-gray-400">{t('colType')}</TableHead>
+                <TableHead className="text-xs uppercase text-gray-400">{t('colTitle')}</TableHead>
+                <TableHead className="text-right text-xs uppercase text-gray-400 whitespace-nowrap">{t('colTime')}</TableHead>
+                <TableHead className="hidden md:table-cell text-xs uppercase text-gray-400">{t('colLocation')}</TableHead>
+                <TableHead className="hidden sm:table-cell text-xs uppercase text-gray-400">{t('colTeams')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {group.entries.map((entry) => (
+                <TableRow
+                  key={entry.id}
+                  onClick={() => onEntryClick?.(entry)}
+                  className="cursor-pointer align-top"
+                >
+                  <TableCell className="whitespace-nowrap">
+                    <div className="flex items-center gap-2">
+                      <div className={`h-2 w-2 shrink-0 rounded-full ${entryDot(entry)}`} />
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{typeLabels[entry.type]}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="whitespace-normal text-sm text-gray-900 dark:text-gray-100">
+                    <span>{entry.title}</span>
+                    {entry.description && (
+                      <span className="ml-2 text-xs text-gray-400">{entry.description}</span>
+                    )}
+                    <div className="md:hidden mt-1 flex flex-wrap items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                      {entry.location && <span className="truncate">{entry.location}</span>}
+                      {entry.teamNames.length > 0 && (
+                        <div className="sm:hidden flex flex-wrap gap-1">
+                          {entry.teamNames.map((name) => (
+                            <TeamChip key={name} team={name} size="xs" />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                    {entry.allDay
+                      ? t('common:allDay')
+                      : entry.startTime
+                        ? entry.endTime
+                          ? `${entry.startTime}–${entry.endTime}`
+                          : entry.startTime
+                        : ''}
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell text-xs text-gray-500 truncate max-w-[10rem]">
+                    {entry.location}
+                  </TableCell>
+                  <TableCell className="hidden sm:table-cell">
+                    <div className="flex flex-wrap gap-1">
+                      {entry.teamNames.map((name) => (
+                        <TeamChip key={name} team={name} size="sm" />
+                      ))}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       ))}
     </div>

@@ -4,6 +4,7 @@ import { CalendarDays, List, CheckCircle } from 'lucide-react'
 import { useTeamAbsences } from '../../hooks/useTeamAbsences'
 import EmptyState from '../../components/EmptyState'
 import AbsenceCard from './AbsenceCard'
+import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import MonthGrid from '../calendar/components/MonthGrid'
 import CalendarEntryModal from '../calendar/CalendarEntryModal'
 import { toISODate } from '../../utils/dateHelpers'
@@ -122,21 +123,34 @@ export default function TeamAbsenceView({ teamIds, onEdit, onDelete, canEdit }: 
             description={t('noTeamAbsencesDescription')}
           />
         ) : (
-          <div className="space-y-3">
-            {sortedAbsences.map((a) => {
-              const member = asObj<Member>(a.member) ?? memberMap[relId(a.member)]
-              const memberName = [member?.first_name, member?.last_name].filter(Boolean).join(' ') || t('common:unknown')
-              return (
-                <AbsenceCard
-                  key={a.id}
-                  absence={a}
-                  memberName={memberName}
-                  onEdit={onEdit}
-                  onDelete={onDelete}
-                  canEdit={canEdit}
-                />
-              )
-            })}
+          <div className="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-gray-500 dark:text-gray-400">{t('colMember')}</TableHead>
+                  <TableHead className="text-gray-500 dark:text-gray-400">{t('colReason')}</TableHead>
+                  <TableHead className="hidden md:table-cell text-gray-500 dark:text-gray-400">{t('colWhen')}</TableHead>
+                  <TableHead className="hidden sm:table-cell text-gray-500 dark:text-gray-400">{t('colAffects')}</TableHead>
+                  <TableHead className="w-32 text-right" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sortedAbsences.map((a) => {
+                  const member = asObj<Member>(a.member) ?? memberMap[relId(a.member)]
+                  const memberName = [member?.first_name, member?.last_name].filter(Boolean).join(' ') || t('common:unknown')
+                  return (
+                    <AbsenceCard
+                      key={a.id}
+                      absence={a}
+                      memberName={memberName}
+                      onEdit={onEdit}
+                      onDelete={onDelete}
+                      canEdit={canEdit}
+                    />
+                  )
+                })}
+              </TableBody>
+            </Table>
           </div>
         )
       ) : (

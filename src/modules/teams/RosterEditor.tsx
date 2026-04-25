@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useParams, Link, Navigate } from 'react-router-dom'
 import { User, X } from 'lucide-react'
 import { logActivity } from '../../utils/logActivity'
-import { coercePositions, getPositionI18nKey, getSelectablePositions, isNonPlayingStaff } from '../../utils/memberPositions'
+import { coercePositions, getPositionI18nKey, getPositionInitial, getSelectablePositions, isNonPlayingStaff } from '../../utils/memberPositions'
 import { useAuth } from '../../hooks/useAuth'
 import { useTeamMembers } from '../../hooks/useTeamMembers'
 import { useMutation } from '../../hooks/useMutation'
@@ -18,6 +18,7 @@ import { getFileUrl } from '../../utils/fileUrl'
 import { getCurrentSeason } from '../../utils/dateHelpers'
 import type { Team, Member, MemberPosition, MemberTeam, TeamSettings } from '../../types'
 import { Button } from '../../components/ui/button'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table'
 import { fetchItems, updateRecord } from '../../lib/api'
 import { asObj, relId } from '../../utils/relations'
 
@@ -270,189 +271,184 @@ export default function RosterEditor() {
         {members.length === 0 ? (
           <EmptyState icon={<User className="h-10 w-10" />} title={t('noMembers')} description={t('noMembersDescription')} />
         ) : (
-          <div className="mt-4 space-y-2">
-            {sortedMembers.map((mt) => {
-              const member = asObj<Member>(mt.member)
-              if (!member) return null
-              const initials = `${member.first_name?.[0] ?? ''}${member.last_name?.[0] ?? ''}`.toUpperCase()
-              const isCaptain = team ? relId(team.captain) === String(member.id) : false
-              const overrides = localOverrides[String(member.id)]
-              const memberPositions = coercePositions(overrides?.position ?? member.position)
-              const memberNumber = overrides?.number ?? member.number
-              const nonPlaying = isNonPlayingStaff(member.id, team, memberPositions)
-              const selectablePositions = getSelectablePositions(team?.sport, memberPositions)
-              const mtId = String(mt.id)
-              const guestLevel = guestOverrides[mtId] ?? (mt.guest_level as number) ?? 0
+          <div className="mt-4 rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-gray-200 dark:border-gray-700">
+                  <TableHead className="w-10 hidden sm:table-cell" />
+                  <TableHead className="text-gray-500 dark:text-gray-400">{t('common:name')}</TableHead>
+                  <TableHead className="w-12 text-center text-gray-500 dark:text-gray-400">#</TableHead>
+                  <TableHead className="text-gray-500 dark:text-gray-400">{t('positionCol')}</TableHead>
+                  <TableHead className="w-16 text-center text-gray-500 dark:text-gray-400">K&nbsp;/&nbsp;G</TableHead>
+                  <TableHead className="w-8" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sortedMembers.map((mt) => {
+                  const member = asObj<Member>(mt.member)
+                  if (!member) return null
+                  const initials = `${member.first_name?.[0] ?? ''}${member.last_name?.[0] ?? ''}`.toUpperCase()
+                  const isCaptain = team ? relId(team.captain) === String(member.id) : false
+                  const overrides = localOverrides[String(member.id)]
+                  const memberPositions = coercePositions(overrides?.position ?? member.position)
+                  const memberNumber = overrides?.number ?? member.number
+                  const nonPlaying = isNonPlayingStaff(member.id, team, memberPositions)
+                  const selectablePositions = getSelectablePositions(team?.sport, memberPositions)
+                  const mtId = String(mt.id)
+                  const guestLevel = guestOverrides[mtId] ?? (mt.guest_level as number) ?? 0
 
-              /* ── Number input (shared between layouts) ── */
-              const numberEl = nonPlaying ? (
-                <span className="flex h-7 w-10 items-center justify-center text-sm text-gray-400 dark:text-gray-500">—</span>
-              ) : editingNumber === member.id ? (
-                <input
-                  type="number"
-                  value={numberValue}
-                  onChange={(e) => setNumberValue(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') saveNumber(member.id)
-                    else if (e.key === 'Escape') setEditingNumber(null)
-                  }}
-                  onBlur={() => saveNumber(member.id)}
-                  className="w-12 rounded-md border border-brand-400 bg-white px-1 py-0.5 text-center text-sm font-medium text-gray-900 shadow-sm ring-1 ring-brand-400/30 focus:outline-none dark:border-brand-500 dark:bg-gray-700 dark:text-gray-100 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                  autoFocus
-                />
-              ) : (
-                <button
-                  onClick={() => { setEditingNumber(member.id); setNumberValue(String(memberNumber || '')) }}
-                  className="flex h-7 w-10 items-center justify-center rounded-md border border-gray-200 text-sm font-medium text-gray-500 transition-colors hover:border-brand-400 hover:text-brand-600 dark:border-gray-600 dark:text-gray-400 dark:hover:border-brand-500 dark:hover:text-brand-400"
-                  title={t('numberCol')}
-                >
-                  {memberNumber || '—'}
-                </button>
-              )
+                  const numberEl = nonPlaying ? (
+                    <span className="flex h-7 w-10 mx-auto items-center justify-center text-sm text-gray-400 dark:text-gray-500">—</span>
+                  ) : editingNumber === member.id ? (
+                    <input
+                      type="number"
+                      value={numberValue}
+                      onChange={(e) => setNumberValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') saveNumber(member.id)
+                        else if (e.key === 'Escape') setEditingNumber(null)
+                      }}
+                      onBlur={() => saveNumber(member.id)}
+                      className="w-12 mx-auto block rounded-md border border-brand-400 bg-white px-1 py-0.5 text-center text-sm font-medium text-gray-900 shadow-sm ring-1 ring-brand-400/30 focus:outline-none dark:border-brand-500 dark:bg-gray-700 dark:text-gray-100 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                      autoFocus
+                    />
+                  ) : (
+                    <button
+                      onClick={() => { setEditingNumber(member.id); setNumberValue(String(memberNumber || '')) }}
+                      className="flex h-7 w-10 mx-auto items-center justify-center rounded-md border border-gray-200 text-sm font-medium text-gray-500 transition-colors hover:border-brand-400 hover:text-brand-600 dark:border-gray-600 dark:text-gray-400 dark:hover:border-brand-500 dark:hover:text-brand-400"
+                      title={t('numberCol')}
+                    >
+                      {memberNumber || '—'}
+                    </button>
+                  )
 
-              /* ── Captain button ── */
-              const captainEl = (
-                <button
-                  onClick={() => toggleRole(member.id, 'captain')}
-                  title={t(ROLE_I18N.captain)}
-                  className={`rounded px-1.5 py-0.5 text-xs font-medium transition-colors ${
-                    isCaptain
-                      ? ROLE_COLORS.captain
-                      : 'bg-gray-100 text-gray-400 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-500 dark:hover:bg-gray-600'
-                  }`}
-                >
-                  K
-                </button>
-              )
+                  const captainEl = (
+                    <button
+                      onClick={() => toggleRole(member.id, 'captain')}
+                      title={t(ROLE_I18N.captain)}
+                      className={`rounded px-1.5 py-0.5 text-xs font-medium transition-colors ${
+                        isCaptain
+                          ? ROLE_COLORS.captain
+                          : 'bg-gray-100 text-gray-400 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-500 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      K
+                    </button>
+                  )
 
-              /* ── Guest button ── */
-              const guestEl = (
-                <button
-                  onClick={async () => {
-                    const nextLevel = (guestLevel + 1) % 4
-                    setGuestOverrides((prev) => ({ ...prev, [mtId]: nextLevel }))
-                    try {
-                      await updateRecord('member_teams', mtId, { guest_level: nextLevel })
-                      logActivity('update', 'member_teams', mtId, { guest_level: nextLevel })
-                    } catch {
-                      setGuestOverrides((prev) => ({ ...prev, [mtId]: guestLevel }))
-                      toast.error(t('common:errorSaving'))
-                    }
-                  }}
-                  title={guestLevel === 0 ? t('guestLevel0') : t('guestLevelTooltip', { level: guestLevel })}
-                  className={`rounded px-1.5 py-0.5 text-xs font-medium transition-colors ${
-                    guestLevel === 0
-                      ? 'bg-gray-100 text-gray-400 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-500 dark:hover:bg-gray-600'
-                      : guestLevel === 1
-                        ? 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300'
-                        : guestLevel === 2
-                          ? 'bg-orange-100/70 text-orange-600 dark:bg-orange-900/60 dark:text-orange-400'
-                          : 'bg-orange-100/50 text-orange-500 dark:bg-orange-900/40 dark:text-orange-500'
-                  }`}
-                >
-                  {guestLevel === 0 ? t('guestBadge') : `G${guestLevel}`}
-                </button>
-              )
+                  const guestEl = (
+                    <button
+                      onClick={async () => {
+                        const nextLevel = (guestLevel + 1) % 4
+                        setGuestOverrides((prev) => ({ ...prev, [mtId]: nextLevel }))
+                        try {
+                          await updateRecord('member_teams', mtId, { guest_level: nextLevel })
+                          logActivity('update', 'member_teams', mtId, { guest_level: nextLevel })
+                        } catch {
+                          setGuestOverrides((prev) => ({ ...prev, [mtId]: guestLevel }))
+                          toast.error(t('common:errorSaving'))
+                        }
+                      }}
+                      title={guestLevel === 0 ? t('guestLevel0') : t('guestLevelTooltip', { level: guestLevel })}
+                      className={`rounded px-1.5 py-0.5 text-xs font-medium transition-colors ${
+                        guestLevel === 0
+                          ? 'bg-gray-100 text-gray-400 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-500 dark:hover:bg-gray-600'
+                          : guestLevel === 1
+                            ? 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300'
+                            : guestLevel === 2
+                              ? 'bg-orange-100/70 text-orange-600 dark:bg-orange-900/60 dark:text-orange-400'
+                              : 'bg-orange-100/50 text-orange-500 dark:bg-orange-900/40 dark:text-orange-500'
+                      }`}
+                    >
+                      {guestLevel === 0 ? t('guestBadge') : `G${guestLevel}`}
+                    </button>
+                  )
 
-              /* ── Remove button ── */
-              const removeEl = (
-                <button
-                  onClick={() => setRemovingId(mt.id as string)}
-                  className="shrink-0 p-1 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                  title={t('common:remove')}
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )
-
-              /* ── Position dropdown ── */
-              const positionEl = (
-                <div className="relative">
-                  <button
-                    onClick={() => setEditingPosition(editingPosition === member.id ? null : member.id)}
-                    className="w-full truncate rounded border border-gray-300 px-2 py-1 text-left text-xs text-gray-700 transition-colors hover:border-brand-400 dark:border-gray-600 dark:text-gray-100 dark:hover:border-brand-500 sm:w-40"
-                    title={t('positionCol')}
-                  >
-                    {memberPositions
-                      .map((p) => (getPositionI18nKey(p) ? t(getPositionI18nKey(p)!) : p))
-                      .join(', ') || '—'}
-                  </button>
-                  {editingPosition === member.id && (
-                    <>
-                      <div className="fixed inset-0 z-10" onClick={() => setEditingPosition(null)} />
-                      <div className="absolute left-0 z-20 mt-1 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-600 dark:bg-gray-800">
-                        {selectablePositions.map((p) => {
-                          const active = memberPositions.includes(p)
-                          return (
-                            <button
-                              key={p}
-                              onClick={() => {
-                                const next = (active
-                                  ? memberPositions.filter((pos) => pos !== p)
-                                  : [...memberPositions, p]) as MemberPosition[]
-                                savePosition(member.id, next.length > 0 ? next : ['other'])
-                              }}
-                              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
-                            >
-                              <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${active ? 'border-brand-500 bg-brand-500 text-white' : 'border-gray-300 dark:border-gray-500'}`}>
-                                {active && (
-                                  <svg className="h-3 w-3" viewBox="0 0 12 12">
-                                    <path d="M10 3L4.5 8.5 2 6" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                                  </svg>
-                                )}
-                              </span>
-                              {getPositionI18nKey(p) ? t(getPositionI18nKey(p)!) : p}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </>
-                  )}
-                </div>
-              )
-
-              return (
-                <div key={mt.id as string} className="rounded-lg border bg-white dark:bg-gray-800 dark:border-gray-700 px-3 py-2">
-                  {/* Mobile: multi-row layout */}
-                  <div className="sm:hidden">
-                    <div className="flex items-center gap-2">
-                      {member.photo ? (
-                        <img src={getFileUrl('members', member.id, member.photo)} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" />
-                      ) : (
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-200 dark:bg-gray-600 text-xs font-medium text-gray-600 dark:text-gray-300">{initials}</div>
+                  const positionLabelFull = memberPositions
+                    .map((p) => (getPositionI18nKey(p) ? t(getPositionI18nKey(p)!) : p))
+                    .join(', ') || '—'
+                  const positionLabelShort = memberPositions
+                    .map((p) => getPositionInitial(p))
+                    .join('/') || '—'
+                  const positionEl = (
+                    <div className="relative">
+                      <button
+                        onClick={() => setEditingPosition(editingPosition === member.id ? null : member.id)}
+                        className="rounded border border-gray-300 px-2 py-1 text-left text-xs text-gray-700 transition-colors hover:border-brand-400 dark:border-gray-600 dark:text-gray-100 dark:hover:border-brand-500 w-12 sm:w-40"
+                        title={positionLabelFull}
+                      >
+                        <span className="sm:hidden font-semibold tracking-wide">{positionLabelShort}</span>
+                        <span className="hidden sm:inline truncate">{positionLabelFull}</span>
+                      </button>
+                      {editingPosition === member.id && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={() => setEditingPosition(null)} />
+                          <div className="absolute left-0 z-20 mt-1 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-600 dark:bg-gray-800">
+                            {selectablePositions.map((p) => {
+                              const active = memberPositions.includes(p)
+                              return (
+                                <button
+                                  key={p}
+                                  onClick={() => {
+                                    const next = (active
+                                      ? memberPositions.filter((pos) => pos !== p)
+                                      : [...memberPositions, p]) as MemberPosition[]
+                                    savePosition(member.id, next.length > 0 ? next : ['other'])
+                                  }}
+                                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
+                                >
+                                  <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${active ? 'border-brand-500 bg-brand-500 text-white' : 'border-gray-300 dark:border-gray-500'}`}>
+                                    {active && (
+                                      <svg className="h-3 w-3" viewBox="0 0 12 12">
+                                        <path d="M10 3L4.5 8.5 2 6" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                                      </svg>
+                                    )}
+                                  </span>
+                                  {getPositionI18nKey(p) ? t(getPositionI18nKey(p)!) : p}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </>
                       )}
-                      <span className="min-w-0 flex-1 truncate text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {member.last_name} {member.first_name}
-                      </span>
-                      {numberEl}
-                      {captainEl}
-                      {guestEl}
-                      {removeEl}
                     </div>
-                    <div className="mt-1.5 pl-10">
-                      {positionEl}
-                    </div>
-                  </div>
+                  )
 
-                  {/* Desktop: single-row layout */}
-                  <div className="hidden sm:flex items-center gap-3">
-                    {member.photo ? (
-                      <img src={getFileUrl('members', member.id, member.photo)} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" />
-                    ) : (
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-200 dark:bg-gray-600 text-xs font-medium text-gray-600 dark:text-gray-300">{initials}</div>
-                    )}
-                    <span className="min-w-0 flex-1 truncate text-sm font-medium text-gray-900 dark:text-gray-100">
-                      {displayName(member)}
-                    </span>
-                    {numberEl}
-                    {positionEl}
-                    {captainEl}
-                    {guestEl}
-                    {removeEl}
-                  </div>
-                </div>
-              )
-            })}
+                  return (
+                    <TableRow key={mt.id as string} className="border-gray-200 dark:border-gray-700">
+                      <TableCell className="hidden sm:table-cell">
+                        {member.photo ? (
+                          <img src={getFileUrl('members', member.id, member.photo)} alt="" className="h-8 w-8 rounded-full object-cover" />
+                        ) : (
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 dark:bg-gray-600 text-xs font-medium text-gray-600 dark:text-gray-300">{initials}</div>
+                        )}
+                      </TableCell>
+                      <TableCell className="whitespace-normal text-sm font-medium text-gray-900 dark:text-gray-100 leading-tight">
+                        <span className="block sm:inline">{member.last_name}</span>
+                        <span className="block sm:inline sm:ml-1 text-gray-600 dark:text-gray-400 sm:text-gray-900 sm:dark:text-gray-100">{member.first_name}</span>
+                      </TableCell>
+                      <TableCell className="text-center">{numberEl}</TableCell>
+                      <TableCell>{positionEl}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col items-center gap-1 sm:flex-row sm:gap-1.5">
+                          {captainEl}
+                          {guestEl}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <button
+                          onClick={() => setRemovingId(mt.id as string)}
+                          className="p-1 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                          title={t('common:remove')}
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
           </div>
         )}
       </div>

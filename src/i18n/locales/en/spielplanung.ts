@@ -131,4 +131,11 @@ export default {
     markAsComboAB: 'Mark as KWI A + B',
     unmarkCombo: 'Back to single hall',
   },
+  colDate: 'Date',
+  colTime: 'Time',
+  colTeam: 'Team',
+  colMatchup: 'Matchup',
+  colType: 'H/A',
+  colHall: 'Hall',
+  colStatus: 'Status',
 } as const

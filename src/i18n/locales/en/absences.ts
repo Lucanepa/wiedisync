@@ -100,4 +100,17 @@ export default {
   dayFri: 'Fri',
   daySat: 'Sat',
   daySun: 'Sun',
+  // Table columns
+  colReason: 'Reason',
+  colWhen: 'When',
+  colAffects: 'Affects',
+  colMember: 'Member',
+  colDays: 'Days',
+  // 2-axis toggle
+  viewAbsences: 'Absences',
+  viewUnavailabilities: 'Unavailabilities',
+  scopeMine: 'Mine',
+  scopeTeam: 'Team',
+  noTeamWeeklies: 'No team weekly unavailabilities',
+  noTeamWeekliesDescription: 'Nobody on this team has set up a recurring weekly unavailability yet.',
 } as const

@@ -140,6 +140,11 @@ export default {
   auditResults: 'results',
   auditLoading: 'Loading audit log…',
   auditNoResults: 'No entries found.',
+  auditWhen: 'When',
+  auditAction: 'Action',
+  auditCollection: 'Collection',
+  auditRecord: 'Record',
+  auditActor: 'Actor',
 
   // Dashboard & Query page
   dashboardTab: 'Dashboard',
@@ -307,6 +312,10 @@ export default {
   anmeldungenUpdateError: 'Error updating registration',
   anmeldungenSelected: 'selected',
   anmeldungenSelectAll: 'Select all',
+  anmeldungenColName: 'Name',
+  anmeldungenColStatus: 'Status',
+  anmeldungenColTeam: 'Team',
+  anmeldungenColSubmitted: 'Submitted',
   anmeldungenDownloadCSV: 'CSV for ClubDesk',
   anmeldungenRejectTitle: 'Reject Registration',
   anmeldungenRejectReasonLabel: 'Reason',

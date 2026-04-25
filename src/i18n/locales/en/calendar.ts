@@ -55,4 +55,10 @@ export default {
   icalFilterLabel: 'What do you want to subscribe to?',
   icalTeamFilter: 'Filter by team',
   icalTeamHint: 'Empty = all teams',
+  // Table columns
+  colType: 'Type',
+  colTitle: 'Title',
+  colTime: 'Time',
+  colLocation: 'Location',
+  colTeams: 'Teams',
 } as const

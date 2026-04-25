@@ -2,6 +2,16 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## [4.4.0] — 2026-04-25
+
+### Added
+- **Tables convention.** New project-wide rule: any view of homogeneous data records uses shadcn `<Table>` (never card-stacks). Mobile compaction rules: names wrap to 2 lines, positions render as initials (S/O/M/D/L/G + BB equivalents), action toggles stack vertically on `<sm`, optional columns hide via `hidden sm:table-cell`. Reference impl: `RosterEditor`. Codified in `CLAUDE.md` + the `kscw-shadcn` skill, with explicit exceptions for event/activity cards (`GameCard`, `TrainingCard`, `EventCard`, `ScorerRow`), branded entity cards (`TeamCard`), and prose / release notes (`ChangelogPage`).
+- **Absences page redesigned around two axes.** Two stacked button toggles (Absences | Unavailabilities × Mine | Team) replace the single 3-tab bar; new "Team Unavailabilities" view shows everyone's recurring weekly schedules in your team. Team scope is now visible to all team members (was coach/team-responsible only) — Directus permissions were already permissive, the gate was UI-only.
+
+### Changed
+- **9 list views converted to tables.** Roster editor, referee expenses, announcements, admin reports, audit log, registrations (Anmeldungen), absences (mine + team + weekly), Spielplanung list view, calendar unified list, news archive. Each gains proper column structure with mobile compaction; inline editing preserved everywhere it existed before.
+- **Shared row components render `<TableRow>` directly.** `AbsenceCard` and `WeeklyUnavailabilityCard` now render single rows (not wrapping divs), so their parent pages wrap them in `<Table>` with consistent column layout. New `getPositionInitial()` helper in `memberPositions.ts`.
+
 ## [4.3.0] — 2026-04-24
 
 ### Added

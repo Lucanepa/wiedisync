@@ -100,4 +100,17 @@ export default {
   dayFri: 'Fr',
   daySat: 'Sa',
   daySun: 'So',
+  // Table columns
+  colReason: 'Grund',
+  colWhen: 'Wann',
+  colAffects: 'Betrifft',
+  colMember: 'Mitglied',
+  colDays: 'Tage',
+  // 2-axis toggle
+  viewAbsences: 'Absenzen',
+  viewUnavailabilities: 'Wöchentliche',
+  scopeMine: 'Meine',
+  scopeTeam: 'Team',
+  noTeamWeeklies: 'Keine wöchentlichen Abwesenheiten im Team',
+  noTeamWeekliesDescription: 'Niemand in diesem Team hat eine wöchentliche Abwesenheit hinterlegt.',
 } as const

@@ -1,13 +1,16 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Megaphone, Pin } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { useNotifications } from '../../hooks/useNotifications'
-import { useAnnouncements } from '../../hooks/useAnnouncements'
-import AnnouncementRow from '../home/components/AnnouncementRow'
+import { useAnnouncements, pickTranslation } from '../../hooks/useAnnouncements'
+import { stripHtml } from '../../components/RichText'
+import { assetUrl } from '../../lib/api'
+import { formatRelativeTimeZurich } from '../../utils/dateHelpers'
 import AnnouncementDetailModal from '../home/components/AnnouncementDetailModal'
 import LoadingSpinner from '../../components/LoadingSpinner'
+import { Table, TableBody, TableCell, TableRow } from '../../components/ui/table'
 import type { Announcement, Notification } from '../../types'
 
 type FeedItem =
@@ -17,7 +20,7 @@ type FeedItem =
 const PAGE_SIZE = 20
 
 export default function NewsArchivePage() {
-  const { t } = useTranslation('announcements')
+  const { t, i18n } = useTranslation('announcements')
   const { t: tn } = useTranslation('notifications')
   const navigate = useNavigate()
   const { user, isApproved } = useAuth()
@@ -83,22 +86,27 @@ export default function NewsArchivePage() {
         </div>
       ) : (
         <>
-          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-            {visible.map((item) =>
-              item.kind === 'announcement' ? (
-                <AnnouncementRow
-                  key={item.id}
-                  announcement={item.record}
-                  onClick={() => setSelectedAnnouncement(item.record)}
-                />
-              ) : (
-                <NewsArchiveNotificationRow
-                  key={item.id}
-                  notification={item.record}
-                  onMarkAsRead={markAsRead}
-                />
-              ),
-            )}
+          <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+            <Table>
+              <TableBody>
+                {visible.map((item) =>
+                  item.kind === 'announcement' ? (
+                    <AnnouncementTableRow
+                      key={item.id}
+                      announcement={item.record}
+                      lang={i18n.language}
+                      onClick={() => setSelectedAnnouncement(item.record)}
+                    />
+                  ) : (
+                    <NotificationTableRow
+                      key={item.id}
+                      notification={item.record}
+                      onMarkAsRead={markAsRead}
+                    />
+                  ),
+                )}
+              </TableBody>
+            </Table>
           </div>
           {hasMore && (
             <div className="mt-4 flex justify-center">
@@ -123,9 +131,54 @@ export default function NewsArchivePage() {
   )
 }
 
-// Lightweight inline notification row (mirrors HomePage NewsRow but kept local
-// to avoid coupling to home module internals).
-function NewsArchiveNotificationRow({
+function AnnouncementTableRow({
+  announcement,
+  lang,
+  onClick,
+}: {
+  announcement: Announcement
+  lang: string
+  onClick: () => void
+}) {
+  const tr = pickTranslation(announcement.translations, lang)
+  const timeAgo = (() => {
+    const ts = announcement.published_at ?? announcement.date_created
+    if (!ts) return ''
+    return formatRelativeTimeZurich(ts, lang)
+  })()
+  const excerpt = tr.body ? stripHtml(tr.body) : ''
+  const thumbUrl = announcement.image ? assetUrl(announcement.image, 'width=96&height=96&fit=cover') : ''
+
+  return (
+    <TableRow onClick={onClick} className="cursor-pointer align-top">
+      <TableCell className="hidden sm:table-cell w-12">
+        {thumbUrl ? (
+          <img src={thumbUrl} alt="" className="h-9 w-9 rounded-md object-cover" loading="lazy" />
+        ) : (
+          <span className="flex h-9 w-9 items-center justify-center rounded-md bg-brand-50 text-brand-600 dark:bg-brand-900/40 dark:text-brand-300">
+            <Megaphone className="h-4 w-4" />
+          </span>
+        )}
+      </TableCell>
+      <TableCell className="whitespace-normal">
+        <div className="flex items-center gap-1.5">
+          {announcement.pinned && (
+            <Pin className="h-3 w-3 shrink-0 text-gold-500 dark:text-gold-400" aria-label="Pinned" />
+          )}
+          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{tr.title}</span>
+        </div>
+        {excerpt && (
+          <p className="mt-0.5 line-clamp-2 text-xs text-gray-500 dark:text-gray-400">{excerpt}</p>
+        )}
+      </TableCell>
+      <TableCell className="text-right text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+        {timeAgo}
+      </TableCell>
+    </TableRow>
+  )
+}
+
+function NotificationTableRow({
   notification,
   onMarkAsRead,
 }: {
@@ -154,7 +207,7 @@ function NewsArchiveNotificationRow({
     if (minutes < 60) return String(t('minutesAgo', { count: minutes }))
     const hours = Math.floor(minutes / 60)
     if (hours < 24) return String(t('hoursAgo', { count: hours }))
-    const days = Math.floor(hours / 24)
+    const days = Math.floor(hours / 60 / 24)
     return String(t('daysAgo', { count: days }))
   })()
 
@@ -167,15 +220,20 @@ function NewsArchiveNotificationRow({
   })()
 
   return (
-    <div
+    <TableRow
       onClick={() => {
         if (!notification.read) onMarkAsRead(notification.id)
         navigate(path)
       }}
-      className="flex cursor-pointer items-center gap-3 border-b border-gray-100 px-4 py-2.5 last:border-b-0 hover:bg-gray-50 active:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-700/50 dark:active:bg-gray-700"
+      className="cursor-pointer align-top"
     >
-      <p className="min-w-0 flex-1 truncate text-sm text-gray-900 dark:text-gray-100">{message}</p>
-      <span className="shrink-0 text-xs text-gray-500 dark:text-gray-400">{timeAgo}</span>
-    </div>
+      <TableCell className="hidden sm:table-cell w-12" />
+      <TableCell className="whitespace-normal text-sm text-gray-900 dark:text-gray-100">
+        {message}
+      </TableCell>
+      <TableCell className="text-right text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+        {timeAgo}
+      </TableCell>
+    </TableRow>
   )
 }

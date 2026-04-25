@@ -519,6 +519,25 @@ export default {
         const upcomingPublic = upcomingGames.map(enrichGame)
         const resultsPublic = completedGames.map(enrichGame)
 
+        // Fall back to the linked hall's name/address when the training row's
+        // denormalized hall_name is empty (older trainings created before the
+        // column was populated still reference a hall via FK).
+        const hallIds = [...new Set(trainings.map((t) => t.hall).filter((id) => id != null))]
+        const hallById = hallIds.length
+          ? new Map(
+              (await database('halls').whereIn('id', hallIds).select('id', 'name', 'address'))
+                .map((h) => [h.id, h])
+            )
+          : new Map()
+        const trainingsPublic = trainings.map((t) => {
+          const h = t.hall != null ? hallById.get(t.hall) : null
+          return {
+            ...t,
+            hall_name: t.hall_name || (h?.name ?? null),
+            hall_address: t.hall_address || (h?.address ?? null),
+          }
+        })
+
         res.json({
           data: {
             ...team,
@@ -526,7 +545,7 @@ export default {
             coaches: coachesPublic,
             upcoming_games: upcomingPublic,
             results: resultsPublic,
-            upcoming_trainings: trainings,
+            upcoming_trainings: trainingsPublic,
             rankings,
             sponsors,
           },

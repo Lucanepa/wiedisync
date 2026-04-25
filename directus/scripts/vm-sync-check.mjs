@@ -403,17 +403,39 @@ async function syncToMembers(rows) {
     'Content-Type': 'application/json',
   };
 
-  // Build lookup: association_id (string) → row
+  const norm = (s) => (s == null ? '' : String(s).trim().toLowerCase());
+  const nameKey = (fn, ln) => `${norm(fn)}|${norm(ln)}`;
+  const nameDobKey = (fn, ln, dob) => `${norm(fn)}|${norm(ln)}|${dob || ''}`;
+
+  // Build lookups from VM rows. For name-only matches, drop colliding keys
+  // so we never bind a member to the wrong VM person.
   const rowByAssocId = new Map();
+  const rowByEmail = new Map();
+  const rowByNameDob = new Map();
+  const rowByName = new Map();
+  const nameCollisions = new Set();
   for (const row of rows) {
     if (row.association_id) rowByAssocId.set(String(row.association_id), row);
+    if (row.email) {
+      const k = norm(row.email);
+      if (k) rowByEmail.set(k, row);
+    }
+    if (row.first_name && row.last_name && row.birthday) {
+      rowByNameDob.set(nameDobKey(row.first_name, row.last_name, row.birthday), row);
+    }
+    if (row.first_name && row.last_name) {
+      const k = nameKey(row.first_name, row.last_name);
+      if (rowByName.has(k)) nameCollisions.add(k);
+      else rowByName.set(k, row);
+    }
   }
+  for (const k of nameCollisions) rowByName.delete(k);
 
-  // Fetch all members with a license_nr (paginated)
+  // Fetch all members (paginated) — we want to backfill members without license_nr too.
   const members = [];
   let page = 1;
   while (true) {
-    const url = `${DIRECTUS_URL}/items/members?fields=id,license_nr,sex,licences,vm_email&filter[license_nr][_nnull]=true&limit=250&page=${page}`;
+    const url = `${DIRECTUS_URL}/items/members?fields=id,license_nr,sex,licences,vm_email,email,first_name,last_name,birthdate,birthdate_visibility,licence_category,licence_activated,licence_validated&limit=250&page=${page}`;
     const res = await fetch(url, { headers });
     if (!res.ok) throw new Error(`Directus members list failed: ${res.status}`);
     const { data } = await res.json();
@@ -421,15 +443,37 @@ async function syncToMembers(rows) {
     members.push(...data);
     page++;
   }
-  console.log(`  Members with license_nr: ${members.length}`);
+  console.log(`  Members fetched: ${members.length}`);
 
   // Build update payloads
   const GENDER_MAP = { male: 'm', female: 'f', m: 'm', f: 'f' };
   const updates = [];
   let matched = 0;
+  let matchedByLicense = 0, matchedByEmail = 0, matchedByNameDob = 0, matchedByName = 0;
+  let backfilledLicense = 0, backfilledBirthdate = 0;
 
   for (const member of members) {
-    const row = rowByAssocId.get(String(member.license_nr));
+    let row = null;
+    if (member.license_nr) {
+      row = rowByAssocId.get(String(member.license_nr));
+      if (row) matchedByLicense++;
+    }
+    if (!row && member.email) {
+      row = rowByEmail.get(norm(member.email));
+      if (row) matchedByEmail++;
+    }
+    if (!row && member.vm_email) {
+      row = rowByEmail.get(norm(member.vm_email));
+      if (row) matchedByEmail++;
+    }
+    if (!row && member.first_name && member.last_name && member.birthdate) {
+      row = rowByNameDob.get(nameDobKey(member.first_name, member.last_name, member.birthdate));
+      if (row) matchedByNameDob++;
+    }
+    if (!row && member.first_name && member.last_name) {
+      row = rowByName.get(nameKey(member.first_name, member.last_name));
+      if (row) matchedByName++;
+    }
     if (!row) continue;
     matched++;
 
@@ -443,7 +487,37 @@ async function syncToMembers(rows) {
       changed = true;
     }
 
-    // Licence fields — read from sv_vm_check at query time, no longer synced to members
+    // Backfill license_nr (additive — never overwrite existing).
+    if (!member.license_nr && row.association_id) {
+      payload.license_nr = String(row.association_id);
+      backfilledLicense++;
+      changed = true;
+    }
+
+    // Backfill birthdate (additive). Default visibility to 'hidden' unless the
+    // member already opted into a different visibility.
+    if (!member.birthdate && row.birthday) {
+      payload.birthdate = row.birthday;
+      if (!member.birthdate_visibility) payload.birthdate_visibility = 'hidden';
+      backfilledBirthdate++;
+      changed = true;
+    }
+
+    // Licence fields — mirror to members so the field labels in the admin UI
+    // ("synced from Volleymanager") aren't misleading. sv_vm_check remains the
+    // source of truth; this is a denormalised cache for fast read.
+    if (row.licence_category != null && row.licence_category !== member.licence_category) {
+      payload.licence_category = row.licence_category;
+      changed = true;
+    }
+    if (row.licence_activated != null && row.licence_activated !== member.licence_activated) {
+      payload.licence_activated = row.licence_activated;
+      changed = true;
+    }
+    if (row.licence_validated != null && row.licence_validated !== member.licence_validated) {
+      payload.licence_validated = row.licence_validated;
+      changed = true;
+    }
 
     // VM email — store the email from Volleymanager
     if (row.email && row.email !== member.vm_email) {
@@ -466,7 +540,8 @@ async function syncToMembers(rows) {
     if (changed) updates.push(payload);
   }
 
-  console.log(`  Matched: ${matched}, To update: ${updates.length}`);
+  console.log(`  Matched: ${matched} (license=${matchedByLicense}, email=${matchedByEmail}, name+dob=${matchedByNameDob}, name=${matchedByName}), To update: ${updates.length}`);
+  console.log(`  Backfill: license_nr=${backfilledLicense}, birthdate=${backfilledBirthdate}`);
 
   // Batch PATCH in groups of 50
   let updated = 0, errors = 0;

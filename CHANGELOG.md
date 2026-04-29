@@ -2,6 +2,11 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## [4.4.3] — 2026-04-29
+
+### Fixed
+- **Member-scoped reads on absences, participations, events.** Continuing the audit in 4.4.2: `KSCW Member × {absences,participations,events} × read` all had `permissions = NULL`, so every member could read every other member's absence reasons, every RSVP across the club, and every event regardless of audience. Migration `033-member-read-team-scoping.sql` adds the `members.member_teams` o2m alias and scopes the rules: absences + participations to own + same-team-as-me; events to own + club-wide (`event_type ∈ {verein, tournament}`) + my-teams (via `events.teams`) + directly invited (via `events.invited_members`). Games left intentionally open (club-public schedule). Applied dev + prod.
+
 ## [4.4.2] — 2026-04-29
 
 ### Fixed

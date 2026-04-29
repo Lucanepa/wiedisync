@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.4.2'
+const APP_VERSION = '4.4.3'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,21 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.4.3',
+    date: '2026-04-29',
+    sections: [
+      {
+        title: 'Privacy: absences, RSVPs and events are scoped to your teams',
+        items: [
+          'You no longer see absences for members outside your own teams. Same goes for participation/RSVP rows on activities you have no access to.',
+          'Events are scoped too — you see club-wide events (Vereinsanlässe, tournaments), events your teams are invited to, events you were personally invited to, and events you created. Other teams\' private events are no longer visible.',
+          'Match schedules (games) intentionally remain visible across the club — same as before.',
+          'Coaches, Team Responsibles, Sport Admins and Vorstand keep their wider read access.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.4.2',
     date: '2026-04-29',

@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.4.1'
+const APP_VERSION = '4.4.2'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,20 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.4.2',
+    date: '2026-04-29',
+    sections: [
+      {
+        title: 'Trainings are scoped to your teams',
+        items: [
+          'Members now only see trainings for the teams they belong to — previously a permission gap meant every member could read every team\'s training records via the API.',
+          'Public access to the trainings endpoint was also removed; nothing public consumed it.',
+          'Coaches, Team Responsibles, Sport Admins and Vorstand are unaffected — their wider scope is preserved.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.4.1',
     date: '2026-04-25',

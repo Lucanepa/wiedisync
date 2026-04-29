@@ -2,6 +2,11 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## [4.4.2] — 2026-04-29
+
+### Fixed
+- **Trainings permission scoping.** `KSCW Member × trainings × read` had `permissions = NULL` (no row filter) — every member could fetch every team's trainings. Audit was triggered after Alex Leonhardt (member of H3 only) was seeing all 175 future trainings instead of his team's 11. Migration `032-trainings-team-scoping.sql` adds the `teams.members` o2m alias and scopes the rule to `{team:{members:{member:{user:{_eq:"$CURRENT_USER"}}}}}`. The `Public × trainings × read` row was also dropped — public never read trainings. Coach/Team Responsible/Sport Admin/Vorstand scopes preserved. Applied dev + prod.
+
 ## [4.4.1] — 2026-04-25
 
 ### Fixed

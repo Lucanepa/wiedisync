@@ -2,6 +2,11 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## [4.4.6] — 2026-04-30
+
+### Fixed
+- **Third-pass permission audit (migration 036).** KSCW Coach + Team Responsible `members.update` (fields=`position,number`) was NULL-filtered — coaches could edit number/position for any member via API. Scoped to members on a team I coach (Coach: `{member_teams:{team:{coach:{members_id:{user:{_eq:"$CURRENT_USER"}}}}}}`) / am responsible for (TR: `team_responsible` alias). KSCW Member reads on `event_sessions` + `events_members` scoped via parent event filter (mirrors `events.read` from 033). KSCW Coach reads + CUDs on `event_sessions` + `events_members` scoped via parent event = my-coached-team or my-created. Cleaned up duplicate `event_sessions`/`events_members`/`events_teams`/`hall_events_halls` permission rows left over from M2M re-creation. Out of scope: `member_teams`/`teams_coaches`/`teams_responsibles`/`teams_sponsors` — directory-level info legitimately readable across the club. Applied dev + prod.
+
 ## [4.4.5] — 2026-04-30
 
 ### Fixed

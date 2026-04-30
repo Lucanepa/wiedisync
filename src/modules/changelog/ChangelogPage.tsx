@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.4.5'
+const APP_VERSION = '4.4.6'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,20 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.4.6',
+    date: '2026-04-30',
+    sections: [
+      {
+        title: 'Third-pass permission audit',
+        items: [
+          'Coaches and Team Responsibles can now only edit position/number for members on a team they actually coach / are responsible for (the API field-level update was open before; the UI was already gating it).',
+          'Event sessions and event-member invitations are now visible only for events you can see — same scope as the events list itself.',
+          'Cleaned up duplicate permission rows left over from past M2M re-creations (cosmetic, no behaviour change).',
+        ],
+      },
+    ],
+  },
   {
     version: '4.4.5',
     date: '2026-04-30',

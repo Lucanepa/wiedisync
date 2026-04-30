@@ -2,6 +2,11 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## [4.4.4] — 2026-04-30
+
+### Fixed
+- **`spielplaner_assignments` had no member-side read perms.** Migration 031 created the collection but never inserted permission rows, so every non-admin user's `loadTeamContext` (`src/hooks/useAuth.tsx`) failed inside a `Promise.all`, leaving `memberTeamIds=[]`. Was masked by the wide-open reads in 4.4.1- — once 4.4.2/4.4.3 tightened reads to require team match, members started seeing no trainings/games/events and couldn't RSVP. Migration `034-spielplaner-assignments-read-perm.sql` grants self-scoped read (`{member:{user:{_eq:"$CURRENT_USER"}}}`) to every KSCW policy. Applied dev + prod.
+
 ## [4.4.3] — 2026-04-29
 
 ### Fixed

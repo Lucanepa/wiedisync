@@ -78,6 +78,7 @@ See `INFRA.md → Domains & Hosting Overview` for full map.
 
 ## Changelog
 <!-- Keep entries one line. For full details see CHANGELOG.md or git log. -->
+- **2026-04-30** v4.4.4 — Migration 034 — grants self-scoped `spielplaner_assignments.read` to all KSCW policies. Was missing since 031, masked by wide-open reads, surfaced once 032/033 tightened them — every member's `loadTeamContext` was silently failing.
 - **2026-04-29** v4.4.3 — Migration 033 — `KSCW Member` reads on `absences` / `participations` / `events` scoped (own + same-team for the first two; own + club-wide + invited-team / -member for events). Adds `members.member_teams` o2m alias.
 - **2026-04-29** v4.4.2 — Migration 032 — `trainings.read` scoped to user's teams (KSCW Member rule was unfiltered) + public read removed; adds `teams.members` o2m alias.
 - **2026-04-23** v4.2.0 — Spielplanung sandbox mode: manual game CRUD on calendar (create/edit/delete + bulk Excel import), scoped Spielplaner role (`spielplaner_assignments`), Week view with drag-to-reschedule on manual games (15-min snap + conflict guard), richer chips + detail drawer, season nav unclamped, SVRZ field locking.

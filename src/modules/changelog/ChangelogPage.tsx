@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.4.3'
+const APP_VERSION = '4.4.4'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,19 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.4.4',
+    date: '2026-04-30',
+    sections: [
+      {
+        title: 'RSVPs and team-context loads are working again',
+        items: [
+          'Yesterday\'s scoping fix surfaced an older bug: the `spielplaner_assignments` collection had no read permissions for any non-admin policy, so loading your team list silently failed for every member. Before the audit you couldn\'t tell because the wide-open backend just returned everything; once we tightened reads, the empty team list meant you saw nothing and couldn\'t RSVP.',
+          'Granted self-scoped read access to the collection for all KSCW policies. Team context now loads correctly and RSVPs work again.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.4.3',
     date: '2026-04-29',

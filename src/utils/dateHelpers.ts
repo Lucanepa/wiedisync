@@ -24,12 +24,29 @@ function formatZurichParts(d: Date): Record<string, string> {
   return Object.fromEntries(parts.map(p => [p.type, p.value]));
 }
 
+/**
+ * Parse a flexible string into a Date. Handles:
+ *   • ISO datetime ("YYYY-MM-DDTHH:MM:SS[Z|±hh:mm]") — passed through.
+ *   • "YYYY-MM-DD HH:MM:SS" (Postgres timestamp text) — treated as UTC.
+ *   • Bare "YYYY-MM-DD" — anchored to midnight UTC.
+ *
+ * Bare-date handling matters: appending just 'Z' to "2026-05-07" yields
+ * "2026-05-07Z", which V8 silently parses but Safari/JavaScriptCore rejects
+ * as Invalid Date. That made every bare `date` field render as "" on iOS
+ * Safari (e.g. trainings list missing weekday/date next to the team chip).
+ */
+function parseFlexible(input: string): Date {
+  if (input.includes('T')) return new Date(input);
+  if (input.includes(' ')) return new Date(input.replace(' ', 'T') + 'Z');
+  return new Date(input + 'T00:00:00Z');
+}
+
 /** Format HH:mm in Europe/Zurich, accepts ISO UTC, "YYYY-MM-DD HH:MM:SS" (treated as UTC), or bare "HH:MM". */
 export function formatTimeZurich(input: string | Date | null | undefined, locale?: string): string {
   if (!input) return '';
   if (typeof input === 'string' && /^\d{2}:\d{2}(:\d{2})?$/.test(input)) return input.slice(0, 5);
   const d = typeof input === 'string'
-    ? new Date(input.includes('T') ? input : input.replace(' ', 'T') + 'Z')
+    ? parseFlexible(input)
     : input;
   if (Number.isNaN(d.getTime())) return '';
   return new Intl.DateTimeFormat(locale ?? currentLocale(), {
@@ -41,7 +58,7 @@ export function formatTimeZurich(input: string | Date | null | undefined, locale
 export function formatDateZurich(input: string | Date | null | undefined, locale: string = 'de-CH'): string {
   if (!input) return '';
   const d = typeof input === 'string'
-    ? new Date(input.includes('T') ? input : input.replace(' ', 'T') + 'Z')
+    ? parseFlexible(input)
     : input;
   if (Number.isNaN(d.getTime())) return '';
   return new Intl.DateTimeFormat(locale, {
@@ -53,7 +70,7 @@ export function formatDateZurich(input: string | Date | null | undefined, locale
 export function formatDateCompactZurich(input: string | Date | null | undefined, locale?: string): string {
   if (!input) return '';
   const d = typeof input === 'string'
-    ? new Date(input.includes('T') ? input : input.replace(' ', 'T') + 'Z')
+    ? parseFlexible(input)
     : input;
   if (Number.isNaN(d.getTime())) return '';
   return new Intl.DateTimeFormat(locale ?? currentLocale(), {
@@ -65,7 +82,7 @@ export function formatDateCompactZurich(input: string | Date | null | undefined,
 export function formatDateShortZurich(input: string | Date | null | undefined): string {
   if (!input) return '';
   const d = typeof input === 'string'
-    ? new Date(input.includes('T') ? input : input.replace(' ', 'T') + 'Z')
+    ? parseFlexible(input)
     : input;
   if (Number.isNaN(d.getTime())) return '';
   const p = formatZurichParts(d);
@@ -76,7 +93,7 @@ export function formatDateShortZurich(input: string | Date | null | undefined): 
 export function formatWeekdayZurich(input: string | Date | null | undefined, locale: string = 'de-CH'): string {
   if (!input) return '';
   const d = typeof input === 'string'
-    ? new Date(input.includes('T') ? input : input.replace(' ', 'T') + 'Z')
+    ? parseFlexible(input)
     : input;
   if (Number.isNaN(d.getTime())) return '';
   return new Intl.DateTimeFormat(locale, { timeZone: ZURICH, weekday: 'short' }).format(d);
@@ -86,7 +103,7 @@ export function formatWeekdayZurich(input: string | Date | null | undefined, loc
 export function formatDateTimeCompactZurich(input: string | Date | null | undefined): string {
   if (!input) return '';
   const d = typeof input === 'string'
-    ? new Date(input.includes('T') ? input : input.replace(' ', 'T') + 'Z')
+    ? parseFlexible(input)
     : input;
   if (Number.isNaN(d.getTime())) return '';
   return `${formatDateCompactZurich(d)} ${formatTimeZurich(d)}`;
@@ -96,7 +113,7 @@ export function formatDateTimeCompactZurich(input: string | Date | null | undefi
 export function formatRelativeTimeZurich(input: string | Date | null | undefined, locale: string = 'de'): string {
   if (!input) return '';
   const d = typeof input === 'string'
-    ? new Date(input.includes('T') ? input : input.replace(' ', 'T') + 'Z')
+    ? parseFlexible(input)
     : input;
   if (Number.isNaN(d.getTime())) return '';
   const diffMs = d.getTime() - Date.now();

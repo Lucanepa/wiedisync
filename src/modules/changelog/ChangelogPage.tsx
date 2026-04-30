@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.4.6'
+const APP_VERSION = '4.4.7'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,24 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.4.7',
+    date: '2026-04-30',
+    sections: [
+      {
+        title: 'iOS Safari: training/event dates now render',
+        items: [
+          'Date columns coming back as bare "YYYY-MM-DD" were rendering empty on iPhone Safari (e.g. weekday next to the team chip on training cards). Root cause: the date formatter appended a `Z` to the bare date producing "2026-05-07Z", which V8 parses but JavaScriptCore rejects as Invalid Date — so the formatter returned `""`. Fixed by anchoring bare dates to `T00:00:00Z` before parsing. Affects every Zurich-zoned formatter (date, weekday, compact, datetime, relative, time).',
+        ],
+      },
+      {
+        title: 'M2M cascades on the remaining junctions',
+        items: [
+          'events_teams, events_members, hall_events_halls, hall_slots_teams, teams_sponsors had FKs declared `ON DELETE SET NULL` instead of CASCADE. When a parent (event/hall_event/hall_slot/team) was deleted, the junction row stayed behind with a NULL FK — Directus then serialised that NULL as the literal string "null" in `_in` filters, breaking integer columns with a 400 error. Migration 037 deletes existing orphans (5 events_teams, 1 events_members) and rebuilds the constraints as CASCADE. Continues the work of migration 021.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.4.6',
     date: '2026-04-30',

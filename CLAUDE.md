@@ -78,6 +78,7 @@ See `INFRA.md → Domains & Hosting Overview` for full map.
 
 ## Changelog
 <!-- Keep entries one line. For full details see CHANGELOG.md or git log. -->
+- **2026-04-30** v4.4.7 — Migration 037 — junction cascade pass 2 (`events_teams`, `events_members`, `hall_events_halls`, `hall_slots_teams`, `teams_sponsors` SET NULL → CASCADE; orphan cleanup) + iOS Safari `Invalid Date` fix in `dateHelpers.ts` (bare YYYY-MM-DD anchored to T00:00:00Z; V8 parsed `2026-05-07Z` but JavaScriptCore rejected → empty weekday/date on training cards).
 - **2026-04-30** v4.4.6 — Migration 036 — third-pass audit. Coach/TR `members.update` scoped to my-team members; Member + Coach reads on `event_sessions`/`events_members` scoped via parent-event filter; deduped leftover M2M-recreation permission rows.
 - **2026-04-30** v4.4.5 — Migration 035 — second-pass audit. Removed public reads on `participations`/`events`/`events_teams`/`slot_claims`; scoped Member reads on `polls`/`referee_expenses`; scoped Coach reads on `participations`/`absences`; revoked `event_signups` PG grant from anon/authenticated.
 - **2026-04-30** v4.4.4 — Migration 034 — grants self-scoped `spielplaner_assignments.read` to all KSCW policies. Was missing since 031, masked by wide-open reads, surfaced once 032/033 tightened them — every member's `loadTeamContext` was silently failing.

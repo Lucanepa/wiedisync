@@ -2,6 +2,12 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## [4.4.7] — 2026-04-30
+
+### Fixed
+- **iOS Safari Invalid Date on bare `YYYY-MM-DD` columns.** All Zurich-zoned formatters in `src/utils/dateHelpers.ts` (`formatTime/Date/DateCompact/DateShort/Weekday/DateTimeCompact/RelativeTime`) used `input.replace(' ', 'T') + 'Z'` to coerce timestamps to UTC. For bare `date` columns (e.g. `trainings.date = '2026-05-07'`), the no-op replace + 'Z' produced `'2026-05-07Z'` — V8 silently parses it, JavaScriptCore (Safari/iOS) returns Invalid Date → formatters returned `""`. Symptom: weekday + date next to team chip on training cards rendered as "H3, " (just the comma). Replaced the inline parser with a shared `parseFlexible(input)` helper that anchors bare dates to `T00:00:00Z`.
+- **Junction cascade pass 2 (migration 037).** Continuing migration 021. Five remaining M2M junctions had `ON DELETE SET NULL` on their integer FKs: `events_teams`, `events_members`, `hall_events_halls`, `hall_slots_teams`, `teams_sponsors`. Per the documented gotcha (`feedback_junction_cascade.md`), parent deletes leave orphan rows with NULL FKs that Directus serialises as the literal string `"null"` in `_in` filters → 400s on integer columns. Deleted existing orphans (5 in `events_teams`, 1 in `events_members`) and rebuilt the constraints as `CASCADE`. Applied dev + prod.
+
 ## [4.4.6] — 2026-04-30
 
 ### Fixed

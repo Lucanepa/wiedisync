@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.4.4'
+const APP_VERSION = '4.4.5'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,21 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.4.5',
+    date: '2026-04-30',
+    sections: [
+      {
+        title: 'Second-pass permission audit',
+        items: [
+          'Public (unauthenticated) access removed from participations, events, events_teams and slot_claims — these are internal data and were never consumed by the public site. The kept-public reads (games, members directory, halls, hall slots, rankings, sponsors) are unchanged.',
+          'Polls and referee expenses are now scoped to your own teams on read — like trainings and absences in the previous releases.',
+          'Coach reads on participations and absences are now scoped to teams the coach actually coaches (writes were already scoped; reads were left open).',
+          'Postgres-level grant on `event_signups` revoked from anon/authenticated — defense in depth; PostgREST is stopped, but the grant was still hanging.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.4.4',
     date: '2026-04-30',

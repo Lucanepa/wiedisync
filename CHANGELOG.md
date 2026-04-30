@@ -2,6 +2,11 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## [4.4.5] — 2026-04-30
+
+### Fixed
+- **Second-pass permission audit (migration 035).** Removed public reads on `participations` / `events` / `events_teams` / `slot_claims` (the public website doesn't consume them; participations was a real privacy leak — every RSVP across the club was anonymously readable). KSCW Member reads on `polls` and `referee_expenses` scoped to teams I'm on (`{team:{members:{member:{user:{_eq:"$CURRENT_USER"}}}}}`). KSCW Coach reads on `participations` and `absences` scoped to teams I coach (mirrors the CUD scoping from migration 026). KSCW Coach polls CUD also scoped. Postgres-level: `REVOKE ALL ON event_signups FROM anon, authenticated` — defense in depth; PostgREST is stopped but the Supabase default grant was still in place. `tasks` left intentionally open: no `team` FK (only activity_type/activity_id strings), filter would need sub-query support that Directus doesn't have. Applied dev + prod.
+
 ## [4.4.4] — 2026-04-30
 
 ### Fixed

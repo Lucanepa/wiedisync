@@ -43,6 +43,11 @@ export function initSentry() {
       const errMsg = event.exception?.values?.[0]?.value ?? ''
       if (errMsg.includes('No token for authenticating the websocket') ||
           errMsg.includes('No token for re-authenticating the websocket')) return null
+      // Suppress @directus/sdk websocket race: re-auth fires after the socket dropped
+      // (`r.connection.send` / `connection is undefined`). Realtime auto-reconnects.
+      const errStack = event.exception?.values?.[0]?.stacktrace?.frames?.map(f => f.filename ?? '').join(' ') ?? ''
+      if (errStack.includes('@directus/sdk') &&
+          /connection is undefined|cannot read propert(?:y|ies) of undefined.*\(reading 'send'\)/i.test(errMsg)) return null
       // Suppress browser-extension DOM manipulation errors (Google Translate, Grammarly, etc.)
       if (errMsg.includes("removeChild' on 'Node'") ||
           errMsg.includes("insertBefore' on 'Node'")) return null

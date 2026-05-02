@@ -2,6 +2,13 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## [4.4.8] — 2026-05-02
+
+### Fixed
+- **`user_logs` createRecord rejected with `Invalid query. Invalid numeric value.` for KSCW Members (WIEDISYNC-19, 36 users / 75 events).** The KSCW Member read policy on `user_logs` filtered `user._eq:$CURRENT_USER`, but `user_logs.user` is an integer FK to `members.id` while `$CURRENT_USER` resolves to the Directus user UUID. The INSERT succeeded; the post-insert SELECT through the RLS filter blew up parsing the UUID as integer. Patched permission filter on dev + prod to traverse the relation: `user.user._eq:$CURRENT_USER`.
+- **`vm_sync` cron `spawnSync ETIMEDOUT`.** Monthly Volleymanager sync used `execSync` with a 120s timeout, blocking the Directus event loop the whole time and timing out on slower months. Converted to async `spawn` with a 10-min timeout, matching the SVRZ scheduling-sync pattern.
+- **Sentry noise: `r.connection is undefined` from `@directus/sdk` (WIEDISYNC-3A).** SDK websocket re-auth race after the socket has already dropped. Realtime auto-reconnects; suppressed via `beforeSend` filter alongside the existing `No token for (re-)authenticating the websocket` suppressions.
+
 ## [4.4.7] — 2026-04-30
 
 ### Fixed

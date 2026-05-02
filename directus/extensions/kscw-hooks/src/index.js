@@ -1546,8 +1546,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     try {
       const token = await getCronAccessToken(log, 'VM sync')
       if (!token) return
-      const { execSync } = await import('node:child_process')
-      // Only pass required env vars to child process (avoid leaking secrets in crash dumps)
+      const { spawn } = await import('node:child_process')
       const env = {
         HOME: process.env.HOME,
         PATH: process.env.PATH,
@@ -1556,10 +1555,22 @@ export default ({ action, filter, init, schedule }, { services, database, logger
         DIRECTUS_URL: 'http://127.0.0.1:8055',
         DIRECTUS_TOKEN: token,
       }
-      const output = execSync('node /directus/scripts/vm-sync-check.mjs', {
-        env,
-        timeout: 120_000,
-        encoding: 'utf-8',
+      const output = await new Promise((resolve, reject) => {
+        const child = spawn('node', ['/directus/scripts/vm-sync-check.mjs'], { env })
+        let stdout = ''
+        let stderr = ''
+        child.stdout.on('data', (chunk) => { stdout += chunk.toString() })
+        child.stderr.on('data', (chunk) => { stderr += chunk.toString() })
+        const timer = setTimeout(() => {
+          child.kill('SIGKILL')
+          reject(Object.assign(new Error('VM sync timed out after 10 min'), { status: null }))
+        }, 600_000)
+        child.on('close', (code) => {
+          clearTimeout(timer)
+          if (code === 0) resolve(stdout)
+          else reject(Object.assign(new Error(`VM sync exited ${code}: ${stderr.slice(-500)}`), { status: code }))
+        })
+        child.on('error', (err) => { clearTimeout(timer); reject(err) })
       })
       log.info(`VM sync cron: ${output.split('\n').slice(-6).join(' | ')}`)
     } catch (err) {

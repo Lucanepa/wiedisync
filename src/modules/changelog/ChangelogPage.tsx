@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.4.7'
+const APP_VERSION = '4.4.8'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,24 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.4.8',
+    date: '2026-05-02',
+    sections: [
+      {
+        title: 'Activity log no longer fails for members',
+        items: [
+          'When a regular member edited a roster, slot, or RSVP, the silent activity-log write was being rejected by the API with "Invalid numeric value". The audit row was actually being created — the post-insert read was failing because the row-level filter compared an integer member id against the Directus user UUID. Fixed the filter to traverse through the member relation. Affected 36 members / 75 failed writes over the last month.',
+        ],
+      },
+      {
+        title: 'Volleymanager monthly sync no longer times out',
+        items: [
+          'The 1st-of-month VM licence sync was running with a 120s synchronous timeout that blocked the API event loop the whole time. Switched to an async spawn with a 10-minute budget, matching the SVRZ schedule sync.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.4.7',
     date: '2026-04-30',

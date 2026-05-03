@@ -69,10 +69,12 @@ export function useBulkParticipationStatuses(
 
   const isLoading = partLoading || absLoading
 
-  // Build lookup: activityId → effectiveStatus.
-  // The map's outward key is `activity.id` (callers do `statusMap.get(tr.id)`),
-  // but internally we index participations by the composite `type:id` so the
-  // event/training/game rows for the same numeric id never collide.
+  // Build lookup keyed by composite `type:id`. The numeric id alone is unsafe
+  // when callers iterate mixed activity types (the home page passes trainings,
+  // games and events together). A `training:1 declined` would otherwise be
+  // overwritten by an `event:1 confirmed` for the same member, painting the
+  // training row green. v4.4.12 fixed the input filter and `partByKey` lookup
+  // but missed the output map — this is the rest of that fix.
   const statusMap = useMemo(() => {
     const map = new Map<string, Participation['status'] | 'absent'>()
     if (!user) return map
@@ -83,21 +85,27 @@ export function useBulkParticipationStatuses(
     }
 
     for (const activity of activities) {
-      const participation = partByKey.get(`${activity.type}:${activity.id}`)
+      const key = `${activity.type}:${activity.id}`
+      const participation = partByKey.get(key)
 
       // Check if any absence covers this activity's date and type
       const hasAbsence = absences.some((a) => absenceCoversActivity(a, activity.type, activity.date))
 
       if (participation) {
-        map.set(activity.id, participation.status)
+        map.set(key, participation.status)
       } else if (hasAbsence) {
         // Will be auto-declined by useParticipation when the detail modal opens
-        map.set(activity.id, 'declined')
+        map.set(key, 'declined')
       }
     }
 
     return map
   }, [user, participations, absences, activities])
 
-  return { statusMap, isLoading }
+  const getStatus = useMemo(
+    () => (type: Participation['activity_type'], id: string) => statusMap.get(`${type}:${id}`),
+    [statusMap],
+  )
+
+  return { statusMap, getStatus, isLoading }
 }

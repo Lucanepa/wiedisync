@@ -127,7 +127,7 @@ export default function HomePage() {
   }, [today, sportFilter])
   const { data: allNextGamesRaw, isLoading: gamesLoading } = useCollection<ExpandedGame>('games', {
     filter: allGamesFilter,
-    fields: ['*', 'kscw_team.*', 'hall.*'],
+    fields: ['*', 'kscw_team.*', 'kscw_team.coach.members_id', 'kscw_team.team_responsible.members_id', 'hall.*'],
     sort: ['date', 'time'],
     limit: 5,
     enabled: showAllGames || !hasTeams,
@@ -143,7 +143,7 @@ export default function HomePage() {
   }, [today, teamGameFilter, sportFilter])
   const { data: myNextGamesRaw } = useCollection<ExpandedGame>('games', {
     filter: myGamesFilter,
-    fields: ['*', 'kscw_team.*', 'hall.*'],
+    fields: ['*', 'kscw_team.*', 'kscw_team.coach.members_id', 'kscw_team.team_responsible.members_id', 'hall.*'],
     sort: ['date', 'time'],
     limit: 5,
     enabled: hasTeams && !showAllGames,
@@ -158,7 +158,7 @@ export default function HomePage() {
   }, [sportFilter])
   const { data: allLatestResultsRaw, isLoading: resultsLoading } = useCollection<ExpandedGame>('games', {
     filter: allResultsFilter,
-    fields: ['*', 'kscw_team.*', 'hall.*'],
+    fields: ['*', 'kscw_team.*', 'kscw_team.coach.members_id', 'kscw_team.team_responsible.members_id', 'hall.*'],
     sort: ['-date', '-time'],
     limit: 5,
     enabled: showAllResults || !hasTeams,
@@ -174,7 +174,7 @@ export default function HomePage() {
   }, [teamGameFilter, sportFilter])
   const { data: myLatestResultsRaw } = useCollection<ExpandedGame>('games', {
     filter: myResultsFilter,
-    fields: ['*', 'kscw_team.*', 'hall.*'],
+    fields: ['*', 'kscw_team.*', 'kscw_team.coach.members_id', 'kscw_team.team_responsible.members_id', 'hall.*'],
     sort: ['-date', '-time'],
     limit: 5,
     enabled: hasTeams && !showAllResults,
@@ -196,7 +196,7 @@ export default function HomePage() {
 
   const { data: nextTrainingsRaw, isLoading: trainingsLoading } = useCollection<TrainingExpanded>('trainings', {
     filter: trainingFilter as Record<string, unknown> | undefined,
-    fields: ['*', 'team.*', 'hall.*', 'coach.*'],
+    fields: ['*', 'team.*', 'team.coach.members_id', 'team.team_responsible.members_id', 'hall.*', 'coach.*'],
     sort: ['date', 'start_time'],
     limit: 10,
     enabled: hasTeams,
@@ -300,7 +300,7 @@ export default function HomePage() {
     return items
   }, [allDataLoaded, nextGames, latestResults, nextTrainings, events])
 
-  const { statusMap: participationStatuses, isLoading: bulkPartLoading } = useBulkParticipationStatuses(allActivities)
+  const { getStatus: getParticipationStatus, isLoading: bulkPartLoading } = useBulkParticipationStatuses(allActivities)
 
   // Combined loading: wait for all primary data + participation statuses
   // For logged-in users, we need member_teams + all dependent queries + participation statuses
@@ -430,7 +430,7 @@ export default function HomePage() {
               onGameClick={setSelectedGame}
               onTrainingClick={setSelectedTraining}
               onEventClick={setSelectedEvent}
-              participationStatuses={participationStatuses}
+              getParticipationStatus={getParticipationStatus}
             />
           </div>
           {userLeagueGroups.size > 0 && (
@@ -460,7 +460,7 @@ export default function HomePage() {
               <SectionHeader title={t('nextTrainings')} linkTo="/trainings" linkLabel={t('allTrainings')} />
               <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
                 {nextTrainings.map((tr) => (
-                  <CompactTrainingRow key={tr.id} training={tr} onClick={() => setSelectedTraining(tr)} participationStatus={participationStatuses.get(tr.id)} />
+                  <CompactTrainingRow key={tr.id} training={tr} onClick={() => setSelectedTraining(tr)} participationStatus={getParticipationStatus('training', tr.id)} />
                 ))}
               </div>
             </div>
@@ -471,7 +471,7 @@ export default function HomePage() {
               <SectionHeader title={t('events')} linkTo="/events" linkLabel={t('allEvents')} />
               <div className="space-y-3">
                 {events.map((event) => (
-                  <EventRow key={event.id} event={event} onClick={() => setSelectedEvent(event)} participationStatus={participationStatuses.get(event.id)} />
+                  <EventRow key={event.id} event={event} onClick={() => setSelectedEvent(event)} participationStatus={getParticipationStatus('event', event.id)} />
                 ))}
               </div>
             </div>
@@ -493,7 +493,7 @@ export default function HomePage() {
                   />
                   <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
                     {latestResults.map((g) => (
-                      <CompactGameRow key={g.id} game={g} showScore onClick={() => setSelectedGame(g)} participationStatus={participationStatuses.get(g.id)} />
+                      <CompactGameRow key={g.id} game={g} showScore onClick={() => setSelectedGame(g)} participationStatus={getParticipationStatus('game', g.id)} />
                     ))}
                   </div>
                 </div>
@@ -513,7 +513,7 @@ export default function HomePage() {
                   />
                   <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
                     {nextGames.map((g) => (
-                      <CompactGameRow key={g.id} game={g} showScore={false} onClick={() => setSelectedGame(g)} participationStatus={participationStatuses.get(g.id)} />
+                      <CompactGameRow key={g.id} game={g} showScore={false} onClick={() => setSelectedGame(g)} participationStatus={getParticipationStatus('game', g.id)} />
                     ))}
                   </div>
                 </div>
@@ -526,7 +526,7 @@ export default function HomePage() {
               <SectionHeader title={t('nextGames')} linkTo="/games" linkLabel={t('allGames')} />
               <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
                 {nextGames.map((g) => (
-                  <CompactGameRow key={g.id} game={g} showScore={false} onClick={() => setSelectedGame(g)} participationStatus={participationStatuses.get(g.id)} />
+                  <CompactGameRow key={g.id} game={g} showScore={false} onClick={() => setSelectedGame(g)} participationStatus={getParticipationStatus('game', g.id)} />
                 ))}
               </div>
             </div>
@@ -967,7 +967,7 @@ function NextAppointments({
   onGameClick,
   onTrainingClick,
   onEventClick,
-  participationStatuses,
+  getParticipationStatus,
 }: {
   games: ExpandedGame[]
   trainings: TrainingExpanded[]
@@ -975,7 +975,7 @@ function NextAppointments({
   onGameClick: (g: ExpandedGame) => void
   onTrainingClick: (t: TrainingExpanded) => void
   onEventClick: (e: EventExpanded) => void
-  participationStatuses: Map<string, string>
+  getParticipationStatus: (type: 'game' | 'training' | 'event', id: string) => string | undefined
 }) {
   const { t } = useTranslation('home')
   const [visibleCount, setVisibleCount] = useState(10)
@@ -1024,7 +1024,7 @@ function NextAppointments({
                   key={`${apt.type}-${apt.data.id}`}
                   appointment={apt}
                   onClick={renderOnClick(apt)}
-                  participationStatus={participationStatuses.get(apt.data.id)}
+                  participationStatus={getParticipationStatus(apt.type, apt.data.id)}
                 />
               ))}
             </tbody>
@@ -1039,7 +1039,7 @@ function NextAppointments({
             key={`${apt.type}-${apt.data.id}`}
             appointment={apt}
             onClick={renderOnClick(apt)}
-            participationStatus={participationStatuses.get(apt.data.id)}
+            participationStatus={getParticipationStatus(apt.type, apt.data.id)}
           />
         ))}
       </div>

@@ -68,16 +68,22 @@ export async function vmLogin({ username, password }) {
   // 3. Dashboard (sets session permissions)
   await follow(`${VM_BASE}/`, jar);
 
+  // 4. Enter the volleyball sub-app context. Without this step every indoor
+  // page except /sportmanager.indoorvolleyball/game/index returns 403 — the
+  // session is authenticated but has no sub-app scope. Discovered 2026-05-03.
+  await follow(`${VM_BASE}/sportmanager.volleyball/main/dashboard`, jar);
+
   return jar;
 }
 
 // ─── CSRF extraction ─────────────────────────────────────────────────
 export async function csrfFromPage(jar, pagePath) {
-  const { body } = await follow(
+  const { response, body } = await follow(
     `${VM_BASE}${pagePath}`,
     jar,
     { headers: { Accept: 'text/html', Referer: `${VM_BASE}/` } },
   );
+  if (!response.ok) throw new Error(`csrfFromPage ${pagePath} → HTTP ${response.status}`);
   const csrf = body.match(/data-csrf-token="([^"]+)"/)?.[1];
   const wuid = body.match(/data-window-unique-id="([^"]+)"/)?.[1] || '';
   if (!csrf) throw new Error(`CSRF token extraction failed for ${pagePath}`);

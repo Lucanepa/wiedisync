@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.4.12'
+const APP_VERSION = '4.4.14'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,30 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.4.14',
+    date: '2026-05-03',
+    sections: [
+      {
+        title: 'Home agenda — Mondays no longer green when you\'re unavailable, "Coach present" badge no longer hidden',
+        items: [
+          'Two related "My next appointments" bugs on the home page. (1) The strip on training rows could still render green ("confirmed") even with a `declined` participation and a covering weekly absence. v4.4.12 fixed the *internal* lookup in `useBulkParticipationStatuses` to use the composite `(activity_type, activity_id)` key, but missed the *output* map — that one still keyed by numeric `activity_id` alone. As soon as the home page passed a mixed list of trainings + games + events to the hook, an `event:1 confirmed` overwrote `training:1 declined` (last write wins), and every Monday training on row id=1..4 painted itself green even though the underlying participation was declined. Output map now keyed by composite, callers updated to pass `(type, id)` via a new `getParticipationStatus(type, id)` accessor. (2) "Coach present" badge was missing on most trainings the user was actually coaching. The home page fetched trainings with `team.*`, which only expands scalar fields + M2O FKs — so `team.coach` and `team.team_responsible` (both M2M) were `undefined`, and `teamCoachIds(team)` returned just the captain. Player-coaches (the user, in this case) were invisible to the badge logic. Added `team.coach.members_id`, `team.team_responsible.members_id` to the trainings fetch, and the equivalent `kscw_team.coach.members_id` / `kscw_team.team_responsible.members_id` to all four games fetches.',
+        ],
+      },
+    ],
+  },
+  {
+    version: '4.4.13',
+    date: '2026-05-03',
+    sections: [
+      {
+        title: 'SVRZ daily sync was crashing — now fixed',
+        items: [
+          'The Volleymanager scheduling sync (`svrz_sync` cron) had been failing every morning at 04:30 with what looked like a CSRF parsing error on the SVRZ "playing-schedule responsible addresses" page. Real cause was hidden behind a misleading error: after login the script needs to enter the volleyball sub-app context (a step the browser does invisibly), and without it every indoor page except the games list returns 403 Forbidden. `csrfFromPage()` only checked the regex, not the HTTP status, so a 403 error page surfaced as "CSRF token extraction failed". Added the missing context-enter step to the login flow — verified live against prod, all SVRZ pages reachable again. Same fix also future-proofs the monthly licence sync (vm-sync-check), which would have hit the same 403 on June 1. Hardened the CSRF helper to report HTTP status on failure so future SVRZ-side drift is diagnosed in one log line.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.4.12',
     date: '2026-05-03',

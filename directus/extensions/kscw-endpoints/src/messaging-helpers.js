@@ -4,6 +4,8 @@
  * Plan 03+ will add DM/request-specific helpers here.
  */
 
+import { tPush } from './push-i18n.js'
+
 export class MessagingError extends Error {
   constructor(status, code, message, details) {
     super(message)
@@ -373,9 +375,14 @@ export async function resolveRecipientsForPush(db, conv, senderMemberId) {
 /**
  * Build the push preview string per the recipient's push_preview_content flag.
  * Falls back to generic copy when body is missing or preview is disabled.
+ *
+ * @param {{push_preview_content?: boolean}} recipient
+ * @param {string} senderName
+ * @param {string} body
+ * @param {string} [locale] - short code: de | gsw | en | fr | it (defaults to de)
  */
-export function buildPushPreview(recipient, senderName, body) {
-  const generic = 'Neue Nachricht in KSCW'
+export function buildPushPreview(recipient, senderName, body, locale = 'de') {
+  const generic = tPush(locale, 'message.generic')
   const showContent = recipient?.push_preview_content === true
   if (!showContent) return generic
   if (!body || typeof body !== 'string' || body.length === 0) return generic

@@ -2,6 +2,7 @@ export default {
   confirmed: 'Confirme',
   declined: 'Decline',
   declinedAbsence: 'Decline (Absence)',
+  declinedUnavailable: 'Indisponible',
   tentative: 'Peut-etre',
   absent: 'Absent',
   rsvp: 'RSVP',

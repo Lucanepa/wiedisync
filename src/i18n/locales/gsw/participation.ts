@@ -2,6 +2,7 @@ export default {
   confirmed: 'Zuegseit',
   declined: 'Abgseit',
   declinedAbsence: 'Abgseit (Absänz)',
+  declinedUnavailable: 'Nöd verfüegbar',
   tentative: 'Villicht',
   absent: 'Abwesend',
   rsvp: 'Antworte',

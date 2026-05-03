@@ -116,11 +116,16 @@ export function registerEventNotify(router, { services, database, getSchema, log
 
       await db('notifications').insert(notifRows)
 
-      // Send web push
+      // Send web push (per-recipient locale; event.title kept as-is)
       try {
         const { sendPushToMembers } = await import('./web-push.js')
+        const { sendLocalizedPush } = await import('./push-i18n.js')
         const url = `${FRONTEND_URL}/events`
-        await sendPushToMembers(db, memberIdArray, event.title, 'Du wurdest eingeladen', url, `event-${eventId}`, logger)
+        await sendLocalizedPush(
+          db, memberIdArray,
+          (ids, title, body) => sendPushToMembers(db, ids, title, body, url, `event-${eventId}`, logger),
+          null, 'eventInvite.body', {}, event.title,
+        )
       } catch (pushErr) {
         logger.warn('Push notification failed:', pushErr.message)
       }

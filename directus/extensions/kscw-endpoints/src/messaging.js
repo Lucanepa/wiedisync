@@ -37,24 +37,33 @@ export function registerMessaging(router, ctx) {
       if (recipientIds.length === 0) return
       const recipients = await db('members')
         .whereIn('id', recipientIds)
-        .select('id', 'push_preview_content')
+        .select('id', 'push_preview_content', 'language')
       const senderName = [sender.first_name, sender.last_name].filter(Boolean).join(' ') || 'KSCW'
 
-      const withPreview = recipients.filter(r => r.push_preview_content === true).map(r => r.id)
-      const genericOnly = recipients.filter(r => r.push_preview_content !== true).map(r => r.id)
-
       const { sendPushToMembers } = await import('./web-push.js')
+      const { memberLangToCode } = await import('./push-i18n.js')
       const url = process.env.FRONTEND_URL || 'https://wiedisync.kscw.ch'
       const pushUrl = `${url}/inbox/${conv.id}`
       const tag = `msg-${conv.id}`
 
-      if (withPreview.length > 0) {
-        const previewBody = buildPushPreview({ push_preview_content: true }, senderName, opts.pollQuestion ? `📊 ${opts.pollQuestion}` : body)
-        await sendPushToMembers(db, withPreview, senderName, previewBody, pushUrl, tag, log)
+      // Group by (preview-flag × locale) so the generic fallback string is
+      // localized and the preview group still gets the sender's actual content.
+      const groups = new Map() // key: `${preview ? 'p' : 'g'}-${code}` → { preview, code, ids[] }
+      for (const r of recipients) {
+        const code = memberLangToCode(r.language)
+        const preview = r.push_preview_content === true
+        const key = `${preview ? 'p' : 'g'}-${code}`
+        if (!groups.has(key)) groups.set(key, { preview, code, ids: [] })
+        groups.get(key).ids.push(r.id)
       }
-      if (genericOnly.length > 0) {
-        const genericBody = buildPushPreview({ push_preview_content: false }, senderName, body)
-        await sendPushToMembers(db, genericOnly, 'KSC Wiedikon', genericBody, pushUrl, tag, log)
+
+      for (const { preview, code, ids } of groups.values()) {
+        if (ids.length === 0) continue
+        const bodyText = preview
+          ? buildPushPreview({ push_preview_content: true }, senderName, opts.pollQuestion ? `📊 ${opts.pollQuestion}` : body, code)
+          : buildPushPreview({ push_preview_content: false }, senderName, body, code)
+        const title = preview ? senderName : 'KSC Wiedikon'
+        await sendPushToMembers(db, ids, title, bodyText, pushUrl, tag, log)
       }
     } catch (err) {
       log.error({ err: err?.message ?? String(err) }, 'messaging push fan-out failed')

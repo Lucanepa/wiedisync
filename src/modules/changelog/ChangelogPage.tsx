@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.4.8'
+const APP_VERSION = '4.4.10'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,31 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.4.10',
+    date: '2026-05-03',
+    sections: [
+      {
+        title: 'Weekly unavailability now actually overrides existing RSVPs',
+        items: [
+          'Setting a weekly unavailability after you had already RSVP\'d ✓ to a covered training/game/event left your participation stuck on confirmed — the green strip on the row stayed green even though the roster modal showed "Declined (Absence)". The auto-decline hook only INSERTed new declines and skipped any activity where a participation row already existed; the new RSVP path also did not respect existing absences. Hook now UPDATEs existing confirmed/tentative/waitlisted rows on absence create/update and a new participation-create filter silently flips fresh RSVPs to declined when a covering absence exists. Migration 038 reshapes the `auto_declined_by` clear-marker trigger so the hook can set status + marker in one statement, and backfills currently-conflicting rows (6 rows on prod).',
+          'Roster modal now distinguishes weekly unavailability ("Unavailable") from one-time absence ("Declined (Absence)"), and respects `days_of_week` + `affects` so a Mon-only weekly absence no longer marks you absent on Tuesdays.',
+        ],
+      },
+    ],
+  },
+  {
+    version: '4.4.9',
+    date: '2026-05-03',
+    sections: [
+      {
+        title: 'Push notifications now respect your language',
+        items: [
+          'The daily “you have an activity tomorrow” reminder, the RSVP deadline reminder, team-join requests, scorer delegation accepted/declined, event invites, club news fan-out, and direct messages all sent a hardcoded German string regardless of the recipient’s `members.language`. Push payloads are baked at send time, so toggling the in-app language could not localize them after delivery. Fix: a new push-i18n helper buckets recipients by locale (de / gsw / en / fr / it) and dispatches one push per bucket with translated strings. Announcements use their own per-locale translations field; emails were already locale-aware and unchanged.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.4.8',
     date: '2026-05-02',

@@ -13,6 +13,7 @@ import { getFileUrl } from '../utils/fileUrl'
 import type { Participation, Absence, Member, Team, EventSession } from '../types'
 import { asObj, flattenMemberIds } from '../utils/relations'
 import { formatDate, getDeadlineDate, formatRelativeTime, formatDateTimeCompact } from '../utils/dateHelpers'
+import { absenceCoversActivity } from '../utils/absenceHelpers'
 
 interface ParticipationRosterModalProps {
   open: boolean
@@ -337,8 +338,18 @@ export default function ParticipationRosterModal({
   const tentativeParts = summaryParticipations.filter(p => p.status === 'tentative')
   const tentative = tentativeParts.length
   const tentativeGuests = tentativeParts.reduce((sum, p) => sum + (p.guest_count ?? 0), 0)
-  // Count absent members without a participation record as declined too
-  const absentMemberIds = new Set(absences.map(a => a.member))
+  // Count absent members without a participation record as declined too.
+  // Only consider absences that actually cover this activity (date range +
+  // day-of-week for weekly + affects bitmap) — `absences` is fetched only
+  // by date range, so weekly Mon-only absences would otherwise mark members
+  // absent on Tuesdays.
+  const coveringAbsenceByMember = new Map<string, Absence>()
+  for (const a of absences) {
+    if (activityDate && absenceCoversActivity(a, activityType, activityDate)) {
+      coveringAbsenceByMember.set(String(a.member), a)
+    }
+  }
+  const absentMemberIds = new Set(coveringAbsenceByMember.keys())
   const absentWithoutParticipation = memberList.filter(m =>
     absentMemberIds.has(String(m.id)) && !summaryParticipations.some(p => String(p.member) === String(m.id))
   ).length
@@ -367,8 +378,7 @@ export default function ParticipationRosterModal({
   }
 
   function getMemberStatus(memberId: string): Participation['status'] | null {
-    const absence = absences.find(a => a.member === memberId)
-    if (absence) return 'declined'
+    if (coveringAbsenceByMember.has(String(memberId))) return 'declined'
     const p = participations.find(p => p.member === memberId)
     return p?.status ?? null
   }
@@ -382,7 +392,7 @@ export default function ParticipationRosterModal({
   }
 
   function getMemberAbsenceReason(memberId: string): string | null {
-    const absence = absences.find(a => a.member === memberId)
+    const absence = coveringAbsenceByMember.get(String(memberId))
     if (!absence) return null
     return reasonLabels[absence.reason] ?? null
   }
@@ -662,7 +672,9 @@ export default function ParticipationRosterModal({
                   <div className="flex shrink-0 items-center gap-1">
                     {status ? (
                       <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[status] ?? ''}`}>
-                        {absentMemberIds.has(member.id) ? t('declinedAbsence') : t(status)}
+                        {absentMemberIds.has(member.id)
+                          ? t(coveringAbsenceByMember.get(String(member.id))?.type === 'weekly' ? 'declinedUnavailable' : 'declinedAbsence')
+                          : t(status)}
                       </span>
                     ) : (
                       <span className="text-xs text-gray-400 dark:text-gray-500">

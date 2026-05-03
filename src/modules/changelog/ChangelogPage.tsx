@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.4.10'
+const APP_VERSION = '4.4.11'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,18 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.4.11',
+    date: '2026-05-03',
+    sections: [
+      {
+        title: 'Emails now respect your language too',
+        items: [
+          'Push notifications were already locale-aware in 4.4.9, but emails still bucketed recipients into just DE or EN — and even worse, admin alias addresses (kontakt@kscw.ch, the volleyball@/basketball@ aliases, OWNER_EMAIL constants) had no member record, so they always fell into the German bucket. Anyone reading those forwarding aliases got a duplicate German copy of the same email a real admin had already received in their preferred language. Expanded `bucketEmailsByLocale` to all five locales (de / gsw / en / fr / it), added a `members.email` fallback so admin addresses without a Directus user still resolve, and translated the registration confirmation, ClubDesk update, contact form, event invite, team-join request, and broadcast emails into the full set. Replaced the OWNER_EMAIL CC pattern in registration with a separate localized send (matches the registering user\'s locale) so the alias never receives a German copy of an English admin email.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.4.10',
     date: '2026-05-03',

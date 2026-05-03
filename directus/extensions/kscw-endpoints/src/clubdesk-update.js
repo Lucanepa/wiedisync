@@ -15,10 +15,25 @@ const FIELD_LABELS = {
     birthdate: 'Geburtsdatum', anrede: 'Anrede', adresse: 'Adresse', plz: 'PLZ', ort: 'Ort',
     nationalitaet: 'Nationalität', sex: 'Geschlecht', ahv_nummer: 'AHV-Nummer',
   },
+  gsw: {
+    first_name: 'Vorname', last_name: 'Nachname', email: 'E-Mail', phone: 'Telefon',
+    birthdate: 'Geburtsdatum', anrede: 'Aaräde', adresse: 'Adrässe', plz: 'PLZ', ort: 'Ort',
+    nationalitaet: 'Nationalität', sex: 'Gschlächt', ahv_nummer: 'AHV-Nummer',
+  },
   en: {
     first_name: 'First name', last_name: 'Last name', email: 'Email', phone: 'Phone',
     birthdate: 'Date of birth', anrede: 'Salutation', adresse: 'Address', plz: 'Zip', ort: 'City',
     nationalitaet: 'Nationality', sex: 'Sex', ahv_nummer: 'AHV number',
+  },
+  fr: {
+    first_name: 'Prénom', last_name: 'Nom', email: 'E-mail', phone: 'Téléphone',
+    birthdate: 'Date de naissance', anrede: 'Salutation', adresse: 'Adresse', plz: 'NPA', ort: 'Localité',
+    nationalitaet: 'Nationalité', sex: 'Sexe', ahv_nummer: "Numéro d'AVS",
+  },
+  it: {
+    first_name: 'Nome', last_name: 'Cognome', email: 'E-mail', phone: 'Telefono',
+    birthdate: 'Data di nascita', anrede: 'Appellativo', adresse: 'Indirizzo', plz: 'CAP', ort: 'Località',
+    nationalitaet: 'Nazionalità', sex: 'Sesso', ahv_nummer: 'Numero AVS',
   },
 }
 
@@ -31,6 +46,14 @@ const T = {
     name: 'Name', email: 'E-Mail', phone: 'Telefon', team: 'Team',
     field: 'Feld', oldValue: 'Alt', newValue: 'Neu',
   },
+  gsw: {
+    title: 'ClubDesk Datenaapassig',
+    subject: name => `[KSCW] Datenaapassig: ${name}`,
+    intro: 'Folgendi Date sind vom Mitglied aktualisiert worde und müend i ClubDesk übernoh werde:',
+    currentData: 'Aktuelli Date',
+    name: 'Name', email: 'E-Mail', phone: 'Telefon', team: 'Team',
+    field: 'Fäld', oldValue: 'Alt', newValue: 'Neu',
+  },
   en: {
     title: 'ClubDesk Data Update',
     subject: name => `[KSCW] Data update: ${name}`,
@@ -39,7 +62,25 @@ const T = {
     name: 'Name', email: 'Email', phone: 'Phone', team: 'Team',
     field: 'Field', oldValue: 'Old', newValue: 'New',
   },
+  fr: {
+    title: 'Mise à jour ClubDesk',
+    subject: name => `[KSCW] Mise à jour : ${name}`,
+    intro: "Les données suivantes ont été mises à jour par le membre et doivent être reportées dans ClubDesk :",
+    currentData: 'Données actuelles',
+    name: 'Nom', email: 'E-mail', phone: 'Téléphone', team: 'Équipe',
+    field: 'Champ', oldValue: 'Ancien', newValue: 'Nouveau',
+  },
+  it: {
+    title: 'Aggiornamento ClubDesk',
+    subject: name => `[KSCW] Aggiornamento: ${name}`,
+    intro: 'I seguenti dati sono stati aggiornati dal socio e devono essere riportati in ClubDesk:',
+    currentData: 'Dati attuali',
+    name: 'Nome', email: 'E-mail', phone: 'Telefono', team: 'Squadra',
+    field: 'Campo', oldValue: 'Vecchio', newValue: 'Nuovo',
+  },
 }
+
+const CD_LOCALES = ['de', 'gsw', 'en', 'fr', 'it']
 
 const CSV_HEADERS = [
   'Anrede', 'Vorname', 'Nachname', 'E-Mail', 'Telefon',
@@ -130,8 +171,22 @@ export function registerClubdeskUpdate(router, { database, logger, services, get
       const filename = `clubdesk-update-${current_data.last_name}-${current_data.first_name}-${dateStr}.csv`
 
       const mail = new MailService({ schema, knex: database })
-      const buckets = await bucketEmailsByLocale(database, [OWNER_EMAIL, ADMIN_EMAIL])
-      for (const loc of ['de', 'en']) {
+
+      // OWNER_EMAIL is a real admin's mailbox (resolves via members.language).
+      // ADMIN_EMAIL is a forwarding alias (kontakt@kscw.ch) without a member
+      // record, so the bucketing helper would fall it into `de`. To prevent
+      // a duplicate German copy reaching the same admin via the alias, we
+      // mirror ADMIN_EMAIL into the same locale bucket as OWNER_EMAIL.
+      const ownerBuckets = await bucketEmailsByLocale(database, [OWNER_EMAIL])
+      const ownerLocale = CD_LOCALES.find(l => ownerBuckets[l].length) || 'de'
+      const buckets = await bucketEmailsByLocale(database, [OWNER_EMAIL])
+      // Add ADMIN_EMAIL to the owner's resolved bucket (deduplicated)
+      const adminLower = ADMIN_EMAIL.toLowerCase()
+      if (adminLower !== OWNER_EMAIL.toLowerCase() && !buckets[ownerLocale].includes(adminLower)) {
+        buckets[ownerLocale].push(adminLower)
+      }
+
+      for (const loc of CD_LOCALES) {
         const tos = buckets[loc]
         if (!tos.length) continue
         const tt = T[loc] || T.de

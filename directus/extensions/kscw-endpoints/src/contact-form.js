@@ -12,11 +12,25 @@ const T = {
     subject: (subj, name) => `[KSCW Kontakt] ${subj || 'Anfrage'} von ${name}`,
     nameLabel: 'Name', emailLabel: 'E-Mail', subjectLabel: 'Betreff',
   },
+  gsw: {
+    subject: (subj, name) => `[KSCW Kontakt] ${subj || 'Aafrog'} vo ${name}`,
+    nameLabel: 'Name', emailLabel: 'E-Mail', subjectLabel: 'Betreff',
+  },
   en: {
     subject: (subj, name) => `[KSCW Contact] ${subj || 'Inquiry'} from ${name}`,
     nameLabel: 'Name', emailLabel: 'Email', subjectLabel: 'Subject',
   },
+  fr: {
+    subject: (subj, name) => `[KSCW Contact] ${subj || 'Demande'} de ${name}`,
+    nameLabel: 'Nom', emailLabel: 'E-mail', subjectLabel: 'Objet',
+  },
+  it: {
+    subject: (subj, name) => `[KSCW Contatto] ${subj || 'Richiesta'} da ${name}`,
+    nameLabel: 'Nome', emailLabel: 'E-mail', subjectLabel: 'Oggetto',
+  },
 }
+
+const CF_LOCALES = ['de', 'gsw', 'en', 'fr', 'it']
 
 const SPORT_EMAILS = {
   volleyball: process.env.CONTACT_EMAIL_VB || 'volleyball@kscw.ch',
@@ -91,7 +105,7 @@ export function registerContactForm(router, { database, logger, services, getSch
       // addresses (kontakt@/volleyball@/basketball@) fall back to DE.
       const recipientList = toEmail.split(',').map(s => s.trim()).filter(Boolean)
       const buckets = await bucketEmailsByLocale(database, recipientList)
-      for (const loc of ['de', 'en']) {
+      for (const loc of CF_LOCALES) {
         const tos = buckets[loc]
         if (!tos.length) continue
         const tt = T[loc] || T.de

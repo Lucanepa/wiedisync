@@ -174,7 +174,10 @@ export function weekday(d, lang = 'de') {
  * @param {string} args.subject
  * @param {string} args.message — plain text, newlines preserved
  * @param {string} args.recipientFirstName
- * @param {'de'|'en'|'fr'|'gsw'|'it'} [args.lang='de']
+ * @param {'de'|'en'|'fr'|'gsw'|'it'|'german'|'english'|'french'|'italian'|'swiss_german'} [args.lang='de']
+ *        Accepts both the short-code (`de`/`en`/...) and the long-form value
+ *        stored in `members.language` (`german`/`english`/...). Unknown values
+ *        fall back to `de`.
  * @returns {string} full HTML email document
  */
 export function buildBroadcastEmail({
@@ -185,35 +188,38 @@ export function buildBroadcastEmail({
   recipientFirstName,
   lang = 'de',
 }) {
-  // Resolve language bucket. gsw (Swiss German) falls back to de per project
-  // i18n convention; fr/it fall back to de (the canonical club language)
-  // rather than en — the club operates in Zürich and most members read German.
-  const isEnglish = lang === 'en'
-  const L = isEnglish
-    ? {
-        title: 'Message about the event',
-        greeting: (n) => (n ? `Hi ${n},` : 'Hi,'),
-        from: 'From',
-        eventLabel: 'Event',
-        gameLabel: 'Game',
-        trainingLabel: 'Training',
-        date: 'Date',
-        location: 'Location',
-        team: 'Team',
-        cta: 'Open in Wiedisync',
-      }
-    : {
-        title: 'Nachricht zum Anlass',
-        greeting: (n) => (n ? `Hallo ${n},` : 'Hallo,'),
-        from: 'Von',
-        eventLabel: 'Anlass',
-        gameLabel: 'Spiel',
-        trainingLabel: 'Training',
-        date: 'Datum',
-        location: 'Ort',
-        team: 'Team',
-        cta: 'Im Wiedisync öffnen',
-      }
+  // Normalize long-form `members.language` values to short codes.
+  if (LANG_TO_CODE[lang]) lang = LANG_TO_CODE[lang]
+
+  // Five locales (de/gsw/en/fr/it) — unknown lang falls back to de.
+  const BROADCAST_L = {
+    de: {
+      title: 'Nachricht zum Anlass', greeting: n => (n ? `Hallo ${n},` : 'Hallo,'),
+      from: 'Von', eventLabel: 'Anlass', gameLabel: 'Spiel', trainingLabel: 'Training',
+      date: 'Datum', location: 'Ort', team: 'Team', cta: 'Im Wiedisync öffnen',
+    },
+    gsw: {
+      title: 'Nachricht zum Aalass', greeting: n => (n ? `Hoi ${n},` : 'Hoi,'),
+      from: 'Vo', eventLabel: 'Aalass', gameLabel: 'Spiel', trainingLabel: 'Training',
+      date: 'Datum', location: 'Ort', team: 'Team', cta: 'Im Wiedisync öffne',
+    },
+    en: {
+      title: 'Message about the event', greeting: n => (n ? `Hi ${n},` : 'Hi,'),
+      from: 'From', eventLabel: 'Event', gameLabel: 'Game', trainingLabel: 'Training',
+      date: 'Date', location: 'Location', team: 'Team', cta: 'Open in Wiedisync',
+    },
+    fr: {
+      title: "Message à propos de l'événement", greeting: n => (n ? `Salut ${n},` : 'Bonjour,'),
+      from: 'De', eventLabel: 'Événement', gameLabel: 'Match', trainingLabel: 'Entraînement',
+      date: 'Date', location: 'Lieu', team: 'Équipe', cta: 'Ouvrir dans Wiedisync',
+    },
+    it: {
+      title: "Messaggio sull'evento", greeting: n => (n ? `Ciao ${n},` : 'Salve,'),
+      from: 'Da', eventLabel: 'Evento', gameLabel: 'Partita', trainingLabel: 'Allenamento',
+      date: 'Data', location: 'Luogo', team: 'Squadra', cta: 'Apri in Wiedisync',
+    },
+  }
+  const L = BROADCAST_L[lang] || BROADCAST_L.de
 
   // Activity-type label — game/training get specific labels, event uses generic
   const activityLabel =

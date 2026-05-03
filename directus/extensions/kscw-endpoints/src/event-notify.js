@@ -143,19 +143,23 @@ export function registerEventNotify(router, { services, database, getSchema, log
             ? `${weekday(event.start_date)}, ${formatDateCH(event.start_date)}`
             : ''
 
-          // Per-member locale: default English, switch to German for members
-          // who have explicitly set 'german' or 'swiss_german' in their profile.
+          // Per-member locale: routes by `members.language` into 5 buckets.
+          // Unknown / null falls back to `de` (canonical club language).
           const L = {
-            en: { greeting: 'Hi', greetingNoName: 'Hello', event: 'Event', date: 'Date', place: 'Location', title: 'Invitation', cta: 'Respond', subject: 'Invitation' },
             de: { greeting: 'Hallo', greetingNoName: 'Hallo', event: 'Anlass', date: 'Datum', place: 'Ort', title: 'Einladung', cta: 'Antworten', subject: 'Einladung' },
+            gsw: { greeting: 'Hoi', greetingNoName: 'Hoi', event: 'Aalass', date: 'Datum', place: 'Ort', title: 'Yyladig', cta: 'Antworte', subject: 'Yyladig' },
+            en: { greeting: 'Hi', greetingNoName: 'Hello', event: 'Event', date: 'Date', place: 'Location', title: 'Invitation', cta: 'Respond', subject: 'Invitation' },
+            fr: { greeting: 'Salut', greetingNoName: 'Bonjour', event: 'Événement', date: 'Date', place: 'Lieu', title: 'Invitation', cta: 'Répondre', subject: 'Invitation' },
+            it: { greeting: 'Ciao', greetingNoName: 'Salve', event: 'Evento', date: 'Data', place: 'Luogo', title: 'Invito', cta: 'Rispondi', subject: 'Invito' },
           }
+          const LANG_TO_CODE = { german: 'de', swiss_german: 'gsw', english: 'en', french: 'fr', italian: 'it' }
 
           let emailsSent = 0
           let emailsFailed = 0
           for (const member of members) {
             try {
-              const isGerman = ['german', 'swiss_german'].includes(member.language || '')
-              const l = isGerman ? L.de : L.en
+              const code = LANG_TO_CODE[member.language] || 'de'
+              const l = L[code]
               const greeting = member.first_name ? `${l.greeting} ${member.first_name}` : l.greetingNoName
               const body = buildInfoCard([
                 { label: l.event, value: event.title },

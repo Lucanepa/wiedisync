@@ -1193,27 +1193,60 @@ export default {
             const coachMembers = await database('members')
               .whereIn('id', recipientIds)
               .select('email', 'first_name', 'language')
+            // Per-recipient locale: members.language → 5-bucket
+            const TJR_LANG_TO_CODE = { german: 'de', swiss_german: 'gsw', english: 'en', french: 'fr', italian: 'it' }
+            const TJR = {
+              de: {
+                subject: `WiediSync — Neue Beitrittsanfrage für ${teamName}`,
+                intro: `<strong>${first_name} ${last_name}</strong> möchte dem Team <strong>${teamName}</strong> beitreten.`,
+                alertTitle: 'Aktion erforderlich',
+                alertBody: 'Bitte genehmige oder lehne die Anfrage auf der Teamseite ab.',
+                cta: 'Zur Teamseite', title: 'Neue Beitrittsanfrage',
+              },
+              gsw: {
+                subject: `WiediSync — Neui Bytrittsaafrog für ${teamName}`,
+                intro: `<strong>${first_name} ${last_name}</strong> möcht zum Team <strong>${teamName}</strong>.`,
+                alertTitle: 'Aktion erforderlich',
+                alertBody: 'Bitte bewillig oder läne d Aafrog uf dr Team-Site ab.',
+                cta: 'Zur Team-Site', title: 'Neui Bytrittsaafrog',
+              },
+              en: {
+                subject: `WiediSync — New join request for ${teamName}`,
+                intro: `<strong>${first_name} ${last_name}</strong> wants to join team <strong>${teamName}</strong>.`,
+                alertTitle: 'Action required',
+                alertBody: 'Please approve or reject the request on the team page.',
+                cta: 'Go to team page', title: 'New join request',
+              },
+              fr: {
+                subject: `WiediSync — Nouvelle demande d'adhésion pour ${teamName}`,
+                intro: `<strong>${first_name} ${last_name}</strong> souhaite rejoindre l'équipe <strong>${teamName}</strong>.`,
+                alertTitle: 'Action requise',
+                alertBody: "Merci d'approuver ou de refuser la demande sur la page de l'équipe.",
+                cta: "Voir la page de l'équipe", title: "Nouvelle demande d'adhésion",
+              },
+              it: {
+                subject: `WiediSync — Nuova richiesta di adesione per ${teamName}`,
+                intro: `<strong>${first_name} ${last_name}</strong> vuole unirsi alla squadra <strong>${teamName}</strong>.`,
+                alertTitle: 'Azione richiesta',
+                alertBody: 'Approva o rifiuta la richiesta sulla pagina della squadra.',
+                cta: 'Vai alla pagina della squadra', title: 'Nuova richiesta di adesione',
+              },
+            }
             for (const coach of coachMembers) {
               if (!coach.email) continue
-              const isGerman = !coach.language || coach.language === 'german' || coach.language === 'swiss_german'
-              const subject = isGerman
-                ? `WiediSync — Neue Beitrittsanfrage für ${teamName}`
-                : `WiediSync — New join request for ${teamName}`
+              const code = TJR_LANG_TO_CODE[coach.language] || 'de'
+              const tt = TJR[code]
               const bodyHtml =
-                `<div style="font-size:14px;color:#e2e8f0;margin-bottom:16px">${isGerman
-                  ? `<strong>${first_name} ${last_name}</strong> möchte dem Team <strong>${teamName}</strong> beitreten.`
-                  : `<strong>${first_name} ${last_name}</strong> wants to join team <strong>${teamName}</strong>.`
-                }</div>` +
-                buildAlertBox('info', isGerman ? 'Aktion erforderlich' : 'Action required',
-                  isGerman ? 'Bitte genehmige oder lehne die Anfrage auf der Teamseite ab.' : 'Please approve or reject the request on the team page.') +
-                `<div style="text-align:center;margin-top:20px"><a href="${FRONTEND_URL}/teams/${teamUrlPath}" style="display:inline-block;padding:12px 24px;background:#4A55A2;color:#fff;text-decoration:none;border-radius:8px;font-weight:600">${isGerman ? 'Zur Teamseite' : 'Go to team page'}</a></div>`
+                `<div style="font-size:14px;color:#e2e8f0;margin-bottom:16px">${tt.intro}</div>` +
+                buildAlertBox('info', tt.alertTitle, tt.alertBody) +
+                `<div style="text-align:center;margin-top:20px"><a href="${FRONTEND_URL}/teams/${teamUrlPath}" style="display:inline-block;padding:12px 24px;background:#4A55A2;color:#fff;text-decoration:none;border-radius:8px;font-weight:600">${tt.cta}</a></div>`
               const html = buildEmailLayout(bodyHtml, {
-                title: isGerman ? 'Neue Beitrittsanfrage' : 'New join request',
+                title: tt.title,
                 subtitle: `WiediSync — ${teamName}`,
               })
               mailService.send({
                 to: coach.email,
-                subject,
+                subject: tt.subject,
                 html,
                 text: `${first_name} ${last_name} → ${teamName}\n${FRONTEND_URL}/teams/${teamUrlPath}`,
               }).catch(e => log.error(`register notify email: ${e.message}`))

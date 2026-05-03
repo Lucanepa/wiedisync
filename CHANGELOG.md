@@ -2,6 +2,11 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## [4.4.11] — 2026-05-03
+
+### Fixed
+- **Email locale was DE/EN-only and broke on admin alias addresses.** Push got 5-locale support in 4.4.9 but emails still bucketed into just `de` and `en`, with members of `language=french/italian/swiss_german` silently routed to DE. Worse: alias addresses (`kontakt@kscw.ch`, `volleyball@kscw.ch`, `basketball@kscw.ch`, hardcoded `OWNER_EMAIL`) have no Directus user and no `members.email` row, so the bucketing helper defaulted them to DE — meaning forwarded copies arrived in German even when the underlying admin had `language=english`. Concrete repro: registering as `Livia Vuillemin (volleyball)` produced an English admin email to vb_admin Luca *and* a German copy via the OWNER_EMAIL CC, both reaching Luca's mailbox; he opened the German one. Same root cause for the `[KSCW] Datenanpassung` ClubDesk update email. Fix: `bucketEmailsByLocale` now returns `{de, gsw, en, fr, it}` and falls back to `members.email` when no `directus_users` row matches; `bucketMemberIdsByLocale` added for member-id callers; `EMAIL_LOCALES` exported. Translations added for the registration confirmation (volleyball / basketball / passive), admin notification, ClubDesk data-update mail, contact form, event invite, team-join request (in both `kscw-hooks` and `kscw-endpoints`), and `buildBroadcastEmail`. The `password-reset` email already had all five locales. Replaced the OWNER_EMAIL CC pattern in registration with a separate localized send (in the registering user's locale) so the alias receives a deterministic copy and never gets a duplicate German one of an English admin email. ClubDesk update mirrors the ADMIN_EMAIL into OWNER_EMAIL's resolved locale bucket for the same reason.
+
 ## [4.4.10] — 2026-05-03
 
 ### Fixed

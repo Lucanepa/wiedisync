@@ -63,6 +63,17 @@ function generateRefNumber() {
 // ── Confirmation emails ─────────────────────────────────────────
 
 // ── i18n strings for emails ────────────────────────────────────
+// Five locales: de | gsw (Swiss German) | en | fr | it.
+// Long bodies (vbBody/bbBody/passiveBody) are paragraph-length;
+// short labels follow the field naming convention used elsewhere in the app.
+const VB_FEE_LINES = {
+  de: 'Erwerbstätige: CHF 440.–<br>Studenten/Studentinnen / Lernende: CHF 380.–<br>Schüler/Schülerinnen (Meisterschaft): CHF 310.–<br>Schüler/Schülerinnen (nur Turniere): CHF 210.–<br>Schüler/Schülerinnen (nur Turniere, 1. Saison): CHF 110.–',
+  gsw: 'Erwärbstätigi: CHF 440.–<br>Studänte / Lehrlig: CHF 380.–<br>Schüeler (Meisterschaft): CHF 310.–<br>Schüeler (nur Turnier): CHF 210.–<br>Schüeler (nur Turnier, 1. Saison): CHF 110.–',
+  en: 'Working adults: CHF 440.–<br>Students / apprentices: CHF 380.–<br>Pupils (championship): CHF 310.–<br>Pupils (tournaments only): CHF 210.–<br>Pupils (tournaments only, 1st season): CHF 110.–',
+  fr: 'Personnes actives : CHF 440.–<br>Étudiant·e·s / apprenti·e·s : CHF 380.–<br>Élèves (championnat) : CHF 310.–<br>Élèves (tournois uniquement) : CHF 210.–<br>Élèves (tournois uniquement, 1ʳᵉ saison) : CHF 110.–',
+  it: 'Adulti che lavorano: CHF 440.–<br>Studenti / apprendisti: CHF 380.–<br>Allievi (campionato): CHF 310.–<br>Allievi (solo tornei): CHF 210.–<br>Allievi (solo tornei, 1ª stagione): CHF 110.–',
+}
+
 const T = {
   de: {
     greeting: name => `Hallo ${name},`,
@@ -96,18 +107,55 @@ const T = {
     name: 'Name', team: 'Team', fee: 'Beitragskategorie', dob: 'Geburtsdatum',
     email: 'E-Mail', phone: 'Telefon', address: 'Adresse', nationality: 'Nationalität',
     gender: 'Geschlecht', licence: 'Lizenz', refLevel: 'Schiedsrichter-Stufe', ref: 'Referenz',
-    // Admin notification labels + copy
     adminTitle: 'Neue Anmeldung',
     adminCta: 'Im Admin prüfen',
     adminSubject: (vorname, nachname, type) => `[KSCW] Neue Anmeldung: ${vorname} ${nachname} (${type})`,
-    adminType: 'Typ',
-    adminAhv: 'AHV',
-    adminKantonsschule: 'Kantonsschule',
-    adminBemerkungen: 'Bemerkungen',
+    adminType: 'Typ', adminAhv: 'AHV', adminKantonsschule: 'Kantonsschule', adminBemerkungen: 'Bemerkungen',
     adminNextSteps: 'Nächste Schritte:',
     adminStep1: 'Daten im Admin-Bereich prüfen und ggf. bearbeiten',
     adminStep2: 'Anmeldung bestätigen oder ablehnen',
     adminStep3: 'Nach Bestätigung wird automatisch eine CSV-Datei generiert',
+  },
+  gsw: {
+    greeting: name => `Hoi ${name},`,
+    vbTitle: 'Willkomme bim KSC Wiedikon!',
+    vbSubtitle: 'Dini Volleyball-Aamäldig isch agcho',
+    vbSubject: 'Willkomme bim KSC Wiedikon — Volleyball',
+    vbFooter: 'Sportlichi Grüess — KSC Wiedikon Volleyball',
+    vbFeeHeader: 'Mitgliederbyträg',
+    vbBody: `<p>Bitte beachte, dass de Lizenzierigsprozess ab dr Zahlig vom Mitgliederbytrag mind. ä Wuche dauert.</p>
+      <p>Du überchunsch i de nächste Täg (oder im Auguscht, dr Haupträchnigsperiode) ä Rächnig vo eus. Dini Lizenz wird erst bstellt, wenn de Bytrag bim KSCW aacho isch — also eifach so schnäll wie möglich yzahle.</p>
+      <p>Neu muesch dir under <a href="https://volleymanager.volleyball.ch/login" style="color:#FFC832">volleymanager.volleyball.ch</a> ä Login mache, falls du no kä hesch.</p>
+      <p>Bi Frage zum Club, dym Team oder em Lizenzierigsprozess cha dir dini Trainerin oder dr Trainer oder au mir gärn Uskunft geh.</p>`,
+    bbTitle: 'Aamäldig agcho',
+    bbSubtitle: 'KSC Wiedikon Basketball',
+    bbSubject: 'Aamäldig agcho — KSC Wiedikon Basketball',
+    bbFooter: 'KSC Wiedikon Basketball',
+    bbBody: `<p>Dini Aamäldig wird vo eusem Admin-Team prüeft. Du wirsch informiert, sobald si bewilligt isch.</p>
+      <p><strong style="color:#e2e8f0">Nächsti Schritt:</strong></p>
+      <ul style="padding-left:20px;margin:8px 0">
+        <li>Stell sicher, dass du dini ID-Kopie (Vorder- und Rückseite) ufeglade hesch</li>
+        <li>De Lizenzaatrag wird vom Admin vorbereitet</li>
+        <li>D Bearbeitig dauert i de Regle ä paar Werchtäg</li>
+      </ul>
+      <p>Bi Frage chunsch zu dym Coach oder a <a href="mailto:kontakt@kscw.ch" style="color:#F97316">kontakt@kscw.ch</a>.</p>`,
+    passiveTitle: 'Passivmitgliedschaft',
+    passiveSubtitle: 'Aamäldig agcho',
+    passiveSubject: 'Passivmitgliedschaft — KSC Wiedikon',
+    passiveBody: `<p>Dini Aamäldig als Passivmitglied isch agcho und wird prüeft.</p>
+      <p>Du überchunsch i de nächste Täg ä Rächnig für de Passivmitgliedsbytrag (CHF 50.–).</p>
+      <p>Bi Frage erreichsch eus under <a href="mailto:kontakt@kscw.ch" style="color:#4A55A2">kontakt@kscw.ch</a>.</p>`,
+    name: 'Name', team: 'Team', fee: 'Bytragskategorie', dob: 'Geburtsdatum',
+    email: 'E-Mail', phone: 'Telefon', address: 'Adrässe', nationality: 'Nationalität',
+    gender: 'Gschlächt', licence: 'Lizenz', refLevel: 'Schiedsrichter-Stuefe', ref: 'Referenz',
+    adminTitle: 'Neui Aamäldig',
+    adminCta: 'Im Admin prüefe',
+    adminSubject: (vorname, nachname, type) => `[KSCW] Neui Aamäldig: ${vorname} ${nachname} (${type})`,
+    adminType: 'Typ', adminAhv: 'AHV', adminKantonsschule: 'Kantonsschuel', adminBemerkungen: 'Bemerkige',
+    adminNextSteps: 'Nächsti Schritt:',
+    adminStep1: 'Date im Admin-Bereich prüefe und ev. bearbeite',
+    adminStep2: 'Aamäldig bestätige oder abläne',
+    adminStep3: 'Noch dr Bestätigig wird automatisch ä CSV-Datei gmacht',
   },
   en: {
     greeting: name => `Hello ${name},`,
@@ -141,21 +189,100 @@ const T = {
     name: 'Name', team: 'Team', fee: 'Fee Category', dob: 'Date of Birth',
     email: 'Email', phone: 'Phone', address: 'Address', nationality: 'Nationality',
     gender: 'Sex', licence: 'Licence', refLevel: 'Referee Level', ref: 'Reference',
-    // Admin notification labels + copy
     adminTitle: 'New Registration',
     adminCta: 'Review in admin',
     adminSubject: (vorname, nachname, type) => `[KSCW] New registration: ${vorname} ${nachname} (${type})`,
-    adminType: 'Type',
-    adminAhv: 'AHV',
-    adminKantonsschule: 'Cantonal School',
-    adminBemerkungen: 'Notes',
+    adminType: 'Type', adminAhv: 'AHV', adminKantonsschule: 'Cantonal School', adminBemerkungen: 'Notes',
     adminNextSteps: 'Next steps:',
     adminStep1: 'Review the data in the admin area and edit if needed',
     adminStep2: 'Approve or reject the registration',
     adminStep3: 'After approval, a CSV file is automatically generated',
   },
+  fr: {
+    greeting: name => `Salut ${name},`,
+    vbTitle: 'Bienvenue au KSC Wiedikon !',
+    vbSubtitle: 'Ton inscription en volleyball a été reçue',
+    vbSubject: 'Bienvenue au KSC Wiedikon — Volleyball',
+    vbFooter: 'Salutations sportives — KSC Wiedikon Volleyball',
+    vbFeeHeader: 'Cotisations',
+    vbBody: `<p>Note que la procédure de licence prend au minimum une semaine à partir du paiement de la cotisation.</p>
+      <p>Tu recevras une facture de notre part dans les prochains jours (ou en août, la principale période de facturation). Ta licence ne sera commandée qu'une fois la cotisation reçue par le KSCW — donc paie aussi vite que possible.</p>
+      <p>Tu dois en plus te créer un compte sur <a href="https://volleymanager.volleyball.ch/login" style="color:#FFC832">volleymanager.volleyball.ch</a> si tu n'en as pas encore.</p>
+      <p>Pour toute question sur le club, ton équipe ou la procédure de licence, ton coach ou nous-mêmes te répondrons volontiers.</p>`,
+    bbTitle: 'Inscription reçue',
+    bbSubtitle: 'KSC Wiedikon Basketball',
+    bbSubject: 'Inscription reçue — KSC Wiedikon Basketball',
+    bbFooter: 'KSC Wiedikon Basketball',
+    bbBody: `<p>Ta candidature sera examinée par notre équipe d'administration. Tu seras notifié·e dès qu'elle sera approuvée.</p>
+      <p><strong style="color:#e2e8f0">Prochaines étapes :</strong></p>
+      <ul style="padding-left:20px;margin:8px 0">
+        <li>Assure-toi d'avoir téléchargé la copie de ta pièce d'identité (recto et verso)</li>
+        <li>La demande de licence sera préparée par l'administrateur</li>
+        <li>Le traitement prend généralement quelques jours ouvrables</li>
+      </ul>
+      <p>Pour toute question, contacte ton coach ou <a href="mailto:kontakt@kscw.ch" style="color:#F97316">kontakt@kscw.ch</a>.</p>`,
+    passiveTitle: 'Membre passif·ve',
+    passiveSubtitle: 'Inscription reçue',
+    passiveSubject: 'Membre passif·ve — KSC Wiedikon',
+    passiveBody: `<p>Ton inscription comme membre passif·ve a été reçue et sera examinée.</p>
+      <p>Tu recevras dans les prochains jours une facture pour la cotisation de membre passif·ve (CHF 50.–).</p>
+      <p>Pour toute question, écris-nous à <a href="mailto:kontakt@kscw.ch" style="color:#4A55A2">kontakt@kscw.ch</a>.</p>`,
+    name: 'Nom', team: 'Équipe', fee: 'Catégorie de cotisation', dob: 'Date de naissance',
+    email: 'E-mail', phone: 'Téléphone', address: 'Adresse', nationality: 'Nationalité',
+    gender: 'Sexe', licence: 'Licence', refLevel: "Niveau d'arbitrage", ref: 'Référence',
+    adminTitle: 'Nouvelle inscription',
+    adminCta: "Vérifier dans l'admin",
+    adminSubject: (vorname, nachname, type) => `[KSCW] Nouvelle inscription : ${vorname} ${nachname} (${type})`,
+    adminType: 'Type', adminAhv: 'AVS', adminKantonsschule: 'École cantonale', adminBemerkungen: 'Remarques',
+    adminNextSteps: 'Prochaines étapes :',
+    adminStep1: "Vérifier les données dans l'espace admin et les modifier si nécessaire",
+    adminStep2: "Approuver ou refuser l'inscription",
+    adminStep3: 'Après approbation, un fichier CSV est généré automatiquement',
+  },
+  it: {
+    greeting: name => `Ciao ${name},`,
+    vbTitle: 'Benvenuto al KSC Wiedikon!',
+    vbSubtitle: 'La tua iscrizione al volleyball è stata ricevuta',
+    vbSubject: 'Benvenuto al KSC Wiedikon — Volleyball',
+    vbFooter: 'Saluti sportivi — KSC Wiedikon Volleyball',
+    vbFeeHeader: 'Quote associative',
+    vbBody: `<p>Tieni presente che il processo di licenza richiede almeno una settimana a partire dal pagamento della quota associativa.</p>
+      <p>Riceverai una fattura da noi nei prossimi giorni (o in agosto, il principale periodo di fatturazione). La tua licenza verrà ordinata solo dopo che la quota sarà stata ricevuta dal KSCW — quindi paga il prima possibile.</p>
+      <p>Devi inoltre creare un account su <a href="https://volleymanager.volleyball.ch/login" style="color:#FFC832">volleymanager.volleyball.ch</a> se non ne hai già uno.</p>
+      <p>Per domande sul club, sulla tua squadra o sul processo di licenza, il tuo coach o noi stessi ti risponderemo volentieri.</p>`,
+    bbTitle: 'Iscrizione ricevuta',
+    bbSubtitle: 'KSC Wiedikon Basketball',
+    bbSubject: 'Iscrizione ricevuta — KSC Wiedikon Basketball',
+    bbFooter: 'KSC Wiedikon Basketball',
+    bbBody: `<p>La tua iscrizione sarà esaminata dal nostro team di amministrazione. Riceverai una notifica non appena sarà approvata.</p>
+      <p><strong style="color:#e2e8f0">Prossimi passi:</strong></p>
+      <ul style="padding-left:20px;margin:8px 0">
+        <li>Assicurati di aver caricato la copia del tuo documento d'identità (fronte e retro)</li>
+        <li>La richiesta di licenza sarà preparata dall'amministratore</li>
+        <li>L'elaborazione richiede di solito alcuni giorni lavorativi</li>
+      </ul>
+      <p>Per domande, contatta il tuo coach o <a href="mailto:kontakt@kscw.ch" style="color:#F97316">kontakt@kscw.ch</a>.</p>`,
+    passiveTitle: 'Socio passivo',
+    passiveSubtitle: 'Iscrizione ricevuta',
+    passiveSubject: 'Socio passivo — KSC Wiedikon',
+    passiveBody: `<p>La tua iscrizione come socio passivo è stata ricevuta e sarà esaminata.</p>
+      <p>Riceverai nei prossimi giorni una fattura per la quota di socio passivo (CHF 50.–).</p>
+      <p>Per domande scrivici a <a href="mailto:kontakt@kscw.ch" style="color:#4A55A2">kontakt@kscw.ch</a>.</p>`,
+    name: 'Nome', team: 'Squadra', fee: 'Categoria quota', dob: 'Data di nascita',
+    email: 'E-mail', phone: 'Telefono', address: 'Indirizzo', nationality: 'Nazionalità',
+    gender: 'Sesso', licence: 'Licenza', refLevel: 'Livello arbitrale', ref: 'Riferimento',
+    adminTitle: 'Nuova iscrizione',
+    adminCta: "Verifica nell'admin",
+    adminSubject: (vorname, nachname, type) => `[KSCW] Nuova iscrizione: ${vorname} ${nachname} (${type})`,
+    adminType: 'Tipo', adminAhv: 'AVS', adminKantonsschule: 'Scuola cantonale', adminBemerkungen: 'Note',
+    adminNextSteps: 'Prossimi passi:',
+    adminStep1: "Verifica i dati nell'area admin e modificali se necessario",
+    adminStep2: "Approva o rifiuta l'iscrizione",
+    adminStep3: "Dopo l'approvazione, viene generato automaticamente un file CSV",
+  },
 }
 
+const REG_LOCALES = ['de', 'gsw', 'en', 'fr', 'it']
 function t(locale) { return T[locale] || T.de }
 
 function buildSummaryCard(reg, locale) {
@@ -181,17 +308,12 @@ function buildVolleyballEmail(reg, locale) {
   const l = t(locale)
   const summary = buildSummaryCard(reg, locale)
 
+  const feeLines = VB_FEE_LINES[locale] || VB_FEE_LINES.de
   const feeTable = `
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#0f172a;border:1px solid #334155;border-radius:8px;overflow:hidden;margin:12px 0">
   <tr><td style="padding:16px 20px">
     <div style="font-size:11px;text-transform:uppercase;color:#64748b;letter-spacing:0.5px;margin-bottom:8px;font-weight:700">${l.vbFeeHeader}</div>
-    <div style="font-size:13px;color:#e2e8f0;line-height:1.8">
-      Erwerbstätige: CHF 440.–<br>
-      Studenten/Studentinnen / Lernende: CHF 380.–<br>
-      Schüler/Schülerinnen (Meisterschaft): CHF 310.–<br>
-      Schüler/Schülerinnen (nur Turniere): CHF 210.–<br>
-      Schüler/Schülerinnen (nur Turniere, 1. Saison): CHF 110.–
-    </div>
+    <div style="font-size:13px;color:#e2e8f0;line-height:1.8">${feeLines}</div>
   </td></tr>
 </table>`
 
@@ -384,37 +506,39 @@ export function registerRegistration(router, { database, logger, services, getSc
           html: emailHtml,
         })
 
-        // Notify sport admins (from DB) + always CC owner.
-        // Per-recipient locale: members.language → DE bucket vs EN bucket.
-        // Owner is CC'd on the bucket matching its own locale (or DE fallback).
+        // Notify sport admins (resolved from DB) — one email per locale bucket
+        // so each admin reads it in their own `members.language`. The OWNER_EMAIL
+        // is a forwarding alias (kontakt@kscw.ch) without a member record, so
+        // we used to CC it on whichever bucket happened to have people — that
+        // pushed the German copy to anglophone admins via the alias. Instead,
+        // send the OWNER_EMAIL its own copy in the registering user's locale
+        // (matches the form they submitted, deterministic regardless of admin
+        // composition). Real admins still get their bucketed locale.
         const adminEmails = await getSportAdminEmails(database, body.membership_type)
         const ownerLower = OWNER_EMAIL.toLowerCase()
         const adminTo = adminEmails.filter(e => e !== ownerLower)
         const adminBuckets = await bucketEmailsByLocale(database, adminTo)
-        const ownerBuckets = await bucketEmailsByLocale(database, [OWNER_EMAIL])
-        const ownerLocale = ownerBuckets.en.length ? 'en' : 'de'
-        const totalAdmins = adminBuckets.de.length + adminBuckets.en.length
 
-        // Fallback: no admins → send owner-only in owner's locale
-        if (totalAdmins === 0) {
-          adminBuckets[ownerLocale].push(OWNER_EMAIL)
-        }
-        // Pick which bucket owner is CC'd on (prefer same locale; else whichever has people)
-        const ownerCcBucket = totalAdmins > 0
-          ? (adminBuckets[ownerLocale].length ? ownerLocale : (adminBuckets.de.length ? 'de' : 'en'))
-          : null
-
-        for (const loc of ['de', 'en']) {
+        for (const loc of REG_LOCALES) {
           const tos = adminBuckets[loc]
           if (!tos.length) continue
           const lAdmin = T[loc] || T.de
           await mail.send({
             to: tos,
-            cc: (loc === ownerCcBucket) ? [OWNER_EMAIL] : [],
             subject: lAdmin.adminSubject(reg.vorname, reg.nachname, reg.membership_type),
             html: buildAdminNotificationEmail(reg, loc),
           })
         }
+
+        // Owner alias: send a copy in the registering user's locale.
+        // (If real admins are absent — e.g. a passive registration with no
+        // sport admins — this also serves as the admin notification.)
+        const ownerLAdmin = T[locale] || T.de
+        await mail.send({
+          to: [OWNER_EMAIL],
+          subject: ownerLAdmin.adminSubject(reg.vorname, reg.nachname, reg.membership_type),
+          html: buildAdminNotificationEmail(reg, locale),
+        })
       } catch (emailErr) {
         log.warn({ msg: `Confirmation email failed: ${emailErr.message}`, id })
         // Don't fail the registration if email fails

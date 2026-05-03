@@ -48,6 +48,14 @@ function formatSessionLabel(session: EventSession): string {
   return datePart
 }
 
+/** Capitalize the first character (locale-aware) — Intl.RelativeTimeFormat
+ *  emits lowercase ("last month", "vor einem monat"), but we render this as a
+ *  standalone sub-label under the member's name where sentence-case reads better. */
+function capitalizeFirst(s: string): string {
+  if (!s) return s
+  return s.charAt(0).toLocaleUpperCase() + s.slice(1)
+}
+
 /** Clickable relative timestamp that toggles to absolute dd.mm.yy HH:mm on tap */
 function RsvpTimestamp({ datetime, locale }: { datetime: string; locale: string }) {
   const [showAbsolute, setShowAbsolute] = useState(false)
@@ -57,7 +65,7 @@ function RsvpTimestamp({ datetime, locale }: { datetime: string; locale: string 
       onClick={() => setShowAbsolute(v => !v)}
       className="truncate text-[11px] text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
     >
-      {showAbsolute ? formatDateTimeCompact(datetime) : formatRelativeTime(datetime, locale)}
+      {showAbsolute ? formatDateTimeCompact(datetime) : capitalizeFirst(formatRelativeTime(datetime, locale))}
     </button>
   )
 }

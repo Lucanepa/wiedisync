@@ -2,6 +2,12 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## [4.4.12] — 2026-05-03
+
+### Fixed
+- **Training row strip rendered "confirmed" green even when the user had a `declined` participation + covering absence.** Concrete repro on prod (member 8, training id 4 on 2026-05-25): `participations.status='declined'` plus a `weekly` absence covering Mondays — the roster modal correctly showed "Unavailable", but the personal training row's left strip was green. Root cause in `useBulkParticipationStatuses`: the in-memory `partByActivity` lookup was keyed on `activity_id` alone, with no `activity_type`. The same member had `training:4 declined` AND `event:4 confirmed` in `participations`; the query also did not filter by `activity_type`, so both rows came back, and the second `Map.set('4', …)` overwrote the first depending on Directus return order — when `event:4 confirmed` won, every training/game/event sharing the numeric id `4` rendered green. Fixed by keying both the Directus filter (`activity_type._in [...]`) and the JS `Map` on the composite `${type}:${id}` key.
+- **Roster modal "last month" sub-label now sentence-cased.** `Intl.RelativeTimeFormat` emits lowercase ("last month", "vor einem monat"), which read awkwardly as a standalone label under a member's name. Capitalized in `RsvpTimestamp` via `String#charAt(0).toLocaleUpperCase()` (preserves locale-correct casing for non-ASCII).
+
 ## [4.4.11] — 2026-05-03
 
 ### Fixed

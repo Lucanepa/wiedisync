@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.4.11'
+const APP_VERSION = '4.4.12'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,19 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.4.12',
+    date: '2026-05-03',
+    sections: [
+      {
+        title: 'Training row strip now matches your actual RSVP',
+        items: [
+          'A training row could render its left strip green ("confirmed") even when you had a `declined` participation and a covering weekly absence — the roster modal would correctly say "Unavailable" while the row insisted you were going. Root cause: `useBulkParticipationStatuses` keyed its internal lookup by `activity_id` alone, with no `activity_type`. If you had separate participations on different activity types that happened to share the same numeric id (e.g. `training:4 declined` + `event:4 confirmed`), the second one overwrote the first depending on Directus return order, so the wrong status would surface. The query also was not filtered by activity_type, which made the collision more likely. Both the filter and the JS map are now keyed on the composite `(activity_type, activity_id)`.',
+          'Roster modal sub-label "last month" / "vor einem monat" / etc. now sentence-cased — `Intl.RelativeTimeFormat` emits lowercase, which read awkwardly as a standalone label.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.4.11',
     date: '2026-05-03',

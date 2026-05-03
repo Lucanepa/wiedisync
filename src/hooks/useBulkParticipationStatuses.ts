@@ -17,11 +17,21 @@ export function useBulkParticipationStatuses(
 ) {
   const { user } = useAuth()
 
-  // Build a single filter for all participations: member=X && (activity_id=A || activity_id=B || ...)
+  // Build a single filter for all participations: member=X && activity_type ∈ types
+  // && activity_id ∈ ids. We MUST filter on activity_type as well — `(type, id)`
+  // is the natural composite key for `participations`. A user can have separate
+  // rows for `training:4` and `event:4` with different statuses; without the
+  // type filter the JS map below collides them and the wrong row wins.
+  const activityTypes = useMemo(() => Array.from(new Set(activities.map(a => a.type))), [activities])
+  const activityIds = useMemo(() => activities.map(a => a.id), [activities])
   const participationFilter = useMemo((): Record<string, unknown> | undefined => {
     if (!user || activities.length === 0) return undefined
-    return { _and: [{ member: { _eq: user.id } }, { activity_id: { _in: activities.map(a => a.id) } }] }
-  }, [user, activities])
+    return { _and: [
+      { member: { _eq: user.id } },
+      { activity_type: { _in: activityTypes } },
+      { activity_id: { _in: activityIds } },
+    ] }
+  }, [user, activities, activityTypes, activityIds])
 
   // Determine date range for absences
   const { minDate, maxDate } = useMemo(() => {
@@ -59,19 +69,21 @@ export function useBulkParticipationStatuses(
 
   const isLoading = partLoading || absLoading
 
-  // Build lookup: activityId → effectiveStatus
+  // Build lookup: activityId → effectiveStatus.
+  // The map's outward key is `activity.id` (callers do `statusMap.get(tr.id)`),
+  // but internally we index participations by the composite `type:id` so the
+  // event/training/game rows for the same numeric id never collide.
   const statusMap = useMemo(() => {
     const map = new Map<string, Participation['status'] | 'absent'>()
     if (!user) return map
 
-    // Index participations by activity_id
-    const partByActivity = new Map<string, Participation>()
+    const partByKey = new Map<string, Participation>()
     for (const p of participations) {
-      partByActivity.set(p.activity_id, p)
+      partByKey.set(`${p.activity_type}:${p.activity_id}`, p)
     }
 
     for (const activity of activities) {
-      const participation = partByActivity.get(activity.id)
+      const participation = partByKey.get(`${activity.type}:${activity.id}`)
 
       // Check if any absence covers this activity's date and type
       const hasAbsence = absences.some((a) => absenceCoversActivity(a, activity.type, activity.date))

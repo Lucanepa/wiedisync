@@ -282,36 +282,94 @@ export function buildBroadcastEmail({
 }
 
 /**
- * Bucket admin/staff email recipients by their preferred locale.
+ * Map `members.language` (long form) → short ISO-ish code we use in templates.
+ * Unknown / null falls back to `de` (canonical club language; matches the
+ * Postgres column default).
+ */
+const LANG_TO_CODE = {
+  german: 'de',
+  swiss_german: 'gsw',
+  english: 'en',
+  french: 'fr',
+  italian: 'it',
+}
+
+export function memberLangToEmailCode(lang) {
+  return LANG_TO_CODE[lang] || 'de'
+}
+
+/**
+ * Bucket email recipients by their preferred locale, returning empty arrays
+ * for absent locales so callers can always loop `['de','gsw','en','fr','it']`.
  *
- * Resolves each address against `directus_users.email` (case-insensitive) and
- * reads `members.language` via the `members.user` FK. Addresses without a
- * matching member, or with `german`/`swiss_german`/null, fall in the `de`
- * bucket; everything else (`english`/`french`/`italian`/...) falls in `en`.
- * Mirrors the resolution used by team-join-request and announcement fanout.
+ * Resolution order per address (first match wins):
+ *   1. `directus_users.email` → `members.user` FK → `members.language`
+ *   2. `members.email` directly (covers staff/owner addresses that aren't a
+ *      Directus user, e.g. external admins, the OWNER_EMAIL constant)
+ *   3. fallback to `de`
  *
  * @param {object} database - knex instance
  * @param {string[]} emails - recipient addresses (any case)
- * @returns {Promise<{de: string[], en: string[]}>}
+ * @returns {Promise<{de: string[], gsw: string[], en: string[], fr: string[], it: string[]}>}
  */
 export async function bucketEmailsByLocale(database, emails) {
-  const buckets = { de: [], en: [] }
+  const buckets = { de: [], gsw: [], en: [], fr: [], it: [] }
   if (!Array.isArray(emails) || emails.length === 0) return buckets
   const lower = [...new Set(emails.map(e => String(e || '').trim().toLowerCase()).filter(Boolean))]
   if (lower.length === 0) return buckets
   const placeholders = lower.map(() => '?').join(',')
-  const rows = await database('directus_users as du')
+
+  // Pass 1: directus_users.email → members.language
+  const duRows = await database('directus_users as du')
     .leftJoin('members as m', 'm.user', 'du.id')
     .whereRaw(`LOWER(du.email) IN (${placeholders})`, lower)
     .select(database.raw('LOWER(du.email) as email'), 'm.language')
   const langMap = new Map()
-  for (const r of rows) {
-    if (!langMap.has(r.email)) langMap.set(r.email, r.language)
+  for (const r of duRows) {
+    if (!langMap.has(r.email) && r.language != null) langMap.set(r.email, r.language)
   }
+
+  // Pass 2: members.email fallback for addresses we couldn't resolve via Directus
+  const unresolved = lower.filter(e => !langMap.has(e))
+  if (unresolved.length > 0) {
+    const ph = unresolved.map(() => '?').join(',')
+    const memRows = await database('members')
+      .whereRaw(`LOWER(email) IN (${ph})`, unresolved)
+      .select(database.raw('LOWER(email) as email'), 'language')
+    for (const r of memRows) {
+      if (!langMap.has(r.email) && r.language != null) langMap.set(r.email, r.language)
+    }
+  }
+
   for (const email of lower) {
-    const lang = langMap.get(email)
-    const isGerman = !lang || lang === 'german' || lang === 'swiss_german'
-    buckets[isGerman ? 'de' : 'en'].push(email)
+    const code = memberLangToEmailCode(langMap.get(email))
+    buckets[code].push(email)
   }
   return buckets
 }
+
+/**
+ * Bucket member ids by their preferred locale. Use this when callers already
+ * hold member ids and don't need to round-trip via email addresses.
+ *
+ * @param {object} database - knex instance
+ * @param {Array<number|string>} memberIds
+ * @returns {Promise<{de: number[], gsw: number[], en: number[], fr: number[], it: number[]}>}
+ */
+export async function bucketMemberIdsByLocale(database, memberIds) {
+  const buckets = { de: [], gsw: [], en: [], fr: [], it: [] }
+  if (!Array.isArray(memberIds) || memberIds.length === 0) return buckets
+  const ids = [...new Set(memberIds.filter(Boolean))]
+  if (ids.length === 0) return buckets
+  const rows = await database('members').whereIn('id', ids).select('id', 'language')
+  const langMap = new Map()
+  for (const r of rows) langMap.set(r.id, r.language)
+  for (const id of ids) {
+    const code = memberLangToEmailCode(langMap.get(id))
+    buckets[code].push(id)
+  }
+  return buckets
+}
+
+/** Locale order callers should iterate in. Frozen so it's safe to share. */
+export const EMAIL_LOCALES = Object.freeze(['de', 'gsw', 'en', 'fr', 'it'])

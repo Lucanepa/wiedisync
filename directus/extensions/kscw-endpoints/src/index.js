@@ -15,8 +15,9 @@ import { registerGCalSync } from './gcal-sync.js'
 import { registerScorerReminders } from './scorer-reminders.js'
 import { registerGameScheduling } from './game-scheduling.js'
 import { registerContactForm } from './contact-form.js'
-import { registerWebPush, sendPushToMember } from './web-push.js'
+import { registerWebPush, sendPushToMember, sendPushToMembers } from './web-push.js'
 import { FRONTEND_URL } from './email-template.js'
+import { sendLocalizedPush, tPush, memberLangToCode } from './push-i18n.js'
 import { writeErrorLog, logErrorToFile, logAuthDenial, logWarning, cleanOldLogs, computeErrorHash } from './error-log.js'
 import { registerStats } from './stats.js'
 import { registerRegistration } from './registration.js'
@@ -1218,13 +1219,14 @@ export default {
               }).catch(e => log.error(`register notify email: ${e.message}`))
             }
 
-            // Push notifications
-            for (const rid of recipientIds) {
-              sendPushToMember(database, rid,
-                `Neue Beitrittsanfrage: ${first_name} ${last_name}`,
-                `${first_name} ${last_name} möchte ${teamName} beitreten`,
-                `${FRONTEND_URL}/teams/${teamUrlPath}`, 'team', log).catch(() => {})
-            }
+            // Push notifications (per-recipient locale)
+            const memberName = `${first_name} ${last_name}`
+            sendLocalizedPush(
+              database, recipientIds,
+              (ids, title, body) => sendPushToMembers(database, ids, title, body, `${FRONTEND_URL}/teams/${teamUrlPath}`, 'team', log),
+              'joinRequest.title', 'joinRequest.body',
+              { name: memberName, team: teamName },
+            ).catch(() => {})
           }
         } catch (notifErr) {
           log.error(`register notification: ${notifErr.message}`)
@@ -1331,8 +1333,12 @@ export default {
           activity_type: 'game', activity_id: String(d.game), team: d.from_team, read: false,
         })
 
-        // Push notification
-        sendPushToMember(database, d.from_member, 'Delegation angenommen', 'Deine Schreiber-Delegation wurde angenommen', FRONTEND_URL, 'delegation', log).catch(() => {})
+        // Push notification (recipient locale)
+        sendLocalizedPush(
+          database, [d.from_member],
+          (ids, title, body) => sendPushToMembers(database, ids, title, body, FRONTEND_URL, 'delegation', log),
+          'delegation.accepted.title', 'delegation.accepted.body',
+        ).catch(() => {})
 
         res.json({ success: true })
       } catch (err) {
@@ -1365,8 +1371,12 @@ export default {
             activity_type: 'game', activity_id: String(d.game), team: d.from_team, read: false,
           })
 
-          // Push notification
-          sendPushToMember(database, d.from_member, 'Delegation abgelehnt', 'Deine Schreiber-Delegation wurde abgelehnt', FRONTEND_URL, 'delegation', log).catch(() => {})
+          // Push notification (recipient locale)
+          sendLocalizedPush(
+            database, [d.from_member],
+            (ids, title, body) => sendPushToMembers(database, ids, title, body, FRONTEND_URL, 'delegation', log),
+            'delegation.declined.title', 'delegation.declined.body',
+          ).catch(() => {})
         }
 
         res.json({ success: true })

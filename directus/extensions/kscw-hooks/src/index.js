@@ -22,6 +22,7 @@
 import { logCronError, logWarning, logAuthDenial, cleanOldLogs, writeErrorLog } from '../../kscw-endpoints/src/error-log.js'
 import { initSentry } from '../../kscw-endpoints/src/sentry.js'
 import { buildEmailLayout, buildInfoCard, buildAlertBox, bucketEmailsByLocale } from '../../kscw-endpoints/src/email-template.js'
+import { sendLocalizedPush, bucketMembersByLocale, tPush } from '../../kscw-endpoints/src/push-i18n.js'
 
 // Frontend URL — env var or auto-detect from Directus PUBLIC_URL
 const FRONTEND_URL = process.env.FRONTEND_URL
@@ -439,8 +440,8 @@ export default ({ action, filter, init, schedule }, { services, database, logger
 
       // Unwind: reverse any auto-declines this absence previously created
       // that no longer match the (possibly shortened / re-scoped) window.
-      // Manual overrides are safe — the BEFORE UPDATE trigger on participations
-      // clears auto_declined_by as soon as a user flips `status`.
+      // Manual overrides survive — the BEFORE UPDATE trigger on participations
+      // detaches `auto_declined_by` the moment a user flips `status`.
       await database.raw(
         `DELETE FROM participations WHERE auto_declined_by = ?::integer`,
         [absenceId],
@@ -448,9 +449,30 @@ export default ({ action, filter, init, schedule }, { services, database, logger
 
       let declined = 0
 
+      // Per the agreed policy: an absence hard-overrides existing confirmed /
+      // tentative / waitlisted RSVPs. The two-step pattern (UPDATE then INSERT)
+      // is required because participations has no UNIQUE(member,activity_id)
+      // constraint, so ON CONFLICT is unavailable. Migration 038 reshapes the
+      // trigger to preserve `auto_declined_by` when we set status + marker in
+      // the same UPDATE — without that, the marker would be cleared and the
+      // override would be indistinguishable from a manual edit.
+
       // Trainings
       if (allTypes || affects.includes('trainings')) {
-        const res = await database.raw(`
+        const upd = await database.raw(`
+          UPDATE participations p
+          SET status = 'declined', note = ?, auto_declined_by = ?::integer
+          FROM trainings t
+          WHERE p.activity_type = 'training' AND p.activity_id = t.id::text
+            AND p.member = ?::integer
+            AND p.status IN ('confirmed', 'tentative', 'waitlisted')
+            AND t.date >= ?::date AND t.date <= ?::date
+            AND t.cancelled = false
+            ${pgDowClause}
+        `, [absence.reason || '', absenceId, memberId, effectiveStart, endDate])
+        declined += upd?.rowCount || 0
+
+        const ins = await database.raw(`
           INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff, auto_declined_by)
           SELECT ?::integer, 'training', t.id::text, 'declined', ?, 0, false, ?::integer
           FROM trainings t
@@ -462,13 +484,27 @@ export default ({ action, filter, init, schedule }, { services, database, logger
               SELECT 1 FROM participations p
               WHERE p.activity_type = 'training' AND p.activity_id = t.id::text AND p.member = ?::integer
             )
-        `, [memberId, absence.reason || '', absenceId, effectiveStart, endDate, memberId, memberId])
-        declined += res?.rowCount || 0
+        `, [memberId, absence.reason || '', absenceId, effectiveStart, endDate, memberId])
+        declined += ins?.rowCount || 0
       }
 
       // Games
       if (allTypes || affects.includes('games')) {
-        const res = await database.raw(`
+        const upd = await database.raw(`
+          UPDATE participations p
+          SET status = 'declined', note = ?, auto_declined_by = ?::integer
+          FROM games g
+          WHERE p.activity_type = 'game' AND p.activity_id = g.id::text
+            AND p.member = ?::integer
+            AND p.status IN ('confirmed', 'tentative', 'waitlisted')
+            AND g.date >= ?::date AND g.date <= ?::date
+            AND g.kscw_team IS NOT NULL
+            AND COALESCE(g.status, '') NOT IN ('completed', 'postponed', 'cancelled')
+            ${pgDowClause.replace(/d\.date/g, 'g.date')}
+        `, [absence.reason || '', absenceId, memberId, effectiveStart, endDate])
+        declined += upd?.rowCount || 0
+
+        const ins = await database.raw(`
           INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff, auto_declined_by)
           SELECT ?::integer, 'game', g.id::text, 'declined', ?, 0, false, ?::integer
           FROM games g
@@ -481,13 +517,25 @@ export default ({ action, filter, init, schedule }, { services, database, logger
               SELECT 1 FROM participations p
               WHERE p.activity_type = 'game' AND p.activity_id = g.id::text AND p.member = ?::integer
             )
-        `, [memberId, absence.reason || '', absenceId, effectiveStart, endDate, memberId, memberId])
-        declined += res?.rowCount || 0
+        `, [memberId, absence.reason || '', absenceId, effectiveStart, endDate, memberId])
+        declined += ins?.rowCount || 0
       }
 
       // Events
       if (allTypes || affects.includes('events')) {
-        const res = await database.raw(`
+        const upd = await database.raw(`
+          UPDATE participations p
+          SET status = 'declined', note = ?, auto_declined_by = ?::integer
+          FROM events e
+          WHERE p.activity_type = 'event' AND p.activity_id = e.id::text
+            AND p.member = ?::integer
+            AND p.status IN ('confirmed', 'tentative', 'waitlisted')
+            AND e.start_date::date >= ?::date AND e.start_date::date <= ?::date
+            ${pgDowClause.replace(/d\.date/g, 'e.start_date::date')}
+        `, [absence.reason || '', absenceId, memberId, effectiveStart, endDate])
+        declined += upd?.rowCount || 0
+
+        const ins = await database.raw(`
           INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff, auto_declined_by)
           SELECT ?::integer, 'event', e.id::text, 'declined', ?, 0, false, ?::integer
           FROM events e
@@ -499,8 +547,8 @@ export default ({ action, filter, init, schedule }, { services, database, logger
               SELECT 1 FROM participations p
               WHERE p.activity_type = 'event' AND p.activity_id = e.id::text AND p.member = ?::integer
             )
-        `, [memberId, absence.reason || '', absenceId, effectiveStart, endDate, memberId, memberId])
-        declined += res?.rowCount || 0
+        `, [memberId, absence.reason || '', absenceId, effectiveStart, endDate, memberId])
+        declined += ins?.rowCount || 0
       }
 
       if (declined > 0) log.info(`[absence-auto-decline] Absence ${absenceId}: ${declined} activities declined for member ${memberId}`)
@@ -595,11 +643,14 @@ export default ({ action, filter, init, schedule }, { services, database, logger
         }).catch(e => log.error(`team-join-request email: ${e.message}`))
       }
 
-      // Push
-      await sendPushToMembers(database, recipientIds,
-        `Neue Beitrittsanfrage: ${member.first_name} ${member.last_name}`,
-        `${member.first_name} ${member.last_name} möchte ${teamName} beitreten`,
-        `${FRONTEND_URL}/teams/${teamUrlPath}`, 'team', log)
+      // Push (per-recipient locale)
+      const memberName = `${member.first_name} ${member.last_name}`
+      await sendLocalizedPush(
+        database, recipientIds,
+        (ids, title, body) => sendPushToMembers(database, ids, title, body, `${FRONTEND_URL}/teams/${teamUrlPath}`, 'team', log),
+        'joinRequest.title', 'joinRequest.body',
+        { name: memberName, team: teamName },
+      )
     } catch (err) {
       log.error({ msg: `[team-join-request] ${err.message}`, stack: err.stack })
     }
@@ -683,9 +734,17 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       const baseBodyText = stripHtmlPlain(baseTr.body).slice(0, 200)
       const newsUrl = `${FRONTEND_URL}/news`
 
-      // Push fanout (single batch, German title for all)
+      // Push fanout (per-recipient locale via members.language)
       if (ann.notify_push) {
-        await sendPushToMembers(database, memberIds, baseTitle, baseBodyText, newsUrl, `announcement-${annId}`, log)
+        const CODE_TO_LANG = { de: 'german', gsw: 'swiss_german', en: 'english', fr: 'french', it: 'italian' }
+        const buckets = await bucketMembersByLocale(database, memberIds)
+        for (const [code, ids] of Object.entries(buckets)) {
+          if (!ids || ids.length === 0) continue
+          const tr = pickAnnouncementTranslation(translations, CODE_TO_LANG[code])
+          const title = tr.title || baseTitle
+          const body = (stripHtmlPlain(tr.body).slice(0, 200)) || baseBodyText
+          await sendPushToMembers(database, ids, title, body, newsUrl, `announcement-${annId}`, log)
+        }
       }
 
       // Email fanout (per-recipient locale resolution)
@@ -1351,7 +1410,11 @@ export default ({ action, filter, init, schedule }, { services, database, logger
           .distinct('member')
           .pluck('member')
         if (deadlineMembers.length > 0) {
-          await sendPushToMembers(database, deadlineMembers, 'RSVP Erinnerung', 'Anmeldefrist läuft morgen ab', FRONTEND_URL, 'deadline_reminder', log)
+          await sendLocalizedPush(
+            database, deadlineMembers,
+            (ids, title, body) => sendPushToMembers(database, ids, title, body, FRONTEND_URL, 'deadline_reminder', log),
+            'deadline.title', 'deadline.body',
+          )
         }
       } catch (pushErr) {
         log.warn({ msg: `Deadline push: ${pushErr.message}`, event: 'cron.deadline_push', stack: pushErr.stack })
@@ -1439,7 +1502,11 @@ export default ({ action, filter, init, schedule }, { services, database, logger
           .distinct('member')
           .pluck('member')
         if (upcomingMembers.length > 0) {
-          await sendPushToMembers(database, upcomingMembers, 'Morgen', 'Du hast morgen eine Aktivität', FRONTEND_URL, 'upcoming_activity', log)
+          await sendLocalizedPush(
+            database, upcomingMembers,
+            (ids, title, body) => sendPushToMembers(database, ids, title, body, FRONTEND_URL, 'upcoming_activity', log),
+            'tomorrow.title', 'tomorrow.body',
+          )
         }
       } catch (pushErr) {
         log.warn({ msg: `Upcoming push: ${pushErr.message}`, event: 'cron.upcoming_push', stack: pushErr.stack })
@@ -2210,5 +2277,68 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     return payload
   })
 
-  log.info('KSCW hooks loaded: role-sync (5 actions, 2 filters), Turnstile, member privacy, registration approval, Spielplaner scope guard, 11 crons (validations+notifications in Postgres)')
+  // ── Participation create: absence-aware auto-decline ────────────────────
+  // When a new participation is created, look up any covering absence for the
+  // member and silently flip the new RSVP to 'declined'. Mirrors the policy
+  // applied by autoDeclineForAbsence on the absence side: the absence wins.
+  // The user can clear the absence (or the marker) to RSVP affirmatively again.
+  filter('participations.items.create', async (payload, _meta, { database: db }) => {
+    try {
+      if (!payload || !payload.activity_type || !payload.activity_id || !payload.member) return payload
+      // If already declined, nothing to do.
+      if (payload.status === 'declined') return payload
+
+      // Resolve activity date based on activity_type
+      let activityDate = null
+      let affectsKey = null
+      if (payload.activity_type === 'training') {
+        const row = await db('trainings').where('id', payload.activity_id).first('date', 'cancelled')
+        if (!row || row.cancelled) return payload
+        activityDate = row.date
+        affectsKey = 'trainings'
+      } else if (payload.activity_type === 'game') {
+        const row = await db('games').where('id', payload.activity_id).first('date', 'status')
+        if (!row) return payload
+        if (['completed', 'postponed', 'cancelled'].includes(row.status || '')) return payload
+        activityDate = row.date
+        affectsKey = 'games'
+      } else if (payload.activity_type === 'event') {
+        const row = await db('events').where('id', payload.activity_id).first('start_date')
+        if (!row) return payload
+        activityDate = row.start_date
+        affectsKey = 'events'
+      } else {
+        return payload
+      }
+      if (!activityDate) return payload
+
+      const dateStr = activityDate.toISOString?.().split('T')[0] || String(activityDate).split('T')[0]
+      const res = await db.raw(`
+        SELECT a.id, COALESCE(a.reason, '') AS reason
+        FROM absences a
+        WHERE a.member = ?::integer
+          AND a.start_date::date <= ?::date AND a.end_date::date >= ?::date
+          AND (a.affects::jsonb @> '"all"' OR a.affects::jsonb @> ?::jsonb)
+          AND (a.type != 'weekly' OR a.days_of_week::jsonb @> to_jsonb((EXTRACT(DOW FROM ?::date)::int + 6) % 7))
+        ORDER BY a.id ASC
+        LIMIT 1
+      `, [payload.member, dateStr, dateStr, JSON.stringify(affectsKey), dateStr])
+
+      const absence = res?.rows?.[0]
+      if (!absence) return payload
+
+      log.info(`[absence-auto-decline] participation create override: member=${payload.member} ${payload.activity_type}=${payload.activity_id} → declined (absence ${absence.id})`)
+      return {
+        ...payload,
+        status: 'declined',
+        note: payload.note || absence.reason,
+        auto_declined_by: absence.id,
+      }
+    } catch (err) {
+      log.error({ msg: `[absence-auto-decline] participation create filter: ${err.message}`, event: 'absence_auto_decline_part_create', stack: err.stack })
+      return payload
+    }
+  })
+
+  log.info('KSCW hooks loaded: role-sync (5 actions, 2 filters), Turnstile, member privacy, registration approval, Spielplaner scope guard, participation absence-aware decline, 11 crons (validations+notifications in Postgres)')
 }

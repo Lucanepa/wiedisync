@@ -2,6 +2,17 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## [4.4.10] — 2026-05-03
+
+### Fixed
+- **Weekly unavailability did not override existing confirmed RSVPs.** If you had already RSVP'd ✓ to a Monday training and then created a weekly Monday unavailability, the participation row stayed `confirmed` — the personal training row's left strip rendered green via `useBulkParticipationStatuses` (which prefers an existing participation over an absence), while the roster modal labelled you "Declined (Absence)" via its absence overlay. Two views of the same data disagreed. Root cause: `autoDeclineForAbsence` in `kscw-hooks` did `INSERT … NOT EXISTS` (skipped any activity where a participation already existed) and there was no `participations.items.create` filter to catch the reverse case (RSVPing after the absence already existed). Policy decision: an absence hard-overrides the RSVP. Hook now UPDATE-then-INSERTs for trainings/games/events, and a new `filter('participations.items.create')` silently flips fresh RSVPs to `declined` + tags them with `auto_declined_by` when a covering absence exists. Migration 038 reshapes `trg_participations_clear_auto_marker` to mirror the trainings `auto_cancelled_by_closure` pattern (clear only when status changed AND marker unchanged) so the hook can write both fields in one UPDATE without losing the marker; manual-override semantics preserved (a user-driven status flip still detaches `auto_declined_by`). Backfilled 6 conflicting rows on prod.
+- **Roster modal label and absence-coverage logic.** `ParticipationRosterModal.tsx` showed `Declined (Absence)` for any absence overlapping the activity date, regardless of `type`/`days_of_week`/`affects`. Switched the modal to use `absenceCoversActivity()` (already used by `useParticipation` and `useBulkParticipationStatuses`) so weekly absences only count on their declared days, and added `declinedUnavailable: 'Unavailable'` (en/de/fr/it/gsw) so weekly unavailabilities show "Unavailable" while one-off absences keep "Declined (Absence)".
+
+## [4.4.9] — 2026-05-03
+
+### Fixed
+- **Push notifications were always sent in German regardless of `members.language`.** Every cron and event-driven push (`upcoming_activity`, `deadline_reminder`, team-join requests, scorer delegation accepted/declined, event invites, announcement fan-out, direct-message preview fallback) called `sendPushToMembers` once with a hardcoded German title + body. Web push payloads are baked at send time, so the recipient's in-app locale toggle could not localize them after delivery. New `directus/extensions/kscw-endpoints/src/push-i18n.js` provides `bucketMembersByLocale` (de / gsw / en / fr / it via `members.language`) and `tPush(locale, key, vars)` over an 11-key translation table. All eight call sites switched to `sendLocalizedPush`, dispatching one push per locale bucket. Announcement fan-out reuses its existing per-locale `translations` field (no new keys needed). Email templates were already DE/EN bucketed and were not changed.
+
 ## [4.4.8] — 2026-05-02
 
 ### Fixed

@@ -46,8 +46,8 @@ export function flattenMemberIds(field: unknown): string[] {
   }).filter(Boolean)
 }
 
-/** Union of a team's coach + captain + team_responsible member IDs — used for "Coach present" detection. */
-export function teamCoachIds(team: { coach?: unknown; captain?: unknown; team_responsible?: unknown } | null | undefined): string[] {
+/** Team's coach member IDs — used for "Coach present" detection. Excludes captain + team_responsible (they're not coaches). */
+export function teamCoachIds(team: { coach?: unknown } | null | undefined): string[] {
   if (!team) return []
-  return [...flattenMemberIds(team.coach), ...flattenMemberIds(team.captain), ...flattenMemberIds(team.team_responsible)]
+  return flattenMemberIds(team.coach)
 }

@@ -370,10 +370,10 @@ export default function ParticipationRosterModal({
 
   // Staff counts — only staff who are NOT also players
   const staffParticipations = participations.filter(p => p.is_staff && !memberIdSet.has(p.member))
-  // "Coach present" = staff-only confirmed + player-coaches confirmed
+  // "Coach present" = staff-only confirmed + player-coaches confirmed (coach only — captain/TR don't count)
   const staffOnlyConfirmed = staffParticipations.filter(p => p.status === 'confirmed').length
   const playerCoachConfirmed = summaryParticipations.filter(p =>
-    p.status === 'confirmed' && leadershipRoles.has(p.member)
+    p.status === 'confirmed' && leadershipRoles.get(p.member) === 'coach'
   ).length
   const staffConfirmed = staffOnlyConfirmed + playerCoachConfirmed
 

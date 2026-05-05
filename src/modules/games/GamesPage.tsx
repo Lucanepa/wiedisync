@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
@@ -18,6 +18,7 @@ import GameCard from './components/GameCard'
 import RankingsTable from './components/RankingsTable'
 import KscwScoreboard from './components/KscwScoreboard'
 import GameDetailModal from './components/GameDetailModal'
+import GameCoachDashboard from './components/GameCoachDashboard'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import SharedEmptyState from '../../components/EmptyState'
 import { getGameWarnings, type Warning } from '../../utils/participationWarnings'
@@ -32,7 +33,7 @@ function buildTeamFilter(teamPbIds: string[]): Record<string, unknown> | null {
 
 export default function GamesPage() {
   const { t } = useTranslation('games')
-  const { user, memberTeamIds, memberTeamNames, coachTeamIds, coachTeamNames, primarySport, teamsLoading } = useAuth()
+  const { user, memberTeamIds, memberTeamNames, coachTeamIds, coachTeamNames, isCoach, primarySport, teamsLoading } = useAuth()
   // Merge member + coach teams for visibility (coaches see teams they manage)
   const allUserTeamIds = useMemo(() => [...new Set([...memberTeamIds, ...coachTeamIds])], [memberTeamIds, coachTeamIds])
   const allUserTeamNames = useMemo(() => [...new Set([...memberTeamNames, ...coachTeamNames])], [memberTeamNames, coachTeamNames])
@@ -42,7 +43,7 @@ export default function GamesPage() {
   const [searchParams] = useSearchParams()
   const [activeTab, setActiveTab] = useState<TabKey>(() => {
     const tab = searchParams.get('tab')
-    return tab === 'rankings' || tab === 'results' || tab === 'scoreboard' ? tab : 'upcoming'
+    return tab === 'rankings' || tab === 'results' || tab === 'scoreboard' || tab === 'dashboard' ? tab : 'upcoming'
   })
   const [selectedTeams, setSelectedTeams] = useState<string[]>([])
   const [selectedGame, setSelectedGame] = useState<Game | null>(null)
@@ -88,6 +89,40 @@ export default function GamesPage() {
     ? effectiveTeamIds
     : (!(effectiveIsAdmin || effectiveIsVorstand) && allUserTeamIds.length > 0 ? allUserTeamIds : [])
   const teamFilter = buildTeamFilter(filterTeamIds)
+
+  // Dashboard team ID resolution (priority: first selected → first coached → null).
+  // Note: selectedTeams holds team NAMES; effectiveTeamIds is the resolved ID array
+  // from name→id lookup above. coachTeamIds (from useAuth) is always ID-typed.
+  const dashboardTeamId = useMemo<string | null>(() => {
+    if (effectiveTeamIds.length > 0) return effectiveTeamIds[0] ?? null
+    return coachTeamIds[0] ?? null
+  }, [effectiveTeamIds, coachTeamIds])
+
+  const visibleTabs = useMemo<TabKey[]>(() => {
+    const base: TabKey[] = ['upcoming', 'results', 'rankings', 'scoreboard']
+    if (isCoach || effectiveIsAdmin) base.push('dashboard')
+    return base
+  }, [isCoach, effectiveIsAdmin])
+
+  // Preserve the user's multi-select while they're on the dashboard tab,
+  // so switching back to upcoming/results restores it. Snapshot when entering
+  // the dashboard tab; restore when leaving.
+  const preservedSelectionRef = useRef<string[] | null>(null)
+  useEffect(() => {
+    if (activeTab === 'dashboard') {
+      if (preservedSelectionRef.current === null) {
+        preservedSelectionRef.current = selectedTeams
+      }
+      if (selectedTeams.length > 1) {
+        // Collapse to single team on entering dashboard.
+        setSelectedTeams(selectedTeams.slice(0, 1))
+      }
+    } else if (preservedSelectionRef.current !== null) {
+      setSelectedTeams(preservedSelectionRef.current)
+      preservedSelectionRef.current = null
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab])
 
   // Sport filter clause for Directus queries
   const sportFilter = useMemo((): Record<string, unknown> | null => {
@@ -241,10 +276,10 @@ export default function GamesPage() {
           </div>
         )}
         <div data-tour="team-filter">
-          <TeamFilterBar selected={selectedTeams} onChange={setSelectedTeams} sport={sport} limitToTeams={effectiveIsAdmin || effectiveIsVorstand || !user ? undefined : allUserTeamNames} />
+          <TeamFilterBar selected={selectedTeams} onChange={setSelectedTeams} sport={sport} limitToTeams={effectiveIsAdmin || effectiveIsVorstand || !user ? undefined : allUserTeamNames} singleSelect={activeTab === 'dashboard'} />
         </div>
         <div data-tour="game-tabs">
-          <GameTabs activeTab={activeTab} onChange={(tab) => { setActiveTab(tab); setShowAll(false) }} />
+          <GameTabs activeTab={activeTab} onChange={(tab) => { setActiveTab(tab); setShowAll(false) }} tabs={visibleTabs} />
         </div>
       </div>
 
@@ -354,6 +389,11 @@ export default function GamesPage() {
         {activeTab === 'scoreboard' && !rankingsLoading && (
           <div data-tour="game-scoreboard"><KscwScoreboard rankings={allRankings} /></div>
         )}
+
+        {/* Coach Dashboard */}
+        {activeTab === 'dashboard' && (
+          <GameCoachDashboard teamId={dashboardTeamId} />
+        )}
       </div>
 
       <GameDetailModal game={selectedGame} onClose={() => setSelectedGame(null)} />
@@ -366,6 +406,7 @@ const tabIcons: Record<string, React.ReactNode> = {
   results: <Trophy className="h-10 w-10" />,
   rankings: <BarChart3 className="h-10 w-10" />,
   scoreboard: <LayoutGrid className="h-10 w-10" />,
+  dashboard: <BarChart3 className="h-10 w-10" />,
 }
 
 function EmptyState({ tab }: { tab: string }) {

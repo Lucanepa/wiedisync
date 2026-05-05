@@ -24,6 +24,7 @@ export default {
   reasonWork: 'Work',
   reasonPersonal: 'Personal',
   reasonOther: 'Other',
+  weeklyUnavailability: 'Weekly unavailability',
 
   // Affects options
   affectsTrainings: 'Trainings',

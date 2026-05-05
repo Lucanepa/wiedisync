@@ -10,6 +10,7 @@ import { getEventWarnings } from '../../utils/participationWarnings'
 import { useAuth } from '../../hooks/useAuth'
 import { useMutation } from '../../hooks/useMutation'
 import { useMyCoveringAbsence } from '../../hooks/useMyCoveringAbsence'
+import { useAbsenceNoteText } from '../../hooks/useAbsenceNoteText'
 import { formatDate, formatTime, getDeadlineDate } from '../../utils/dateHelpers'
 import type { Event, Team, Participation } from '../../types'
 
@@ -212,7 +213,9 @@ function EventCardParticipation({ event, existingParticipation, onSaved }: { eve
   const { user, isStaffOnly } = useAuth()
   const isStaff = !!event.teams?.[0] && isStaffOnly(teamId(event.teams[0]))
   const { create, update } = useMutation<Participation>('participations')
-  const { hasAbsence, isLoading: absenceLoading } = useMyCoveringAbsence('event', event.start_date)
+  const { absence, hasAbsence } = useMyCoveringAbsence('event', event.start_date)
+  const absenceLabel = absence?.type === 'weekly' ? 'declinedUnavailable' : 'absent'
+  const absenceNoteText = useAbsenceNoteText(absence)
 
   const deadlinePassed = event.respond_by
     ? getDeadlineDate(event.respond_by, event.start_date ? formatTime(event.start_date) : undefined) < new Date()
@@ -225,11 +228,12 @@ function EventCardParticipation({ event, existingParticipation, onSaved }: { eve
   const noteInitRef = useRef(existingParticipation?.note ?? '')
   const noteInputRef = useRef<HTMLInputElement>(null)
 
-  // Sync note when participation data changes
+  // Sync note: prefer server note, otherwise prefill with absence label.
   const serverNote = existingParticipation?.note ?? ''
-  if (serverNote !== noteInitRef.current) {
-    noteInitRef.current = serverNote
-    setNoteText(serverNote)
+  const effectiveSync = serverNote || absenceNoteText
+  if (effectiveSync !== noteInitRef.current) {
+    noteInitRef.current = effectiveSync
+    setNoteText(effectiveSync)
   }
 
   const serverStatus = existingParticipation?.status ?? null
@@ -284,13 +288,11 @@ function EventCardParticipation({ event, existingParticipation, onSaved }: { eve
 
   const isLocked = deadlinePassed
 
-  if (absenceLoading) return null
-  if (hasAbsence) {
-    return <p className="text-sm text-gray-500 dark:text-gray-400">{t('absent')}</p>
-  }
-
   return (
     <div className="space-y-1.5">
+      {hasAbsence && (
+        <p className="text-xs italic text-gray-500 dark:text-gray-400">{t(absenceLabel)}</p>
+      )}
       <div className="relative flex flex-wrap items-center gap-1.5">
         {(['confirmed', 'tentative', 'declined'] as const)
           .filter((s) => s !== 'tentative' || event.allow_maybe !== false)

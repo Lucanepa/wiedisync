@@ -65,29 +65,28 @@ function HookedParticipationButton(props: ParticipationButtonProps) {
   const { t } = useTranslation('participation')
   const { isStaffOnly } = useAuth()
   const isStaff = !!props.teamId && isStaffOnly(props.teamId)
-  const { participation, effectiveStatus, hasAbsence, setStatus, saveConfirmed, dismissConfirmed } = useParticipation(
+  const { participation, effectiveStatus, setStatus, saveConfirmed, dismissConfirmed } = useParticipation(
     props.activityType,
     props.activityId,
     props.activityDate,
     props.sessionId,
     isStaff,
   )
-  // Absence hard-overrides RSVP: hide interactive buttons when a covering
-  // absence exists. Detail modals already short-circuit before reaching this
-  // component, so this guards calendar entries and any other inline caller.
-  // We piggyback on `useMyCoveringAbsence` solely for its `isLoading` flag —
-  // the underlying useCollection cache key matches `useParticipation`'s, so
-  // there's no extra HTTP request, only a shared subscription.
-  const { isLoading: absenceLoading } = useMyCoveringAbsence(props.activityType, props.activityDate)
-  if (absenceLoading) return null
-  if (hasAbsence) {
-    return <p className="text-sm text-gray-500 dark:text-gray-400">{t('absent')}</p>
-  }
+  // Show buttons even when an absence covers — clicking flips status; the
+  // BEFORE UPDATE trigger detaches `auto_declined_by`, leaving a clean manual
+  // override. The label below the buttons just communicates the state.
+  const { absence, hasAbsence } = useMyCoveringAbsence(props.activityType, props.activityDate)
+  const absenceLabel = absence?.type === 'weekly' ? 'declinedUnavailable' : 'absent'
   return (
-    <ParticipationButtonInner
-      {...props}
-      data={{ participation, effectiveStatus, setStatus, saveConfirmed, dismissConfirmed }}
-    />
+    <div className="space-y-1">
+      {hasAbsence && (
+        <p className="text-xs italic text-gray-500 dark:text-gray-400">{t(absenceLabel)}</p>
+      )}
+      <ParticipationButtonInner
+        {...props}
+        data={{ participation, effectiveStatus, setStatus, saveConfirmed, dismissConfirmed }}
+      />
+    </div>
   )
 }
 

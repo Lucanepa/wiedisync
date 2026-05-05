@@ -9,6 +9,8 @@ import ParticipationRosterModal from '../../components/ParticipationRosterModal'
 import SessionParticipationSheet from '../../components/SessionParticipationSheet'
 import { useAuth } from '../../hooks/useAuth'
 import { useParticipation } from '../../hooks/useParticipation'
+import { useMyCoveringAbsence } from '../../hooks/useMyCoveringAbsence'
+import { useAbsenceNoteText } from '../../hooks/useAbsenceNoteText'
 import { useCollection } from '../../lib/query'
 import { useMutation } from '../../hooks/useMutation'
 import { formatDate, formatTime } from '../../utils/dateHelpers'
@@ -260,6 +262,9 @@ function EventParticipation({ event, isStaff, isStaffParticipant }: { event: Eve
     undefined,
     isStaffParticipant,
   )
+  const { absence } = useMyCoveringAbsence('event', event.start_date)
+  const absenceLabel = absence?.type === 'weekly' ? 'declinedUnavailable' : 'absent'
+  const absenceNoteText = useAbsenceNoteText(absence)
   const [noteText, setNoteText] = useState(savedNote)
   const [noteSaved, setNoteSaved] = useState(false)
   const noteInitRef = useRef(savedNote)
@@ -283,9 +288,10 @@ function EventParticipation({ event, isStaff, isStaffParticipant }: { event: Eve
     setGuestCount(participation?.guest_count ?? 0)
   }, [participation?.guest_count])
 
-  if (savedNote !== noteInitRef.current) {
-    noteInitRef.current = savedNote
-    setNoteText(savedNote)
+  const effectiveSync = savedNote || absenceNoteText
+  if (effectiveSync !== noteInitRef.current) {
+    noteInitRef.current = effectiveSync
+    setNoteText(effectiveSync)
   }
 
   useEffect(() => {
@@ -329,12 +335,11 @@ function EventParticipation({ event, isStaff, isStaffParticipant }: { event: Eve
     }
   }
 
-  if (hasAbsence) {
-    return <p className="text-sm text-gray-500 dark:text-gray-400">{t('absent')}</p>
-  }
-
   return (
     <div className="space-y-2">
+      {hasAbsence && (
+        <p className="text-xs italic text-gray-500 dark:text-gray-400">{t(absenceLabel)}</p>
+      )}
       <div className="relative flex items-center gap-2">
         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('yourStatus')}:</span>
         <div className="flex items-center gap-1.5">

@@ -321,7 +321,8 @@ function GameCardParticipation({ game, existingParticipation, onSaved }: { game:
   const { user, isStaffOnly } = useAuth()
   const isStaff = !!game.kscw_team && isStaffOnly(game.kscw_team)
   const { create, update } = useMutation<Participation>('participations')
-  const { hasAbsence, isLoading: absenceLoading } = useMyCoveringAbsence('game', game.date)
+  const { absence, hasAbsence } = useMyCoveringAbsence('game', game.date)
+  const absenceLabel = absence?.type === 'weekly' ? 'declinedUnavailable' : 'absent'
   const [optimisticStatus, setOptimisticStatus] = useState<Participation['status'] | null>(null)
 
   const serverStatus = existingParticipation?.status ?? null
@@ -350,13 +351,12 @@ function GameCardParticipation({ game, existingParticipation, onSaved }: { game:
     }
   }, [user, existingParticipation, game.id, isStaff, create, update, onSaved])
 
-  if (absenceLoading) return null
-  if (hasAbsence) {
-    return <p className="text-xs text-gray-500 dark:text-gray-400">{t('absent')}</p>
-  }
-
   return (
-    <div data-tour="game-rsvp" className="flex items-center gap-1.5">
+    <div data-tour="game-rsvp" className="flex flex-col gap-1">
+      {hasAbsence && (
+        <p className="text-xs italic text-gray-500 dark:text-gray-400">{t(absenceLabel)}</p>
+      )}
+    <div className="flex items-center gap-1.5">
       <button
         onClick={(e) => { e.stopPropagation(); setStatus('confirmed') }}
         className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
@@ -387,6 +387,7 @@ function GameCardParticipation({ game, existingParticipation, onSaved }: { game:
       >
         {t('no')}
       </button>
+    </div>
     </div>
   )
 }

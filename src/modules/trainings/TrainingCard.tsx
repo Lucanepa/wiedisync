@@ -6,6 +6,7 @@ import ParticipationSummary from '../../components/ParticipationSummary'
 import { useAuth } from '../../hooks/useAuth'
 import { useMutation } from '../../hooks/useMutation'
 import { useMyCoveringAbsence } from '../../hooks/useMyCoveringAbsence'
+import { useAbsenceNoteText } from '../../hooks/useAbsenceNoteText'
 
 import { formatDate, formatWeekday, formatTime, getDeadlineDate } from '../../utils/dateHelpers'
 import ParticipationWarningBadge from '../../components/ParticipationWarningBadge'
@@ -155,7 +156,9 @@ function TrainingParticipation({ training, existingParticipation, onSaved }: { t
   const { user, isStaffOnly } = useAuth()
   const isStaff = isStaffOnly(relId(training.team))
   const { create, update } = useMutation<Participation>('participations')
-  const { hasAbsence, isLoading: absenceLoading } = useMyCoveringAbsence('training', training.date)
+  const { absence, hasAbsence } = useMyCoveringAbsence('training', training.date)
+  const absenceLabel = absence?.type === 'weekly' ? 'declinedUnavailable' : 'absent'
+  const absenceNoteText = useAbsenceNoteText(absence)
 
   const deadlinePassed = training.respond_by
     ? getDeadlineDate(training.respond_by, training.start_time) < new Date()
@@ -173,11 +176,15 @@ function TrainingParticipation({ training, existingParticipation, onSaved }: { t
     setGuestCount(existingParticipation?.guest_count ?? 0)
   }, [existingParticipation?.guest_count])
 
-  // Sync note when participation data changes
+  // Sync note when participation data changes. When there is no server-saved
+  // note but a covering absence applies, prefill with the absence-derived
+  // label (Vacation / Weekly unavailability / etc.) so the user sees and can
+  // edit the implicit reason.
   const serverNote = existingParticipation?.note ?? ''
-  if (serverNote !== noteInitRef.current) {
-    noteInitRef.current = serverNote
-    setNoteText(serverNote)
+  const effectiveSync = serverNote || absenceNoteText
+  if (effectiveSync !== noteInitRef.current) {
+    noteInitRef.current = effectiveSync
+    setNoteText(effectiveSync)
   }
 
   const serverStatus = existingParticipation?.status ?? null
@@ -241,13 +248,11 @@ function TrainingParticipation({ training, existingParticipation, onSaved }: { t
 
   const isLocked = deadlinePassed
 
-  if (absenceLoading) return null
-  if (hasAbsence) {
-    return <p className="text-sm text-gray-500 dark:text-gray-400">{t('absent')}</p>
-  }
-
   return (
     <div className="space-y-1.5">
+      {hasAbsence && (
+        <p className="text-xs italic text-gray-500 dark:text-gray-400">{t(absenceLabel)}</p>
+      )}
       <div data-tour="rsvp-buttons" className="relative flex flex-wrap items-center gap-1.5">
         {(['confirmed', 'tentative', 'declined'] as const)
           // When deadline has passed: only render the user's selected choice (if any) in its color.

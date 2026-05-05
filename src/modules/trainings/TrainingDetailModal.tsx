@@ -6,6 +6,8 @@ import ParticipationSummary from '../../components/ParticipationSummary'
 import ParticipationRosterModal from '../../components/ParticipationRosterModal'
 import { useAuth } from '../../hooks/useAuth'
 import { useParticipation } from '../../hooks/useParticipation'
+import { useMyCoveringAbsence } from '../../hooks/useMyCoveringAbsence'
+import { useAbsenceNoteText } from '../../hooks/useAbsenceNoteText'
 import { formatDate, formatWeekday, formatTime, getDeadlineDate } from '../../utils/dateHelpers'
 import TasksSection from '../tasks/TasksSection'
 import BroadcastButton from '../broadcast/BroadcastButton'
@@ -208,6 +210,9 @@ function TrainingParticipation({ training, isStaff, isStaffParticipant }: { trai
     undefined,
     isStaffParticipant,
   )
+  const { absence } = useMyCoveringAbsence('training', training.date)
+  const absenceLabel = absence?.type === 'weekly' ? 'declinedUnavailable' : 'absent'
+  const absenceNoteText = useAbsenceNoteText(absence)
   const [noteText, setNoteText] = useState(savedNote)
   const [noteSaved, setNoteSaved] = useState(false)
   const noteInitRef = useRef(savedNote)
@@ -219,10 +224,11 @@ function TrainingParticipation({ training, isStaff, isStaffParticipant }: { trai
   useEffect(() => {
     setGuestCount(participation?.guest_count ?? 0)
   }, [participation?.guest_count])
-  // Sync note text when server data loads/changes
-  if (savedNote !== noteInitRef.current) {
-    noteInitRef.current = savedNote
-    setNoteText(savedNote)
+  // Sync note text when server data loads/changes — fall back to absence label.
+  const effectiveSync = savedNote || absenceNoteText
+  if (effectiveSync !== noteInitRef.current) {
+    noteInitRef.current = effectiveSync
+    setNoteText(effectiveSync)
   }
 
   // Auto-dismiss status confirmation after 2s
@@ -256,12 +262,11 @@ function TrainingParticipation({ training, isStaff, isStaffParticipant }: { trai
 
   const isLocked = deadlinePassed
 
-  if (hasAbsence) {
-    return <p className="text-sm text-gray-500 dark:text-gray-400">{t('absent')}</p>
-  }
-
   return (
     <div className="space-y-2">
+      {hasAbsence && (
+        <p className="text-xs italic text-gray-500 dark:text-gray-400">{t(absenceLabel)}</p>
+      )}
       <div className="relative flex items-center gap-2">
         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('yourStatus')}:</span>
         <div className="flex items-center gap-1.5">

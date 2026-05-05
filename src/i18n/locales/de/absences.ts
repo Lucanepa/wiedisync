@@ -24,6 +24,7 @@ export default {
   reasonWork: 'Arbeit',
   reasonPersonal: 'Persönlich',
   reasonOther: 'Sonstiges',
+  weeklyUnavailability: 'Wöchentliche Verhinderung',
 
   // Affects options
   affectsTrainings: 'Trainings',

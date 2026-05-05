@@ -9,6 +9,8 @@ import ParticipationSummary from '../../../components/ParticipationSummary'
 import ParticipationRosterModal from '../../../components/ParticipationRosterModal'
 import { useAuth } from '../../../hooks/useAuth'
 import { useParticipation } from '../../../hooks/useParticipation'
+import { useMyCoveringAbsence } from '../../../hooks/useMyCoveringAbsence'
+import { useAbsenceNoteText } from '../../../hooks/useAbsenceNoteText'
 import { useMutation } from '../../../hooks/useMutation'
 import { fetchItem } from '../../../lib/api'
 import { sanitizeUrl } from '../../../utils/sanitizeUrl'
@@ -86,13 +88,17 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
     undefined,
     isStaffParticipant,
   )
+  const { absence } = useMyCoveringAbsence('game', game?.date)
+  const absenceLabel = absence?.type === 'weekly' ? 'participation:declinedUnavailable' : 'participation:absent'
+  const absenceNoteText = useAbsenceNoteText(absence)
   const [noteText, setNoteText] = useState(savedNote)
   const [noteSaved, setNoteSaved] = useState(false)
   const noteInitRef = useRef(savedNote)
-  // Sync note text when server data loads/changes
-  if (savedNote !== noteInitRef.current) {
-    noteInitRef.current = savedNote
-    setNoteText(savedNote)
+  // Sync note text — fall back to absence label when no server note.
+  const effectiveSync = savedNote || absenceNoteText
+  if (effectiveSync !== noteInitRef.current) {
+    noteInitRef.current = effectiveSync
+    setNoteText(effectiveSync)
   }
 
   // Auto-dismiss status confirmation after 2s
@@ -318,11 +324,10 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
             </div>
           ) : (
           <div className="flex flex-wrap items-center gap-3 border-t dark:border-gray-700 px-6 py-3">
-            {hasAbsence ? (
-              <span className="text-sm text-gray-500 dark:text-gray-400">{t('participation:absent')}</span>
-            ) : (
-              <>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('participation:attending')}</span>
+            {hasAbsence && (
+              <span className="w-full text-xs italic text-gray-500 dark:text-gray-400">{t(absenceLabel)}</span>
+            )}
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('participation:attending')}</span>
                 <div className="relative flex gap-2">
                   <button
                     onClick={() => setStatus('confirmed', noteText)}
@@ -369,13 +374,11 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
                     )
                   })()}
                 </div>
-              </>
-            )}
             <div className="ml-auto border-l pl-3 dark:border-gray-600">
               <ParticipationSummary activityType="game" activityId={game.id} bars coachMemberIds={[...flattenMemberIds(kscwTeamObj?.coach), ...flattenMemberIds(kscwTeamObj?.captain), ...flattenMemberIds(kscwTeamObj?.team_responsible)]} />
             </div>
             {/* Participation note */}
-            {!hasAbsence && effectiveStatus && (
+            {effectiveStatus && (
               <div className="relative flex w-full items-center gap-2 pt-1">
                 <MessageSquare className="h-4 w-4 shrink-0 text-gray-400" />
                 <input

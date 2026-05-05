@@ -24,6 +24,7 @@ export default {
   reasonWork: 'Schaffe',
   reasonPersonal: 'Persönlich',
   reasonOther: 'Suscht',
+  weeklyUnavailability: 'Wuchäverhinderig',
 
   // Affects options
   affectsTrainings: 'Trainings',

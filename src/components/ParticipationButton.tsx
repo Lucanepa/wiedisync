@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Check, X, HelpCircle, Hourglass } from 'lucide-react'
 import { useParticipation } from '../hooks/useParticipation'
+import { useMyCoveringAbsence } from '../hooks/useMyCoveringAbsence'
 import { getDeadlineDate } from '../utils/dateHelpers'
 import { useMutation } from '../hooks/useMutation'
 import { useAuth } from '../hooks/useAuth'
@@ -74,6 +75,11 @@ function HookedParticipationButton(props: ParticipationButtonProps) {
   // Absence hard-overrides RSVP: hide interactive buttons when a covering
   // absence exists. Detail modals already short-circuit before reaching this
   // component, so this guards calendar entries and any other inline caller.
+  // We piggyback on `useMyCoveringAbsence` solely for its `isLoading` flag —
+  // the underlying useCollection cache key matches `useParticipation`'s, so
+  // there's no extra HTTP request, only a shared subscription.
+  const { isLoading: absenceLoading } = useMyCoveringAbsence(props.activityType, props.activityDate)
+  if (absenceLoading) return null
   if (hasAbsence) {
     return <p className="text-sm text-gray-500 dark:text-gray-400">{t('absent')}</p>
   }

@@ -91,4 +91,8 @@ export default {
   slotModeManual: 'Manual',
   autoCancelOnMin: 'Auto-cancel',
   autoCancelOnMinHint: 'Training will be automatically cancelled at the deadline if fewer confirmations than the minimum',
+  excludedGuestLevels: 'Excluded guests',
+  excludedGuestLevelsHint: 'Guests at the selected tiers cannot confirm or mark themselves as tentative',
+  excludeAllGuests: 'All guests',
+  guestExcluded: 'Your guest tier is excluded from this training',
 } as const

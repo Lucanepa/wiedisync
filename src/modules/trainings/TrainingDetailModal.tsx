@@ -198,6 +198,10 @@ export default function TrainingDetailModal({ training, onClose }: TrainingDetai
 function TrainingParticipation({ training, isStaff, isStaffParticipant }: { training: TrainingExpanded; isStaff: boolean; isStaffParticipant: boolean }) {
   const { t } = useTranslation('participation')
   const { t: tTrainings } = useTranslation('trainings')
+  const { getGuestLevel } = useAuth()
+  const myGuestLevel = getGuestLevel(relId(training.team))
+  const excludedGuestLevels = Array.isArray(training.excluded_guest_levels) ? training.excluded_guest_levels : []
+  const guestExcluded = myGuestLevel > 0 && excludedGuestLevels.map((n: number) => Number(n)).includes(myGuestLevel)
 
   const deadlinePassed = training.respond_by
     ? getDeadlineDate(training.respond_by, training.start_time) < new Date()
@@ -261,6 +265,10 @@ function TrainingParticipation({ training, isStaff, isStaffParticipant }: { trai
   }
 
   const isLocked = deadlinePassed
+
+  if (guestExcluded) {
+    return <p className="text-sm italic text-gray-500 dark:text-gray-400">{tTrainings('guestExcluded')}</p>
+  }
 
   return (
     <div className="space-y-2">

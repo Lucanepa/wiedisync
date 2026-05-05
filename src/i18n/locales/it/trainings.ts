@@ -91,4 +91,8 @@ export default {
   slotModeManual: 'Manuale',
   autoCancelOnMin: 'Cancellazione automatica',
   autoCancelOnMinHint: "L'allenamento verrà cancellato automaticamente alla scadenza se ci sono meno conferme del minimo",
+  excludedGuestLevels: 'Ospiti esclusi',
+  excludedGuestLevelsHint: 'Gli ospiti dei livelli selezionati non possono confermare o indicare incerto',
+  excludeAllGuests: 'Tutti gli ospiti',
+  guestExcluded: 'Il tuo livello di ospite è escluso da questo allenamento',
 } as const

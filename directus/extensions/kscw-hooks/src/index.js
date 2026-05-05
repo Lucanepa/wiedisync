@@ -2373,5 +2373,60 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     }
   })
 
-  log.info('KSCW hooks loaded: role-sync (5 actions, 2 filters), Turnstile, member privacy, registration approval, Spielplaner scope guard, participation absence-aware decline, 11 crons (validations+notifications in Postgres)')
+  // ── Guest-level RSVP gate ───────────────────────────────────────────────
+  // Trainings can configure `excluded_guest_levels` (jsonb array, e.g. [1,2,3])
+  // to block guests at specific tiers from confirming/tentative. Games are a
+  // hardcoded hard rule: guests of any level can't RSVP yes/maybe to a game.
+  // Events stay open. Declined is always allowed (lets the user cleanly opt
+  // out without an admin doing it for them).
+  filter('participations.items.create', async (payload, _meta, { database: db }) => {
+    try {
+      if (!payload || !payload.activity_type || !payload.activity_id || !payload.member) return payload
+      if (payload.status !== 'confirmed' && payload.status !== 'tentative') return payload
+
+      let teamId = null
+      let excluded = null  // null = "block any positive level" (games), array = explicit list
+      if (payload.activity_type === 'training') {
+        const row = await db('trainings').where('id', payload.activity_id).first('team', 'excluded_guest_levels')
+        if (!row || !row.team) return payload
+        teamId = row.team
+        const raw = row.excluded_guest_levels
+        const list = Array.isArray(raw) ? raw : (typeof raw === 'string' ? JSON.parse(raw) : [])
+        if (!list.length) return payload
+        excluded = list.map((v) => Number(v)).filter((n) => !Number.isNaN(n))
+      } else if (payload.activity_type === 'game') {
+        const row = await db('games').where('id', payload.activity_id).first('kscw_team')
+        if (!row || !row.kscw_team) return payload
+        teamId = row.kscw_team
+        // null = block any positive guest_level
+      } else {
+        return payload
+      }
+
+      const mt = await db('member_teams')
+        .where('member', payload.member)
+        .andWhere('team', teamId)
+        .first('guest_level')
+      const level = Number(mt?.guest_level || 0)
+      if (level === 0) return payload  // not a guest, always allowed
+
+      const blocked = excluded === null ? level > 0 : excluded.includes(level)
+      if (!blocked) return payload
+
+      log.info(`[guest-rsvp-gate] block ${payload.activity_type}=${payload.activity_id} member=${payload.member} level=${level}`)
+      throw kscwScopeError(
+        payload.activity_type === 'game'
+          ? 'Guests cannot participate in games'
+          : 'Your guest level is excluded from this training',
+        403,
+        'GUEST_RSVP_BLOCKED',
+      )
+    } catch (err) {
+      if (err?.extensions?.code === 'GUEST_RSVP_BLOCKED' || err?.status === 403) throw err
+      log.error({ msg: `[guest-rsvp-gate] ${err.message}`, event: 'guest_rsvp_gate', stack: err.stack })
+      return payload
+    }
+  })
+
+  log.info('KSCW hooks loaded: role-sync (5 actions, 2 filters), Turnstile, member privacy, registration approval, Spielplaner scope guard, participation absence-aware decline, guest-level RSVP gate, 11 crons (validations+notifications in Postgres)')
 }

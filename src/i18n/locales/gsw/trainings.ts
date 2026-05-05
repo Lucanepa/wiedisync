@@ -91,4 +91,8 @@ export default {
   slotModeManual: 'Manuell',
   autoCancelOnMin: 'Automatisch absäge',
   autoCancelOnMinHint: 'Training wird bi Frischtablauf automatisch abgseit, wenn weniger Zusage als s Minimum vorliged',
+  excludedGuestLevels: 'Usgschlossni Gäst',
+  excludedGuestLevelsHint: 'Gäst vo de gwählte Stuefe chönd nöd zuesäge oder als unsicher markiere',
+  excludeAllGuests: 'Alli Gäst',
+  guestExcluded: 'Dini Gaststuefe isch vo dem Training usgschlosse',
 } as const

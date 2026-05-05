@@ -91,4 +91,8 @@ export default {
   slotModeManual: 'Manuel',
   autoCancelOnMin: 'Annulation automatique',
   autoCancelOnMinHint: "L'entraînement sera annulé automatiquement à la date limite si moins de confirmations que le minimum",
+  excludedGuestLevels: 'Invités exclus',
+  excludedGuestLevelsHint: 'Les invités des niveaux sélectionnés ne peuvent pas confirmer ni se marquer incertains',
+  excludeAllGuests: 'Tous les invités',
+  guestExcluded: 'Votre niveau d\'invité est exclu de cet entraînement',
 } as const

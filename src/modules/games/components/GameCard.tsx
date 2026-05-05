@@ -318,8 +318,10 @@ export default function GameCard({ game, onClick, variant = 'card', participatio
 
 function GameCardParticipation({ game, existingParticipation, onSaved }: { game: Game; existingParticipation?: Participation; onSaved?: () => void }) {
   const { t } = useTranslation('participation')
-  const { user, isStaffOnly } = useAuth()
+  const { t: tGames } = useTranslation('games')
+  const { user, isStaffOnly, isGuestIn } = useAuth()
   const isStaff = !!game.kscw_team && isStaffOnly(game.kscw_team)
+  const guestExcluded = !!game.kscw_team && isGuestIn(game.kscw_team)
   const { create, update } = useMutation<Participation>('participations')
   const { absence, hasAbsence } = useMyCoveringAbsence('game', game.date)
   const absenceLabel = absence?.type === 'weekly' ? 'declinedUnavailable' : 'absent'
@@ -350,6 +352,10 @@ function GameCardParticipation({ game, existingParticipation, onSaved }: { game:
       setOptimisticStatus(null)
     }
   }, [user, existingParticipation, game.id, isStaff, create, update, onSaved])
+
+  if (guestExcluded) {
+    return <p className="text-xs italic text-gray-500 dark:text-gray-400">{tGames('guestsCannotParticipate')}</p>
+  }
 
   return (
     <div data-tour="game-rsvp" className="flex flex-col gap-1">

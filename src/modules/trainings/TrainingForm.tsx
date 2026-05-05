@@ -281,14 +281,14 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
 
     // Resolve hall_slot relation: only for regular slots in auto mode
     const activeSlot = slotOptions.find((o) => o.key === selectedSlotKey)
-    const hallSlotId = slotMode === 'auto' && activeSlot?.type === 'regular' ? activeSlot.hallSlotId : ''
+    const hallSlotId = slotMode === 'auto' && activeSlot?.type === 'regular' ? activeSlot.hallSlotId : null
 
     const data = {
       team: teamId,
       date,
       start_time: startTime,
       end_time: endTime,
-      hall: hallId === '__other__' ? '' : (hallId || undefined),
+      hall: hallId === '__other__' ? null : (hallId || null),
       hall_name: hallId === '__other__' ? hallName : '',
       hall_slot: hallSlotId,
       notes,

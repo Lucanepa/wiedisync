@@ -61,15 +61,22 @@ export default function ParticipationButton(props: ParticipationButtonProps) {
 
 /** Uses useParticipation hook to fetch data (for detail modals / standalone use) */
 function HookedParticipationButton(props: ParticipationButtonProps) {
+  const { t } = useTranslation('participation')
   const { isStaffOnly } = useAuth()
   const isStaff = !!props.teamId && isStaffOnly(props.teamId)
-  const { participation, effectiveStatus, setStatus, saveConfirmed, dismissConfirmed } = useParticipation(
+  const { participation, effectiveStatus, hasAbsence, setStatus, saveConfirmed, dismissConfirmed } = useParticipation(
     props.activityType,
     props.activityId,
     props.activityDate,
     props.sessionId,
     isStaff,
   )
+  // Absence hard-overrides RSVP: hide interactive buttons when a covering
+  // absence exists. Detail modals already short-circuit before reaching this
+  // component, so this guards calendar entries and any other inline caller.
+  if (hasAbsence) {
+    return <p className="text-sm text-gray-500 dark:text-gray-400">{t('absent')}</p>
+  }
   return (
     <ParticipationButtonInner
       {...props}

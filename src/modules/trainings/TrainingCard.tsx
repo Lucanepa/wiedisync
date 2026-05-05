@@ -5,6 +5,7 @@ import TeamChip from '../../components/TeamChip'
 import ParticipationSummary from '../../components/ParticipationSummary'
 import { useAuth } from '../../hooks/useAuth'
 import { useMutation } from '../../hooks/useMutation'
+import { useMyCoveringAbsence } from '../../hooks/useMyCoveringAbsence'
 
 import { formatDate, formatWeekday, formatTime, getDeadlineDate } from '../../utils/dateHelpers'
 import ParticipationWarningBadge from '../../components/ParticipationWarningBadge'
@@ -154,6 +155,7 @@ function TrainingParticipation({ training, existingParticipation, onSaved }: { t
   const { user, isStaffOnly } = useAuth()
   const isStaff = isStaffOnly(relId(training.team))
   const { create, update } = useMutation<Participation>('participations')
+  const { hasAbsence } = useMyCoveringAbsence('training', training.date)
 
   const deadlinePassed = training.respond_by
     ? getDeadlineDate(training.respond_by, training.start_time) < new Date()
@@ -238,6 +240,10 @@ function TrainingParticipation({ training, existingParticipation, onSaved }: { t
   }
 
   const isLocked = deadlinePassed
+
+  if (hasAbsence) {
+    return <p className="text-sm text-gray-500 dark:text-gray-400">{t('absent')}</p>
+  }
 
   return (
     <div className="space-y-1.5">

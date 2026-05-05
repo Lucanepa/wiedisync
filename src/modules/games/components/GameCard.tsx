@@ -12,6 +12,7 @@ import ParticipationWarningBadge from '../../../components/ParticipationWarningB
 import type { Warning } from '../../../utils/participationWarnings'
 import { useAuth } from '../../../hooks/useAuth'
 import { useMutation } from '../../../hooks/useMutation'
+import { useMyCoveringAbsence } from '../../../hooks/useMyCoveringAbsence'
 import type { Participation } from '../../../types'
 import { asObj, teamCoachIds } from '../../../utils/relations'
 
@@ -320,6 +321,7 @@ function GameCardParticipation({ game, existingParticipation, onSaved }: { game:
   const { user, isStaffOnly } = useAuth()
   const isStaff = !!game.kscw_team && isStaffOnly(game.kscw_team)
   const { create, update } = useMutation<Participation>('participations')
+  const { hasAbsence } = useMyCoveringAbsence('game', game.date)
   const [optimisticStatus, setOptimisticStatus] = useState<Participation['status'] | null>(null)
 
   const serverStatus = existingParticipation?.status ?? null
@@ -347,6 +349,10 @@ function GameCardParticipation({ game, existingParticipation, onSaved }: { game:
       setOptimisticStatus(null)
     }
   }, [user, existingParticipation, game.id, isStaff, create, update, onSaved])
+
+  if (hasAbsence) {
+    return <p className="text-xs text-gray-500 dark:text-gray-400">{t('absent')}</p>
+  }
 
   return (
     <div data-tour="game-rsvp" className="flex items-center gap-1.5">

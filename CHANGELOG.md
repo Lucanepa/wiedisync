@@ -2,6 +2,12 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## [4.4.15] — 2026-05-05
+
+### Fixed
+- **Absence override leak: card-level + calendar RSVP buttons let users overwrite a covering absence.** v4.4.10's policy ("absence hard-overrides RSVP") was enforced in the three detail modals (`TrainingDetailModal`, `EventDetailModal`, `GameDetailModal` all early-return a passive "Excused" message when `hasAbsence`). It was NOT enforced on (a) inline card RSVP UIs `TrainingCard.TrainingParticipation`, `GameCard.GameCardParticipation`, `EventCard.EventCardParticipation` — these render Yes/Maybe/No pills directly on the list cards using prefetched participation data, never going through the detail modal — or (b) `CalendarEntryModal.tsx:143,163` which rendered `<ParticipationButton>` raw with no absence check. Concrete leak path: an auto-declined participation displays the red "No" pill (because `status='declined'`); the user clicks "Yes"; PATCH `participations/<id>` flips status to confirmed; migration 038's BEFORE UPDATE trigger `trg_participations_clear_auto_marker` is — by design — permissive on manual UPDATEs (clears `auto_declined_by` so the row detaches from the absence) so the override sticks. Fix is purely UI: new `useMyCoveringAbsence(activityType, activityDate)` hook (`src/hooks/useMyCoveringAbsence.ts`) wraps `useCollection<Absence>` filtered to the current user + the activity's date range, runs `absenceCoversActivity()` to apply the day-of-week + affects bitmap. The three card components and `HookedParticipationButton` now `if (hasAbsence) return <p>{t('absent')}</p>` mirroring the detail modals. Trigger and backend filter (`participations.items.create`) untouched — manual overrides via Directus admin or after deleting the absence still work.
+- **PATCH `/items/trainings/{id}` returned 500 when editing the hall.** Postgres error `invalid input syntax for type integer: ""`. `TrainingForm.handleSubmit` (`src/modules/trainings/TrainingForm.tsx:284,291,293`) was sending `''` (empty string) for two nullable integer FKs — `hall_slot` (whenever the form was not in "auto" slot mode, regardless of whether you'd picked an actual hall) and `hall` (only when the "Other / custom name" radio was selected). Either path produced a write Postgres rejected. Both now resolve to `null`, which Directus accepts for nullable FK columns.
+
 ## [4.4.14] — 2026-05-03
 
 ### Fixed

@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.4.14'
+const APP_VERSION = '4.4.15'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,19 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.4.15',
+    date: '2026-05-05',
+    sections: [
+      {
+        title: 'Absence-aware RSVP gates + training hall edit no longer 500s',
+        items: [
+          'Two fixes. (1) Inline RSVP buttons on training / game / event cards and on calendar entries did not check whether a covering absence existed — only the detail modals did. So an auto-declined row would render its red "No" pill but still let you click "Yes" or "Maybe" to flip it. The PATCH went through (migration 038\'s trigger detaches `auto_declined_by` on user-driven status changes, by design — it allows true manual overrides after an absence is removed), and the absence got silently overwritten. New `useMyCoveringAbsence(activityType, activityDate)` hook; `TrainingCard.TrainingParticipation`, `GameCard.GameCardParticipation`, `EventCard.EventCardParticipation` and the shared `HookedParticipationButton` (which the calendar entry modal uses) now early-return a passive "Excused" pill when an absence covers, mirroring the detail modals. The trigger semantics stay untouched, so deleting/narrowing the absence and then RSVPing still works exactly as before.',
+          'Editing a training\'s hall returned **500 invalid input syntax for type integer: ""**. `TrainingForm.handleSubmit` was sending empty strings for two nullable integer FKs: `hall_slot` (when not in auto mode) and `hall` (when "Other / custom name" was selected). Postgres rejects `""` for an integer column. Both now send `null`. Affects every training edit that toggled hall mode or used a custom hall name.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.4.14',
     date: '2026-05-03',

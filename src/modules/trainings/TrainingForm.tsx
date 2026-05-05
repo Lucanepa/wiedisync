@@ -78,6 +78,7 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
   const [maxParticipants, setMaxParticipants] = useState('')
   const [requireNoteIfAbsent, setRequireNoteIfAbsent] = useState(false)
   const [autoCancelOnMin, setAutoCancelOnMin] = useState(false)
+  const [excludedGuestLevels, setExcludedGuestLevels] = useState<number[]>([])
   const [respondByDefaultDays, setRespondByDefaultDays] = useState<number | null>(null)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -227,6 +228,11 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
       setMaxParticipants(training.max_participants ? String(training.max_participants) : '')
       setRequireNoteIfAbsent(!!training.require_note_if_absent)
       setAutoCancelOnMin(!!training.auto_cancel_on_min)
+      const rawExcluded = (training as Training & { excluded_guest_levels?: unknown }).excluded_guest_levels
+      const parsedExcluded = Array.isArray(rawExcluded)
+        ? rawExcluded
+        : typeof rawExcluded === 'string' ? (() => { try { const v = JSON.parse(rawExcluded); return Array.isArray(v) ? v : [] } catch { return [] } })() : []
+      setExcludedGuestLevels(parsedExcluded.map((n: unknown) => Number(n)).filter((n: number) => [1, 2, 3].includes(n)))
       // Edit mode: if training has a hall_slot, start in auto mode with it pre-selected
       if (training.hall_slot) {
         setSlotMode('auto')
@@ -251,6 +257,7 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
       setMaxParticipants('')
       setRequireNoteIfAbsent(false)
       setAutoCancelOnMin(false)
+      setExcludedGuestLevels([])
       setRespondByDefaultDays(null)
       defaultsAppliedForTeam.current = null
       setSlotMode('auto')
@@ -301,6 +308,7 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
       max_participants: maxParticipants ? Number(maxParticipants) : null,
       require_note_if_absent: requireNoteIfAbsent,
       auto_cancel_on_min: autoCancelOnMin,
+      excluded_guest_levels: excludedGuestLevels,
     }
 
     setIsLoading(true)
@@ -338,6 +346,7 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
       max_participants: data.max_participants,
       require_note_if_absent: data.require_note_if_absent,
       auto_cancel_on_min: data.auto_cancel_on_min,
+      excluded_guest_levels: data.excluded_guest_levels,
     }
 
     // Find sibling trainings with same hall_slot, excluding the one we already updated
@@ -589,6 +598,43 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
           <div>
             <span>{t('requireNoteIfAbsent', { ns: 'participation' })}</span>
             <p className="text-xs text-muted-foreground">{t('requireNoteIfAbsentHint', { ns: 'participation' })}</p>
+          </div>
+        </div>
+
+        <div className="space-y-1.5 text-sm text-gray-700 dark:text-gray-300">
+          <div>
+            <span className="font-medium">{t('excludedGuestLevels')}</span>
+            <p className="text-xs text-muted-foreground">{t('excludedGuestLevelsHint')}</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setExcludedGuestLevels((prev) => prev.length === 3 ? [] : [1, 2, 3])}
+              className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                excludedGuestLevels.length === 3
+                  ? 'border-orange-500 bg-orange-100 text-orange-700 dark:border-orange-600 dark:bg-orange-900/30 dark:text-orange-300'
+                  : 'border-gray-300 bg-transparent text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-800'
+              }`}
+            >
+              {t('excludeAllGuests')}
+            </button>
+            {[1, 2, 3].map((lvl) => {
+              const active = excludedGuestLevels.includes(lvl)
+              return (
+                <button
+                  key={lvl}
+                  type="button"
+                  onClick={() => setExcludedGuestLevels((prev) => active ? prev.filter((l) => l !== lvl) : [...prev, lvl].sort())}
+                  className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                    active
+                      ? 'border-orange-500 bg-orange-100 text-orange-700 dark:border-orange-600 dark:bg-orange-900/30 dark:text-orange-300'
+                      : 'border-gray-300 bg-transparent text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  G{lvl}
+                </button>
+              )
+            })}
           </div>
         </div>
 

@@ -19,7 +19,8 @@ interface CalendarEntryModalProps {
 
 export default function CalendarEntryModal({ entry, onClose, onRefresh }: CalendarEntryModalProps) {
   const { t } = useTranslation('calendar')
-  const { user } = useAuth()
+  const { t: tTrainings } = useTranslation('trainings')
+  const { user, getGuestLevel } = useAuth()
   const [editingAbsence, setEditingAbsence] = useState(false)
 
   useEffect(() => {
@@ -138,24 +139,34 @@ export default function CalendarEntryModal({ entry, onClose, onRefresh }: Calend
           </div>
 
           {/* Participation section for trainings */}
-          {entry.type === 'training' && user && !(entry.source as Training).cancelled && (
-            <div className="border-t dark:border-gray-700 px-6 py-4 space-y-3">
-              <ParticipationButton
-                activityType="training"
-                activityId={entry.source.id}
-                activityDate={(entry.source as Training).date}
-                teamId={(entry.source as Training).team}
-                respondBy={(entry.source as Training).respond_by}
-                activityStartTime={(entry.source as Training).start_time}
-                requireNoteIfAbsent={(entry.source as Training).require_note_if_absent}
-              />
-              <ParticipationSummary
-                activityType="training"
-                activityId={entry.source.id}
-                compact
-              />
-            </div>
-          )}
+          {entry.type === 'training' && user && !(entry.source as Training).cancelled && (() => {
+            const tr = entry.source as Training
+            const myGuestLevel = getGuestLevel(tr.team)
+            const excluded = Array.isArray(tr.excluded_guest_levels) ? tr.excluded_guest_levels : []
+            const guestExcluded = myGuestLevel > 0 && excluded.map((n) => Number(n)).includes(myGuestLevel)
+            return (
+              <div className="border-t dark:border-gray-700 px-6 py-4 space-y-3">
+                {guestExcluded ? (
+                  <p className="text-sm italic text-gray-500 dark:text-gray-400">{tTrainings('guestExcluded')}</p>
+                ) : (
+                  <ParticipationButton
+                    activityType="training"
+                    activityId={tr.id}
+                    activityDate={tr.date}
+                    teamId={tr.team}
+                    respondBy={tr.respond_by}
+                    activityStartTime={tr.start_time}
+                    requireNoteIfAbsent={tr.require_note_if_absent}
+                  />
+                )}
+                <ParticipationSummary
+                  activityType="training"
+                  activityId={tr.id}
+                  compact
+                />
+              </div>
+            )
+          })()}
 
           {/* Participation section for events */}
           {entry.type === 'event' && user && (

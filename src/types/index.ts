@@ -367,7 +367,8 @@ export interface Training extends BaseRecord {
   max_participants: number
   require_note_if_absent: boolean
   auto_cancel_on_min: boolean
-
+  /** Guest tiers blocked from confirming/tentative on this training. Values 1-3. Empty = open to all. */
+  excluded_guest_levels: number[]
 }
 
 export interface Absence extends BaseRecord {

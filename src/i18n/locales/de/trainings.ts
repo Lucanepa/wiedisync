@@ -91,4 +91,8 @@ export default {
   slotModeManual: 'Manuell',
   autoCancelOnMin: 'Automatisch absagen',
   autoCancelOnMinHint: 'Training wird bei Fristablauf automatisch abgesagt, wenn weniger Zusagen als das Minimum vorliegen',
+  excludedGuestLevels: 'Ausgeschlossene Gäste',
+  excludedGuestLevelsHint: 'Gäste der ausgewählten Stufen können nicht zusagen oder als unsicher markieren',
+  excludeAllGuests: 'Alle Gäste',
+  guestExcluded: 'Deine Gaststufe ist von diesem Training ausgeschlossen',
 } as const

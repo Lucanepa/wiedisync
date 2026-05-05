@@ -153,8 +153,11 @@ export default function TrainingCard({ training, participations, myParticipation
 function TrainingParticipation({ training, existingParticipation, onSaved }: { training: TrainingExpanded; existingParticipation?: Participation; onSaved?: () => void }) {
   const { t } = useTranslation('participation')
   const { t: tTrainings } = useTranslation('trainings')
-  const { user, isStaffOnly } = useAuth()
+  const { user, isStaffOnly, getGuestLevel } = useAuth()
   const isStaff = isStaffOnly(relId(training.team))
+  const myGuestLevel = getGuestLevel(relId(training.team))
+  const excludedGuestLevels = Array.isArray(training.excluded_guest_levels) ? training.excluded_guest_levels : []
+  const guestExcluded = myGuestLevel > 0 && excludedGuestLevels.map((n) => Number(n)).includes(myGuestLevel)
   const { create, update } = useMutation<Participation>('participations')
   const { absence, hasAbsence } = useMyCoveringAbsence('training', training.date)
   const absenceLabel = absence?.type === 'weekly' ? 'declinedUnavailable' : 'absent'
@@ -247,6 +250,10 @@ function TrainingParticipation({ training, existingParticipation, onSaved }: { t
   }
 
   const isLocked = deadlinePassed
+
+  if (guestExcluded) {
+    return <p className="text-xs italic text-gray-500 dark:text-gray-400">{tTrainings('guestExcluded')}</p>
+  }
 
   return (
     <div className="space-y-1.5">

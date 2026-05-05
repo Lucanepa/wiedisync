@@ -18,6 +18,10 @@ export default {
 
   // Coach dashboard
   seasonLabel: 'Saison',
+  rangeFromLabel: 'Von',
+  rangeToLabel: 'Bis',
+  resetRange: 'Auf Standard zurücksetzen',
+  rangeInvalid: '"Von" muss vor oder gleich "Bis" sein',
   noDataAvailable: 'Keine Daten verfügbar',
   noDataDescription: 'Keine Anwesenheitsdaten vorhanden.',
 

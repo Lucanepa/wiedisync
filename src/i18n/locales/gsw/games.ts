@@ -127,6 +127,21 @@ export default {
   guestsCannotParticipate: 'Gäst chönd nöd a Spiel teilneh',
   minParticipants: 'Min. Spieler',
 
+  // Coach dashboard
+  dashboardTab: 'Coach-Dashboard',
+  leagueOnly: 'Nur Liga',
+  selectTeamPrompt: 'Wähl es Team us, zum s\'Dashboard z\'gseh.',
+  gamesCol: 'Spiel',
+  drilldownStatusConfirmed: 'Zuegseit',
+  drilldownStatusDeclined: 'Abgseit',
+  drilldownEmpty: 'Kei Spiel i de Zit.',
+
+  // Game card actions
+  editGame: 'Spiel ändere',
+  deleteGame: 'Spiel lösche',
+  deleteConfirm: 'Wötsch das Spiel würkli lösche?',
+  viewRoster: 'Aufstellig aaluege',
+
   // Referee expenses
   refereeExpenses: 'Schiedsrichterchöschte',
   refereeExpensesPaidBy: 'Zahlt vo',

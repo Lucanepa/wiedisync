@@ -124,6 +124,21 @@ export default {
   guestsCannotParticipate: 'Gli ospiti non possono partecipare alle partite',
   minParticipants: 'Min. giocatori',
 
+  // Coach dashboard
+  dashboardTab: 'Dashboard del coach',
+  leagueOnly: 'Solo campionato',
+  selectTeamPrompt: 'Seleziona una squadra per vedere il dashboard.',
+  gamesCol: 'Partite',
+  drilldownStatusConfirmed: 'Confermato',
+  drilldownStatusDeclined: 'Rifiutato',
+  drilldownEmpty: 'Nessuna partita in questo periodo.',
+
+  // Game card actions
+  editGame: 'Modifica partita',
+  deleteGame: 'Elimina partita',
+  deleteConfirm: 'Vuoi davvero eliminare questa partita?',
+  viewRoster: 'Vedi formazione',
+
   // Referee expenses
   refereeExpenses: 'Spese arbitrali',
   refereeExpensesPaidBy: 'Pagato da',

@@ -333,10 +333,15 @@ function EventCardParticipation({ event, existingParticipation, onSaved }: { eve
           {t('deadlinePassed')}
         </p>
       )}
+      {event.respond_by && !deadlinePassed && (
+        <p data-tour="event-respond-by" className="text-[10px] leading-tight text-gray-400 dark:text-gray-500">
+          {t('respondBy', { ns: 'events' })}: {formatDate(event.respond_by)}, {formatTime(event.respond_by) || (event.start_date ? formatTime(event.start_date) : '')}
+        </p>
+      )}
 
-      {/* Note input — shown when status is set and note is required for absent */}
-      {displayStatus && event.require_note_if_absent && (displayStatus === 'declined' || displayStatus === 'tentative') && (
-        <div className="flex items-center gap-1.5">
+      {/* Note input — always visible once a status is set; required for declined/tentative when event.require_note_if_absent is on */}
+      {displayStatus && (
+        <div data-tour="event-note" className="flex items-center gap-1.5">
           <MessageSquare className="h-3.5 w-3.5 shrink-0 text-gray-400" />
           <input
             ref={noteInputRef}

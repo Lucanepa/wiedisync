@@ -2,6 +2,14 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## v4.5.0 — 2026-05-05
+
+- Coach Dashboard expanded to /games (new tab, per-row drilldown, league-only toggle).
+- Trainings + games dashboards: replaced season selector with persisted From/To range (defaults: 01.06 of current season → today, rolls forward annually).
+- Bucket simplification: weekly + one-off absences now both count as "absent" (was: "excused"). Confirmed RSVP wins over a covering absence. Trend dots green/red.
+- GameCard + EventCard feature parity with TrainingCard (always-visible note input, respond-by line, roster opener, edit/delete pencils — delete only for manually-created games).
+- Migration 041 + setup-permissions update: three new team-row columns guarded by leaving them out of PUBLIC_TEAM_FIELDS; explicit Coach/TR read+update row added.
+
 ## [4.4.15] — 2026-05-05
 
 ### Fixed

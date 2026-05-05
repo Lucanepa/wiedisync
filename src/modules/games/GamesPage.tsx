@@ -1,14 +1,16 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import { useSportPreference } from '../../hooks/useSportPreference'
+import { useMutation } from '../../hooks/useMutation'
 import type { Game, Ranking, Team, Participation, ParticipationWithMember } from '../../types'
 import { useCollection, useActivitiesWithParticipations } from '../../lib/query'
 import { useRealtime } from '../../hooks/useRealtime'
 import { teamIds } from '../../utils/teamColors'
 import { todayLocal } from '../../utils/dateHelpers'
+import { isCupGame } from '../../utils/leagueClassification'
 import SportToggle from '../../components/SportToggle'
 import TeamFilterBar from './components/TeamFilterBar'
 import GameTabs from './components/GameTabs'
@@ -17,8 +19,11 @@ import GameCard from './components/GameCard'
 import RankingsTable from './components/RankingsTable'
 import KscwScoreboard from './components/KscwScoreboard'
 import GameDetailModal from './components/GameDetailModal'
+import GameCoachDashboard from './components/GameCoachDashboard'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import SharedEmptyState from '../../components/EmptyState'
+import ParticipationRosterModal from '../../components/ParticipationRosterModal'
+import ConfirmDialog from '@/components/ConfirmDialog'
 import { getGameWarnings, type Warning } from '../../utils/participationWarnings'
 import { Calendar, Trophy, BarChart3, LayoutGrid } from 'lucide-react'
 import { TourPageButton } from '../guide/TourPageButton'
@@ -29,14 +34,9 @@ function buildTeamFilter(teamPbIds: string[]): Record<string, unknown> | null {
   return { kscw_team: { _in: teamPbIds } }
 }
 
-function isCupGame(league: string | null | undefined): boolean {
-  if (!league) return false
-  return /Cup|Pokal|Turnier/i.test(league)
-}
-
 export default function GamesPage() {
   const { t } = useTranslation('games')
-  const { user, memberTeamIds, memberTeamNames, coachTeamIds, coachTeamNames, primarySport, teamsLoading } = useAuth()
+  const { user, memberTeamIds, memberTeamNames, coachTeamIds, coachTeamNames, isCoach, primarySport, teamsLoading } = useAuth()
   // Merge member + coach teams for visibility (coaches see teams they manage)
   const allUserTeamIds = useMemo(() => [...new Set([...memberTeamIds, ...coachTeamIds])], [memberTeamIds, coachTeamIds])
   const allUserTeamNames = useMemo(() => [...new Set([...memberTeamNames, ...coachTeamNames])], [memberTeamNames, coachTeamNames])
@@ -46,10 +46,12 @@ export default function GamesPage() {
   const [searchParams] = useSearchParams()
   const [activeTab, setActiveTab] = useState<TabKey>(() => {
     const tab = searchParams.get('tab')
-    return tab === 'rankings' || tab === 'results' || tab === 'scoreboard' ? tab : 'upcoming'
+    return tab === 'rankings' || tab === 'results' || tab === 'scoreboard' || tab === 'dashboard' ? tab : 'upcoming'
   })
   const [selectedTeams, setSelectedTeams] = useState<string[]>([])
   const [selectedGame, setSelectedGame] = useState<Game | null>(null)
+  const [rosterGame, setRosterGame] = useState<Game | null>(null)
+  const [deletingGameId, setDeletingGameId] = useState<string | null>(null)
   const [showAll, setShowAll] = useState(false)
   const [autoSelected, setAutoSelected] = useState(false)
 
@@ -92,6 +94,40 @@ export default function GamesPage() {
     ? effectiveTeamIds
     : (!(effectiveIsAdmin || effectiveIsVorstand) && allUserTeamIds.length > 0 ? allUserTeamIds : [])
   const teamFilter = buildTeamFilter(filterTeamIds)
+
+  // Dashboard team ID resolution (priority: first selected → first coached → null).
+  // Note: selectedTeams holds team NAMES; effectiveTeamIds is the resolved ID array
+  // from name→id lookup above. coachTeamIds (from useAuth) is always ID-typed.
+  const dashboardTeamId = useMemo<string | null>(() => {
+    if (effectiveTeamIds.length > 0) return effectiveTeamIds[0] ?? null
+    return coachTeamIds[0] ?? null
+  }, [effectiveTeamIds, coachTeamIds])
+
+  const visibleTabs = useMemo<TabKey[]>(() => {
+    const base: TabKey[] = ['upcoming', 'results', 'rankings', 'scoreboard']
+    if (isCoach || effectiveIsAdmin) base.push('dashboard')
+    return base
+  }, [isCoach, effectiveIsAdmin])
+
+  // Preserve the user's multi-select while they're on the dashboard tab,
+  // so switching back to upcoming/results restores it. Snapshot when entering
+  // the dashboard tab; restore when leaving.
+  const preservedSelectionRef = useRef<string[] | null>(null)
+  useEffect(() => {
+    if (activeTab === 'dashboard') {
+      if (preservedSelectionRef.current === null) {
+        preservedSelectionRef.current = selectedTeams
+      }
+      if (selectedTeams.length > 1) {
+        // Collapse to single team on entering dashboard.
+        setSelectedTeams(selectedTeams.slice(0, 1))
+      }
+    } else if (preservedSelectionRef.current !== null) {
+      setSelectedTeams(preservedSelectionRef.current)
+      preservedSelectionRef.current = null
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab])
 
   // Sport filter clause for Directus queries
   const sportFilter = useMemo((): Record<string, unknown> | null => {
@@ -147,6 +183,21 @@ export default function GamesPage() {
   const allParticipations = combined?.participations ?? []
 
   useRealtime('participations', () => refetchCombined())
+
+  const { remove: removeGame } = useMutation<Game>('games')
+
+  const handleEdit = (g: Game) => {
+    setSelectedGame(g)
+  }
+  const handleDelete = (id: string) => {
+    setDeletingGameId(id)
+  }
+  const confirmDelete = async () => {
+    if (!deletingGameId) return
+    await removeGame(deletingGameId)
+    setDeletingGameId(null)
+    refetchCombined()
+  }
 
   // Build maps: gameId → participations[], gameId → user's participation
   const { participationsByGame, myParticipationByGame, warningsByGame } = useMemo(() => {
@@ -245,10 +296,10 @@ export default function GamesPage() {
           </div>
         )}
         <div data-tour="team-filter">
-          <TeamFilterBar selected={selectedTeams} onChange={setSelectedTeams} sport={sport} limitToTeams={effectiveIsAdmin || effectiveIsVorstand || !user ? undefined : allUserTeamNames} />
+          <TeamFilterBar selected={selectedTeams} onChange={setSelectedTeams} sport={sport} limitToTeams={effectiveIsAdmin || effectiveIsVorstand || !user ? undefined : allUserTeamNames} singleSelect={activeTab === 'dashboard'} />
         </div>
         <div data-tour="game-tabs">
-          <GameTabs activeTab={activeTab} onChange={(tab) => { setActiveTab(tab); setShowAll(false) }} />
+          <GameTabs activeTab={activeTab} onChange={(tab) => { setActiveTab(tab); setShowAll(false) }} tabs={visibleTabs} />
         </div>
       </div>
 
@@ -278,7 +329,18 @@ export default function GamesPage() {
                       )}
                       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" data-tour={section.key === 'league' ? 'game-card' : undefined}>
                         {section.items.map((g) => (
-                          <GameCard key={g.id} game={g} onClick={setSelectedGame} participations={participationsByGame.get(g.id)} myParticipation={myParticipationByGame.get(g.id)} warnings={warningsByGame.get(g.id)} onParticipationSaved={refetchCombined} />
+                          <GameCard
+                            key={g.id}
+                            game={g}
+                            onClick={setSelectedGame}
+                            onOpenRoster={setRosterGame}
+                            onEdit={handleEdit}
+                            onDelete={handleDelete}
+                            participations={participationsByGame.get(g.id)}
+                            myParticipation={myParticipationByGame.get(g.id)}
+                            warnings={warningsByGame.get(g.id)}
+                            onParticipationSaved={refetchCombined}
+                          />
                         ))}
                       </div>
                     </div>
@@ -320,7 +382,18 @@ export default function GamesPage() {
                       )}
                       <div data-tour={section.key === 'league' ? 'game-results' : undefined} className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white md:mx-auto md:w-fit dark:bg-gray-800 md:grid md:grid-cols-[auto_auto_auto_auto_auto_auto_auto_1fr]">
                         {section.items.map((g) => (
-                          <GameCard key={g.id} game={g} onClick={setSelectedGame} variant="compact" participations={participationsByGame.get(g.id)} myParticipation={myParticipationByGame.get(g.id)} warnings={warningsByGame.get(g.id)} />
+                          <GameCard
+                            key={g.id}
+                            game={g}
+                            onClick={setSelectedGame}
+                            onOpenRoster={setRosterGame}
+                            onEdit={handleEdit}
+                            onDelete={handleDelete}
+                            variant="compact"
+                            participations={participationsByGame.get(g.id)}
+                            myParticipation={myParticipationByGame.get(g.id)}
+                            warnings={warningsByGame.get(g.id)}
+                          />
                         ))}
                       </div>
                     </div>
@@ -358,9 +431,34 @@ export default function GamesPage() {
         {activeTab === 'scoreboard' && !rankingsLoading && (
           <div data-tour="game-scoreboard"><KscwScoreboard rankings={allRankings} /></div>
         )}
+
+        {/* Coach Dashboard */}
+        {activeTab === 'dashboard' && (
+          <GameCoachDashboard teamId={dashboardTeamId} />
+        )}
       </div>
 
       <GameDetailModal game={selectedGame} onClose={() => setSelectedGame(null)} />
+
+      <ParticipationRosterModal
+        open={rosterGame !== null}
+        onClose={() => setRosterGame(null)}
+        activityType="game"
+        activityId={rosterGame?.id ?? ''}
+        activityDate={rosterGame?.date ?? ''}
+        teamIds={rosterGame ? [String(typeof rosterGame.kscw_team === 'object' ? (rosterGame.kscw_team as any).id : rosterGame.kscw_team)] : []}
+        title={t('participation')}
+      />
+
+      <ConfirmDialog
+        open={deletingGameId !== null}
+        onClose={() => setDeletingGameId(null)}
+        onConfirm={confirmDelete}
+        title={t('deleteGame')}
+        message={t('deleteConfirm')}
+        confirmLabel={t('deleteGame')}
+        danger
+      />
     </div>
   )
 }
@@ -370,6 +468,7 @@ const tabIcons: Record<string, React.ReactNode> = {
   results: <Trophy className="h-10 w-10" />,
   rankings: <BarChart3 className="h-10 w-10" />,
   scoreboard: <LayoutGrid className="h-10 w-10" />,
+  dashboard: <BarChart3 className="h-10 w-10" />,
 }
 
 function EmptyState({ tab }: { tab: string }) {

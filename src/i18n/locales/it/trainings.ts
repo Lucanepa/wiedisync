@@ -18,6 +18,10 @@ export default {
 
   // Coach dashboard
   seasonLabel: 'Stagione',
+  rangeFromLabel: 'Da',
+  rangeToLabel: 'A',
+  resetRange: 'Reimposta predefiniti',
+  rangeInvalid: '"Da" deve essere prima o uguale a "A"',
   noDataAvailable: 'Nessun dato disponibile',
   noDataDescription: 'Nessun dato di presenze da visualizzare.',
 

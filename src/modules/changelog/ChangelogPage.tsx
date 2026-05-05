@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.4.15'
+const APP_VERSION = '4.5.0'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,22 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.5.0',
+    date: '2026-05-05',
+    sections: [
+      {
+        title: 'Coach Dashboard expansion + game/event card parity',
+        items: [
+          'Coach Dashboard expanded to /games — new tab with per-row drilldown and a league-only toggle so cup games can be excluded from attendance stats at will.',
+          'Trainings + games dashboards: replaced the season selector with a persisted From/To range. Defaults to 01.06 of the current season → today and rolls forward annually. The range is stored per-team on the team row, so each coach/TR sees their own settings persist across sessions.',
+          'Bucket simplification across both dashboards: weekly and one-off absences now both count as "absent" (the old "excused" bucket is gone). A confirmed RSVP always wins over a covering absence so the count reflects reality, and trend dots are now green/red only.',
+          'GameCard + EventCard feature parity with TrainingCard: always-visible note input, respond-by line, roster opener, and edit/delete pencils. Delete is only available for manually-created games (SVRZ-synced games are read-only as before).',
+          'Migration 041 + setup-permissions update: three new team-row columns (`dashboard_range_from`, `dashboard_range_to`, `dashboard_league_only`) are guarded by leaving them out of `PUBLIC_TEAM_FIELDS`; an explicit Coach/TR read+update row is added so only authorized team members can change them.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.4.15',
     date: '2026-05-05',

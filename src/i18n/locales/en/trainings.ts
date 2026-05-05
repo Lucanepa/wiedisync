@@ -18,6 +18,10 @@ export default {
 
   // Coach dashboard
   seasonLabel: 'Season',
+  rangeFromLabel: 'From',
+  rangeToLabel: 'To',
+  resetRange: 'Reset to defaults',
+  rangeInvalid: '"From" must be on or before "To"',
   noDataAvailable: 'No data available',
   noDataDescription: 'No attendance data to display.',
 

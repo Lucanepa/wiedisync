@@ -155,7 +155,7 @@ function TrainingParticipation({ training, existingParticipation, onSaved }: { t
   const { user, isStaffOnly } = useAuth()
   const isStaff = isStaffOnly(relId(training.team))
   const { create, update } = useMutation<Participation>('participations')
-  const { hasAbsence } = useMyCoveringAbsence('training', training.date)
+  const { hasAbsence, isLoading: absenceLoading } = useMyCoveringAbsence('training', training.date)
 
   const deadlinePassed = training.respond_by
     ? getDeadlineDate(training.respond_by, training.start_time) < new Date()
@@ -241,6 +241,7 @@ function TrainingParticipation({ training, existingParticipation, onSaved }: { t
 
   const isLocked = deadlinePassed
 
+  if (absenceLoading) return null
   if (hasAbsence) {
     return <p className="text-sm text-gray-500 dark:text-gray-400">{t('absent')}</p>
   }

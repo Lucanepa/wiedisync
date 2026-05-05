@@ -212,7 +212,7 @@ function EventCardParticipation({ event, existingParticipation, onSaved }: { eve
   const { user, isStaffOnly } = useAuth()
   const isStaff = !!event.teams?.[0] && isStaffOnly(teamId(event.teams[0]))
   const { create, update } = useMutation<Participation>('participations')
-  const { hasAbsence } = useMyCoveringAbsence('event', event.start_date)
+  const { hasAbsence, isLoading: absenceLoading } = useMyCoveringAbsence('event', event.start_date)
 
   const deadlinePassed = event.respond_by
     ? getDeadlineDate(event.respond_by, event.start_date ? formatTime(event.start_date) : undefined) < new Date()
@@ -284,6 +284,7 @@ function EventCardParticipation({ event, existingParticipation, onSaved }: { eve
 
   const isLocked = deadlinePassed
 
+  if (absenceLoading) return null
   if (hasAbsence) {
     return <p className="text-sm text-gray-500 dark:text-gray-400">{t('absent')}</p>
   }

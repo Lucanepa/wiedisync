@@ -127,6 +127,21 @@ export default {
   guestsCannotParticipate: 'Guests cannot participate in games',
   minParticipants: 'Min. players',
 
+  // Coach dashboard
+  dashboardTab: 'Coach dashboard',
+  leagueOnly: 'League only',
+  selectTeamPrompt: 'Select a team to view the dashboard.',
+  gamesCol: 'Games',
+  drilldownStatusConfirmed: 'Confirmed',
+  drilldownStatusDeclined: 'Declined',
+  drilldownEmpty: 'No games in this range.',
+
+  // Game card actions
+  editGame: 'Edit game',
+  deleteGame: 'Delete game',
+  deleteConfirm: 'Are you sure you want to delete this game?',
+  viewRoster: 'View roster',
+
   // Referee expenses
   refereeExpenses: 'Referee expenses',
   refereeExpensesPaidBy: 'Paid by',

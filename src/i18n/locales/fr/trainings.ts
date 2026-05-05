@@ -18,6 +18,10 @@ export default {
 
   // Coach dashboard
   seasonLabel: 'Saison',
+  rangeFromLabel: 'De',
+  rangeToLabel: 'À',
+  resetRange: 'Réinitialiser',
+  rangeInvalid: '"De" doit être avant ou égal à "À"',
   noDataAvailable: 'Aucune donnee disponible',
   noDataDescription: 'Aucune donnee de presence a afficher.',
 

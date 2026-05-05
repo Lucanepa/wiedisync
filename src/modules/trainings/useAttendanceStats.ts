@@ -1,9 +1,41 @@
 import { useState, useEffect, useCallback } from 'react'
 import i18n from '../../i18n'
-import { getSeasonDateRange, todayLocal } from '../../utils/dateHelpers'
+import { todayLocal } from '../../utils/dateHelpers'
 import type { Training, Participation, Absence, Member, MemberTeam } from '../../types'
 import { fetchAllItems } from '../../lib/api'
 import { asObj, memberName } from '../../utils/relations'
+
+export type AttendanceBucket = 'present' | 'absent' | 'not_counted'
+
+interface ClassifyArgs {
+  // Mirrors Participation['status'] from src/types/index.ts (no 'absent' value exists in the schema).
+  participationStatus: 'confirmed' | 'declined' | 'tentative' | 'waitlisted' | null | undefined
+  hasAbsence: boolean
+  isPast: boolean
+}
+
+/**
+ * Classify a single (player, activity) cell.
+ *
+ * Priority order (NEW — different from pre-2026-05-05 behaviour):
+ * 1. Confirmed RSVP wins over a covering absence.
+ * 2. Declined RSVP → absent.
+ * 3. Covering absence (one-off OR weekly) → absent.
+ * 4. Past activity with no response → absent.
+ * 5. Future activity with no response → not counted.
+ */
+export function classifyAttendance({ participationStatus, hasAbsence, isPast }: ClassifyArgs): AttendanceBucket {
+  if (participationStatus === 'confirmed') return 'present'
+  if (participationStatus === 'declined') return 'absent'
+  if (hasAbsence) return 'absent'
+  if (isPast) return 'absent'
+  return 'not_counted'
+}
+
+export interface DateRange {
+  from: string  // YYYY-MM-DD
+  to: string    // YYYY-MM-DD
+}
 
 export interface PlayerStats {
   memberId: string
@@ -12,13 +44,12 @@ export interface PlayerStats {
   total: number
   present: number
   absent: number
-  excused: number
   percentage: number
-  trend: ('present' | 'absent' | 'excused')[]
+  trend: ('present' | 'absent')[]
   lastResponseAt: string | null
 }
 
-export function useAttendanceStats(teamId: string | null, season: string) {
+export function useAttendanceStats(teamId: string | null, range: DateRange) {
   const [stats, setStats] = useState<PlayerStats[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
@@ -33,7 +64,7 @@ export function useAttendanceStats(teamId: string | null, season: string) {
     setIsLoading(true)
     setError(null)
     try {
-      const { start, end } = getSeasonDateRange(season)
+      const { from: start, to: end } = range
 
       // Get team members
       const memberTeams = await fetchAllItems<MemberTeam & { member: Member | string }>('member_teams', {
@@ -52,7 +83,7 @@ export function useAttendanceStats(teamId: string | null, season: string) {
         return
       }
 
-      // Get non-cancelled trainings in season
+      // Get non-cancelled trainings in range
       const trainings = await fetchAllItems<Training>('trainings', {
         filter: { _and: [{ team: { _eq: teamId } }, { date: { _gte: start } }, { date: { _lte: end } }, { cancelled: { _eq: false } }] },
         sort: ['date'],
@@ -70,7 +101,7 @@ export function useAttendanceStats(teamId: string | null, season: string) {
         filter: { _and: [{ activity_type: { _eq: 'training' } }, { activity_id: { _in: trainingIds } }] },
       })
 
-      // Get absences for all members in the season
+      // Get absences for all members in the range
       const memberIds = members.map((m) => m.id)
       const absences = await fetchAllItems<Absence>('absences', {
         filter: { _and: [{ member: { _in: memberIds } }, { end_date: { _gte: start } }, { start_date: { _lte: end } }] },
@@ -87,7 +118,6 @@ export function useAttendanceStats(teamId: string | null, season: string) {
           total: trainings.length,
           present: 0,
           absent: 0,
-          excused: 0,
           percentage: 0,
           trend: [],
           lastResponseAt: null,
@@ -110,17 +140,15 @@ export function useAttendanceStats(teamId: string | null, season: string) {
             (a) => a.member === member.id && a.start_date <= trainingDate && a.end_date >= trainingDate,
           )
 
-          if (hasAbsence) {
-            s.excused++
-          } else if (participation?.status === 'confirmed') {
-            s.present++
-          } else if (participation?.status === 'declined') {
-            s.absent++
-          } else if (isPast) {
-            // Past training with no response → count as absent
-            s.absent++
-          }
-          // Future training with no response → not counted
+          const bucket = classifyAttendance({
+            participationStatus: participation?.status ?? null,
+            hasAbsence,
+            isPast,
+          })
+
+          if (bucket === 'present') s.present++
+          else if (bucket === 'absent') s.absent++
+          // 'not_counted' → contributes nothing
         }
       }
 
@@ -148,10 +176,12 @@ export function useAttendanceStats(teamId: string | null, season: string) {
           const hasAbsence = absences.some(
             (a) => a.member === member.id && a.start_date <= trainingDate && a.end_date >= trainingDate,
           )
-
-          if (hasAbsence) trend.push('excused')
-          else if (participation?.status === 'confirmed') trend.push('present')
-          else trend.push('absent')
+          const bucket = classifyAttendance({
+            participationStatus: participation?.status ?? null,
+            hasAbsence,
+            isPast: true, // trend dots only show past trainings
+          })
+          trend.push(bucket === 'present' ? 'present' : 'absent')
         }
         memberStats[member.id].trend = trend
       }
@@ -171,11 +201,11 @@ export function useAttendanceStats(teamId: string | null, season: string) {
           )
           return hasParticipation || hasAbsence
         }).length
-        const countable = pastTrainings.length + futureResponded
+        const total = pastTrainings.length + futureResponded
         return {
           ...s,
-          total: countable,
-          percentage: countable > 0 ? Math.round((s.present / (countable - s.excused || 1)) * 100) : 0,
+          total,
+          percentage: total > 0 ? Math.round((s.present / total) * 100) : 0,
         }
       })
       result.sort((a, b) => b.percentage - a.percentage || a.memberName.localeCompare(b.memberName, i18n.language))
@@ -186,7 +216,7 @@ export function useAttendanceStats(teamId: string | null, season: string) {
     } finally {
       setIsLoading(false)
     }
-  }, [teamId, season])
+  }, [teamId, range.from, range.to])
 
   useEffect(() => {
     fetch()

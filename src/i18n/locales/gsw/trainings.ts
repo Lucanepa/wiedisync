@@ -18,6 +18,10 @@ export default {
 
   // Coach dashboard
   seasonLabel: 'Saison',
+  rangeFromLabel: 'Vo',
+  rangeToLabel: 'Bis',
+  resetRange: 'Zruggsetze',
+  rangeInvalid: '"Vo" muess vor oder gliich "Bis" sii',
   noDataAvailable: 'Käni Date verfüegbar',
   noDataDescription: 'Käni Aaweseheitsdate vorhande.',
 

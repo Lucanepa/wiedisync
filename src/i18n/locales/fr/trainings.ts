@@ -87,6 +87,8 @@ export default {
   noSlotForDay: 'Aucun creneau de salle pour ce jour',
   useSlot: 'Utiliser le creneau de salle',
   enterManually: 'Saisir manuellement',
+  slotModeAuto: 'Creneau auto',
+  slotModeManual: 'Manuel',
   autoCancelOnMin: 'Annulation automatique',
   autoCancelOnMinHint: "L'entraînement sera annulé automatiquement à la date limite si moins de confirmations que le minimum",
 } as const

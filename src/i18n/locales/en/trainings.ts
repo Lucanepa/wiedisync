@@ -87,6 +87,8 @@ export default {
   noSlotForDay: 'No hall slot for this day',
   useSlot: 'Use hall slot',
   enterManually: 'Enter manually',
+  slotModeAuto: 'Auto hall slot',
+  slotModeManual: 'Manual',
   autoCancelOnMin: 'Auto-cancel',
   autoCancelOnMinHint: 'Training will be automatically cancelled at the deadline if fewer confirmations than the minimum',
 } as const

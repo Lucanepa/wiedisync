@@ -45,6 +45,12 @@ export interface Team extends BaseRecord {
   bb_source_id: string
   open_for_players: boolean
   features_enabled: TeamSettings
+  /** Coach Dashboard: persisted From date (NULL = computed default). */
+  dashboard_range_from?: string | null
+  /** Coach Dashboard: persisted To date (NULL = today). */
+  dashboard_range_to?: string | null
+  /** Coach Dashboard: exclude cup games from games-attendance count. */
+  dashboard_league_only?: boolean
 
 }
 

@@ -228,6 +228,13 @@ const PUBLIC_TEAM_FIELDS = [
   'team_responsible', 'sponsors',
 ]
 
+/** Coach Dashboard prefs — readable by Coach/Team Responsible/Admin via an explicit read row. NOT added to PUBLIC_TEAM_FIELDS. */
+const LEADER_TEAM_DASHBOARD_FIELDS = [
+  'dashboard_range_from',
+  'dashboard_range_to',
+  'dashboard_league_only',
+]
+
 /** Public fields for games */
 const PUBLIC_GAME_FIELDS = [
   'id', 'date', 'time', 'home_team', 'away_team', 'home_score', 'away_score',
@@ -497,6 +504,12 @@ async function main() {
   await setPermRead(LEADER_POLICY, 'members')
   // Members — update position + number (coaches assign these in RosterEditor)
   await setPerm(LEADER_POLICY, 'members', 'update', null, ['position', 'number'])
+
+  // Coach Dashboard prefs — explicit read for Leader (Coach/TR).
+  // PUBLIC_TEAM_FIELDS doesn't include these, so KSCW Member never sees them.
+  // Frontend scopes the query to the user's own teams (same pattern as the
+  // existing unfiltered teams.update on the next line).
+  await setPermRead(LEADER_POLICY, 'teams', null, LEADER_TEAM_DASHBOARD_FIELDS)
 
   // Teams — update (own coached/TR teams — filter enforced at API, frontend does team-scope)
   await setPerm(LEADER_POLICY, 'teams', 'update')

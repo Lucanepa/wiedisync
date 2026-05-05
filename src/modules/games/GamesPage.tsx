@@ -9,6 +9,7 @@ import { useCollection, useActivitiesWithParticipations } from '../../lib/query'
 import { useRealtime } from '../../hooks/useRealtime'
 import { teamIds } from '../../utils/teamColors'
 import { todayLocal } from '../../utils/dateHelpers'
+import { isCupGame } from '../../utils/leagueClassification'
 import SportToggle from '../../components/SportToggle'
 import TeamFilterBar from './components/TeamFilterBar'
 import GameTabs from './components/GameTabs'
@@ -27,11 +28,6 @@ function buildTeamFilter(teamPbIds: string[]): Record<string, unknown> | null {
   if (teamPbIds.length === 0) return null
   if (teamPbIds.length === 1) return { kscw_team: { _eq: teamPbIds[0] } }
   return { kscw_team: { _in: teamPbIds } }
-}
-
-function isCupGame(league: string | null | undefined): boolean {
-  if (!league) return false
-  return /Cup|Pokal|Turnier/i.test(league)
 }
 
 export default function GamesPage() {

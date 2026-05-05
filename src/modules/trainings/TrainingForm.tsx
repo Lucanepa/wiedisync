@@ -412,33 +412,48 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
           onChange={setDate}
         />
 
-        {/* Slot mode indicator */}
+        {/* Slot mode toggle — only show when team has any configured hall slots */}
+        {teamId && teamSlots.length > 0 && (
+          <div className="inline-flex w-full rounded-lg bg-gray-100 p-1 dark:bg-gray-800">
+            <button
+              type="button"
+              onClick={switchToAuto}
+              className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                slotMode === 'auto'
+                  ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-gray-100'
+                  : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
+              }`}
+            >
+              {t('slotModeAuto')}
+            </button>
+            <button
+              type="button"
+              onClick={switchToManual}
+              className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                slotMode === 'manual'
+                  ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-gray-100'
+                  : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
+              }`}
+            >
+              {t('slotModeManual')}
+            </button>
+          </div>
+        )}
+
+        {/* Slot mode indicator — auto-mode informational box (no inline switch link, toggle handles that) */}
         {slotMode === 'auto' && teamId && date && (
           <div>
             {slotOptions.length === 0 ? (
-              <div className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-600 dark:bg-gray-800 dark:text-gray-400">
-                <span>{t('noSlotForDay')}</span>
-                <button type="button" onClick={switchToManual} className="text-brand-500 hover:underline">
-                  {t('enterManually')}
-                </button>
+              <div className="rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+                {t('noSlotForDay')}
               </div>
             ) : slotOptions.length === 1 ? (
-              <div className="flex items-center justify-between rounded-lg bg-green-50 px-3 py-2 text-sm text-green-800 dark:bg-green-900/20 dark:text-green-300">
-                <span>
-                  {slotOptions[0].type === 'claimed' ? t('claimedSlot') : t('slotDetected')}: {slotOptions[0].label}
-                </span>
-                <button type="button" onClick={switchToManual} className="text-green-600 hover:underline dark:text-green-400">
-                  {t('enterManually')}
-                </button>
+              <div className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-800 dark:bg-green-900/20 dark:text-green-300">
+                {slotOptions[0].type === 'claimed' ? t('claimedSlot') : t('slotDetected')}: {slotOptions[0].label}
               </div>
             ) : (
               <div className="space-y-2 rounded-lg bg-green-50 px-3 py-2 dark:bg-green-900/20">
-                <div className="flex items-center justify-between text-sm text-green-800 dark:text-green-300">
-                  <span>{t('slotDetected')}</span>
-                  <button type="button" onClick={switchToManual} className="text-green-600 hover:underline dark:text-green-400">
-                    {t('enterManually')}
-                  </button>
-                </div>
+                <div className="text-sm text-green-800 dark:text-green-300">{t('slotDetected')}</div>
                 {slotOptions.map((opt) => (
                   <label key={opt.key} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
                     <input
@@ -456,14 +471,6 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
                 ))}
               </div>
             )}
-          </div>
-        )}
-
-        {slotMode === 'manual' && teamId && teamSlots.length > 0 && (
-          <div className="text-right">
-            <button type="button" onClick={switchToAuto} className="text-sm text-brand-500 hover:underline">
-              {t('useSlot')}
-            </button>
           </div>
         )}
 

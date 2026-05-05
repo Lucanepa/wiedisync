@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import { useSportPreference } from '../../hooks/useSportPreference'
+import { useMutation } from '../../hooks/useMutation'
 import type { Game, Ranking, Team, Participation, ParticipationWithMember } from '../../types'
 import { useCollection, useActivitiesWithParticipations } from '../../lib/query'
 import { useRealtime } from '../../hooks/useRealtime'
@@ -21,6 +22,8 @@ import GameDetailModal from './components/GameDetailModal'
 import GameCoachDashboard from './components/GameCoachDashboard'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import SharedEmptyState from '../../components/EmptyState'
+import ParticipationRosterModal from '../../components/ParticipationRosterModal'
+import ConfirmDialog from '@/components/ConfirmDialog'
 import { getGameWarnings, type Warning } from '../../utils/participationWarnings'
 import { Calendar, Trophy, BarChart3, LayoutGrid } from 'lucide-react'
 import { TourPageButton } from '../guide/TourPageButton'
@@ -47,6 +50,8 @@ export default function GamesPage() {
   })
   const [selectedTeams, setSelectedTeams] = useState<string[]>([])
   const [selectedGame, setSelectedGame] = useState<Game | null>(null)
+  const [rosterGame, setRosterGame] = useState<Game | null>(null)
+  const [deletingGameId, setDeletingGameId] = useState<string | null>(null)
   const [showAll, setShowAll] = useState(false)
   const [autoSelected, setAutoSelected] = useState(false)
 
@@ -179,6 +184,21 @@ export default function GamesPage() {
 
   useRealtime('participations', () => refetchCombined())
 
+  const { remove: removeGame } = useMutation<Game>('games')
+
+  const handleEdit = (g: Game) => {
+    setSelectedGame(g)
+  }
+  const handleDelete = (id: string) => {
+    setDeletingGameId(id)
+  }
+  const confirmDelete = async () => {
+    if (!deletingGameId) return
+    await removeGame(deletingGameId)
+    setDeletingGameId(null)
+    refetchCombined()
+  }
+
   // Build maps: gameId → participations[], gameId → user's participation
   const { participationsByGame, myParticipationByGame, warningsByGame } = useMemo(() => {
     const byGame = new Map<string, Participation[]>()
@@ -309,7 +329,18 @@ export default function GamesPage() {
                       )}
                       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" data-tour={section.key === 'league' ? 'game-card' : undefined}>
                         {section.items.map((g) => (
-                          <GameCard key={g.id} game={g} onClick={setSelectedGame} participations={participationsByGame.get(g.id)} myParticipation={myParticipationByGame.get(g.id)} warnings={warningsByGame.get(g.id)} onParticipationSaved={refetchCombined} />
+                          <GameCard
+                            key={g.id}
+                            game={g}
+                            onClick={setSelectedGame}
+                            onOpenRoster={setRosterGame}
+                            onEdit={handleEdit}
+                            onDelete={handleDelete}
+                            participations={participationsByGame.get(g.id)}
+                            myParticipation={myParticipationByGame.get(g.id)}
+                            warnings={warningsByGame.get(g.id)}
+                            onParticipationSaved={refetchCombined}
+                          />
                         ))}
                       </div>
                     </div>
@@ -351,7 +382,18 @@ export default function GamesPage() {
                       )}
                       <div data-tour={section.key === 'league' ? 'game-results' : undefined} className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white md:mx-auto md:w-fit dark:bg-gray-800 md:grid md:grid-cols-[auto_auto_auto_auto_auto_auto_auto_1fr]">
                         {section.items.map((g) => (
-                          <GameCard key={g.id} game={g} onClick={setSelectedGame} variant="compact" participations={participationsByGame.get(g.id)} myParticipation={myParticipationByGame.get(g.id)} warnings={warningsByGame.get(g.id)} />
+                          <GameCard
+                            key={g.id}
+                            game={g}
+                            onClick={setSelectedGame}
+                            onOpenRoster={setRosterGame}
+                            onEdit={handleEdit}
+                            onDelete={handleDelete}
+                            variant="compact"
+                            participations={participationsByGame.get(g.id)}
+                            myParticipation={myParticipationByGame.get(g.id)}
+                            warnings={warningsByGame.get(g.id)}
+                          />
                         ))}
                       </div>
                     </div>
@@ -397,6 +439,26 @@ export default function GamesPage() {
       </div>
 
       <GameDetailModal game={selectedGame} onClose={() => setSelectedGame(null)} />
+
+      <ParticipationRosterModal
+        open={rosterGame !== null}
+        onClose={() => setRosterGame(null)}
+        activityType="game"
+        activityId={rosterGame?.id ?? ''}
+        activityDate={rosterGame?.date ?? ''}
+        teamIds={rosterGame ? [String(typeof rosterGame.kscw_team === 'object' ? (rosterGame.kscw_team as any).id : rosterGame.kscw_team)] : []}
+        title={t('participation')}
+      />
+
+      <ConfirmDialog
+        open={deletingGameId !== null}
+        onClose={() => setDeletingGameId(null)}
+        onConfirm={confirmDelete}
+        title={t('deleteGame')}
+        message={t('deleteConfirm')}
+        confirmLabel={t('deleteGame')}
+        danger
+      />
     </div>
   )
 }

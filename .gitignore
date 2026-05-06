@@ -26,6 +26,7 @@ playwright-report/
 test-results/
 e2e/.auth/
 .env.test
+.playwright-mcp/
 
 # Directus backend (local dev data + deps)
 directus/node_modules/

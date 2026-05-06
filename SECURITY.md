@@ -46,6 +46,29 @@ Tracked (must stay clean of secrets):
 
 Treat this as a deduplication shield: if a future audit finds something on this list, it's either a regression or a misunderstanding — verify before re-flagging.
 
+### 2026-05-06 (continued) — v4.5.2 closes the last Critical
+
+**Custom endpoints (`directus/extensions/kscw-endpoints/src/`)**
+- New `sv-licence.js` — `GET /kscw/sv-licence/me` joins by `members.license_nr → sv_vm_check.association_id` and returns the 11-field whitelist for the caller's own row only. Replaces direct collection access.
+- New `migrations-status.js` — admin-only `GET /kscw/admin/migrations-status` exposes `{applied, pending, latest, latest_applied_at}` for the InfraHealth dashboard. Drift detection without giving up the admin token.
+
+**Frontend (`src/`)**
+- `ProfilePage.tsx` switched to `kscwApi('/sv-licence/me')`. No remaining direct `sv_vm_check` reads from non-admin code paths.
+- `InfraHealthPage.tsx` shows the migration tracker card.
+
+**Permissions (`directus/scripts/setup-permissions.mjs`)**
+- KSCW Member's `sv_vm_check.read` row removed entirely. Direct `GET /items/sv_vm_check` returns 403 for Members. Sport Admin retains CRUD.
+- Auto-loads `.env.local` and resolves `DIRECTUS_DEV_TOKEN` / `DIRECTUS_PROD_TOKEN` by URL — no env-wrapper noise on `npm run db:setup-perms:*`.
+
+**Smoke test (`directus/scripts/smoke-test.mjs`)**
+- Token-only auth. New asserts: `sv_vm_check direct (must 403)` + `kscw/sv-licence/me`. Re-granting Member read on the collection now turns the next deploy red.
+
+**Ops**
+- Web push `VAPID_PUBLIC_KEY` set on **both** dev + prod containers; missing-on-dev gap closed (`docker run` recreate, since `docker restart` doesn't reload env-file).
+- Live admin password reconciled against `/opt/directus-kscw{,-dev}/.env` on both VPS instances. No more "fresh container start could divert the bootstrap user" risk.
+- `npm run db:fresh-install:dev|prod` script added (`SCHEMA.sql → migrate → setup-perms → smoke`). Single command for clean-DB rebuild.
+- `.playwright-mcp/` added to `.gitignore` (browser-snapshot scratch dumps, not for the repo).
+
 ### 2026-05-06 — Deep audit + remediation
 
 **Frontend (`src/`)**
@@ -93,7 +116,6 @@ Treat this as a deduplication shield: if a future audit finds something on this 
 
 | Item | Status | Why |
 |---|---|---|
-| `sv_vm_check.read` cross-member dump (Critical, 2026-05-06 audit) | **Open — blocked on Directus 11 bug** | Migration 043 attempted to scope to own-row via `{member: {user: $CURRENT_USER}}`. Two blockers: (1) `sv_vm_check` has no `member` FK (linkage is by `email` + `association_id`); (2) Directus 11 emits invalid SQL `CASE WHEN 1 THEN col END` whenever ANY row filter is set on this collection (`argument of CASE/WHEN must be type boolean, not integer` on Postgres 12+). Fix path: build a `GET /kscw/sv-licence/me` custom endpoint, REVOKE Member's direct `sv_vm_check.read`, update `useLicenceCard` to use the endpoint. Until then the 11-field whitelist (no email/birthday/name/phone/team_names) limits the surface but cross-member enumeration of `association_id`/`is_foreigner`/`nationality_code`/licence dates is still possible. |
 | Broadcast TOCTOU on `sent_at` rate-check | Accepted soft-limit | Code comment in `broadcast-helpers.js:364` explicitly accepts the race; the audit table catches abuse. Re-evaluate if abuse is observed. |
 | `iCal` feeds (`/kscw/ical/*`) public | Accepted | Designed for calendar embedding. No member PII. |
 | In-memory `X-Forwarded-For` rate limiters | Accepted | Only safe behind CF Tunnel — documented in this file. If VPS ports ever go public, all limiters collapse simultaneously and need replacing with a Postgres / Redis store. |

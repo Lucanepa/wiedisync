@@ -9,6 +9,7 @@ export default {
   team: 'Squadra',
   teams: 'Squadre',
   events: 'Eventi',
+  inbox: 'Messaggi',
   gameplan: 'Calendar Plan',
   hallenplan: 'Fasce palestra',
   terminplanung: 'Spielplanung',

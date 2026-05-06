@@ -315,7 +315,7 @@ export default function Layout() {
             <nav data-tour="nav-sidebar" className="flex-1 overflow-y-auto p-4">
               <ul className="space-y-1">
                 {navItems.map((item) => {
-                  const showBadge = messagingOn && item.to === '/teams' && unreadMessages > 0
+                  const showBadge = messagingOn && item.to === '/inbox' && unreadMessages > 0
                   return (
                     <li key={item.to}>
                       <NavLink

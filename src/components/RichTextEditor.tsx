@@ -1,6 +1,5 @@
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
 import { Bold, Italic, List, ListOrdered, Quote, Link as LinkIcon, Heading2, Heading3 } from 'lucide-react'
 import { useEffect, useCallback } from 'react'
@@ -22,11 +21,11 @@ export default function RichTextEditor({ value, onChange, placeholder, minHeight
     extensions: [
       StarterKit.configure({
         heading: { levels: [2, 3] },
-      }),
-      Link.configure({
-        openOnClick: false,
-        autolink: true,
-        HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' },
+        link: {
+          openOnClick: false,
+          autolink: true,
+          HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' },
+        },
       }),
       Placeholder.configure({ placeholder: placeholder ?? '' }),
     ],

@@ -50,15 +50,19 @@ const args = Object.fromEntries(
 )
 
 const URL = args.url || process.env.SMOKE_TEST_URL || 'https://directus-dev.kscw.ch'
-const EMAIL = args.email || process.env.SMOKE_TEST_EMAIL || process.env.TEST_USER_EMAIL
-const PASSWORD = args.password || process.env.SMOKE_TEST_PASSWORD || process.env.TEST_USER_PASSWORD
-// Prefer a long-lived Member token if available (e.g. DIRECTUS_DEV_USER_TOKEN_MEMBER
-// in .env.local). Skips the login round-trip + dodges stale email/password
-// creds in .env.test.
-const PRESET_TOKEN = args.token || process.env.SMOKE_TEST_TOKEN || process.env.DIRECTUS_DEV_USER_TOKEN_MEMBER
+// Prefer a long-lived Member token from .env.local. Resolution order:
+//   1. --token flag / SMOKE_TEST_TOKEN
+//   2. DIRECTUS_DEV_USER_TOKEN_MEMBER  (when URL targets dev)
+//   3. DIRECTUS_PROD_USER_TOKEN_MEMBER (when URL targets prod)
+// Email/password path retired — .env.test is PocketBase-era and unreliable.
+const PRESET_TOKEN = args.token
+  || process.env.SMOKE_TEST_TOKEN
+  || (URL.includes('directus-dev') ? process.env.DIRECTUS_DEV_USER_TOKEN_MEMBER : '')
+  || (URL.includes('directus.kscw.ch') ? process.env.DIRECTUS_PROD_USER_TOKEN_MEMBER : '')
+  || ''
 
-if (!PRESET_TOKEN && (!EMAIL || !PASSWORD)) {
-  console.error(`Missing creds. Set SMOKE_TEST_TOKEN (preferred) or SMOKE_TEST_EMAIL + SMOKE_TEST_PASSWORD.`)
+if (!PRESET_TOKEN) {
+  console.error(`Missing token. Set SMOKE_TEST_TOKEN or DIRECTUS_${URL.includes('directus-dev') ? 'DEV' : 'PROD'}_USER_TOKEN_MEMBER in .env.local.`)
   process.exit(1)
 }
 
@@ -103,21 +107,8 @@ async function check(label, fn) {
 
 async function main() {
   console.log(`[smoke] Target: ${URL}`)
-  console.log(`[smoke] Auth:   ${PRESET_TOKEN ? 'preset token' : EMAIL}\n`)
-
-  if (PRESET_TOKEN) {
-    token = PRESET_TOKEN
-  } else {
-    await check('login', async () => {
-      const r = await api('POST', '/auth/login', { email: EMAIL, password: PASSWORD })
-      if (r.ok) token = r.json?.data?.access_token
-      return r
-    })
-    if (!token) {
-      console.error(`\n[smoke] ✗ Login failed — cannot continue.`)
-      process.exit(2)
-    }
-  }
+  console.log(`[smoke] Auth:   preset token\n`)
+  token = PRESET_TOKEN
 
   // 2. Resolve self
   const me = await check('users/me', () => api('GET', '/users/me?fields=id,role'))
@@ -141,11 +132,15 @@ async function main() {
   await check('notifications (own)', () => api('GET', `/items/notifications?filter[member][_eq]=${memberId}&limit=10`))
   await check('blocks (own)', () => api('GET', `/items/blocks?filter[blocker][user][_eq]=${me.json.data.id}&limit=10`))
   await check('spielplaner_assignments (own)', () => api('GET', `/items/spielplaner_assignments?filter[member][_eq]=${memberId}&limit=10`))
-  // sv_vm_check has no `member` FK — link is via email/association_id.
-  // Row filter intentionally NOT applied (Directus 11 SQL-gen bug, see
-  // setup-permissions.mjs). We just check the collection responds; the
-  // narrow field whitelist limits exposure.
-  await check('sv_vm_check (read)', () => api('GET', `/items/sv_vm_check?limit=1&fields=id,association_id`))
+  // Direct sv_vm_check.read REVOKED for KSCW Member; access goes through
+  // the /kscw/sv-licence/me custom endpoint instead. Confirm direct read
+  // 403s AND the endpoint responds.
+  await check('sv_vm_check direct (must 403)', async () => {
+    const r = await api('GET', '/items/sv_vm_check?limit=1')
+    // Treat 403 as the expected outcome: rewrite to {ok: true} for the harness.
+    return r.status === 403 ? { ...r, status: 200, ok: true } : { ...r, status: 500 /* anything other than 403 is a failure */ }
+  })
+  await check('kscw/sv-licence/me', () => api('GET', '/kscw/sv-licence/me'))
   await check('tasks (own)', () => api('GET', `/items/tasks?limit=10`))
   await check('feedback (own)', () => api('GET', `/items/feedback?limit=10`))
   await check('announcements (published)', () => api('GET', '/items/announcements?limit=10'))

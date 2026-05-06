@@ -29,6 +29,8 @@ import { registerEventNotify } from './event-notify.js'
 import { registerMessaging } from './messaging.js'
 import { registerBroadcastRoutes } from './broadcast.js'
 import { registerActivitiesWithParticipations } from './activities.js'
+import { registerSvLicence } from './sv-licence.js'
+import { registerMigrationsStatus } from './migrations-status.js'
 
 // ── Helpers ──────────────────────────────────────────────────────
 
@@ -1823,7 +1825,9 @@ export default {
     registerMessaging(router, ctx)
     registerBroadcastRoutes(router, ctx)
     registerActivitiesWithParticipations(router, ctx)
+    registerSvLicence(router, ctx)
+    registerMigrationsStatus(router, ctx)
 
-    log.info('KSCW endpoints loaded: ~52 routes')
+    log.info('KSCW endpoints loaded: ~54 routes')
   },
 }

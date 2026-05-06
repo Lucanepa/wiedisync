@@ -41,12 +41,36 @@
  *   DIRECTUS_URL=https://directus-dev.kscw.ch DIRECTUS_TOKEN=<token> node directus/scripts/setup-permissions.mjs
  */
 
+// Auto-load .env.local (gitignored) so callers can keep dev/prod tokens
+// out of the npm script string. Resolution order for the token:
+//   1. DIRECTUS_TOKEN (explicit override)
+//   2. DIRECTUS_DEV_TOKEN  (used when DIRECTUS_URL points at dev)
+//   3. DIRECTUS_PROD_TOKEN (used when DIRECTUS_URL points at prod)
+//   4. ADMIN_EMAIL + ADMIN_PASSWORD (fallback — login to obtain a token)
+import { readFileSync as _readFileSync } from 'node:fs'
+import { fileURLToPath as _fileURLToPath } from 'node:url'
+import { dirname as _dirname, join as _join } from 'node:path'
+const _here = _dirname(_fileURLToPath(import.meta.url))
+try {
+  const envText = _readFileSync(_join(_here, '../../.env.local'), 'utf-8')
+  for (const line of envText.split('\n')) {
+    const m = line.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/)
+    if (m && !(m[1] in process.env)) process.env[m[1]] = m[2].replace(/^['"]|['"]$/g, '')
+  }
+} catch { /* file missing — fine */ }
+
 const DIRECTUS_URL = process.env.DIRECTUS_URL || 'http://localhost:8055'
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@kscw.ch'
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD
-if (!ADMIN_PASSWORD) { console.error('Missing ADMIN_PASSWORD env var'); process.exit(1) }
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || ''
 const ADMIN_PASSWORD_CLEAN = ADMIN_PASSWORD.replace(/\\!/g, '!')
-const STATIC_TOKEN = process.env.DIRECTUS_TOKEN || ''
+const STATIC_TOKEN = process.env.DIRECTUS_TOKEN
+  || (DIRECTUS_URL.includes('directus-dev') ? process.env.DIRECTUS_DEV_TOKEN : '')
+  || (DIRECTUS_URL.includes('directus.kscw.ch') ? process.env.DIRECTUS_PROD_TOKEN : '')
+  || ''
+if (!STATIC_TOKEN && !ADMIN_PASSWORD) {
+  console.error('Need DIRECTUS_TOKEN, DIRECTUS_DEV_TOKEN, DIRECTUS_PROD_TOKEN, or ADMIN_PASSWORD to authenticate')
+  process.exit(1)
+}
 
 let token = null
 let stats = { ok: 0, err: 0 }
@@ -450,27 +474,17 @@ async function main() {
   // public read removed in 035; member read still permissive per audit decision.
   await setPermRead(MEMBER_POLICY, 'slot_claims')
 
-  // sv_vm_check — null row filter + narrow field whitelist.
+  // sv_vm_check — direct read REVOKED for KSCW Member (closes the audit's
+  // last open Critical finding from 2026-05-06).
   //
-  // ⚠ Open audit finding (2026-05-06): without a row filter, every member
-  // can read every member's licence row. The intended fix was a row filter
-  // {member: {user: $CURRENT_USER}}, but:
-  //   (a) sv_vm_check has no `member` FK column (linked by `email` /
-  //       `association_id`), and
-  //   (b) Directus 11 generates `CASE WHEN 1 THEN col END` SQL whenever a
-  //       row filter is set on this collection, which Postgres 12+ rejects
-  //       ("argument of CASE/WHEN must be type boolean, not type integer").
+  // Members access their own licence data through `GET /kscw/sv-licence/me`
+  // which joins by license_nr → association_id and returns ONLY the 11
+  // safe fields. Direct collection read would either leak every member's
+  // licence row (no filter) or trigger Directus 11's `CASE WHEN 1` SQL bug
+  // (with row filter). Custom endpoint side-steps both.
   //
-  // Mitigation TODO: build a custom `/kscw/sv-licence/me` endpoint that
-  // returns the caller's own row, REVOKE Member's direct sv_vm_check.read,
-  // update useLicenceCard to use the endpoint. Tracked in SECURITY.md.
-  // For now: 11-field whitelist (no PII surface) keeps the original posture.
-  const VM_CHECK_FIELDS = [
-    'id', 'association_id', 'licence_category', 'licence_activated', 'licence_validated',
-    'is_locally_educated', 'is_foreigner', 'federation', 'nationality_code',
-    'licence_activation_date', 'licence_validation_date',
-  ]
-  await setPermRead(MEMBER_POLICY, 'sv_vm_check', null, VM_CHECK_FIELDS)
+  // No setPermRead call here — the absence is the point. Sport Admin and
+  // higher tiers retain full CRUD via SPORT_ADMIN_FULL_CRUD below.
 
   // Members — limited fields for other members. PII (email/phone) excluded
   // (migration 024). Self-read row is added below with editable fields.

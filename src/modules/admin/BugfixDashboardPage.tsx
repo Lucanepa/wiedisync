@@ -26,6 +26,7 @@ import {
   AlertDialogTitle,
 } from '../../components/ui/alert-dialog'
 import { formatDateTimeCompactZurich } from '../../utils/dateHelpers'
+import { sanitizeUrl } from '../../utils/sanitizeUrl'
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -235,12 +236,15 @@ function IssueRow({ issue, t, lang }: { issue: BugfixIssue; t: (k: string, opts?
 
         {status === 'pr_ready' && (
           <>
-            {issue.pr_url && (
-              <a href={issue.pr_url} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1 rounded bg-blue-600 px-2 py-0.5 text-[10px] font-medium text-white hover:bg-blue-700">
-                <ExternalLink className="h-2.5 w-2.5" /> {t('viewPr')}
-              </a>
-            )}
+            {(() => {
+              const safe = sanitizeUrl(issue.pr_url || '')
+              return safe ? (
+                <a href={safe} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-1 rounded bg-blue-600 px-2 py-0.5 text-[10px] font-medium text-white hover:bg-blue-700">
+                  <ExternalLink className="h-2.5 w-2.5" /> {t('viewPr')}
+                </a>
+              ) : null
+            })()}
             <button onClick={handleDeployDev} className="rounded bg-cyan-600 px-2 py-0.5 text-[10px] font-medium text-white hover:bg-cyan-700">
               {t('deployDev')}
             </button>
@@ -366,12 +370,15 @@ function IssueRow({ issue, t, lang }: { issue: BugfixIssue; t: (k: string, opts?
               <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-0.5">{t('fixHistory')}</p>
               <p className="text-xs text-gray-700 dark:text-gray-300">
                 Status: <StatusBadge status={issue.fix_status} t={t} />
-                {issue.pr_url && (
-                  <a href={issue.pr_url} target="_blank" rel="noopener noreferrer"
-                    className="ml-2 text-blue-600 hover:underline dark:text-blue-400">
-                    PR <ExternalLink className="inline h-2.5 w-2.5" />
-                  </a>
-                )}
+                {(() => {
+                  const safe = sanitizeUrl(issue.pr_url || '')
+                  return safe ? (
+                    <a href={safe} target="_blank" rel="noopener noreferrer"
+                      className="ml-2 text-blue-600 hover:underline dark:text-blue-400">
+                      PR <ExternalLink className="inline h-2.5 w-2.5" />
+                    </a>
+                  ) : null
+                })()}
               </p>
             </div>
           )}

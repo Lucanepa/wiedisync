@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.5.0'
+const APP_VERSION = '4.5.1'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,24 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.5.1',
+    date: '2026-05-06',
+    sections: [
+      {
+        title: 'Deep security audit — 6 surfaces, ~58 findings remediated',
+        items: [
+          'Frontend hardening: Sentry Session Replay now masks all text/inputs and denies network details for Directus (was capturing PII at 100% on error). OAuth callback rejects token URLs without a fresh sentinel set by `loginWithOAuth` (closes the CSRF substitution path). Sponsor `website_url` and admin BugfixDashboard `pr_url` routed through `sanitizeUrl()`. `RichText` DOMPurify call gets explicit `ALLOWED_URI_REGEXP`. `public/sw.js` pins push-notification click URLs to our origin.',
+          'Push worker (`workers/push/`): bearer-secret comparison switched from `!==` to constant-time XOR-fold (`timingSafeEqualStr`) — closes the timing oracle on `AUTH_SECRET`.',
+          'Custom endpoints: newsletter Turnstile now fails closed when `TURNSTILE_SECRET` is unset (was returning `true`, opening unlimited mailbomb relay). `/terminplanung/register` no longer leaks the raw token in the response body — only emailed. `/terminplanung/book-home` wrapped in a transaction with `SELECT … FOR UPDATE` and a cross-team check (`slot.kscw_team === opponent.kscw_team`) — closes both the TOCTOU race and cross-team slot sabotage. New shared `capPayload` (caps `/client-error` body to 500 chars) and `ipRateLimit` helpers; `team-invites/claim` rate-limited to 5/15min/IP. `web-push.js` removed hardcoded VAPID public-key fallback (silent split-brain risk).',
+          'Custom hooks: announcement audience guard now blocks `audience_sport`-unset posts unless caller is full admin/superuser (a Sport Admin could omit `audience_sport` and broadcast to the entire club). New `filter` on `members.items.update` strips the `role` field unless caller is admin (defense-in-depth on top of field-level perms — the role-sync hook escalates to Directus user role). Junction-delete pending Maps now drained via try/finally + key snapshot (race fix). New `escapeEmailHtml` helper; admin-controlled `rejection_reason` now escaped before email interpolation. `clubdesk-update` `buildChangesTable` HTML-escapes member-supplied `old_value`/`new_value`.',
+          'Migration 043: `tasks.read` scoped to assigned/claimed-by self (was unfiltered for KSCW Member). `feedback.read` scoped to own submissions. `teams.update` row-scoped for Coach + Team Responsible (was unfiltered — coach on team A could PATCH team B). `teams_sponsors.sponsors_id` FK with ON DELETE CASCADE (closes the deferred half of migration 037). `SET search_path = public` added to all 8 messaging trigger functions. `bugfix_jobs` explicit REVOKE FROM anon, authenticated.',
+          'Permission management redesigned to kill the audit-pass regression cycle. `setup-permissions.mjs` is now the single declarative source for Directus permissions; numbered SQL migrations are SCHEMA-ONLY going forward. New tooling: `apply-migrations.mjs` (with `kscw_migrations` tracker table + sha-tamper detection), `smoke-test.mjs` (logs in as a non-admin Member and asserts no 4xx on critical reads — catches the silent Promise.all-failure pattern from 4.4.4 the same minute it ships), and `regenerate-baseline.mjs` (pg_dumps current schema for fresh installs). Single-command deploy: `npm run db:deploy:dev|prod` runs migrate → setup-perms → smoke. Documented across CLAUDE.md, INFRA.md, SECURITY.md, PERMISSIONS.md.',
+          'Open finding: `sv_vm_check.read` cross-member dump remains — Directus 11 emits invalid `CASE WHEN 1` SQL when a row filter is applied on this collection (PG 12+ rejects). Fix path is a custom `/kscw/sv-licence/me` endpoint + revoke direct read; tracked in SECURITY.md.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.5.0',
     date: '2026-05-05',

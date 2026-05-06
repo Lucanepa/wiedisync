@@ -1,6 +1,32 @@
 /**
  * KSCW Directus 11 Hybrid Permission Setup
  *
+ * SOURCE OF TRUTH (read this before editing):
+ *   The numbered SQL migrations in `directus/scripts/0NN-*.sql` are the source
+ *   of truth for the LIVE permissions on dev + prod. This file is the
+ *   fresh-install snapshot — it must reproduce the same end-state when
+ *   bootstrapping a brand-new Directus instance from zero.
+ *
+ *   When you change permissions:
+ *     1. Write a new SQL migration (NN+1) that mutates live perms idempotently.
+ *     2. Apply it on dev, then prod.
+ *     3. Update this file to match the new end-state. Otherwise the next
+ *        run of `setup-permissions.mjs` (during a DR rebuild, fresh dev env,
+ *        or onboarding) will silently roll back security hardening.
+ *   That bidirectional contract is enforced by reviewers — see PERMISSIONS.md.
+ *
+ * Reflects state through migration 043 (2026-05-06). Audit history:
+ *   023 messaging RBAC scoping        024 PII fields off cross-member read
+ *   025 feedback status lock          026 coach team-scoped writes
+ *   027 sport admin delete lock       028 auto-action markers
+ *   029 messaging self-read fields    030 members.read field gaps
+ *   031 spielplaner_assignments       032 trainings team-scoping
+ *   033 member-read team-scoping      034 spielplaner_assignments.read
+ *   035 second-pass audit             036 third-pass audit
+ *   037 junction cascade pass 2       038-039 absence override
+ *   040 excluded_guest_levels         041 team-dashboard prefs
+ *   042 blocks + spielplaner perms    043 security hardening pass
+ *
  * Directus 11 model: Roles → Policies → Permissions
  *   1. Ensure roles exist (rename old names if needed)
  *   2. Create/find access policies (one per role tier)
@@ -185,8 +211,14 @@ const OWN_MEMBER = { member: { user: { _eq: '$CURRENT_USER' } } }
 /** user = $CURRENT_USER (members table) */
 const OWN_USER = { user: { _eq: '$CURRENT_USER' } }
 
-/** user = $CURRENT_USER (directus_users FK on user_logs) */
-const OWN_DU = { user: { _eq: '$CURRENT_USER' } }
+/**
+ * user_logs.user is an INTEGER FK to members.id, NOT a UUID FK to
+ * directus_users. The naive `{ user: { _eq: '$CURRENT_USER' } }` filter
+ * tries to compare an int to the caller's UUID and Postgres throws
+ * "Invalid numeric value" (see CHANGELOG v4.4.8). The correct path
+ * traverses one more level: user_logs → members → directus_users.
+ */
+const OWN_DU = { user: { user: { _eq: '$CURRENT_USER' } } }
 
 /** from_member or to_member is current user */
 const OWN_DELEGATION = {
@@ -202,13 +234,19 @@ const OWN_DRIVER = { driver: { user: { _eq: '$CURRENT_USER' } } }
 /** passenger = current user */
 const OWN_PASSENGER = { passenger: { user: { _eq: '$CURRENT_USER' } } }
 
-/** Fields visible to regular members when reading other members */
+/**
+ * Fields visible to regular members when reading OTHER members.
+ * Migration 024 explicitly removed `email` + `phone` from this set — they
+ * leak across the whole club. Self-read covers them via MEMBER_OWN_READABLE.
+ * Migration 030 added `kscw_membership_active`, `shell`, `shell_expires`.
+ */
 const MEMBER_VISIBLE_FIELDS = [
   'id', 'first_name', 'last_name', 'photo', 'number',
   'position', 'licences', 'user',
-  'coach_approved_team', 'role', 'language', 'email',
-  'requested_team', 'birthdate_visibility', 'hide_phone', 'phone',
+  'coach_approved_team', 'role', 'language',
+  'requested_team', 'birthdate_visibility', 'hide_phone',
   'license_nr', 'sex', 'licence_category', 'licence_activated', 'licence_validated',
+  'kscw_membership_active', 'shell', 'shell_expires',
 ]
 
 /** Fields a member can update on their own profile */
@@ -327,24 +365,17 @@ async function main() {
     await setPermRead(PUBLIC_POLICY, 'teams_coaches')  // coach junction
     await setPermRead(PUBLIC_POLICY, 'members', null, ['id', 'first_name', 'last_name', 'photo'])
 
-    // Calendar: hall slots, closures, hall events, halls
+    // Calendar: hall slots, closures, hall events, halls.
+    // Migration 035 removed `slot_claims` from Public — internal hall booking
+    // strategy isn't public. Same migration also removed events/events_teams/
+    // participations (every RSVP across the club was anonymously readable).
+    // Migration 032 removed `trainings` (per-team schedule, members-only).
     await setPermRead(PUBLIC_POLICY, 'hall_slots')
     await setPermRead(PUBLIC_POLICY, 'hall_slots_teams')  // M2M junction
     await setPermRead(PUBLIC_POLICY, 'hall_closures')
     await setPermRead(PUBLIC_POLICY, 'hall_events')
     await setPermRead(PUBLIC_POLICY, 'hall_events_halls')  // M2M junction
     await setPermRead(PUBLIC_POLICY, 'halls')
-
-    // Trainings (calendar view)
-    await setPermRead(PUBLIC_POLICY, 'trainings')
-    await setPermRead(PUBLIC_POLICY, 'slot_claims')  // hall slot claims (read-only)
-
-    // Events (club-wide public events on home/calendar)
-    await setPermRead(PUBLIC_POLICY, 'events')
-    await setPermRead(PUBLIC_POLICY, 'events_teams')  // M2M junction
-
-    // Participations (game/training RSVP counts visible publicly)
-    await setPermRead(PUBLIC_POLICY, 'participations')
 
     // Feedback — public create (kscw-website form, validated by Turnstile hook)
     await setPerm(PUBLIC_POLICY, 'feedback', 'create', null,
@@ -367,15 +398,20 @@ async function main() {
 
   console.log('\n6. Member permissions...')
 
-  // Read: teams, games, rankings, sponsors (no filter needed — public-level + more)
+  // ── Unfiltered cross-club reads ─────────────────────────────
+  // Truly directory-level info: club-public schedules and venue data.
+  // Per migration 036, the M2M junctions (teams_coaches/teams_responsibles/
+  // teams_sponsors / member_teams) stay open so the whole-club app can show
+  // cross-team rosters. Member-level fields they expose are bounded by the
+  // members.read field whitelist below.
   const MEMBER_READ_ALL = [
     'teams', 'games', 'rankings', 'sponsors',
-    'trainings', 'events', 'event_sessions', 'events_teams',
+    'event_sessions',
     'hall_slots', 'hall_closures', 'hall_events', 'hall_events_halls', 'halls', 'hall_slots_teams',
-    'slot_claims', 'news', 'app_settings',
+    'news', 'app_settings',
     'referee_expenses', 'carpools', 'carpool_passengers', 'polls',
     // Junctions
-    'teams_coaches', 'teams_responsibles', 'teams_sponsors', 'events_teams', 'events_members', 'hall_events_halls',
+    'teams_coaches', 'teams_responsibles', 'teams_sponsors', 'events_teams', 'events_members',
     // Files
     'directus_files',
   ]
@@ -383,7 +419,52 @@ async function main() {
     await setPermRead(MEMBER_POLICY, col)
   }
 
-  // sv_vm_check — own record only, restricted fields (no PII: email, birthday, name, phone)
+  // ── Team-scoped reads (migration 032 / 033) ─────────────────
+  // trainings: only my teams. events: own + club-wide + my-teams + invited.
+  // participations + absences: own + same-team. polls + referee_expenses
+  // already covered above for cross-club but fine — those are team-scoped
+  // by app navigation; they don't carry PII.
+  const MY_TEAMS_FILTER = { team: { members: { member: { user: { _eq: '$CURRENT_USER' } } } } }
+  await setPermRead(MEMBER_POLICY, 'trainings', MY_TEAMS_FILTER)
+
+  const EVENTS_VISIBLE = {
+    _or: [
+      { created_by: { user: { _eq: '$CURRENT_USER' } } },
+      { event_type: { _in: ['verein', 'tournament'] } },
+      { teams: { teams_id: { members: { member: { user: { _eq: '$CURRENT_USER' } } } } } },
+      { invited_members: { members_id: { user: { _eq: '$CURRENT_USER' } } } },
+    ],
+  }
+  await setPermRead(MEMBER_POLICY, 'events', EVENTS_VISIBLE)
+
+  const SAME_TEAM_AS_ME = {
+    _or: [
+      { member: { user: { _eq: '$CURRENT_USER' } } },
+      { member: { member_teams: { team: { members: { member: { user: { _eq: '$CURRENT_USER' } } } } } } },
+    ],
+  }
+  await setPermRead(MEMBER_POLICY, 'participations', SAME_TEAM_AS_ME)
+  await setPermRead(MEMBER_POLICY, 'absences', SAME_TEAM_AS_ME)
+
+  // ── slot_claims — keep open for now (calendar UI relies on it),
+  // public read removed in 035; member read still permissive per audit decision.
+  await setPermRead(MEMBER_POLICY, 'slot_claims')
+
+  // sv_vm_check — null row filter + narrow field whitelist.
+  //
+  // ⚠ Open audit finding (2026-05-06): without a row filter, every member
+  // can read every member's licence row. The intended fix was a row filter
+  // {member: {user: $CURRENT_USER}}, but:
+  //   (a) sv_vm_check has no `member` FK column (linked by `email` /
+  //       `association_id`), and
+  //   (b) Directus 11 generates `CASE WHEN 1 THEN col END` SQL whenever a
+  //       row filter is set on this collection, which Postgres 12+ rejects
+  //       ("argument of CASE/WHEN must be type boolean, not type integer").
+  //
+  // Mitigation TODO: build a custom `/kscw/sv-licence/me` endpoint that
+  // returns the caller's own row, REVOKE Member's direct sv_vm_check.read,
+  // update useLicenceCard to use the endpoint. Tracked in SECURITY.md.
+  // For now: 11-field whitelist (no PII surface) keeps the original posture.
   const VM_CHECK_FIELDS = [
     'id', 'association_id', 'licence_category', 'licence_activated', 'licence_validated',
     'is_locally_educated', 'is_foreigner', 'federation', 'nationality_code',
@@ -391,7 +472,8 @@ async function main() {
   ]
   await setPermRead(MEMBER_POLICY, 'sv_vm_check', null, VM_CHECK_FIELDS)
 
-  // Members — limited fields for other members
+  // Members — limited fields for other members. PII (email/phone) excluded
+  // (migration 024). Self-read row is added below with editable fields.
   await setPermRead(MEMBER_POLICY, 'members', null, MEMBER_VISIBLE_FIELDS)
 
   // Members — read own profile with expanded fields (editable fields must be readable)
@@ -401,13 +483,11 @@ async function main() {
   // Members — update own profile (limited fields)
   await setPerm(MEMBER_POLICY, 'members', 'update', OWN_USER, MEMBER_EDITABLE_FIELDS)
 
-  // Participations — read all (needed for roster/warnings), create, update own
-  await setPermRead(MEMBER_POLICY, 'participations')
+  // Participations: read scope set above (SAME_TEAM_AS_ME); CRU below.
   await setPerm(MEMBER_POLICY, 'participations', 'create')
   await setPerm(MEMBER_POLICY, 'participations', 'update', OWN_MEMBER)
 
-  // Absences — read all (team-wide view), CUD own
-  await setPermRead(MEMBER_POLICY, 'absences')
+  // Absences: read scope set above (SAME_TEAM_AS_ME); CUD below.
   await setPerm(MEMBER_POLICY, 'absences', 'create')
   await setPerm(MEMBER_POLICY, 'absences', 'update', OWN_MEMBER)
   await setPerm(MEMBER_POLICY, 'absences', 'delete', OWN_MEMBER)
@@ -448,8 +528,19 @@ async function main() {
   await setPerm(MEMBER_POLICY, 'push_subscriptions', 'update', OWN_MEMBER)
   await setPerm(MEMBER_POLICY, 'push_subscriptions', 'delete', OWN_MEMBER)
 
-  // Member teams — read own
+  // Member teams — directory-level cross-club read kept (migration 036).
+  // `guest_level` stays readable: the FE's getGuestLevel() needs it on the
+  // user's own rows, and cross-team visibility of guest_level is acceptable
+  // (it's already implicit in roster cards). The 2026-05-06 audit raised it
+  // as Low; we explicitly accept that read scope and document in SECURITY.md.
   await setPermRead(MEMBER_POLICY, 'member_teams')
+
+  // Blocks — see only my own outgoing blocks (incoming blocks stay opaque)
+  // (migration 042).
+  await setPermRead(MEMBER_POLICY, 'blocks', { blocker: { user: { _eq: '$CURRENT_USER' } } })
+
+  // Spielplaner assignments — self-scoped (migrations 034, 042).
+  await setPermRead(MEMBER_POLICY, 'spielplaner_assignments', OWN_MEMBER)
 
   // Scorer delegations — read/create/update own
   await setPermRead(MEMBER_POLICY, 'scorer_delegations', OWN_DELEGATION)
@@ -463,18 +554,19 @@ async function main() {
   await setPerm(MEMBER_POLICY, 'user_logs', 'create')
   await setPermRead(MEMBER_POLICY, 'user_logs', OWN_DU)
 
-  // Feedback — create + read own
+  // Feedback — create + read own (migration 043 scoped read by submitter email).
   await setPerm(MEMBER_POLICY, 'feedback', 'create')
-  await setPermRead(MEMBER_POLICY, 'feedback')
+  await setPermRead(MEMBER_POLICY, 'feedback', { email: { _eq: '$CURRENT_USER.email' } })
 
-  // Tasks — read, update assigned
-  await setPermRead(MEMBER_POLICY, 'tasks')
-  await setPerm(MEMBER_POLICY, 'tasks', 'update', {
+  // Tasks — read scope mirrors update (migration 043).
+  const OWN_TASK_FILTER = {
     _or: [
       { assigned_to: { user: { _eq: '$CURRENT_USER' } } },
       { claimed_by: { user: { _eq: '$CURRENT_USER' } } },
     ],
-  })
+  }
+  await setPermRead(MEMBER_POLICY, 'tasks', OWN_TASK_FILTER)
+  await setPerm(MEMBER_POLICY, 'tasks', 'update', OWN_TASK_FILTER)
 
   // Carpools — create, update own
   await setPerm(MEMBER_POLICY, 'carpools', 'create')
@@ -502,17 +594,34 @@ async function main() {
 
   // Members — read all fields (coaches need email, phone for their team)
   await setPermRead(LEADER_POLICY, 'members')
-  // Members — update position + number (coaches assign these in RosterEditor)
-  await setPerm(LEADER_POLICY, 'members', 'update', null, ['position', 'number'])
+  // Members — update position + number (migration 036 scoped to my-team members).
+  // Coach uses { member_teams.team.coach.members_id... }; TR uses team_responsible.
+  // We can't tell which sub-policy this is at this layer, so the broader Coach
+  // filter is used; TR is identical because both junction columns appear on teams.
+  const COACH_TEAM_MEMBERS = {
+    member_teams: {
+      team: {
+        _or: [
+          { coach: { members_id: { user: { _eq: '$CURRENT_USER' } } } },
+          { team_responsible: { members_id: { user: { _eq: '$CURRENT_USER' } } } },
+        ],
+      },
+    },
+  }
+  await setPerm(LEADER_POLICY, 'members', 'update', COACH_TEAM_MEMBERS, ['position', 'number'])
 
   // Coach Dashboard prefs — explicit read for Leader (Coach/TR).
   // PUBLIC_TEAM_FIELDS doesn't include these, so KSCW Member never sees them.
-  // Frontend scopes the query to the user's own teams (same pattern as the
-  // existing unfiltered teams.update on the next line).
   await setPermRead(LEADER_POLICY, 'teams', null, LEADER_TEAM_DASHBOARD_FIELDS)
 
-  // Teams — update (own coached/TR teams — filter enforced at API, frontend does team-scope)
-  await setPerm(LEADER_POLICY, 'teams', 'update')
+  // Teams — update scoped (migration 043). Coach ↔ team via teams.coach M2M;
+  // Team Responsible ↔ team via teams.team_responsible M2M.
+  await setPerm(LEADER_POLICY, 'teams', 'update', {
+    _or: [
+      { coach: { members_id: { user: { _eq: '$CURRENT_USER' } } } },
+      { team_responsible: { members_id: { user: { _eq: '$CURRENT_USER' } } } },
+    ],
+  })
 
   // Games — update (duty assignments, scores)
   await setPerm(LEADER_POLICY, 'games', 'update')
@@ -644,9 +753,12 @@ async function main() {
 
   console.log('\n9. Sport Admin permissions...')
 
-  const ALL_COLLECTIONS = [
-    'teams', 'games', 'trainings', 'events', 'event_sessions', 'events_teams',
-    'members', 'member_teams', 'participations', 'absences',
+  // Sport Admin tier: club-wide CRU on operational collections, but NOT
+  // members.delete or teams.delete (migration 027 — full admin only,
+  // club-wide blast radius).
+  const SPORT_ADMIN_FULL_CRUD = [
+    'games', 'trainings', 'events', 'event_sessions', 'events_teams',
+    'member_teams', 'participations', 'absences',
     'rankings', 'sponsors', 'teams_sponsors',
     'hall_slots', 'hall_closures', 'hall_events', 'hall_events_halls', 'halls', 'hall_slots_teams',
     'slot_claims', 'notifications', 'feedback', 'scorer_delegations', 'referee_expenses',
@@ -662,9 +774,15 @@ async function main() {
     'announcements',
     'directus_files',
   ]
-
-  for (const col of ALL_COLLECTIONS) {
+  for (const col of SPORT_ADMIN_FULL_CRUD) {
     await setPermCRUD(SPORT_ADMIN_POLICY, col)
+  }
+  // Restricted: read/create/update only on members + teams (delete blocked).
+  for (const col of ['members', 'teams']) {
+    await setPerm(SPORT_ADMIN_POLICY, col, 'create')
+    await setPermRead(SPORT_ADMIN_POLICY, col)
+    await setPerm(SPORT_ADMIN_POLICY, col, 'update')
+    // No delete — migration 027.
   }
 
   console.log(`  ✓ Sport Admin permissions set`)

@@ -58,7 +58,10 @@ export function registerGameScheduling(router, { database, logger, services, get
         log.warn(`Scheduling email failed: ${mailErr.message}`)
       }
 
-      res.json({ success: true, token, expires_at: expiresAt })
+      // Do NOT return the token here — it travels via email only. Returning
+      // it in the response would let any caller who passes Turnstile receive
+      // a token bound to an arbitrary contact_email they don't control.
+      res.json({ success: true, expires_at: expiresAt })
     } catch (err) {
       log.error({ msg: `terminplanung/register: ${err.message}`, endpoint: 'terminplanung/register', userId: req.accountability?.user || null, method: req.method, stack: err.stack })
       res.status(500).json({ error: 'Internal error' })
@@ -190,35 +193,49 @@ export function registerGameScheduling(router, { database, logger, services, get
       const { slot_id } = req.body
       if (!slot_id) return res.status(400).json({ error: 'slot_id required' })
 
-      const slot = await database('game_scheduling_slots').where('id', slot_id).first()
-      if (!slot || slot.status === 'blocked' || slot.status === 'booked') {
-        return res.status(400).json({ error: 'Slot not available' })
-      }
+      // Run the slot reservation in a transaction with SELECT … FOR UPDATE so
+      // two concurrent calls for the same slot can't both pass the
+      // availability check (the original code had a TOCTOU window between the
+      // existence check and the booking insert).
+      // Cross-team check: the slot must belong to the same kscw_team as the
+      // opponent's invite — without this, any opponent with a valid token
+      // could mark slots from OTHER teams as booked, effectively sabotaging
+      // their schedule.
+      await database.transaction(async (trx) => {
+        const slot = await trx('game_scheduling_slots').where('id', slot_id).forUpdate().first()
+        if (!slot || slot.status === 'blocked' || slot.status === 'booked') {
+          throw Object.assign(new Error('Slot not available'), { httpStatus: 400 })
+        }
+        if (slot.kscw_team !== opponent.kscw_team) {
+          throw Object.assign(new Error('Slot does not belong to this team'), { httpStatus: 400 })
+        }
 
-      // Check no duplicate booking
-      const existing = await database('game_scheduling_bookings')
-        .where('slot', slot_id).where('status', 'confirmed').first()
-      if (existing) return res.status(400).json({ error: 'Slot already booked' })
+        const existing = await trx('game_scheduling_bookings')
+          .where('slot', slot_id).where('status', 'confirmed').first()
+        if (existing) {
+          throw Object.assign(new Error('Slot already booked'), { httpStatus: 400 })
+        }
 
-      // Insert home booking (schema: opponent FK, slot FK, type, season, status)
-      await database('game_scheduling_bookings').insert({
-        opponent: opponent.id,
-        slot: slot_id,
-        type: 'home_slot_pick',
-        season: slot.season,
-        status: 'confirmed',
+        await trx('game_scheduling_bookings').insert({
+          opponent: opponent.id,
+          slot: slot_id,
+          type: 'home_slot_pick',
+          season: slot.season,
+          status: 'confirmed',
+        })
+        await trx('game_scheduling_slots').where('id', slot_id).update({ status: 'booked' })
+
+        await trx('game_scheduling_opponents')
+          .where('id', opponent.id)
+          .whereIn('status', ['invited', 'viewed'])
+          .update({ status: 'booked' })
       })
-      // Mark the slot itself as booked so it disappears from available lists
-      await database('game_scheduling_slots').where('id', slot_id).update({ status: 'booked' })
-
-      // Status lifecycle: booking transitions invited/viewed → booked
-      await database('game_scheduling_opponents')
-        .where('id', opponent.id)
-        .whereIn('status', ['invited', 'viewed'])
-        .update({ status: 'booked' })
 
       res.json({ success: true })
     } catch (err) {
+      if (err && err.httpStatus) {
+        return res.status(err.httpStatus).json({ error: err.message })
+      }
       log.error({ msg: `terminplanung/book-home: ${err.message}`, endpoint: 'terminplanung/book-home', userId: req.accountability?.user || null, method: req.method, stack: err.stack })
       res.status(500).json({ error: 'Internal error' })
     }

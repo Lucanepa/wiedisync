@@ -168,7 +168,45 @@ function requireAuth(req, log) {
   }
 }
 
-export { logEndpointError, scrubBody }
+/**
+ * Cap an arbitrary client-supplied payload to keep the JSONL error log from
+ * being filled by attacker-controlled bodies.
+ * - strings: truncated to 500 chars
+ * - objects/arrays: JSON-serialised then truncated
+ * - everything else: stringified + truncated
+ */
+function capPayload(payload, max = 500) {
+  if (payload == null) return null
+  try {
+    const str = typeof payload === 'string' ? payload : JSON.stringify(payload)
+    return str.length > max ? str.slice(0, max) + '…' : str
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Tiny in-memory IP rate limiter shared by sensitive public endpoints.
+ * Returns true when the request is allowed, false when over budget.
+ * The map self-cleans when it grows past 1k entries.
+ */
+function ipRateLimit(map, req, maxAttempts, windowMs) {
+  const ip = req.ip || req.headers?.['x-forwarded-for'] || 'unknown'
+  const now = Date.now()
+  const entry = map.get(ip)
+  if (entry && now < entry.resetAt) {
+    if (entry.count >= maxAttempts) return false
+    entry.count++
+  } else {
+    map.set(ip, { count: 1, resetAt: now + windowMs })
+  }
+  if (map.size > 1000) {
+    for (const [k, v] of map) { if (now > v.resetAt) map.delete(k) }
+  }
+  return true
+}
+
+export { logEndpointError, scrubBody, capPayload, ipRateLimit }
 
 export default {
   id: 'kscw',
@@ -222,9 +260,11 @@ export default {
           page: body.page || null,
           userAgent: body.userAgent || null,
           responseBody: typeof body.responseBody === 'string' ? body.responseBody.slice(0, 1000) : null,
-          payload: body.payload || null,
-          error: body.error || null,
-          type: body.type || null,
+          // Cap payload size — uncapped attacker-controlled payloads can fill
+          // the JSONL log over time (30 req/min × big payload × 30 days).
+          payload: capPayload(body.payload),
+          error: typeof body.error === 'string' ? body.error.slice(0, 1000) : null,
+          type: typeof body.type === 'string' ? body.type.slice(0, 200) : null,
           stack: typeof body.stack === 'string' ? body.stack.slice(0, 2000) : null,
         })
 
@@ -683,8 +723,15 @@ export default {
       }
     })
 
+    const teamInviteClaimIp = new Map() // ip → { count, resetAt }
     router.post('/team-invites/claim', async (req, res) => {
       try {
+        // Rate limit: 5 claim attempts per 15 min per IP. The token is
+        // 32 hex / 128-bit so guessing is infeasible — the limit is mostly
+        // to keep brute-DoS against the team_invites table bounded.
+        if (!ipRateLimit(teamInviteClaimIp, req, 5, 15 * 60 * 1000)) {
+          return res.status(429).json({ error: 'Too many requests' })
+        }
         const { token, first_name, last_name, email: rawEmail } = req.body
         if (!token || !first_name || !last_name || !rawEmail) {
           return res.status(400).json({ error: 'token, first_name, last_name, email required' })

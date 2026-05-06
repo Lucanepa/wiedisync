@@ -30,7 +30,16 @@ self.addEventListener('push', function(event) {
 self.addEventListener('notificationclick', function(event) {
   event.notification.close()
 
-  var url = (event.notification.data && event.notification.data.url) || self.location.origin
+  // Pin notification URLs to our origin — defense in depth in case the push
+  // pipeline (CF worker / backend) ever ships a URL it shouldn't.
+  var rawUrl = (event.notification.data && event.notification.data.url) || self.location.origin
+  var url = self.location.origin
+  try {
+    var parsed = new URL(rawUrl, self.location.origin)
+    if (parsed.origin === self.location.origin && (parsed.protocol === 'https:' || parsed.protocol === 'http:')) {
+      url = parsed.href
+    }
+  } catch (_) { /* keep origin fallback */ }
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {

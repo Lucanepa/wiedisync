@@ -1,0 +1,238 @@
+# Permissions reference — KSCW Directus
+
+Canonical role × collection × action map. Reflects the live state through migration 043 (2026-05-06). Updated by reviewers as part of every permission change.
+
+> **Source of truth (post-2026-05-06):** `directus/scripts/setup-permissions.mjs` is the SINGLE source for Directus permissions. It is declarative, idempotent (clears + recreates on every run), and applied via `npm run db:setup-perms:<env>` on every deploy. Numbered SQL migrations are SCHEMA-ONLY going forward — they no longer carry permission rows. This doc is the human-readable index of the script — keep both in sync.
+
+> **Permissions migrations 019/020/023/024/025/026/027/029/030/032/033/034/035/036/042/043** in `0NN-*.sql` form the historical journal of how we got to the current state. Do not write new ones. Update the script instead and let `db:setup-perms` reconcile.
+
+---
+
+## Roles & policies
+
+| Role | Policy | `admin_access` | `app_access` | Description |
+|---|---|---|---|---|
+| Administrator | (built-in) | true | true | Directus root |
+| Superuser | KSCW Admin | true | true | Full system access (superuser + admin members) |
+| Sport Admin | KSCW Sport Admin | false | true | vb_admin / bb_admin — sport-scoped club ops |
+| Vorstand | KSCW Vorstand | false | true | Board members — read-all access |
+| Team Responsible | KSCW Team Responsible | false | true | Coach or team responsible (LEADER tier) |
+| Member | KSCW Member | false | true | Default authenticated member |
+| Public | (built-in `$t:public_label`) | false | true | Unauthenticated visitors |
+
+Inheritance (additive): `Sport Admin` → `Team Responsible` → `Member`. `Vorstand` → `Member`. Every member of a higher tier carries the lower tier's permissions on top of their own row.
+
+---
+
+## Filter shorthand
+
+Used throughout — repeated literally rather than via subqueries because Directus stores filters as inline JSON.
+
+| Name | Filter | Usage |
+|---|---|---|
+| `OWN_USER` | `{ user: { _eq: '$CURRENT_USER' } }` | members directly |
+| `OWN_MEMBER` | `{ member: { user: { _eq: '$CURRENT_USER' } } }` | rows with `member` FK |
+| `OWN_DU` | `{ user: { user: { _eq: '$CURRENT_USER' } } }` | `user_logs` (int FK to members) |
+| `MY_TEAMS` | `{ team: { members: { member: { user: ... } } } }` | trainings, anything team-scoped |
+| `EVENTS_VISIBLE` | `_or` of own / club-wide / my-teams / invited-members | events, event_sessions, events_members |
+| `SAME_TEAM_AS_ME` | `_or` of own member + member-on-same-team | participations, absences |
+| `OWN_DELEGATION` | `{ _or: [{ from_member.user }, { to_member.user }] }` | scorer_delegations |
+
+---
+
+## Public (unauthenticated)
+
+| Collection | Action | Filter | Notes |
+|---|---|---|---|
+| teams | read | `active = true` | Limited fields (`PUBLIC_TEAM_FIELDS`) |
+| games | read | none | Limited fields (`PUBLIC_GAME_FIELDS`) |
+| rankings | read | none | |
+| sponsors | read | `active = true` | |
+| teams_sponsors | read | none | Junction for kscw-website |
+| teams_coaches | read | none | Junction for kscw-website |
+| members | read | none | Fields: `id, first_name, last_name, photo` only |
+| hall_slots / hall_slots_teams | read | none | Calendar embed |
+| hall_closures | read | none | |
+| hall_events / hall_events_halls | read | none | |
+| halls | read | none | |
+| feedback | create | none | Fields whitelisted; Turnstile + filter hook gate |
+| mixed_tournament_signups | create | none | Same |
+| directus_files | read + create | none | Public file uploads (feedback screenshots etc.) |
+
+**Explicit non-public (don't re-grant!):** `trainings` (032), `slot_claims` / `events` / `events_teams` / `participations` (035), `event_signups` (anon/authenticated revoked at PG level — 035).
+
+---
+
+## KSCW Member — most-touched rows
+
+### Reads (with row scope)
+
+| Collection | Filter | Fields | Source migration |
+|---|---|---|---|
+| members | none | `MEMBER_VISIBLE_FIELDS` (no `email`/`phone`) | 024 |
+| members | `OWN_USER` | `MEMBER_OWN_READABLE` (incl. PII + 029 messaging fields + 030 + 042) | 029, 030, 042 |
+| trainings | `MY_TEAMS` | `*` | 032 |
+| events | `EVENTS_VISIBLE` | `*` | 033 |
+| event_sessions | events `EVENTS_VISIBLE` | `*` | 036 |
+| events_members | events `EVENTS_VISIBLE` | `*` | 036 |
+| participations | `SAME_TEAM_AS_ME` | `*` | 033 |
+| absences | `SAME_TEAM_AS_ME` | `*` | 033 |
+| sv_vm_check | `OWN_MEMBER` | `VM_CHECK_FIELDS` (11 fields, no PII) | **043** |
+| tasks | own `assigned_to` / `claimed_by` | `*` | **043** |
+| feedback | `email = $CURRENT_USER.email` | `*` | **043** |
+| member_teams | none | `id, member, team, season` (no `guest_level`) | **043** |
+| blocks | `blocker.user = $CURRENT_USER` | `*` | 042 |
+| spielplaner_assignments | `OWN_MEMBER` | `*` | 034, 042 |
+| user_logs | `OWN_DU` (note traversal!) | `*` | 4.4.8 fix |
+| notifications | `OWN_MEMBER` | `*` | |
+| push_subscriptions | `OWN_MEMBER` | `*` | |
+| announcements | published + non-expired only | excludes `audience_teams` / `audience_roles` | 3.11 |
+| polls | `MY_TEAMS` (via team)| `*` | 035 |
+| referee_expenses | `MY_TEAMS` (via team) | `*` | 035 |
+
+### Reads (intentionally cross-club)
+
+`teams`, `games`, `rankings`, `sponsors`, `event_sessions` (read filtered above), `hall_slots`, `hall_closures`, `hall_events`, `hall_events_halls`, `halls`, `hall_slots_teams`, `slot_claims`, `news`, `app_settings`, `carpools`, `carpool_passengers`, `teams_coaches`, `teams_responsibles`, `teams_sponsors`, `events_teams`, `events_members`, `directus_files`.
+
+### Writes
+
+| Collection | Action | Filter |
+|---|---|---|
+| members | update | `OWN_USER`, fields = `MEMBER_EDITABLE_FIELDS` (excludes `role`, role stripped by hook filter) |
+| participations | create / update | own |
+| absences | create / update / delete | own |
+| notifications | update / delete | own |
+| push_subscriptions | create / update / delete | own |
+| scorer_delegations | create / update | own (from/to) |
+| user_logs | create | none |
+| feedback | create | none |
+| tasks | update | own (assigned/claimed) |
+| carpools | create / update | own driver |
+| carpool_passengers | create / update | own |
+| poll_votes | create / update | `OWN_MEMBER` |
+| team_requests | create | none |
+| directus_files | create | none |
+
+**Explicit non-write for Member:** `members.role` field — stripped by `filter('members.items.update')` in `kscw-hooks` for non-admin callers (defense-in-depth on top of field-level perm).
+
+---
+
+## KSCW Team Responsible (Coach + TR — LEADER tier)
+
+Inherits everything from Member. Adds:
+
+| Collection | Action | Filter | Source migration |
+|---|---|---|---|
+| members | read | none (full fields) | |
+| members | update | scoped to my-team members, fields = `position, number` | 036 |
+| teams | read | none | |
+| teams | read | none | also `LEADER_TEAM_DASHBOARD_FIELDS` |
+| teams | update | scoped: `coach.members_id.user = $CURRENT_USER` OR `team_responsible.members_id.user = $CURRENT_USER` | **043** |
+| games | update | scoped via teams.coach (mig 026) | 026 |
+| trainings | create / update | scoped via teams.coach | 026 |
+| events | create / update | scoped via teams.coach | 026 |
+| event_sessions | create / update | scoped via parent event | 026, 036 |
+| events_teams | create / update / delete | scoped via teams.coach | 019, 026 |
+| participations | update | scoped via teams.coach | 026 |
+| member_teams | create / update / delete | scoped via teams.coach | 020 |
+| hall_slots | create / update | scoped via teams.coach | 026 |
+| hall_slots_teams | CRUD | scoped via teams.coach | 020 |
+| slot_claims | update | scoped via teams.coach | 026 |
+| team_invites | full CRUD | scoped via teams.coach | |
+| scorer_delegations | read | none | |
+| referee_expenses | create / update | scoped via teams.coach | 026 |
+| tasks | create / update / delete | scoped via teams.coach | 026 |
+| task_templates | read / create / update | scoped via teams.coach | 026 |
+| polls | create / update / delete | scoped via teams.coach | 026 |
+| team_requests | read / update | none | |
+| absences | read | none (team-wide visibility for coaches) | |
+| notifications | create | none | |
+| announcements | read | published + non-expired only (no draft access) | F6 audit |
+| user_logs | read | none | |
+| game_scheduling_* | read | none | |
+| directus_files | create | none | |
+
+---
+
+## KSCW Vorstand
+
+Inherits Member. Adds read-all on operational collections — board oversight role:
+
+`members, member_teams, participations, absences, notifications, scorer_delegations, team_invites, user_logs, feedback, tasks, task_templates, poll_votes, team_requests, push_subscriptions, game_scheduling_*, announcements`.
+
+No CRU writes — Vorstand is read-only by design.
+
+---
+
+## KSCW Sport Admin
+
+Inherits Team Responsible (and via that, Member). Adds full CRUD on operational collections except:
+
+- `members` and `teams` — create / read / update only. **No delete** (migration 027 — club-wide blast radius is admin-only).
+
+---
+
+## Administrator / Superuser
+
+`admin_access = true`. Bypasses all permission checks. Use sparingly.
+
+---
+
+## Operational checklist for permission changes
+
+When you touch any permission row:
+
+- [ ] Edit `directus/scripts/setup-permissions.mjs` only. **Do NOT write a numbered SQL migration for a permission change.**
+- [ ] Update this `PERMISSIONS.md` row in the same commit.
+- [ ] Add a one-liner to `SECURITY.md` audit log (`### YYYY-MM-DD — …`).
+- [ ] Test: `npm run db:deploy:dev` — runs migrate → setup-perms → smoke. Confirm green before merging.
+- [ ] Ship: merge to prod and `npm run db:deploy:prod`.
+
+The reviewer should diff `setup-permissions.mjs` against this doc to confirm parity. The smoke test is the safety net — if it fails for a Member role on any collection, the deploy halts before reaching users.
+
+---
+
+## Verification queries
+
+Run these after migration 043 to confirm parity:
+
+```sql
+-- 1. Critical reads scoped
+SELECT pol.name, p.collection, p.action, p.permissions, p.fields
+FROM directus_permissions p
+JOIN directus_policies pol ON pol.id = p.policy
+WHERE p.collection IN ('sv_vm_check','tasks','feedback','member_teams')
+  AND pol.name = 'KSCW Member'
+ORDER BY p.collection;
+
+-- 2. teams.update is row-scoped for both leader sub-policies
+SELECT pol.name, p.collection, p.action, p.permissions
+FROM directus_permissions p
+JOIN directus_policies pol ON pol.id = p.policy
+WHERE p.collection = 'teams' AND p.action = 'update';
+
+-- 3. Sport Admin: no delete on members or teams
+SELECT pol.name, p.collection, p.action
+FROM directus_permissions p
+JOIN directus_policies pol ON pol.id = p.policy
+WHERE pol.name = 'KSCW Sport Admin' AND p.collection IN ('members','teams')
+ORDER BY p.collection, p.action;
+
+-- 4. teams_sponsors FK present + cascade
+SELECT conname, confdeltype FROM pg_constraint
+WHERE conrelid = 'teams_sponsors'::regclass AND contype = 'f';
+
+-- 5. Messaging functions have search_path
+SELECT proname, proconfig FROM pg_proc
+WHERE proname LIKE 'fn_messaging%' OR proname = 'messaging_protect_sentinel'
+ORDER BY proname;
+
+-- 6. anon / authenticated have NO SELECT on operational tables
+SELECT grantee, table_name
+FROM information_schema.table_privileges
+WHERE table_schema = 'public'
+  AND grantee IN ('anon','authenticated')
+  AND privilege_type = 'SELECT'
+ORDER BY table_name;
+-- Expected: empty (or only the explicitly-public set).
+```

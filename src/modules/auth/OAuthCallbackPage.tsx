@@ -5,9 +5,9 @@ import { useNavigate } from 'react-router-dom'
  * Handles the OAuth redirect callback from Directus SSO.
  *
  * Directus redirects back with access_token + refresh_token + expires in the
- * URL search params. We extract them, store in the auth storage (so the
- * Directus SDK picks them up), clean the URL to remove tokens from browser
- * history, then redirect to the app root where useAuth will restore the session.
+ * URL search params. We require an `oauth_pending` sentinel set by
+ * loginWithOAuth() to be present and fresh — that closes the CSRF window
+ * where an attacker tricks a victim into loading a crafted callback URL.
  */
 export default function OAuthCallbackPage() {
   const navigate = useNavigate()
@@ -18,25 +18,39 @@ export default function OAuthCallbackPage() {
     const refreshToken = params.get('refresh_token')
     const expires = params.get('expires')
 
-    if (accessToken && refreshToken) {
-      // Store tokens in the same format the Directus SDK expects
+    let consumed = false
+    let pending: { nonce?: string; ts?: number; provider?: string } | null = null
+    try {
+      const raw = sessionStorage.getItem('oauth_pending')
+      if (raw) pending = JSON.parse(raw)
+    } catch { /* malformed — treat as absent */ }
+    // Clear the sentinel before any branch — single-use.
+    try { sessionStorage.removeItem('oauth_pending') } catch { /* ignore */ }
+
+    // Reject token params that didn't come from a recent loginWithOAuth click.
+    // 5-minute freshness window covers slow Google consent screens.
+    const fresh = !!pending?.ts && (Date.now() - pending.ts) < 5 * 60 * 1000
+    if (accessToken && refreshToken && fresh) {
       const authData = {
         access_token: accessToken,
         refresh_token: refreshToken,
         expires: expires ? Number(expires) : null,
       }
-
-      // Determine storage based on remember-me preference
       const rememberMe = localStorage.getItem('wiedisync-remember-me') !== 'false'
       const storage = rememberMe ? localStorage : sessionStorage
       storage.setItem('directus_auth', JSON.stringify(authData))
+      consumed = true
     }
 
-    // Clean tokens from URL to prevent leaking via browser history / Referer
+    // Always strip tokens from URL before any subsequent navigation/render
     window.history.replaceState({}, '', '/auth/callback')
 
-    // Navigate to root — useAuth init will detect the token and restore the session
-    navigate('/', { replace: true })
+    if (consumed) {
+      navigate('/', { replace: true })
+    } else {
+      // Either no tokens, or no recent OAuth attempt — bounce to login
+      navigate('/login?oauth=expired', { replace: true })
+    }
   }, [navigate])
 
   return (

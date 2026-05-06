@@ -90,7 +90,7 @@ if (typeof window !== 'undefined') {
 
 export async function login(email: string, password: string) {
   try {
-    return await client.login(email, password)
+    return await client.login({ email, password })
   } catch (err) {
     captureAuthError(err, { action: 'login', method: 'password' })
     throw err

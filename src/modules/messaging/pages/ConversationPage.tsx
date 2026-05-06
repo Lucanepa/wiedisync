@@ -8,6 +8,7 @@ import { useMemberDisplayNames } from '../hooks/useMemberDisplayNames'
 import { messagingFeatureEnabled } from '../../../utils/messagingFeatureFlag'
 import ThreadView from '../components/ThreadView'
 import RequestCard from '../components/RequestCard'
+import ConsentModal from '../components/ConsentModal'
 import { resolveRequestHeader } from '../utils/resolveRequestHeader'
 import { Button } from '@/components/ui/button'
 import { ChevronLeft } from 'lucide-react'
@@ -86,6 +87,7 @@ export default function ConversationPage() {
         composerDisabled={composerDisabled}
         header={bannerNode}
       />
+      <ConsentModal />
     </div>
   )
 }

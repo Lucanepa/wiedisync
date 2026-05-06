@@ -7,6 +7,7 @@ import { useMessageRequests } from '../hooks/useMessageRequests'
 import ConversationList from '../components/ConversationList'
 import InboxEmptyState from '../components/InboxEmptyState'
 import NewMessageDialog from '../components/NewMessageDialog'
+import ConsentModal from '../components/ConsentModal'
 import { Button } from '@/components/ui/button'
 import { messagingFeatureEnabled } from '../../../utils/messagingFeatureFlag'
 import { useAuth } from '../../../hooks/useAuth'
@@ -70,6 +71,7 @@ export default function InboxPage() {
       )}
 
       <NewMessageDialog open={newMsgOpen} onOpenChange={setNewMsgOpen} />
+      <ConsentModal />
     </div>
   )
 }

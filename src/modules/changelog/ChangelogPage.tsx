@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.5.1'
+const APP_VERSION = '4.5.2'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,23 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.5.2',
+    date: '2026-05-06',
+    sections: [
+      {
+        title: 'Audit follow-ups: sv_vm_check Critical closed + ops tooling',
+        items: [
+          'Closes the last Critical from the 2026-05-06 audit. New `GET /kscw/sv-licence/me` custom endpoint returns the caller\'s own row (joined by `members.license_nr → sv_vm_check.association_id`) with the same 11-field whitelist as before — no PII surface beyond what members already see on their own member row. Direct `sv_vm_check.read` for KSCW Member is now REVOKED entirely, side-stepping the Directus 11 `CASE WHEN 1` SQL bug. `ProfilePage` switched from `useCollection<VmCheck>` to a `kscwApi(\'/sv-licence/me\')` call.',
+          '`VAPID_PUBLIC_KEY` env var added to dev container (was the same gap as prod — the hardcoded fallback in `web-push.js` had been load-bearing). Both dev and prod containers recreated to load the env. Push notifications confirmed working on both (vapid endpoint 200).',
+          'New `/kscw/admin/migrations-status` endpoint surfaces tracker state (applied count, pending list, latest filename + timestamp). Wired into `/admin/infra` as a new "Migrations applied" stat card — turns yellow with a "N pending" detail if dev/prod fall out of sync. Tracker auto-detects whether the table exists yet and returns a zero-state instead of 500.',
+          '`smoke-test.mjs` retired the email/password fallback (`.env.test` was PocketBase-era and unreliable). Now token-only via `DIRECTUS_DEV_USER_TOKEN_MEMBER` / `DIRECTUS_PROD_USER_TOKEN_MEMBER` from `.env.local`, picked by URL. Two new asserts: `sv_vm_check direct (must 403)` and `kscw/sv-licence/me`. 19/19 passing on dev.',
+          '`setup-permissions.mjs` auto-loads `.env.local` and resolves the token by URL (`DIRECTUS_DEV_TOKEN` or `DIRECTUS_PROD_TOKEN`), so `npm run db:setup-perms:dev|prod` no longer needs an inline env wrapper. Falls back to `ADMIN_EMAIL`/`ADMIN_PASSWORD` if no token found.',
+          'New `npm run db:fresh-install:dev|prod` — single command for a brand-new Directus DB: pipes `SCHEMA.sql` into psql, then runs `db:migrate` + `db:setup-perms` + `db:smoke`. Useful for DR rebuild / fresh dev env / contributor onboarding.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.5.1',
     date: '2026-05-06',

@@ -361,6 +361,27 @@ export default function InfraHealthPage() {
       )
     } catch { /* skip stats on error */ }
 
+    // Migration tracker — applied vs pending. Pending > 0 means dev/prod
+    // are out of sync; the deploy hasn't been run yet.
+    try {
+      const token = getAccessToken()
+      const r = await fetch(`${PROD_URL}/kscw/admin/migrations-status`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+      if (r.ok) {
+        const m = await r.json()
+        const pendingCount = Array.isArray(m.pending) ? m.pending.length : 0
+        statResults.push({
+          name: 'Migrations applied',
+          status: pendingCount === 0 ? 'healthy' : 'stale',
+          detail: pendingCount === 0
+            ? `Latest: ${m.latest ?? '—'}`
+            : `${pendingCount} pending: ${(m.pending ?? []).slice(0, 3).join(', ')}${pendingCount > 3 ? '…' : ''}`,
+          value: m.applied,
+        })
+      }
+    } catch { /* skip migration check on error */ }
+
     setStats(statResults)
 
     // ── VPS Metrics ──

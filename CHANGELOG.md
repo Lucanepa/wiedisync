@@ -2,6 +2,20 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## v4.5.2 — 2026-05-06
+
+### Closed: last Critical from the v4.5.1 audit
+
+- **`sv_vm_check` cross-member dump.** New `GET /kscw/sv-licence/me` custom endpoint joins by `members.license_nr → sv_vm_check.association_id` with the original 11-field whitelist. Direct `sv_vm_check.read` for KSCW Member is now REVOKED — side-steps the Directus 11 `CASE WHEN 1` SQL-gen bug entirely. `ProfilePage` switched from `useCollection<VmCheck>` to `kscwApi('/sv-licence/me')`.
+
+### Ops & dev experience
+
+- `VAPID_PUBLIC_KEY` added to the dev container env (same gap as prod had pre-v4.5.1) and both containers recreated. Push working on both.
+- New `/kscw/admin/migrations-status` admin endpoint + a "Migrations applied" card on `/admin/infra` — surfaces applied count, pending list, latest migration. Goes amber if dev/prod drift.
+- `smoke-test.mjs`: token-only auth via `DIRECTUS_DEV_USER_TOKEN_MEMBER` / `DIRECTUS_PROD_USER_TOKEN_MEMBER` (from `.env.local`, URL-resolved); email/password fallback retired. Two new asserts: `sv_vm_check direct (must 403)` and `kscw/sv-licence/me`. 19/19 passing on dev.
+- `setup-permissions.mjs` auto-loads `.env.local` and picks the right `DIRECTUS_DEV_TOKEN` / `DIRECTUS_PROD_TOKEN` by URL — no more inline env wrappers in npm scripts.
+- New `npm run db:fresh-install:dev|prod`: `SCHEMA.sql | psql` → `db:migrate` → `db:setup-perms` → `db:smoke`. Single command for DR rebuild / fresh env.
+
 ## v4.5.1 — 2026-05-06
 
 ### Security

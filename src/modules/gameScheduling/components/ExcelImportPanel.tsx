@@ -33,8 +33,8 @@ export default function ExcelImportPanel() {
     const file = e.target.files?.[0]
     if (!file) return
 
-    const { default: readXlsxFile } = await import('read-excel-file/browser')
-    const rawRows = await readXlsxFile(file)
+    const { readSheet } = await import('read-excel-file/browser')
+    const rawRows = await readSheet(file)
     if (rawRows.length === 0) return
     const headers = rawRows[0].map((h) => String(h).trim())
     const rows = rawRows.slice(1).map((row) => {

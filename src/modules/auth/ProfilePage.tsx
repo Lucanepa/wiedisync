@@ -1,9 +1,10 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Plus, X, Clock } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { useCollection } from '../../lib/query'
+import { kscwApi } from '../../lib/api'
 import { Button } from '@/components/ui/button'
 import StatusBadge from '../../components/StatusBadge'
 import TeamChip from '../../components/TeamChip'
@@ -71,14 +72,19 @@ export default function ProfilePage() {
   }
 
   // Fetch extra VM data from sv_vm_check (LAS, foreigner, federation, FdO, dates)
+  // via the dedicated /kscw/sv-licence/me endpoint. Direct sv_vm_check.read is
+  // revoked for KSCW Member because Directus 11 emits invalid `CASE WHEN 1` SQL
+  // when a row filter is applied to this collection.
   interface VmCheck { id: string; licence_category: string | null; licence_activated: boolean | null; licence_validated: boolean | null; is_locally_educated: boolean | null; is_foreigner: boolean | null; federation: string | null; nationality_code: string | null }
-  const { data: vmCheckRaw } = useCollection<VmCheck>('sv_vm_check', {
-    filter: user?.license_nr ? { association_id: { _eq: user.license_nr } } : undefined,
-    fields: ['id', 'licence_category', 'licence_activated', 'licence_validated', 'is_locally_educated', 'is_foreigner', 'federation', 'nationality_code'],
-    limit: 1,
-    enabled: !!user?.license_nr,
-  })
-  const vmCheck = vmCheckRaw?.[0] ?? null
+  const [vmCheck, setVmCheck] = useState<VmCheck | null>(null)
+  useEffect(() => {
+    if (!user?.id) return
+    let cancelled = false
+    kscwApi('/sv-licence/me')
+      .then((r) => { if (!cancelled) setVmCheck((r as { data: VmCheck | null })?.data ?? null) })
+      .catch(() => { if (!cancelled) setVmCheck(null) })
+    return () => { cancelled = true }
+  }, [user?.id])
 
   const today = toISODate(new Date())
 

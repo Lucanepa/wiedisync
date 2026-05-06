@@ -79,8 +79,8 @@ export function normalizeAffects(input: string | undefined): string[] {
 }
 
 export async function parseAbsenceFile(file: File): Promise<RawAbsenceRow[]> {
-  const { default: readXlsxFile } = await import('read-excel-file/browser')
-  const rawRows = await readXlsxFile(file)
+  const { readSheet } = await import('read-excel-file/browser')
+  const rawRows = await readSheet(file)
   if (rawRows.length === 0) return []
 
   const headers = rawRows[0].map((h) => String(h).trim())

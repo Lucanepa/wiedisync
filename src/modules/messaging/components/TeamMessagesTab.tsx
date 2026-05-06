@@ -4,6 +4,7 @@ import { useAuth } from '../../../hooks/useAuth'
 import { useConversations } from '../hooks/useConversations'
 import ThreadView from './ThreadView'
 import MessagingDisabledBanner from './MessagingDisabledBanner'
+import ConsentModal from './ConsentModal'
 
 type Props = { teamId: string }
 
@@ -20,5 +21,10 @@ export default function TeamMessagesTab({ teamId }: Props) {
   if (!teamChatEnabled) return <div className="p-4"><MessagingDisabledBanner /></div>
   if (!conv)            return <div className="p-4 text-sm text-muted-foreground">{t('loading')}</div>
 
-  return <ThreadView conversation={conv} onMarkRead={markRead} onToggleMute={toggleMute} />
+  return (
+    <>
+      <ThreadView conversation={conv} onMarkRead={markRead} onToggleMute={toggleMute} />
+      <ConsentModal />
+    </>
+  )
 }

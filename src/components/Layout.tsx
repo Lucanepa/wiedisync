@@ -22,7 +22,6 @@ import TeamChip from './TeamChip'
 import { useCollection } from '../lib/query'
 import LoadingSpinner from './LoadingSpinner'
 import ProfileEditModal from '../modules/auth/ProfileEditModal'
-import ConsentModal from '../modules/messaging/components/ConsentModal'
 import type { MemberTeam, Team } from '../types'
 import { asObj } from '../utils/relations'
 import {
@@ -591,8 +590,9 @@ export default function Layout() {
         />
       )}
 
-      {/* Messaging consent modal — shown when user hasn't responded to consent prompt yet */}
-      {messagingFeatureEnabled(user?.id) && isApproved && user && <ConsentModal />}
+      {/* Messaging consent modal mounts at the messaging entry points
+          (InboxPage, ConversationPage, TeamMessagesTab), not globally,
+          so users only see it when they actually engage with messaging. */}
     </div>
   )
 }

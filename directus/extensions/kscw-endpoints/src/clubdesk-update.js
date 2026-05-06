@@ -103,15 +103,29 @@ function buildCsv(data, teamNames) {
   return CSV_HEADERS.join(',') + '\n' + row.map(escCsv).join(',')
 }
 
+// Escape user-controlled strings before interpolating into the admin email
+// body. Without this, a member could submit `<img src=x onerror=…>` as one of
+// the changed values and the admin's webmail client would render the payload.
+function escHtml(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 function buildChangesTable(changes, locale = 'de') {
   const labels = FIELD_LABELS[locale] || FIELD_LABELS.de
   const t = T[locale] || T.de
   const rows = changes.map(c => {
     const label = labels[c.field] || c.field
+    const oldVal = c.old_value ? escHtml(c.old_value) : '—'
+    const newVal = c.new_value ? escHtml(c.new_value) : '—'
     return `<tr>
-      <td style="padding:6px 12px;border-bottom:1px solid #334155;color:#e2e8f0;font-size:13px">${label}</td>
-      <td style="padding:6px 12px;border-bottom:1px solid #334155;color:#ef4444;font-size:13px;text-decoration:line-through">${c.old_value || '—'}</td>
-      <td style="padding:6px 12px;border-bottom:1px solid #334155;color:#22c55e;font-size:13px">${c.new_value || '—'}</td>
+      <td style="padding:6px 12px;border-bottom:1px solid #334155;color:#e2e8f0;font-size:13px">${escHtml(label)}</td>
+      <td style="padding:6px 12px;border-bottom:1px solid #334155;color:#ef4444;font-size:13px;text-decoration:line-through">${oldVal}</td>
+      <td style="padding:6px 12px;border-bottom:1px solid #334155;color:#22c55e;font-size:13px">${newVal}</td>
     </tr>`
   }).join('')
 

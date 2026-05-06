@@ -1,0 +1,164 @@
+# Security baseline — KSCW (`wiedisync`)
+
+Living doc for the security posture of the KSCW platform. Audited findings, fixes, gotchas, and rules. Update on every audit pass.
+
+> **Reporting:** mail `kontakt@kscw.ch`. Do NOT open a public issue with exploit details. Production lives at `wiedisync.kscw.ch` + `directus.kscw.ch` (Hetzner via Cloudflare Tunnel).
+
+---
+
+## Trust boundaries
+
+| Surface | Origin | Auth | Notes |
+|---|---|---|---|
+| `wiedisync.kscw.ch` (React) | CF Pages, prod branch | Directus access token (localStorage / sessionStorage based on remember-me) | Talks only to `directus.kscw.ch`. CF Pages env vars carry only `VITE_*` (public). |
+| `wiedisync.pages.dev` (React dev) | CF Pages, dev branch | Same | Talks to `directus-dev.kscw.ch`. |
+| `directus.kscw.ch` (Directus) | Hetzner VPS via CF Tunnel | Built-in Directus auth (cookies + bearer). Custom endpoints inherit `req.accountability`. | All custom routes under `/kscw/*`. |
+| `kscw-push.lucanepa.workers.dev` (CF Worker) | Cloudflare Workers | Shared bearer secret from Directus → worker (constant-time compared since 2026-05-06). | VAPID keys in worker secret store; Directus side reads `VAPID_PUBLIC_KEY` env. |
+| `kscw.ch` (ClubDesk) | External | Out of our scope | Don't change DNS until explicitly confirmed. |
+
+Direct VPS exposure (Hetzner ports 8055/8056) is **not** publicly reachable — only via CF Tunnel. If that ever changes, `X-Forwarded-For`-based rate limiters collapse simultaneously (every limiter in `kscw-endpoints` uses it as fallback).
+
+---
+
+## What's gitignored vs. tracked
+
+Already in `.gitignore` (don't commit):
+
+- `.env`, `.env.*` (`.env.example` is the only tracked env file)
+- `.env.test` (line 28 — local-only test creds; passwords share value `thamykscw_1972`. Rotate if leaked.)
+- `INFRA.md` — contains VPS IPs / SMTP creds / token formats
+- `CONTINGENCY.md`
+- `directus/.env`, `directus/uploads/`, `directus/node_modules/`
+- `.planning/` and `docs/superpowers/{plans,specs}/` (plan/spec docs leak credentials in practice)
+- `playwright-report/`, `test-results/`, `e2e/.auth/`
+
+Tracked (must stay clean of secrets):
+
+- `directus/extensions/**` — only `process.env.X` reads, no fallback values to live keys.
+- `workers/push/src/**` — same. VAPID + AUTH secrets via `wrangler secret`.
+- `src/**` — only `VITE_*` env variables (public by design).
+
+> **Rule:** if you find yourself adding a `|| 'fallback-value'` to a secret env read, push it back. Web push regressed on this once (`VAPID_PUBLIC_KEY` had a hardcoded fallback) — fixed 2026-05-06.
+
+---
+
+## Hardening completed (audit log)
+
+Treat this as a deduplication shield: if a future audit finds something on this list, it's either a regression or a misunderstanding — verify before re-flagging.
+
+### 2026-05-06 — Deep audit + remediation
+
+**Frontend (`src/`)**
+- Sentry Session Replay now masks all text + inputs and denies network details for `directus.kscw.ch` (`src/lib/sentry.ts`).
+- OAuth callback rejects token params unless an `oauth_pending` sentinel was set by `loginWithOAuth` within the last 5 min (`src/modules/auth/OAuthCallbackPage.tsx`, `src/hooks/useAuth.tsx`).
+- Sponsor `website_url` and BugfixDashboard `pr_url` routed through `sanitizeUrl()` (`src/utils/sanitizeUrl.ts`).
+- `RichText` DOMPurify call has explicit `ALLOWED_URI_REGEXP` for http(s) + same-origin only.
+- `public/sw.js` pins notification-click URLs to our origin.
+
+**Push worker (`workers/push/`)**
+- Bearer-secret comparison switched from `!==` to constant-time XOR-fold (`timingSafeEqualStr` helper).
+
+**Custom endpoints (`directus/extensions/kscw-endpoints/src/`)**
+- `newsletter.js` `verifyTurnstile` now fails closed when `TURNSTILE_SECRET` is unset (was returning `true`).
+- `game-scheduling.js` no longer returns the raw token in the `/register` response body — only emailed.
+- `game-scheduling.js` `book-home` wrapped in a transaction with `SELECT … FOR UPDATE` and a cross-team check (`slot.kscw_team === opponent.kscw_team`). Closes both the TOCTOU race and the cross-team sabotage path.
+- `index.js` exposes shared helpers `capPayload(payload, max=500)` and `ipRateLimit(map, req, n, ms)`.
+- `index.js` `client-error` payload is now capped via `capPayload` (was uncapped → disk fill via 30 req/min).
+- `index.js` `team-invites/claim` rate-limited to 5 attempts / 15 min / IP.
+- `web-push.js` — removed hardcoded `VAPID_PUBLIC_KEY` fallback; endpoint returns 503 if env unset.
+
+**Custom hooks (`directus/extensions/kscw-hooks/src/index.js`)**
+- Announcement audience guard now also blocks `audience_sport`-unset posts unless caller is full admin / superuser. Sport-scoped admins can no longer bypass scope by omitting the field.
+- Filter on `members.items.update` strips the `role` field unless caller is admin / superuser. Defense in depth on top of Directus field-level perms.
+- Junction-delete pending Maps drained via try/finally + key snapshot — error in `syncMemberRole` no longer leaks orphaned entries.
+- `escapeEmailHtml` helper introduced; admin-controlled `rejection_reason` now escaped before email interpolation.
+- `clubdesk-update.js` `buildChangesTable` HTML-escapes member-supplied `old_value` / `new_value` before interpolating into the admin email.
+
+**SQL — migration 043**
+- `sv_vm_check.read` row-scoped to own member (was unfiltered → cross-member SV licence dump).
+- `tasks.read` scoped to assigned/claimed-by self.
+- `feedback.read` scoped to own submissions.
+- `teams.update` row-scoped for KSCW Coach + KSCW Team Responsible.
+- `teams_sponsors.sponsors_id` FK with ON DELETE CASCADE (closes the deferred half of migration 037).
+- `member_teams.read` field set narrowed to `id, member, team, season` (drops `guest_level` from cross-team reads).
+- `SET search_path = public` added to all 8 messaging trigger functions (`fn_messaging_*`, `messaging_protect_sentinel`).
+- `bugfix_jobs` explicit `REVOKE ALL FROM anon, authenticated`.
+
+**Consolidation**
+- `directus/scripts/setup-permissions.mjs` rebuilt to match the post-043 live state. Header banner documents the dual-source (script + migrations) policy.
+
+---
+
+## Open / accepted / out-of-scope
+
+| Item | Status | Why |
+|---|---|---|
+| `sv_vm_check.read` cross-member dump (Critical, 2026-05-06 audit) | **Open — blocked on Directus 11 bug** | Migration 043 attempted to scope to own-row via `{member: {user: $CURRENT_USER}}`. Two blockers: (1) `sv_vm_check` has no `member` FK (linkage is by `email` + `association_id`); (2) Directus 11 emits invalid SQL `CASE WHEN 1 THEN col END` whenever ANY row filter is set on this collection (`argument of CASE/WHEN must be type boolean, not integer` on Postgres 12+). Fix path: build a `GET /kscw/sv-licence/me` custom endpoint, REVOKE Member's direct `sv_vm_check.read`, update `useLicenceCard` to use the endpoint. Until then the 11-field whitelist (no email/birthday/name/phone/team_names) limits the surface but cross-member enumeration of `association_id`/`is_foreigner`/`nationality_code`/licence dates is still possible. |
+| Broadcast TOCTOU on `sent_at` rate-check | Accepted soft-limit | Code comment in `broadcast-helpers.js:364` explicitly accepts the race; the audit table catches abuse. Re-evaluate if abuse is observed. |
+| `iCal` feeds (`/kscw/ical/*`) public | Accepted | Designed for calendar embedding. No member PII. |
+| In-memory `X-Forwarded-For` rate limiters | Accepted | Only safe behind CF Tunnel — documented in this file. If VPS ports ever go public, all limiters collapse simultaneously and need replacing with a Postgres / Redis store. |
+| `Math.max(rs)`-style PKCS8 key wrapping in `workers/push/src/index.ts` | Accepted | Documented inline; used to handle WebCrypto's lack of raw P-256 import. Audited 2026-04-04. |
+| Notification triggers fan out without re-checking caller identity | Accepted | Triggers run after Directus RBAC has already gated the parent INSERT/UPDATE. If we ever grant `games`/`trainings`/`events` direct DML to a non-admin role at the PG level, this assumption breaks. |
+| `tasks` schema lacks `team` FK | Accepted (43 fixed read-side) | Migration 035 noted the design gap. Read scope now uses assignee FKs which is the right substitute; create a migration that adds `team` if cross-team queries are ever needed. |
+
+---
+
+## Recurring gotchas
+
+These have bitten before and will bite again:
+
+1. **`setup-permissions.mjs` vs. SQL migrations.** Bidirectional contract: every permission change goes into both. The script is the snapshot, migrations are the journal. Fresh installs run only the script, so silent rollbacks are real (see `feedback_prod_is_canonical.md` memory).
+
+2. **M2M junction permissions.** Flat-id payloads trigger junction-PK lookup (403 for non-admin); use `[{ teams_id: 3 }]` shape. Grant junction CRUD AND base CRUD as a pair. Without both, frontend operations hit 403 silently because `Promise.all` in `loadTeamContext` swallows individual failures.
+
+3. **`$CURRENT_USER` is a UUID; Directus FKs to `members` are integers.** Naive `{ user: { _eq: '$CURRENT_USER' } }` filters on int FKs throw "Invalid numeric value". Always traverse through `members.user` (see `OWN_DU` in `setup-permissions.mjs`).
+
+4. **`_neq` excludes NULLs in Directus.** Use `_or` with `_null: true` if you want NULL rows to match.
+
+5. **Junction tables with `ON DELETE SET NULL`.** Directus serialises the resulting `null` integer as the literal string `"null"` in `_in` filters → 400 errors. All junctions should be `ON DELETE CASCADE`. Migrations 021 + 037 + 043 cover the known set.
+
+6. **Hooks running as admin on user-controlled payloads.** Action hooks that use `database` or `services` with `accountability: null` bypass Directus RBAC entirely. Always re-verify the caller identity before privileged side effects (role-sync, broadcast fanout, dateStr-in-raw-SQL).
+
+7. **Email/HTML interpolation.** Any human-controlled string ending up in an `html:` mail body needs HTML escaping. Helpers: `escapeEmailHtml` in `kscw-hooks/src/index.js`, `escHtml` in `clubdesk-update.js`. Don't add new email templates without one.
+
+8. **Tokenized public flows.** Standard pattern: 16+ bytes of `crypto.randomBytes`, single-use enforced atomically (transaction + `FOR UPDATE`), expiry, revoke endpoint, audit log on issuance. Cross-resource ownership check on every consume.
+
+9. **CSP `style-src 'unsafe-inline'`.** Required by Tailwind v4. Documented gap. Rules out CSS-based exfil mitigations from CSP — be vigilant about user-controlled style attributes.
+
+10. **Sentry replay capture rate is 100% on error.** Always set `maskAllText: true` + `maskAllInputs: true` if any new replay integration is added.
+
+11. **Push notifications need both ends to share VAPID public key.** Worker reads it from `wrangler secret` and Directus reads from `process.env.VAPID_PUBLIC_KEY`. A split-brain (e.g. via the formerly-hardcoded fallback) makes every push silently fail.
+
+---
+
+## Audit cadence
+
+Run the deep audit after any of:
+
+- A milestone bump in `package.json` (`*.0.0` or `*.X.0`).
+- A new role / policy addition.
+- Any custom endpoint going from auth-required to public (or vice versa).
+- A new third-party integration.
+
+The audit pattern is captured as a Claude Code skill — invoke `/kscw-security-audit` (lives in `~/.claude/skills/`). The skill dispatches 6 parallel agents over the same surfaces this doc covers.
+
+After each audit, append a `### YYYY-MM-DD — Deep audit + remediation` block above and check off / move items between "Hardening completed" and "Open / accepted".
+
+---
+
+## Continuous verification (process — not findings)
+
+The deep audit catches drift; these always-on guards stop new drift from reaching prod:
+
+1. **Permissions are declarative.** `directus/scripts/setup-permissions.mjs` is the only place where role × collection × action rows live. Numbered SQL migrations are SCHEMA ONLY (DDL, triggers, RLS, FKs, grants, data backfills). The 4.4.4 / 042 incidents were both "permission row never created on prod" — that class of bug is structurally impossible when the script runs on every deploy.
+
+2. **`npm run db:deploy:<env>` is the canonical deploy.** It runs three phases:
+   - `db:migrate:<env>` — applies pending numbered migrations (tracker-aware, sha-verified, idempotent).
+   - `db:setup-perms:<env>` — reconciles Directus permission rows from the script.
+   - `db:smoke:<env>` — logs in as a non-admin Member, exercises every collection touched by `loadTeamContext` + the home page, exits non-zero on any 4xx/5xx. Catches the silent-Promise.all-failure pattern (the 4.4.4 incident) on first deploy after the regression.
+
+3. **Migration tracker = the apply-once contract.** `kscw_migrations(filename, sha256, applied_at, applied_by)` records every applied migration. The runner refuses to proceed if any row's stored sha differs from the on-disk file. This kills "was migration 009 ever applied to prod?" mysteries (which is exactly what migration 042 was guessing about).
+
+4. **Fresh-install path is one file + one script.** `directus/scripts/SCHEMA.sql` (regenerated from prod via `npm run db:baseline:prod`) + `setup-permissions.mjs`. Numbered migrations stay as the historical journal but aren't part of the bootstrap.
+
+See `CLAUDE.md → "Migration & Permission Policy"` for the rules and `INFRA.md → "Database Deploy Workflow"` for the runbook.

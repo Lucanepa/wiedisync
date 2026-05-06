@@ -38,10 +38,24 @@ Use `encode()` from `@toon-format/toon` when passing uniform object arrays to LL
 - **Admin UI**: `https://directus.kscw.ch/admin` (prod), `https://directus-dev.kscw.ch/admin` (dev)
 - **Schema changes**: Make on dev, sync to prod via `npm run schema:pull` / `npm run schema:push`. See `INFRA.md → Schema Sync`.
 - **Extensions**: Endpoints in `directus/extensions/kscw-endpoints/`, hooks in `directus/extensions/kscw-hooks/`. Deploy by restarting container.
-- **Postgres triggers**: `directus/scripts/001-postgres-triggers.sql`. Apply via `psql` on `coolify-db`.
 - **Deleting collections/records**: Confirm with user first.
 - **M2M fields MUST be created via the admin UI** — API-created M2M relations show "relationship hasn't been configured correctly". Flow: (1) nuke junction + PG table + field, (2) create via Settings → Data Model → Add Field → Many to Many in browser, (3) restore data via API. UI auto-generates junction names (e.g. `teams_members_3`) — rename via SQL after + update Directus metadata. Check names via `/relations` API.
 - **Junction names (prod)**: `hall_slots_teams`, `teams_coaches`, `teams_responsibles`, `teams_sponsors`, `events_teams`, `hall_events_halls`. `captain` is M2O on `teams` (not a junction).
+
+## Migration & Permission Policy (READ BEFORE TOUCHING SQL OR PERMS)
+The "every audit pass breaks something" loop comes from treating permissions as patches. Hard rules:
+
+1. **Permissions live ONLY in `directus/scripts/setup-permissions.mjs`.** Never write a permission row in a numbered `0NN-*.sql` migration. The script is declarative + idempotent (`clearPolicyPermissions` then recreate) and is the single source of truth. Re-runs are safe and required after every deploy.
+2. **Numbered migrations are SCHEMA-ONLY.** DDL, triggers, RLS policies, grants, foreign keys, data backfills. Each must be idempotent (`CREATE OR REPLACE`, `IF NOT EXISTS`, `DROP IF EXISTS`-then-`CREATE`, `DO $$ … END $$` for FK adds, `ON CONFLICT DO NOTHING` for backfills). One numbered migration = one bounded change.
+3. **The runner enforces apply-once.** `npm run db:migrate:dev|prod` reads `kscw_migrations` (filename + sha256), applies pending in numeric order, errors if any applied migration's on-disk content has been edited (sha mismatch). Don't edit applied migrations — fix forward with a new number.
+4. **Deploy command is one of these, not bespoke psql:**
+   - `npm run db:deploy:dev` — runs `db:migrate:dev` → `db:setup-perms:dev` → `db:smoke:dev`
+   - `npm run db:deploy:prod` — same on prod
+5. **Smoke test is part of deploy.** `db:smoke` logs in as a non-admin Member and exercises every collection that `loadTeamContext` + the home page touch. Catches the silent `Promise.all` failure pattern (4.4.4) the same minute it ships.
+6. **Fresh installs use `SCHEMA.sql` + setup-permissions.mjs, not the migration journal.** Regenerate `directus/scripts/SCHEMA.sql` from prod via `npm run db:baseline:prod` after any schema migration and commit it. The journal stays as the audit trail.
+7. **PERMISSIONS.md and SECURITY.md are operational docs, not vibes.** When you change a permission row in `setup-permissions.mjs`, update PERMISSIONS.md the same commit. When you fix a security finding, append to SECURITY.md "Hardening completed". Reviewers diff both.
+
+If a future change tempts you to add a permission row in a numbered SQL file: stop. Update `setup-permissions.mjs` instead and let the next deploy reconcile. If you need a permission *fix on prod NOW*, either run `npm run db:setup-perms:prod` or apply the SQL by hand AND update the script in the same commit.
 
 ## SSH to VPS
 - `ssh hetzner` (alias in `~/.ssh/config`)

@@ -11,6 +11,10 @@ export default function RichText({
   const clean = DOMPurify.sanitize(html, {
     ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 's', 'a', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'blockquote', 'span'],
     ALLOWED_ATTR: ['href', 'target', 'rel', 'class'],
+    // Restrict href to http(s) absolute URLs or same-origin paths. Defense in
+    // depth on top of DOMPurify's default URI allow-list — rejects javascript:,
+    // data:, mailto:, vbscript:, cid:, etc.
+    ALLOWED_URI_REGEXP: /^(?:https?:\/\/|\/(?!\/))/i,
   })
 
   return (

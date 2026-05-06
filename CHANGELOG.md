@@ -2,6 +2,29 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## v4.5.1 — 2026-05-06
+
+### Security
+
+- **Deep audit + remediation across 6 surfaces.** ~58 findings; the high-impact items are listed below. Full audit log + open items in `SECURITY.md`; canonical permission map in `PERMISSIONS.md`.
+- **Frontend.** Sentry Session Replay masks all text/inputs and denies network details for Directus (was capturing PII at 100% on error). OAuth callback rejects token URLs without a fresh `oauth_pending` sentinel from `loginWithOAuth` (closes the CSRF substitution path). Sponsor `website_url` and admin BugfixDashboard `pr_url` routed through `sanitizeUrl()`. `RichText` DOMPurify call gets explicit `ALLOWED_URI_REGEXP`. `public/sw.js` pins push-notification click URLs to our origin.
+- **Push worker.** Bearer-secret comparison switched from `!==` to constant-time XOR-fold (`timingSafeEqualStr`) — closes the timing oracle on `AUTH_SECRET`.
+- **Custom endpoints.** Newsletter Turnstile fails closed when `TURNSTILE_SECRET` is unset (was returning `true` → mailbomb relay). `/terminplanung/register` no longer returns the raw token in the response body. `/terminplanung/book-home` wrapped in a transaction with `SELECT … FOR UPDATE` and a cross-team check (`slot.kscw_team === opponent.kscw_team`) — closes both the TOCTOU race and cross-team slot sabotage. New shared `capPayload` (caps `/client-error` body to 500 chars) and `ipRateLimit` helpers; `team-invites/claim` rate-limited to 5/15min/IP. `web-push.js` removed hardcoded VAPID public-key fallback.
+- **Custom hooks.** Announcement audience guard now blocks `audience_sport`-unset posts unless caller is full admin/superuser (a Sport Admin could omit the field and broadcast to the entire club). New filter on `members.items.update` strips the `role` field unless caller is admin/superuser (defense-in-depth on top of field-level perms — the role-sync hook escalates to Directus user role). Junction-delete pending Maps drained via try/finally + key snapshot. New `escapeEmailHtml`; admin-controlled `rejection_reason` and clubdesk-update `old_value`/`new_value` are now HTML-escaped before email interpolation.
+- **Migration 043.** `tasks.read` scoped to own assignments. `feedback.read` scoped to own email. `teams.update` row-scoped for Coach + Team Responsible. `teams_sponsors.sponsors_id` FK with ON DELETE CASCADE (closes the deferred half of migration 037). `SET search_path = public` on all 8 messaging trigger functions. `bugfix_jobs` explicit REVOKE FROM anon, authenticated.
+
+### Process
+
+- **Permissions are now declarative.** `directus/scripts/setup-permissions.mjs` is the SINGLE source for Directus permissions, applied via `npm run db:setup-perms:<env>` on every deploy. Numbered SQL migrations are SCHEMA-ONLY going forward. The 4.4.4 / 042 incident class ("permission row never created on prod, surfaced four versions later") is now structurally impossible.
+- **Migration tracker.** New `kscw_migrations(filename, sha256, applied_at, applied_by)` table + `apply-migrations.mjs` runner. Refuses to proceed if any applied migration's on-disk sha differs (tamper detection). Eliminates "was migration 009 ever applied to prod?" mysteries.
+- **Smoke test.** `smoke-test.mjs` logs in as a non-admin Member, runs ~18 critical reads (`users/me`, `members/self`, `member_teams`, `teams`, `games`, `trainings`, `events`, `participations`, `absences`, `notifications`, `blocks`, `spielplaner_assignments`, `sv_vm_check`, `tasks`, `feedback`, `announcements`, `user_logs`, `web-push/vapid-public-key`), exits non-zero on any 4xx/5xx. Catches the silent Promise.all-failure pattern (4.4.4) on first deploy after the regression.
+- **Single-command deploy.** `npm run db:deploy:dev|prod` runs migrate → setup-perms → smoke. Fresh-install path: `SCHEMA.sql` baseline (regenerated from prod via `npm run db:baseline:prod`) + `setup-permissions.mjs`.
+- **Policy locked into CLAUDE.md, INFRA.md, SECURITY.md, PERMISSIONS.md.** Cross-referenced from every entry point. New `~/.claude/skills/kscw-security-audit/` skill encodes the 6-agent dispatch pattern for re-running the audit (with `SECURITY.md` as the dedup shield against re-flagging fixed items).
+
+### Open
+
+- `sv_vm_check.read` cross-member dump (Critical from the audit) remains open. Directus 11 emits invalid `CASE WHEN 1` SQL when a row filter is applied on this collection, which Postgres 12+ rejects. Fix path is a custom `/kscw/sv-licence/me` endpoint + revoke direct read. The 11-field whitelist (no email/birthday/name/phone) limits the surface; tracked in `SECURITY.md`.
+
 ## v4.5.0 — 2026-05-05
 
 - Coach Dashboard expanded to /games (new tab, per-row drilldown, league-only toggle).

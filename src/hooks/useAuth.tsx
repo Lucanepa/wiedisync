@@ -243,6 +243,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [fetchMember, loadTeamContext])
 
   const loginWithOAuth = useCallback(async (provider: string) => {
+    // Issue a freshness sentinel so the callback can reject token params that
+    // weren't preceded by an active OAuth attempt (CSRF: tricked-callback URL).
+    const nonce = (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
+      ? crypto.randomUUID()
+      : String(Date.now()) + ':' + Math.random().toString(36).slice(2)
+    try {
+      sessionStorage.setItem('oauth_pending', JSON.stringify({ nonce, ts: Date.now(), provider }))
+    } catch { /* storage unavailable — degrade open */ }
     window.location.href = `${API_URL}/auth/login/${provider}?redirect=${encodeURIComponent(window.location.origin + '/auth/callback')}`
   }, [])
 

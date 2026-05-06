@@ -32,7 +32,16 @@ export function initSentry() {
 
     integrations: [
       Sentry.browserTracingIntegration(),
-      Sentry.replayIntegration(),
+      // Mask all text + inputs in replays — the app renders member names,
+      // chat messages, RSVP notes, etc. Without masking, every error replay
+      // captures full PII (nFADP issue). Network bodies for our API are also
+      // denied since they may carry tokens or member data.
+      Sentry.replayIntegration({
+        maskAllText: true,
+        maskAllInputs: true,
+        blockAllMedia: true,
+        networkDetailDenyUrls: [/directus(?:-dev)?\.kscw\.ch/],
+      }),
     ],
 
     // Don't send events from local dev; scrub PII from breadcrumbs;

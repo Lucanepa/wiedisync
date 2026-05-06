@@ -54,9 +54,12 @@ export default {
       })
     }
 
-    // Auth check — simple shared secret from Directus hooks
+    // Auth check — shared secret from Directus hooks. Constant-time compare
+    // closes the timing-oracle on `AUTH_SECRET`: JS `!==` short-circuits on
+    // the first differing byte, leaking the secret one char at a time over
+    // network latency.
     const authHeader = request.headers.get('Authorization')
-    if (!authHeader || authHeader !== `Bearer ${env.AUTH_SECRET}`) {
+    if (!authHeader || !timingSafeEqualStr(authHeader, `Bearer ${env.AUTH_SECRET}`)) {
       return json({ error: 'unauthorized' }, 401, env.ALLOWED_ORIGIN)
     }
 
@@ -394,6 +397,21 @@ function concatBytes(...arrays: Uint8Array[]): Uint8Array {
     offset += a.length
   }
   return result
+}
+
+function timingSafeEqualStr(a: string, b: string): boolean {
+  const enc = new TextEncoder()
+  const aBytes = enc.encode(a)
+  const bBytes = enc.encode(b)
+  // Always compare a fixed-length buffer to avoid leaking length differences
+  // via a quick exit. We XOR pad against the longer of the two and OR-fold
+  // a length-mismatch flag into the result.
+  const len = Math.max(aBytes.length, bBytes.length)
+  let diff = aBytes.length ^ bBytes.length
+  for (let i = 0; i < len; i++) {
+    diff |= (aBytes[i] ?? 0) ^ (bBytes[i] ?? 0)
+  }
+  return diff === 0
 }
 
 function corsHeaders(origin: string): Record<string, string> {

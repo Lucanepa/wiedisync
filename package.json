@@ -1,7 +1,7 @@
 {
   "name": "wiedisync",
   "private": true,
-  "version": "4.5.0",
+  "version": "4.5.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -17,6 +17,18 @@
     "schema:pull": "node directus/scripts/schema-pull.mjs",
     "schema:diff": "node directus/scripts/schema-diff.mjs",
     "schema:push": "node directus/scripts/schema-push.mjs",
+    "db:migrate:dev": "node directus/scripts/apply-migrations.mjs dev",
+    "db:migrate:prod": "node directus/scripts/apply-migrations.mjs prod",
+    "db:migrate:status:dev": "node directus/scripts/apply-migrations.mjs dev --status",
+    "db:migrate:status:prod": "node directus/scripts/apply-migrations.mjs prod --status",
+    "db:setup-perms:dev": "DIRECTUS_URL=https://directus-dev.kscw.ch node directus/scripts/setup-permissions.mjs",
+    "db:setup-perms:prod": "DIRECTUS_URL=https://directus.kscw.ch node directus/scripts/setup-permissions.mjs",
+    "db:smoke:dev": "SMOKE_TEST_URL=https://directus-dev.kscw.ch node directus/scripts/smoke-test.mjs",
+    "db:smoke:prod": "SMOKE_TEST_URL=https://directus.kscw.ch node directus/scripts/smoke-test.mjs",
+    "db:deploy:dev": "npm run db:migrate:dev && npm run db:setup-perms:dev && npm run db:smoke:dev",
+    "db:deploy:prod": "npm run db:migrate:prod && npm run db:setup-perms:prod && npm run db:smoke:prod",
+    "db:baseline:dev": "node directus/scripts/regenerate-baseline.mjs dev",
+    "db:baseline:prod": "node directus/scripts/regenerate-baseline.mjs prod",
     "ext:deploy:dev": "rsync -avz --delete directus/extensions/ hetzner:/tmp/kscw-extensions/ && ssh hetzner \"sudo rsync -a --delete /tmp/kscw-extensions/ /opt/directus-kscw-dev/extensions/ && sudo docker restart directus-kscw-dev\"",
     "ext:deploy:prod": "rsync -avz --delete directus/extensions/ hetzner:/tmp/kscw-extensions/ && ssh hetzner \"sudo rsync -a --delete /tmp/kscw-extensions/ /opt/directus-kscw/extensions/ && sudo docker restart directus-kscw\"",
     "ext:deploy": "npm run ext:deploy:dev && npm run ext:deploy:prod"

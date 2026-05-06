@@ -11,9 +11,11 @@ const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET || '';
 const WEBSITE_URL = process.env.KSCW_WEBSITE_URL || 'https://kscw-website.pages.dev';
 
 async function verifyTurnstile(token) {
+  // Fail closed when the secret is missing — a misconfigured container would
+  // otherwise turn this public endpoint into an unauthenticated email-relay.
   if (!TURNSTILE_SECRET) {
-    console.warn('[newsletter] TURNSTILE_SECRET not configured — CAPTCHA disabled');
-    return true;
+    console.error('[newsletter] TURNSTILE_SECRET not configured — rejecting request');
+    return false;
   }
   const resp = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
     method: 'POST',

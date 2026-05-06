@@ -28,6 +28,18 @@ import { sendLocalizedPush, bucketMembersByLocale, tPush } from '../../kscw-endp
 const FRONTEND_URL = process.env.FRONTEND_URL
   || (process.env.PUBLIC_URL?.includes('directus-dev') ? 'https://wiedisync.pages.dev' : 'https://wiedisync.kscw.ch')
 
+// Escape user/admin-supplied text before interpolating into outbound email
+// HTML. Used by registration rejection emails and any other place where a
+// human-controlled string lands in an `html:` mail body.
+function escapeEmailHtml(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 const PUSH_WORKER_URL = process.env.PUSH_WORKER_URL || 'https://kscw-push.lucanepa.workers.dev'
 const PUSH_AUTH_SECRET = process.env.PUSH_AUTH_SECRET || ''
 
@@ -328,6 +340,23 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     }
   }
 
+  // Defense-in-depth: strip `role` from the update payload unless the caller
+  // is admin / superuser. The Directus field-level permission on members.role
+  // SHOULD be admin-only — but the action hook below escalates `members.role`
+  // to a Directus user role, so a single misconfigured field perm would let
+  // any member self-promote to Superuser. Fail closed at the filter layer.
+  filter('members.items.update', async (payload, _meta, context) => {
+    if (!payload || !('role' in payload)) return payload
+    const userId = context?.accountability?.user
+    if (!userId) return payload // system-context update (cron/hook) — trust
+    const m = await database('members').where('user', userId).select('role').first()
+    const roles = Array.isArray(m?.role) ? m.role : []
+    if (roles.includes('admin') || roles.includes('superuser')) return payload
+    delete payload.role
+    log.warn({ msg: '[role-sync] non-admin attempted members.role update — stripped', userId })
+    return payload
+  })
+
   // Sync when members.role array changes
   action('members.items.update', async ({ keys, payload }) => {
     if (payload && 'role' in payload) {
@@ -376,23 +405,26 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     return keys
   })
 
-  action('teams_coaches.items.delete', async () => {
+  // Drain the pending-junction map under try/finally so a syncMemberRole
+  // failure can't leave the entry orphaned forever. Snapshot keys first so
+  // we never iterate the map while mutating it (concurrent inserts from
+  // overlapping deletes are otherwise lost).
+  async function drainPendingJunction(prefix) {
+    const toProcess = []
     for (const [key, memberId] of pendingJunctionDeletes) {
-      if (key.startsWith('coach-')) {
+      if (key.startsWith(prefix)) toProcess.push([key, memberId])
+    }
+    for (const [key, memberId] of toProcess) {
+      try {
         await syncMemberRole(memberId)
+      } finally {
         pendingJunctionDeletes.delete(key)
       }
     }
-  })
+  }
 
-  action('teams_responsibles.items.delete', async () => {
-    for (const [key, memberId] of pendingJunctionDeletes) {
-      if (key.startsWith('tr-')) {
-        await syncMemberRole(memberId)
-        pendingJunctionDeletes.delete(key)
-      }
-    }
-  })
+  action('teams_coaches.items.delete', async () => { await drainPendingJunction('coach-') })
+  action('teams_responsibles.items.delete', async () => { await drainPendingJunction('tr-') })
 
   // ── Absence Auto-Decline ────────────────────────────────────────
   // When an absence is created or updated, auto-decline all overlapping
@@ -866,16 +898,29 @@ export default ({ action, filter, init, schedule }, { services, database, logger
   // an announcement targeting the OTHER sport. Global admin/superuser
   // and members with BOTH sport roles bypass.
   async function validateAnnouncementAudience(payload, context) {
-    if (!payload?.audience_sport) return
     const userId = context?.accountability?.user
     if (!userId) return
     const m = await database('members').where('user', userId).select('role').first()
     if (!m) return
     const roles = Array.isArray(m.role) ? m.role : []
+    // Global admins / superusers can post anything. Members with both sport
+    // admin roles also pass through.
     if (roles.includes('admin') || roles.includes('superuser')) return
     const isVb = roles.includes('vb_admin')
     const isBb = roles.includes('bb_admin')
     if (isVb && isBb) return
+
+    // Club-wide announcements (audience_sport unset OR audience_type='all'):
+    // only full admins may address every member of every team. A
+    // sport-scoped admin omitting audience_sport must NOT silently fall
+    // through to the all-members fanout (resolveAnnouncementAudience treats
+    // missing sport as "all").
+    if (!payload?.audience_sport) {
+      const err = new Error('Only global admins can post club-wide announcements. Set audience_sport to your scope.')
+      err.status = 403
+      throw err
+    }
+
     if (payload.audience_sport === 'volleyball' && !isVb) {
       const err = new Error('Only volleyball admins can post volleyball-targeted announcements.')
       err.status = 403
@@ -2225,8 +2270,11 @@ export default ({ action, filter, init, schedule }, { services, database, logger
         } else if (payload.status === 'rejected') {
           // ── Rejection email to user ──
           const reason = payload.rejection_reason || reg.rejection_reason || ''
+          // Admin-supplied rejection reason ends up in the user's mailbox.
+          // Escape HTML so an admin can't inject phishing markup or a tracking
+          // pixel into the email body.
           const reasonBlock = reason
-            ? `<div style="background:#450a0a;border:1px solid #7f1d1d;border-radius:8px;padding:12px 16px;margin:12px 0"><div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#f87171;font-weight:700;margin-bottom:4px">${l.rejectedReasonLabel}</div><div style="font-size:13px;color:#fca5a5">${reason}</div></div>`
+            ? `<div style="background:#450a0a;border:1px solid #7f1d1d;border-radius:8px;padding:12px 16px;margin:12px 0"><div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#f87171;font-weight:700;margin-bottom:4px">${l.rejectedReasonLabel}</div><div style="font-size:13px;color:#fca5a5">${escapeEmailHtml(reason)}</div></div>`
             : ''
           const rejectionHtml = buildEmailLayout(
             summaryCard + `<div style="font-size:13px;color:#94a3b8;line-height:1.7;margin-top:12px">${l.rejectedBody}</div>` + reasonBlock + `<div style="font-size:13px;color:#94a3b8;line-height:1.7;margin-top:12px">${l.rejectedContact}</div>`,

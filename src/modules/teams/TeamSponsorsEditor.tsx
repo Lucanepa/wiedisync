@@ -12,6 +12,7 @@ import ConfirmDialog from '../../components/ConfirmDialog'
 import EmptyState from '../../components/EmptyState'
 import type { Team, Sponsor } from '../../types'
 import { createRecord, deleteRecord, fetchAllItems, updateRecord } from '../../lib/api'
+import { sanitizeUrl } from '../../utils/sanitizeUrl'
 
 export default function TeamSponsorsEditor({ team }: { team: Team }) {
   const { t } = useTranslation('teams')
@@ -205,12 +206,15 @@ export default function TeamSponsorsEditor({ team }: { team: Team }) {
               )}
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">{sp.name}</p>
-                {sp.website_url && (
-                  <a href={sp.website_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-brand-600 hover:underline dark:text-brand-400">
-                    <Globe className="h-3 w-3" />
-                    {sp.website_url.replace(/^https?:\/\//, '').replace(/\/$/, '')}
-                  </a>
-                )}
+                {(() => {
+                  const safeUrl = sanitizeUrl(sp.website_url || '')
+                  return safeUrl ? (
+                    <a href={safeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-brand-600 hover:underline dark:text-brand-400">
+                      <Globe className="h-3 w-3" />
+                      {safeUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}
+                    </a>
+                  ) : null
+                })()}
               </div>
               <div className="flex items-center gap-2">
                 <Switch checked={sp.team_page_only} onCheckedChange={() => handleTeamPageOnlyToggle(sp)} />

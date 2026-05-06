@@ -12,9 +12,18 @@
 
 import { FRONTEND_URL } from './email-template.js'
 
-const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || 'BKJqU0d09bzpCWv6Goq-_24NxBLHHwGkjrUrRQsyIDoECVIE5nBBFw8g3j_hjBRhOlJL2YU72b_5R_SxFedMBQs'
+// Fail loudly on missing VAPID config rather than silently falling back to a
+// public-key value that may not match the worker's secret store. A split-brain
+// here makes every push delivery fail with no obvious cause.
+const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY
 const PUSH_WORKER_URL = process.env.PUSH_WORKER_URL || 'https://kscw-push.lucanepa.workers.dev'
 const PUSH_AUTH_SECRET = process.env.PUSH_AUTH_SECRET
+if (!VAPID_PUBLIC_KEY) {
+  // Don't throw at import time (would crash the whole Directus container);
+  // log so it's diagnosable, and the /vapid-public-key route below returns
+  // a 503 instead of a wrong key.
+  console.error('[web-push] VAPID_PUBLIC_KEY env var not set — push subscriptions will fail until configured')
+}
 
 // ── Helper: send push to a single member ────────────────────────────
 
@@ -108,6 +117,9 @@ export function registerWebPush(router, ctx) {
 
   // GET /kscw/web-push/vapid-public-key — public, no auth
   router.get('/web-push/vapid-public-key', (_req, res) => {
+    if (!VAPID_PUBLIC_KEY) {
+      return res.status(503).json({ error: 'Push not configured' })
+    }
     res.json({ publicKey: VAPID_PUBLIC_KEY })
   })
 

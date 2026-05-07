@@ -2,6 +2,14 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## v4.5.3 — 2026-05-07
+
+### Roster duplicate guard
+
+- **DB constraint.** Migration 044 adds `UNIQUE (member, team)` on `member_teams`. Same member + same team is now strictly one row. Refetch races, double-clicks, and two coaches both hitting "approve" can no longer spawn twins. The migration sanity-checks for existing duplicates first and refuses to apply until `directus/scripts/dedupe-member-teams.mjs` cleans them up.
+- **Data cleanup.** 5 duplicate rows removed from prod (`Hanna Baumgartner` D4, `Isis Hemprich` D1, `Maëlle Leiser` DU23-2, `Livia Schlegel` D4, `Daniela Duc (Fölmli)` D4) and 1 from dev (`Pawel Kalaga` H1) — all season=2025/26, guest_level=0. Surfaced when D4 admin saw Hanna listed twice on the roster.
+- **Frontend defense-in-depth.** `RosterEditor.handleAdd`, `TeamDetail.handleApprove`, and `TeamDetail.handleApproveRequest` now look up `(member, team)` first and no-op (or update `guest_level` in the request flow) when a row already exists. The constraint catches genuine bugs rather than masking everyday UX races.
+
 ## v4.5.2 — 2026-05-06
 
 ### Closed: last Critical from the v4.5.1 audit

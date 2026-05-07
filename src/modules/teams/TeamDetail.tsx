@@ -189,13 +189,20 @@ export default function TeamDetail() {
 
   async function handleApprove(member: Member) {
     try {
-      // Create member_teams FIRST — Postgres trigger blocks coach_approved_team=true without it
-      const mt = await createRecord<{id: string}>('member_teams', {
-        member: member.id,
-        team: teamId!,
-        season: getCurrentSeason(),
+      // Create member_teams FIRST — Postgres trigger blocks coach_approved_team=true without it.
+      // Skip insert if a row already exists; unique constraint (migration 044) is the hard backstop.
+      const existing = await fetchAllItems<{ id: string }>('member_teams', {
+        filter: { _and: [{ member: { _eq: member.id } }, { team: { _eq: teamId! } }] },
+        fields: ['id'],
       })
-      logActivity('create', 'member_teams', mt.id, { member: member.id, team: teamId })
+      if (!existing.length) {
+        const mt = await createRecord<{id: string}>('member_teams', {
+          member: member.id,
+          team: teamId!,
+          season: getCurrentSeason(),
+        })
+        logActivity('create', 'member_teams', mt.id, { member: member.id, team: teamId })
+      }
       await updateRecord('members', member.id, { coach_approved_team: true })
       logActivity('update', 'members', member.id, { coach_approved_team: true })
       refetchPending()
@@ -230,13 +237,26 @@ export default function TeamDetail() {
     if (!member) return
     const guestLevel = requestGuestLevels[request.id] ?? 0
     try {
-      const mt = await createRecord<{id: string}>('member_teams', {
-        member: member.id,
-        team: teamId!,
-        season: getCurrentSeason(),
-        guest_level: guestLevel,
+      // If a member_teams row exists for (member, team), update its guest_level rather
+      // than create a duplicate. Unique constraint (migration 044) is the hard backstop.
+      const existing = await fetchAllItems<{ id: string; guest_level: number }>('member_teams', {
+        filter: { _and: [{ member: { _eq: member.id } }, { team: { _eq: teamId! } }] },
+        fields: ['id', 'guest_level'],
       })
-      logActivity('create', 'member_teams', mt.id, { member: member.id, team: teamId, guest_level: guestLevel })
+      if (existing.length) {
+        if (Number(existing[0].guest_level ?? 0) !== guestLevel) {
+          await updateRecord('member_teams', existing[0].id, { guest_level: guestLevel })
+          logActivity('update', 'member_teams', existing[0].id, { guest_level: guestLevel })
+        }
+      } else {
+        const mt = await createRecord<{id: string}>('member_teams', {
+          member: member.id,
+          team: teamId!,
+          season: getCurrentSeason(),
+          guest_level: guestLevel,
+        })
+        logActivity('create', 'member_teams', mt.id, { member: member.id, team: teamId, guest_level: guestLevel })
+      }
       await updateRecord('team_requests', request.id, { status: 'approved' })
       refetchTeamRequests()
     } catch {

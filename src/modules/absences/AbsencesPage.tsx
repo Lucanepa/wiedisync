@@ -19,6 +19,7 @@ import WeeklyUnavailabilityCard from './WeeklyUnavailabilityCard'
 import WeeklyUnavailabilityForm from './WeeklyUnavailabilityForm'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import WeeklyDayHeaderCells from './WeeklyDayHeaderCells'
 import TabBar from '../../components/TabBar'
 import type { Absence, Member, Team } from '../../types'
 import { TourPageButton } from '../guide/TourPageButton'
@@ -252,7 +253,7 @@ export default function AbsencesPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-gray-500 dark:text-gray-400">{t('colDays')}</TableHead>
+                    <WeeklyDayHeaderCells />
                     <TableHead className="hidden md:table-cell text-gray-500 dark:text-gray-400">{t('colWhen')}</TableHead>
                     <TableHead className="hidden sm:table-cell text-gray-500 dark:text-gray-400">{t('colAffects')}</TableHead>
                     <TableHead className="w-32 text-right" />
@@ -392,7 +393,7 @@ function TeamWeeklySection({
         <TableHeader>
           <TableRow>
             <TableHead className="text-gray-500 dark:text-gray-400">{t('colMember')}</TableHead>
-            <TableHead className="text-gray-500 dark:text-gray-400">{t('colDays')}</TableHead>
+            <WeeklyDayHeaderCells />
             <TableHead className="hidden md:table-cell text-gray-500 dark:text-gray-400">{t('colWhen')}</TableHead>
             <TableHead className="hidden sm:table-cell text-gray-500 dark:text-gray-400">{t('colAffects')}</TableHead>
             <TableHead className="w-32 text-right" />

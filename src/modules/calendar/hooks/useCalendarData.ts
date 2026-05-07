@@ -7,8 +7,8 @@ import {
   toDateKey,
   eachDayOfInterval,
 } from '../../../utils/dateUtils'
-import { format, isBefore, isAfter, isSameDay } from 'date-fns'
-import { formatTime } from '../../../utils/dateHelpers'
+import { format, isBefore, isAfter, isSameDay, max as maxDate, min as minDate } from 'date-fns'
+import { formatTime, getDayOfWeek } from '../../../utils/dateHelpers'
 import { asObj, relId, memberName } from '../../../utils/relations'
 import { isAuthenticated } from '../../../lib/api'
 
@@ -173,6 +173,45 @@ function absenceToEntry(absence: Absence, memberName: string): CalendarEntry {
   }
 }
 
+/**
+ * Expand a weekly absence into one calendar entry per matching weekday
+ * inside the visible range (clipped to the absence's own start/end window).
+ * Each occurrence is a single-day allDay entry with a stable id suffix.
+ */
+function weeklyAbsenceToEntries(
+  absence: Absence,
+  memberName: string,
+  rangeStart: Date,
+  rangeEnd: Date,
+): CalendarEntry[] {
+  const days = absence.days_of_week ?? []
+  if (days.length === 0) return []
+  const absStart = parseDate(absence.start_date)
+  const absEnd = parseDate(absence.end_date)
+  const from = maxDate([absStart, rangeStart])
+  const to = minDate([absEnd, rangeEnd])
+  if (isAfter(from, to)) return []
+  const title = memberName ? `Unavailable · ${memberName}` : 'Unavailable'
+  const out: CalendarEntry[] = []
+  for (const d of eachDayOfInterval(from, to)) {
+    if (!days.includes(getDayOfWeek(d))) continue
+    out.push({
+      id: `${absence.id}:${toDateKey(d)}`,
+      type: 'absence',
+      title,
+      date: d,
+      startTime: null,
+      endTime: null,
+      allDay: true,
+      location: '',
+      teamNames: [],
+      description: absence.reason_detail ?? '',
+      source: absence,
+    })
+  }
+  return out
+}
+
 /** Detect hall events that are actually closures (e.g. "Halle geschlossen") */
 const CLOSURE_PATTERN = /geschlossen|gesperrt|closed/i
 
@@ -284,7 +323,7 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
     filter: fetchAbsences
       ? { _and: [{ end_date: { _gte: fetchRange.start } }, { start_date: { _lte: fetchRange.end } }] }
       : { id: { _eq: -1 } },
-    fields: ['id', 'member.*', 'start_date', 'end_date', 'reason', 'reason_detail', 'affects'],
+    fields: ['id', 'member.*', 'start_date', 'end_date', 'reason', 'reason_detail', 'affects', 'type', 'days_of_week'],
     sort: ['start_date'],
     all: true,
   })
@@ -357,7 +396,11 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
         if (teamIdSet && affects && affects.length > 0 && !affects.includes('all') && !affects.some((id) => teamIdSet.has(id))) continue
         const m = asObj<{ first_name: string; last_name: string }>(a.member)
         const firstName = m?.first_name || memberName(m) || '?'
-        all.push(absenceToEntry(a, firstName))
+        if (a.type === 'weekly') {
+          all.push(...weeklyAbsenceToEntries(a, firstName, rangeStart, rangeEnd))
+        } else {
+          all.push(absenceToEntry(a, firstName))
+        }
       }
     }
 

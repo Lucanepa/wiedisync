@@ -22,7 +22,8 @@ interface WeeklyUnavailabilityCardProps {
 }
 
 /**
- * Renders a single `<TableRow>` — must be used inside a `<Table>`.
+ * Renders a single `<TableRow>` — must be used inside a `<Table>` whose header
+ * contains 7 day columns (Mon..Sun). See WEEKLY_DAY_HEADERS in the parent page.
  */
 export default function WeeklyUnavailabilityCard({ absence, onEdit, onDelete, showMemberName, canEdit }: WeeklyUnavailabilityCardProps) {
   const { t } = useTranslation('absences')
@@ -44,6 +45,8 @@ export default function WeeklyUnavailabilityCard({ absence, onEdit, onDelete, sh
         : ''
   }`
 
+  const activeDays = new Set(absence.days_of_week ?? [])
+
   return (
     <TableRow className="align-top">
       {showMemberName && (
@@ -51,19 +54,29 @@ export default function WeeklyUnavailabilityCard({ absence, onEdit, onDelete, sh
           {memberName ?? '—'}
         </TableCell>
       )}
-      <TableCell className="whitespace-normal">
-        <div className="flex flex-wrap gap-1.5">
-          {(absence.days_of_week ?? []).sort().map((day) => (
+      {DAY_KEYS.map((key, dow) => {
+        const active = activeDays.has(dow)
+        const label = t(key)
+        return (
+          <TableCell
+            key={key}
+            className="w-10 px-1 text-center align-middle"
+            title={active ? label : undefined}
+          >
             <span
-              key={day}
-              className="rounded-full bg-brand-500 px-2.5 py-0.5 text-xs font-medium text-white"
+              aria-label={active ? label : undefined}
+              aria-hidden={!active}
+              className={
+                active
+                  ? 'inline-flex h-7 w-7 items-center justify-center rounded-full bg-brand-500 text-[11px] font-semibold text-white'
+                  : 'inline-flex h-7 w-7 items-center justify-center rounded-full text-[11px] text-gray-300 dark:text-gray-600'
+              }
             >
-              {t(DAY_KEYS[day])}
+              {active ? '•' : ''}
             </span>
-          ))}
-        </div>
-        <div className="md:hidden mt-1 text-xs text-gray-600 dark:text-gray-400">{dateRange}</div>
-      </TableCell>
+          </TableCell>
+        )
+      })}
       <TableCell className="hidden md:table-cell whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
         {dateRange}
       </TableCell>

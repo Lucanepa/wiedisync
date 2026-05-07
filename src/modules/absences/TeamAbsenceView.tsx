@@ -7,8 +7,9 @@ import AbsenceCard from './AbsenceCard'
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import MonthGrid from '../calendar/components/MonthGrid'
 import CalendarEntryModal from '../calendar/CalendarEntryModal'
-import { toISODate } from '../../utils/dateHelpers'
-import { parseDate, isSameDay, startOfMonth } from '../../utils/dateUtils'
+import { toISODate, getDayOfWeek } from '../../utils/dateHelpers'
+import { parseDate, isSameDay, startOfMonth, eachDayOfInterval, toDateKey } from '../../utils/dateUtils'
+import { max as maxDate, min as minDate, isAfter } from 'date-fns'
 import DatePicker from '@/components/ui/DatePicker'
 import type { CalendarEntry } from '../../types/calendar'
 import type { Absence, Member } from '../../types'
@@ -21,16 +22,52 @@ interface TeamAbsenceViewProps {
   canEdit?: boolean
 }
 
-/** Convert team absences into CalendarEntry[] for MonthGrid */
-function absencesToEntries(absences: Absence[], memberMap: Record<string, Member>): CalendarEntry[] {
-  return absences.map((a) => {
-    const start = parseDate(a.start_date)
-    const end = parseDate(a.end_date)
-    const isMultiDay = !isSameDay(start, end)
+/**
+ * Convert team absences into CalendarEntry[] for MonthGrid.
+ * Standard absences render as a multi-day block. Weekly absences expand
+ * into one entry per matching weekday inside the visible month range
+ * (clipped to the absence's own start/end window).
+ */
+function absencesToEntries(
+  absences: Absence[],
+  memberMap: Record<string, Member>,
+  rangeStart: Date,
+  rangeEnd: Date,
+): CalendarEntry[] {
+  const out: CalendarEntry[] = []
+  for (const a of absences) {
     const m = asObj<Member>(a.member) ?? memberMap[relId(a.member)]
     const memberName = [m?.first_name, m?.last_name].filter(Boolean).join(' ') || ''
 
-    return {
+    if (a.type === 'weekly') {
+      const days = a.days_of_week ?? []
+      if (days.length === 0) continue
+      const from = maxDate([parseDate(a.start_date), rangeStart])
+      const to = minDate([parseDate(a.end_date), rangeEnd])
+      if (isAfter(from, to)) continue
+      for (const d of eachDayOfInterval(from, to)) {
+        if (!days.includes(getDayOfWeek(d))) continue
+        out.push({
+          id: `${a.id}:${toDateKey(d)}`,
+          type: 'absence' as const,
+          title: memberName,
+          date: d,
+          startTime: null,
+          endTime: null,
+          allDay: true,
+          location: '',
+          teamNames: [],
+          description: a.reason_detail ?? '',
+          source: a,
+        })
+      }
+      continue
+    }
+
+    const start = parseDate(a.start_date)
+    const end = parseDate(a.end_date)
+    const isMultiDay = !isSameDay(start, end)
+    out.push({
       id: a.id,
       type: 'absence' as const,
       title: memberName,
@@ -43,8 +80,9 @@ function absencesToEntries(absences: Absence[], memberMap: Record<string, Member
       teamNames: [],
       description: a.reason_detail ?? '',
       source: a,
-    }
-  })
+    })
+  }
+  return out
 }
 
 export default function TeamAbsenceView({ teamIds, onEdit, onDelete, canEdit }: TeamAbsenceViewProps) {
@@ -64,15 +102,26 @@ export default function TeamAbsenceView({ teamIds, onEdit, onDelete, canEdit }: 
 
   const { absences, memberMap, isLoading } = useTeamAbsences(teamIds, startDate, endDate)
 
-  // Flat list sorted by most recent first
+  // Standard (date-range) absences only — weeklies live in the Unavailabilities tab.
+  // Sorted ascending so the next upcoming absence appears first.
   const sortedAbsences = useMemo(() =>
-    [...absences].sort((a, b) => b.start_date.localeCompare(a.start_date)),
+    [...absences]
+      .filter((a) => a.type !== 'weekly')
+      .sort((a, b) => a.start_date.localeCompare(b.start_date)),
   [absences])
 
-  // Calendar entries
+  // Calendar entries — both standard blocks and per-weekday weekly occurrences,
+  // clipped to the currently displayed month so we don't pre-expand a year of dots.
+  const calendarRangeStart = useMemo(() => startOfMonth(month), [month])
+  const calendarRangeEnd = useMemo(() => {
+    const d = new Date(month)
+    d.setMonth(d.getMonth() + 1)
+    d.setDate(0)
+    return d
+  }, [month])
   const calendarEntries = useMemo(
-    () => absencesToEntries(absences, memberMap),
-    [absences, memberMap],
+    () => absencesToEntries(absences, memberMap, calendarRangeStart, calendarRangeEnd),
+    [absences, memberMap, calendarRangeStart, calendarRangeEnd],
   )
 
   if (isLoading) {

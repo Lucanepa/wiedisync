@@ -19,7 +19,7 @@ import { getCurrentSeason } from '../../utils/dateHelpers'
 import type { Team, Member, MemberPosition, MemberTeam, TeamSettings } from '../../types'
 import { Button } from '../../components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table'
-import { fetchItems, updateRecord } from '../../lib/api'
+import { fetchAllItems, fetchItems, updateRecord } from '../../lib/api'
 import { asObj, relId } from '../../utils/relations'
 
 type LeadershipRole = 'coach' | 'captain' | 'team_responsible'
@@ -100,7 +100,13 @@ export default function RosterEditor() {
     if (!teamId || addingId) return
     setAddingId(memberId)
     try {
-      await create({ member: memberId, team: teamId, season })
+      const existing = await fetchAllItems<{ id: string }>('member_teams', {
+        filter: { _and: [{ member: { _eq: memberId } }, { team: { _eq: teamId } }] },
+        fields: ['id'],
+      })
+      if (!existing.length) {
+        await create({ member: memberId, team: teamId, season })
+      }
       const member = allMembers.find(m => m.id === memberId)
       toast.success(t('memberAdded', { name: displayName(member ?? {} as Member) }))
       setSearch('')

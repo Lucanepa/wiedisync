@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.5.2'
+const APP_VERSION = '4.5.3'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,20 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.5.3',
+    date: '2026-05-07',
+    sections: [
+      {
+        title: 'Roster duplicate guard — DB constraint + frontend pre-checks',
+        items: [
+          'Migration 044 adds `UNIQUE (member, team)` on `member_teams`. Same member + same team is now strictly one row; refetch races, double-clicks, or two coaches both hitting "approve" can no longer spawn twins. The migration sanity-checks for existing duplicates and refuses to apply until they are cleaned up by `directus/scripts/dedupe-member-teams.mjs`.',
+          'Cleaned up 5 duplicate rows on prod (`Hanna Baumgartner` D4, `Isis Hemprich` D1, `Maëlle Leiser` DU23-2, `Livia Schlegel` D4, `Daniela Duc (Fölmli)` D4) and 1 on dev (`Pawel Kalaga` H1) — all season=2025/26, guest_level=0. Surfaced when D4 admin saw Hanna listed twice on the roster.',
+          'Frontend defense-in-depth: `RosterEditor.handleAdd`, `TeamDetail.handleApprove`, and `TeamDetail.handleApproveRequest` now look up `(member, team)` first and no-op (or update `guest_level` for the request flow) if a row already exists, so the constraint catches genuine bugs rather than masking common UX races.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.5.2',
     date: '2026-05-06',

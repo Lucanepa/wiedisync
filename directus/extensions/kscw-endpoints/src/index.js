@@ -31,6 +31,7 @@ import { registerBroadcastRoutes } from './broadcast.js'
 import { registerActivitiesWithParticipations } from './activities.js'
 import { registerSvLicence } from './sv-licence.js'
 import { registerMigrationsStatus } from './migrations-status.js'
+import { registerSyncStatus } from './sync-status.js'
 
 // ── Helpers ──────────────────────────────────────────────────────
 
@@ -1827,6 +1828,7 @@ export default {
     registerActivitiesWithParticipations(router, ctx)
     registerSvLicence(router, ctx)
     registerMigrationsStatus(router, ctx)
+    registerSyncStatus(router, ctx)
 
     log.info('KSCW endpoints loaded: ~54 routes')
   },

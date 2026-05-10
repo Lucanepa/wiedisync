@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.6.2'
+const APP_VERSION = '4.6.3'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,19 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.6.3',
+    date: '2026-05-10',
+    sections: [
+      {
+        title: 'MoreSheet swipe-down + real cron heartbeat health',
+        items: [
+          '`MoreSheet` now matches the Vaul-based detail modals (`TrainingDetailModal`, `GameDetailModal`, `EventDetailModal`) and the existing `NotificationPanel` — drag the sheet down from the top to dismiss. Touch handlers on the wrapper measure `clientY - touchStart`; only consume the drag when the inner scroll is at the top so a downward swipe in the middle of a long admin nav still scrolls normally. Release past 100px slides the sheet out via the existing close animation.',
+          '`/status` page no longer reports "41 d ago" while crons are firing nightly. Migration 045 adds a `sync_runs` table (`source` PK, `last_run_at`, `status`, `rows_changed`, `duration_ms`, `error_message`) and a `logCronRun(database, source, opts)` helper in `error-log.js`. The `sv_sync`, `bp_sync`, `vm_sync`, `svrz_sync` crons now record a heartbeat on success AND on failure. New `gcal_sync` cron at 04:00 UTC calls the existing `/admin/gcal-sync` endpoint nightly (was admin-trigger-only — `hall_events` literally never auto-refreshed). New `GET /kscw/admin/sync-status` endpoint surfaces the heartbeats; `useInfraHealth.ts` reads from there instead of probing `MAX(games.date_updated)` per source. The hook also distinguishes "stale" from "errored" so a cron that just failed renders red rather than orange.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.6.2',
     date: '2026-05-10',

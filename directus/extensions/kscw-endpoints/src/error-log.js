@@ -96,6 +96,50 @@ export function logAuthDenial(endpoint, req, reason) {
 }
 
 /**
+ * Record a cron last-run heartbeat into the `sync_runs` table.
+ *
+ * Migration 045 added the table. /status reads `last_run_at` per source so
+ * staleness reflects "did the cron actually fire?" rather than "did the cron
+ * write a row to games/hall_events?". The previous implementation used the
+ * latter and showed orange whenever a cron was a no-op (steady-state season
+ * with no schedule changes), which is the common case.
+ *
+ * Failures here are swallowed: the cron itself must never fail because the
+ * health tracker had a hiccup. Tracking is best-effort.
+ *
+ * @param database - knex instance from the cron's hook context
+ * @param source   - stable key (e.g. 'sv_sync', 'bp_sync', 'gcal_sync')
+ * @param opts     - { status?: 'ok' | 'error', rowsChanged?: number,
+ *                     durationMs?: number, errorMessage?: string | null }
+ */
+export async function logCronRun(database, source, opts = {}) {
+  if (!database || !source) return
+  const status = opts.status === 'error' ? 'error' : 'ok'
+  try {
+    await database('sync_runs')
+      .insert({
+        source,
+        last_run_at: database.fn.now(),
+        status,
+        rows_changed: Number.isFinite(opts.rowsChanged) ? opts.rowsChanged : 0,
+        duration_ms: Number.isFinite(opts.durationMs) ? opts.durationMs : 0,
+        error_message: opts.errorMessage ?? null,
+      })
+      .onConflict('source')
+      .merge()
+  } catch (err) {
+    // Don't crash the cron over health tracking — just record to the file log.
+    writeErrorLog({
+      level: 'warn',
+      project: 'wiedisync',
+      event: 'sync_runs_write_failed',
+      source,
+      error: err.message,
+    })
+  }
+}
+
+/**
  * Log a cron/background job error.
  */
 export function logCronError(cronName, err, extra) {

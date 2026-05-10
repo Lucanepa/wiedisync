@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { API_URL, fetchItems } from '../lib/api'
+import { API_URL, kscwApi } from '../lib/api'
 
 export interface ServiceHealth {
   name: string
@@ -11,6 +11,10 @@ export interface SyncStatus {
   source: string
   lastUpdated: string | null
   isStale: boolean
+  /** 'error' when the last cron run actually errored (not just stale).
+   *  Lets the status page distinguish "ran 4 hours ago but failed" from
+   *  "hasn't run in 41 days". */
+  hadError?: boolean
 }
 
 export interface InfraHealth {
@@ -21,6 +25,16 @@ export interface InfraHealth {
 }
 
 const STALE_THRESHOLD_MS = 36 * 60 * 60 * 1000 // 36 hours
+
+type SyncRun = {
+  source: string
+  last_run_at: string | null
+  status: 'ok' | 'error'
+  age_seconds: number | null
+  error_message: string | null
+  rows_changed?: number
+  duration_ms?: number
+}
 
 export function useInfraHealth(): InfraHealth {
   const [services, setServices] = useState<ServiceHealth[]>([])
@@ -53,59 +67,56 @@ export function useInfraHealth(): InfraHealth {
 
       setServices([pbHealth])
 
-      // Sync freshness — query latest record per source
-      const now = Date.now()
+      // Sync freshness — pull cron last-run heartbeats from `sync_runs`
+      // (migration 045) via the auth-required /admin/sync-status endpoint.
+      // The previous implementation used `MAX(games.date_updated)` per
+      // source as a proxy, which only bumped when a row actually changed —
+      // a steady-state season made every sync look stale even when the cron
+      // was firing nightly. Now we read the cron heartbeats directly.
       const syncChecks: SyncStatus[] = []
-
-      for (const source of ['swiss_volley', 'basketplan']) {
-        try {
-          // Legacy sync rows (before the knex scripts were patched to bump
-          // date_updated) have null timestamps. Postgres sorts NULLS-FIRST on
-          // DESC, so without the _nnull filter we'd return a junk row and
-          // render "Unknown" / stale-by-default. Filter + take max of both.
-          const records = await fetchItems<Record<string, unknown>>('games', {
-            sort: ['-date_updated', '-date_created'],
-            filter: {
-              source: { _eq: source },
-              _or: [
-                { date_updated: { _nnull: true } },
-                { date_created: { _nnull: true } },
-              ],
-            },
-            fields: ['date_created', 'date_updated'],
-            limit: 1,
-          })
-          const rec = records[0]
-          const lastUpdated = (rec?.date_updated as string) || (rec?.date_created as string) || null
-          const isStale = lastUpdated
-            ? now - new Date(lastUpdated).getTime() > STALE_THRESHOLD_MS
-            : true
-          syncChecks.push({ source, lastUpdated, isStale })
-        } catch {
-          syncChecks.push({ source, lastUpdated: null, isStale: true })
-        }
-      }
-
-      // GCal sync — same null-sort defense as above.
       try {
-        const gcalRecords = await fetchItems<Record<string, unknown>>('hall_events', {
-          sort: ['-date_updated', '-date_created'],
-          filter: {
-            _or: [
-              { date_updated: { _nnull: true } },
-              { date_created: { _nnull: true } },
-            ],
-          },
-          fields: ['date_created', 'date_updated'],
-          limit: 1,
-        })
-        const rec = gcalRecords[0]
-        const lastUpdated = (rec?.date_updated as string) || (rec?.date_created as string) || null
-        const isStale = lastUpdated
-          ? now - new Date(lastUpdated).getTime() > STALE_THRESHOLD_MS
-          : true
-        syncChecks.push({ source: 'gcal', lastUpdated, isStale })
+        const { runs } = await kscwApi<{ runs: SyncRun[] }>('/admin/sync-status')
+        const byKey = new Map<string, SyncRun>(runs.map((r) => [r.source, r]))
+
+        // Map our internal cron sources to the public /status row keys.
+        // Swiss Volley aggregates two crons (sv_sync polls game data;
+        // svrz_sync walks the scheduling/contacts API) — surface the most
+        // recent run between them so a single failure doesn't flip the row
+        // orange while the other is healthy.
+        const pickLatest = (...keys: string[]): SyncRun | null => {
+          const candidates = keys.map((k) => byKey.get(k)).filter(Boolean) as SyncRun[]
+          if (candidates.length === 0) return null
+          return candidates.reduce((best, cur) => {
+            const a = best.last_run_at ? new Date(best.last_run_at).getTime() : 0
+            const b = cur.last_run_at ? new Date(cur.last_run_at).getTime() : 0
+            return b > a ? cur : best
+          })
+        }
+
+        const swissVolley = pickLatest('sv_sync', 'svrz_sync')
+        const basketplan = byKey.get('bp_sync') ?? null
+        const gcal = byKey.get('gcal_sync') ?? null
+
+        const toStatus = (source: string, run: SyncRun | null): SyncStatus => {
+          if (!run || !run.last_run_at) return { source, lastUpdated: null, isStale: true }
+          const ageMs = (run.age_seconds ?? 0) * 1000
+          const isStale = ageMs > STALE_THRESHOLD_MS
+          return {
+            source,
+            lastUpdated: run.last_run_at,
+            isStale: isStale || run.status === 'error',
+            hadError: run.status === 'error',
+          }
+        }
+
+        syncChecks.push(toStatus('swiss_volley', swissVolley))
+        syncChecks.push(toStatus('basketplan', basketplan))
+        syncChecks.push(toStatus('gcal', gcal))
       } catch {
+        // /admin/sync-status not deployed yet (transient on first migration
+        // run) — render every source as stale rather than blank.
+        syncChecks.push({ source: 'swiss_volley', lastUpdated: null, isStale: true })
+        syncChecks.push({ source: 'basketplan', lastUpdated: null, isStale: true })
         syncChecks.push({ source: 'gcal', lastUpdated: null, isStale: true })
       }
 

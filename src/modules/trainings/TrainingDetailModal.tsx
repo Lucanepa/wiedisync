@@ -189,6 +189,7 @@ export default function TrainingDetailModal({ training, onClose }: TrainingDetai
           respondBy={training.respond_by}
           activityStartTime={training.start_time}
           showRsvpTime={isFeatureEnabled(asObj<Team>(training.team)?.features_enabled, 'show_rsvp_time')}
+          excludedGuestLevels={Array.isArray(training.excluded_guest_levels) ? training.excluded_guest_levels : []}
         />
       )}
     </>

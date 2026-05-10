@@ -30,6 +30,11 @@ interface ParticipationRosterModalProps {
   participationMode?: 'whole' | 'per_day' | 'per_session' | ''
   showRsvpTime?: boolean
   allowMaybe?: boolean
+  /** Guest levels excluded from this activity (only meaningful for trainings).
+   *  Members of those levels are dropped from the roster — they can't reply
+   *  (UI hides buttons + server rejects), so showing them as "not responded"
+   *  just inflates the list. */
+  excludedGuestLevels?: number[]
 }
 
 /** Sort comparator: by first_name then last_name, locale-aware + case-insensitive. */
@@ -85,6 +90,7 @@ export default function ParticipationRosterModal({
   participationMode,
   showRsvpTime = true,
   allowMaybe = true,
+  excludedGuestLevels,
 }: ParticipationRosterModalProps) {
   const { t, i18n } = useTranslation('participation')
   const { t: te } = useTranslation('events')
@@ -167,9 +173,24 @@ export default function ParticipationRosterModal({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isClubWide, open, clubWideParticipations.length])
 
+  // Excluded guests can't reply (UI hides buttons + server rejects participations.create),
+  // so dropping them from the roster keeps "not responded" counts honest.
+  // Games: hard rule from commit af71850 — any guest_level > 0 cannot participate.
+  // Trainings: per-activity excludedGuestLevels list.
+  const excludedSet = useMemo(() => {
+    if (!excludedGuestLevels?.length) return null
+    return new Set(excludedGuestLevels.map((n) => Number(n)))
+  }, [excludedGuestLevels])
+
   const memberList: Member[] = isClubWide
     ? clubWideMembers
     : members
+        .filter((mt) => {
+          const lvl = Number((mt as { guest_level?: number }).guest_level ?? 0)
+          if (lvl > 0 && activityType === 'game') return false
+          if (excludedSet && lvl > 0 && excludedSet.has(lvl)) return false
+          return true
+        })
         .map((mt) => asObj<Member>(mt.member))
         .filter((m): m is Member => m !== null)
         .map(m => ({ ...m, id: String(m.id) }))

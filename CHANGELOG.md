@@ -2,6 +2,14 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## v4.5.4 — 2026-05-10
+
+### Roster modal hides excluded guests
+
+- Per-training `excluded_guest_levels` (commit `af71850`, v4.5.x) hid input buttons on the guest's own card and 403'd `participations.create` server-side, but never touched the staff-side roster view. Excluded guests sat in `ParticipationRosterModal` as zombie "Hasn't replied yet" rows — they couldn't reply and they inflated the "not responded" count.
+- `ParticipationRosterModal` gained an `excludedGuestLevels` prop and now drops members whose `member_teams.guest_level` is in the excluded set before building `memberList`. Wired through from `TrainingDetailModal` and `TrainingsPage`.
+- Games extension: same modal also drops any member with `guest_level > 0` whenever `activityType === 'game'` — matches the hard rule from `af71850` (games never allow guests). No call-site changes; `GameDetailModal` and `GamesPage` already pass `activityType="game"`.
+
 ## v4.5.3 — 2026-05-07
 
 ### Roster duplicate guard

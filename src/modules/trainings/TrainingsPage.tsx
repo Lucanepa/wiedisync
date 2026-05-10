@@ -75,7 +75,7 @@ export default function TrainingsPage() {
   const [recurringEditDialogOpen, setRecurringEditDialogOpen] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [recurringOpen, setRecurringOpen] = useState(false)
-  const [rosterTraining, setRosterTraining] = useState<{ id: string; teamId: string; date: string; showRsvpTime?: boolean } | null>(null)
+  const [rosterTraining, setRosterTraining] = useState<{ id: string; teamId: string; date: string; showRsvpTime?: boolean; excludedGuestLevels?: number[] } | null>(null)
   const recurringSelectionMade = useRef(false)
 
   // Single round-trip: trainings + their participations in one request.
@@ -245,7 +245,13 @@ export default function TrainingsPage() {
                 participations={participationsByActivity.get(training.id)}
                 myParticipation={myParticipationByActivity.get(training.id)}
                 onParticipationSaved={refetch}
-                onOpenRoster={(id, teamId, date) => setRosterTraining({ id, teamId, date, showRsvpTime: isFeatureEnabled(asObj<Team>(training.team)?.features_enabled, 'show_rsvp_time') })}
+                onOpenRoster={(id, teamId, date) => setRosterTraining({
+                  id,
+                  teamId,
+                  date,
+                  showRsvpTime: isFeatureEnabled(asObj<Team>(training.team)?.features_enabled, 'show_rsvp_time'),
+                  excludedGuestLevels: Array.isArray(training.excluded_guest_levels) ? training.excluded_guest_levels : [],
+                })}
                 onEdit={(effectiveIsAdmin || isCoachOf(relId(training.team))) ? handleEdit : undefined}
                 onDelete={(effectiveIsAdmin || isCoachOf(relId(training.team))) ? setDeletingId : undefined}
               />
@@ -308,6 +314,7 @@ export default function TrainingsPage() {
         teamIds={rosterTraining?.teamId ? [rosterTraining.teamId] : []}
         title={t('participation')}
         showRsvpTime={rosterTraining?.showRsvpTime}
+        excludedGuestLevels={rosterTraining?.excludedGuestLevels}
       />
     </div>
   )

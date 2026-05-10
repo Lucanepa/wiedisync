@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.6.5'
+const APP_VERSION = '4.6.6'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,18 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.6.6',
+    date: '2026-05-10',
+    sections: [
+      {
+        title: 'Roster summary count: excluded guests no longer leak in',
+        items: [
+          'Roster modal showed "14 Confirmed" while the filtered list had 13 — and exports also had 13. The summary tally pulled from `playerParticipations`, whose filter (`!p.is_staff || memberIdSet.has(p.member)`) only enforced the roster membership for staff-flagged rows. A confirmed RSVP from a guest at an `excludedGuestLevels` level (filtered out of `memberList`, hidden from the visible list and export) still satisfied `!p.is_staff` and counted in the summary. Filter is now a single `memberIdSet.has(p.member)` — purely-staff participations route through `staffParticipations` as before.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.6.5',
     date: '2026-05-10',

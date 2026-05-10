@@ -53,7 +53,7 @@ export default function ExplorePage() {
   }, [refresh])
 
   const hasSelection = !!selectedType && !!selectedId
-  const refreshedAt = data.loadedAt ? new Date(data.loadedAt).toLocaleTimeString(currentLocale()) : null
+  const refreshedAt = data.loadedAt ? new Date(data.loadedAt).toLocaleTimeString(currentLocale(), { hour12: false }) : null
 
   return (
     <div className="flex h-[calc(100vh-4rem)] flex-col bg-background text-foreground">

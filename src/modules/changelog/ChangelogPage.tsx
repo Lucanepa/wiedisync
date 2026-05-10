@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.6.7'
+const APP_VERSION = '4.7.0'
 
 interface ChangelogEntry {
   version: string
@@ -12,145 +12,78 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
   {
-    version: '4.6.7',
+    version: '4.7.0',
     date: '2026-05-10',
     sections: [
       {
-        title: 'Roster summary count: actual fix this time',
+        title: 'Coaches can edit notes — with attribution',
         items: [
-          'v4.6.6 only blocked excluded-guest leak (memberIdSet check) but didn\'t address player-coach double-counting. A player who carries both an `is_staff = true` presence marker AND a separate non-staff player RSVP for the same training was counted twice — modal said "14 Confirmed" while the card-row preview correctly said 13. `playerParticipations` now mirrors `ParticipationSummary` (the card-row source of truth) exactly: dedupe by member with best-status priority (confirmed > tentative > waitlisted > declined), drop is_staff rows from the player tally, restrict to `memberIdSet`. `getMemberStatus` prefers the non-staff row so the visible list and the count never disagree on which row "represents" a given member.',
-          '"Coach present" badge is now driven by a Set of player-coach IDs walking the FULL participations list, not by `summaryParticipations` (which now excludes is_staff rows). A coach who only has an `is_staff` confirmed marker — no separate player RSVP — still triggers the badge.',
+          'Coaches and team responsibles can now edit a player\'s note from the roster modal alongside the existing status edit. Click the pencil → status dropdown + note input appear side-by-side. Status saves on change; note saves on blur or Enter. Click outside the panel to close.',
+          'Every staff edit gets attributed under the row in italic gray: *"Edited to Confirmed by Luca Canepa on 10.05.2026 14:32"* and *"Note edited by Luca Canepa on 10.05.2026 14:35"* — independent lines, so editing only the note doesn\'t reset the status attribution and vice versa. Self-edits and system writes (cron auto-decline, hall closure unwind) leave the row clean.',
+          'Same lines appear in PNG/PDF exports under the player name; CSV gets a new "Edited by" column.',
+          'Schema: migration 046 added a single tracker, migration 047 split it into per-field `last_status_edited_*` and `last_note_edited_*` (cleaner attribution semantics). Backend hook in kscw-hooks stamps the matching tracker only when the field is in the write payload — system-context writes have null accountability and don\'t pollute the trackers.',
+        ],
+      },
+      {
+        title: 'Date & time format: `dd.mm.yyyy` + 24-hour, app-wide',
+        items: [
+          'All dates render as `dd.mm.yyyy` (`10.05.2026`) regardless of browser language. Every time renders as 24-hour `HH:MM`. Previously English-locale users saw `5/10/26, 2:32 PM` while Germans saw `10.05.2026, 14:32` for the same instant — confusing and inconsistent. The central date/time helpers (`formatDateZurich`, `formatDateCompactZurich`, `formatTimeZurich`, `formatDateTimeCompact`) are now hardcoded to `de-CH` + `hour12: false`, and 7 inline `toLocaleString` call sites that bypassed the helpers were patched.',
+          'Same standardisation in the kscw-website repo — `formatDate` helper hardcoded to `de-CH`, plus 6 inline call sites in `index.astro` / `news/index.astro` / `calendar-grid.ts` that previously rendered `30/03/2026` (en-CH slashes) for English visitors. Public site now reads dot-format everywhere.',
+          'Rule documented in `CLAUDE.md` (both repos) and `INFRA.md → Time & Date Formatting`.',
+        ],
+      },
+      {
+        title: 'RSVP feedback: drop the "Saved" / "Note saved" popovers',
+        items: [
+          'The active RSVP button stays highlighted and the note input keeps its saved value — visual feedback already exists. Removed the green floating popovers from `ParticipationButton` (home agenda RSVP), `TrainingDetailModal`, `TrainingCard`, `EventDetailModal`, `GameCard`, `GameDetailModal`. Less visual noise on every interaction. Enter on the note input still saves automatically.',
         ],
       },
     ],
   },
   {
-    version: '4.6.6',
+    version: '4.6 (4.6.0 → 4.6.7)',
     date: '2026-05-10',
     sections: [
       {
-        title: 'Roster summary count: excluded guests no longer leak in',
+        title: 'Mobile bottom sheets',
         items: [
-          'Roster modal showed "14 Confirmed" while the filtered list had 13 — and exports also had 13. The summary tally pulled from `playerParticipations`, whose filter (`!p.is_staff || memberIdSet.has(p.member)`) only enforced the roster membership for staff-flagged rows. A confirmed RSVP from a guest at an `excludedGuestLevels` level (filtered out of `memberList`, hidden from the visible list and export) still satisfied `!p.is_staff` and counted in the summary. Filter is now a single `memberIdSet.has(p.member)` — purely-staff participations route through `staffParticipations` as before.',
+          '`MoreSheet` and `NotificationPanel` scroll properly on Android Chrome + iOS Safari — both engines mishandle touch-scroll on a transformed compositor layer, and the slide-up animation + scroll container had been the same DOM node. Outer animated wrapper + inner `flex-1 overflow-y-auto overscroll-contain` body.',
+          'Drag the sheet down from the top to dismiss (matches Vaul-based detail modals). Drag in the middle of a long admin nav still scrolls normally.',
+          'Top close strip is one full-width tap target with the visual handle bar inside; chevron-down button on mobile, X button in the desktop notifications header.',
         ],
       },
-    ],
-  },
-  {
-    version: '4.6.5',
-    date: '2026-05-10',
-    sections: [
-      {
-        title: 'Roster export PNG/PDF: actually has pixels (real fix this time)',
-        items: [
-          'v4.6.4 swapped `opacity: 0` for `left: -10000px` thinking the opacity was the only thing being inlined into the snapshot. It wasn\'t — `html-to-image` clones the source DOM with computed styles intact, including the cloned root\'s `position: fixed; left: -10000px`, so inside the SVG `<foreignObject>` the cloned content painted at x=−10000 (way outside the canvas area). Same blank result, different mechanism. Restructured the printable view so the OUTER wrapper does the hiding (`position: fixed; width: 0; height: 0; overflow: hidden`) while the INNER node passed to `toPng` keeps clean normal-flow styles. The clone no longer carries any hide hack. Verified end-to-end on localhost.',
-          'New activity-kind line in the export header — small uppercase `TRAINING` / `GAME` / `EVENT` above the title. Game call sites (`GamesPage`, `GameDetailModal`) override with `"<home> vs <away>"`, so a game export reads `KSCW H1 VS PFADI` above the team-and-date title. Same line prepends the CSV metadata block. New `activityKind?: string` prop on `ParticipationRosterModal`; defaults derived from `activityType` via new `kindTraining` / `kindGame` / `kindEvent` keys (EN + DE).',
-          'New `?debugExport=1` URL flag — when present, `exportRosterImage` dumps a `[rosterExport] PNG diagnostics` console group with the source `getBoundingClientRect`, computed-style snapshot, an intermediate `toSvg` data URL, and the final `toPng` size. Kept on for future blank-export reports — costs nothing when the flag is absent.',
-        ],
-      },
-      {
-        title: 'Localhost dev server CORS-safe by construction',
-        items: [
-          'Localhost (`http://localhost:*` / `127.0.0.1` / `*.local`) now ALWAYS points at `directus-dev.kscw.ch`, regardless of `VITE_DIRECTUS_URL` in `.env*`. Prod Directus has a strict CORS allowlist that doesn\'t include localhost (and shouldn\'t — exposing prod data to anyone running `npm run dev` would be bad), so an env override that pointed there silently broke every fetch with "blocked by CORS policy". The `.env.local` line is now a no-op for `npm run dev`; only matters for non-localhost preview builds.',
-        ],
-      },
-    ],
-  },
-  {
-    version: '4.6.4',
-    date: '2026-05-10',
-    sections: [
-      {
-        title: 'Roster export PNG/PDF really renders content now',
-        items: [
-          'v4.6.2 portaled the printable view to `document.body` to escape Vaul Drawer\'s transformed ancestor — that fixed the "snapshot clipped to a blank rectangle" failure mode but kept `opacity: 0` as the hide mechanism, so the new failure mode was a fully-transparent (white-on-white) PNG. `html-to-image` clones the source DOM with computed styles intact, including `opacity: 0` on the root, so the painted canvas was 0-alpha across the whole frame. Switched to off-screen positioning (`left: -10000px`) — the printable view stays invisible to the user but is fully opaque for the snapshot.',
-        ],
-      },
-      {
-        title: '/status: friendlier label before the first cron fires',
-        items: [
-          'Migration 045 seeds `sync_runs` rows at the 1970-01-01 epoch so they show stale immediately on a fresh deploy — but the `/status` row was rendering that as "20583 d ago", which is technically true and visually nonsense. `useInfraHealth.ts` now flags any heartbeat dated before 2000-01-01 as `awaitingFirstRun: true`; `StatusPage` shows "Awaiting first run" in that case (still orange — the cron genuinely hasn\'t run yet). Once the next scheduled cycle fires (gcal_sync 04:00 UTC, svrz_sync 04:30 UTC, sv_sync 06:00 UTC, bp_sync 06:05 UTC) the row flips to a real "X h ago".',
-        ],
-      },
-    ],
-  },
-  {
-    version: '4.6.3',
-    date: '2026-05-10',
-    sections: [
-      {
-        title: 'MoreSheet swipe-down + real cron heartbeat health',
-        items: [
-          '`MoreSheet` now matches the Vaul-based detail modals (`TrainingDetailModal`, `GameDetailModal`, `EventDetailModal`) and the existing `NotificationPanel` — drag the sheet down from the top to dismiss. Touch handlers on the wrapper measure `clientY - touchStart`; only consume the drag when the inner scroll is at the top so a downward swipe in the middle of a long admin nav still scrolls normally. Release past 100px slides the sheet out via the existing close animation.',
-          '`/status` page no longer reports "41 d ago" while crons are firing nightly. Migration 045 adds a `sync_runs` table (`source` PK, `last_run_at`, `status`, `rows_changed`, `duration_ms`, `error_message`) and a `logCronRun(database, source, opts)` helper in `error-log.js`. The `sv_sync`, `bp_sync`, `vm_sync`, `svrz_sync` crons now record a heartbeat on success AND on failure. New `gcal_sync` cron at 04:00 UTC calls the existing `/admin/gcal-sync` endpoint nightly (was admin-trigger-only — `hall_events` literally never auto-refreshed). New `GET /kscw/admin/sync-status` endpoint surfaces the heartbeats; `useInfraHealth.ts` reads from there instead of probing `MAX(games.date_updated)` per source. The hook also distinguishes "stale" from "errored" so a cron that just failed renders red rather than orange.',
-        ],
-      },
-    ],
-  },
-  {
-    version: '4.6.2',
-    date: '2026-05-10',
-    sections: [
-      {
-        title: 'Roster: explicit RSVP wins over absence overlay + export polish',
-        items: [
-          'Critical fix: clicking "Yes" on a training/game/event covered by a weekly unavailability now sticks. The participation row was being correctly updated to confirmed (BEFORE UPDATE trigger from migration 038 clears `auto_declined_by` on user-driven status changes — that part still works), but the roster modal\'s `getMemberStatus` checked the absence-cover overlay first and returned `declined` regardless. Logic flipped: a row whose `auto_declined_by` is null is treated as user-owned and its status is sacred; the absence overlay is only consulted when there is no row OR the row still carries the auto-decline marker. Same change to the badge label so a manually-confirmed user no longer renders with the red "Unavailable" pill.',
-          '`Participation` type gains the optional `auto_declined_by?: number | null` field so the frontend can distinguish system-set rows from user-set ones without a separate flag.',
-          'Backend `participations.items.create` filter (the v4.4.10 absence guard) now skips when the request carries user accountability — system-context creates from `autoDeclineForAbsence` (cron writing a fresh declined row when a new absence is created) still get auto-flipped, but a user explicitly POSTing `status: confirmed` is trusted.',
-        ],
-      },
-      {
-        title: 'Bottom sheet UX',
-        items: [
-          'Top close strip on `MoreSheet` and `NotificationPanel` is now one big button covering the full row width, with the visual handle bar inside it. Tap anywhere on the strip — handle, chevron, blank space — to dismiss. Hover/active states give the row a subtle background flash so the affordance is unambiguous.',
-        ],
-      },
-      {
-        title: 'Roster export',
-        items: [
-          'PNG / PDF were exporting blank. The hidden printable view sat at `position: fixed; left: -10000px` inside the modal\'s Vaul Drawer (or Radix Dialog on desktop), and an ancestor `transform` re-anchored the "fixed" coords to the drawer instead of the viewport — html-to-image\'s bounding-rect calculation then captured an empty rectangle. View now portals to `document.body` (escapes the transformed ancestor) at `top:0/left:0` with `opacity:0 + pointer-events:none + z-index:-1` so it lays out at full size while staying invisible and inert. Also waits for `document.fonts.ready` before snapshotting.',
-          'Stale-bundle handling: dynamic imports of `html-to-image` and `jspdf` now throw a typed `ExportLibraryError` ("App may have been updated — please refresh") when CF Pages no longer has the chunk hashes the user\'s loaded SPA references. The export handler shows it as a sonner toast instead of a silent "Failed to fetch dynamically imported module" Sentry.',
-          'Filename: dropped the duplicate date — title already contains it ("H3 — 11/05/2026"), so `<title>_<date>_<filter>.<ext>` produced "H3-—-11_05_2026_11_05_2026_Confirmed.csv". Now `<title>_<filter>.<ext>` when the title already includes the date. Em-dash + en-dash + hyphen runs are also collapsed to single underscores, so the same title becomes "H3_11_05_2026_Confirmed.csv".',
-          'CSV: dropped the redundant date row in the metadata block (line 2 of the file was just the date already in the title row). Position values in the data column are now translated through the `teams` namespace (`positionSetter` → "Setter") instead of leaking the raw enum value, so the data rows match the metadata "Positions:" summary.',
-        ],
-      },
-    ],
-  },
-  {
-    version: '4.6.1',
-    date: '2026-05-10',
-    sections: [
-      {
-        title: 'Explicit close affordance on bottom sheets',
-        items: [
-          '`MoreSheet` and `NotificationPanel` now show a chevron-down button at the top-right of the handle row on mobile (44×44px touch target). Tapping it triggers `startClose()` — same animation path as backdrop tap and nav-link tap, so the slide-down + unmount flow is unchanged. NotificationPanel also gets a small `X` close button in the header on desktop (`lg:` only) for parity with native popover patterns.',
-          'Background: even with the v4.6.0 scroll fix, the dismiss UX on phones with very tall content (admin mode in MoreSheet, long unread queues in NotificationPanel) was unclear — the only ways to close were a backdrop tap (small target above the sheet) or a nav-link tap (which navigates somewhere). The chevron makes "just close it" a one-tap action without leaving the current page. `aria-label` falls back via i18n `defaultValue: \'Close\'`; `common.close` already exists in all 5 locales for the key when added explicitly.',
-        ],
-      },
-    ],
-  },
-  {
-    version: '4.6.0',
-    date: '2026-05-10',
-    sections: [
       {
         title: 'Roster export — CSV / PNG / PDF',
         items: [
-          'Staff and admins can export the participation roster from `ParticipationRosterModal` in three formats. New "Export" dropdown sits next to the status filter, gated by `canEditRoster` (coach/team-responsible of the team or admin). The export respects the active status filter — exporting "Confirmed" produces a list of just the confirmed members; exporting "All" appends the waitlist + staff sections so the file matches what is on screen.',
-          'Each row carries: full name (with leadership badge — Coach / C / TR / Staff), jersey number from `members.number`, default positions from `members.position[]`, status (with absence-reason variant for declined-by-absence rows), guest count, free-text note (or absence reason), and the RSVP timestamp. UTF-8 BOM in front of the CSV so Excel autodetects the encoding for umlauts in member names.',
-          'PNG and PDF are produced from a hidden printable view rendered off-screen at 800px wide with light-mode inline styles, so exports look the same regardless of the user\'s dark-mode setting. Multi-page PDFs slice the rendered canvas vertically by A4 page height. `html-to-image` (~47KB gzip) and `jspdf` (~127KB gzip) are dynamic-imported on first export click, so the main bundle stays unchanged for users who never use the feature.',
-          'Filename pattern: `<title>_<date>_<filter>.<ext>` with reserved characters sanitised. Every export file leads with a small metadata block (activity title, date, filter + count, exported-at timestamp) so a coach pasting the file into Slack/WhatsApp has the context inline.',
-          'Position summary header: above the member table, the export shows a pill row with the count of each playing position represented in the current population (e.g. `3 Setter`, `5 Outside hitter`, `4 Middle blocker`, `2 Opposite`, `2 Libero`). Members are counted once per position they declare on their profile (a setter/outside hybrid contributes to both buckets). Order is fixed (S → O → M → D → L → basketball equivalents → guest → other) so consecutive exports read consistently. CSV gets a `Positions:` line in the metadata block; PNG/PDF render pills below the status counts. Localised via the existing `teams` namespace position keys.',
+          'Staff/admin Export dropdown in `ParticipationRosterModal` (gated by `canEditRoster`). Three formats; respects the active status filter; "All" appends waitlist + staff. Columns: name (with leadership suffix), jersey number, default positions, status (incl. absence-reason flavour), guests, note, RSVP timestamp.',
+          'Header carries an uppercase activity-kind line above the title — `TRAINING` / `GAME` / `EVENT`. Game call sites override with `"<home> vs <away>"` so a game export reads e.g. `KSCW H1 VS PFADI`. Position-summary pill row above the table; CSV gets a `Positions:` metadata line.',
+          'PNG/PDF use a hidden printable view portalled to `document.body` (escapes the modal\'s transformed ancestor) inside a zero-size `overflow:hidden` wrapper, so the cloned root passed to `html-to-image` carries no `opacity:0` or off-screen offset that would empty the snapshot. Lazy-loaded `html-to-image` + `jspdf` — main bundle unchanged. PDF slices to multi-page A4 when content overflows.',
+          'Filename: `<title>_<filter>.<ext>` when title already contains the date; em/en/hyphen dashes collapse to a single underscore. Sanitised for cross-OS filename safety.',
+          'Stale-bundle dynamic-import failures surface as a sonner toast asking the user to refresh (was a silent Sentry).',
+          'New `?debugExport=1` URL flag dumps a per-stage console group (rect, computed style, intermediate `toSvg`, final `toPng` size) for future blank-export diagnostics.',
         ],
       },
       {
-        title: 'Mobile bottom sheet scroll fix + roster filter dropdown',
+        title: 'Roster modal correctness',
         items: [
-          '`MoreSheet` and `NotificationPanel` could not be scrolled on mobile (Android + iOS) when their content overflowed — admin mode loaded the full nav + admin + super-admin sections well past 85vh. Root cause: both placed the slide-up keyframe (`animate-sheet-up`, `translateY(100%) → 0`, `both` fill) and `overflow-y-auto` on the same DOM node. The active or settled `transform` promotes the element to a compositor layer; on both Android Chrome and iOS Safari that layer mishandles touch-driven scrolling. `position: sticky` children of a transformed ancestor are also broken on both engines, which compounded the bug for the sticky handles in MoreSheet/NotificationPanel.',
-          'Both components are now structured as outer animated wrapper (`flex flex-col max-h-[85vh]` + `animate-sheet-*`) wrapping an inner `flex-1 overflow-y-auto overscroll-contain` body. Scroll lives on a node with no transform. `panelRef` in `NotificationPanel` was moved to the new scroll container so the swipe-down-to-close gate (`scrollTop <= 0 && dy > 0`) still reads the correct scroll position.',
-          'Hardened `onAnimationEnd` on both wrappers (`if (e.target === e.currentTarget)`) to ignore bubbled `animationend` from descendants — latent footgun if any child ever gets a CSS animation.',
-          'Audit pass confirmed `Modal` (Vaul-based shadcn `Drawer` on mobile) is structurally fine. `MemberMultiSelect` and `ParticipationButton` use sibling-not-ancestor backdrops, so interior taps do not bubble to the close handler.',
-          '`ParticipationRosterModal` status filter chip strip → single `DropdownMenu` trigger. Saves ~36px vertical on mobile, drops the awkward x-scroll on narrow screens, surfaces all options in one tap with a colored dot + count per status.',
+          'Excluded guests no longer leak into the staff-side modal — per-training `excluded_guest_levels` filters them from `memberList`, the visible list, and the export. Games drop any `guest_level > 0` unconditionally.',
+          'Summary count vs visible list — modal said "14 Confirmed" while the card-row preview correctly said 13. `playerParticipations` now mirrors `ParticipationSummary` exactly: dedupe by member with best-status priority, drop `is_staff` rows from the player tally, restrict to `memberIdSet`. `getMemberStatus` prefers the non-staff row so visible list, summary counts, and exports agree.',
+          '"Coach present" badge driven by a Set of player-coach IDs walking the full participations list — a coach who only carries an `is_staff` confirmed marker still triggers the badge.',
+          'Explicit RSVP wins over absence overlay — clicking "Yes" on an activity covered by a weekly unavailability now sticks. A row whose `auto_declined_by` is null is treated as user-owned and its status is sacred. Same fix applied to badge label and `statusLabelText` (used by export). Backend `participations.items.create` filter skips when accountability is set so user-driven creates trust the explicit RSVP.',
+        ],
+      },
+      {
+        title: '/status page: real cron heartbeats',
+        items: [
+          'Migration 045 adds `sync_runs` (`source` PK, `last_run_at`, `status`, `rows_changed`, `duration_ms`, `error_message`). New `logCronRun()` helper upserts on completion. `sv_sync` / `bp_sync` / `vm_sync` / `svrz_sync` record a heartbeat on every termination path. New `gcal_sync` cron at 04:00 UTC calls the existing `/admin/gcal-sync` endpoint nightly (was admin-trigger-only — `hall_events` never auto-refreshed). New `GET /kscw/admin/sync-status` endpoint surfaces the heartbeats; `useInfraHealth.ts` aggregates Swiss Volley as `sv_sync` ∪ `svrz_sync` (most recent wins) and distinguishes stale from errored.',
+          '"Awaiting first run" label replaces the literal "20583 d ago" the 1970-epoch seed produced before the first cron fires.',
+        ],
+      },
+      {
+        title: 'Localhost dev server',
+        items: [
+          'Localhost (`localhost`, `127.0.0.1`, `*.local`) ALWAYS points at `directus-dev.kscw.ch`, regardless of `VITE_DIRECTUS_URL` in `.env*` — prod CORS rejects localhost origins, so an env override that pointed there silently broke every fetch.',
+          'New `npm run dev:prod` script reverse-proxies all `/directus/*` (REST + WS) from the dev server to prod Directus, so localhost can render against live data when dev is too stale. Loud red console banner on every page load — every write hits live data.',
         ],
       },
     ],

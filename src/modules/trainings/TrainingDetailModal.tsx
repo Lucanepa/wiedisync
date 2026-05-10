@@ -356,13 +356,6 @@ function TrainingParticipation({ training, isStaff, isStaffParticipant }: { trai
           {noteRequiredError && (
             <p className="mt-0.5 ml-6 text-[11px] text-red-500 dark:text-red-400">{t('noteRequiredError')}</p>
           )}
-          {/* Note saved confirmation */}
-          {noteSaved && (
-            <span className="absolute -top-7 right-0 flex items-center gap-1 whitespace-nowrap rounded-md bg-green-600 px-2 py-0.5 text-[11px] font-medium text-white shadow-lg animate-fade-in">
-              <Check className="h-3 w-3" />
-              {t('noteSaved')}
-            </span>
-          )}
         </div>
       )}
       {/* Guest counter — coaches/TR only */}

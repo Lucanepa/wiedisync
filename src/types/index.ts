@@ -84,6 +84,10 @@ export interface TeamSettings extends FeatureToggles {
 }
 
 export interface Member extends BaseRecord {
+  /** directus_users.id — set when this member has an authenticated account.
+   *  Used to map participation `last_edited_by` (a directus_users UUID) back
+   *  to a member name for the "Edited by …" attribution line. */
+  user?: string | null
   email: string
   first_name: string
   last_name: string
@@ -455,6 +459,19 @@ export interface Participation extends BaseRecord {
    *  changes `status` (migration 038), so a non-null marker is the definitive
    *  signal that "this row was system-set, not user-set". */
   auto_declined_by?: number | null
+  /** Per-field edit attribution (migration 047). Set by the kscw-hooks
+   *  `participations.items.{create,update}` filter ONLY when the matching
+   *  field is in the write payload, so editing the note doesn't reset the
+   *  status attribution and vice versa. Null for system-context writes
+   *  (cron auto-decline, hall-closure unwind) — those leave the tracker
+   *  pair untouched, distinguishing them from staff edits. Roster modal
+   *  renders "Edited to X by Y on Z" / "Note edited by Y on Z" as
+   *  independent lines when these resolve to a user other than the
+   *  participation's own member. */
+  last_status_edited_by?: string | null
+  last_status_edited_at?: string | null
+  last_note_edited_by?: string | null
+  last_note_edited_at?: string | null
 }
 
 export interface UserLog extends BaseRecord {

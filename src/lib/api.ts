@@ -37,17 +37,33 @@ function getStorage(): Storage {
 const host = typeof window !== 'undefined' ? window.location.hostname : ''
 const isProd = host === 'wiedisync.kscw.ch'
 const isLocalhost = host === 'localhost' || host === '127.0.0.1' || host.endsWith('.local')
-// Localhost ALWAYS points at dev Directus regardless of `VITE_DIRECTUS_URL`
-// in `.env*` — prod Directus has a strict CORS allowlist that doesn't and
-// shouldn't include localhost, so an env override that pointed there would
-// just yield "blocked by CORS policy" on every fetch. Prod hostname always
-// points at prod. Any other host (CF Pages preview, pages.dev, custom
-// preview domains) honors the env or falls back to dev.
+// `npm run dev:prod` sets VITE_PROD_DATA=1 → vite.config.ts spins up a
+// reverse proxy that forwards `/directus/*` (REST + WS) to prod Directus.
+// In that mode we use a relative `/directus` prefix so all browser fetches
+// stay same-origin (no CORS preflight) and the proxy does the heavy lift.
+const useProdProxy = isLocalhost && import.meta.env.VITE_PROD_DATA === '1'
+// Localhost ALWAYS points at dev Directus by default, regardless of
+// `VITE_DIRECTUS_URL` in `.env*` — prod Directus has a strict CORS allowlist
+// that doesn't and shouldn't include localhost, so an env override that
+// pointed there would just yield "blocked by CORS policy" on every fetch.
+// Prod hostname always points at prod. Any other host (CF Pages preview,
+// pages.dev, custom preview domains) honors the env or falls back to dev.
 export const API_URL = isProd
   ? 'https://directus.kscw.ch'
-  : isLocalhost
-    ? 'https://directus-dev.kscw.ch'
-    : (import.meta.env.VITE_DIRECTUS_URL || 'https://directus-dev.kscw.ch')
+  : useProdProxy
+    ? '/directus'
+    : isLocalhost
+      ? 'https://directus-dev.kscw.ch'
+      : (import.meta.env.VITE_DIRECTUS_URL || 'https://directus-dev.kscw.ch')
+
+// Loud red banner on every page load when proxying prod — writes from the
+// dev server hit live data and that fact can otherwise drift out of mind.
+if (useProdProxy && typeof window !== 'undefined') {
+  console.warn(
+    '%c⚠ DEV SERVER PROXYING PROD DIRECTUS — every write hits live data',
+    'background:#dc2626;color:#fff;padding:4px 10px;font-weight:bold;font-size:13px;border-radius:3px;',
+  )
+}
 
 // ── Client ──────────────────────────────────────────────────────────
 
@@ -73,6 +89,14 @@ export const client = createDirectus(API_URL)
   }))
   .with(rest())
   .with(realtime({
+    // When `API_URL` is the relative `/directus` prefix (proxy mode), the
+    // SDK's default URL derivation produces `/directus/websocket` which the
+    // browser rejects (WebSocket needs absolute ws:// or wss://). Build the
+    // absolute proxy URL explicitly here; vite's `ws: true` proxy entry
+    // forwards it to wss://directus.kscw.ch/websocket.
+    url: useProdProxy && typeof window !== 'undefined'
+      ? `${window.location.origin.replace(/^http/, 'ws')}/directus/websocket`
+      : undefined,
     authMode: 'handshake',
     heartbeat: false,
     reconnect: { delay: 5000, retries: 2 },

@@ -14,9 +14,13 @@ function formatGameDateTime(iso: string | null, locale: string): string {
   if (!iso) return ''
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return ''
-  return d.toLocaleString(locale === 'de' ? 'de-CH' : 'en-CH', {
+  // Always Swiss dd.mm.yyyy. The weekday segment localizes to user's
+  // language but the date numbers stay dotted day-first regardless.
+  // See CLAUDE.md → Time & Date Formatting.
+  void locale
+  return d.toLocaleString('de-CH', {
     weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
+    hour: '2-digit', minute: '2-digit', hour12: false,
   })
 }
 

@@ -249,30 +249,55 @@ export default function ParticipationRosterModal({
   const isLoading = (isClubWide ? clubWideLoading || clubWidePartsLoading : membersLoading) || participationsLoading
 
   // Staff-side note edit. Creates a participation row with `status: null` if
-  // none exists yet — lets a coach attach context like "Out for the season"
-  // to a player who hasn't RSVPed. Empty input clears the note (no-op when
-  // already empty).
+  // none exists yet (lets a coach attach context like "Out for the season"
+  // to a player who hasn't RSVPed). Saving an empty string explicitly
+  // clears the note AND suppresses the absence-reason fallback in the
+  // display — without that, clearing a row whose note was never set
+  // visually leaves the absence reason showing because the row's `.note`
+  // stayed null/undefined and the fallback re-applied.
   const handleNoteChange = useCallback(async (memberId: string, newNote: string) => {
     if (!activityId) return
     const currentParticipation = participations.find(p => p.member === memberId)
     const trimmed = (newNote ?? '').trim()
-    const currentNote = (currentParticipation?.note ?? '').trim()
-    if (trimmed === currentNote) return
-    setSavingMemberIds(prev => new Set(prev).add(memberId))
-    try {
-      if (currentParticipation) {
+    if (currentParticipation) {
+      const saved = currentParticipation.note ?? null
+      // No-op when already explicitly empty and user typed empty; or when
+      // the typed value matches the saved value byte-for-byte. Critically
+      // we DO save when saved === null/undefined and the user explicitly
+      // typed empty — that writes '' so the display stops falling back to
+      // the absence reason.
+      if (trimmed === '' && saved === '') return
+      if (trimmed !== '' && trimmed === saved) return
+      setSavingMemberIds(prev => new Set(prev).add(memberId))
+      try {
         await update(currentParticipation.id, { note: trimmed })
-      } else if (trimmed) {
-        await create({
-          member: memberId,
-          activity_type: activityType,
-          activity_id: activityId,
-          status: null as unknown as Participation['status'],
-          note: trimmed,
-          guest_count: 0,
-          is_staff: false,
+      } catch {
+        // useMutation handles logging; UI reverts via refetch
+      } finally {
+        setSavingMemberIds(prev => {
+          const next = new Set(prev)
+          next.delete(memberId)
+          return next
         })
       }
+      return
+    }
+    // No participation row yet — create one only if the staff actually
+    // typed something. Empty input on a never-RSVPed player is a no-op
+    // (nothing to clear, no absence overlay to suppress because there's
+    // no row to attach to).
+    if (!trimmed) return
+    setSavingMemberIds(prev => new Set(prev).add(memberId))
+    try {
+      await create({
+        member: memberId,
+        activity_type: activityType,
+        activity_id: activityId,
+        status: null as unknown as Participation['status'],
+        note: trimmed,
+        guest_count: 0,
+        is_staff: false,
+      })
     } catch {
       // useMutation handles logging; UI reverts via refetch
     } finally {
@@ -654,7 +679,10 @@ export default function ParticipationRosterModal({
         positions: translatePositions(m.position),
         status: statusLabelText(m.id, status),
         guests: p?.guest_count ?? 0,
-        note: absenceReason || p?.note || '',
+        // Custom note wins over absence-reason fallback even when cleared
+        // to empty — staff explicit clear should remove the displayed note.
+        // Absence reason is only surfaced when participation has no note set.
+        note: (p?.note ?? null) != null ? (p!.note ?? '') : (absenceReason ?? ''),
         rsvpAt: ts ? formatDateTimeCompact(ts) : '',
         editedBy: formatAttribution(m, p),
       }
@@ -1264,10 +1292,14 @@ export default function ParticipationRosterModal({
                   </div>
                 )}
                 </div>
-                {/* Note on its own row — skip if note is just a duplicate of position preferences */}
+                {/* Note on its own row — skip if note is just a duplicate of position preferences.
+                    Custom participation.note wins over absence-reason fallback even when cleared
+                    to empty: staff explicit clear should remove the displayed note. Absence reason
+                    is only surfaced when participation has no note set at all (null/undefined). */}
                 {(() => {
                   const absenceReason = getMemberAbsenceReason(member.id)
-                  const note = absenceReason || participation?.note
+                  const customNote = participation?.note
+                  const note = customNote != null ? customNote : absenceReason
                   if (!note) return null
                   // Deduplicate: if note matches the positions string, don't show it again
                   if (participation?.position_1) {

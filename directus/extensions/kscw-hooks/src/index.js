@@ -491,6 +491,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
 
       // Trainings
       if (allTypes || affects.includes('trainings')) {
+        const trainingDowClause = pgDowClause.replace(/d\.date/g, 't.date')
         const upd = await database.raw(`
           UPDATE participations p
           SET status = 'declined', note = ?, auto_declined_by = ?::integer
@@ -500,7 +501,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
             AND p.status IN ('confirmed', 'tentative', 'waitlisted')
             AND t.date >= ?::date AND t.date <= ?::date
             AND t.cancelled = false
-            ${pgDowClause}
+            ${trainingDowClause}
         `, [absence.reason || '', absenceId, memberId, effectiveStart, endDate])
         declined += upd?.rowCount || 0
 
@@ -510,7 +511,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
           FROM trainings t
           WHERE t.date >= ?::date AND t.date <= ?::date
             AND t.cancelled = false
-            ${pgDowClause}
+            ${trainingDowClause}
             AND EXISTS (SELECT 1 FROM member_teams mt WHERE mt.team = t.team AND mt.member = ?::integer)
             AND NOT EXISTS (
               SELECT 1 FROM participations p

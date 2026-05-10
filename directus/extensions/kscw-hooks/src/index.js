@@ -2359,15 +2359,23 @@ export default ({ action, filter, init, schedule }, { services, database, logger
   })
 
   // ── Participation create: absence-aware auto-decline ────────────────────
-  // When a new participation is created, look up any covering absence for the
-  // member and silently flip the new RSVP to 'declined'. Mirrors the policy
-  // applied by autoDeclineForAbsence on the absence side: the absence wins.
-  // The user can clear the absence (or the marker) to RSVP affirmatively again.
-  filter('participations.items.create', async (payload, _meta, { database: db }) => {
+  // System-context creates (the cron writing a fresh declined row when an
+  // absence is created) still get auto-flipped to declined. User-driven
+  // creates DO NOT — a member's explicit "Yes" / "Maybe" click is the source
+  // of truth, even if a covering absence still exists. Policy aligned with
+  // the BEFORE UPDATE trigger from migration 038, which clears
+  // `auto_declined_by` on any user-initiated status change for the same
+  // reason: the user's last manual action wins.
+  filter('participations.items.create', async (payload, _meta, { database: db, accountability }) => {
     try {
       if (!payload || !payload.activity_type || !payload.activity_id || !payload.member) return payload
       // If already declined, nothing to do.
       if (payload.status === 'declined') return payload
+      // Skip when the request is user-driven — trust the explicit RSVP.
+      // Cron writes have null accountability (system context), so
+      // autoDeclineForAbsence's INSERT path still passes through this filter
+      // and would no-op (it sets status=declined upfront).
+      if (accountability?.user) return payload
 
       // Resolve activity date based on activity_type
       let activityDate = null

@@ -450,6 +450,11 @@ export interface Participation extends BaseRecord {
   position_1?: VolleyPosition | null
   position_2?: VolleyPosition | null
   position_3?: VolleyPosition | null
+  /** Set by the autoDeclineForAbsence hook when the cron writes a forced
+   *  decline. Cleared to NULL by the BEFORE UPDATE trigger the moment a user
+   *  changes `status` (migration 038), so a non-null marker is the definitive
+   *  signal that "this row was system-set, not user-set". */
+  auto_declined_by?: number | null
 }
 
 export interface UserLog extends BaseRecord {

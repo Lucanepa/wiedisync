@@ -248,6 +248,42 @@ export default function ParticipationRosterModal({
       : regularLoading
   const isLoading = (isClubWide ? clubWideLoading || clubWidePartsLoading : membersLoading) || participationsLoading
 
+  // Staff-side note edit. Creates a participation row with `status: null` if
+  // none exists yet — lets a coach attach context like "Out for the season"
+  // to a player who hasn't RSVPed. Empty input clears the note (no-op when
+  // already empty).
+  const handleNoteChange = useCallback(async (memberId: string, newNote: string) => {
+    if (!activityId) return
+    const currentParticipation = participations.find(p => p.member === memberId)
+    const trimmed = (newNote ?? '').trim()
+    const currentNote = (currentParticipation?.note ?? '').trim()
+    if (trimmed === currentNote) return
+    setSavingMemberIds(prev => new Set(prev).add(memberId))
+    try {
+      if (currentParticipation) {
+        await update(currentParticipation.id, { note: trimmed })
+      } else if (trimmed) {
+        await create({
+          member: memberId,
+          activity_type: activityType,
+          activity_id: activityId,
+          status: null as unknown as Participation['status'],
+          note: trimmed,
+          guest_count: 0,
+          is_staff: false,
+        })
+      }
+    } catch {
+      // useMutation handles logging; UI reverts via refetch
+    } finally {
+      setSavingMemberIds(prev => {
+        const next = new Set(prev)
+        next.delete(memberId)
+        return next
+      })
+    }
+  }, [activityId, activityType, participations, create, update])
+
   const handleStatusChange = useCallback(async (memberId: string, newStatus: string) => {
     setEditingMemberId(null)
     if (!activityId) return
@@ -516,6 +552,57 @@ export default function ParticipationRosterModal({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter, memberList, participations, absences])
 
+  // ---- Edit attribution (migration 046) ------------------------------------
+  // Map directus_users.id → display name for the "Edited by …" line. We can
+  // only resolve names of editors who are themselves members of one of the
+  // teams whose roster we loaded; admins / coaches from other teams fall
+  // back to a generic "Staff" label. Cheap rebuild because `members` only
+  // changes when the team set or roster shape changes.
+  const editorNameByUserId = useMemo(() => {
+    const m = new Map<string, string>()
+    const all = [...memberList, ...staffMembers]
+    for (const member of all) {
+      if (member.user) m.set(member.user, `${member.first_name ?? ''} ${member.last_name ?? ''}`.trim() || t('staffFallback', { defaultValue: 'Staff' }))
+    }
+    return m
+  }, [memberList, staffMembers, t])
+
+  /** Returns per-field attribution lines (migration 047).
+   *  - `status`: surfaced when `last_status_edited_by` differs from the
+   *    member's own `user` field (third-party staff status edit).
+   *  - `note`: same logic, against `last_note_edited_*`.
+   *  Either side may be null independently; a row can show only the note
+   *  attribution if the coach edited the note while the player set their
+   *  own status. Members with no linked directus_users account (shell
+   *  records) can't self-edit, so any populated tracker is by definition a
+   *  staff edit. */
+  function getEditAttribution(member: Member, p: Participation | null): {
+    status: { name: string; status: string; at: string } | null
+    note: { name: string; at: string } | null
+  } {
+    // App-wide format: `dd.mm.yyyy, HH:MM` (Swiss dot date + 24h time).
+    // formatDateTimeCompact (= formatDateCompactZurich + formatTimeZurich)
+    // is hardcoded to `de-CH` so the format is uniform regardless of the
+    // user's browser language. See `INFRA.md → Time & Date Formatting`.
+    const fmtAt = (iso: string) => formatDateTimeCompact(iso)
+    let statusAttr: { name: string; status: string; at: string } | null = null
+    let noteAttr: { name: string; at: string } | null = null
+    if (p?.last_status_edited_by && p.last_status_edited_at && (!member.user || member.user !== p.last_status_edited_by)) {
+      statusAttr = {
+        name: editorNameByUserId.get(p.last_status_edited_by) ?? t('staffFallback', { defaultValue: 'Staff' }),
+        status: statusLabelText(member.id, p.status ?? null),
+        at: fmtAt(p.last_status_edited_at),
+      }
+    }
+    if (p?.last_note_edited_by && p.last_note_edited_at && (!member.user || member.user !== p.last_note_edited_by)) {
+      noteAttr = {
+        name: editorNameByUserId.get(p.last_note_edited_by) ?? t('staffFallback', { defaultValue: 'Staff' }),
+        at: fmtAt(p.last_note_edited_at),
+      }
+    }
+    return { status: statusAttr, note: noteAttr }
+  }
+
   // ---- Export ---------------------------------------------------------------
   const printRef = useRef<HTMLDivElement>(null)
   const [exporting, setExporting] = useState<null | 'csv' | 'png' | 'pdf'>(null)
@@ -548,8 +635,15 @@ export default function ParticipationRosterModal({
   }, [tt])
 
   const exportRows = useMemo<RosterExportRow[]>(() => {
+    const formatAttribution = (member: Member, p: Participation | null): string => {
+      const { status: statusAttr, note: noteAttr } = getEditAttribution(member, p)
+      const lines: string[] = []
+      if (statusAttr) lines.push(t('editedByOn', { defaultValue: 'Edited to {{status}} by {{name}} on {{at}}', ...statusAttr }))
+      if (noteAttr) lines.push(t('noteEditedByOn', { defaultValue: 'Note edited by {{name}} on {{at}}', ...noteAttr }))
+      return lines.join('\n')
+    }
     const rows: RosterExportRow[] = filteredMemberList.map((m) => {
-      const p = participations.find((pt) => pt.member === m.id)
+      const p = participations.find((pt) => pt.member === m.id && !pt.is_staff) ?? participations.find((pt) => pt.member === m.id) ?? null
       const status = getMemberStatus(m.id)
       const absenceReason = getMemberAbsenceReason(m.id)
       const role = leadershipRoles.get(m.id)
@@ -562,6 +656,7 @@ export default function ParticipationRosterModal({
         guests: p?.guest_count ?? 0,
         note: absenceReason || p?.note || '',
         rsvpAt: ts ? formatDateTimeCompact(ts) : '',
+        editedBy: formatAttribution(m, p),
       }
     })
     // When filter is "All", append waitlist + staff so the export reflects
@@ -580,10 +675,11 @@ export default function ParticipationRosterModal({
           guests: wp.guest_count ?? 0,
           note: wp.note || '',
           rsvpAt: ts ? formatDateTimeCompact(ts) : '',
+          editedBy: formatAttribution(m, wp),
         })
       }
       for (const sm of staffMembers) {
-        const sp = staffParticipations.find((p) => p.member === sm.id)
+        const sp = staffParticipations.find((p) => p.member === sm.id) ?? null
         const ts = sp?.date_updated ?? sp?.date_created ?? ''
         rows.push({
           name: `${(sm.first_name ?? '').trim()} ${(sm.last_name ?? '').trim()}`.trim() + ' (Staff)',
@@ -593,6 +689,7 @@ export default function ParticipationRosterModal({
           guests: sp?.guest_count ?? 0,
           note: sp?.note || '',
           rsvpAt: ts ? formatDateTimeCompact(ts) : '',
+          editedBy: formatAttribution(sm, sp),
         })
       }
     }
@@ -650,7 +747,7 @@ export default function ParticipationRosterModal({
       activityTitle: title,
       activityDate: formatDate(activityDate.split(' ')[0]),
       filterLabel,
-      exportedAt: new Date().toLocaleString(),
+      exportedAt: formatDateTimeCompact(new Date().toISOString()),
       totalCount: exportRows.length,
       positionsSummary: positionsSummaryText,
     }
@@ -963,13 +1060,22 @@ export default function ParticipationRosterModal({
             <tbody>
               {exportRows.map((r, i) => (
                 <tr key={i} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                  <td style={{ padding: '6px 8px', color: '#6b7280', fontVariantNumeric: 'tabular-nums' }}>{r.jerseyNumber ?? ''}</td>
-                  <td style={{ padding: '6px 8px' }}>{r.name}</td>
-                  <td style={{ padding: '6px 8px', color: '#6b7280' }}>{r.positions}</td>
-                  <td style={{ padding: '6px 8px' }}>{r.status}</td>
-                  <td style={{ padding: '6px 8px', color: '#6b7280', fontVariantNumeric: 'tabular-nums' }}>{r.guests > 0 ? `+${r.guests}` : ''}</td>
-                  <td style={{ padding: '6px 8px', color: '#6b7280' }}>{r.note}</td>
-                  <td style={{ padding: '6px 8px', color: '#9ca3af', fontSize: '11px' }}>{r.rsvpAt}</td>
+                  <td style={{ padding: '6px 8px', color: '#6b7280', fontVariantNumeric: 'tabular-nums', verticalAlign: 'top' }}>{r.jerseyNumber ?? ''}</td>
+                  <td style={{ padding: '6px 8px', verticalAlign: 'top' }}>
+                    {r.name}
+                    {r.editedBy && (
+                      <div style={{ marginTop: '2px', fontSize: '10px', fontStyle: 'italic', color: '#9ca3af' }}>
+                        {r.editedBy.split('\n').map((line, idx) => (
+                          <div key={idx}>{line}</div>
+                        ))}
+                      </div>
+                    )}
+                  </td>
+                  <td style={{ padding: '6px 8px', color: '#6b7280', verticalAlign: 'top' }}>{r.positions}</td>
+                  <td style={{ padding: '6px 8px', verticalAlign: 'top' }}>{r.status}</td>
+                  <td style={{ padding: '6px 8px', color: '#6b7280', fontVariantNumeric: 'tabular-nums', verticalAlign: 'top' }}>{r.guests > 0 ? `+${r.guests}` : ''}</td>
+                  <td style={{ padding: '6px 8px', color: '#6b7280', verticalAlign: 'top' }}>{r.note}</td>
+                  <td style={{ padding: '6px 8px', color: '#9ca3af', fontSize: '11px', verticalAlign: 'top' }}>{r.rsvpAt}</td>
                 </tr>
               ))}
             </tbody>
@@ -1087,19 +1193,40 @@ export default function ParticipationRosterModal({
                     )
                   })()
                 ) : editingMemberId === member.id ? (
-                  // Inline select dropdown (editing mode)
-                  <select
-                    autoFocus
-                    defaultValue={participations.find(p => p.member === member.id)?.status ?? ''}
-                    onChange={(e) => handleStatusChange(member.id, e.target.value)}
-                    onBlur={() => setTimeout(() => setEditingMemberId(prev => prev === member.id ? null : prev), 150)}
-                    className="shrink-0 rounded-md border border-gray-300 bg-white px-1.5 py-0.5 text-xs dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+                  // Inline edit panel: status dropdown + note input. Both auto-save
+                  // (status on `onChange`, note on `onBlur`). The wrapper's `onBlur`
+                  // only closes the panel when focus leaves the whole panel — tabbing
+                  // between the select and the input keeps it open. Saving the status
+                  // also closes; saving the note alone leaves it open so the editor
+                  // can keep tweaking.
+                  <div
+                    className="flex shrink-0 items-center gap-1.5"
+                    onBlur={(e) => {
+                      if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                        setTimeout(() => setEditingMemberId(prev => prev === member.id ? null : prev), 150)
+                      }
+                    }}
                   >
-                    <option value="">{t('clearStatus')}</option>
-                    <option value="confirmed">{t('confirmed')}</option>
-                    {allowMaybe && <option value="tentative">{t('tentative')}</option>}
-                    <option value="declined">{t('declined')}</option>
-                  </select>
+                    <select
+                      autoFocus
+                      defaultValue={participations.find(p => p.member === member.id && !p.is_staff)?.status ?? participations.find(p => p.member === member.id)?.status ?? ''}
+                      onChange={(e) => handleStatusChange(member.id, e.target.value)}
+                      className="rounded-md border border-gray-300 bg-white px-1.5 py-0.5 text-xs dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+                    >
+                      <option value="">{t('clearStatus')}</option>
+                      <option value="confirmed">{t('confirmed')}</option>
+                      {allowMaybe && <option value="tentative">{t('tentative')}</option>}
+                      <option value="declined">{t('declined')}</option>
+                    </select>
+                    <input
+                      type="text"
+                      placeholder={t('addNotePlaceholder', { defaultValue: 'Note…' })}
+                      defaultValue={participations.find(p => p.member === member.id && !p.is_staff)?.note ?? participations.find(p => p.member === member.id)?.note ?? ''}
+                      onBlur={(e) => handleNoteChange(member.id, e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur() }}
+                      className="w-32 rounded-md border border-gray-300 bg-white px-2 py-0.5 text-xs dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+                    />
+                  </div>
                 ) : (
                   // Status badge + optional pencil icon
                   <div className="flex shrink-0 items-center gap-1">
@@ -1148,6 +1275,29 @@ export default function ParticipationRosterModal({
                     if (note === posStr) return null
                   }
                   return <p className="break-words px-3 pb-2 pl-14 text-xs italic text-gray-400">{note}</p>
+                })()}
+                {/* Staff edit attribution (migration 047) — independent lines
+                    for status and note edits. Each surfaces only when its
+                    tracker resolves to a user other than the member's own;
+                    self-edits stay clean. Generic "Staff" fallback when the
+                    editor isn't on any of the team rosters we loaded. */}
+                {(() => {
+                  const { status: statusAttr, note: noteAttr } = getEditAttribution(member, participation ?? null)
+                  if (!statusAttr && !noteAttr) return null
+                  return (
+                    <div className="px-3 pb-2 pl-14 text-[11px] italic text-gray-400 dark:text-gray-500">
+                      {statusAttr && (
+                        <p className="break-words">
+                          {t('editedByOn', { defaultValue: 'Edited to {{status}} by {{name}} on {{at}}', ...statusAttr })}
+                        </p>
+                      )}
+                      {noteAttr && (
+                        <p className="break-words">
+                          {t('noteEditedByOn', { defaultValue: 'Note edited by {{name}} on {{at}}', ...noteAttr })}
+                        </p>
+                      )}
+                    </div>
+                  )
                 })()}
               </div>
             )

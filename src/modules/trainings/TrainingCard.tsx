@@ -350,12 +350,6 @@ function TrainingParticipation({ training, existingParticipation, onSaved }: { t
           >
             <Check className="h-3 w-3" />
           </button>
-          {noteSaved && (
-            <span className="absolute -top-6 right-0 flex items-center gap-1 whitespace-nowrap rounded-md bg-green-600 px-2 py-0.5 text-[10px] font-medium text-white shadow-lg animate-fade-in">
-              <Check className="h-2.5 w-2.5" />
-              {t('noteSaved')}
-            </span>
-          )}
         </div>
       )}
     </div>

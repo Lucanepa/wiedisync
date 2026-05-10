@@ -398,13 +398,6 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
                 >
                   <Check className="h-4 w-4" />
                 </button>
-                {/* Note saved confirmation */}
-                {noteSaved && (
-                  <span className="absolute -top-7 right-0 flex items-center gap-1 whitespace-nowrap rounded-md bg-green-600 px-2 py-0.5 text-[11px] font-medium text-white shadow-lg animate-fade-in">
-                    <Check className="h-3 w-3" />
-                    {t('participation:noteSaved')}
-                  </span>
-                )}
               </div>
             )}
           </div>

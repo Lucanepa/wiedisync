@@ -13,6 +13,11 @@ export type RosterExportRow = {
   guests: number
   note: string
   rsvpAt: string
+  /** Localized "Edited to X by Y on Z" sentence when the row was last
+   *  touched by a staff member other than the member themselves; empty
+   *  when self-edit or system-set. Rendered as a small italic line under
+   *  the table row in PNG/PDF and as a separate column in CSV. */
+  editedBy: string
 }
 
 export type RosterExportMeta = {
@@ -33,7 +38,7 @@ export type RosterExportMeta = {
   positionsSummary: string
 }
 
-const COLUMNS = ['Name', 'Number', 'Positions', 'Status', 'Guests', 'Note', 'RSVP time']
+const COLUMNS = ['Name', 'Number', 'Positions', 'Status', 'Guests', 'Note', 'RSVP time', 'Edited by']
 
 /** Replace characters that break filenames on Windows/Unix. Em/en dashes
  *  collapse with surrounding whitespace into a single `_` so titles like
@@ -70,6 +75,7 @@ export function exportRosterCsv(rows: RosterExportRow[], meta: RosterExportMeta)
     r.guests,
     r.note,
     r.rsvpAt,
+    r.editedBy,
   ])
   const dataCsv = toCSV(COLUMNS, tableRows)
   // Trim metadata: title (already includes the date in our convention) +

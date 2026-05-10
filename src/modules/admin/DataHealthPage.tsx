@@ -203,7 +203,7 @@ export default function DataHealthPage() {
     try {
       const data = await runAllChecks()
       setResults(data)
-      setLastCheck(new Date().toLocaleTimeString(currentLocale()))
+      setLastCheck(new Date().toLocaleTimeString(currentLocale(), { hour12: false }))
     } catch (err) {
       toast.error(String(err))
     } finally {

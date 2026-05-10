@@ -27,5 +27,21 @@ export default defineConfig({
   },
   server: {
     port: 1234,
+    // `npm run dev:prod` sets VITE_PROD_DATA=1 → all `/directus/*` requests
+    // (REST + WS) get reverse-proxied to prod Directus. The browser only
+    // ever talks to localhost:1234, so CORS never engages. Writes hit
+    // PROD — `src/lib/api.ts` prints a red console banner on startup so
+    // this can't be forgotten.
+    ...(process.env.VITE_PROD_DATA === '1' && {
+      proxy: {
+        '/directus': {
+          target: 'https://directus.kscw.ch',
+          changeOrigin: true,
+          rewrite: (p: string) => p.replace(/^\/directus/, ''),
+          ws: true,
+          secure: true,
+        },
+      },
+    }),
   },
 })

@@ -41,15 +41,18 @@ function parseFlexible(input: string): Date {
   return new Date(input + 'T00:00:00Z');
 }
 
-/** Format HH:mm in Europe/Zurich, accepts ISO UTC, "YYYY-MM-DD HH:MM:SS" (treated as UTC), or bare "HH:MM". */
-export function formatTimeZurich(input: string | Date | null | undefined, locale?: string): string {
+/** Format HH:mm in Europe/Zurich, accepts ISO UTC, "YYYY-MM-DD HH:MM:SS" (treated as UTC), or bare "HH:MM".
+ *  Locale is hardcoded to `de-CH` so the output is always 24-hour `HH:mm`
+ *  regardless of the user's browser language — the en-US default would
+ *  produce `2:32 PM` style output on English-speaking clients. */
+export function formatTimeZurich(input: string | Date | null | undefined, locale: string = 'de-CH'): string {
   if (!input) return '';
   if (typeof input === 'string' && /^\d{2}:\d{2}(:\d{2})?$/.test(input)) return input.slice(0, 5);
   const d = typeof input === 'string'
     ? parseFlexible(input)
     : input;
   if (Number.isNaN(d.getTime())) return '';
-  return new Intl.DateTimeFormat(locale ?? currentLocale(), {
+  return new Intl.DateTimeFormat(locale, {
     timeZone: ZURICH, hour: '2-digit', minute: '2-digit', hour12: false,
   }).format(d);
 }
@@ -66,15 +69,20 @@ export function formatDateZurich(input: string | Date | null | undefined, locale
   }).format(d);
 }
 
-/** Format dd.mm.yy (compact) in Europe/Zurich. */
-export function formatDateCompactZurich(input: string | Date | null | undefined, locale?: string): string {
+/** Format dd.mm.yyyy (compact) in Europe/Zurich.
+ *  Locale is hardcoded to `de-CH` so the output is always Swiss dot format
+ *  (`10.05.2026`) regardless of the user's browser language — en-US default
+ *  yields `05/10/26` (mm/dd/yy), which is wrong for our audience and reads
+ *  as the wrong date for half the year. App-wide convention is dd.mm.yyyy
+ *  (4-digit year) per `CLAUDE.md → Time & Date Formatting`. */
+export function formatDateCompactZurich(input: string | Date | null | undefined, locale: string = 'de-CH'): string {
   if (!input) return '';
   const d = typeof input === 'string'
     ? parseFlexible(input)
     : input;
   if (Number.isNaN(d.getTime())) return '';
-  return new Intl.DateTimeFormat(locale ?? currentLocale(), {
-    timeZone: ZURICH, day: '2-digit', month: '2-digit', year: '2-digit',
+  return new Intl.DateTimeFormat(locale, {
+    timeZone: ZURICH, day: '2-digit', month: '2-digit', year: 'numeric',
   }).format(d);
 }
 

@@ -2521,5 +2521,46 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     }
   })
 
-  log.info('KSCW hooks loaded: role-sync (5 actions, 2 filters), Turnstile, member privacy, registration approval, Spielplaner scope guard, participation absence-aware decline, guest-level RSVP gate, 11 crons (validations+notifications in Postgres)')
+  // ── Edit attribution (migration 047, replaces 046) ──────────────────────
+  // Per-field trackers: `last_status_edited_*` and `last_note_edited_*`.
+  // The roster modal renders "Edited to <status> by <name> on <date>" and
+  // "Note edited by <name> on <date>" as INDEPENDENT lines, so a coach who
+  // edits only the note doesn't reset the status attribution and vice
+  // versa. Logic:
+  //   • If `status` is in the payload → stamp last_status_edited_*
+  //   • If `note`   is in the payload → stamp last_note_edited_*
+  // System-context writes (null accountability — cron auto-decline,
+  // hall-closure unwind) leave both pairs untouched so they remain
+  // distinguishable from staff edits. Filters always overwrite the
+  // client-supplied tracker fields so they can't be spoofed from the API.
+  filter('participations.items.create', async (payload, _meta, { accountability }) => {
+    if (!accountability?.user) return payload
+    const now = new Date().toISOString()
+    const out = { ...payload }
+    if (Object.prototype.hasOwnProperty.call(payload, 'status')) {
+      out.last_status_edited_by = accountability.user
+      out.last_status_edited_at = now
+    }
+    if (Object.prototype.hasOwnProperty.call(payload, 'note') && (payload.note ?? '') !== '') {
+      out.last_note_edited_by = accountability.user
+      out.last_note_edited_at = now
+    }
+    return out
+  })
+  filter('participations.items.update', async (payload, _meta, { accountability }) => {
+    if (!accountability?.user) return payload
+    const now = new Date().toISOString()
+    const out = { ...payload }
+    if (Object.prototype.hasOwnProperty.call(payload, 'status')) {
+      out.last_status_edited_by = accountability.user
+      out.last_status_edited_at = now
+    }
+    if (Object.prototype.hasOwnProperty.call(payload, 'note')) {
+      out.last_note_edited_by = accountability.user
+      out.last_note_edited_at = now
+    }
+    return out
+  })
+
+  log.info('KSCW hooks loaded: role-sync (5 actions, 2 filters), Turnstile, member privacy, registration approval, Spielplaner scope guard, participation absence-aware decline, guest-level RSVP gate, edit-attribution (migration 046), 11 crons (validations+notifications in Postgres)')
 }

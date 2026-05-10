@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 import { Pencil, ChevronDown, Check, Download, FileText, Image as ImageIcon, FileType } from 'lucide-react'
 import Modal from '@/components/Modal'
 import {
@@ -422,8 +424,16 @@ export default function ParticipationRosterModal({
   }
 
   function getMemberStatus(memberId: string): Participation['status'] | null {
-    if (coveringAbsenceByMember.has(String(memberId))) return 'declined'
     const p = participations.find(p => p.member === memberId)
+    // Explicit user RSVP wins over an absence overlay: the BEFORE UPDATE
+    // trigger (migration 038) clears `auto_declined_by` to NULL the moment a
+    // user changes `status`, so a row with a null marker is definitively
+    // user-owned — its status is sacred even if a covering absence still
+    // exists. Only fall back to the absence-driven decline when there is no
+    // participation row, OR the row was last touched by the auto-decline
+    // hook (marker still set).
+    if (p && p.auto_declined_by == null) return p.status
+    if (coveringAbsenceByMember.has(String(memberId))) return 'declined'
     return p?.status ?? null
   }
 
@@ -465,7 +475,12 @@ export default function ParticipationRosterModal({
 
   function statusLabelText(memberId: string, baseStatus: Participation['status'] | null): string {
     if (!baseStatus) return t('notResponded')
-    if (absentMemberIds.has(memberId)) {
+    // Only render the absence-flavoured label when the decline was actually
+    // driven by the absence: row missing, or row still carries the auto
+    // marker (cron wrote it). A user-set status overrides absence overlay.
+    const p = participations.find((pt) => pt.member === memberId)
+    const isAbsenceDecline = absentMemberIds.has(memberId) && baseStatus === 'declined' && (p == null || p.auto_declined_by != null)
+    if (isAbsenceDecline) {
       const isWeekly = coveringAbsenceByMember.get(String(memberId))?.type === 'weekly'
       return t(isWeekly ? 'declinedUnavailable' : 'declinedAbsence')
     }
@@ -478,18 +493,24 @@ export default function ParticipationRosterModal({
     return base + suffix
   }
 
+  const translatePositions = useCallback((positions: string[] | undefined): string => {
+    return (positions ?? []).map((p) => {
+      const key = getPositionI18nKey(p)
+      return key ? tt(key) : p
+    }).join(', ')
+  }, [tt])
+
   const exportRows = useMemo<RosterExportRow[]>(() => {
     const rows: RosterExportRow[] = filteredMemberList.map((m) => {
       const p = participations.find((pt) => pt.member === m.id)
       const status = getMemberStatus(m.id)
       const absenceReason = getMemberAbsenceReason(m.id)
       const role = leadershipRoles.get(m.id)
-      const positions = (m.position ?? []).join(', ')
       const ts = p?.date_updated ?? p?.date_created ?? ''
       return {
         name: fullName(m, role),
         jerseyNumber: m.number && m.number > 0 ? m.number : null,
-        positions,
+        positions: translatePositions(m.position),
         status: statusLabelText(m.id, status),
         guests: p?.guest_count ?? 0,
         note: absenceReason || p?.note || '',
@@ -507,7 +528,7 @@ export default function ParticipationRosterModal({
         rows.push({
           name: fullName(m, role),
           jerseyNumber: m.number && m.number > 0 ? m.number : null,
-          positions: (m.position ?? []).join(', '),
+          positions: translatePositions(m.position),
           status: t('waitlisted'),
           guests: wp.guest_count ?? 0,
           note: wp.note || '',
@@ -520,7 +541,7 @@ export default function ParticipationRosterModal({
         rows.push({
           name: `${(sm.first_name ?? '').trim()} ${(sm.last_name ?? '').trim()}`.trim() + ' (Staff)',
           jerseyNumber: sm.number && sm.number > 0 ? sm.number : null,
-          positions: (sm.position ?? []).join(', '),
+          positions: translatePositions(sm.position),
           status: sp?.status ? t(sp.status) : t('notResponded'),
           guests: sp?.guest_count ?? 0,
           note: sp?.note || '',
@@ -530,7 +551,7 @@ export default function ParticipationRosterModal({
     }
     return rows
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filteredMemberList, participations, absences, leadershipRoles, statusFilter, waitlistedParts, staffMembers, staffParticipations, memberList, t])
+  }, [filteredMemberList, participations, absences, leadershipRoles, statusFilter, waitlistedParts, staffMembers, staffParticipations, memberList, t, translatePositions])
 
   // Position breakdown of the same population that exportRows covers — counts
   // each member once per declared position (a setter/outside hybrid contributes
@@ -596,10 +617,16 @@ export default function ParticipationRosterModal({
       }
     } catch (err) {
       console.error('Roster export failed', err)
+      // Stale-bundle dynamic-import failures get a clear actionable message;
+      // anything else falls through to a generic notice.
+      const message = (err instanceof Error && err.name === 'ExportLibraryError')
+        ? err.message
+        : t('exportFailed', { defaultValue: 'Export failed. Please try again.' })
+      toast.error(message)
     } finally {
       setExporting(null)
     }
-  }, [exporting, exportRows, exportMeta])
+  }, [exporting, exportRows, exportMeta, t])
 
   // Compute short display names: first name only, disambiguate with last-name initials
   const displayNames = useMemo(() => {
@@ -789,23 +816,29 @@ export default function ParticipationRosterModal({
         )
       })()}
 
-      {/* Hidden printable view for PNG/PDF export — kept off-screen but rendered
-          so the snapshot reflects current data. Light-themed so exports look
-          consistent regardless of the user's dark-mode setting. */}
-      {canEditRoster && (
+      {/* Hidden printable view for PNG/PDF export.
+          Portalled to document.body so it escapes the Vaul Drawer / Radix
+          Dialog ancestor — those carry a `transform` during open + at rest,
+          which turns `position: fixed` into a relative anchor and clipped
+          the snapshot to a blank rectangle. opacity:0 + pointer-events:none
+          + z-index:-1 keeps it invisible and inert while still laying out
+          properly so html-to-image can measure + paint it. */}
+      {canEditRoster && createPortal(
         <div
           ref={printRef}
           aria-hidden="true"
           style={{
             position: 'fixed',
-            left: '-10000px',
+            left: 0,
             top: 0,
             width: '800px',
             backgroundColor: '#ffffff',
             color: '#111827',
             padding: '24px',
-            fontFamily: 'system-ui, -apple-system, sans-serif',
+            fontFamily: 'Arial, Helvetica, sans-serif',
             pointerEvents: 'none',
+            opacity: 0,
+            zIndex: -1,
           }}
         >
           <div style={{ borderBottom: '2px solid #e5e7eb', paddingBottom: '12px', marginBottom: '16px' }}>
@@ -877,7 +910,8 @@ export default function ParticipationRosterModal({
           <p style={{ marginTop: '16px', fontSize: '11px', color: '#9ca3af', textAlign: 'right' }}>
             {t('exportedAt', { defaultValue: 'Exported' })} {exportMeta.exportedAt}
           </p>
-        </div>
+        </div>,
+        document.body,
       )}
 
       {/* Deadline banner */}
@@ -1002,9 +1036,17 @@ export default function ParticipationRosterModal({
                   <div className="flex shrink-0 items-center gap-1">
                     {status ? (
                       <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[status] ?? ''}`}>
-                        {absentMemberIds.has(member.id)
-                          ? t(coveringAbsenceByMember.get(String(member.id))?.type === 'weekly' ? 'declinedUnavailable' : 'declinedAbsence')
-                          : t(status)}
+                        {/* Only flavour the badge as "Unavailable / Declined (Absence)"
+                            when the status is genuinely declined-by-absence —
+                            i.e. the row is missing or still carries the auto
+                            marker. A user who manually flipped to confirmed /
+                            tentative wants their literal status rendered. */}
+                        {(() => {
+                          const p = participations.find(pt => pt.member === member.id)
+                          const isAbsenceDecline = absentMemberIds.has(member.id) && status === 'declined' && (p == null || p.auto_declined_by != null)
+                          if (!isAbsenceDecline) return t(status)
+                          return t(coveringAbsenceByMember.get(String(member.id))?.type === 'weekly' ? 'declinedUnavailable' : 'declinedAbsence')
+                        })()}
                       </span>
                     ) : (
                       <span className="text-xs text-gray-400 dark:text-gray-500">

@@ -29,14 +29,30 @@ export type RosterExportMeta = {
 
 const COLUMNS = ['Name', 'Number', 'Positions', 'Status', 'Guests', 'Note', 'RSVP time']
 
-/** Replace characters that break filenames on Windows/Unix. */
+/** Replace characters that break filenames on Windows/Unix. Em/en dashes
+ *  collapse with surrounding whitespace into a single `_` so titles like
+ *  "H3 — 11/05/2026" don't end up as "H3-—-11_05_2026" (read as "---" by
+ *  the user). Then collapse runs of `-` and `_` to a single `_`. */
 function sanitizeFilename(s: string): string {
-  return s.replace(/[\\/:*?"<>|]/g, '_').replace(/\s+/g, '-').slice(0, 80)
+  return s
+    .replace(/[\\/:*?"<>|]/g, '_')
+    .replace(/\s*[—–-]+\s*/g, '_')
+    .replace(/\s+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '')
+    .slice(0, 80)
 }
 
 export function buildExportFilename(meta: RosterExportMeta, ext: 'csv' | 'png' | 'pdf'): string {
-  const base = sanitizeFilename(`${meta.activityTitle}_${meta.activityDate}_${meta.filterLabel}`)
-  return `${base}.${ext}`
+  // The activity title already includes the date for trainings/games (e.g.
+  // "H3 — 11/05/2026"), so pasting `_<date>` after it produced the
+  // "H3-—-11_05_2026_11_05_2026" duplicate. Trust the title to be unique
+  // enough; fall back to date when the title doesn't contain it.
+  const titleHasDate = meta.activityDate && meta.activityTitle.includes(meta.activityDate)
+  const parts = titleHasDate
+    ? [meta.activityTitle, meta.filterLabel]
+    : [meta.activityTitle, meta.activityDate, meta.filterLabel]
+  return `${sanitizeFilename(parts.filter(Boolean).join('_'))}.${ext}`
 }
 
 export function exportRosterCsv(rows: RosterExportRow[], meta: RosterExportMeta): void {
@@ -50,21 +66,49 @@ export function exportRosterCsv(rows: RosterExportRow[], meta: RosterExportMeta)
     r.rsvpAt,
   ])
   const dataCsv = toCSV(COLUMNS, tableRows)
-  // Lead with a small metadata block (Excel/Sheets render it as plain rows).
-  // BOM up front so Excel autodetects UTF-8 for umlauts in names.
-  const metaLines = [
-    meta.activityTitle,
-    meta.activityDate,
-    `Filter: ${meta.filterLabel} (${meta.totalCount})`,
-  ]
+  // Trim metadata: title (already includes the date in our convention) +
+  // filter + position summary + exported timestamp. Dropped the standalone
+  // date row — duplicated the title and showed up as "11/05/2026" floating
+  // alone on row 2 of the file.
+  const metaLines: string[] = [meta.activityTitle, `Filter: ${meta.filterLabel} (${meta.totalCount})`]
   if (meta.positionsSummary) metaLines.push(`Positions: ${meta.positionsSummary}`)
   metaLines.push(`Exported: ${meta.exportedAt}`, '')
   const metaBlock = metaLines.join('\n')
+  // BOM up front so Excel autodetects UTF-8 for umlauts in names.
   downloadText('﻿' + metaBlock + '\n' + dataCsv, buildExportFilename(meta, 'csv'), 'text/csv;charset=utf-8')
 }
 
+/** Wrap dynamic imports so a stale-bundle (chunk hashes from a prior deploy
+ *  no longer on the server) becomes an actionable user-facing error rather
+ *  than a silent "Failed to fetch dynamically imported module" Sentry. CF
+ *  Pages serves the SPA fallback (index.html) for missing chunk URLs, which
+ *  surfaces as `MIME type "text/html"` in the console. */
+class ExportLibraryError extends Error {
+  readonly lib: string
+  constructor(lib: string, cause: unknown) {
+    super(`Could not load the ${lib} export library. The app may have been updated since you opened this page — please refresh and try again.`)
+    this.name = 'ExportLibraryError'
+    this.lib = lib
+    if (cause instanceof Error) this.stack = `${this.message}\nCaused by: ${cause.stack ?? cause.message}`
+  }
+}
+
+async function loadHtmlToImage() {
+  try { return await import('html-to-image') }
+  catch (err) { throw new ExportLibraryError('image', err) }
+}
+async function loadJsPdf() {
+  try { return await import('jspdf') }
+  catch (err) { throw new ExportLibraryError('PDF', err) }
+}
+
 export async function exportRosterImage(node: HTMLElement, meta: RosterExportMeta): Promise<void> {
-  const { toPng } = await import('html-to-image')
+  const { toPng } = await loadHtmlToImage()
+  // Wait for any custom fonts in the printable view to settle before snapshot
+  // — html-to-image inlines computed styles but can't draw a glyph the font
+  // engine hasn't loaded yet. Cheap on a snapshot path and prevents the
+  // occasional Arial-fallback PNG.
+  if (document.fonts?.ready) await document.fonts.ready
   const dataUrl = await toPng(node, {
     pixelRatio: 2,
     backgroundColor: '#ffffff',
@@ -80,9 +124,10 @@ export async function exportRosterImage(node: HTMLElement, meta: RosterExportMet
 
 export async function exportRosterPdf(node: HTMLElement, meta: RosterExportMeta): Promise<void> {
   const [{ toPng }, { default: jsPDF }] = await Promise.all([
-    import('html-to-image'),
-    import('jspdf'),
+    loadHtmlToImage(),
+    loadJsPdf(),
   ])
+  if (document.fonts?.ready) await document.fonts.ready
   const dataUrl = await toPng(node, {
     pixelRatio: 2,
     backgroundColor: '#ffffff',

@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.6.1'
+const APP_VERSION = '4.6.2'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,35 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.6.2',
+    date: '2026-05-10',
+    sections: [
+      {
+        title: 'Roster: explicit RSVP wins over absence overlay + export polish',
+        items: [
+          'Critical fix: clicking "Yes" on a training/game/event covered by a weekly unavailability now sticks. The participation row was being correctly updated to confirmed (BEFORE UPDATE trigger from migration 038 clears `auto_declined_by` on user-driven status changes — that part still works), but the roster modal\'s `getMemberStatus` checked the absence-cover overlay first and returned `declined` regardless. Logic flipped: a row whose `auto_declined_by` is null is treated as user-owned and its status is sacred; the absence overlay is only consulted when there is no row OR the row still carries the auto-decline marker. Same change to the badge label so a manually-confirmed user no longer renders with the red "Unavailable" pill.',
+          '`Participation` type gains the optional `auto_declined_by?: number | null` field so the frontend can distinguish system-set rows from user-set ones without a separate flag.',
+          'Backend `participations.items.create` filter (the v4.4.10 absence guard) now skips when the request carries user accountability — system-context creates from `autoDeclineForAbsence` (cron writing a fresh declined row when a new absence is created) still get auto-flipped, but a user explicitly POSTing `status: confirmed` is trusted.',
+        ],
+      },
+      {
+        title: 'Bottom sheet UX',
+        items: [
+          'Top close strip on `MoreSheet` and `NotificationPanel` is now one big button covering the full row width, with the visual handle bar inside it. Tap anywhere on the strip — handle, chevron, blank space — to dismiss. Hover/active states give the row a subtle background flash so the affordance is unambiguous.',
+        ],
+      },
+      {
+        title: 'Roster export',
+        items: [
+          'PNG / PDF were exporting blank. The hidden printable view sat at `position: fixed; left: -10000px` inside the modal\'s Vaul Drawer (or Radix Dialog on desktop), and an ancestor `transform` re-anchored the "fixed" coords to the drawer instead of the viewport — html-to-image\'s bounding-rect calculation then captured an empty rectangle. View now portals to `document.body` (escapes the transformed ancestor) at `top:0/left:0` with `opacity:0 + pointer-events:none + z-index:-1` so it lays out at full size while staying invisible and inert. Also waits for `document.fonts.ready` before snapshotting.',
+          'Stale-bundle handling: dynamic imports of `html-to-image` and `jspdf` now throw a typed `ExportLibraryError` ("App may have been updated — please refresh") when CF Pages no longer has the chunk hashes the user\'s loaded SPA references. The export handler shows it as a sonner toast instead of a silent "Failed to fetch dynamically imported module" Sentry.',
+          'Filename: dropped the duplicate date — title already contains it ("H3 — 11/05/2026"), so `<title>_<date>_<filter>.<ext>` produced "H3-—-11_05_2026_11_05_2026_Confirmed.csv". Now `<title>_<filter>.<ext>` when the title already includes the date. Em-dash + en-dash + hyphen runs are also collapsed to single underscores, so the same title becomes "H3_11_05_2026_Confirmed.csv".',
+          'CSV: dropped the redundant date row in the metadata block (line 2 of the file was just the date already in the title row). Position values in the data column are now translated through the `teams` namespace (`positionSetter` → "Setter") instead of leaking the raw enum value, so the data rows match the metadata "Positions:" summary.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.6.1',
     date: '2026-05-10',

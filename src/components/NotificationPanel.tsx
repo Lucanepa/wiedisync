@@ -155,17 +155,17 @@ export default function NotificationPanel({
         <div ref={panelRef} className="pb-safe flex-1 overflow-y-auto overscroll-contain">
         {/* Handle (mobile) + close button */}
         <div className="sticky top-0 z-10 rounded-t-2xl bg-white dark:bg-gray-800 lg:rounded-t-2xl">
-          <div className="relative flex justify-center pb-1 pt-3 lg:hidden">
-            <div className="h-1 w-10 rounded-full bg-gray-300 dark:bg-gray-600" />
-            <button
-              type="button"
-              onClick={startClose}
-              aria-label={t('close', { defaultValue: 'Close' })}
-              className="absolute right-2 top-0 inline-flex h-11 w-11 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-            >
+          <button
+            type="button"
+            onClick={startClose}
+            aria-label={t('close', { defaultValue: 'Close' })}
+            className="relative flex w-full items-center justify-center rounded-t-2xl pb-1 pt-3 transition-colors hover:bg-gray-50 active:bg-gray-100 dark:hover:bg-gray-700/60 dark:active:bg-gray-700 lg:hidden"
+          >
+            <span className="h-1 w-10 rounded-full bg-gray-300 dark:bg-gray-600" />
+            <span className="absolute right-3 top-1.5 inline-flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 dark:text-gray-500">
               <ChevronDown className="h-5 w-5" />
-            </button>
-          </div>
+            </span>
+          </button>
 
           {/* Header */}
           <div className="flex items-center justify-between gap-2 border-b border-gray-200 px-4 pb-3 pt-2 dark:border-gray-700 lg:pt-4">

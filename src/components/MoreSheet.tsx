@@ -220,18 +220,20 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
         onClick={(e) => e.stopPropagation()}
         onAnimationEnd={(e) => { if (e.target === e.currentTarget) onAnimEnd() }}
       >
-        {/* Handle + close button */}
-        <div className="relative flex shrink-0 items-center justify-center rounded-t-2xl bg-white pb-2 pt-3 dark:bg-gray-800">
-          <div className="h-1 w-10 rounded-full bg-gray-300 dark:bg-gray-600" />
-          <button
-            type="button"
-            onClick={startClose}
-            aria-label={t('close', { defaultValue: 'Close' })}
-            className="absolute right-2 top-1 inline-flex h-11 w-11 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-          >
+        {/* Close row — the entire top strip is one big tap target. The visual
+            handle bar in the middle is part of the same button so tapping it
+            also dismisses (no more "is this thing interactive?" guessing). */}
+        <button
+          type="button"
+          onClick={startClose}
+          aria-label={t('close', { defaultValue: 'Close' })}
+          className="relative flex shrink-0 items-center justify-center rounded-t-2xl bg-white pb-2 pt-3 transition-colors hover:bg-gray-50 active:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700/60 dark:active:bg-gray-700"
+        >
+          <span className="h-1 w-10 rounded-full bg-gray-300 dark:bg-gray-600" />
+          <span className="absolute right-3 top-1.5 inline-flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 dark:text-gray-500">
             <ChevronDown className="h-5 w-5" />
-          </button>
-        </div>
+          </span>
+        </button>
 
         {/* Scrollable body */}
         <div className="pb-safe flex-1 overflow-y-auto overscroll-contain">

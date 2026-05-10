@@ -2,6 +2,26 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## v4.6.2 — 2026-05-10
+
+### Roster: explicit RSVP wins over absence overlay
+
+- **Critical**: clicking "Yes" on an activity covered by a weekly unavailability now sticks. The participation row was being correctly updated to confirmed (BEFORE UPDATE trigger from migration 038 clears `auto_declined_by` on user status changes — that part still works), but the roster modal's `getMemberStatus` checked the absence-cover overlay **first** and returned `declined` regardless of the row's actual status. Logic flipped: a participation row whose `auto_declined_by` is null is treated as user-owned and its status is sacred; the absence overlay is only consulted when there is no row OR the row still carries the auto-decline marker.
+- Same change applied to the row badge label and to `statusLabelText` (used by the roster export) so a manually-confirmed user never renders as "Unavailable" / "Declined (Absence)".
+- `Participation` type gains the optional `auto_declined_by?: number | null` field so the frontend can distinguish system-set rows from user-set ones.
+- Backend `participations.items.create` filter (the v4.4.10 absence guard) now skips when the request carries user accountability — `autoDeclineForAbsence` (cron writing fresh declined rows when an absence is created) still works because that path runs in system context with null accountability.
+
+### Bottom sheet UX
+
+- Top close strip on `MoreSheet` and `NotificationPanel` is now one big full-width button, with the visual handle bar inside it. Tap anywhere on the strip — handle, chevron, blank space — to dismiss. Hover/active states give the row a subtle background flash.
+
+### Roster export
+
+- **PNG / PDF were blank.** The hidden printable view sat at `position: fixed; left: -10000px` inside the modal's Vaul Drawer (or Radix Dialog on desktop), and an ancestor `transform` re-anchored the "fixed" coords to the drawer instead of the viewport — html-to-image's bounding-rect calc then captured an empty rectangle. View now portals to `document.body` (escapes the transformed ancestor) at `top:0/left:0` with `opacity:0 + pointer-events:none + z-index:-1` so it lays out at full size while staying invisible and inert. Also waits for `document.fonts.ready` before snapshotting.
+- **Stale-bundle handling**: dynamic imports of `html-to-image` and `jspdf` now throw a typed `ExportLibraryError` ("App may have been updated — please refresh") when CF Pages no longer has the chunk hashes the user's loaded SPA references. Surfaced as a sonner toast.
+- **Filename**: dropped the duplicate date — title already contains it ("H3 — 11/05/2026"), so the old pattern produced "H3-—-11_05_2026_11_05_2026_Confirmed.csv". Now `<title>_<filter>.<ext>` when the title already includes the date. Em/en/hyphen dashes collapse to single underscores, so the result is "H3_11_05_2026_Confirmed.csv".
+- **CSV**: dropped the redundant date metadata row (was just duplicating the title's date). Position values in the data column are now translated through the `teams` namespace, matching the "Positions:" summary line.
+
 ## v4.6.1 — 2026-05-10
 
 ### Explicit close affordance on bottom sheets

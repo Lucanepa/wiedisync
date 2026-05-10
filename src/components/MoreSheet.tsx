@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../hooks/useAuth'
@@ -199,6 +199,37 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
   const { t } = useTranslation('nav')
   const { closing, startClose, onAnimEnd } = useAnimatedClose(onClose)
 
+  // Swipe-down-to-close: matches NotificationPanel + the Vaul-based detail
+  // modals (Training/Game/Event). Drag is only consumed when the inner scroll
+  // is at the top, so a downward swipe in the middle of a long admin nav
+  // still scrolls the list normally.
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [dragY, setDragY] = useState(0)
+  const touchStart = useRef<{ y: number; scrollTop: number } | null>(null)
+
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    const el = scrollRef.current
+    if (!el) return
+    touchStart.current = { y: e.touches[0].clientY, scrollTop: el.scrollTop }
+  }, [])
+
+  const onTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!touchStart.current) return
+    const dy = e.touches[0].clientY - touchStart.current.y
+    if (touchStart.current.scrollTop <= 0 && dy > 0) {
+      setDragY(dy)
+      e.preventDefault()
+    }
+  }, [])
+
+  const onTouchEnd = useCallback(() => {
+    if (dragY > 100) {
+      startClose()
+    }
+    setDragY(0)
+    touchStart.current = null
+  }, [dragY, startClose])
+
   // Prevent body scroll when sheet is open
   useEffect(() => {
     document.body.style.overflow = 'hidden'
@@ -217,8 +248,12 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
           carries an active transform from the slide-up keyframes. */}
       <div
         className={`absolute bottom-0 left-0 right-0 flex max-h-[85vh] flex-col rounded-t-2xl bg-white dark:bg-gray-800 ${closing ? 'animate-sheet-down' : 'animate-sheet-up'}`}
+        style={dragY > 0 ? { transform: `translateY(${dragY}px)`, transition: 'none' } : undefined}
         onClick={(e) => e.stopPropagation()}
         onAnimationEnd={(e) => { if (e.target === e.currentTarget) onAnimEnd() }}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
       >
         {/* Close row — the entire top strip is one big tap target. The visual
             handle bar in the middle is part of the same button so tapping it
@@ -235,8 +270,8 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
           </span>
         </button>
 
-        {/* Scrollable body */}
-        <div className="pb-safe flex-1 overflow-y-auto overscroll-contain">
+        {/* Scrollable body — ref drives the swipe-from-top scrollTop check */}
+        <div ref={scrollRef} className="pb-safe flex-1 overflow-y-auto overscroll-contain">
 
         {/* Nav items */}
         <nav className="px-4 pb-2">

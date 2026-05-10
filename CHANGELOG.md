@@ -2,6 +2,21 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## v4.6.3 — 2026-05-10
+
+### MoreSheet swipe-down to dismiss
+
+- `MoreSheet` now matches the Vaul-based detail modals (`TrainingDetailModal`, `GameDetailModal`, `EventDetailModal`) and the existing `NotificationPanel` — drag the sheet down from the top to dismiss. Touch handlers on the wrapper measure `clientY - touchStart`; only consume the drag when the inner scroll is at the top so a downward swipe in the middle of a long admin nav still scrolls normally. Release past 100px slides the sheet out via the existing close animation.
+
+### Real cron heartbeat health (`/status`)
+
+- `/status` no longer reports "41 d ago" on syncs that are firing nightly. The previous detection used `MAX(games.date_updated)` per source as a proxy for "did the cron run?" — only bumped when a row actually changed, which is rare in steady-state.
+- **Migration 045** adds a `sync_runs` table: `source` PK, `last_run_at`, `status` (`'ok' | 'error'`), `rows_changed`, `duration_ms`, `error_message`. Idempotent. Seeds the known sources (sv_sync, bp_sync, svrz_sync, vm_sync, gcal_sync) at 1970-01-01 so they show stale until first cron fire. `REVOKE ALL FROM anon, authenticated` — only `supabase_admin` writes, members read via the custom endpoint.
+- New `logCronRun(database, source, opts)` helper in `error-log.js` upserts on completion (success or failure) — `onConflict('source').merge()`. Failures swallow + log to JSONL so cron health tracking can never crash the cron itself.
+- `sv_sync`, `bp_sync`, `vm_sync`, `svrz_sync` cron blocks now record a heartbeat on every termination path. New `gcal_sync` cron at 04:00 UTC calls the existing `/admin/gcal-sync` endpoint nightly — that endpoint was admin-trigger-only, so `hall_events` literally never auto-refreshed (root cause of the orange "Hall schedule sync" row).
+- New `GET /kscw/admin/sync-status` endpoint (auth-required) returns one row per source with `age_seconds` precomputed. `useInfraHealth.ts` reads from there. Swiss Volley row aggregates `sv_sync` + `svrz_sync` (most recent of the two wins) so a single cron failure doesn't flip the row orange while the other is healthy.
+- Hook also distinguishes "stale" from "errored" — a cron that just failed renders red, not orange. Frontend type gains `hadError?: boolean` on `SyncStatus`.
+
 ## v4.6.2 — 2026-05-10
 
 ### Roster: explicit RSVP wins over absence overlay

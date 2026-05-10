@@ -19,7 +19,7 @@
  *   3. Notification cleanup (old notifications)
  */
 
-import { logCronError, logWarning, logAuthDenial, cleanOldLogs, writeErrorLog } from '../../kscw-endpoints/src/error-log.js'
+import { logCronError, logCronRun, logWarning, logAuthDenial, cleanOldLogs, writeErrorLog } from '../../kscw-endpoints/src/error-log.js'
 import { initSentry } from '../../kscw-endpoints/src/sentry.js'
 import { buildEmailLayout, buildInfoCard, buildAlertBox, bucketEmailsByLocale } from '../../kscw-endpoints/src/email-template.js'
 import { sendLocalizedPush, bucketMembersByLocale, tPush } from '../../kscw-endpoints/src/push-i18n.js'
@@ -1644,6 +1644,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
   // Calls the existing SV sync endpoint via internal HTTP
 
   schedule('0 6 * * *', async () => {
+    const startedAt = Date.now()
     try {
       const token = await getCronAccessToken(log, 'SV sync')
       if (!token) return
@@ -1654,9 +1655,11 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       const body = await res.text()
       if (!res.ok) throw new Error(`${res.status} ${body}`)
       log.info(`SV sync cron: ${body}`)
+      await logCronRun(database, 'sv_sync', { status: 'ok', durationMs: Date.now() - startedAt })
     } catch (err) {
       log.error({ msg: `SV sync cron: ${err.message}`, event: 'cron.sv_sync', stack: err.stack })
       logCronError('sv_sync', err)
+      await logCronRun(database, 'sv_sync', { status: 'error', durationMs: Date.now() - startedAt, errorMessage: err.message })
     }
   })
 
@@ -1664,6 +1667,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
   // Calls the existing BP sync endpoint via internal HTTP
 
   schedule('5 6 * * *', async () => {
+    const startedAt = Date.now()
     try {
       const token = await getCronAccessToken(log, 'BP sync')
       if (!token) return
@@ -1674,9 +1678,11 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       const body = await res.text()
       if (!res.ok) throw new Error(`${res.status} ${body}`)
       log.info(`BP sync cron: ${body}`)
+      await logCronRun(database, 'bp_sync', { status: 'ok', durationMs: Date.now() - startedAt })
     } catch (err) {
       log.error({ msg: `BP sync cron: ${err.message}`, event: 'cron.bp_sync', stack: err.stack })
       logCronError('bp_sync', err)
+      await logCronRun(database, 'bp_sync', { status: 'error', durationMs: Date.now() - startedAt, errorMessage: err.message })
     }
   })
 
@@ -1688,6 +1694,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       log.warn('VM sync skipped: VM_USERNAME or VM_PASSWORD not set')
       return
     }
+    const startedAt = Date.now()
     try {
       const token = await getCronAccessToken(log, 'VM sync')
       if (!token) return
@@ -1718,9 +1725,11 @@ export default ({ action, filter, init, schedule }, { services, database, logger
         child.on('error', (err) => { clearTimeout(timer); reject(err) })
       })
       log.info(`VM sync cron: ${output.split('\n').slice(-6).join(' | ')}`)
+      await logCronRun(database, 'vm_sync', { status: 'ok', durationMs: Date.now() - startedAt })
     } catch (err) {
       log.error({ msg: `VM sync cron: ${err.message}`, exitCode: err.status, event: 'cron.vm_sync' })
       logCronError('vm_sync', new Error(err.message))
+      await logCronRun(database, 'vm_sync', { status: 'error', durationMs: Date.now() - startedAt, errorMessage: err.message })
     }
   })
 
@@ -1731,6 +1740,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       log.warn('SVRZ sync skipped: VM_USERNAME or VM_PASSWORD not set')
       return
     }
+    const startedAt = Date.now()
     try {
       const token = await getCronAccessToken(log, 'SVRZ sync')
       if (!token) return
@@ -1772,9 +1782,36 @@ export default ({ action, filter, init, schedule }, { services, database, logger
         })
       })
       log.info(`SVRZ sync cron: ${output.split('\n').slice(-6).join(' | ')}`)
+      await logCronRun(database, 'svrz_sync', { status: 'ok', durationMs: Date.now() - startedAt })
     } catch (err) {
       log.error({ msg: `SVRZ sync cron: ${err.message}`, exitCode: err.status, event: 'cron.svrz_sync' })
       logCronError('svrz_sync', new Error(err.message))
+      await logCronRun(database, 'svrz_sync', { status: 'error', durationMs: Date.now() - startedAt, errorMessage: err.message })
+    }
+  })
+
+  // ── 10e. Cron: Google Calendar / hall events sync (daily 04:00 UTC) ──
+  // The /admin/gcal-sync endpoint was admin-trigger only, so hall_events
+  // never refreshed automatically — /status orange "Hall schedule sync"
+  // 41d ago was the consequence. Cron now hits the same endpoint nightly
+  // with a system-context token so the venue feed stays fresh.
+  schedule('0 4 * * *', async () => {
+    const startedAt = Date.now()
+    try {
+      const token = await getCronAccessToken(log, 'GCal sync')
+      if (!token) return
+      const res = await fetch('http://localhost:8055/kscw/admin/gcal-sync', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const body = await res.text()
+      if (!res.ok) throw new Error(`${res.status} ${body}`)
+      log.info(`GCal sync cron: ${body.slice(0, 200)}`)
+      await logCronRun(database, 'gcal_sync', { status: 'ok', durationMs: Date.now() - startedAt })
+    } catch (err) {
+      log.error({ msg: `GCal sync cron: ${err.message}`, event: 'cron.gcal_sync', stack: err.stack })
+      logCronError('gcal_sync', err)
+      await logCronRun(database, 'gcal_sync', { status: 'error', durationMs: Date.now() - startedAt, errorMessage: err.message })
     }
   })
 

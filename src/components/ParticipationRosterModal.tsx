@@ -364,9 +364,15 @@ export default function ParticipationRosterModal({
   // treated as players — their is_staff participation counts as player participation.
   const memberIdSet = new Set(memberList.map(m => m.id))
 
-  // Reclassify: if a participation is marked is_staff but the member is in the player list,
-  // treat it as a player participation (not staff-only).
-  const playerParticipations = participations.filter(p => !p.is_staff || memberIdSet.has(p.member))
+  // Player participations = anyone in the current `memberList` (which has
+  // already filtered out guests at excluded levels for this activity, plus
+  // guest_level > 0 for games). Both `is_staff` and non-staff flags qualify
+  // as long as the participant is actually on the roster — pure staff (not
+  // in the player list) is counted separately via `staffParticipations`.
+  // Previous version (`!p.is_staff || memberIdSet.has(p.member)`) let a
+  // confirmed RSVP from an excluded guest leak into the "confirmed" tally,
+  // surfacing as "14 Confirmed" while the visible list showed 13.
+  const playerParticipations = participations.filter(p => memberIdSet.has(p.member))
 
   // For the overall tab on multi-session events, deduplicate by member so summary
   // counts reflect unique people, not slot-count. Use "best status" priority:

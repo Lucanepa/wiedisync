@@ -2,6 +2,12 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## v4.6.6 — 2026-05-10
+
+### Roster summary: excluded guests no longer leak into "Confirmed" tally
+
+- Modal showed "14 Confirmed" while the filtered list and exports both had 13. `playerParticipations` filter was `!p.is_staff || memberIdSet.has(p.member)` — only enforced roster membership for staff-flagged rows. A confirmed RSVP from a guest at one of the activity's `excludedGuestLevels` was filtered out of `memberList` (and therefore hidden from the visible list and export), but its participation row still satisfied `!p.is_staff` and counted in the summary. Filter is now a single `memberIdSet.has(p.member)` — pure-staff participations still route through `staffParticipations` as before.
+
 ## v4.6.5 — 2026-05-10
 
 ### Roster export PNG/PDF — finally has pixels

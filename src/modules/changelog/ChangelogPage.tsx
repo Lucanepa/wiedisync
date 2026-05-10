@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.6.0'
+const APP_VERSION = '4.6.1'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,19 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.6.1',
+    date: '2026-05-10',
+    sections: [
+      {
+        title: 'Explicit close affordance on bottom sheets',
+        items: [
+          '`MoreSheet` and `NotificationPanel` now show a chevron-down button at the top-right of the handle row on mobile (44×44px touch target). Tapping it triggers `startClose()` — same animation path as backdrop tap and nav-link tap, so the slide-down + unmount flow is unchanged. NotificationPanel also gets a small `X` close button in the header on desktop (`lg:` only) for parity with native popover patterns.',
+          'Background: even with the v4.6.0 scroll fix, the dismiss UX on phones with very tall content (admin mode in MoreSheet, long unread queues in NotificationPanel) was unclear — the only ways to close were a backdrop tap (small target above the sheet) or a nav-link tap (which navigates somewhere). The chevron makes "just close it" a one-tap action without leaving the current page. `aria-label` falls back via i18n `defaultValue: \'Close\'`; `common.close` already exists in all 5 locales for the key when added explicitly.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.6.0',
     date: '2026-05-10',

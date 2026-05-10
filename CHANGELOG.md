@@ -2,6 +2,13 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## v4.6.1 — 2026-05-10
+
+### Explicit close affordance on bottom sheets
+
+- `MoreSheet` and `NotificationPanel` now show a chevron-down button at the top-right of the handle row on mobile (44×44px touch target). Tapping it triggers `startClose()` — same animation path as backdrop tap, so the slide-down + unmount flow is unchanged. NotificationPanel also gets a small `X` close button in the header on desktop (`lg:` only) for parity with native popover patterns.
+- Background: even with the v4.6.0 scroll fix, the dismiss UX on phones with very tall content (admin mode in MoreSheet, long unread queues) was unclear — the only ways to close were a backdrop tap (small target above the sheet) or a nav-link tap (which navigates somewhere). The chevron makes "just close it" a one-tap action without leaving the current page.
+
 ## v4.6.0 — 2026-05-10
 
 ### Roster export — CSV / PNG / PDF

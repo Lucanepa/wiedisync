@@ -556,6 +556,16 @@ export default function ParticipationRosterModal({
   function getMemberAbsenceReason(memberId: string): string | null {
     const absence = coveringAbsenceByMember.get(String(memberId))
     if (!absence) return null
+    // Weekly absences are recurring "every Wednesday I work late" type
+    // patterns — the user's reason field on those typically defaults to
+    // 'other' because none of the one-off reasons (injury / vacation /
+    // work / personal) really fit a recurring schedule conflict.
+    // Surface the absence TYPE for weekly absences instead of the reason
+    // string ("Weekly unavailability" reads as actual information; "Other"
+    // reads as "we don't know").
+    if (absence.type === 'weekly') {
+      return ta('weeklyUnavailability')
+    }
     return reasonLabels[absence.reason] ?? null
   }
 

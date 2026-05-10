@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.5.4'
+const APP_VERSION = '4.6.0'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,32 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.6.0',
+    date: '2026-05-10',
+    sections: [
+      {
+        title: 'Roster export — CSV / PNG / PDF',
+        items: [
+          'Staff and admins can export the participation roster from `ParticipationRosterModal` in three formats. New "Export" dropdown sits next to the status filter, gated by `canEditRoster` (coach/team-responsible of the team or admin). The export respects the active status filter — exporting "Confirmed" produces a list of just the confirmed members; exporting "All" appends the waitlist + staff sections so the file matches what is on screen.',
+          'Each row carries: full name (with leadership badge — Coach / C / TR / Staff), jersey number from `members.number`, default positions from `members.position[]`, status (with absence-reason variant for declined-by-absence rows), guest count, free-text note (or absence reason), and the RSVP timestamp. UTF-8 BOM in front of the CSV so Excel autodetects the encoding for umlauts in member names.',
+          'PNG and PDF are produced from a hidden printable view rendered off-screen at 800px wide with light-mode inline styles, so exports look the same regardless of the user\'s dark-mode setting. Multi-page PDFs slice the rendered canvas vertically by A4 page height. `html-to-image` (~47KB gzip) and `jspdf` (~127KB gzip) are dynamic-imported on first export click, so the main bundle stays unchanged for users who never use the feature.',
+          'Filename pattern: `<title>_<date>_<filter>.<ext>` with reserved characters sanitised. Every export file leads with a small metadata block (activity title, date, filter + count, exported-at timestamp) so a coach pasting the file into Slack/WhatsApp has the context inline.',
+          'Position summary header: above the member table, the export shows a pill row with the count of each playing position represented in the current population (e.g. `3 Setter`, `5 Outside hitter`, `4 Middle blocker`, `2 Opposite`, `2 Libero`). Members are counted once per position they declare on their profile (a setter/outside hybrid contributes to both buckets). Order is fixed (S → O → M → D → L → basketball equivalents → guest → other) so consecutive exports read consistently. CSV gets a `Positions:` line in the metadata block; PNG/PDF render pills below the status counts. Localised via the existing `teams` namespace position keys.',
+        ],
+      },
+      {
+        title: 'Mobile bottom sheet scroll fix + roster filter dropdown',
+        items: [
+          '`MoreSheet` and `NotificationPanel` could not be scrolled on mobile (Android + iOS) when their content overflowed — admin mode loaded the full nav + admin + super-admin sections well past 85vh. Root cause: both placed the slide-up keyframe (`animate-sheet-up`, `translateY(100%) → 0`, `both` fill) and `overflow-y-auto` on the same DOM node. The active or settled `transform` promotes the element to a compositor layer; on both Android Chrome and iOS Safari that layer mishandles touch-driven scrolling. `position: sticky` children of a transformed ancestor are also broken on both engines, which compounded the bug for the sticky handles in MoreSheet/NotificationPanel.',
+          'Both components are now structured as outer animated wrapper (`flex flex-col max-h-[85vh]` + `animate-sheet-*`) wrapping an inner `flex-1 overflow-y-auto overscroll-contain` body. Scroll lives on a node with no transform. `panelRef` in `NotificationPanel` was moved to the new scroll container so the swipe-down-to-close gate (`scrollTop <= 0 && dy > 0`) still reads the correct scroll position.',
+          'Hardened `onAnimationEnd` on both wrappers (`if (e.target === e.currentTarget)`) to ignore bubbled `animationend` from descendants — latent footgun if any child ever gets a CSS animation.',
+          'Audit pass confirmed `Modal` (Vaul-based shadcn `Drawer` on mobile) is structurally fine. `MemberMultiSelect` and `ParticipationButton` use sibling-not-ancestor backdrops, so interior taps do not bubble to the close handler.',
+          '`ParticipationRosterModal` status filter chip strip → single `DropdownMenu` trigger. Saves ~36px vertical on mobile, drops the awkward x-scroll on narrow screens, surfaces all options in one tap with a colored dot + count per status.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.5.4',
     date: '2026-05-10',

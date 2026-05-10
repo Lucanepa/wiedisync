@@ -48,4 +48,13 @@ export default {
   positions: 'Preferenze di ruolo',
   positionRequired: 'Scegli un ruolo...',
   positionsRequiredError: 'Tutti e 3 i ruoli sono obbligatori',
+  export: 'Esporta',
+  exportCsv: 'CSV',
+  exportPng: 'Immagine PNG',
+  exportPdf: 'PDF',
+  exportedAt: 'Esportato',
+  filter: 'Filtro',
+  name: 'Nome',
+  status: 'Stato',
+  note: 'Nota',
 } as const

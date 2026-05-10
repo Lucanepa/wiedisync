@@ -1,7 +1,13 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pencil } from 'lucide-react'
+import { Pencil, ChevronDown, Check, Download, FileText, Image as ImageIcon, FileType } from 'lucide-react'
 import Modal from '@/components/Modal'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { useMultiTeamMembers } from '../hooks/useTeamMembers'
 import { useTeamParticipations, useAllEventParticipations } from '../hooks/useParticipation'
 import { useAuth } from '../hooks/useAuth'
@@ -14,6 +20,14 @@ import type { Participation, Absence, Member, Team, EventSession } from '../type
 import { asObj, flattenMemberIds } from '../utils/relations'
 import { formatDate, getDeadlineDate, formatRelativeTime, formatDateTimeCompact } from '../utils/dateHelpers'
 import { absenceCoversActivity } from '../utils/absenceHelpers'
+import { getPositionI18nKey } from '../utils/memberPositions'
+import {
+  exportRosterCsv,
+  exportRosterImage,
+  exportRosterPdf,
+  type RosterExportMeta,
+  type RosterExportRow,
+} from '../utils/rosterExport'
 
 interface ParticipationRosterModalProps {
   open: boolean
@@ -95,6 +109,7 @@ export default function ParticipationRosterModal({
   const { t, i18n } = useTranslation('participation')
   const { t: te } = useTranslation('events')
   const { t: ta } = useTranslation('absences')
+  const { t: tt } = useTranslation('teams')
   const { members, isLoading: membersLoading } = useMultiTeamMembers(teamIds)
   const [absences, setAbsences] = useState<Absence[]>([])
   const [staffMembers, setStaffMembers] = useState<Member[]>([])
@@ -444,6 +459,148 @@ export default function ParticipationRosterModal({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter, memberList, participations, absences])
 
+  // ---- Export ---------------------------------------------------------------
+  const printRef = useRef<HTMLDivElement>(null)
+  const [exporting, setExporting] = useState<null | 'csv' | 'png' | 'pdf'>(null)
+
+  function statusLabelText(memberId: string, baseStatus: Participation['status'] | null): string {
+    if (!baseStatus) return t('notResponded')
+    if (absentMemberIds.has(memberId)) {
+      const isWeekly = coveringAbsenceByMember.get(String(memberId))?.type === 'weekly'
+      return t(isWeekly ? 'declinedUnavailable' : 'declinedAbsence')
+    }
+    return t(baseStatus)
+  }
+
+  function fullName(m: Member, role?: string): string {
+    const base = `${m.first_name ?? ''} ${m.last_name ?? ''}`.trim()
+    const suffix = role === 'coach' ? ' (Coach)' : role === 'captain' ? ' (C)' : role === 'tr' ? ' (TR)' : ''
+    return base + suffix
+  }
+
+  const exportRows = useMemo<RosterExportRow[]>(() => {
+    const rows: RosterExportRow[] = filteredMemberList.map((m) => {
+      const p = participations.find((pt) => pt.member === m.id)
+      const status = getMemberStatus(m.id)
+      const absenceReason = getMemberAbsenceReason(m.id)
+      const role = leadershipRoles.get(m.id)
+      const positions = (m.position ?? []).join(', ')
+      const ts = p?.date_updated ?? p?.date_created ?? ''
+      return {
+        name: fullName(m, role),
+        jerseyNumber: m.number && m.number > 0 ? m.number : null,
+        positions,
+        status: statusLabelText(m.id, status),
+        guests: p?.guest_count ?? 0,
+        note: absenceReason || p?.note || '',
+        rsvpAt: ts ? formatDateTimeCompact(ts) : '',
+      }
+    })
+    // When filter is "All", append waitlist + staff so the export reflects
+    // everything visible in the modal.
+    if (statusFilter === null) {
+      for (const wp of waitlistedParts) {
+        const m = memberList.find((mm) => mm.id === wp.member)
+        if (!m) continue
+        const role = leadershipRoles.get(m.id)
+        const ts = wp.date_updated ?? wp.date_created ?? ''
+        rows.push({
+          name: fullName(m, role),
+          jerseyNumber: m.number && m.number > 0 ? m.number : null,
+          positions: (m.position ?? []).join(', '),
+          status: t('waitlisted'),
+          guests: wp.guest_count ?? 0,
+          note: wp.note || '',
+          rsvpAt: ts ? formatDateTimeCompact(ts) : '',
+        })
+      }
+      for (const sm of staffMembers) {
+        const sp = staffParticipations.find((p) => p.member === sm.id)
+        const ts = sp?.date_updated ?? sp?.date_created ?? ''
+        rows.push({
+          name: `${(sm.first_name ?? '').trim()} ${(sm.last_name ?? '').trim()}`.trim() + ' (Staff)',
+          jerseyNumber: sm.number && sm.number > 0 ? sm.number : null,
+          positions: (sm.position ?? []).join(', '),
+          status: sp?.status ? t(sp.status) : t('notResponded'),
+          guests: sp?.guest_count ?? 0,
+          note: sp?.note || '',
+          rsvpAt: ts ? formatDateTimeCompact(ts) : '',
+        })
+      }
+    }
+    return rows
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredMemberList, participations, absences, leadershipRoles, statusFilter, waitlistedParts, staffMembers, staffParticipations, memberList, t])
+
+  // Position breakdown of the same population that exportRows covers — counts
+  // each member once per declared position (a setter/outside hybrid contributes
+  // to both buckets). Stable order preserved by inserting in iteration order.
+  const positionSummary = useMemo<{ position: string; label: string; count: number }[]>(() => {
+    const membersForExport: Member[] = [...filteredMemberList]
+    if (statusFilter === null) {
+      for (const wp of waitlistedParts) {
+        const m = memberList.find((mm) => mm.id === wp.member)
+        if (m) membersForExport.push(m)
+      }
+      for (const sm of staffMembers) membersForExport.push(sm)
+    }
+    const counts = new Map<string, number>()
+    for (const m of membersForExport) {
+      for (const p of m.position ?? []) {
+        counts.set(p, (counts.get(p) ?? 0) + 1)
+      }
+    }
+    // Stable position ordering — same as the existing positionOrder convention
+    // (S, O, M, D, L, …) so the strip reads consistently across exports.
+    const order = ['setter', 'outside', 'middle', 'opposite', 'libero', 'point_guard', 'shooting_guard', 'small_forward', 'power_forward', 'center', 'guest', 'other']
+    return order
+      .filter((pos) => counts.has(pos))
+      .map((pos) => {
+        const key = getPositionI18nKey(pos)
+        return {
+          position: pos,
+          label: key ? tt(key) : pos,
+          count: counts.get(pos) ?? 0,
+        }
+      })
+  }, [filteredMemberList, statusFilter, waitlistedParts, staffMembers, memberList, tt])
+
+  const exportMeta = useMemo<RosterExportMeta>(() => {
+    const filterLabel =
+      statusFilter === null ? t('all')
+      : statusFilter === 'no_response' ? t('notResponded')
+      : t(statusFilter)
+    const positionsSummaryText = positionSummary.length > 0
+      ? positionSummary.map((p) => `${p.count} ${p.label}`).join(', ')
+      : ''
+    return {
+      activityTitle: title,
+      activityDate: formatDate(activityDate.split(' ')[0]),
+      filterLabel,
+      exportedAt: new Date().toLocaleString(),
+      totalCount: exportRows.length,
+      positionsSummary: positionsSummaryText,
+    }
+  }, [title, activityDate, statusFilter, exportRows.length, positionSummary, t])
+
+  const handleExport = useCallback(async (format: 'csv' | 'png' | 'pdf') => {
+    if (exporting) return
+    setExporting(format)
+    try {
+      if (format === 'csv') {
+        exportRosterCsv(exportRows, exportMeta)
+      } else if (format === 'png') {
+        if (printRef.current) await exportRosterImage(printRef.current, exportMeta)
+      } else if (format === 'pdf') {
+        if (printRef.current) await exportRosterPdf(printRef.current, exportMeta)
+      }
+    } catch (err) {
+      console.error('Roster export failed', err)
+    } finally {
+      setExporting(null)
+    }
+  }, [exporting, exportRows, exportMeta])
+
   // Compute short display names: first name only, disambiguate with last-name initials
   const displayNames = useMemo(() => {
     const names = new Map<string, string>()
@@ -554,28 +711,172 @@ export default function ParticipationRosterModal({
         )}
       </div>
 
-      {/* Status filter chips */}
-      {memberList.length > 0 && (
-        <div className="mb-4 flex gap-1.5 overflow-x-auto pb-1">
-          {([
-            { key: null, label: t('all'), count: memberList.length, activeClass: 'bg-gray-600 text-white dark:bg-gray-400 dark:text-gray-900' },
-            { key: 'confirmed', label: t('confirmed'), count: confirmed, activeClass: 'bg-green-600 text-white dark:bg-green-500 dark:text-white' },
-            { key: 'tentative', label: t('tentative'), count: tentative, activeClass: 'bg-yellow-500 text-white dark:bg-yellow-500 dark:text-white' },
-            { key: 'declined', label: t('declined'), count: declined, activeClass: 'bg-red-600 text-white dark:bg-red-500 dark:text-white' },
-            { key: 'no_response', label: t('notResponded'), count: notResponded, activeClass: 'bg-gray-500 text-white dark:bg-gray-500 dark:text-white' },
-          ] as const).map((chip) => (
-            <button
-              key={chip.key ?? 'all'}
-              onClick={() => setStatusFilter(chip.key)}
-              className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
-                statusFilter === chip.key
-                  ? chip.activeClass
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
-              }`}
-            >
-              {chip.key === null ? chip.label : `${chip.label} (${chip.count})`}
-            </button>
-          ))}
+      {/* Status filter + export — dropdown menus */}
+      {memberList.length > 0 && (() => {
+        const filterOptions = [
+          { key: null, label: t('all'), count: memberList.length, dotClass: 'bg-gray-400 dark:bg-gray-500' },
+          { key: 'confirmed', label: t('confirmed'), count: confirmed, dotClass: 'bg-green-500' },
+          { key: 'tentative', label: t('tentative'), count: tentative, dotClass: 'bg-yellow-500' },
+          { key: 'declined', label: t('declined'), count: declined, dotClass: 'bg-red-500' },
+          { key: 'no_response', label: t('notResponded'), count: notResponded, dotClass: 'bg-gray-400 dark:bg-gray-500' },
+        ] as const
+        const active = filterOptions.find((o) => o.key === statusFilter) ?? filterOptions[0]
+        return (
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex min-h-[36px] items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                >
+                  <span className={`h-2 w-2 shrink-0 rounded-full ${active.dotClass}`} />
+                  <span>{active.label}</span>
+                  <span className="text-gray-400 dark:text-gray-500">({active.count})</span>
+                  <ChevronDown className="h-3.5 w-3.5 text-gray-400" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="min-w-[200px]">
+                {filterOptions.map((opt) => (
+                  <DropdownMenuItem
+                    key={opt.key ?? 'all'}
+                    onClick={() => setStatusFilter(opt.key)}
+                    className="flex cursor-pointer items-center gap-2"
+                  >
+                    <span className={`h-2 w-2 shrink-0 rounded-full ${opt.dotClass}`} />
+                    <span className="flex-1">{opt.label}</span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500">{opt.count}</span>
+                    {statusFilter === opt.key && <Check className="h-4 w-4 text-brand-600 dark:text-gold-400" />}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Export — staff/admin only */}
+            {canEditRoster && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    disabled={exporting !== null || exportRows.length === 0}
+                    className="inline-flex min-h-[36px] items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                  >
+                    {exporting !== null ? (
+                      <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-gray-300 border-t-brand-500" />
+                    ) : (
+                      <Download className="h-4 w-4" />
+                    )}
+                    <span>{t('export', { defaultValue: 'Export' })}</span>
+                    <ChevronDown className="h-3.5 w-3.5 text-gray-400" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-[180px]">
+                  <DropdownMenuItem onClick={() => handleExport('csv')} className="flex cursor-pointer items-center gap-2">
+                    <FileText className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                    <span className="flex-1">{t('exportCsv', { defaultValue: 'CSV' })}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport('png')} className="flex cursor-pointer items-center gap-2">
+                    <ImageIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                    <span className="flex-1">{t('exportPng', { defaultValue: 'PNG image' })}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport('pdf')} className="flex cursor-pointer items-center gap-2">
+                    <FileType className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                    <span className="flex-1">{t('exportPdf', { defaultValue: 'PDF' })}</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
+        )
+      })()}
+
+      {/* Hidden printable view for PNG/PDF export — kept off-screen but rendered
+          so the snapshot reflects current data. Light-themed so exports look
+          consistent regardless of the user's dark-mode setting. */}
+      {canEditRoster && (
+        <div
+          ref={printRef}
+          aria-hidden="true"
+          style={{
+            position: 'fixed',
+            left: '-10000px',
+            top: 0,
+            width: '800px',
+            backgroundColor: '#ffffff',
+            color: '#111827',
+            padding: '24px',
+            fontFamily: 'system-ui, -apple-system, sans-serif',
+            pointerEvents: 'none',
+          }}
+        >
+          <div style={{ borderBottom: '2px solid #e5e7eb', paddingBottom: '12px', marginBottom: '16px' }}>
+            <h1 style={{ fontSize: '20px', fontWeight: 600, margin: 0 }}>{exportMeta.activityTitle}</h1>
+            <p style={{ fontSize: '13px', color: '#6b7280', margin: '6px 0 0' }}>
+              {exportMeta.activityDate} &middot; {t('filter', { defaultValue: 'Filter' })}: {exportMeta.filterLabel} ({exportMeta.totalCount})
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '12px', fontSize: '12px' }}>
+            <span style={{ color: '#16a34a' }}>{confirmed}{confirmedGuests > 0 ? `+${confirmedGuests}` : ''} {t('confirmed')}</span>
+            <span style={{ color: '#ca8a04' }}>{tentative}{tentativeGuests > 0 ? `+${tentativeGuests}` : ''} {t('tentative')}</span>
+            <span style={{ color: '#dc2626' }}>{declined} {t('declined')}</span>
+            {waitlisted > 0 && <span style={{ color: '#ea580c' }}>{waitlisted} {t('waitlisted')}</span>}
+            <span style={{ color: '#6b7280' }}>{notResponded} {t('notResponded')}</span>
+            {staffConfirmed > 0 && <span style={{ color: '#4f46e5' }}>{staffConfirmed} {t('staffPresent')}</span>}
+          </div>
+
+          {positionSummary.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '16px', fontSize: '12px' }}>
+              {positionSummary.map((p) => (
+                <span
+                  key={p.position}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '3px 10px',
+                    borderRadius: '999px',
+                    backgroundColor: '#f3f4f6',
+                    color: '#374151',
+                    border: '1px solid #e5e7eb',
+                  }}
+                >
+                  <strong style={{ fontVariantNumeric: 'tabular-nums', color: '#111827' }}>{p.count}</strong>
+                  <span>{p.label}</span>
+                </span>
+              ))}
+            </div>
+          )}
+
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <thead>
+              <tr style={{ backgroundColor: '#f3f4f6', borderBottom: '1px solid #d1d5db' }}>
+                <th style={{ textAlign: 'left', padding: '8px', width: '40px' }}>#</th>
+                <th style={{ textAlign: 'left', padding: '8px' }}>{t('name', { defaultValue: 'Name' })}</th>
+                <th style={{ textAlign: 'left', padding: '8px' }}>{t('positions', { defaultValue: 'Positions' })}</th>
+                <th style={{ textAlign: 'left', padding: '8px' }}>{t('status', { defaultValue: 'Status' })}</th>
+                <th style={{ textAlign: 'left', padding: '8px', width: '60px' }}>{t('guests')}</th>
+                <th style={{ textAlign: 'left', padding: '8px' }}>{t('note', { defaultValue: 'Note' })}</th>
+                <th style={{ textAlign: 'left', padding: '8px' }}>RSVP</th>
+              </tr>
+            </thead>
+            <tbody>
+              {exportRows.map((r, i) => (
+                <tr key={i} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                  <td style={{ padding: '6px 8px', color: '#6b7280', fontVariantNumeric: 'tabular-nums' }}>{r.jerseyNumber ?? ''}</td>
+                  <td style={{ padding: '6px 8px' }}>{r.name}</td>
+                  <td style={{ padding: '6px 8px', color: '#6b7280' }}>{r.positions}</td>
+                  <td style={{ padding: '6px 8px' }}>{r.status}</td>
+                  <td style={{ padding: '6px 8px', color: '#6b7280', fontVariantNumeric: 'tabular-nums' }}>{r.guests > 0 ? `+${r.guests}` : ''}</td>
+                  <td style={{ padding: '6px 8px', color: '#6b7280' }}>{r.note}</td>
+                  <td style={{ padding: '6px 8px', color: '#9ca3af', fontSize: '11px' }}>{r.rsvpAt}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <p style={{ marginTop: '16px', fontSize: '11px', color: '#9ca3af', textAlign: 'right' }}>
+            {t('exportedAt', { defaultValue: 'Exported' })} {exportMeta.exportedAt}
+          </p>
         </div>
       )}
 

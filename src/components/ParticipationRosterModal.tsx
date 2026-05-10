@@ -364,20 +364,40 @@ export default function ParticipationRosterModal({
   // treated as players — their is_staff participation counts as player participation.
   const memberIdSet = new Set(memberList.map(m => m.id))
 
-  // Player participations = anyone in the current `memberList` (which has
-  // already filtered out guests at excluded levels for this activity, plus
-  // guest_level > 0 for games). Both `is_staff` and non-staff flags qualify
-  // as long as the participant is actually on the roster — pure staff (not
-  // in the player list) is counted separately via `staffParticipations`.
-  // Previous version (`!p.is_staff || memberIdSet.has(p.member)`) let a
-  // confirmed RSVP from an excluded guest leak into the "confirmed" tally,
-  // surfacing as "14 Confirmed" while the visible list showed 13.
-  const playerParticipations = participations.filter(p => memberIdSet.has(p.member))
+  // Best-status priority for member-level dedupe; mirrors ParticipationSummary.
+  const statusPriority: Record<string, number> = { confirmed: 4, tentative: 3, waitlisted: 2, declined: 1 }
+
+  // Player participations: aligned with `ParticipationSummary` (card-row
+  // source of truth) so the modal counts and the card counts can't drift.
+  // Algorithm:
+  //   1. Dedupe by `p.member`, keeping the best-status row per member
+  //      (confirmed > tentative > waitlisted > declined). A player who
+  //      somehow has both a player-RSVP row AND an `is_staff` row for
+  //      the same training collapses to one entry.
+  //   2. Drop `is_staff` rows from the player tally — those are
+  //      coach/TR presence markers, not player RSVPs. Player-coaches
+  //      get counted via `playerCoachConfirmed` further down.
+  //   3. Restrict to members currently on the roster (`memberIdSet`),
+  //      so a confirmed RSVP from an excluded guest can't leak in.
+  // Pre-fix this filter was `!p.is_staff || memberIdSet.has(p.member)`
+  // which both let excluded guests through AND double-counted player-
+  // coaches with two rows — surfacing as "14 Confirmed" while the card
+  // and the visible roster both showed 13.
+  const playerParticipations = (() => {
+    const byMember = new Map<string, Participation>()
+    for (const p of participations) {
+      if (!memberIdSet.has(p.member)) continue
+      const existing = byMember.get(p.member)
+      if (!existing || (statusPriority[p.status] ?? 0) > (statusPriority[existing.status] ?? 0)) {
+        byMember.set(p.member, p)
+      }
+    }
+    return Array.from(byMember.values()).filter(p => !p.is_staff)
+  })()
 
   // For the overall tab on multi-session events, deduplicate by member so summary
-  // counts reflect unique people, not slot-count. Use "best status" priority:
-  // confirmed > tentative > waitlisted > declined (same logic as ParticipationSummary).
-  const statusPriority: Record<string, number> = { confirmed: 4, tentative: 3, waitlisted: 2, declined: 1 }
+  // counts reflect unique people, not slot-count. (`statusPriority` declared above
+  // for the `playerParticipations` dedupe; reused here for multi-session collapse.)
   const summaryParticipations = (hasSessionMode && activeSessionTab === null)
     ? (() => {
         const byMember = new Map<string, Participation>()
@@ -421,11 +441,19 @@ export default function ParticipationRosterModal({
 
   // Staff counts — only staff who are NOT also players
   const staffParticipations = participations.filter(p => p.is_staff && !memberIdSet.has(p.member))
-  // "Coach present" = staff-only confirmed + player-coaches confirmed (coach only — captain/TR don't count)
+  // "Coach present" = staff-only confirmed + player-coaches confirmed (coach only — captain/TR don't count).
+  // Player-coach lookup walks the FULL participations list (not `summaryParticipations`,
+  // which now excludes `is_staff` rows): a coach who has only an `is_staff` confirmed
+  // marker would otherwise lose their badge after the v4.6.7 dedupe tightening.
+  // Set-based dedupe so a coach with both player + staff confirmed rows counts once.
   const staffOnlyConfirmed = staffParticipations.filter(p => p.status === 'confirmed').length
-  const playerCoachConfirmed = summaryParticipations.filter(p =>
-    p.status === 'confirmed' && leadershipRoles.get(p.member) === 'coach'
-  ).length
+  const playerCoachConfirmedIds = new Set<string>()
+  for (const p of participations) {
+    if (p.status === 'confirmed' && memberIdSet.has(p.member) && leadershipRoles.get(p.member) === 'coach') {
+      playerCoachConfirmedIds.add(p.member)
+    }
+  }
+  const playerCoachConfirmed = playerCoachConfirmedIds.size
   const staffConfirmed = staffOnlyConfirmed + playerCoachConfirmed
 
   const deadlinePassed = respondBy
@@ -437,7 +465,13 @@ export default function ParticipationRosterModal({
   }
 
   function getMemberStatus(memberId: string): Participation['status'] | null {
-    const p = participations.find(p => p.member === memberId)
+    // Prefer the player (non-staff) row — for player-coaches who carry both an
+    // `is_staff` presence marker and a separate player RSVP, the player row is
+    // what the roster modal is rendering ("did this person say they're coming
+    // as a player?"). Matches the dedupe applied to `playerParticipations` so
+    // visible-list status, summary counts, and export rows stay coherent.
+    const p = participations.find(p => p.member === memberId && !p.is_staff)
+      ?? participations.find(p => p.member === memberId)
     // Explicit user RSVP wins over an absence overlay: the BEFORE UPDATE
     // trigger (migration 038) clears `auto_declined_by` to NULL the moment a
     // user changes `status`, so a row with a null marker is definitively

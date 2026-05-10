@@ -2,6 +2,13 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## v4.6.7 — 2026-05-10
+
+### Roster summary count — actual fix
+
+- v4.6.6 only blocked excluded-guest leak; didn't address player-coach double-counting. A player who carried both an `is_staff = true` presence marker AND a non-staff player RSVP for the same training was counted twice in the modal ("14 Confirmed") while the card-row preview correctly showed 13. `playerParticipations` now mirrors `ParticipationSummary` (the card source of truth) exactly: dedupe by member with best-status priority, drop `is_staff` rows from the player tally, restrict to `memberIdSet`. `getMemberStatus` prefers the non-staff row so visible list, summary counts, and exports never disagree.
+- "Coach present" badge now walks the full participations list via a Set of player-coach IDs (not `summaryParticipations`, which now excludes is_staff rows). A coach who only has an is_staff confirmed marker still triggers the badge.
+
 ## v4.6.6 — 2026-05-10
 
 ### Roster summary: excluded guests no longer leak into "Confirmed" tally

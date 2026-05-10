@@ -15,6 +15,10 @@ export interface SyncStatus {
    *  Lets the status page distinguish "ran 4 hours ago but failed" from
    *  "hasn't run in 41 days". */
   hadError?: boolean
+  /** True when the heartbeat row holds the migration-045 epoch seed
+   *  (1970-01-01) — i.e. the cron is wired but hasn't fired since deploy.
+   *  Suppresses the nonsensical "20583 d ago" label. */
+  awaitingFirstRun?: boolean
 }
 
 export interface InfraHealth {
@@ -99,6 +103,11 @@ export function useInfraHealth(): InfraHealth {
 
         const toStatus = (source: string, run: SyncRun | null): SyncStatus => {
           if (!run || !run.last_run_at) return { source, lastUpdated: null, isStale: true }
+          const runMs = new Date(run.last_run_at).getTime()
+          // Migration 045 seeds 1970-01-01 so a freshly-deployed system shows
+          // the row as stale immediately. Detect that and surface a friendlier
+          // label instead of "20583 d ago".
+          const awaitingFirstRun = runMs < new Date('2000-01-01').getTime()
           const ageMs = (run.age_seconds ?? 0) * 1000
           const isStale = ageMs > STALE_THRESHOLD_MS
           return {
@@ -106,6 +115,7 @@ export function useInfraHealth(): InfraHealth {
             lastUpdated: run.last_run_at,
             isStale: isStale || run.status === 'error',
             hadError: run.status === 'error',
+            awaitingFirstRun,
           }
         }
 

@@ -2,6 +2,23 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## v4.6.5 — 2026-05-10
+
+### Roster export PNG/PDF — finally has pixels
+
+- v4.6.4 swapped `opacity: 0` for `left: -10000px` on the printable view, thinking the opacity was the only computed style being inlined into the snapshot. It wasn't — `html-to-image` clones the source DOM with computed styles intact, including the cloned root's `position: fixed; left: -10000px`, so inside the SVG `<foreignObject>` the cloned content painted at x=−10000 (outside the canvas area). Same blank result, different mechanism.
+- Restructured the printable view so the OUTER wrapper does the hiding (`position: fixed; width: 0; height: 0; overflow: hidden`) while the INNER node passed to `toPng` keeps clean normal-flow styles — no `opacity`, no off-screen positioning. The clone no longer carries any hide hack and the snapshot fills with real pixels. Verified end-to-end on localhost.
+- New `?debugExport=1` URL flag dumps a `[rosterExport] PNG diagnostics` console group with the source `getBoundingClientRect`, computed-style snapshot, intermediate `toSvg` data URL, and final `toPng` size. Kept enabled in prod — costs nothing when the flag is absent, useful next time someone reports a blank export.
+
+### Activity-kind line in the export header
+
+- New small uppercase line above the title in PNG/PDF + first metadata row in CSV: `TRAINING`, `GAME`, or `EVENT`. Game call sites (`GamesPage`, `GameDetailModal`) override with `"<home> vs <away>"`, so a game export reads `KSCW H1 VS PFADI` above the team-and-date title. The modal's on-screen title is unchanged — only the export header carries the matchup.
+- New `activityKind?: string` prop on `ParticipationRosterModal`; defaults derived from `activityType` via new `kindTraining` / `kindGame` / `kindEvent` keys (EN + DE; FR/GSW/IT fall back to EN).
+
+### Localhost dev server: CORS-safe by construction
+
+- Localhost (`localhost`, `127.0.0.1`, `*.local`) now ALWAYS points at `directus-dev.kscw.ch`, regardless of `VITE_DIRECTUS_URL` in `.env*`. Prod Directus has a strict CORS allowlist that doesn't and shouldn't include localhost — an env override that pointed there silently broke every fetch with "blocked by CORS policy". The override line in `.env.local` is now a no-op for `npm run dev`; only matters for non-localhost preview builds.
+
 ## v4.6.4 — 2026-05-10
 
 ### Roster export PNG/PDF: actually contains pixels now

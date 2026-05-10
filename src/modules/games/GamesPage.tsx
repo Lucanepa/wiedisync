@@ -448,6 +448,7 @@ export default function GamesPage() {
         activityDate={rosterGame?.date ?? ''}
         teamIds={rosterGame ? [String(typeof rosterGame.kscw_team === 'object' ? (rosterGame.kscw_team as any).id : rosterGame.kscw_team)] : []}
         title={t('participation')}
+        activityKind={rosterGame ? `${rosterGame.home_team ?? ''} vs ${rosterGame.away_team ?? ''}`.trim() : undefined}
       />
 
       <ConfirmDialog

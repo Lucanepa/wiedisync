@@ -16,6 +16,12 @@ export type RosterExportRow = {
 }
 
 export type RosterExportMeta = {
+  /** Activity-kind label rendered as a small uppercase line above the title
+   *  in PNG/PDF exports and on the first metadata row in CSV. Defaults to
+   *  the localized activity type ("Training" / "Game" / "Event"); games
+   *  may pass `"<home> vs <away>"` so the matchup appears in the export
+   *  header even though the modal's on-screen title is just "Roster". */
+  activityKind: string
   activityTitle: string
   activityDate: string
   filterLabel: string
@@ -70,7 +76,7 @@ export function exportRosterCsv(rows: RosterExportRow[], meta: RosterExportMeta)
   // filter + position summary + exported timestamp. Dropped the standalone
   // date row — duplicated the title and showed up as "11/05/2026" floating
   // alone on row 2 of the file.
-  const metaLines: string[] = [meta.activityTitle, `Filter: ${meta.filterLabel} (${meta.totalCount})`]
+  const metaLines: string[] = [meta.activityKind, meta.activityTitle, `Filter: ${meta.filterLabel} (${meta.totalCount})`]
   if (meta.positionsSummary) metaLines.push(`Positions: ${meta.positionsSummary}`)
   metaLines.push(`Exported: ${meta.exportedAt}`, '')
   const metaBlock = metaLines.join('\n')
@@ -102,18 +108,53 @@ async function loadJsPdf() {
   catch (err) { throw new ExportLibraryError('PDF', err) }
 }
 
+/** Set ?debugExport=1 in the URL to dump per-stage artifact info to the
+ *  console. Survives in prod so we can diagnose blank-snapshot reports
+ *  without redeploying. */
+function shouldDebug(): boolean {
+  try { return new URLSearchParams(window.location.search).has('debugExport') }
+  catch { return false }
+}
+
 export async function exportRosterImage(node: HTMLElement, meta: RosterExportMeta): Promise<void> {
-  const { toPng } = await loadHtmlToImage()
-  // Wait for any custom fonts in the printable view to settle before snapshot
-  // — html-to-image inlines computed styles but can't draw a glyph the font
-  // engine hasn't loaded yet. Cheap on a snapshot path and prevents the
-  // occasional Arial-fallback PNG.
+  const debug = shouldDebug()
+  const lib = await loadHtmlToImage()
+  const { toPng, toSvg } = lib
   if (document.fonts?.ready) await document.fonts.ready
+
+  if (debug) {
+    const rect = node.getBoundingClientRect()
+    const cs = window.getComputedStyle(node)
+    console.group('[rosterExport] PNG diagnostics')
+    console.log('node:', node)
+    console.log('rect:', { x: rect.x, y: rect.y, w: rect.width, h: rect.height })
+    console.log('computed:', {
+      display: cs.display, position: cs.position, opacity: cs.opacity,
+      visibility: cs.visibility, transform: cs.transform, overflow: cs.overflow,
+      width: cs.width, height: cs.height, color: cs.color, backgroundColor: cs.backgroundColor,
+    })
+    console.log('parent:', node.parentElement)
+    console.log('children count:', node.children.length, 'innerHTML length:', node.innerHTML.length)
+    console.log('innerHTML head:', node.innerHTML.slice(0, 400))
+    try {
+      const svgUrl = await toSvg(node, { backgroundColor: '#ffffff', cacheBust: true })
+      console.log('toSvg dataURL length:', svgUrl.length)
+      console.log('toSvg head (decoded):', decodeURIComponent(svgUrl.split(',')[1] ?? '').slice(0, 600))
+    } catch (svgErr) { console.error('toSvg threw:', svgErr) }
+  }
+
   const dataUrl = await toPng(node, {
     pixelRatio: 2,
     backgroundColor: '#ffffff',
     cacheBust: true,
   })
+
+  if (debug) {
+    console.log('toPng dataURL length:', dataUrl.length)
+    console.log('toPng head:', dataUrl.slice(0, 80))
+    console.groupEnd()
+  }
+
   const a = document.createElement('a')
   a.href = dataUrl
   a.download = buildExportFilename(meta, 'png')

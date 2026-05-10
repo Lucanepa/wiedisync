@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.6.4'
+const APP_VERSION = '4.6.5'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,26 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.6.5',
+    date: '2026-05-10',
+    sections: [
+      {
+        title: 'Roster export PNG/PDF: actually has pixels (real fix this time)',
+        items: [
+          'v4.6.4 swapped `opacity: 0` for `left: -10000px` thinking the opacity was the only thing being inlined into the snapshot. It wasn\'t — `html-to-image` clones the source DOM with computed styles intact, including the cloned root\'s `position: fixed; left: -10000px`, so inside the SVG `<foreignObject>` the cloned content painted at x=−10000 (way outside the canvas area). Same blank result, different mechanism. Restructured the printable view so the OUTER wrapper does the hiding (`position: fixed; width: 0; height: 0; overflow: hidden`) while the INNER node passed to `toPng` keeps clean normal-flow styles. The clone no longer carries any hide hack. Verified end-to-end on localhost.',
+          'New activity-kind line in the export header — small uppercase `TRAINING` / `GAME` / `EVENT` above the title. Game call sites (`GamesPage`, `GameDetailModal`) override with `"<home> vs <away>"`, so a game export reads `KSCW H1 VS PFADI` above the team-and-date title. Same line prepends the CSV metadata block. New `activityKind?: string` prop on `ParticipationRosterModal`; defaults derived from `activityType` via new `kindTraining` / `kindGame` / `kindEvent` keys (EN + DE).',
+          'New `?debugExport=1` URL flag — when present, `exportRosterImage` dumps a `[rosterExport] PNG diagnostics` console group with the source `getBoundingClientRect`, computed-style snapshot, an intermediate `toSvg` data URL, and the final `toPng` size. Kept on for future blank-export reports — costs nothing when the flag is absent.',
+        ],
+      },
+      {
+        title: 'Localhost dev server CORS-safe by construction',
+        items: [
+          'Localhost (`http://localhost:*` / `127.0.0.1` / `*.local`) now ALWAYS points at `directus-dev.kscw.ch`, regardless of `VITE_DIRECTUS_URL` in `.env*`. Prod Directus has a strict CORS allowlist that doesn\'t include localhost (and shouldn\'t — exposing prod data to anyone running `npm run dev` would be bad), so an env override that pointed there silently broke every fetch with "blocked by CORS policy". The `.env.local` line is now a no-op for `npm run dev`; only matters for non-localhost preview builds.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.6.4',
     date: '2026-05-10',

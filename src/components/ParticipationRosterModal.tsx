@@ -51,6 +51,12 @@ interface ParticipationRosterModalProps {
    *  (UI hides buttons + server rejects), so showing them as "not responded"
    *  just inflates the list. */
   excludedGuestLevels?: number[]
+  /** Optional override for the activity-kind line shown above the title in
+   *  PNG/PDF exports and prepended to CSV metadata. Defaults to the
+   *  translated activity type ("Training" / "Game" / "Event"). Game call
+   *  sites pass `"<home> vs <away>"` so the export header carries the
+   *  matchup without disturbing the modal's on-screen title. */
+  activityKind?: string
 }
 
 /** Sort comparator: by first_name then last_name, locale-aware + case-insensitive. */
@@ -107,6 +113,7 @@ export default function ParticipationRosterModal({
   showRsvpTime = true,
   allowMaybe = true,
   excludedGuestLevels,
+  activityKind,
 }: ParticipationRosterModalProps) {
   const { t, i18n } = useTranslation('participation')
   const { t: te } = useTranslation('events')
@@ -594,7 +601,12 @@ export default function ParticipationRosterModal({
     const positionsSummaryText = positionSummary.length > 0
       ? positionSummary.map((p) => `${p.count} ${p.label}`).join(', ')
       : ''
+    const fallbackKind =
+      activityType === 'training' ? t('kindTraining', { defaultValue: 'Training' })
+      : activityType === 'game' ? t('kindGame', { defaultValue: 'Game' })
+      : t('kindEvent', { defaultValue: 'Event' })
     return {
+      activityKind: activityKind || fallbackKind,
       activityTitle: title,
       activityDate: formatDate(activityDate.split(' ')[0]),
       filterLabel,
@@ -602,7 +614,7 @@ export default function ParticipationRosterModal({
       totalCount: exportRows.length,
       positionsSummary: positionsSummaryText,
     }
-  }, [title, activityDate, statusFilter, exportRows.length, positionSummary, t])
+  }, [activityKind, activityType, title, activityDate, statusFilter, exportRows.length, positionSummary, t])
 
   const handleExport = useCallback(async (format: 'csv' | 'png' | 'pdf') => {
     if (exporting) return
@@ -820,29 +832,44 @@ export default function ParticipationRosterModal({
           Portalled to document.body so it escapes the Vaul Drawer / Radix
           Dialog ancestor — those carry a `transform` during open + at rest,
           which turns `position: fixed` into a relative anchor and clipped
-          the snapshot to a blank rectangle. We hide it by parking it
-          off-screen (`left: -10000px`) instead of `opacity: 0`: html-to-image
-          clones the DOM with computed styles intact, so an opacity-0 root
-          paints to a fully transparent canvas → the saved PNG is blank
-          white. Off-screen positioning leaves the element fully opaque so
-          the snapshot actually contains pixels. */}
+          the snapshot to a blank rectangle.
+          Hiding strategy: outer wrapper clips via `width: 0; height: 0;
+          overflow: hidden;` while the INNER node (the one passed to
+          html-to-image) gets clean normal-flow styles — no `opacity: 0`,
+          no `position: fixed; left: -10000px`. html-to-image clones the
+          inner node with its computed styles inlined; if those styles
+          carry a hide hack the snapshot inherits it (opacity:0 → blank
+          alpha; off-screen position → content paints outside the SVG
+          foreignObject's canvas). The outer wrapper does the hiding and
+          gets discarded by the cloner because we hand it the inner ref. */}
       {canEditRoster && createPortal(
         <div
-          ref={printRef}
           aria-hidden="true"
           style={{
             position: 'fixed',
-            left: '-10000px',
+            left: 0,
             top: 0,
+            width: 0,
+            height: 0,
+            overflow: 'hidden',
+            pointerEvents: 'none',
+            zIndex: -1,
+          }}
+        >
+        <div
+          ref={printRef}
+          style={{
             width: '800px',
             backgroundColor: '#ffffff',
             color: '#111827',
             padding: '24px',
             fontFamily: 'Arial, Helvetica, sans-serif',
-            pointerEvents: 'none',
           }}
         >
           <div style={{ borderBottom: '2px solid #e5e7eb', paddingBottom: '12px', marginBottom: '16px' }}>
+            <p style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 4px' }}>
+              {exportMeta.activityKind}
+            </p>
             <h1 style={{ fontSize: '20px', fontWeight: 600, margin: 0 }}>{exportMeta.activityTitle}</h1>
             <p style={{ fontSize: '13px', color: '#6b7280', margin: '6px 0 0' }}>
               {exportMeta.activityDate} &middot; {t('filter', { defaultValue: 'Filter' })}: {exportMeta.filterLabel} ({exportMeta.totalCount})
@@ -911,6 +938,7 @@ export default function ParticipationRosterModal({
           <p style={{ marginTop: '16px', fontSize: '11px', color: '#9ca3af', textAlign: 'right' }}>
             {t('exportedAt', { defaultValue: 'Exported' })} {exportMeta.exportedAt}
           </p>
+        </div>
         </div>,
         document.body,
       )}

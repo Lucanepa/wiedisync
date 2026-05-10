@@ -36,9 +36,18 @@ function getStorage(): Storage {
 
 const host = typeof window !== 'undefined' ? window.location.hostname : ''
 const isProd = host === 'wiedisync.kscw.ch'
+const isLocalhost = host === 'localhost' || host === '127.0.0.1' || host.endsWith('.local')
+// Localhost ALWAYS points at dev Directus regardless of `VITE_DIRECTUS_URL`
+// in `.env*` — prod Directus has a strict CORS allowlist that doesn't and
+// shouldn't include localhost, so an env override that pointed there would
+// just yield "blocked by CORS policy" on every fetch. Prod hostname always
+// points at prod. Any other host (CF Pages preview, pages.dev, custom
+// preview domains) honors the env or falls back to dev.
 export const API_URL = isProd
   ? 'https://directus.kscw.ch'
-  : (import.meta.env.VITE_DIRECTUS_URL || 'https://directus-dev.kscw.ch')
+  : isLocalhost
+    ? 'https://directus-dev.kscw.ch'
+    : (import.meta.env.VITE_DIRECTUS_URL || 'https://directus-dev.kscw.ch')
 
 // ── Client ──────────────────────────────────────────────────────────
 

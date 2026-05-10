@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ClipboardList, Clock, AlertTriangle, Trophy, Bell, ArrowRightLeft, BellRing, BellOff, UserPlus, Trash2 } from 'lucide-react'
+import { ClipboardList, Clock, AlertTriangle, Trophy, Bell, ArrowRightLeft, BellRing, BellOff, UserPlus, Trash2, ChevronDown, X } from 'lucide-react'
 import type { Notification } from '../types'
 import { usePushNotifications } from '../hooks/usePushNotifications'
 
@@ -153,10 +153,18 @@ export default function NotificationPanel({
       >
         {/* Scrollable body — panelRef points here so onTouchStart can read scrollTop */}
         <div ref={panelRef} className="pb-safe flex-1 overflow-y-auto overscroll-contain">
-        {/* Handle (mobile) */}
+        {/* Handle (mobile) + close button */}
         <div className="sticky top-0 z-10 rounded-t-2xl bg-white dark:bg-gray-800 lg:rounded-t-2xl">
-          <div className="flex justify-center pb-1 pt-3 lg:hidden">
+          <div className="relative flex justify-center pb-1 pt-3 lg:hidden">
             <div className="h-1 w-10 rounded-full bg-gray-300 dark:bg-gray-600" />
+            <button
+              type="button"
+              onClick={startClose}
+              aria-label={t('close', { defaultValue: 'Close' })}
+              className="absolute right-2 top-0 inline-flex h-11 w-11 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+            >
+              <ChevronDown className="h-5 w-5" />
+            </button>
           </div>
 
           {/* Header */}
@@ -181,6 +189,15 @@ export default function NotificationPanel({
                   {t('clearRead')}
                 </button>
               )}
+              {/* Desktop close (mobile uses the chevron in the handle row) */}
+              <button
+                type="button"
+                onClick={startClose}
+                aria-label={t('close', { defaultValue: 'Close' })}
+                className="hidden h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-gray-300 lg:inline-flex"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
           </div>
         </div>

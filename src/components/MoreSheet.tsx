@@ -220,9 +220,17 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
         onClick={(e) => e.stopPropagation()}
         onAnimationEnd={(e) => { if (e.target === e.currentTarget) onAnimEnd() }}
       >
-        {/* Handle */}
-        <div className="flex shrink-0 justify-center rounded-t-2xl bg-white pb-2 pt-3 dark:bg-gray-800">
+        {/* Handle + close button */}
+        <div className="relative flex shrink-0 items-center justify-center rounded-t-2xl bg-white pb-2 pt-3 dark:bg-gray-800">
           <div className="h-1 w-10 rounded-full bg-gray-300 dark:bg-gray-600" />
+          <button
+            type="button"
+            onClick={startClose}
+            aria-label={t('close', { defaultValue: 'Close' })}
+            className="absolute right-2 top-1 inline-flex h-11 w-11 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+          >
+            <ChevronDown className="h-5 w-5" />
+          </button>
         </div>
 
         {/* Scrollable body */}

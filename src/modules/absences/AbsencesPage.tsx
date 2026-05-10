@@ -126,7 +126,6 @@ export default function AbsencesPage() {
             <h1 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-gray-100">{t('title')}</h1>
             <TourPageButton />
           </div>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('subtitle')}</p>
         </div>
         <div className="flex gap-2">
           {viewType === 'absences' && scope === 'mine' && (

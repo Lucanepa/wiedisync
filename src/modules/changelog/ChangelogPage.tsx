@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.5.3'
+const APP_VERSION = '4.5.4'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,20 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.5.4',
+    date: '2026-05-10',
+    sections: [
+      {
+        title: 'Roster modal hides excluded guests',
+        items: [
+          'Trainings with `excluded_guest_levels` set (commit `af71850`, v4.5.x) hid Yes/Maybe/No buttons on the guest\'s own card and server-blocked their `participations.create`, but never touched the staff-side roster view. Excluded guests sat in `ParticipationRosterModal` as zombie "Hasn\'t replied yet" rows — they couldn\'t reply (UI hidden + server 403), and they inflated the "not responded" count.',
+          '`ParticipationRosterModal` gained an `excludedGuestLevels` prop and now drops members whose `member_teams.guest_level` is in the excluded set before building `memberList`. Wired through from `TrainingDetailModal` and `TrainingsPage` (passes `training.excluded_guest_levels`).',
+          'Games extension: same modal also drops any member with `guest_level > 0` whenever `activityType === \'game\'` — matches the hard rule from `af71850` (games never allow guests). No call-site changes needed; both `GameDetailModal` and `GamesPage` already pass `activityType="game"`.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.5.3',
     date: '2026-05-07',

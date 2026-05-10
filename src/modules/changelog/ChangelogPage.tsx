@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.6.3'
+const APP_VERSION = '4.6.4'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,24 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.6.4',
+    date: '2026-05-10',
+    sections: [
+      {
+        title: 'Roster export PNG/PDF really renders content now',
+        items: [
+          'v4.6.2 portaled the printable view to `document.body` to escape Vaul Drawer\'s transformed ancestor — that fixed the "snapshot clipped to a blank rectangle" failure mode but kept `opacity: 0` as the hide mechanism, so the new failure mode was a fully-transparent (white-on-white) PNG. `html-to-image` clones the source DOM with computed styles intact, including `opacity: 0` on the root, so the painted canvas was 0-alpha across the whole frame. Switched to off-screen positioning (`left: -10000px`) — the printable view stays invisible to the user but is fully opaque for the snapshot.',
+        ],
+      },
+      {
+        title: '/status: friendlier label before the first cron fires',
+        items: [
+          'Migration 045 seeds `sync_runs` rows at the 1970-01-01 epoch so they show stale immediately on a fresh deploy — but the `/status` row was rendering that as "20583 d ago", which is technically true and visually nonsense. `useInfraHealth.ts` now flags any heartbeat dated before 2000-01-01 as `awaitingFirstRun: true`; `StatusPage` shows "Awaiting first run" in that case (still orange — the cron genuinely hasn\'t run yet). Once the next scheduled cycle fires (gcal_sync 04:00 UTC, svrz_sync 04:30 UTC, sv_sync 06:00 UTC, bp_sync 06:05 UTC) the row flips to a real "X h ago".',
+        ],
+      },
+    ],
+  },
   {
     version: '4.6.3',
     date: '2026-05-10',

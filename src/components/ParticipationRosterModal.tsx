@@ -820,16 +820,19 @@ export default function ParticipationRosterModal({
           Portalled to document.body so it escapes the Vaul Drawer / Radix
           Dialog ancestor — those carry a `transform` during open + at rest,
           which turns `position: fixed` into a relative anchor and clipped
-          the snapshot to a blank rectangle. opacity:0 + pointer-events:none
-          + z-index:-1 keeps it invisible and inert while still laying out
-          properly so html-to-image can measure + paint it. */}
+          the snapshot to a blank rectangle. We hide it by parking it
+          off-screen (`left: -10000px`) instead of `opacity: 0`: html-to-image
+          clones the DOM with computed styles intact, so an opacity-0 root
+          paints to a fully transparent canvas → the saved PNG is blank
+          white. Off-screen positioning leaves the element fully opaque so
+          the snapshot actually contains pixels. */}
       {canEditRoster && createPortal(
         <div
           ref={printRef}
           aria-hidden="true"
           style={{
             position: 'fixed',
-            left: 0,
+            left: '-10000px',
             top: 0,
             width: '800px',
             backgroundColor: '#ffffff',
@@ -837,8 +840,6 @@ export default function ParticipationRosterModal({
             padding: '24px',
             fontFamily: 'Arial, Helvetica, sans-serif',
             pointerEvents: 'none',
-            opacity: 0,
-            zIndex: -1,
           }}
         >
           <div style={{ borderBottom: '2px solid #e5e7eb', paddingBottom: '12px', marginBottom: '16px' }}>

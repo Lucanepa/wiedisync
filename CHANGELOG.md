@@ -2,6 +2,18 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## v4.6.4 — 2026-05-10
+
+### Roster export PNG/PDF: actually contains pixels now
+
+- v4.6.2 fixed the "blank snapshot" failure caused by the printable view sitting inside Vaul Drawer's transformed ancestor (re-anchored `position: fixed`) by portaling the view to `document.body`. The wrapper kept `opacity: 0` as the hide mechanism — and `html-to-image` clones the source DOM with computed styles intact, so the painted canvas inherited 0 alpha across the frame. Result: the saved PNG/PDF was a fully transparent image filled with the `backgroundColor: '#ffffff'` baseline → blank white file.
+- Switched the hide mechanism from `opacity: 0` (and `zIndex: -1`) to `left: -10000px`. The printable view stays invisible to the user, fully opaque for the snapshot, and the off-screen positioning means it never gets composited into the visible viewport even briefly.
+
+### `/status`: humane label before the first cron fires
+
+- Migration 045 seeds `sync_runs` rows at the 1970-01-01 epoch so a freshly-deployed system shows them as stale immediately. The status row was rendering that literally as "20583 d ago" — accurate, useless. `useInfraHealth.ts` flags any heartbeat dated before 2000-01-01 as `awaitingFirstRun: true`; `StatusPage` shows "Awaiting first run" (still orange — the cron genuinely hasn't fired yet). Once the next cycle runs (gcal_sync 04:00 UTC, svrz_sync 04:30 UTC, sv_sync 06:00 UTC, bp_sync 06:05 UTC) the row flips to "X h ago".
+- New i18n key `bugfixes.statusAwaitingFirstRun` (EN + DE; FR/GSW/IT fall back to EN as they don't translate the `/status` rows yet).
+
 ## v4.6.3 — 2026-05-10
 
 ### MoreSheet swipe-down to dismiss

@@ -51,6 +51,12 @@ export default function StatusPage() {
   const gc = syncs.find(s => s.source === 'gcal')
   const syncRow = (s: typeof sv): ServiceStatus =>
     !s ? 'loading' : s.isStale ? 'warn' : 'ok'
+  const syncDetail = (s: typeof sv): string | undefined => {
+    if (!s) return undefined
+    if (s.awaitingFirstRun) return t('statusAwaitingFirstRun')
+    if (!s.lastUpdated) return undefined
+    return `${relativeTime(s.lastUpdated, '')} ${t('statusAgo')}`
+  }
 
   const rows: ServiceRow[] = [
     {
@@ -65,21 +71,21 @@ export default function StatusPage() {
       label: t('statusSvLabel'),
       icon: <Database className="h-4 w-4" />,
       status: syncRow(sv),
-      detail: sv?.lastUpdated ? `${relativeTime(sv.lastUpdated, '')} ${t('statusAgo')}` : undefined,
+      detail: syncDetail(sv),
     },
     {
       key: 'bp',
       label: t('statusBpLabel'),
       icon: <Database className="h-4 w-4" />,
       status: syncRow(bp),
-      detail: bp?.lastUpdated ? `${relativeTime(bp.lastUpdated, '')} ${t('statusAgo')}` : undefined,
+      detail: syncDetail(bp),
     },
     {
       key: 'gc',
       label: t('statusGcalLabel'),
       icon: <Calendar className="h-4 w-4" />,
       status: syncRow(gc),
-      detail: gc?.lastUpdated ? `${relativeTime(gc.lastUpdated, '')} ${t('statusAgo')}` : undefined,
+      detail: syncDetail(gc),
     },
   ]
 

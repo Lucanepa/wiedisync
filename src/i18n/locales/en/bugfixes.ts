@@ -51,6 +51,7 @@ export default {
   statusBpLabel: 'Basketplan sync',
   statusGcalLabel: 'Hall schedule sync',
   statusAgo: 'ago',
+  statusAwaitingFirstRun: 'Awaiting first run',
   statusAllOk: 'All systems operational',
   statusAllOkSubtitle: 'App, data syncs, and calendar are all up to date.',
   statusSomeDown: 'A service is offline',

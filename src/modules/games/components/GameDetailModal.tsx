@@ -632,6 +632,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
       activityDate={game?.date ?? ''}
       teamIds={kscwTeamId ? [kscwTeamId] : []}
       title={t('participationRoster')}
+      activityKind={game ? `${game.home_team ?? ''} vs ${game.away_team ?? ''}`.trim() : undefined}
       respondBy={game?.respond_by}
       activityStartTime={game?.time}
       showRsvpTime={isFeatureEnabled(kscwTeamObj?.features_enabled, 'show_rsvp_time')}

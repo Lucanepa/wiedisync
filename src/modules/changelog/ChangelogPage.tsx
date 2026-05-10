@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.6.6'
+const APP_VERSION = '4.6.7'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,19 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.6.7',
+    date: '2026-05-10',
+    sections: [
+      {
+        title: 'Roster summary count: actual fix this time',
+        items: [
+          'v4.6.6 only blocked excluded-guest leak (memberIdSet check) but didn\'t address player-coach double-counting. A player who carries both an `is_staff = true` presence marker AND a separate non-staff player RSVP for the same training was counted twice — modal said "14 Confirmed" while the card-row preview correctly said 13. `playerParticipations` now mirrors `ParticipationSummary` (the card-row source of truth) exactly: dedupe by member with best-status priority (confirmed > tentative > waitlisted > declined), drop is_staff rows from the player tally, restrict to `memberIdSet`. `getMemberStatus` prefers the non-staff row so the visible list and the count never disagree on which row "represents" a given member.',
+          '"Coach present" badge is now driven by a Set of player-coach IDs walking the FULL participations list, not by `summaryParticipations` (which now excludes is_staff rows). A coach who only has an `is_staff` confirmed marker — no separate player RSVP — still triggers the badge.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.6.6',
     date: '2026-05-10',

@@ -89,14 +89,17 @@ export const client = createDirectus(API_URL)
   }))
   .with(rest())
   .with(realtime({
-    // When `API_URL` is the relative `/directus` prefix (proxy mode), the
-    // SDK's default URL derivation produces `/directus/websocket` which the
-    // browser rejects (WebSocket needs absolute ws:// or wss://). Build the
-    // absolute proxy URL explicitly here; vite's `ws: true` proxy entry
-    // forwards it to wss://directus.kscw.ch/websocket.
-    url: useProdProxy && typeof window !== 'undefined'
-      ? `${window.location.origin.replace(/^http/, 'ws')}/directus/websocket`
-      : undefined,
+    // The Directus SDK detects URL overrides with `'url' in config` — passing
+    // `url: undefined` still hits that branch, then `new URL(undefined)`
+    // throws "Invalid URL" and crashes the page (WIEDISYNC-3Q). Only include
+    // the key when we genuinely want to override the derived URL. In proxy
+    // mode (`npm run dev:prod`), API_URL is the relative `/directus` prefix
+    // and the SDK would derive `/directus/websocket` which the browser
+    // rejects (WebSocket needs absolute ws:// or wss://); we build the
+    // absolute proxy URL explicitly and vite's `ws: true` entry forwards it.
+    ...(useProdProxy && typeof window !== 'undefined'
+      ? { url: `${window.location.origin.replace(/^http/, 'ws')}/directus/websocket` }
+      : {}),
     authMode: 'handshake',
     heartbeat: false,
     reconnect: { delay: 5000, retries: 2 },

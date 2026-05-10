@@ -286,9 +286,14 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
       return
     }
 
-    // Resolve hall_slot relation: only for regular slots in auto mode
+    // Resolve hall_slot relation: only for regular slots in auto mode.
+    // Coerce empty-string IDs to null — Postgres rejects `""` for an integer
+    // FK ("invalid input syntax for type integer", WIEDISYNC-3N) and an
+    // empty SlotOption.hallSlotId is semantically "no slot" anyway.
     const activeSlot = slotOptions.find((o) => o.key === selectedSlotKey)
-    const hallSlotId = slotMode === 'auto' && activeSlot?.type === 'regular' ? activeSlot.hallSlotId : null
+    const hallSlotId = slotMode === 'auto' && activeSlot?.type === 'regular' && activeSlot.hallSlotId
+      ? activeSlot.hallSlotId
+      : null
 
     const data = {
       team: teamId,

@@ -212,16 +212,21 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
       {/* Backdrop */}
       <div className={`absolute inset-0 bg-black/50 ${closing ? 'animate-fade-out' : 'animate-fade-in'}`} />
 
-      {/* Sheet */}
+      {/* Sheet — animation lives on this wrapper; scrolling lives on the inner
+          container so iOS Safari doesn't lose touch-scroll when the parent
+          carries an active transform from the slide-up keyframes. */}
       <div
-        className={`pb-safe absolute bottom-0 left-0 right-0 max-h-[85vh] overflow-y-auto overscroll-contain rounded-t-2xl bg-white dark:bg-gray-800 ${closing ? 'animate-sheet-down' : 'animate-sheet-up'}`}
+        className={`absolute bottom-0 left-0 right-0 flex max-h-[85vh] flex-col rounded-t-2xl bg-white dark:bg-gray-800 ${closing ? 'animate-sheet-down' : 'animate-sheet-up'}`}
         onClick={(e) => e.stopPropagation()}
-        onAnimationEnd={onAnimEnd}
+        onAnimationEnd={(e) => { if (e.target === e.currentTarget) onAnimEnd() }}
       >
-        {/* Handle — sticky so it's always visible */}
-        <div className="sticky top-0 z-10 flex justify-center rounded-t-2xl bg-white pb-2 pt-3 dark:bg-gray-800">
+        {/* Handle */}
+        <div className="flex shrink-0 justify-center rounded-t-2xl bg-white pb-2 pt-3 dark:bg-gray-800">
           <div className="h-1 w-10 rounded-full bg-gray-300 dark:bg-gray-600" />
         </div>
+
+        {/* Scrollable body */}
+        <div className="pb-safe flex-1 overflow-y-auto overscroll-contain">
 
         {/* Nav items */}
         <nav className="px-4 pb-2">
@@ -439,6 +444,7 @@ export default function MoreSheet({ onClose, unreadNotifications = 0, onOpenNoti
           <NavLink to="/impressum" onClick={startClose} className="hover:text-gray-600 dark:hover:text-gray-300">
             {t('impressum')}
           </NavLink>
+        </div>
         </div>
       </div>
     </div>

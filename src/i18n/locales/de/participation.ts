@@ -48,4 +48,13 @@ export default {
   positions: 'Positionswünsche',
   positionRequired: 'Position wählen...',
   positionsRequiredError: 'Alle 3 Positionen sind erforderlich',
+  export: 'Exportieren',
+  exportCsv: 'CSV',
+  exportPng: 'PNG-Bild',
+  exportPdf: 'PDF',
+  exportedAt: 'Exportiert',
+  filter: 'Filter',
+  name: 'Name',
+  status: 'Status',
+  note: 'Notiz',
 } as const

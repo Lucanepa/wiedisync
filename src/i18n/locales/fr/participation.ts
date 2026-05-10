@@ -48,4 +48,13 @@ export default {
   positions: 'Preferences de poste',
   positionRequired: 'Choisir un poste...',
   positionsRequiredError: 'Les 3 postes sont obligatoires',
+  export: 'Exporter',
+  exportCsv: 'CSV',
+  exportPng: 'Image PNG',
+  exportPdf: 'PDF',
+  exportedAt: 'Exporté',
+  filter: 'Filtre',
+  name: 'Nom',
+  status: 'Statut',
+  note: 'Note',
 } as const

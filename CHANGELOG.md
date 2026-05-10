@@ -2,6 +2,28 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## v4.6.0 — 2026-05-10
+
+### Roster export — CSV / PNG / PDF
+
+- **New Export dropdown in `ParticipationRosterModal`**, gated by `canEditRoster` (coach / team-responsible / admin). Three formats: CSV, PNG image, PDF. Respects the active status filter — exporting "Confirmed" produces only confirmed members; exporting "All" appends the waitlist + staff sections so the file mirrors what's on screen.
+- **Columns**: full name (with leadership suffix — Coach / C / TR / Staff), `members.number` (jersey), `members.position[]` (default positions), human-readable status (including the absence-reason variant for declined-by-absence rows), guest count, free-text note (or absence reason), RSVP timestamp.
+- **CSV**: vanilla `Blob` via the existing `toCSV` / `downloadText` helpers in `src/modules/admin/utils/exportResults.ts`. UTF-8 BOM up front so Excel autodetects encoding (umlauts in member names). Five-row metadata header (title, date, filter + count, exported-at) before the data table.
+- **PNG / PDF**: hidden printable view rendered off-screen at 800px width with light-mode inline styles — exports look identical regardless of the user's dark-mode setting. PNG via `html-to-image` (lazy-loaded, ~47KB gzip). PDF wraps the same snapshot via `jspdf` (lazy-loaded, ~127KB gzip), slicing the canvas vertically when content exceeds one A4 page. Both libs are dynamic imports — main bundle is unchanged for users who never click Export.
+- **Filename**: `<title>_<date>_<filter>.<ext>` with reserved characters sanitised.
+- **Position summary header**: above the member table, the export shows a pill row with the count of each playing position represented in the current population (e.g. `3 Setter`, `5 Outside hitter`, `4 Middle blocker`, `2 Opposite`, `2 Libero`). Members are counted once per position they declare on their profile (a setter/outside hybrid contributes to both buckets). Order is fixed (S → O → M → D → L → BB equivalents → guest → other) so consecutive exports read consistently. CSV gets a `Positions:` line in the metadata block; PNG/PDF render pills below the status counts. Localised via the existing `teams` namespace position keys (de/en/gsw/fr/it).
+
+### Mobile bottom sheet scroll fix
+
+- **`MoreSheet` and `NotificationPanel` couldn't be scrolled on mobile** (both Android Chrome and iOS Safari) when content overflowed — admin-mode users carry a long secondary nav + admin section + super-admin section, well past the 85vh cap. Both components placed the slide-up keyframe (`animate-sheet-up`, `translateY(100%) → 0`, `both` fill) and `overflow-y-auto` on the **same DOM node**. The active/settled `transform` promotes the element to a compositor layer; on both engines that layer mishandles touch-driven scrolling. `position: sticky` children of a transformed ancestor are also broken on both — which compounded the problem for the sticky handles.
+- **Restructure**: outer animated wrapper (`flex flex-col max-h-[85vh]` + `animate-sheet-*`) wraps an inner `flex-1 overflow-y-auto overscroll-contain` body. Scroll lives on a node with no transform. `panelRef` in `NotificationPanel` was moved to the new scroll container so the swipe-down-to-close gate (`scrollTop <= 0 && dy > 0`) still reads the correct scroll position.
+- **`onAnimationEnd` hardened** on both wrappers (`if (e.target === e.currentTarget)`) to ignore bubbled `animationend` from descendants — latent footgun if any child ever gets a CSS animation.
+- **Audit pass** confirmed `Modal` (Vaul-based shadcn `Drawer` on mobile) is structurally fine. `MemberMultiSelect` and `ParticipationButton` use sibling-not-ancestor backdrops, so interior taps don't bubble to the close handler.
+
+### Roster filter dropdown
+
+- `ParticipationRosterModal` status filter row converted from a horizontally-scrolling chip strip to a single `DropdownMenu` trigger. Saves ~36px of vertical space on mobile, removes the awkward x-scroll on narrow screens, and shows all options with colored dot + count per status. Active filter shown on the trigger button with the same dot.
+
 ## v4.5.4 — 2026-05-10
 
 ### Roster modal hides excluded guests

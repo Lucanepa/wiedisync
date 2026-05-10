@@ -140,17 +140,19 @@ export default function NotificationPanel({
       {/* Backdrop */}
       <div className={`absolute inset-0 bg-black/50 ${closing ? 'animate-fade-out' : 'animate-fade-in'}`} />
 
-      {/* Panel */}
+      {/* Panel — animation/drag transform on this wrapper; scrolling on inner
+          container so iOS Safari keeps touch-scroll while transform is active. */}
       <div
-        ref={panelRef}
-        className={`pb-safe absolute bottom-0 left-0 right-0 max-h-[85vh] overflow-y-auto overscroll-contain rounded-t-2xl bg-white dark:bg-gray-800 lg:bottom-auto lg:left-auto lg:right-4 lg:top-4 lg:max-h-[80vh] lg:w-96 lg:rounded-2xl lg:shadow-2xl ${closing ? 'animate-sheet-down lg:animate-fade-out' : 'animate-sheet-up lg:animate-modal-enter'}`}
+        className={`absolute bottom-0 left-0 right-0 flex max-h-[85vh] flex-col rounded-t-2xl bg-white dark:bg-gray-800 lg:bottom-auto lg:left-auto lg:right-4 lg:top-4 lg:max-h-[80vh] lg:w-96 lg:rounded-2xl lg:shadow-2xl ${closing ? 'animate-sheet-down lg:animate-fade-out' : 'animate-sheet-up lg:animate-modal-enter'}`}
         style={dragY > 0 ? { transform: `translateY(${dragY}px)`, transition: 'none' } : undefined}
         onClick={(e) => e.stopPropagation()}
-        onAnimationEnd={onAnimEnd}
+        onAnimationEnd={(e) => { if (e.target === e.currentTarget) onAnimEnd() }}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
       >
+        {/* Scrollable body — panelRef points here so onTouchStart can read scrollTop */}
+        <div ref={panelRef} className="pb-safe flex-1 overflow-y-auto overscroll-contain">
         {/* Handle (mobile) */}
         <div className="sticky top-0 z-10 rounded-t-2xl bg-white dark:bg-gray-800 lg:rounded-t-2xl">
           <div className="flex justify-center pb-1 pt-3 lg:hidden">
@@ -265,6 +267,7 @@ export default function NotificationPanel({
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   )

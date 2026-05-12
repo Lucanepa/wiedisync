@@ -11,14 +11,18 @@ export default function WeeklyDayHeaderCells() {
   const { t } = useTranslation('absences')
   return (
     <>
-      {DAY_KEYS.map((key) => (
-        <TableHead
-          key={key}
-          className="w-10 px-1 text-center text-[11px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400"
-        >
-          {t(key)}
-        </TableHead>
-      ))}
+      {DAY_KEYS.map((key) => {
+        const label = t(key)
+        return (
+          <TableHead
+            key={key}
+            className="w-7 px-0.5 sm:w-10 sm:px-1 text-center text-[10px] sm:text-[11px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400"
+          >
+            <span className="sm:hidden">{label.charAt(0)}</span>
+            <span className="hidden sm:inline">{label}</span>
+          </TableHead>
+        )
+      })}
     </>
   )
 }

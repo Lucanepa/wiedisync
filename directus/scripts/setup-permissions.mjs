@@ -640,13 +640,45 @@ async function main() {
   // Games — update (duty assignments, scores)
   await setPerm(LEADER_POLICY, 'games', 'update')
 
-  // Trainings — CRU
+  // Trainings — coach can read/CRU/delete trainings of teams they coach or TR.
+  // Read scope is required because the Member fallback policy only grants
+  // trainings.read to users present in `member_teams` of the team — a coach
+  // who is not also a player on their own team (common: Vorstand coaches,
+  // retired/parent coaches) would otherwise see no trainings at all.
+  const COACH_OR_TR_OF_TEAM = {
+    _or: [
+      { team: { coach: { members_id: { user: { _eq: '$CURRENT_USER' } } } } },
+      { team: { team_responsible: { members_id: { user: { _eq: '$CURRENT_USER' } } } } },
+    ],
+  }
+  await setPermRead(LEADER_POLICY, 'trainings', COACH_OR_TR_OF_TEAM)
   await setPerm(LEADER_POLICY, 'trainings', 'create')
   await setPerm(LEADER_POLICY, 'trainings', 'update')
+  await setPerm(LEADER_POLICY, 'trainings', 'delete', COACH_OR_TR_OF_TEAM)
 
-  // Events — CRU
+  // Events — coach can read/CRU/delete events of teams they coach or TR,
+  // plus club-wide events, plus events they created, plus events they were
+  // personally invited to. Mirrors the Member read policy (migration 033)
+  // but adds the coach/TR M2M traversal.
+  await setPermRead(LEADER_POLICY, 'events', {
+    _or: [
+      { created_by: { user: { _eq: '$CURRENT_USER' } } },
+      { event_type: { _in: ['verein', 'tournament'] } },
+      { teams: { teams_id: { coach: { members_id: { user: { _eq: '$CURRENT_USER' } } } } } },
+      { teams: { teams_id: { team_responsible: { members_id: { user: { _eq: '$CURRENT_USER' } } } } } },
+      { teams: { teams_id: { members: { member: { user: { _eq: '$CURRENT_USER' } } } } } },
+      { invited_members: { members_id: { user: { _eq: '$CURRENT_USER' } } } },
+    ],
+  })
   await setPerm(LEADER_POLICY, 'events', 'create')
   await setPerm(LEADER_POLICY, 'events', 'update')
+  await setPerm(LEADER_POLICY, 'events', 'delete', {
+    _or: [
+      { created_by: { user: { _eq: '$CURRENT_USER' } } },
+      { teams: { teams_id: { coach: { members_id: { user: { _eq: '$CURRENT_USER' } } } } } },
+      { teams: { teams_id: { team_responsible: { members_id: { user: { _eq: '$CURRENT_USER' } } } } } },
+    ],
+  })
   await setPerm(LEADER_POLICY, 'event_sessions', 'create')
   await setPerm(LEADER_POLICY, 'event_sessions', 'update')
   await setPerm(LEADER_POLICY, 'events_teams', 'create')

@@ -2,6 +2,19 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## v4.8.2 — 2026-05-12
+
+### Coaches see their team trainings & events again
+
+- Michelle Howald (Vorstand member coaching H2 + H3 without being on either roster) saw zero trainings for her teams even after the v4.8.1 LEADER policy fix. Root cause: LEADER had `trainings.create`/`update` but **no `trainings.read`** — the Member fallback policy's `trainings.read` is scoped to `member_teams`, so a coach who isn't a player on their own team gets nothing.
+- Same structural gap on events: LEADER had only `create`/`update` for `events`, no `read` or `delete`. Coaches couldn't see private team events or cancel them.
+- Fix in `setup-permissions.mjs`:
+  - **`trainings.read`** scoped via the coach/TR M2M traversal: `{ _or: [ { team: { coach: { members_id: { user: { _eq: $CURRENT_USER } } } } }, { team: { team_responsible: { members_id: { user: { _eq: $CURRENT_USER } } } } } ] }`.
+  - **`trainings.delete`** with the same scope.
+  - **`events.read`** with the union of the existing Member event filter (creator, club-wide, invited team via `member_teams`, invited member) plus the coach/TR traversal.
+  - **`events.delete`** scoped to event creator or coach/TR of an attached team.
+- Verified end-to-end on prod: temp-token query as Michelle (member 11) returns trainings of H2 + H3; querying a team she doesn't coach correctly returns empty.
+
 ## v4.8.1 — 2026-05-12
 
 ### Coaches & team responsibles can update their teams again

@@ -80,6 +80,8 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
   const [autoCancelOnMin, setAutoCancelOnMin] = useState(false)
   const [excludedGuestLevels, setExcludedGuestLevels] = useState<number[]>([])
   const [respondByDefaultDays, setRespondByDefaultDays] = useState<number | null>(null)
+  const [autoConfirmRsvp, setAutoConfirmRsvp] = useState<boolean | null>(null)
+  const [teamAutoConfirmDefault, setTeamAutoConfirmDefault] = useState(false)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
@@ -136,9 +138,21 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
         if (s.training_respond_by_days !== undefined) {
           setRespondByDefaultDays(s.training_respond_by_days)
         }
+        setTeamAutoConfirmDefault(s.training_auto_confirm === true)
       })
       .catch(() => { /* silently ignore */ })
   }, [teamId, training])
+
+  // For edit mode: load team default so the hint label is correct
+  useEffect(() => {
+    if (!training || !teamId) return
+    fetchItem<{ features_enabled: TeamSettings }>('teams', teamId, { fields: ['features_enabled'] })
+      .then((team) => {
+        const s = team.features_enabled ?? {}
+        setTeamAutoConfirmDefault(s.training_auto_confirm === true)
+      })
+      .catch(() => { /* silent */ })
+  }, [training, teamId])
 
   // Build matching slot options for the selected date
   const slotOptions = useMemo<SlotOption[]>(() => {
@@ -233,6 +247,8 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
         ? rawExcluded
         : typeof rawExcluded === 'string' ? (() => { try { const v = JSON.parse(rawExcluded); return Array.isArray(v) ? v : [] } catch { return [] } })() : []
       setExcludedGuestLevels(parsedExcluded.map((n: unknown) => Number(n)).filter((n: number) => [1, 2, 3].includes(n)))
+      const rawAcr = (training as Training).auto_confirm_rsvp
+      setAutoConfirmRsvp(rawAcr === true ? true : rawAcr === false ? false : null)
       // Edit mode: if training has a hall_slot, start in auto mode with it pre-selected
       if (training.hall_slot) {
         setSlotMode('auto')
@@ -259,6 +275,8 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
       setAutoCancelOnMin(false)
       setExcludedGuestLevels([])
       setRespondByDefaultDays(null)
+      setAutoConfirmRsvp(null)
+      setTeamAutoConfirmDefault(false)
       defaultsAppliedForTeam.current = null
       setSlotMode('auto')
       setSelectedSlotKey('')
@@ -314,6 +332,7 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
       require_note_if_absent: requireNoteIfAbsent,
       auto_cancel_on_min: autoCancelOnMin,
       excluded_guest_levels: excludedGuestLevels,
+      auto_confirm_rsvp: autoConfirmRsvp,
     }
 
     setIsLoading(true)
@@ -352,6 +371,7 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
       require_note_if_absent: data.require_note_if_absent,
       auto_cancel_on_min: data.auto_cancel_on_min,
       excluded_guest_levels: data.excluded_guest_levels,
+      auto_confirm_rsvp: data.auto_confirm_rsvp,
     }
 
     // Find sibling trainings with same hall_slot, excluding the one we already updated
@@ -637,6 +657,38 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
                   }`}
                 >
                   G{lvl}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="space-y-1.5 text-sm text-gray-700 dark:text-gray-300">
+          <div>
+            <span className="font-medium">{t('autoConfirmRsvp')}</span>
+            <p className="text-xs text-muted-foreground">
+              {t('autoConfirmRsvpHint', { default: teamAutoConfirmDefault ? t('on', { defaultValue: 'On' }) : t('off', { defaultValue: 'Off' }) })}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {([
+              { value: null, label: t('useTeamDefault') },
+              { value: true, label: t('on', { defaultValue: 'On' }) },
+              { value: false, label: t('off', { defaultValue: 'Off' }) },
+            ] as { value: boolean | null; label: string }[]).map((opt) => {
+              const active = autoConfirmRsvp === opt.value
+              return (
+                <button
+                  key={String(opt.value)}
+                  type="button"
+                  onClick={() => setAutoConfirmRsvp(opt.value)}
+                  className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                    active
+                      ? 'border-brand-500 bg-brand-100 text-brand-700 dark:border-brand-600 dark:bg-brand-900/30 dark:text-brand-300'
+                      : 'border-gray-300 bg-transparent text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  {opt.label}
                 </button>
               )
             })}

@@ -41,5 +41,6 @@ export function buildManualGamePayload(
     home_score: 0,
     away_score: 0,
     duty_confirmed: false,
+    auto_confirm_rsvp: input.auto_confirm_rsvp ?? null,
   }
 }

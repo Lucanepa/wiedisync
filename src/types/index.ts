@@ -297,6 +297,8 @@ export interface Game extends BaseRecord {
   svrz_push_status: 'pending' | 'pushed' | 'failed' | null
   respond_by: string
   min_participants: number
+  /** Per-game override for auto-confirm RSVP. null = inherit team default. */
+  auto_confirm_rsvp?: boolean | null
 
 }
 
@@ -328,6 +330,8 @@ export interface ManualGameInput {
   } | null
   league?: string
   round?: string
+  /** Per-game override for auto-confirm RSVP. null = inherit team default. */
+  auto_confirm_rsvp?: boolean | null
 }
 
 export interface RefereeExpense extends BaseRecord {
@@ -383,6 +387,8 @@ export interface Training extends BaseRecord {
   auto_cancel_on_min: boolean
   /** Guest tiers blocked from confirming/tentative on this training. Values 1-3. Empty = open to all. */
   excluded_guest_levels: number[]
+  /** Per-training override for auto-confirm RSVP. null = inherit team default. */
+  auto_confirm_rsvp?: boolean | null
 }
 
 export interface Absence extends BaseRecord {

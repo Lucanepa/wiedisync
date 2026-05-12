@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.8.7'
+const APP_VERSION = '4.8.8'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,22 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.8.8',
+    date: '2026-05-12',
+    sections: [
+      {
+        title: 'Security audit follow-ups (Low tier + hygiene)',
+        items: [
+          'Audit-log retention: `user_logs` now has a 90-day purge cron (daily at 02:15 UTC) — matches the retention window already advertised in the audit-log UI. Plus per-collection field redaction: `members`, `directus_users`, `push_subscriptions` payloads have PII (`ahv_nummer`, `birthdate`, `email`, `phone`, push keys, …) replaced with `[REDACTED]` before being stored; `reports_filed`, `messages`, `message_requests` log only `{_redacted: true, _fields: [...]}` so the audit reviewer can see WHAT changed without the row content leaking.',
+          'Announcement email body now allowlist-sanitized (`sanitize-html.js`): only inline-formatting tags + safe https-only links survive; `<script>`, `<style>`, `<iframe>`, `<img>` (tracking pixels), and all event handlers / inline styles are stripped before the email goes out. Closes a compromised-Sport-Admin → phishing-email vector.',
+          'SQL string-interpolation hardening: every `EXTRACT(DOW FROM DATE \'…\')` site in the absence/auto-confirm hooks now parameterizes the date through the driver (`EXTRACT(DOW FROM ?::date)`). The `daysOfWeek` array used by the absence-overlap helper also gets coerced to integers in the 0–6 range before interpolation. Defense-in-depth even though regex validation + jsonb column type already protect in practice.',
+          'Messaging DM auto-accept (migration 052): the trigger that flips pending message requests to `accepted` when two members land on the same team no longer requires the rows to share a `season` value. Cross-season teammates auto-accept the same way same-season teammates always did.',
+          'Docs: `PERMISSIONS.md` header updated through migration 052. `SCHEMA.sql` baseline regenerated from prod so fresh-install diffs cleanly. `pgbouncer.get_auth()` `search_path` finding documented under "Open / accepted" — Supabase-managed function, patching it from our side risks rollback on the next Supabase image bump.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.8.7',
     date: '2026-05-12',

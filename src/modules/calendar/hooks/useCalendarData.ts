@@ -251,13 +251,16 @@ function entryOverlapsRange(entry: CalendarEntry, rangeStart: Date, rangeEnd: Da
 export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true }: UseCalendarDataOptions) {
   const fetchRange = useFetchRange(rangeStart)
 
+  const authed = isAuthenticated()
   const wantHome = filters.sources.includes('game-home')
   const wantAway = filters.sources.includes('game-away')
-  const fetchGames = enabled && (wantHome || wantAway)
-  const fetchTrainings = enabled && filters.sources.includes('training')
-  const fetchClosures = enabled && filters.sources.includes('closure')
-  const fetchEvents = enabled && filters.sources.includes('event')
-  const fetchHallEvents = enabled && filters.sources.includes('hall')
+  // games / trainings / hall_closures / hall_events all require auth post-v4.4.x permission tightening —
+  // gate to avoid 403 "permission to access collection" spam from public visitors landing on /calendar.
+  const fetchGames = enabled && authed && (wantHome || wantAway)
+  const fetchTrainings = enabled && authed && filters.sources.includes('training')
+  const fetchClosures = enabled && authed && filters.sources.includes('closure')
+  const fetchEvents = enabled && authed && filters.sources.includes('event')
+  const fetchHallEvents = enabled && authed && filters.sources.includes('hall')
   const fetchAbsences = enabled && filters.sources.includes('absence')
 
   const { data: gamesRaw, isLoading: gamesLoading } = useCollection<Game>('games', {

@@ -71,6 +71,10 @@ export function initSentry() {
       // care (e.g. useBlocks) already catch and treat as empty; a real permission
       // misconfig would surface via the admin UI, not here.
       if (/permission to access collection .* or it does not exist/i.test(errMsg)) return null
+      // Expired access tokens surface on every in-flight request when a session ages out
+      // (e.g. /calendar fires 4-6 parallel useCollection calls → 4-6 Sentry events per expiry).
+      // The SDK auto-refreshes or kicks the user to /login; nothing actionable here.
+      if (/token expired/i.test(errMsg) || /token has expired/i.test(errMsg)) return null
       // Strip email-like strings from breadcrumb messages
       if (event.breadcrumbs) {
         for (const bc of event.breadcrumbs) {

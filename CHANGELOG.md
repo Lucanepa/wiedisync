@@ -15,6 +15,15 @@ All notable changes to Wiedisync are documented in this file. Recent releases ca
   - **`events.delete`** scoped to event creator or coach/TR of an attached team.
 - Verified end-to-end on prod: temp-token query as Michelle (member 11) returns trainings of H2 + H3; querying a team she doesn't coach correctly returns empty.
 
+### Auto-confirm RSVP — per-activity override + retroactive backfill
+
+- **Per-activity override**: `TrainingForm` and `ManualGameModal` now render a tri-state "Auto-confirm RSVP" control — *Use team default* / *On* / *Off*. The hint label resolves the current team default so coaches see what *Use team default* will produce. Stored as nullable boolean in new `trainings.auto_confirm_rsvp` and `games.auto_confirm_rsvp` columns (migration 048).
+- **Retroactive backfill on team toggle flip**: new `action('teams.items.update')` in `kscw-hooks` detects a change to `features_enabled.training_auto_confirm` / `game_auto_confirm` and runs the auto-confirm `INSERT … SELECT … NOT EXISTS` against every future training/game where `auto_confirm_rsvp IS NULL` (i.e. still inheriting). Trainings honour `excluded_guest_levels`; games include only `guest_level = 0` (`trg_participations_guest_block` still enforces).
+- **Activity-level flip backfill**: `action('trainings.items.update')` and `action('games.items.update')` were extended to run the same auto-confirm pass when `auto_confirm_rsvp` is present in the payload — so a single training flipped to *On* fills its roster without waiting for cron or a save-twice loop. Date guard: `onlyIfFuture` skips past activities.
+- **Effective resolution**: `effective = activity.auto_confirm_rsvp ?? team.features_enabled.<kind>_auto_confirm` — per-activity *Off* hard-overrides team *On*, letting coaches soft-opt-out specific sessions (optional scrimmages, "everyone show up if you can") without changing the whole team.
+- **Safety**: every backfill uses `NOT EXISTS` against `participations` keyed on `(activity_type, activity_id, member)` so absence-declined rows, manual RSVPs, and earlier auto-confirms are never overwritten. Confirmed in dev: re-running a backfill after manual RSVP edits leaves the manual choices alone.
+- i18n EN / DE / GSW / FR / IT for the tri-state labels and hint in both forms.
+
 ## v4.8.1 — 2026-05-12
 
 ### Coaches & team responsibles can update their teams again

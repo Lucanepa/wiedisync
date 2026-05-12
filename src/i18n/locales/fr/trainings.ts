@@ -99,4 +99,9 @@ export default {
   excludedGuestLevelsHint: 'Les invités des niveaux sélectionnés ne peuvent pas confirmer ni se marquer incertains',
   excludeAllGuests: 'Tous les invités',
   guestExcluded: 'Votre niveau d\'invité est exclu de cet entraînement',
+  autoConfirmRsvp: 'Confirmation automatique',
+  autoConfirmRsvpHint: 'Remplacer la valeur par défaut de l\'équipe ({{default}}). Tous les membres éligibles démarrent confirmés ; ils doivent se désinscrire.',
+  useTeamDefault: 'Valeur par défaut de l\'équipe',
+  on: 'Activé',
+  off: 'Désactivé',
 } as const

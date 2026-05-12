@@ -99,4 +99,9 @@ export default {
   excludedGuestLevelsHint: 'Gäste der ausgewählten Stufen können nicht zusagen oder als unsicher markieren',
   excludeAllGuests: 'Alle Gäste',
   guestExcluded: 'Deine Gaststufe ist von diesem Training ausgeschlossen',
+  autoConfirmRsvp: 'Automatisch bestätigen',
+  autoConfirmRsvpHint: 'Team-Standard überschreiben ({{default}}). Alle berechtigten Mitglieder starten als bestätigt; sie müssen sich aktiv abmelden.',
+  useTeamDefault: 'Team-Standard',
+  on: 'An',
+  off: 'Aus',
 } as const

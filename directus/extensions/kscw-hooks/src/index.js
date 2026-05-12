@@ -677,13 +677,71 @@ export default ({ action, filter, init, schedule }, { services, database, logger
   // on every authenticated create/update so the UI can flag third-party
   // edits. System-context writes (no accountability) leave the columns null.
   // Filters always overwrite client-supplied values so they can't be spoofed.
+  // Resolve editor's display name + role relative to the affected member.
+  // Role = 'coach' | 'team_responsible' | 'admin' | 'staff' (fallback).
+  // Migration 053 added the columns; this fills them at write time so the
+  // frontend can render "Edited by coach (Daniela Imhof) on …" without a
+  // per-row round-trip.
+  async function resolveAbsenceEditorMeta(accountability, affectedMemberId) {
+    try {
+      const editorUser = await database('directus_users').where('id', accountability.user)
+        .select('first_name', 'last_name').first()
+      const name = [editorUser?.first_name, editorUser?.last_name].filter(Boolean).join(' ') || null
+      if (accountability.admin) return { name, role: 'admin' }
+      if (!affectedMemberId) return { name, role: 'staff' }
+
+      const memberTeams = await database('member_teams').where('member', affectedMemberId).select('team')
+      const teamIds = memberTeams.map(mt => mt.team).filter(Boolean)
+      if (teamIds.length === 0) return { name, role: 'staff' }
+
+      const editorMember = await database('members').where('user', accountability.user).select('id').first()
+      if (!editorMember) return { name, role: 'staff' }
+
+      const isCoach = await database('teams_coaches')
+        .whereIn('teams_id', teamIds)
+        .andWhere('members_id', editorMember.id)
+        .first()
+      if (isCoach) return { name, role: 'coach' }
+
+      const isTR = await database('teams_responsibles')
+        .whereIn('teams_id', teamIds)
+        .andWhere('members_id', editorMember.id)
+        .first()
+      if (isTR) return { name, role: 'team_responsible' }
+
+      return { name, role: 'staff' }
+    } catch (err) {
+      log.error({ msg: `[absence-editor-meta] ${err.message}`, event: 'absence_editor_meta', stack: err.stack })
+      return { name: null, role: 'staff' }
+    }
+  }
+
   filter('absences.items.create', async (payload, _meta, { accountability }) => {
     if (!accountability?.user) return payload
-    return { ...payload, last_edited_by: accountability.user, last_edited_at: new Date().toISOString() }
+    const meta = await resolveAbsenceEditorMeta(accountability, payload.member)
+    return {
+      ...payload,
+      last_edited_by: accountability.user,
+      last_edited_at: new Date().toISOString(),
+      last_edited_name: meta.name,
+      last_edited_role: meta.role,
+    }
   })
-  filter('absences.items.update', async (payload, _meta, { accountability }) => {
+  filter('absences.items.update', async (payload, meta, { accountability }) => {
     if (!accountability?.user) return payload
-    return { ...payload, last_edited_by: accountability.user, last_edited_at: new Date().toISOString() }
+    let affectedMemberId = payload.member
+    if (!affectedMemberId && Array.isArray(meta?.keys) && meta.keys.length === 1) {
+      const row = await database('absences').where('id', meta.keys[0]).select('member').first()
+      affectedMemberId = row?.member
+    }
+    const editorMeta = await resolveAbsenceEditorMeta(accountability, affectedMemberId)
+    return {
+      ...payload,
+      last_edited_by: accountability.user,
+      last_edited_at: new Date().toISOString(),
+      last_edited_name: editorMeta.name,
+      last_edited_role: editorMeta.role,
+    }
   })
 
   async function notifyAbsenceThirdParty(absenceId, op) {

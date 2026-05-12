@@ -407,6 +407,10 @@ export interface Absence extends BaseRecord {
   last_edited_by?: string | null
   /** Migration 051: timestamp of the most recent authenticated write. */
   last_edited_at?: string | null
+  /** Migration 053: display name of the writer (first_name + last_name). */
+  last_edited_name?: string | null
+  /** Migration 053: writer's role relative to the affected member. */
+  last_edited_role?: 'coach' | 'team_responsible' | 'admin' | 'staff' | null
 }
 
 export interface Event extends BaseRecord {

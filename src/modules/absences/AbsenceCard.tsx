@@ -51,15 +51,25 @@ export default function AbsenceCard({ absence, onEdit, onDelete, memberName, can
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{absence.reason_detail}</p>
         )}
         {(() => {
-          // Third-party edit attribution (migration 051).
+          // Third-party edit attribution (migration 051 + role/name from 053).
           const m = asObj<Member>(absence.member)
           const editedBy = absence.last_edited_by
           const editedAt = absence.last_edited_at
           if (!editedBy || !editedAt) return null
           if (m?.user && m.user === editedBy) return null
+          const role = absence.last_edited_role
+          const name = absence.last_edited_name
+          const at = formatDateTimeCompact(editedAt)
+          // Per-role i18n key so each locale renders capitalisation/grammar
+          // naturally. Pre-053 rows have no role/name → legacy fallback.
+          const key =
+            role === 'coach' && name ? 'editedByCoachOn' :
+            role === 'team_responsible' && name ? 'editedByTeamResponsibleOn' :
+            role === 'admin' && name ? 'editedByAdminOn' :
+            'editedByStaffOn'
           return (
-            <p className="mt-1 text-xs italic text-gray-400 dark:text-gray-500">
-              {t('editedByStaffOn', { defaultValue: 'Edited by team staff on {{at}}', at: formatDateTimeCompact(editedAt) })}
+            <p className="mt-1 break-words text-xs italic text-gray-400 dark:text-gray-500">
+              {t(key, { at, name: name ?? '' })}
             </p>
           )
         })()}

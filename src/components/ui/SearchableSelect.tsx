@@ -144,7 +144,10 @@ export default function SearchableSelect({
       </div>
       {open && createPortal(
         <div ref={dropdownRef} data-searchable-select style={dropdownStyle} className="cursor-default rounded-md border bg-popover shadow-md">
-          <ul className="max-h-60 overflow-auto py-1" role="listbox">
+          <ul
+            className="max-h-60 overflow-y-auto overscroll-contain py-1 [touch-action:pan-y] [-webkit-overflow-scrolling:touch]"
+            role="listbox"
+          >
             {filtered.length === 0 && (
               <li className="px-3 py-2 text-sm text-muted-foreground">{t('noResults')}</li>
             )}
@@ -154,11 +157,10 @@ export default function SearchableSelect({
                 role="option"
                 aria-selected={value === option.value}
                 className={cn(
-                  'flex cursor-pointer select-none items-center px-3 py-2 text-sm hover:bg-accent',
+                  'flex min-h-[44px] cursor-pointer select-none items-center px-3 py-2 text-sm hover:bg-accent',
                   value === option.value && 'bg-accent',
                 )}
-                onMouseDown={(e) => {
-                  e.preventDefault()
+                onClick={() => {
                   onChange(option.value)
                   setOpen(false)
                 }}

@@ -68,7 +68,11 @@ export default function AbsenceForm({ open, absence, onSave, onCancel, forTeam, 
   const [indefinite, setIndefinite] = useState(false)
   const [validationError, setValidationError] = useState('')
 
+  // Initialise form state once per modal-open. Including `user` in deps would
+  // reset the picker every time useAuth refreshes (real-time events, refetch)
+  // — silently clobbering a coach's selection back to themselves.
   useEffect(() => {
+    if (!open) return
     if (absence) {
       setMemberId(relId(absence.member))
       setStartDate(absence.start_date.split(' ')[0])
@@ -87,7 +91,8 @@ export default function AbsenceForm({ open, absence, onSave, onCancel, forTeam, 
       setIndefinite(false)
     }
     setValidationError('')
-  }, [absence, user, open])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, absence])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

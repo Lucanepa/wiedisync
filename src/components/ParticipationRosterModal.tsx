@@ -409,7 +409,9 @@ export default function ParticipationRosterModal({
     }
     fetchAllItems<Member>('members', {
       filter: { id: { _in: staffMemberIds } },
-      fields: ['id', 'first_name', 'last_name', 'photo'],
+      // `user` is required so getEditAttribution() can suppress the
+      // "Edited by …" line when a coach/TR edits their own row.
+      fields: ['id', 'first_name', 'last_name', 'photo', 'user'],
     })
       .then((members) => setStaffMembers(members.sort(byFirstThenLastName)))
       .catch(() => {
@@ -633,19 +635,65 @@ export default function ParticipationRosterModal({
   }, [statusFilter, memberList, participations, absences])
 
   // ---- Edit attribution (migration 046) ------------------------------------
-  // Map directus_users.id → display name for the "Edited by …" line. We can
-  // only resolve names of editors who are themselves members of one of the
-  // teams whose roster we loaded; admins / coaches from other teams fall
-  // back to a generic "Staff" label. Cheap rebuild because `members` only
-  // changes when the team set or roster shape changes.
+  // Map directus_users.id → display name for the "Edited by …" line. Seeded
+  // from the team's own roster + staff so most edits resolve without an extra
+  // query; supplemented by `externalEditorNames` below for editor IDs that
+  // belong to people outside this team (e.g. an admin editing the roster from
+  // another team's perspective). Cheap rebuild because `members` only changes
+  // when the team set or roster shape changes.
+  const [externalEditorNames, setExternalEditorNames] = useState<Map<string, string>>(new Map())
   const editorNameByUserId = useMemo(() => {
     const m = new Map<string, string>()
     const all = [...memberList, ...staffMembers]
     for (const member of all) {
       if (member.user) m.set(member.user, `${member.first_name ?? ''} ${member.last_name ?? ''}`.trim() || t('staffFallback', { defaultValue: 'Staff' }))
     }
+    for (const [uid, name] of externalEditorNames) {
+      if (!m.has(uid)) m.set(uid, name)
+    }
     return m
-  }, [memberList, staffMembers, t])
+  }, [memberList, staffMembers, externalEditorNames, t])
+
+  // Fetch display names for editor user IDs that don't belong to anyone on
+  // the roster — typically admins (or coaches of a different team) editing
+  // from outside. Without this, attribution rows fall back to "Staff", which
+  // is what surfaced in WIEDISYNC roster screenshots showing
+  // "Edited to Maybe by Staff".
+  useEffect(() => {
+    if (!open || !user) return
+    const known = new Set<string>()
+    for (const m of memberList) if (m.user) known.add(m.user)
+    for (const m of staffMembers) if (m.user) known.add(m.user)
+    for (const [uid] of externalEditorNames) known.add(uid)
+    const missing = new Set<string>()
+    for (const p of participations) {
+      if (p.last_status_edited_by && !known.has(p.last_status_edited_by)) missing.add(p.last_status_edited_by)
+      if (p.last_note_edited_by && !known.has(p.last_note_edited_by)) missing.add(p.last_note_edited_by)
+    }
+    if (missing.size === 0) return
+    const ids = [...missing]
+    fetchAllItems<Member>('members', {
+      filter: { user: { _in: ids } },
+      fields: ['user', 'first_name', 'last_name'],
+    })
+      .then((rows) => {
+        if (rows.length === 0) return
+        setExternalEditorNames((prev) => {
+          const next = new Map(prev)
+          for (const r of rows) {
+            const uid = (r as Member & { user?: string }).user
+            if (!uid || next.has(uid)) continue
+            const name = `${r.first_name ?? ''} ${r.last_name ?? ''}`.trim()
+            if (name) next.set(uid, name)
+          }
+          return next
+        })
+      })
+      .catch(() => {
+        // Silent: falling back to the generic "Staff" label is acceptable.
+      })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, participations, memberList, staffMembers])
 
   /** Returns per-field attribution lines (migration 047).
    *  - `status`: surfaced when `last_status_edited_by` differs from the

@@ -14,4 +14,7 @@ export default {
   noTrainings: 'Käni Trainings am Start.',
   myTeams: 'Mini Teams',
   myNextAppointments: 'Mini nöchste Termin',
+  absencesAlertTitle: 'Bitte dini Abwäsenheite iitrage',
+  absencesAlertBody: 'Für d Spielplanig vo dr nöchschte Saison: Trag bitte alli bekannte Abwäsenheite bis am 1. Juni i, damit d Trainer chönd plane.',
+  absencesAlertCta: 'Abwäsenheite iitrage',
 } as const

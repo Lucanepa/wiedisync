@@ -382,6 +382,31 @@ export default function HomePage() {
         </p>
       </div>
 
+      {/* Spielplanung absences reminder — volleyball players, until 2026-06-01 */}
+      {user && isApproved && (primarySport === 'volleyball' || primarySport === 'both') && Date.now() < new Date('2026-06-01T23:59:59+02:00').getTime() && (
+        <div className="mb-6 lg:flex lg:flex-col lg:items-center">
+          <div className="w-full rounded-xl border border-amber-300 bg-amber-50 p-4 lg:max-w-2xl dark:border-amber-700/60 dark:bg-amber-900/20">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
+              <div className="min-w-0 flex-1">
+                <h3 className="text-sm font-semibold text-amber-900 dark:text-amber-100">
+                  {t('absencesAlertTitle')}
+                </h3>
+                <p className="mt-1 text-sm text-amber-800 dark:text-amber-200/90">
+                  {t('absencesAlertBody')}
+                </p>
+                <Link
+                  to="/absences"
+                  className="mt-2 inline-flex min-h-[36px] items-center rounded-md bg-amber-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 dark:text-amber-950"
+                >
+                  {t('absencesAlertCta')}
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* News section — unified feed: announcements + notifications */}
       {user && isApproved && feedItems.length > 0 && (
         <div className="mb-6 lg:flex lg:flex-col lg:items-center">

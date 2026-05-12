@@ -48,24 +48,36 @@ export default function SearchableSelect({
     ? options.filter((o) => o.label.toLowerCase().includes(search.toLowerCase()))
     : options
 
-  // Position dropdown relative to trigger via portal
+  // Position dropdown relative to trigger via portal. When inside a Radix
+  // Dialog (which uses translate(-50%, -50%) on its content), portalling
+  // there + position:fixed breaks — the transform creates a containing block
+  // for fixed children. So we portal into the dialog ancestor and use
+  // position:absolute with coordinates relative to the target's bounding box.
   useLayoutEffect(() => {
     if (!open || !triggerRef.current) return
     const dialogAncestor = triggerRef.current.closest('[role="dialog"]') as HTMLElement | null
-    setPortalTarget(dialogAncestor ?? document.body)
+    const target = dialogAncestor ?? document.body
+    setPortalTarget(target)
     function updatePosition() {
-      const rect = triggerRef.current!.getBoundingClientRect()
-      setDropdownStyle({
-        position: 'fixed',
-        top: rect.bottom + 4,
-        left: rect.left,
-        width: rect.width,
-        zIndex: 9999,
-        // Radix Dialog sets pointer-events:none on the body while open; the
-        // portalled dropdown is a body child so it inherits the block. Force
-        // pointer-events back on for the dropdown subtree.
-        pointerEvents: 'auto',
-      })
+      const triggerRect = triggerRef.current!.getBoundingClientRect()
+      if (dialogAncestor) {
+        const targetRect = dialogAncestor.getBoundingClientRect()
+        setDropdownStyle({
+          position: 'absolute',
+          top: triggerRect.bottom - targetRect.top + 4,
+          left: triggerRect.left - targetRect.left,
+          width: triggerRect.width,
+          zIndex: 9999,
+        })
+      } else {
+        setDropdownStyle({
+          position: 'fixed',
+          top: triggerRect.bottom + 4,
+          left: triggerRect.left,
+          width: triggerRect.width,
+          zIndex: 9999,
+        })
+      }
     }
     updatePosition()
     window.addEventListener('scroll', updatePosition, true)

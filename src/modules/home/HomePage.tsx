@@ -19,6 +19,7 @@ import EventDetailModal from '../events/EventDetailModal'
 import AnnouncementRow from './components/AnnouncementRow'
 import AnnouncementDetailModal from './components/AnnouncementDetailModal'
 import { useAnnouncements } from '../../hooks/useAnnouncements'
+import { useUserVisibleEventIds } from '../../hooks/useUserVisibleEventIds'
 import ParticipationSummary from '../../components/ParticipationSummary'
 import { useBulkParticipationStatuses } from '../../hooks/useBulkParticipationStatuses'
 import type { Game, Event, Team, Training, Hall, Member, MemberTeam, Notification, Announcement, Ranking, BaseRecord } from '../../types'
@@ -207,15 +208,23 @@ export default function HomePage() {
   const nextGames = hasTeams && !showAllGames ? myNextGames : allNextGames
   const latestResults = hasTeams && !showAllResults ? myLatestResults : allLatestResults
 
-  // Upcoming events — scope to user's teams + club-wide events
-  // Non-logged-in users only see club-wide events (no team-specific ones)
+  // Upcoming events — scope to user's teams + club-wide events.
+  // Resolve event IDs via the events_teams junction (single-level filter) rather
+  // than walking `events.teams.teams_id` — that path conflicts with the policy's
+  // own walk through the same alias and silently returns [] for non-admins.
+  // See [feedback_directus_m2m_double_walk] in CLAUDE.md.
+  const { teamEventIds, isLoading: eventIdsLoading } = useUserVisibleEventIds(
+    userTeamIds,
+    undefined,
+    hasTeams,
+  )
   const eventFilter = useMemo((): Record<string, unknown> => {
     const conditions: Record<string, unknown>[] = [{ end_date: { _gte: today } }]
     if (hasTeams) {
       conditions.push({
         _or: [
           { teams: { _null: true } },
-          ...userTeamIds.map(id => ({ teams: { teams_id: { _eq: id } } })),
+          { id: { _in: teamEventIds.length > 0 ? teamEventIds : [-1] } },
         ],
       })
     } else {
@@ -223,13 +232,14 @@ export default function HomePage() {
       conditions.push({ teams: { _null: true } })
     }
     return { _and: conditions }
-  }, [today, hasTeams, userTeamIds])
+  }, [today, hasTeams, teamEventIds])
 
   const { data: eventsRaw, isLoading: eventsLoading } = useCollection<EventExpanded>('events', {
     filter: eventFilter,
     fields: ['*', 'teams.teams_id.*'],
     sort: ['start_date'],
     limit: 10,
+    enabled: !eventIdsLoading,
   })
   const events = eventsRaw ?? []
 

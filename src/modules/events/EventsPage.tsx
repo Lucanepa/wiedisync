@@ -5,6 +5,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import { useCollection } from '../../lib/query'
 import { useMutation } from '../../hooks/useMutation'
+import { useUserVisibleEventIds } from '../../hooks/useUserVisibleEventIds'
 import { todayLocal } from '../../utils/dateHelpers'
 import { useRealtime } from '../../hooks/useRealtime'
 import EmptyState from '../../components/EmptyState'
@@ -51,6 +52,20 @@ export default function EventsPage() {
 
   const today = useMemo(() => todayLocal(), [])
 
+  // Resolve event IDs via junctions (single-level filter) rather than walking
+  // `events.teams.teams_id` / `events.invited_members.members_id` — those paths
+  // conflict with the events policy's own alias walk and silently return [] for
+  // non-admins. See [feedback_directus_m2m_double_walk] in CLAUDE.md.
+  const teamFilterIds = useMemo(
+    () => (selectedTeam ? [selectedTeam] : allUserTeamIds),
+    [selectedTeam, allUserTeamIds],
+  )
+  const { teamEventIds, invitedEventIds, isLoading: eventIdsLoading } = useUserVisibleEventIds(
+    teamFilterIds,
+    user?.id,
+    !effectiveIsAdmin,
+  )
+
   // Show events for selected team, or all user teams + club-wide events
   const eventFilter = useMemo((): Record<string, unknown> => {
     const conditions: Record<string, unknown>[] = []
@@ -64,36 +79,24 @@ export default function EventsPage() {
     }
     // Admins fetch ALL events — no audience filtering needed at API level
     if (!effectiveIsAdmin) {
+      const audienceEventIds = [...new Set([...teamEventIds, ...invitedEventIds])]
       const audienceConds: Record<string, unknown>[] = [
         { teams: { _null: true } },  // Club-wide events
+        { id: { _in: audienceEventIds.length > 0 ? audienceEventIds : [-1] } },
+        { invited_roles: { _nnull: true } },  // Role-targeted (filter client-side)
       ]
-
-      // Team-based (existing logic)
-      const teamFilterIds = selectedTeam ? [selectedTeam] : allUserTeamIds
-      for (const id of teamFilterIds) {
-        audienceConds.push({ teams: { teams_id: { _eq: id } } })
-      }
-
-      // Role-targeted events (fetch all, filter client-side)
-      audienceConds.push({ invited_roles: { _nnull: true } })
-
-      // Directly invited
-      if (user) {
-        audienceConds.push({ invited_members: { members_id: { _eq: user.id } } })
-      }
-
       conditions.push({ _or: audienceConds })
     }
     if (conditions.length === 0) return {}
     return conditions.length === 1 ? conditions[0] : { _and: conditions }
-  }, [allUserTeamIds, selectedTeam, showPast, today, effectiveIsAdmin, user])
+  }, [showPast, today, effectiveIsAdmin, teamEventIds, invitedEventIds])
 
   const { data: eventsRaw, isLoading, refetch } = useCollection<Event>('events', {
     filter: eventFilter,
     sort: ['start_date'],
     limit: 50,
     fields: ['*', 'teams.teams_id.*', 'invited_members.members_id', 'invited_roles', 'send_email_invite'],
-    enabled: !teamsLoading,
+    enabled: !teamsLoading && (effectiveIsAdmin || !eventIdsLoading),
   })
   const events = eventsRaw ?? []
 

@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useCollection } from '../../../lib/query'
+import { useUserVisibleEventIds } from '../../../hooks/useUserVisibleEventIds'
 import type { Game, Training, Event, HallClosure, HallEvent, Team, Absence, MemberTeam } from '../../../types'
 import type { CalendarEntry, CalendarFilterState } from '../../../types/calendar'
 import {
@@ -51,14 +52,23 @@ function addTeamFilter(baseParts: Record<string, unknown>[], teamIds: string[], 
   return { _and: conditions }
 }
 
-/** Filter events by team membership: show club-wide (no teams) + user's teams */
-function addEventTeamFilter(baseParts: Record<string, unknown>[], teamIds: string[]): Record<string, unknown> {
+/**
+ * Filter events by team membership: show club-wide (no teams) + selected teams.
+ * Takes pre-resolved event IDs from the events_teams junction rather than
+ * walking `events.teams.teams_id` — that path conflicts with the events policy's
+ * own walk through the same alias and returns [] for non-admins.
+ */
+function addEventTeamFilter(
+  baseParts: Record<string, unknown>[],
+  teamIds: string[],
+  teamEventIds: string[],
+): Record<string, unknown> {
   const conditions = [...baseParts]
   if (teamIds.length > 0) {
     conditions.push({
       _or: [
         { teams: { _null: true } },
-        ...teamIds.map(id => ({ teams: { teams_id: { _eq: id } } })),
+        { id: { _in: teamEventIds.length > 0 ? teamEventIds : [-1] } },
       ],
     })
   }
@@ -285,11 +295,17 @@ export function useCalendarData({ filters, rangeStart, rangeEnd, enabled = true 
   })
   const closuresRaw = closuresRawData ?? []
 
+  const { teamEventIds, isLoading: eventIdsLoading } = useUserVisibleEventIds(
+    filters.selectedTeamIds,
+    undefined,
+    fetchEvents && filters.selectedTeamIds.length > 0,
+  )
   const { data: eventsRaw, isLoading: eventsLoading } = useCollection<Event>('events', {
-    enabled: fetchEvents,
+    enabled: fetchEvents && !eventIdsLoading,
     filter: addEventTeamFilter(
       buildDateFilter('start_date', fetchRange.start, fetchRange.end),
       filters.selectedTeamIds,
+      teamEventIds,
     ),
     fields: ['id', 'start_date', 'end_date', 'all_day', 'title', 'location', 'description'],
     sort: ['start_date'],

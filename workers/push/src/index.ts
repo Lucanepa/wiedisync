@@ -5,6 +5,11 @@
 interface Env {
   VAPID_PUBLIC_KEY: string
   VAPID_PRIVATE_KEY: string
+  // 2026-05-12 audit #21: VAPID `sub` claim — owner contact for push
+  // providers when a subscription causes problems. Sourced from worker
+  // secret (`wrangler secret put VAPID_SUB`), falling back to a generic
+  // mailto inside createVapidJwt for the unset case.
+  VAPID_SUB?: string
   ALLOWED_ORIGIN: string
   AUTH_SECRET: string
 }
@@ -124,7 +129,7 @@ async function sendWebPush(
   const audience = `${endpoint.protocol}//${endpoint.host}`
 
   // Create VAPID JWT
-  const jwt = await createVapidJwt(audience, env.VAPID_PRIVATE_KEY, env.VAPID_PUBLIC_KEY)
+  const jwt = await createVapidJwt(audience, env.VAPID_PRIVATE_KEY, env.VAPID_PUBLIC_KEY, env.VAPID_SUB)
 
   // Encrypt payload using the subscription's keys
   const encrypted = await encryptPayload(payload, sub.keys.p256dh, sub.keys.auth)
@@ -147,14 +152,15 @@ async function sendWebPush(
 async function createVapidJwt(
   audience: string,
   privateKeyB64: string,
-  _publicKeyB64: string
+  _publicKeyB64: string,
+  sub?: string
 ): Promise<string> {
   const header = { typ: 'JWT', alg: 'ES256' }
   const now = Math.floor(Date.now() / 1000)
   const claims = {
     aud: audience,
     exp: now + 86400, // 24h
-    sub: 'mailto:admin@volleyball.lucanepa.com',
+    sub: sub && /^mailto:[^@\s]+@[^@\s]+$/.test(sub) ? sub : 'mailto:kontakt@kscw.ch',
   }
 
   const headerB64 = b64url(new TextEncoder().encode(JSON.stringify(header)))

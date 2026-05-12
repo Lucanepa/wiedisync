@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.7.0'
+const APP_VERSION = '4.8.0'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,21 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.8.0',
+    date: '2026-05-12',
+    sections: [
+      {
+        title: 'Auto-confirm RSVP — opt-out attendance (PlayerPlus-style)',
+        items: [
+          'Two new team settings: "Auto-confirm trainings" and "Auto-confirm games" (both off by default). When enabled, every newly created training/game starts with all eligible members already set to "Confirmed" — members who can\'t attend must actively decline.',
+          'Trainings: every member of the team is auto-confirmed except those whose `guest_level` is in the training\'s excluded list. Games: only full members (`guest_level = 0`) — guests stay blocked from confirming game participation by the existing Postgres trigger.',
+          'Plays cleanly with the absence system: members with an overlapping one-off or weekly absence are auto-declined first (existing behaviour), then the auto-confirm pass fills in the rest via `NOT EXISTS`, so absent members never get incorrectly auto-confirmed.',
+          'Find both toggles under Team Settings → Game Defaults / Training Defaults. Translated EN / DE / GSW / FR / IT.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.7.0',
     date: '2026-05-10',

@@ -128,6 +128,10 @@ export default {
   featureShowRsvpTimeHint: 'Anzeigen wann jedes Mitglied geantwortet hat',
   featureAutoDeclineTentative: '"Vielleicht" automatisch ablehnen',
   featureAutoDeclineTentativeHint: 'Wandelt "Vielleicht"-Antworten nach der Anmeldefrist in "Nein" um',
+  featureAutoConfirmTraining: 'Trainings automatisch bestätigen',
+  featureAutoConfirmTrainingHint: 'Neue Trainings starten mit allen als bestätigt — Mitglieder müssen sich abmelden, falls sie nicht kommen können',
+  featureAutoConfirmGame: 'Spiele automatisch bestätigen',
+  featureAutoConfirmGameHint: 'Neue Spiele starten mit allen Vollmitgliedern als bestätigt (Gäste ausgeschlossen) — Mitglieder müssen sich abmelden, falls sie nicht kommen können',
   // Team-Einstellungen
   teamSettings: 'Team-Einstellungen',
   teamSettingsDescription: 'Features und Standardeinstellungen für dieses Team konfigurieren.',

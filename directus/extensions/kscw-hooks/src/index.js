@@ -377,12 +377,70 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     }
   })
 
+  // ── Direct LEADER policy attachment ─────────────────────────────
+  // Permission gating MUST NOT depend on the Directus role alone — custom
+  // roles (e.g. "Website Admin"), missed sync events, or manual role edits
+  // can leave a real coach/TR without the LEADER policy. Mirror role-sync
+  // with a user-level directus_access row attached to the LEADER policy.
+  // The LEADER policy's writes are already self-scoped via M2M filters, so
+  // an extra attachment can't widen access beyond what the user's data
+  // already proves.
+
+  async function getLeaderPolicyId() {
+    const row = await database('directus_policies').where('name', 'KSCW Team Responsible').select('id').first()
+    return row?.id ?? null
+  }
+
+  async function ensureLeaderAccess(memberId) {
+    try {
+      const member = await database('members').where('id', memberId).select('user').first()
+      if (!member?.user) return
+      const policyId = await getLeaderPolicyId()
+      if (!policyId) return
+      const existing = await database('directus_access')
+        .where({ user: member.user, policy: policyId })
+        .first()
+      if (existing) return
+      const { randomUUID } = await import('node:crypto')
+      await database('directus_access').insert({ id: randomUUID(), user: member.user, policy: policyId })
+      log.info(`[leader-access] Attached LEADER policy to user ${member.user} (member ${memberId})`)
+    } catch (err) {
+      log.warn({ msg: `[leader-access] attach failed for member ${memberId}: ${err.message}`, memberId, stack: err.stack })
+      logWarning('leader_access_attach', err.message, { memberId, stack: err.stack })
+    }
+  }
+
+  async function revokeLeaderAccessIfOrphan(memberId) {
+    try {
+      const member = await database('members').where('id', memberId).select('user').first()
+      if (!member?.user) return
+      const stillCoach = await database('teams_coaches').where('members_id', memberId).first()
+      const stillTR = await database('teams_responsibles').where('members_id', memberId).first()
+      if (stillCoach || stillTR) return
+      const policyId = await getLeaderPolicyId()
+      if (!policyId) return
+      const deleted = await database('directus_access')
+        .where({ user: member.user, policy: policyId })
+        .delete()
+      if (deleted) log.info(`[leader-access] Revoked LEADER policy from user ${member.user} (member ${memberId} no longer coach/TR)`)
+    } catch (err) {
+      log.warn({ msg: `[leader-access] revoke failed for member ${memberId}: ${err.message}`, memberId, stack: err.stack })
+      logWarning('leader_access_revoke', err.message, { memberId, stack: err.stack })
+    }
+  }
+
   // Sync when coach/TR junctions change (create)
   action('teams_coaches.items.create', async ({ payload }) => {
-    if (payload?.members_id) await syncMemberRole(payload.members_id)
+    if (payload?.members_id) {
+      await syncMemberRole(payload.members_id)
+      await ensureLeaderAccess(payload.members_id)
+    }
   })
   action('teams_responsibles.items.create', async ({ payload }) => {
-    if (payload?.members_id) await syncMemberRole(payload.members_id)
+    if (payload?.members_id) {
+      await syncMemberRole(payload.members_id)
+      await ensureLeaderAccess(payload.members_id)
+    }
   })
 
   // Sync when coach/TR junctions change (delete)
@@ -417,6 +475,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     for (const [key, memberId] of toProcess) {
       try {
         await syncMemberRole(memberId)
+        await revokeLeaderAccessIfOrphan(memberId)
       } finally {
         pendingJunctionDeletes.delete(key)
       }
@@ -1002,6 +1061,33 @@ export default ({ action, filter, init, schedule }, { services, database, logger
           )
       `, [String(key), training.team, dateStr, dateStr, String(key)])
       if (res?.rowCount > 0) log.info(`[absence-auto-decline] Training ${key}: ${res.rowCount} members auto-declined`)
+
+      // Auto-confirm pass (PlayerPlus-style opt-out RSVP). Requires team setting
+      // `training_auto_confirm`. Skips members already declined above by absence
+      // overlap, manual overrides, and members in excluded guest levels.
+      const team = await database('teams').where('id', training.team).first('features_enabled')
+      let fe = team?.features_enabled
+      if (typeof fe === 'string') { try { fe = JSON.parse(fe) } catch { fe = {} } }
+      if (fe && fe.training_auto_confirm === true) {
+        let excluded = training.excluded_guest_levels
+        if (typeof excluded === 'string') { try { excluded = JSON.parse(excluded) } catch { excluded = [] } }
+        if (!Array.isArray(excluded)) excluded = []
+        const excludedClause = excluded.length > 0
+          ? `AND mt.guest_level NOT IN (${excluded.map(() => '?').join(',')})`
+          : ''
+        const ins = await database.raw(`
+          INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff)
+          SELECT mt.member, 'training', ?::text, 'confirmed', '', 0, false
+          FROM member_teams mt
+          WHERE mt.team = ?::integer
+            ${excludedClause}
+            AND NOT EXISTS (
+              SELECT 1 FROM participations p
+              WHERE p.activity_type = 'training' AND p.activity_id = ?::text AND p.member = mt.member
+            )
+        `, [String(key), training.team, ...excluded, String(key)])
+        if (ins?.rowCount > 0) log.info(`[auto-confirm] Training ${key}: ${ins.rowCount} members auto-confirmed`)
+      }
     } catch (err) {
       log.error({ msg: `[absence-auto-decline] Training create: ${err.message}`, event: 'absence_auto_decline_training', key, stack: err.stack })
     }
@@ -1029,6 +1115,29 @@ export default ({ action, filter, init, schedule }, { services, database, logger
           )
       `, [String(key), game.kscw_team, dateStr, dateStr, String(key)])
       if (res?.rowCount > 0) log.info(`[absence-auto-decline] Game ${key}: ${res.rowCount} members auto-declined`)
+
+      // Auto-confirm pass — requires team setting `game_auto_confirm`. Only full
+      // members (guest_level = 0) — guests are blocked from confirming games by
+      // trg_participations_guest_block. Skips active/scheduled games only.
+      if (!['completed', 'postponed', 'cancelled'].includes(game.status || '')) {
+        const team = await database('teams').where('id', game.kscw_team).first('features_enabled')
+        let fe = team?.features_enabled
+        if (typeof fe === 'string') { try { fe = JSON.parse(fe) } catch { fe = {} } }
+        if (fe && fe.game_auto_confirm === true) {
+          const ins = await database.raw(`
+            INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff)
+            SELECT mt.member, 'game', ?::text, 'confirmed', '', 0, false
+            FROM member_teams mt
+            WHERE mt.team = ?::integer
+              AND mt.guest_level = 0
+              AND NOT EXISTS (
+                SELECT 1 FROM participations p
+                WHERE p.activity_type = 'game' AND p.activity_id = ?::text AND p.member = mt.member
+              )
+          `, [String(key), game.kscw_team, String(key)])
+          if (ins?.rowCount > 0) log.info(`[auto-confirm] Game ${key}: ${ins.rowCount} members auto-confirmed`)
+        }
+      }
     } catch (err) {
       log.error({ msg: `[absence-auto-decline] Game create: ${err.message}`, event: 'absence_auto_decline_game', key, stack: err.stack })
     }

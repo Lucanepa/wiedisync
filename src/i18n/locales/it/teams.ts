@@ -114,6 +114,10 @@ export default {
   featureShowRsvpTimeHint: 'Mostra quando ogni membro ha risposto',
   featureAutoDeclineTentative: 'Rifiuta automaticamente i "Forse"',
   featureAutoDeclineTentativeHint: 'Converte le risposte "Forse" in "No" dopo la scadenza',
+  featureAutoConfirmTraining: 'Conferma automaticamente gli allenamenti',
+  featureAutoConfirmTrainingHint: 'I nuovi allenamenti partono con tutti confermati — i membri devono annullare se non possono venire',
+  featureAutoConfirmGame: 'Conferma automaticamente le partite',
+  featureAutoConfirmGameHint: 'Le nuove partite partono con tutti i membri effettivi confermati (ospiti esclusi) — i membri devono annullare se non possono venire',
   // Impostazioni squadra
   teamSettings: 'Impostazioni squadra',
   teamSettingsDescription: 'Configura le funzionalità e le impostazioni predefinite per questa squadra.',

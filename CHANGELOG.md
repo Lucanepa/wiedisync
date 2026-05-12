@@ -2,6 +2,20 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## v4.8.0 — 2026-05-12
+
+### Auto-confirm RSVP — opt-out attendance (PlayerPlus-style)
+
+- Two new team settings under Team Settings → Game Defaults / Training Defaults: **Auto-confirm trainings** and **Auto-confirm games**, both off by default. When enabled for a team, every newly created training/game starts with all eligible members already set to `confirmed` — members who can't attend must actively decline.
+- Stored in the existing `teams.features_enabled` JSON (`training_auto_confirm`, `game_auto_confirm`) — no schema migration needed.
+- Hook lives in `kscw-hooks` `action('trainings.items.create')` and `action('games.items.create')`, appended after the existing absence-auto-decline pass. The new `INSERT … SELECT … NOT EXISTS` writes `confirmed` for every remaining eligible member, so:
+  - Members with an overlapping one-off or weekly absence stay `declined` (auto-decline ran first, the `NOT EXISTS` skip leaves them alone).
+  - Manual coach overrides written before the hook fires (e.g. through `ItemsService` chains) survive.
+  - Trainings honour `excluded_guest_levels` (skipped). Games only include `guest_level = 0` — guests remain blocked by `trg_participations_guest_block`.
+  - Games already `completed` / `postponed` / `cancelled` at creation time are skipped.
+- Translated in EN / DE / GSW / FR / IT (`featureAutoConfirmTraining{,Hint}`, `featureAutoConfirmGame{,Hint}`).
+- Out of scope for v4.8.0: per-activity override (the toggle is team-wide for now), retroactive flip when the toggle is turned on, events (cross-team semantics need a separate design pass).
+
 ## v4.7.0 — 2026-05-10
 
 ### Coaches can edit notes, with per-field attribution

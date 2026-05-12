@@ -128,6 +128,10 @@ export default {
   featureShowRsvpTimeHint: 'Display when each member responded',
   featureAutoDeclineTentative: 'Auto-decline "Maybe"',
   featureAutoDeclineTentativeHint: 'Convert tentative replies to "No" after the RSVP deadline',
+  featureAutoConfirmTraining: 'Auto-confirm trainings',
+  featureAutoConfirmTrainingHint: 'New trainings start with everyone confirmed — members must opt out if they cannot attend',
+  featureAutoConfirmGame: 'Auto-confirm games',
+  featureAutoConfirmGameHint: 'New games start with all full members confirmed (guests excluded) — members must opt out if they cannot attend',
   // Team Settings
   teamSettings: 'Team Settings',
   teamSettingsDescription: 'Configure features and default settings for this team.',

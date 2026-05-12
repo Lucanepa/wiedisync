@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.8.8'
+const APP_VERSION = '4.8.9'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,19 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.8.9',
+    date: '2026-05-12',
+    sections: [
+      {
+        title: 'Participation modal: coaches without a member row now visible + single scroll',
+        items: [
+          'Roster modal staff section was only showing coaches/team-responsibles who had already RSVPed — a coach attached only via the `teams_coaches` junction (no `member_teams` row, no participation row yet) was invisible to roster managers. The modal now seeds the staff member set from the team\'s coach + TR junctions on top of the participation-derived set, so leaders appear immediately and roster staff can add a note or RSVP on their behalf.',
+          'Removed the nested `max-h-[60vh]` scroll inside the participation modal — the outer sheet handles scrolling, so the list no longer scrolls inside another scroll on mobile.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.8.8',
     date: '2026-05-12',

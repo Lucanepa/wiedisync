@@ -2,6 +2,13 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## v4.8.9 — 2026-05-12
+
+Two participation-modal fixes.
+
+- **Coaches without a `member_teams` row now appear in the staff section even before they RSVP.** Michelle Howald (member 11) is attached to H2 + H3 only through the `teams_coaches` junction. The modal's staff-resolution effect previously seeded staff member IDs only from existing `is_staff=true` participation rows — so a coach who had never RSVPed was invisible. Effect now also seeds from `leadershipRoles` (coach + TR member IDs derived from the team's `coach.members_id` / `team_responsible.members_id` expansion that the modal already fetches), filtered to exclude anyone in the regular roster. Staff appear immediately; their participation status is null until they reply.
+- **Removed nested scroll inside the participation modal.** The member list had its own `max-h-[60vh] overflow-y-auto` wrapper inside the Vaul sheet on mobile — scrolling created a scroll-inside-a-scroll. Wrapper now just sets the border; the outer sheet handles scrolling.
+
 ## v4.8.7 — 2026-05-12
 
 Web push on third-party absence edits + UX nudge for coaches.

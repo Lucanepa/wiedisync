@@ -377,17 +377,36 @@ export default function ParticipationRosterModal({
     },
   })
 
-  // Resolve staff member objects (for display) when the staff participation set changes.
+  // Resolve staff member objects (for display) when the staff participation
+  // set changes. Seeds from BOTH (a) existing is_staff participation rows,
+  // and (b) the team's coach + team_responsible junctions — so leaders who
+  // haven't RSVPed yet still appear in the staff section (otherwise a coach
+  // like Michelle Howald, who has no `member_teams` row and no participation
+  // row yet, is invisible to roster managers).
   useEffect(() => {
     if (!user || !open || !activityId || isClubWide) return
     const staffParts = staffPartsRaw ?? []
-    const staffOnlyParts = staffParts.filter((p) => !memberIds.includes(p.member))
+    const memberIdSet = new Set(memberIds.map(String))
+    const staffOnlyParts = staffParts.filter((p) => !memberIdSet.has(String(p.member)))
     setStaffParticipationRows(staffOnlyParts)
-    if (staffOnlyParts.length === 0) {
+
+    const leadershipIds: string[] = []
+    for (const [id, role] of leadershipRoles) {
+      // captain is normally in member_teams already; only coach + TR
+      // typically live outside the regular roster
+      if ((role === 'coach' || role === 'tr') && !memberIdSet.has(String(id))) {
+        leadershipIds.push(String(id))
+      }
+    }
+    const staffMemberIds = [...new Set([
+      ...leadershipIds,
+      ...staffOnlyParts.map((p) => String(p.member)),
+    ])]
+
+    if (staffMemberIds.length === 0) {
       setStaffMembers([])
       return
     }
-    const staffMemberIds = [...new Set(staffOnlyParts.map((p) => p.member))]
     fetchAllItems<Member>('members', {
       filter: { id: { _in: staffMemberIds } },
       fields: ['id', 'first_name', 'last_name', 'photo'],
@@ -398,7 +417,7 @@ export default function ParticipationRosterModal({
         setStaffParticipationRows([])
       })
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, activityId, activityType, isClubWide, memberIds.join(','), staffPartsRaw])
+  }, [open, activityId, activityType, isClubWide, memberIds.join(','), staffPartsRaw, leadershipRoles])
 
   // For the overall tab, compute per-member session counts
   const memberSessionCounts = useMemo(() => {
@@ -1184,7 +1203,7 @@ export default function ParticipationRosterModal({
       {memberList.length === 0 ? (
         <div className="py-8 text-center text-gray-500 dark:text-gray-400">{t('noResponses')}</div>
       ) : (
-        <div className="max-h-[60vh] overflow-y-auto rounded-lg border dark:border-gray-700">
+        <div className="rounded-lg border dark:border-gray-700">
           {filteredMemberList.map((member) => {
             const status = getMemberStatus(member.id)
             const participation = participations.find(p => p.member === member.id)

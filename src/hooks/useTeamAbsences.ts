@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { fetchAllItems, fetchItem } from '../lib/api'
+import { useRealtime } from './useRealtime'
 import type { Absence, Member, MemberTeam } from '../types'
 import { asObj, flattenMemberIds } from '../utils/relations'
 
@@ -78,12 +79,13 @@ export function useTeamAbsences(teamIds: string[], startDate: string, endDate: s
         sort: ['start_date'],
       })
 
-      // Filter to absences that affect at least one of the selected teams
-      // Empty affects, or affects containing 'all', means all teams are affected
-      const teamIdSet = new Set(teamIds)
-      const relevant = result.filter(
-        (a) => !a.affects || a.affects.length === 0 || a.affects.includes('all') || a.affects.some((id) => teamIdSet.has(id)),
-      )
+      // `affects` is an *activity-type* filter (`all` | `trainings` | `games` |
+      // `events`), NOT a team filter — earlier code mistakenly intersected it
+      // with `teamIds` which caused absences with `affects: ['trainings']` to
+      // disappear from team views entirely (2026-05-12). Membership scoping is
+      // already enforced by the member._in fetch above, so we keep every row
+      // returned by the absences query.
+      const relevant = result
 
       // Build member map from absence expands
       const mMap: Record<string, Member> = {}
@@ -118,6 +120,12 @@ export function useTeamAbsences(teamIds: string[], startDate: string, endDate: s
   useEffect(() => {
     fetch()
   }, [fetch])
+
+  // Realtime: when an absence is created/updated/deleted anywhere, refetch
+  // so team-scope views (e.g. coach creating a weekly for a player) update
+  // immediately instead of leaving the staff member uncertain about whether
+  // the save actually persisted.
+  useRealtime('absences', fetch)
 
   return { absences, memberMap, isLoading, error, refetch: fetch }
 }

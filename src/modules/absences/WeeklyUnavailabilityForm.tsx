@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import Modal from '@/components/Modal'
 import { useAuth } from '../../hooks/useAuth'
@@ -92,8 +92,12 @@ export default function WeeklyUnavailabilityForm({ open, absence, onSave, onCanc
     )
   }
 
+  // Synchronous re-entry lock against double-submit (see AbsenceForm for context).
+  const submittingRef = useRef(false)
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (submittingRef.current) return
     setValidationError('')
 
     if (showMemberPicker && !memberId) {
@@ -117,6 +121,7 @@ export default function WeeklyUnavailabilityForm({ open, absence, onSave, onCanc
       return
     }
 
+    submittingRef.current = true
     const data = {
       member: memberId || user?.id,
       type: 'weekly' as const,
@@ -138,6 +143,8 @@ export default function WeeklyUnavailabilityForm({ open, absence, onSave, onCanc
       onSave()
     } catch {
       setValidationError(t('errorSaving'))
+    } finally {
+      submittingRef.current = false
     }
   }
 

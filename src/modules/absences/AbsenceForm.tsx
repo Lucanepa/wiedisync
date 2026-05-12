@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import Modal from '@/components/Modal'
 import { useAuth } from '../../hooks/useAuth'
@@ -94,8 +94,15 @@ export default function AbsenceForm({ open, absence, onSave, onCancel, forTeam, 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, absence])
 
+  // Synchronous re-entry lock — React state updates (useMutation.isLoading)
+  // are async and don't block rapid double-clicks before the next render.
+  // Without this, a frustrated user mashing Save creates duplicate rows
+  // (the 2026-05-12 Sara Berke incident: 5 identical Monday weeklies in 50min).
+  const submittingRef = useRef(false)
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (submittingRef.current) return
     setValidationError('')
 
     if (showMemberPicker && !memberId) {
@@ -115,6 +122,7 @@ export default function AbsenceForm({ open, absence, onSave, onCancel, forTeam, 
       return
     }
 
+    submittingRef.current = true
     const data = {
       member: memberId || user?.id,
       start_date: startDate,
@@ -135,6 +143,8 @@ export default function AbsenceForm({ open, absence, onSave, onCancel, forTeam, 
       onSave()
     } catch {
       setValidationError(t('errorSaving'))
+    } finally {
+      submittingRef.current = false
     }
   }
 

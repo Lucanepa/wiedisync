@@ -599,7 +599,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
               SELECT 1 FROM participations p
               WHERE p.activity_type = 'training' AND p.activity_id = t.id::text AND p.member = ?::integer
             )
-        `, [memberId, absence.reason || '', absenceId, effectiveStart, endDate, memberId])
+        `, [memberId, absence.reason || '', absenceId, effectiveStart, endDate, memberId, memberId])
         declined += ins?.rowCount || 0
       }
 
@@ -632,7 +632,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
               SELECT 1 FROM participations p
               WHERE p.activity_type = 'game' AND p.activity_id = g.id::text AND p.member = ?::integer
             )
-        `, [memberId, absence.reason || '', absenceId, effectiveStart, endDate, memberId])
+        `, [memberId, absence.reason || '', absenceId, effectiveStart, endDate, memberId, memberId])
         declined += ins?.rowCount || 0
       }
 
@@ -662,7 +662,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
               SELECT 1 FROM participations p
               WHERE p.activity_type = 'event' AND p.activity_id = e.id::text AND p.member = ?::integer
             )
-        `, [memberId, absence.reason || '', absenceId, effectiveStart, endDate, memberId])
+        `, [memberId, absence.reason || '', absenceId, effectiveStart, endDate, memberId, memberId])
         declined += ins?.rowCount || 0
       }
 

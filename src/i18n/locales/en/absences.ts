@@ -80,6 +80,7 @@ export default {
   // Indefinite
   indefinite: 'Indefinite',
   indefiniteHint: 'no end date',
+  untilShort: 'until {{date}}',
 
   // Weekly unavailability
   tabWeeklyUnavailability: 'Weekly Unavailability',

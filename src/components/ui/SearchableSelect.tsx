@@ -37,6 +37,10 @@ export default function SearchableSelect({
   const triggerRef = useRef<HTMLDivElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({})
+  // Portal target — prefer the nearest [role="dialog"] ancestor so the
+  // dropdown lives inside Radix Dialog's focus-trap / inert-sibling scope.
+  // Falls back to document.body when not inside a dialog.
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null)
 
   const selectedLabel = options.find((o) => o.value === value)?.label ?? ''
 
@@ -47,6 +51,8 @@ export default function SearchableSelect({
   // Position dropdown relative to trigger via portal
   useLayoutEffect(() => {
     if (!open || !triggerRef.current) return
+    const dialogAncestor = triggerRef.current.closest('[role="dialog"]') as HTMLElement | null
+    setPortalTarget(dialogAncestor ?? document.body)
     function updatePosition() {
       const rect = triggerRef.current!.getBoundingClientRect()
       setDropdownStyle({
@@ -146,7 +152,7 @@ export default function SearchableSelect({
           </button>
         )}
       </div>
-      {open && createPortal(
+      {open && portalTarget && createPortal(
         <div ref={dropdownRef} data-searchable-select style={dropdownStyle} className="cursor-default rounded-md border bg-popover shadow-md">
           <ul
             className="max-h-60 overflow-y-auto overscroll-contain py-1 [touch-action:pan-y] [-webkit-overflow-scrolling:touch]"
@@ -180,7 +186,7 @@ export default function SearchableSelect({
             ))}
           </ul>
         </div>,
-        document.body,
+        portalTarget,
       )}
       {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
     </div>

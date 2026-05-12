@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { Pencil, Trash2 } from 'lucide-react'
 import { formatDate, formatDateTimeCompact } from '../../utils/dateHelpers'
 import { TableCell, TableRow } from '../../components/ui/table'
 import type { Absence, Member } from '../../types'
@@ -47,11 +48,7 @@ export default function WeeklyUnavailabilityCard({ absence, onEdit, onDelete, sh
 
   const activeDays = new Set(absence.days_of_week ?? [])
 
-  // Mobile colSpan for the wrapped actions row: 7 day cells + optional member.
-  const mobileColSpan = 7 + (showMemberName ? 1 : 0)
-
   return (
-    <>
     <TableRow className="align-top">
       {showMemberName && (
         <TableCell className="whitespace-normal text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -64,7 +61,11 @@ export default function WeeklyUnavailabilityCard({ absence, onEdit, onDelete, sh
         return (
           <TableCell
             key={key}
-            className="w-7 px-0.5 sm:w-10 sm:px-1 text-center align-middle"
+            className={
+              `w-7 px-0.5 sm:w-10 sm:px-1 text-center align-middle ` +
+              (dow === 0 ? 'border-l border-gray-200 dark:border-gray-700 ' : '') +
+              `border-r border-gray-200 dark:border-gray-700`
+            }
             title={active ? label : undefined}
           >
             <span
@@ -119,46 +120,31 @@ export default function WeeklyUnavailabilityCard({ absence, onEdit, onDelete, sh
         })()}
       </TableCell>
       {canEdit ? (
-        <TableCell className="hidden sm:table-cell text-right">
-          <div className="flex justify-end gap-2">
+        <TableCell className="w-10 px-1 align-middle text-right">
+          <div className="flex flex-col items-end gap-1">
             <button
+              type="button"
               onClick={() => onEdit(absence)}
-              className="min-h-[36px] rounded px-3 py-1.5 text-sm text-brand-600 hover:bg-brand-50 hover:text-brand-700"
+              aria-label={t('common:edit')}
+              title={t('common:edit')}
+              className="inline-flex h-8 w-8 items-center justify-center rounded text-brand-600 hover:bg-brand-50 hover:text-brand-700 dark:hover:bg-brand-900/30"
             >
-              {t('common:edit')}
+              <Pencil className="h-4 w-4" />
             </button>
             <button
+              type="button"
               onClick={() => onDelete(absence.id)}
-              className="min-h-[36px] rounded px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 hover:text-red-800"
+              aria-label={t('common:delete')}
+              title={t('common:delete')}
+              className="inline-flex h-8 w-8 items-center justify-center rounded text-red-600 hover:bg-red-50 hover:text-red-800 dark:hover:bg-red-900/30"
             >
-              {t('common:delete')}
+              <Trash2 className="h-4 w-4" />
             </button>
           </div>
         </TableCell>
       ) : (
-        <TableCell className="hidden sm:table-cell" />
+        <TableCell />
       )}
     </TableRow>
-    {canEdit && (
-      <TableRow className="sm:hidden border-t-0">
-        <TableCell colSpan={mobileColSpan} className="pt-0 pb-2">
-          <div className="flex justify-end gap-2">
-            <button
-              onClick={() => onEdit(absence)}
-              className="min-h-[36px] rounded px-3 py-1.5 text-sm text-brand-600 hover:bg-brand-50 hover:text-brand-700"
-            >
-              {t('common:edit')}
-            </button>
-            <button
-              onClick={() => onDelete(absence.id)}
-              className="min-h-[36px] rounded px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 hover:text-red-800"
-            >
-              {t('common:delete')}
-            </button>
-          </div>
-        </TableCell>
-      </TableRow>
-    )}
-    </>
   )
 }

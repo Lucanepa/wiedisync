@@ -12,6 +12,69 @@
 
 import { FRONTEND_URL } from './email-template.js'
 
+// ── Subscription endpoint validation ────────────────────────────────
+// Allow-list of public push providers we accept as `endpoint` hostnames. The
+// browser only generates URLs on these origins, so anything else is either a
+// misconfigured client or an attacker trying to coerce the Worker into making
+// HTTPS requests to an attacker-controlled host (SSRF). We use suffix matches
+// so future provider sub-domains keep working without a redeploy.
+const PUSH_ENDPOINT_ALLOWED_SUFFIXES = [
+  '.googleapis.com',          // FCM (Chrome, Edge on most platforms)
+  '.push.apple.com',          // APNs (Safari, iOS)
+  '.push.services.mozilla.com', // Mozilla autopush (Firefox)
+  '.windows.com',             // WNS (legacy Edge/UWP)
+  '.notify.windows.com',      // WNS alternate
+]
+
+function isPrivateIpv4(host) {
+  const m = host.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/)
+  if (!m) return false
+  const [, a, b] = m.map(Number)
+  if (a === 10) return true
+  if (a === 127) return true
+  if (a === 169 && b === 254) return true
+  if (a === 172 && b >= 16 && b <= 31) return true
+  if (a === 192 && b === 168) return true
+  if (a === 0) return true
+  if (a >= 224) return true // multicast + reserved
+  return false
+}
+
+function isPrivateIpv6(host) {
+  const h = host.toLowerCase().replace(/^\[|\]$/g, '')
+  if (h === '::1' || h === '::') return true
+  if (h.startsWith('fc') || h.startsWith('fd')) return true // ULA
+  if (h.startsWith('fe80')) return true                     // link-local
+  return false
+}
+
+/**
+ * Validate a Web Push subscription endpoint before storing it.
+ * Returns `{ ok: true }` or `{ ok: false, error }`.
+ *
+ * Rejects: non-https, malformed URL, private/loopback/link-local hosts,
+ * `localhost`, and hosts outside the known browser-push-provider allow-list.
+ * This is the single chokepoint protecting the CF Worker from issuing
+ * outbound requests to attacker-chosen hosts (see SECURITY.md, 2026-05-12).
+ */
+export function validatePushEndpoint(endpoint) {
+  if (typeof endpoint !== 'string' || endpoint.length < 8 || endpoint.length > 2000) {
+    return { ok: false, error: 'endpoint missing or out of length bounds' }
+  }
+  let u
+  try { u = new URL(endpoint) } catch { return { ok: false, error: 'endpoint not a valid URL' } }
+  if (u.protocol !== 'https:') return { ok: false, error: 'endpoint must use https' }
+  const host = u.hostname.toLowerCase()
+  if (!host || host === 'localhost') return { ok: false, error: 'endpoint host not allowed' }
+  if (isPrivateIpv4(host)) return { ok: false, error: 'endpoint host not allowed' }
+  if (host.startsWith('[') || host.includes(':')) {
+    if (isPrivateIpv6(host)) return { ok: false, error: 'endpoint host not allowed' }
+  }
+  const allowed = PUSH_ENDPOINT_ALLOWED_SUFFIXES.some(s => host === s.slice(1) || host.endsWith(s))
+  if (!allowed) return { ok: false, error: 'endpoint host not allowed' }
+  return { ok: true }
+}
+
 // Fail loudly on missing VAPID config rather than silently falling back to a
 // public-key value that may not match the worker's secret store. A split-brain
 // here makes every push delivery fail with no obvious cause.
@@ -138,6 +201,11 @@ export function registerWebPush(router, ctx) {
       const { endpoint, keys_p256dh, keys_auth } = req.body
       if (!endpoint || !keys_p256dh || !keys_auth) {
         return res.status(400).json({ error: 'endpoint, keys_p256dh, and keys_auth are required' })
+      }
+      const epCheck = validatePushEndpoint(endpoint)
+      if (!epCheck.ok) {
+        log.warn({ msg: `web-push/subscribe: rejected endpoint (${epCheck.error})`, userId: req.accountability.user })
+        return res.status(400).json({ error: 'endpoint not accepted' })
       }
 
       // Upsert by member+endpoint

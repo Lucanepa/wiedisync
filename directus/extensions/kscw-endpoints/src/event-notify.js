@@ -14,6 +14,14 @@ export function registerEventNotify(router, { services, database, getSchema, log
 
   router.post('/events/:id/notify', async (req, res) => {
     try {
+      // Auth: must be a logged-in member; mass-fanout (push + email) is restricted
+      // to Directus admins, KSCW sport admins, the event creator, or a
+      // coach/team-responsible of one of the event's teams. An anonymous /
+      // unauthorised caller previously could spam every member via this route.
+      if (!req.accountability?.user) {
+        return res.status(401).json({ error: 'Authentication required' })
+      }
+
       const eventId = req.params.id
       const sendEmail = req.body?.send_email === true
       const schema = await getSchema()
@@ -22,10 +30,49 @@ export function registerEventNotify(router, { services, database, getSchema, log
       // Fetch event with teams + invited_members
       const eventsService = new ItemsService('events', { schema, knex: db })
       const event = await eventsService.readOne(eventId, {
-        fields: ['*', 'teams.teams_id', 'invited_members.members_id'],
+        fields: ['*', 'teams.teams_id', 'invited_members.members_id', 'created_by'],
       })
 
       if (!event) return res.status(404).json({ error: 'Event not found' })
+
+      // Authorise: admin, sport-admin role, event creator, or coach/TR of
+      // any of the event's teams. Compute against the same user once.
+      const isAdmin = req.accountability.admin === true
+      let allowed = isAdmin
+      let caller = null
+      if (!allowed) {
+        caller = await db('members')
+          .where('user', req.accountability.user)
+          .select('id', 'role')
+          .first()
+        const roles = Array.isArray(caller?.role)
+          ? caller.role
+          : (caller?.role ? (() => { try { return JSON.parse(caller.role) } catch { return [] } })() : [])
+        if (roles.includes('admin') || roles.includes('superuser') || roles.includes('vb_admin') || roles.includes('bb_admin')) {
+          allowed = true
+        } else if (caller && event.created_by && String(event.created_by) === String(caller.id)) {
+          allowed = true
+        } else if (caller) {
+          const evTeamIds = (event.teams ?? []).map(t => t.teams_id ?? t).filter(Boolean)
+          if (evTeamIds.length > 0) {
+            const hit = await db('teams_coaches')
+              .whereIn('teams_id', evTeamIds)
+              .where('members_id', caller.id)
+              .first()
+            if (hit) allowed = true
+            if (!allowed) {
+              const hit2 = await db('teams_responsibles')
+                .whereIn('teams_id', evTeamIds)
+                .where('members_id', caller.id)
+                .first()
+              if (hit2) allowed = true
+            }
+          }
+        }
+      }
+      if (!allowed) {
+        return res.status(403).json({ error: 'Not authorised to notify for this event' })
+      }
 
       // Resolve audience: team members + role members + directly invited
       const memberIds = new Set()

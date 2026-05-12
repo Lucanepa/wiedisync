@@ -2,6 +2,22 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## v4.8.3 — 2026-05-12
+
+Deep security audit + remediation. Eight Fix-this-week findings closed:
+
+- `POST /kscw/events/:id/notify` now requires auth + admin/sport-admin/event-creator/coach-or-TR-of-event-team. Was unauthenticated — mass push/email amplification vector.
+- Audit-log endpoint gate switched from `directus_roles.name = 'Superuser'` (bypassable by renaming a role) to `req.accountability.admin === true`.
+- `registration.bemerkungen` HTML-escaped before interpolation into admin notification email (`escHtml` from email-template.js, now exported).
+- Team-join-request email body escapes member name + team name (5 locales).
+- Push subscription endpoint URL validated at subscribe time: https only, allow-list of browser push provider hosts (FCM/APNs/Mozilla/WNS), private/loopback/link-local IPs rejected. Closes SSRF path through CF push Worker.
+- OAuth callback TTL tightened from 5 min → 2 min; `state=<nonce>` embedded in redirect URL and verified on return if Directus preserves it.
+- LEADER policy scope-tightening pass: `members.read` (`COACH_TEAM_MEMBERS` scope + field whitelist excluding `ahv_nummer`), `games.update`, `trainings.update`, `events.update`, `participations.read`, `participations.update`, `absences.read` all now use the coach/TR-of-the-target-team filter. `user_logs.read` removed from LEADER entirely — audit-log endpoint is the only sanctioned path.
+- Migration 050: `trg_participations_guest_block` now scopes the `guest_level > 0` check to the game's own team (was checking any-team — over-blocked legit RSVPs for seniors guesting on youth teams).
+- `smoke-test.mjs` gains optional Coach-token negative-assertion pass (env-gated via `DIRECTUS_*_USER_TOKEN_COACH`): cross-team `participations.read` returns empty, `user_logs` direct read 403s.
+
+Documentation sync: SECURITY.md "2026-05-12" block, PERMISSIONS.md header bumped to migration 050.
+
 ## v4.8.2 — 2026-05-12
 
 ### Coaches see their team trainings & events again

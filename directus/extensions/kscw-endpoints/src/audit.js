@@ -34,12 +34,11 @@ export function registerAudit(router, { database, logger }) {
       res.status(401).json({ error: 'Authentication required' })
       return false
     }
-    const row = await database('directus_users')
-      .join('directus_roles', 'directus_users.role', 'directus_roles.id')
-      .where('directus_users.id', req.accountability.user)
-      .select('directus_roles.name as role_name')
-      .first()
-    if (!row || row.role_name !== 'Superuser') {
+    // Gate on the stable Directus admin_access flag (resolved from the policies
+    // attached to the user), not on the mutable string `directus_roles.name`.
+    // Any Directus admin who renamed a role to 'Superuser' previously slipped
+    // through this check.
+    if (req.accountability.admin !== true) {
       log.warn({ msg: 'Audit access denied', userId: req.accountability.user })
       res.status(403).json({ error: 'Superuser access required' })
       return false

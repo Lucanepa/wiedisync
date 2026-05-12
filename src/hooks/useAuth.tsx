@@ -245,13 +245,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginWithOAuth = useCallback(async (provider: string) => {
     // Issue a freshness sentinel so the callback can reject token params that
     // weren't preceded by an active OAuth attempt (CSRF: tricked-callback URL).
+    // The nonce is embedded into the redirect URL we hand to Directus; if
+    // Directus preserves our query string when it appends `?access_token=...`,
+    // the callback can bind the nonce. (If it strips, the TTL still narrows
+    // the window — documented residual gap in SECURITY.md.)
     const nonce = (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
       ? crypto.randomUUID()
       : String(Date.now()) + ':' + Math.random().toString(36).slice(2)
     try {
       sessionStorage.setItem('oauth_pending', JSON.stringify({ nonce, ts: Date.now(), provider }))
     } catch { /* storage unavailable — degrade open */ }
-    window.location.href = `${API_URL}/auth/login/${provider}?redirect=${encodeURIComponent(window.location.origin + '/auth/callback')}`
+    const callbackUrl = `${window.location.origin}/auth/callback?state=${encodeURIComponent(nonce)}`
+    window.location.href = `${API_URL}/auth/login/${provider}?redirect=${encodeURIComponent(callbackUrl)}`
   }, [])
 
   const logout = useCallback(() => {

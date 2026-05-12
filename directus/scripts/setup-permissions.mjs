@@ -606,12 +606,17 @@ async function main() {
 
   console.log('\n7. Team Responsible permissions...')
 
-  // Members — read all fields (coaches need email, phone for their team)
-  await setPermRead(LEADER_POLICY, 'members')
-  // Members — update position + number (migration 036 scoped to my-team members).
-  // Coach uses { member_teams.team.coach.members_id... }; TR uses team_responsible.
-  // We can't tell which sub-policy this is at this layer, so the broader Coach
-  // filter is used; TR is identical because both junction columns appear on teams.
+  // Members — scoped full-field read for members on teams I coach or TR.
+  // 2026-05-12 audit: replaced unfiltered `setPermRead(LEADER_POLICY, 'members')`
+  // which exposed every member's `ahv_nummer`, `adresse`, `birthdate`, etc. to
+  // every historical coach across the entire club. With the v4.8.1 per-user
+  // policy backfill this was effectively a club-wide PII dump.
+  //
+  // Out-of-team members remain visible via the MEMBER policy's
+  // `MEMBER_VISIBLE_FIELDS` whitelist (no email/phone/PII). In-team members
+  // are visible via this LEADER row with the contact fields coaches need
+  // (email/phone/address/birthdate) but explicitly NOT `ahv_nummer` (Swiss
+  // social security — coaches have no operational need).
   const COACH_TEAM_MEMBERS = {
     member_teams: {
       team: {
@@ -622,6 +627,11 @@ async function main() {
       },
     },
   }
+  const LEADER_TEAM_MEMBER_FIELDS = [
+    ...new Set([...MEMBER_VISIBLE_FIELDS, ...MEMBER_EDITABLE_FIELDS]),
+  ].filter(f => f !== 'ahv_nummer')
+  await setPermRead(LEADER_POLICY, 'members', COACH_TEAM_MEMBERS, LEADER_TEAM_MEMBER_FIELDS)
+  // Members — update position + number (migration 036 scoped to my-team members).
   await setPerm(LEADER_POLICY, 'members', 'update', COACH_TEAM_MEMBERS, ['position', 'number'])
 
   // Coach Dashboard prefs — explicit read for Leader (Coach/TR).
@@ -637,8 +647,18 @@ async function main() {
     ],
   })
 
-  // Games — update (duty assignments, scores)
-  await setPerm(LEADER_POLICY, 'games', 'update')
+  // Games — update scoped to coach/TR of the game's `kscw_team`.
+  // 2026-05-12 audit: previously unfiltered — every coach in the club could
+  // PATCH any game (scores, duty assignments, `auto_confirm_rsvp`) including
+  // for teams they had no relationship to.
+  await setPerm(LEADER_POLICY, 'games', 'update', {
+    kscw_team: {
+      _or: [
+        { coach: { members_id: { user: { _eq: '$CURRENT_USER' } } } },
+        { team_responsible: { members_id: { user: { _eq: '$CURRENT_USER' } } } },
+      ],
+    },
+  })
 
   // Trainings — coach can read/CRU/delete trainings of teams they coach or TR.
   // Read scope is required because the Member fallback policy only grants
@@ -653,7 +673,9 @@ async function main() {
   }
   await setPermRead(LEADER_POLICY, 'trainings', COACH_OR_TR_OF_TEAM)
   await setPerm(LEADER_POLICY, 'trainings', 'create')
-  await setPerm(LEADER_POLICY, 'trainings', 'update')
+  // 2026-05-12 audit: update was unfiltered; scope to coach/TR of the
+  // training's team like read/delete already are.
+  await setPerm(LEADER_POLICY, 'trainings', 'update', COACH_OR_TR_OF_TEAM)
   await setPerm(LEADER_POLICY, 'trainings', 'delete', COACH_OR_TR_OF_TEAM)
 
   // Events — coach can read/CRU/delete events of teams they coach or TR,
@@ -671,7 +693,15 @@ async function main() {
     ],
   })
   await setPerm(LEADER_POLICY, 'events', 'create')
-  await setPerm(LEADER_POLICY, 'events', 'update')
+  // 2026-05-12 audit: update was unfiltered; scope to creator OR coach/TR of
+  // an invited team (mirrors the delete filter below).
+  await setPerm(LEADER_POLICY, 'events', 'update', {
+    _or: [
+      { created_by: { user: { _eq: '$CURRENT_USER' } } },
+      { teams: { teams_id: { coach: { members_id: { user: { _eq: '$CURRENT_USER' } } } } } },
+      { teams: { teams_id: { team_responsible: { members_id: { user: { _eq: '$CURRENT_USER' } } } } } },
+    ],
+  })
   await setPerm(LEADER_POLICY, 'events', 'delete', {
     _or: [
       { created_by: { user: { _eq: '$CURRENT_USER' } } },
@@ -685,9 +715,18 @@ async function main() {
   await setPerm(LEADER_POLICY, 'events_teams', 'update')
   await setPerm(LEADER_POLICY, 'events_teams', 'delete')
 
-  // Participations — full read + CRU (coach manages team roster)
-  await setPermRead(LEADER_POLICY, 'participations')
-  await setPerm(LEADER_POLICY, 'participations', 'update') // Override member's own-only
+  // Participations — read + update scoped to members on teams I coach/TR
+  // (plus own row). 2026-05-12 audit: was unfiltered full-club RSVP dump.
+  // Filter walks: participation.member → member.member_teams.team.{coach|TR}.
+  const COACH_OR_TR_OF_PARTICIPATION = {
+    _or: [
+      { member: { user: { _eq: '$CURRENT_USER' } } },
+      { member: { member_teams: { team: { coach: { members_id: { user: { _eq: '$CURRENT_USER' } } } } } } },
+      { member: { member_teams: { team: { team_responsible: { members_id: { user: { _eq: '$CURRENT_USER' } } } } } } },
+    ],
+  }
+  await setPermRead(LEADER_POLICY, 'participations', COACH_OR_TR_OF_PARTICIPATION)
+  await setPerm(LEADER_POLICY, 'participations', 'update', COACH_OR_TR_OF_PARTICIPATION)
 
   // Member teams — read all + CRUD
   await setPermRead(LEADER_POLICY, 'member_teams')
@@ -732,8 +771,21 @@ async function main() {
   await setPermRead(LEADER_POLICY, 'team_requests')
   await setPerm(LEADER_POLICY, 'team_requests', 'update')
 
-  // Absences — read all (team-wide view)
-  await setPermRead(LEADER_POLICY, 'absences')
+  // Absences — read + CUD scoped to members on teams I coach/TR.
+  // 2026-05-12 audit: read was unfiltered → full-club absence dump including
+  // notes (potentially health-related). Now uses the same coach/TR scope as
+  // the CUD rows already had.
+  const COACH_TEAM_ABSENCE_SCOPE = { member: COACH_TEAM_MEMBERS }
+  await setPermRead(LEADER_POLICY, 'absences', {
+    _or: [
+      { member: { user: { _eq: '$CURRENT_USER' } } },
+      { member: { member_teams: { team: { coach: { members_id: { user: { _eq: '$CURRENT_USER' } } } } } } },
+      { member: { member_teams: { team: { team_responsible: { members_id: { user: { _eq: '$CURRENT_USER' } } } } } } },
+    ],
+  })
+  await setPerm(LEADER_POLICY, 'absences', 'create')
+  await setPerm(LEADER_POLICY, 'absences', 'update', COACH_TEAM_ABSENCE_SCOPE)
+  await setPerm(LEADER_POLICY, 'absences', 'delete', COACH_TEAM_ABSENCE_SCOPE)
 
   // Notifications — create (coaches send notifications)
   await setPerm(LEADER_POLICY, 'notifications', 'create')
@@ -761,8 +813,10 @@ async function main() {
     'date_created', 'date_updated',
   ])
 
-  // User logs — read all
-  await setPermRead(LEADER_POLICY, 'user_logs')
+  // User logs — REMOVED for LEADER (2026-05-12 audit). The audit log endpoint
+  // at /kscw/admin/audit is the only sanctioned access path and is admin-only.
+  // Direct `/items/user_logs` read previously exposed every member's action
+  // payloads (incl. profile-update diffs with PII) to every coach.
 
   // Game scheduling — read
   await setPermRead(LEADER_POLICY, 'game_scheduling_seasons')

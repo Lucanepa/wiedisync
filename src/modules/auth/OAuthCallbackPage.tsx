@@ -8,7 +8,18 @@ import { useNavigate } from 'react-router-dom'
  * URL search params. We require an `oauth_pending` sentinel set by
  * loginWithOAuth() to be present and fresh — that closes the CSRF window
  * where an attacker tricks a victim into loading a crafted callback URL.
+ *
+ * Defence layers (in order):
+ *   1. `oauth_pending` sentinel must exist (proves a recent click).
+ *   2. Sentinel TTL ≤ 2 min (was 5 min — the 2026-05-12 audit shrank this
+ *      to halve the session-fixation window on shared/kiosk devices).
+ *   3. If a `state` param round-tripped through Directus, it must match the
+ *      stored nonce. Directus may strip our query string when appending
+ *      `?access_token=…` — when state is absent we fall back to the sentinel
+ *      check alone (documented residual gap in SECURITY.md).
  */
+const OAUTH_TTL_MS = 2 * 60 * 1000 // 2 minutes
+
 export default function OAuthCallbackPage() {
   const navigate = useNavigate()
 
@@ -17,6 +28,7 @@ export default function OAuthCallbackPage() {
     const accessToken = params.get('access_token')
     const refreshToken = params.get('refresh_token')
     const expires = params.get('expires')
+    const stateParam = params.get('state')
 
     let consumed = false
     let pending: { nonce?: string; ts?: number; provider?: string } | null = null
@@ -28,9 +40,11 @@ export default function OAuthCallbackPage() {
     try { sessionStorage.removeItem('oauth_pending') } catch { /* ignore */ }
 
     // Reject token params that didn't come from a recent loginWithOAuth click.
-    // 5-minute freshness window covers slow Google consent screens.
-    const fresh = !!pending?.ts && (Date.now() - pending.ts) < 5 * 60 * 1000
-    if (accessToken && refreshToken && fresh) {
+    const fresh = !!pending?.ts && (Date.now() - pending.ts) < OAUTH_TTL_MS
+    // If state arrived back, it must match. (Absent state → fall through to
+    // sentinel-only check; presence + mismatch is always rejected.)
+    const stateOk = !stateParam || (!!pending?.nonce && stateParam === pending.nonce)
+    if (accessToken && refreshToken && fresh && stateOk) {
       const authData = {
         access_token: accessToken,
         refresh_token: refreshToken,

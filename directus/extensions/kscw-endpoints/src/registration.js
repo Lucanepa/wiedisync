@@ -4,7 +4,7 @@
  * POST /kscw/registration/:id/files — public, upload ID files after registration
  */
 
-import { buildEmailLayout, buildInfoCard, formatDateCH, bucketEmailsByLocale } from './email-template.js'
+import { buildEmailLayout, buildInfoCard, formatDateCH, bucketEmailsByLocale, escHtml } from './email-template.js'
 import crypto from 'crypto'
 
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET || ''
@@ -408,7 +408,7 @@ function buildAdminNotificationEmail(reg, locale = 'de') {
 </div>`
 
   const body = summary +
-    (reg.bemerkungen ? `<div style="font-size:13px;color:#94a3b8;margin-top:12px"><strong style="color:#e2e8f0">${l.adminBemerkungen}:</strong><br>${reg.bemerkungen}</div>` : '') +
+    (reg.bemerkungen ? `<div style="font-size:13px;color:#94a3b8;margin-top:12px"><strong style="color:#e2e8f0">${l.adminBemerkungen}:</strong><br>${escHtml(reg.bemerkungen)}</div>` : '') +
     instructions
 
   return buildEmailLayout(body, {

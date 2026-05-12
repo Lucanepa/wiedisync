@@ -1,6 +1,8 @@
 # Permissions reference — KSCW Directus
 
-Canonical role × collection × action map. Reflects the live state through migration 043 (2026-05-06). Updated by reviewers as part of every permission change.
+Canonical role × collection × action map. Reflects the live state through migration 050 (2026-05-12). Updated by reviewers as part of every permission change.
+
+> **2026-05-12 — Deep-audit LEADER tightening.** Removed unfiltered LEADER reads on `members`, `participations`, `absences`, `user_logs`, and unfiltered LEADER updates on `games`, `trainings`, `events`. All now use the coach/TR-of-the-target-team filter pattern; `members.read` adds a `LEADER_TEAM_MEMBER_FIELDS` whitelist that excludes `ahv_nummer`. LEADER lost `user_logs.read` entirely — audit access goes through `/kscw/admin/audit` (admin-only). See SECURITY.md "2026-05-12" block for the full per-finding ledger.
 
 > **Source of truth (post-2026-05-06):** `directus/scripts/setup-permissions.mjs` is the SINGLE source for Directus permissions. It is declarative, idempotent (clears + recreates on every run), and applied via `npm run db:setup-perms:<env>` on every deploy. Numbered SQL migrations are SCHEMA-ONLY going forward — they no longer carry permission rows. This doc is the human-readable index of the script — keep both in sync.
 

@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.8.2'
+const APP_VERSION = '4.8.3'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,26 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.8.3',
+    date: '2026-05-12',
+    sections: [
+      {
+        title: 'Deep security audit — eight Fix-this-week findings closed',
+        items: [
+          'Mass push/email amplification on `POST /kscw/events/:id/notify` closed: the route was unauthenticated. Now requires a logged-in user with admin, sport-admin, event-creator, or coach/TR-of-an-event-team standing.',
+          'Audit-log access (`/admin/audit-log`) no longer bypassable by renaming any Directus role to "Superuser": gate switched from the mutable `directus_roles.name` string match to the stable `req.accountability.admin` flag.',
+          'Registration form `bemerkungen` (Notes) field is now HTML-escaped before landing in the admin notification email. Public registrants can no longer inject HTML into mail clients.',
+          'Push subscription `endpoint` URL is now validated at subscribe time: must be https, host must match a known browser-push-provider allow-list (FCM/APNs/Mozilla/WNS), private/loopback/link-local hosts rejected. Closes an SSRF path through the CF push Worker.',
+          'OAuth callback freshness window tightened from 5 min → 2 min, plus a `state=<nonce>` query param is now embedded into the Directus redirect URL and verified on return if echoed back. Halves the session-fixation window on shared/kiosk devices.',
+          'LEADER (Coach/TR) policy scope-tightening pass: `members.read`, `participations.read`, `participations.update`, `absences.read`, `games.update`, `trainings.update`, `events.update` were all unfiltered after the v4.8.1 per-user backfill — every coach could read/write across the entire club, including AHV numbers, addresses, and other teams\' game scores. All seven rows now use the coach/TR-of-the-target-team filter; `members.read` adds a field whitelist that excludes `ahv_nummer`. `user_logs.read` removed from LEADER entirely.',
+          'Guest-participation block trigger (`trg_participations_guest_block`) now scopes the `guest_level > 0` check to the game\'s own team (migration 050). Seniors who occasionally guest-play for a youth team can again confirm their own primary team\'s games — the original check over-blocked.',
+          'Smoke test gains an optional Coach-token negative-assertion pass (reads `DIRECTUS_*_USER_TOKEN_COACH` from `.env.local`): asserts cross-team participation reads return empty and direct `user_logs` read returns 403. Catches LEADER-scope regressions on every deploy.',
+          'See SECURITY.md "2026-05-12" block for the full per-finding ledger and PERMISSIONS.md for the updated LEADER row pattern.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.8.2',
     date: '2026-05-12',

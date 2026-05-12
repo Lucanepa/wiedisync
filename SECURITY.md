@@ -46,6 +46,40 @@ Tracked (must stay clean of secrets):
 
 Treat this as a deduplication shield: if a future audit finds something on this list, it's either a regression or a misunderstanding — verify before re-flagging.
 
+### 2026-05-12 — Deep audit + remediation (v4.8.3)
+
+Deep audit run post-v4.8.1 (LEADER-per-user backfill) and v4.8.2 (LEADER read scope for trainings/events). Six parallel research agents over the same six surfaces. Eight Fix-this-week findings closed.
+
+**Custom endpoints (`directus/extensions/kscw-endpoints/src/`)**
+- `event-notify.js` `POST /kscw/events/:id/notify` — previously unauthenticated. Now requires `req.accountability.user` AND callers must be Directus admin, KSCW sport-admin role, the event creator, or a coach/TR of one of the event's teams. Closes a mass push/email amplification vector exploitable by any anonymous HTTP client.
+- `audit.js` `requireSuperuser()` — replaced the `directus_roles.name = 'Superuser'` string match (bypassable by renaming any role) with `req.accountability.admin === true`. The stable policy-derived admin flag is the right gate; the role name is mutable.
+- `registration.js` admin notification email — `reg.bemerkungen` now routed through `escHtml()` from `email-template.js`. Public registrants can no longer inject HTML/script into the email body delivered to admin clients. `escHtml` exported from `email-template.js` so other endpoints can reuse it.
+- `web-push.js` `/subscribe` — new `validatePushEndpoint()` rejects non-https, malformed URLs, private/loopback/link-local hosts (IPv4 + IPv6), and any host outside an allow-list of known browser push providers (FCM, APNs, Mozilla autopush, WNS). Closes the SSRF path where an authenticated member could coerce the CF push Worker to issue outbound requests to attacker-chosen hosts.
+
+**Custom hooks (`directus/extensions/kscw-hooks/src/index.js`)**
+- Team-join-request email body (5 locales) — `member.first_name`, `member.last_name`, and `teamName` are now routed through `escapeEmailHtml()` before interpolation into the `intro` HTML. Closes a stored-HTML injection path via member registration names.
+
+**Frontend (`src/`)**
+- `OAuthCallbackPage.tsx` + `useAuth.tsx loginWithOAuth` — `oauth_pending` sentinel TTL tightened from 5 min → 2 min, and a `state=<nonce>` query param is now embedded into the redirect URL handed to Directus. If Directus preserves our query string when appending `?access_token=…` (which most OAuth provider integrations do), the callback verifies the round-tripped state against the stored nonce — full CSRF binding. If Directus strips it, the shorter TTL still narrows the residual window (documented as a known residual gap below).
+
+**Permissions (`directus/scripts/setup-permissions.mjs`) — LEADER policy scope tightening**
+- `members.read` — was unfiltered full-row read across the entire club. Replaced with a `COACH_TEAM_MEMBERS`-scoped row + a new `LEADER_TEAM_MEMBER_FIELDS` field whitelist (all of `MEMBER_OWN_READABLE` minus `ahv_nummer`). Coaches see contact info (email/phone/address/birthdate) only for members on teams they coach or TR. Out-of-team members continue to be readable via the MEMBER policy's existing `MEMBER_VISIBLE_FIELDS` whitelist (no PII).
+- `games.update` — was unfiltered. Now scoped to coach/TR of the game's `kscw_team` via the standard M2M filter pattern.
+- `trainings.update` — was unfiltered. Now uses the same `COACH_OR_TR_OF_TEAM` filter already applied to `trainings.read`/`delete`.
+- `events.update` — was unfiltered. Now mirrors the existing `events.delete` filter (creator OR coach/TR of an invited team).
+- `participations.read` + `participations.update` — was unfiltered full-club RSVP dump. Now scoped via `participation.member.member_teams.team.{coach|team_responsible}`.
+- `absences.read` — was unfiltered full-club absence dump. Same scope as participations.
+- `user_logs.read` — REMOVED entirely from LEADER. The audit log endpoint at `/kscw/admin/audit` is the only sanctioned access path and is admin-only.
+
+**SQL — migration 050**
+- `trg_participations_guest_block` — was checking `guest_level > 0` across the member's ANY team. Now joins to `games.kscw_team` and checks only the row for the game's team. Closes a correctness defect that silently 400'd legit RSVPs for any senior who guest-played for a youth team.
+
+**Smoke test (`directus/scripts/smoke-test.mjs`)**
+- New optional Coach-token pass: reads `DIRECTUS_DEV_USER_TOKEN_COACH` / `DIRECTUS_PROD_USER_TOKEN_COACH` from `.env.local`. Asserts `participations.read` returns only rows whose member is reachable via the coach's teams, and `user_logs` direct read 403s. Skipped silently if no coach token is present, so existing deploys don't break.
+
+**Residual gaps documented**
+- OAuth nonce round-trip depends on Directus preserving our `state` query param through the OAuth provider redirect. If Directus strips it the TTL (now 2 min) is the only defence. Full backend support for `state` belongs in a separate enhancement.
+
 ### 2026-05-06 (continued) — v4.5.2 closes the last Critical
 
 **Custom endpoints (`directus/extensions/kscw-endpoints/src/`)**

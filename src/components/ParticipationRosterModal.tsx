@@ -142,7 +142,10 @@ export default function ParticipationRosterModal({
   // Fetch team leadership roles (coach, captain, team_responsible)
   const { data: teamsRaw } = useCollection<Team>('teams', {
     filter: teamIds.length > 0 ? { id: { _in: teamIds } } : undefined,
-    fields: ['id', 'coach', 'captain', 'team_responsible'],
+    // M2M fields MUST be expanded via `<rel>.members_id`. Bare `coach`/
+    // `team_responsible` return junction row IDs that look like member
+    // IDs but aren't → ghost-staff bug.
+    fields: ['id', 'captain', 'coach.members_id', 'team_responsible.members_id'],
     enabled: teamIds.length > 0 && open,
   })
   const teams = teamsRaw ?? []

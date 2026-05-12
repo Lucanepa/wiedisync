@@ -67,7 +67,14 @@ export default function RosterEditor() {
 
   useEffect(() => {
     if (!teamSlug) return
-    fetchItems<Team>('teams', { filter: { name: { _eq: teamSlug } }, limit: 1 })
+    fetchItems<Team>('teams', {
+      filter: { name: { _eq: teamSlug } },
+      limit: 1,
+      // Expand M2M aliases — bare `coach`/`team_responsible` come back as
+      // junction row IDs that flattenMemberIds would mis-interpret as
+      // member IDs (ghost-staff bug, 2026-05-12).
+      fields: ['*', 'coach.members_id', 'team_responsible.members_id'],
+    })
       .then((items) => setTeam(items[0] ?? null))
       .catch(() => setTeam(null))
   }, [teamSlug])

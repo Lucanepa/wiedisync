@@ -2,6 +2,18 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## v4.8.1 — 2026-05-12
+
+### Coaches & team responsibles can update their teams again
+
+- Three coaches/TRs were silently 403'd on every `PATCH /items/teams/<id>` after the v4.5.1 scope tightening — visible as a dashboard date-range input that wouldn't persist, a roster-page settings toggle that snapped back, or a "Coach can't see trainings" report (`CoachDashboard` auto-persist failing on mount).
+- Root cause: the LEADER policy was attached only to the **Team Responsible** Directus role. Whether a coach got that role depended on the `kscw-hooks` role-sync hook firing on data-change events — coaches whose junction predated the hook (member 467), Vorstand+Coach users created before the priority rule existed (member 11), and users with custom non-managed roles like "Website Admin" (member 442) all ended up with a stale role and no LEADER policy.
+- Fix: decouple LEADER policy attachment from role assignment. Attach the policy **per-user** via `directus_access.user` to every member present in `teams_coaches` or `teams_responsibles`. The policy's writes are already self-scoped via M2M filters (`coach.members_id.user = $CURRENT_USER`), so broadening the attachment cannot widen access — non-coaches still hit 403 on the filter.
+  - One-time SQL backfill applied to prod (21 users).
+  - `directus/scripts/setup-permissions.mjs` section 10 reproduces the same end-state on fresh installs, including stale-row cleanup.
+  - `kscw-hooks` `ensureLeaderAccess()` / `revokeLeaderAccessIfOrphan()` mirror role-sync on `teams_coaches` and `teams_responsibles` create/delete, so new assignments don't need to wait for a setup script run.
+- Lesson logged in `INFRA.md → Troubleshooting`: don't gate capabilities on Directus role assignment when the data already encodes the capability. Filters can read the source of truth at request time.
+
 ## v4.8.0 — 2026-05-12
 
 ### Auto-confirm RSVP — opt-out attendance (PlayerPlus-style)

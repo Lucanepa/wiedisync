@@ -61,7 +61,10 @@ export default function WeeklyUnavailabilityForm({ open, absence, onSave, onCanc
   const [note, setNote] = useState('')
   const [validationError, setValidationError] = useState('')
 
+  // Initialise once per modal-open. `user` in deps would reset the picker on
+  // every useAuth refresh, clobbering a coach's selection back to themselves.
   useEffect(() => {
+    if (!open) return
     if (absence) {
       setMemberId(relId(absence.member))
       setDaysOfWeek(absence.days_of_week ?? [])
@@ -80,7 +83,8 @@ export default function WeeklyUnavailabilityForm({ open, absence, onSave, onCanc
       setNote('')
     }
     setValidationError('')
-  }, [absence, user, open])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, absence])
 
   function toggleDay(day: number) {
     setDaysOfWeek((prev) =>

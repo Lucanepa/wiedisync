@@ -81,7 +81,7 @@ export default function Modal({ open, onClose, title, children, size = 'md', hid
           </div>
           {headerAction && <div className="shrink-0">{headerAction}</div>}
         </DrawerHeader>
-        <div className="max-h-[calc(100dvh-8rem)] overflow-y-auto overscroll-contain px-4 pb-4">
+        <div className="max-h-[calc(100dvh-11rem)] overflow-y-auto overscroll-contain px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           {children}
         </div>
       </DrawerContent>

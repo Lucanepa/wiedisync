@@ -128,6 +128,10 @@ export default {
   featureShowRsvpTimeHint: 'Aazeige wenn jedes Mitglied gantwortet hät',
   featureAutoDeclineTentative: '"Villicht" automatisch ablehne',
   featureAutoDeclineTentativeHint: 'Wandlet "Villicht"-Antworte nach de Aalmeldefrischt in "Nei" um',
+  featureAutoConfirmTraining: 'Trainings automatisch bestätige',
+  featureAutoConfirmTrainingHint: 'Neui Trainings starte mit allne als bestätigt — Mitglieder mönd sich abmelde, wenns nöd chönd cho',
+  featureAutoConfirmGame: 'Spiel automatisch bestätige',
+  featureAutoConfirmGameHint: 'Neui Spiel starte mit allne Vollmitglieder als bestätigt (Gäscht usgschlosse) — Mitglieder mönd sich abmelde, wenns nöd chönd cho',
   // Team-Iistellige
   teamSettings: 'Team-Iistellige',
   teamSettingsDescription: 'Features und Standardiistellige für das Team konfiguriere.',

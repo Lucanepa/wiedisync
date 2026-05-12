@@ -114,6 +114,10 @@ export default {
   featureShowRsvpTimeHint: 'Afficher quand chaque membre a répondu',
   featureAutoDeclineTentative: 'Refuser automatiquement les « Peut-être »',
   featureAutoDeclineTentativeHint: 'Convertit les réponses « Peut-être » en « Non » après la date limite',
+  featureAutoConfirmTraining: 'Confirmer automatiquement les entraînements',
+  featureAutoConfirmTrainingHint: 'Les nouveaux entraînements démarrent avec tout le monde confirmé — les membres doivent se désinscrire s\'ils ne peuvent pas venir',
+  featureAutoConfirmGame: 'Confirmer automatiquement les matchs',
+  featureAutoConfirmGameHint: 'Les nouveaux matchs démarrent avec tous les membres titulaires confirmés (invités exclus) — les membres doivent se désinscrire s\'ils ne peuvent pas venir',
   // Paramètres d'équipe
   teamSettings: 'Paramètres d\'équipe',
   teamSettingsDescription: 'Configurer les fonctionnalités et les paramètres par défaut de cette équipe.',

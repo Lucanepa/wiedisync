@@ -801,9 +801,68 @@ async function main() {
 
   console.log(`  ✓ Sport Admin permissions set`)
 
-  // ── 10. Admin policy (admin_access=true — bypasses all) ────────
+  // ── 10. Backfill user-level LEADER access for every coach/TR ───
+  //
+  // Permission gating must not depend on Directus role assignment. The
+  // role-sync hook only fires on data-change events; users whose
+  // coach/TR junction predates the hook (or whose role got manually
+  // changed to a custom tier like "Website Admin") end up with a stale
+  // role that lacks LEADER policy → 403 on teams.update etc.
+  //
+  // Fix: attach LEADER_POLICY directly to the user via directus_access
+  // for everyone present in teams_coaches or teams_responsibles. The
+  // LEADER policy is already self-scoped on every write (teams.update,
+  // members.update, member_teams.* via M2M filters) so attaching it
+  // broadly is safe — non-coaches simply won't match the filters.
+  //
+  // Idempotent: skips users that already have the row.
 
-  console.log('\n10. Admin/Superuser — admin_access=true, bypasses all permissions')
+  console.log('\n10. Backfilling user-level LEADER access for coaches/TRs...')
+
+  const leaderUserIds = new Set()
+  const coachJunctions = await api('GET', '/items/teams_coaches?fields=members_id.user&limit=-1')
+  const trJunctions = await api('GET', '/items/teams_responsibles?fields=members_id.user&limit=-1')
+  for (const j of [...coachJunctions, ...trJunctions]) {
+    const uid = j?.members_id?.user
+    if (uid) leaderUserIds.add(uid)
+  }
+
+  const existingAccess = await api('GET', `/access?filter[policy][_eq]=${LEADER_POLICY}&filter[user][_nnull]=true&fields=user&limit=-1`)
+  const haveLeader = new Set(existingAccess.map(a => a.user).filter(Boolean))
+
+  let attached = 0
+  let skipped = 0
+  for (const userId of leaderUserIds) {
+    if (haveLeader.has(userId)) { skipped++; continue }
+    try {
+      await api('POST', '/access', { user: userId, policy: LEADER_POLICY })
+      attached++
+    } catch (e) {
+      if (!e.message.includes('RECORD_NOT_UNIQUE')) {
+        console.warn(`  ⚠ attach LEADER to ${userId}: ${e.message.slice(0, 100)}`)
+      } else {
+        skipped++
+      }
+    }
+  }
+  console.log(`  ✓ Attached LEADER policy to ${attached} user(s) (${skipped} already had it, ${leaderUserIds.size} total coaches/TRs)`)
+
+  // Clean up stale user-level LEADER access for users no longer coach/TR.
+  // Re-fetch with id so we can DELETE; the earlier query only requested `user`.
+  const accessWithIds = await api('GET', `/access?filter[policy][_eq]=${LEADER_POLICY}&filter[user][_nnull]=true&fields=id,user&limit=-1`)
+  const stale = accessWithIds.filter(a => a.user && !leaderUserIds.has(a.user))
+  for (const row of stale) {
+    try {
+      await api('DELETE', `/access/${row.id}`)
+    } catch (e) {
+      console.warn(`  ⚠ revoke LEADER from ${row.user}: ${e.message.slice(0, 100)}`)
+    }
+  }
+  if (stale.length > 0) console.log(`  ✓ Revoked LEADER policy from ${stale.length} ex-coach/TR user(s)`)
+
+  // ── 11. Admin policy (admin_access=true — bypasses all) ────────
+
+  console.log('\n11. Admin/Superuser — admin_access=true, bypasses all permissions')
 
   // ── Summary ──────���─────────────────────────────────────────────
 

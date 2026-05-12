@@ -81,6 +81,10 @@ export interface TeamSettings extends FeatureToggles {
   training_respond_by_days?: number
   training_auto_cancel_on_min?: boolean
   training_require_note_if_absent?: boolean
+  /** Auto-confirm RSVP on training create (members must opt out). Default false. */
+  training_auto_confirm?: boolean
+  /** Auto-confirm RSVP on game create for full members only (guests blocked). Default false. */
+  game_auto_confirm?: boolean
 }
 
 export interface Member extends BaseRecord {

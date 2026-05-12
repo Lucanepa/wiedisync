@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.7.0'
+const APP_VERSION = '4.8.1'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,35 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.8.1',
+    date: '2026-05-12',
+    sections: [
+      {
+        title: 'Coaches & team responsibles can update their teams again',
+        items: [
+          'Three coaches/TRs lost the ability to edit team settings, dashboard date range, and team preferences after the v4.5.1 permission tightening. Symptom: silent 403 on every team save — visible to the user as a date-range input that wouldn\'t persist, a "Coach present" toggle that snapped back, or a stuck team-settings panel.',
+          'Root cause: the LEADER policy was attached to the "Team Responsible" Directus role only. Whether a member got that role depended on the role-sync hook firing — coaches whose junction predated the hook, Vorstand+Coach users, and users with custom roles (e.g. "Website Admin") were stuck on a stale role with no LEADER policy.',
+          'Fix: attach the LEADER policy directly to each coach/TR user (per `teams_coaches` / `teams_responsibles` membership), regardless of role. The policy\'s scope filters (`coach.members_id.user = $CURRENT_USER` etc.) already prevent updating teams you don\'t coach, so broadening the attachment is safe. New coach/TR assignments get the attachment in the same transaction as the junction insert; revoked coaches lose it automatically. Backfilled 21 existing coaches/TRs on prod.',
+        ],
+      },
+    ],
+  },
+  {
+    version: '4.8.0',
+    date: '2026-05-12',
+    sections: [
+      {
+        title: 'Auto-confirm RSVP — opt-out attendance (PlayerPlus-style)',
+        items: [
+          'Two new team settings: "Auto-confirm trainings" and "Auto-confirm games" (both off by default). When enabled, every newly created training/game starts with all eligible members already set to "Confirmed" — members who can\'t attend must actively decline.',
+          'Trainings: every member of the team is auto-confirmed except those whose `guest_level` is in the training\'s excluded list. Games: only full members (`guest_level = 0`) — guests stay blocked from confirming game participation by the existing Postgres trigger.',
+          'Plays cleanly with the absence system: members with an overlapping one-off or weekly absence are auto-declined first (existing behaviour), then the auto-confirm pass fills in the rest via `NOT EXISTS`, so absent members never get incorrectly auto-confirmed.',
+          'Find both toggles under Team Settings → Game Defaults / Training Defaults. Translated EN / DE / GSW / FR / IT.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.7.0',
     date: '2026-05-10',

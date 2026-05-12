@@ -745,6 +745,9 @@ function TeamSettingsSection({ team, onUpdate }: { team: Team; onUpdate: (s: Tea
 
         {/* Game Defaults */}
         <SettingsGroup title={t('settingsGameDefaults')}>
+          <SettingRow label={t('featureAutoConfirmGame')} hint={t('featureAutoConfirmGameHint')}>
+            <SwitchToggle checked={settings.game_auto_confirm === true} onChange={() => toggleBool('game_auto_confirm')} />
+          </SettingRow>
           <SettingRow label={t('settingsRequireNoteIfAbsent')} hint={t('settingsRequireNoteHint')}>
             <SwitchToggle checked={settings.game_require_note_if_absent === true} onChange={() => toggleBool('game_require_note_if_absent')} />
           </SettingRow>
@@ -758,6 +761,9 @@ function TeamSettingsSection({ team, onUpdate }: { team: Team; onUpdate: (s: Tea
 
         {/* Training Defaults */}
         <SettingsGroup title={t('settingsTrainingDefaults')}>
+          <SettingRow label={t('featureAutoConfirmTraining')} hint={t('featureAutoConfirmTrainingHint')}>
+            <SwitchToggle checked={settings.training_auto_confirm === true} onChange={() => toggleBool('training_auto_confirm')} />
+          </SettingRow>
           <SettingRow label={t('settingsAutoCancelOnMin')} hint={t('settingsAutoCancelOnMinHint')}>
             <SwitchToggle checked={settings.training_auto_cancel_on_min === true} onChange={() => toggleBool('training_auto_cancel_on_min')} />
           </SettingRow>

@@ -19,4 +19,7 @@ export default {
   showCategories: 'Nach Kategorie',
   rankings: 'Ranglisten',
   showMore: 'Mehr anzeigen',
+  absencesAlertTitle: 'Bitte deine Abwesenheiten erfassen',
+  absencesAlertBody: 'Für die Spielplanung der nächsten Saison: Bitte trage alle bekannten Abwesenheiten bis am 1. Juni ein, damit die Trainer die Spiele entsprechend planen können.',
+  absencesAlertCta: 'Abwesenheiten erfassen',
 } as const

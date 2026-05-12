@@ -19,4 +19,7 @@ export default {
   showCategories: 'By category',
   rankings: 'Rankings',
   showMore: 'Show more',
+  absencesAlertTitle: 'Please enter your absences',
+  absencesAlertBody: 'For next season\'s game scheduling: add all known absences by 1 June so coaches can plan accordingly.',
+  absencesAlertCta: 'Add absences',
 } as const

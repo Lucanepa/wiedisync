@@ -14,4 +14,7 @@ export default {
   noTrainings: 'Nessun allenamento in programma.',
   myTeams: 'Le mie squadre',
   myNextAppointments: 'I miei prossimi appuntamenti',
+  absencesAlertTitle: 'Inserisci le tue assenze',
+  absencesAlertBody: 'Per la pianificazione delle partite della prossima stagione: inserisci tutte le assenze note entro il 1° giugno cosicché gli allenatori possano pianificare.',
+  absencesAlertCta: 'Aggiungi assenze',
 } as const

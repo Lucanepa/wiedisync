@@ -86,6 +86,7 @@ export default {
   editWeeklyTitle: 'Wöchentliche Abwesenheit bearbeiten',
   daysOfWeek: 'Wochentage',
   noteOptional: 'Notiz (optional)',
+  editedByStaffOn: 'Bearbeitet vom Trainerteam am {{at}}',
   notePlaceholder: 'Zusätzliche Informationen...',
   atLeastOneDay: 'Mindestens ein Tag wählen',
   noWeeklyAbsences: 'Keine wöchentlichen Abwesenheiten',

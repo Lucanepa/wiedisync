@@ -389,6 +389,8 @@ export interface Training extends BaseRecord {
   excluded_guest_levels: number[]
   /** Per-training override for auto-confirm RSVP. null = inherit team default. */
   auto_confirm_rsvp?: boolean | null
+  /** Trial training (Probetraining): publicly visible on the website when the team is open for new players. */
+  is_trial?: boolean
 }
 
 export interface Absence extends BaseRecord {
@@ -401,6 +403,10 @@ export interface Absence extends BaseRecord {
   type: 'standard' | 'weekly'
   days_of_week: number[] // 0=Mon..6=Sun (only for type='weekly')
   indefinite: boolean
+  /** Migration 051: directus_users.id of the most recent authenticated writer. */
+  last_edited_by?: string | null
+  /** Migration 051: timestamp of the most recent authenticated write. */
+  last_edited_at?: string | null
 }
 
 export interface Event extends BaseRecord {

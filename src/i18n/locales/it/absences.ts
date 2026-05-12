@@ -86,6 +86,7 @@ export default {
   editWeeklyTitle: 'Modifica indisponibilità settimanale',
   daysOfWeek: 'Giorni della settimana',
   noteOptional: 'Nota (facoltativo)',
+  editedByStaffOn: 'Modificato dallo staff il {{at}}',
   notePlaceholder: 'Informazioni aggiuntive...',
   atLeastOneDay: 'Seleziona almeno un giorno',
   noWeeklyAbsences: 'Nessuna indisponibilità settimanale',

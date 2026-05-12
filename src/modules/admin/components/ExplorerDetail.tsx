@@ -51,7 +51,14 @@ export default function ExplorerDetail({ cache, type, id, onSelect, onBack }: Pr
     )
   }
 
-  const directusUrl = `${API_URL}/admin/content/${type}/${id}`
+  // 2026-05-12 audit #18: pin `type` to the explorer's known buckets before
+  // building the Directus admin URL. The switch above already guarantees
+  // `entity` is null for unknown types, but the explicit allow-list is a
+  // cheap forecloses future API responses where `type` could carry
+  // path-traversal chars.
+  const ALLOWED_TYPES = new Set(['members', 'teams', 'events', 'trainings', 'games'])
+  if (!ALLOWED_TYPES.has(type)) return null
+  const directusUrl = `${API_URL}/admin/content/${encodeURIComponent(type)}/${encodeURIComponent(id)}`
   const title = titleFor(type, entity, cache)
 
   return (

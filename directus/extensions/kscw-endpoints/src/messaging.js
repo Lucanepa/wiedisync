@@ -942,26 +942,39 @@ export function registerMessaging(router, ctx) {
   })
 
   // ── POST /messaging/conversations/:id/clear ─────────────────────────
+  // 2026-05-12 audit #13: communications-banned members must not be able to
+  // wipe their history before moderation can act; bulk operation also gets
+  // a per-call row cap so a compromised account can't time out the DB by
+  // soft-deleting tens of thousands of rows in one call.
   router.post('/messaging/conversations/:id/clear', async (req, res) => {
     try {
       const userId = requireAuth(req)
       const me = await requireMember(db, userId)
+      if (me.communications_banned === true) {
+        return sendError(res, log, new MessagingError('communications_banned',
+          'Account suspended from messaging', 403))
+      }
       await loadConversationMembership(db, req.params.id, me.id)
 
       const schema = await getSchema()
       const messagesService = new ItemsService('messages', { schema, knex: db })
       const nowIso = new Date().toISOString()
 
+      const CLEAR_BATCH_CAP = 500
       const rows = await db('messages')
         .where('conversation', req.params.id)
         .andWhere('sender', me.id)
         .andWhereRaw('deleted_at IS NULL')
+        .orderBy('created_at', 'asc')
+        .limit(CLEAR_BATCH_CAP)
         .select('id')
       if (rows.length === 0) return res.json({ cleared: 0 })
 
       await messagesService.updateMany(rows.map(r => r.id), { deleted_at: nowIso })
 
-      res.json({ cleared: rows.length })
+      // `more` lets the client re-call until cleared. Without this, the
+      // unaware caller would think their history is fully wiped.
+      res.json({ cleared: rows.length, more: rows.length === CLEAR_BATCH_CAP })
     } catch (e) { sendError(res, log, e) }
   })
 
@@ -987,10 +1000,15 @@ export function registerMessaging(router, ctx) {
 
       const convIds = myConvs.map(c => c.id)
 
+      // 2026-05-12 audit #10: soft-deleted messages must NOT appear in the
+      // GDPR export. Self-clear (`POST /conversations/:id/clear`) and
+      // moderator-redact both null `body`/`original_body`; including the
+      // tombstone rows would re-expose timing metadata for redacted content.
       const messages = convIds.length > 0
         ? await db('messages').whereIn('conversation', convIds)
+            .whereNull('deleted_at')
             .select('id', 'conversation', 'sender', 'type', 'body', 'poll',
-                    'created_at', 'edited_at', 'deleted_at')
+                    'created_at', 'edited_at')
         : []
 
       const reactions = convIds.length > 0
@@ -1012,9 +1030,13 @@ export function registerMessaging(router, ctx) {
                 'consent_decision', 'consent_prompted_at', 'last_export_at')
         .first()
 
+      // 2026-05-12 audit #10: `message_snapshot` is the pre-redaction body
+      // of another member's message captured at report-time. The reporter
+      // has no standing claim to that content — it's a moderation artifact,
+      // not personal data belonging to them. Dropped from the export.
       const reportsFiled = await db('reports').where('reporter', me.id)
         .select('id', 'reported_member', 'message', 'conversation',
-                'reason', 'note', 'message_snapshot', 'status', 'created_at')
+                'reason', 'note', 'status', 'created_at')
 
       const bundle = {
         generated_at: new Date().toISOString(),

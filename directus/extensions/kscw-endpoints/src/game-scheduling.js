@@ -73,7 +73,15 @@ export function registerGameScheduling(router, { database, logger, services, get
   const writeAttempts = new Map() // ip → { count, resetAt }
 
   function rateLimit(map, req, maxAttempts, windowMs) {
-    const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown'
+    // 2026-05-12 audit #20: prefer CF-Connecting-IP (set by Cloudflare Tunnel)
+    // over `req.ip` (which is the tunnel IP under reverse proxy) over
+    // X-Forwarded-For (spoofable if `trust proxy` isn't set on Express).
+    // Documented gap in SECURITY.md: limiter is safe ONLY behind CF Tunnel.
+    const xff = req.headers['x-forwarded-for']
+    const ip = req.headers['cf-connecting-ip']
+      || (typeof xff === 'string' ? xff.split(',')[0].trim() : '')
+      || req.ip
+      || 'unknown'
     const now = Date.now()
     const attempt = map.get(ip)
     if (attempt && now < attempt.resetAt) {
@@ -266,11 +274,22 @@ export function registerGameScheduling(router, { database, logger, services, get
         type: 'away_proposal',
         status: 'pending',
       }
+      // 2026-05-12 audit #22: validate date/time/location before storing or
+      // later emailing. Token-flow rate-limit + auth are intact, but garbage
+      // data lands in admin UI + outbound emails (HTML-rendered).
+      const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+      const TIME_RE = /^\d{2}:\d{2}(?::\d{2})?$/
       proposals.forEach((p, i) => {
-        if (!p.date) throw new Error('Each proposal needs a date')
+        if (!p.date || !DATE_RE.test(String(p.date))) {
+          throw new Error('Each proposal needs a valid date (YYYY-MM-DD)')
+        }
+        if (p.start_time && !TIME_RE.test(String(p.start_time))) {
+          throw new Error('start_time must be HH:MM')
+        }
+        const rawPlace = String(p.location || p.place || '').slice(0, 200)
         const dt = p.start_time ? `${p.date}T${p.start_time}` : p.date
         row[`proposed_datetime_${i + 1}`] = dt
-        row[`proposed_place_${i + 1}`] = p.location || p.place || ''
+        row[`proposed_place_${i + 1}`] = rawPlace
       })
       await database('game_scheduling_bookings').insert(row)
 

@@ -467,8 +467,25 @@ async function main() {
       { member: { member_teams: { team: { members: { member: { user: { _eq: '$CURRENT_USER' } } } } } } },
     ],
   }
-  await setPermRead(MEMBER_POLICY, 'participations', SAME_TEAM_AS_ME)
-  await setPermRead(MEMBER_POLICY, 'absences', SAME_TEAM_AS_ME)
+  // 2026-05-12 audit #12: participations.last_*_edited_by are directus_users
+  // UUIDs (migrations 046/047) which let Members enumerate Directus user
+  // UUIDs by cross-referencing. Members get the timestamps but not the
+  // UUIDs; LEADER keeps full read so coach UI can resolve editor names.
+  // Absences gained `last_edited_by/at` in migration 051 — same pattern.
+  const MEMBER_PARTICIPATION_FIELDS = [
+    'id', 'member', 'activity_type', 'activity_id', 'status', 'note',
+    'guest_count', 'is_staff',
+    'auto_declined_by', 'auto_cancelled_by_closure',
+    'last_status_edited_at', 'last_note_edited_at', 'last_edited_at',
+    'date_created', 'date_updated',
+  ]
+  const MEMBER_ABSENCE_FIELDS = [
+    'id', 'member', 'type', 'start_date', 'end_date', 'indefinite',
+    'reason', 'reason_detail', 'affects', 'days_of_week',
+    'last_edited_at', 'date_created', 'date_updated',
+  ]
+  await setPermRead(MEMBER_POLICY, 'participations', SAME_TEAM_AS_ME, MEMBER_PARTICIPATION_FIELDS)
+  await setPermRead(MEMBER_POLICY, 'absences', SAME_TEAM_AS_ME, MEMBER_ABSENCE_FIELDS)
 
   // ── slot_claims — keep open for now (calendar UI relies on it),
   // public read removed in 035; member read still permissive per audit decision.

@@ -14,7 +14,7 @@ import LocationCombobox from '@/components/LocationCombobox'
 import { Switch } from '@/components/ui/switch'
 import { teamNameToColorKey } from '../../utils/teamColors'
 import { formatDateLocale } from '../../utils/dateUtils'
-import { parseRespondByTime, toUtcIsoFromDatetimeLocal, toDatetimeLocalFromUtcIso } from '../../utils/dateHelpers'
+import { parseRespondByTime, toUtcIsoFromDatetimeLocal, toDatetimeLocalFromUtcIso, toZurichDateString } from '../../utils/dateHelpers'
 import type { Event, EventSession, Team } from '../../types'
 import RoleChipPicker from '@/components/RoleChipPicker'
 import MemberMultiSelect from '@/components/MemberMultiSelect'
@@ -124,10 +124,10 @@ export default function EventForm({ open, event, onSave, onCancel }: EventFormPr
       setTitle(event.title)
       setEventType(event.event_type)
       setStartDate(event.all_day
-        ? (event.start_date?.split('T')[0] ?? '')
+        ? toZurichDateString(event.start_date)
         : (event.start_date ? toDatetimeLocalFromUtcIso(event.start_date) : ''))
       setEndDate(event.all_day
-        ? (event.end_date?.split('T')[0] ?? '')
+        ? toZurichDateString(event.end_date)
         : (event.end_date ? toDatetimeLocalFromUtcIso(event.end_date) : ''))
       setAllDay(event.all_day)
       setLocation(event.location ?? '')

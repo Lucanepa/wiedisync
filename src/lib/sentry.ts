@@ -257,6 +257,14 @@ export function captureAuthError(
   },
 ) {
   const err = toError(error)
+  // "Token expired." on token_refresh is the normal idle-timeout path —
+  // refresh token outlived its TTL and the user simply has to log in again.
+  // Not a bug; capturing it spams Sentry (regressed as WIEDISYNC-F on
+  // 2026-05-12 with 100+ hits/day). Log to console but skip remote capture.
+  if (context.action === 'token_refresh' && /token expired/i.test(err.message)) {
+    console.info('[Auth] Refresh token expired — user must re-authenticate')
+    return
+  }
   Sentry.withScope((scope) => {
     scope.setTag('auth.action', context.action)
     if (context.method) scope.setTag('auth.method', context.method)

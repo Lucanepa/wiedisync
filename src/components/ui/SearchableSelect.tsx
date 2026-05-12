@@ -106,8 +106,19 @@ export default function SearchableSelect({
       requestAnimationFrame(() => inputRef.current?.focus())
     } else if (!open) {
       setSearch('')
+      // Drop the portal target reference when closing — prevents the
+      // "removeChild: node is not a child of this node" race where the
+      // parent dialog/drawer unmounts before our portal child does.
+      setPortalTarget(null)
     }
   }, [open, isDesktop])
+
+  // Force-close + drop portal target on unmount, in case the parent modal
+  // is torn down while we're still open.
+  useEffect(() => () => {
+    setOpen(false)
+    setPortalTarget(null)
+  }, [])
 
   // Close on outside click
   useEffect(() => {
@@ -211,7 +222,7 @@ export default function SearchableSelect({
           </ul>
         </div>
       )}
-      {open && isDesktop && portalTarget && createPortal(
+      {open && isDesktop && portalTarget && portalTarget.isConnected && createPortal(
         <div ref={dropdownRef} data-searchable-select style={dropdownStyle} className="cursor-default rounded-md border bg-popover shadow-md">
           <ul
             className="max-h-60 overflow-y-auto overscroll-contain py-1 [touch-action:pan-y] [-webkit-overflow-scrolling:touch]"

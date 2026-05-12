@@ -64,7 +64,7 @@ export default function WeeklyUnavailabilityCard({ absence, onEdit, onDelete, sh
         return (
           <TableCell
             key={key}
-            className="w-10 px-1 text-center align-middle"
+            className="w-7 px-0.5 sm:w-10 sm:px-1 text-center align-middle"
             title={active ? label : undefined}
           >
             <span
@@ -72,8 +72,8 @@ export default function WeeklyUnavailabilityCard({ absence, onEdit, onDelete, sh
               aria-hidden={!active}
               className={
                 active
-                  ? 'inline-flex h-7 w-7 items-center justify-center rounded-full bg-brand-500 text-[11px] font-semibold text-white'
-                  : 'inline-flex h-7 w-7 items-center justify-center rounded-full text-[11px] text-gray-300 dark:text-gray-600'
+                  ? 'inline-flex h-5 w-5 sm:h-7 sm:w-7 items-center justify-center rounded-sm sm:rounded-full bg-brand-500 text-[10px] sm:text-[11px] font-semibold text-white'
+                  : 'inline-flex h-5 w-5 sm:h-7 sm:w-7 items-center justify-center rounded-sm sm:rounded-full text-[10px] sm:text-[11px] text-gray-300 dark:text-gray-600'
               }
             >
               {active ? '•' : ''}

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Trash2, CalendarClock } from 'lucide-react'
 import { formatDate, formatDateTimeCompact } from '../../utils/dateHelpers'
 import { TableCell, TableRow } from '../../components/ui/table'
 import type { Absence, Member } from '../../types'
@@ -52,7 +52,17 @@ export default function WeeklyUnavailabilityCard({ absence, onEdit, onDelete, sh
     <TableRow className="align-top">
       {showMemberName && (
         <TableCell className="whitespace-normal text-sm font-medium text-gray-900 dark:text-gray-100">
-          {memberName ?? '—'}
+          <div>{memberName ?? '—'}</div>
+          {!absence.indefinite && absence.end_date && (
+            <div className="mt-0.5 flex items-center gap-1 text-[11px] font-normal text-gray-500 dark:text-gray-400">
+              <CalendarClock className="h-3 w-3 shrink-0" aria-hidden="true" />
+              <span>
+                {t('untilShort', {
+                  date: formatDate(absence.end_date).replace(/(\d{4})$/, (y) => y.slice(2)),
+                })}
+              </span>
+            </div>
+          )}
         </TableCell>
       )}
       {DAY_KEYS.map((key, dow) => {

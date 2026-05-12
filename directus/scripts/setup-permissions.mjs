@@ -271,6 +271,9 @@ const MEMBER_VISIBLE_FIELDS = [
   'requested_team', 'birthdate_visibility', 'hide_phone',
   'license_nr', 'sex', 'licence_category', 'licence_activated', 'licence_validated',
   'kscw_membership_active', 'shell', 'shell_expires',
+  // 2026-05-12: needed by /teams/* coach-approval queries (sort/filter on
+  // date_created) and /absences (member_teams o2m used to scope absences).
+  'date_created', 'member_teams',
 ]
 
 /** Fields a member can update on their own profile */
@@ -475,6 +478,7 @@ async function main() {
   const MEMBER_PARTICIPATION_FIELDS = [
     'id', 'member', 'activity_type', 'activity_id', 'status', 'note',
     'guest_count', 'is_staff',
+    'session_id', 'waitlisted_at',
     'auto_declined_by', 'auto_cancelled_by_closure',
     'last_status_edited_at', 'last_note_edited_at', 'last_edited_at',
     'date_created', 'date_updated',

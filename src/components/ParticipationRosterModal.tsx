@@ -416,8 +416,13 @@ export default function ParticipationRosterModal({
         setStaffMembers([])
         setStaffParticipationRows([])
       })
+  // Depend on the raw teams query rather than the derived `leadershipRoles`
+  // Map: when teamIds is empty, `teams = teamsRaw ?? []` is a fresh array
+  // literal each render, which makes the `leadershipRoles` useMemo identity
+  // unstable and re-fires this effect on every render → mobile Vaul Drawer
+  // setState → render → setState loop (WIEDISYNC-3Y).
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, activityId, activityType, isClubWide, memberIds.join(','), staffPartsRaw, leadershipRoles])
+  }, [open, activityId, activityType, isClubWide, memberIds.join(','), staffPartsRaw, teamsRaw])
 
   // For the overall tab, compute per-member session counts
   const memberSessionCounts = useMemo(() => {

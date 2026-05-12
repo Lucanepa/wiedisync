@@ -116,6 +116,8 @@ export default function AbsencesPage() {
 
   const hasTeams = memberTeamIds.length > 0 || coachTeamIds.length > 0 || effectiveIsAdmin
   const isTeamScope = scope === 'team' && hasTeams
+  const isCoachOrResponsible = coachTeamIds.length > 0 || effectiveIsCoach || effectiveIsAdmin || effectiveIsVorstand
+  const canCreateForTeam = isTeamScope && isCoachOrResponsible
   const canEditOwn = (a: Absence) => relId(a.member) === String(user?.id) || isCoach || effectiveIsCoach
 
   return (
@@ -134,14 +136,14 @@ export default function AbsencesPage() {
               {t('importAbsences')}
             </Button>
           )}
-          {scope === 'mine' && (
+          {(scope === 'mine' || canCreateForTeam) && (
             viewType === 'weekly' ? (
               <Button onClick={() => { setEditingWeekly(null); setWeeklyFormOpen(true) }}>
-                {t('newWeekly')}
+                {isTeamScope ? t('newWeeklyForMember') : t('newWeekly')}
               </Button>
             ) : (
               <Button data-tour="new-absence" onClick={() => { setEditingAbsence(null); setFormOpen(true) }}>
-                {t('newAbsence')}
+                {isTeamScope ? t('newAbsenceForMember') : t('newAbsence')}
               </Button>
             )
           )}

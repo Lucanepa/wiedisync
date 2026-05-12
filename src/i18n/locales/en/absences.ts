@@ -7,7 +7,9 @@ export default {
   tabTeamAbsences: 'Team Absences',
 
   // Actions
-  newAbsence: 'New Absence',
+  newAbsence: 'New absence',
+  newAbsenceForMember: 'New absence for member',
+  newWeeklyForMember: 'New weekly for member',
 
   // Form
   member: 'Member',

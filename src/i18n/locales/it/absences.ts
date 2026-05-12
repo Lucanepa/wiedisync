@@ -8,6 +8,8 @@ export default {
 
   // Actions
   newAbsence: 'Nuova assenza',
+  newAbsenceForMember: 'Assenza per un membro',
+  newWeeklyForMember: 'Settimanale per un membro',
 
   // Form
   member: 'Membro',

@@ -104,4 +104,6 @@ export default {
   useTeamDefault: 'Team-Standard',
   on: 'An',
   off: 'Aus',
+  isTrialTraining: 'Probetraining',
+  isTrialTrainingHint: 'Auf der Teamseite öffentlich sichtbar, wenn das Team für neue Spieler offen ist.',
 } as const

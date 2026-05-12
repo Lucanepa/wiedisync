@@ -84,6 +84,7 @@ function useNavItems(isLoggedIn: boolean, isApproved: boolean, memberId?: number
       { to: '/admin/infra', label: t('infraHealth'), icon: <Activity className={iconClass} /> },
       { to: '/admin/data-health', label: t('dataHealth'), icon: <HeartPulse className={iconClass} /> },
       { to: '/bugfixes', label: t('bugfixes'), icon: <Bug className={iconClass} /> },
+      { to: '/admin/audit-log', label: t('auditLog'), icon: <ScrollText className={iconClass} /> },
     ],
   }
 }

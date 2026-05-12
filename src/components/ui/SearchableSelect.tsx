@@ -55,6 +55,10 @@ export default function SearchableSelect({
         left: rect.left,
         width: rect.width,
         zIndex: 9999,
+        // Radix Dialog sets pointer-events:none on the body while open; the
+        // portalled dropdown is a body child so it inherits the block. Force
+        // pointer-events back on for the dropdown subtree.
+        pointerEvents: 'auto',
       })
     }
     updatePosition()

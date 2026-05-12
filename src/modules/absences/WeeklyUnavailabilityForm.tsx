@@ -12,7 +12,8 @@ import SearchableSelect from '@/components/ui/SearchableSelect'
 import { Checkbox } from '@/components/ui/checkbox'
 import AffectsMultiSelect from '@/components/AffectsMultiSelect'
 import type { Absence, Member } from '../../types'
-import { memberName, relId } from '../../utils/relations'
+import { memberName, relId, asObj } from '../../utils/relations'
+import { useMultiTeamMembers } from '../../hooks/useTeamMembers'
 
 const DAY_KEYS = ['dayMon', 'dayTue', 'dayWed', 'dayThu', 'dayFri', 'daySat', 'daySun'] as const
 
@@ -35,15 +36,21 @@ export default function WeeklyUnavailabilityForm({ open, absence, onSave, onCanc
   const showMemberPicker = effectiveIsAdmin || (forTeam && isCoachOrResponsible)
 
   const { data: allMembersRaw } = useCollection<Member>('members', {
-    filter: effectiveIsAdmin
-      ? { kscw_membership_active: { _eq: true } }
-      : { _and: [{ kscw_membership_active: { _eq: true } }, { member_teams: { team: { _in: teamIds ?? [] } } }] },
+    filter: { kscw_membership_active: { _eq: true } },
     sort: ['last_name'],
     all: true,
     fields: ['id', 'first_name', 'last_name'],
-    enabled: showMemberPicker,
+    enabled: showMemberPicker && effectiveIsAdmin,
   })
-  const visibleMembers = allMembersRaw ?? []
+  const { members: teamMemberRows } = useMultiTeamMembers(
+    showMemberPicker && !effectiveIsAdmin ? (teamIds ?? []) : [],
+  )
+  const visibleMembers: Member[] = effectiveIsAdmin
+    ? (allMembersRaw ?? [])
+    : teamMemberRows
+        .map((mt) => asObj<Member>(mt.member))
+        .filter((m): m is Member => !!m && m.kscw_membership_active !== false)
+        .sort((a, b) => (a.last_name ?? '').localeCompare(b.last_name ?? ''))
 
   const [memberId, setMemberId] = useState('')
   const [daysOfWeek, setDaysOfWeek] = useState<number[]>([])

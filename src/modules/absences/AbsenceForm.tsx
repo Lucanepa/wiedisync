@@ -5,6 +5,8 @@ import { useAuth } from '../../hooks/useAuth'
 import { useAdminMode } from '../../hooks/useAdminMode'
 import { useMutation } from '../../hooks/useMutation'
 import { useCollection } from '../../lib/query'
+import { useMultiTeamMembers } from '../../hooks/useTeamMembers'
+import { asObj } from '../../utils/relations'
 import { Button } from '@/components/ui/button'
 import { FormTextarea } from '@/components/FormField'
 import DatePicker from '@/components/ui/DatePicker'
@@ -36,17 +38,26 @@ export default function AbsenceForm({ open, absence, onSave, onCancel, forTeam, 
   const isCoachOrResponsible = coachTeamIds.length > 0 || effectiveIsCoach
   const showMemberPicker = effectiveIsAdmin || (forTeam && isCoachOrResponsible)
 
-  // Admins: fetch all active members; coaches on team tab: fetch team members
+  // Admins: fetch all active members club-wide.
   const { data: allMembersRaw } = useCollection<Member>('members', {
-    filter: effectiveIsAdmin
-      ? { kscw_membership_active: { _eq: true } }
-      : { _and: [{ kscw_membership_active: { _eq: true } }, { member_teams: { team: { _in: teamIds ?? [] } } }] },
+    filter: { kscw_membership_active: { _eq: true } },
     sort: ['last_name'],
     all: true,
     fields: ['id', 'first_name', 'last_name'],
-    enabled: showMemberPicker,
+    enabled: showMemberPicker && effectiveIsAdmin,
   })
-  const visibleMembers = allMembersRaw ?? []
+  // Coaches/TRs: fetch members of their coached teams via member_teams junction
+  // (deep `members.member_teams.team._in` filter is unreliable here — single-level
+  // junction filter is the proven pattern from useTeamAbsences).
+  const { members: teamMemberRows } = useMultiTeamMembers(
+    showMemberPicker && !effectiveIsAdmin ? (teamIds ?? []) : [],
+  )
+  const visibleMembers: Member[] = effectiveIsAdmin
+    ? (allMembersRaw ?? [])
+    : teamMemberRows
+        .map((mt) => asObj<Member>(mt.member))
+        .filter((m): m is Member => !!m && m.kscw_membership_active !== false)
+        .sort((a, b) => (a.last_name ?? '').localeCompare(b.last_name ?? ''))
 
   const [memberId, setMemberId] = useState('')
   const [startDate, setStartDate] = useState('')

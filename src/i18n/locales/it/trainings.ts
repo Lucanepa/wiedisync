@@ -99,4 +99,9 @@ export default {
   excludedGuestLevelsHint: 'Gli ospiti dei livelli selezionati non possono confermare o indicare incerto',
   excludeAllGuests: 'Tutti gli ospiti',
   guestExcluded: 'Il tuo livello di ospite è escluso da questo allenamento',
+  autoConfirmRsvp: 'Conferma automatica',
+  autoConfirmRsvpHint: 'Sovrascrivi il valore predefinito della squadra ({{default}}). Tutti i membri idonei partono come confermati; devono annullare manualmente.',
+  useTeamDefault: 'Valore predefinito della squadra',
+  on: 'On',
+  off: 'Off',
 } as const

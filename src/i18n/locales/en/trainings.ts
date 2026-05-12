@@ -99,4 +99,9 @@ export default {
   excludedGuestLevelsHint: 'Guests at the selected tiers cannot confirm or mark themselves as tentative',
   excludeAllGuests: 'All guests',
   guestExcluded: 'Your guest tier is excluded from this training',
+  autoConfirmRsvp: 'Auto-confirm RSVP',
+  autoConfirmRsvpHint: 'Override team default ({{default}}). All eligible members start as confirmed; they must opt out.',
+  useTeamDefault: 'Use team default',
+  on: 'On',
+  off: 'Off',
 } as const

@@ -99,4 +99,9 @@ export default {
   excludedGuestLevelsHint: 'Gäst vo de gwählte Stuefe chönd nöd zuesäge oder als unsicher markiere',
   excludeAllGuests: 'Alli Gäst',
   guestExcluded: 'Dini Gaststuefe isch vo dem Training usgschlosse',
+  autoConfirmRsvp: 'Automatisch bestätige',
+  autoConfirmRsvpHint: 'Team-Standard überschribe ({{default}}). Alli berechtigte Mitglieder starte als bestätigt; sie mönd sich aktiv abmelde.',
+  useTeamDefault: 'Team-Standard',
+  on: 'A',
+  off: 'Us',
 } as const

@@ -23,6 +23,15 @@ const CHANGELOG: ChangelogEntry[] = [
           'Fix: LEADER now has `trainings.read` and `trainings.delete` scoped via the coach/TR M2M traversal (`team.coach.members_id.user = $CURRENT_USER` OR `team.team_responsible.members_id.user = $CURRENT_USER`), plus `events.read` (with the same coach/TR scope union\'d with the existing club-wide/invited filters) and `events.delete` (scoped to event creator or coach/TR of an attached team). Verified: Michelle can now read H2/H3 trainings; reading trainings of a team she doesn\'t coach correctly returns empty.',
         ],
       },
+      {
+        title: 'Auto-confirm RSVP — per-activity override + retroactive backfill',
+        items: [
+          'Per-activity override: training and manual-game forms now show a tri-state "Auto-confirm RSVP" control — *Use team default* / *On* / *Off*. The form hint shows the current team default so coaches see what *Use team default* resolves to. Stored as nullable boolean in new `trainings.auto_confirm_rsvp` and `games.auto_confirm_rsvp` columns (migration 048).',
+          'Retroactive backfill: when a coach flips the team-level toggle from off to on (under Team Settings → Game Defaults / Training Defaults), the backend now fills `confirmed` RSVPs for every eligible member on every future training/game that still inherits the team default (`auto_confirm_rsvp IS NULL`). No more "I just turned this on, why isn\'t the next training auto-confirmed?". Same backfill runs when a single activity\'s override flips to *On*.',
+          'Effective auto-confirm = `activity.auto_confirm_rsvp ?? team.features_enabled.<training|game>_auto_confirm`. Per-activity *Off* hard-overrides team *On*, so coaches can soft-opt-out specific sessions (informal scrimmages, optional extra trainings) without flipping the whole team.',
+          'NOT EXISTS protection kept: absence-declined members and manual RSVPs are never overwritten — backfill only inserts where no row exists yet.',
+        ],
+      },
     ],
   },
   {

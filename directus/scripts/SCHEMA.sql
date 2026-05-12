@@ -2,7 +2,7 @@
 -- KSCW SCHEMA baseline — GENERATED, DO NOT EDIT BY HAND
 -- ============================================================================
 --
--- Generated:   2026-05-06T08:24:34.570Z
+-- Generated:   2026-05-12T10:13:49.833Z
 -- Source:      prod (db=postgres)
 -- Generator:   directus/scripts/regenerate-baseline.mjs
 --
@@ -559,7 +559,6 @@ $$;
 
 CREATE FUNCTION public.fn_messaging_dm_autoaccept() RETURNS trigger
     LANGUAGE plpgsql
-    SET search_path TO 'public'
     AS $$
 DECLARE
   r record;
@@ -570,7 +569,6 @@ BEGIN
       FROM message_requests mr
       JOIN member_teams other_mt
         ON other_mt.team = NEW.team
-       AND other_mt.season = NEW.season
        AND other_mt.member <> NEW.member
      WHERE mr.status = 'pending'
        AND (
@@ -1112,14 +1110,27 @@ CREATE FUNCTION public.trg_participations_guest_block() RETURNS trigger
     LANGUAGE plpgsql
     SET search_path TO 'public'
     AS $$
+DECLARE
+  v_team integer;
 BEGIN
-  -- Block guests from confirming game participation (on insert or status update to confirmed)
+  -- Block guests from confirming game participation (on insert or status
+  -- change to confirmed), scoped to the team that owns the game.
   IF NEW.activity_type = 'game' AND NEW.status = 'confirmed' AND NEW.member IS NOT NULL THEN
     IF TG_OP = 'INSERT' OR (TG_OP = 'UPDATE' AND OLD.status IS DISTINCT FROM NEW.status) THEN
-      IF EXISTS (
-        SELECT 1 FROM member_teams WHERE member = NEW.member AND guest_level > 0 LIMIT 1
-      ) THEN
-        RAISE EXCEPTION 'Guests cannot directly confirm game participation';
+      -- Resolve the game's team. If the game row is missing (FK orphan)
+      -- we fall back to allowing the write — the FK constraint will catch
+      -- the real problem, not this trigger.
+      SELECT kscw_team INTO v_team FROM games WHERE id = NEW.activity_id;
+      IF v_team IS NOT NULL THEN
+        IF EXISTS (
+          SELECT 1 FROM member_teams
+          WHERE member = NEW.member
+            AND team = v_team
+            AND guest_level > 0
+          LIMIT 1
+        ) THEN
+          RAISE EXCEPTION 'Guests cannot directly confirm game participation';
+        END IF;
       END IF;
     END IF;
   END IF;
@@ -1416,8 +1427,24 @@ CREATE TABLE public.absences (
     indefinite boolean DEFAULT false NOT NULL,
     member integer,
     date_created timestamp with time zone,
-    date_updated timestamp with time zone
+    date_updated timestamp with time zone,
+    last_edited_by uuid,
+    last_edited_at timestamp with time zone
 );
+
+
+--
+-- Name: COLUMN absences.last_edited_by; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.absences.last_edited_by IS 'directus_users.id of the writer on the most recent create/update — set by kscw-hooks filter, null for system-context writes.';
+
+
+--
+-- Name: COLUMN absences.last_edited_at; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.absences.last_edited_at IS 'Wall-clock of the most recent authenticated write. Null when never touched by an authenticated session.';
 
 
 --
@@ -2242,8 +2269,16 @@ CREATE TABLE public.games (
     date_updated timestamp with time zone,
     send_email_invite boolean DEFAULT false,
     svrz_push_status public.svrz_push_status_enum,
-    additional_halls json
+    additional_halls json,
+    auto_confirm_rsvp boolean
 );
+
+
+--
+-- Name: COLUMN games.auto_confirm_rsvp; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.games.auto_confirm_rsvp IS 'NULL = inherit teams.features_enabled.game_auto_confirm. true/false = per-activity override.';
 
 
 --
@@ -2837,8 +2872,40 @@ CREATE TABLE public.participations (
     position_1 character varying(255),
     position_2 character varying(255),
     position_3 character varying(255),
-    auto_declined_by integer
+    auto_declined_by integer,
+    last_status_edited_by uuid,
+    last_status_edited_at timestamp with time zone,
+    last_note_edited_by uuid,
+    last_note_edited_at timestamp with time zone
 );
+
+
+--
+-- Name: COLUMN participations.last_status_edited_by; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.participations.last_status_edited_by IS 'directus_users.id of the writer who last set/changed `status` — set by kscw-hooks filter when `status` is in the create/update payload. Null for system-context writes.';
+
+
+--
+-- Name: COLUMN participations.last_status_edited_at; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.participations.last_status_edited_at IS 'Wall-clock of the last `status` write by an authenticated session.';
+
+
+--
+-- Name: COLUMN participations.last_note_edited_by; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.participations.last_note_edited_by IS 'directus_users.id of the writer who last set/changed `note` — set by kscw-hooks filter when `note` is in the create/update payload. Null for system-context writes.';
+
+
+--
+-- Name: COLUMN participations.last_note_edited_at; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.participations.last_note_edited_at IS 'Wall-clock of the last `note` write by an authenticated session.';
 
 
 --
@@ -3401,8 +3468,24 @@ CREATE TABLE public.trainings (
     date_updated timestamp with time zone,
     send_email_invite boolean DEFAULT false,
     auto_cancelled_by_closure integer,
-    excluded_guest_levels jsonb DEFAULT '[]'::jsonb NOT NULL
+    excluded_guest_levels jsonb DEFAULT '[]'::jsonb NOT NULL,
+    auto_confirm_rsvp boolean,
+    is_trial boolean DEFAULT false NOT NULL
 );
+
+
+--
+-- Name: COLUMN trainings.auto_confirm_rsvp; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.trainings.auto_confirm_rsvp IS 'NULL = inherit teams.features_enabled.training_auto_confirm. true/false = per-activity override.';
+
+
+--
+-- Name: COLUMN trainings.is_trial; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.trainings.is_trial IS 'When true, the training is a public trial training (Probetraining) — surfaced on the kscw-website team page next to the "Get in touch" CTA for teams with open_for_players=true.';
 
 
 --
@@ -3850,6 +3933,28 @@ CREATE TABLE public.svrz_spielplaner_contacts (
     raw json,
     last_synced_at timestamp with time zone
 );
+
+
+--
+-- Name: sync_runs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.sync_runs (
+    source text NOT NULL,
+    last_run_at timestamp with time zone DEFAULT now() NOT NULL,
+    status text DEFAULT 'ok'::text NOT NULL,
+    rows_changed integer DEFAULT 0 NOT NULL,
+    duration_ms integer DEFAULT 0 NOT NULL,
+    error_message text,
+    CONSTRAINT sync_runs_status_check CHECK ((status = ANY (ARRAY['ok'::text, 'error'::text])))
+);
+
+
+--
+-- Name: TABLE sync_runs; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.sync_runs IS 'Per-cron last-run tracker — populated by logCronRun() helper. Read by /status page.';
 
 
 --
@@ -4888,6 +4993,14 @@ ALTER TABLE ONLY public.kscw_migrations
 
 
 --
+-- Name: member_teams member_teams_member_team_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.member_teams
+    ADD CONSTRAINT member_teams_member_team_unique UNIQUE (member, team);
+
+
+--
 -- Name: member_teams member_teams_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5117,6 +5230,14 @@ ALTER TABLE ONLY public.svrz_spielplaner_contacts
 
 ALTER TABLE ONLY public.svrz_spielplaner_contacts
     ADD CONSTRAINT svrz_spielplaner_contacts_svrz_persistence_id_unique UNIQUE (svrz_persistence_id);
+
+
+--
+-- Name: sync_runs sync_runs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sync_runs
+    ADD CONSTRAINT sync_runs_pkey PRIMARY KEY (source);
 
 
 --
@@ -5511,6 +5632,13 @@ CREATE INDEX hall_slots_hall_index ON public.hall_slots USING btree (hall);
 
 
 --
+-- Name: idx_absences_last_edited_by; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_absences_last_edited_by ON public.absences USING btree (last_edited_by) WHERE (last_edited_by IS NOT NULL);
+
+
+--
 -- Name: idx_blocks_blocked; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5648,6 +5776,20 @@ CREATE INDEX idx_msg_requests_recipient_status ON public.message_requests USING 
 --
 
 CREATE INDEX idx_participations_auto_declined_by ON public.participations USING btree (auto_declined_by) WHERE (auto_declined_by IS NOT NULL);
+
+
+--
+-- Name: idx_participations_last_note_edited_by; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_participations_last_note_edited_by ON public.participations USING btree (last_note_edited_by) WHERE (last_note_edited_by IS NOT NULL);
+
+
+--
+-- Name: idx_participations_last_status_edited_by; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_participations_last_status_edited_by ON public.participations USING btree (last_status_edited_by) WHERE (last_status_edited_by IS NOT NULL);
 
 
 --
@@ -6043,6 +6185,13 @@ CREATE INDEX trainings_hall_slot_index ON public.trainings USING btree (hall_slo
 
 
 --
+-- Name: trainings_is_trial_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX trainings_is_trial_idx ON public.trainings USING btree (is_trial) WHERE (is_trial = true);
+
+
+--
 -- Name: trainings_team_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6286,6 +6435,14 @@ CREATE TRIGGER trg_trainings_revoke_claims AFTER UPDATE ON public.trainings FOR 
 
 ALTER TABLE ONLY _realtime.extensions
     ADD CONSTRAINT extensions_tenant_external_id_fkey FOREIGN KEY (tenant_external_id) REFERENCES _realtime.tenants(external_id) ON DELETE CASCADE;
+
+
+--
+-- Name: absences absences_last_edited_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.absences
+    ADD CONSTRAINT absences_last_edited_by_fkey FOREIGN KEY (last_edited_by) REFERENCES public.directus_users(id) ON DELETE SET NULL;
 
 
 --
@@ -6574,6 +6731,22 @@ ALTER TABLE ONLY public.messages
 
 ALTER TABLE ONLY public.notifications
     ADD CONSTRAINT notifications_member_foreign FOREIGN KEY (member) REFERENCES public.members(id) ON DELETE CASCADE;
+
+
+--
+-- Name: participations participations_last_note_edited_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.participations
+    ADD CONSTRAINT participations_last_note_edited_by_fkey FOREIGN KEY (last_note_edited_by) REFERENCES public.directus_users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: participations participations_last_status_edited_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.participations
+    ADD CONSTRAINT participations_last_status_edited_by_fkey FOREIGN KEY (last_status_edited_by) REFERENCES public.directus_users(id) ON DELETE SET NULL;
 
 
 --

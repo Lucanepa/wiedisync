@@ -46,6 +46,25 @@ Tracked (must stay clean of secrets):
 
 Treat this as a deduplication shield: if a future audit finds something on this list, it's either a regression or a misunderstanding — verify before re-flagging.
 
+### 2026-05-12 — Deep audit Low-tier + hygiene (v4.8.8)
+
+Closes the remaining open items from the 2026-05-12 audit beyond what v4.8.3 and v4.8.5 already shipped.
+
+**Custom hooks (`directus/extensions/kscw-hooks/src/`)**
+- New `sanitize-html.js` — allowlist HTML sanitizer (pure JS, no deps). Strips `<script>`, `<style>`, `<iframe>`, `<img>`, `<form>`, `<svg>`, every event handler, every inline style, and every attribute except `href` on `<a>` (https-only or same-origin). Applied to the announcement email body before fanout (`notifyAnnouncementPublished`). Closes audit finding #14 — a compromised Sport Admin can no longer ship phishing redirects, tracking pixels, or `<a href="javascript:…">` payloads to the whole sport's mailbox.
+- `index.js` absence-auto-decline + auto-confirm paths — every `EXTRACT(DOW FROM DATE '${dateStr}')` template-string now parameterizes the date through the driver as `EXTRACT(DOW FROM ?::date)`. `autoDeclineForAbsence` additionally coerces the `daysOfWeek` jsonb array to integers in the 0..6 range before interpolating into the `IN (…)` list. Defense-in-depth — the `safeDateStr()` regex and `jsonb` column already protect in practice, but the new shape removes the string-concatenation pattern entirely. Closes audit finding #9.
+
+**Audit log (`directus/extensions/kscw-hooks/src/audit.js`)**
+- Per-collection `REDACTED_FIELDS` map: payload values for `members.ahv_nummer`, `birthdate`, `email`, `phone`, `license_nr`, postal address, `directus_users` credentials, and `push_subscriptions` keys are replaced with `[REDACTED]` before being written to `user_logs.data`. `reports_filed`, `messages`, `message_requests` payloads collapse to `{_redacted: true, _fields: [...]}` so an audit reviewer can see WHICH columns moved without exfiltrating the row content. Field names — and hence the "what changed" signal — survive.
+- New 90-day purge cron (daily at 02:15 UTC) deletes `user_logs` rows older than 90 days. The audit-log UI advertises a 90-day window via `ARCHIVE_DAYS`; until now the rows accumulated indefinitely. Closes audit finding #11.
+
+**SQL — migration 052**
+- `fn_messaging_dm_autoaccept` drops the `other_mt.season = NEW.season` predicate. Cross-season teammates now auto-accept pending DM requests the same way same-season teammates do. Was producing a confusing "we're on the same team but my request is still pending" state at season boundaries. Closes audit finding #25.
+
+**Docs**
+- `PERMISSIONS.md` header bumped to migration 052.
+- `SCHEMA.sql` baseline regenerated from prod (was 7 migrations behind; closes audit finding #24).
+
 ### 2026-05-12 — Deep audit + remediation (v4.8.3)
 
 Deep audit run post-v4.8.1 (LEADER-per-user backfill) and v4.8.2 (LEADER read scope for trainings/events). Six parallel research agents over the same six surfaces. Eight Fix-this-week findings closed.
@@ -156,6 +175,7 @@ Deep audit run post-v4.8.1 (LEADER-per-user backfill) and v4.8.2 (LEADER read sc
 | `Math.max(rs)`-style PKCS8 key wrapping in `workers/push/src/index.ts` | Accepted | Documented inline; used to handle WebCrypto's lack of raw P-256 import. Audited 2026-04-04. |
 | Notification triggers fan out without re-checking caller identity | Accepted | Triggers run after Directus RBAC has already gated the parent INSERT/UPDATE. If we ever grant `games`/`trainings`/`events` direct DML to a non-admin role at the PG level, this assumption breaks. |
 | `tasks` schema lacks `team` FK | Accepted (43 fixed read-side) | Migration 035 noted the design gap. Read scope now uses assignee FKs which is the right substitute; create a migration that adds `team` if cross-team queries are ever needed. |
+| `pgbouncer.get_auth()` lacks `SET search_path = ''` on live prod | Accepted (Supabase-managed) | Audit 2026-05-12 finding #23. Verified `proconfig IS NULL` on live. Patching it from our side risks rollback the next time Supabase bumps the database image, and the function is only callable by the local `pgbouncer` user — not reachable from external traffic. Re-audit if Supabase ever moves the function to a user-modifiable schema. |
 
 ---
 

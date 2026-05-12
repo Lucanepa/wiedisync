@@ -30,18 +30,63 @@ const SKIP_COLLECTIONS = new Set([
 
 const MAX_DATA_BYTES = 4096
 
-function summarisePayload(payload) {
+// Audit 2026-05-12 #11 — collections whose payloads carry PII or secrets.
+// We log the field NAMES (so an audit reviewer can see what changed) but
+// redact the VALUES. The user_logs table has no PII retention story of its
+// own (90-day window now enforced by `purgeUserLogs` below); these maps
+// keep the per-row leak small.
+const REDACTED_FIELDS = {
+  members: new Set([
+    'ahv_nummer', 'birthdate', 'email', 'phone', 'license_nr',
+    'address', 'plz', 'ort', 'nationalitaet', 'anrede', 'sex',
+    'photo', 'requested_team', 'vm_email',
+    'consent_decision', 'consent_prompted_at',
+  ]),
+  directus_users: new Set([
+    'email', 'password', 'token', 'tfa_secret',
+    'first_name', 'last_name', 'language',
+  ]),
+  push_subscriptions: new Set(['endpoint', 'keys_p256dh', 'keys_auth']),
+  // Whole row carries reporter-supplied free text + the message snapshot.
+  reports_filed: '*',
+  // Free-text member messages — never log payload values.
+  messages: '*',
+  message_requests: '*',
+}
+
+function redactValues(collection, payload) {
+  if (payload == null || typeof payload !== 'object') return payload
+  const spec = REDACTED_FIELDS[collection]
+  if (!spec) return payload
+  if (spec === '*') {
+    const keys = Array.isArray(payload)
+      ? Array.from(new Set(payload.flatMap(p => Object.keys(p || {}))))
+      : Object.keys(payload)
+    return { _redacted: true, _fields: keys }
+  }
+  const redactOne = (obj) => {
+    const out = {}
+    for (const k of Object.keys(obj)) {
+      out[k] = spec.has(k) ? '[REDACTED]' : obj[k]
+    }
+    return out
+  }
+  return Array.isArray(payload) ? payload.map(redactOne) : redactOne(payload)
+}
+
+function summarisePayload(collection, payload) {
   if (payload == null) return null
   try {
-    const s = JSON.stringify(payload)
-    if (s.length <= MAX_DATA_BYTES) return payload
+    const redacted = redactValues(collection, payload)
+    const s = JSON.stringify(redacted)
+    if (s.length <= MAX_DATA_BYTES) return redacted
     return { _truncated: true, _bytes: s.length, preview: s.slice(0, MAX_DATA_BYTES) }
   } catch {
     return null
   }
 }
 
-export function registerAuditHook({ action }, { database, logger }) {
+export function registerAuditHook({ action, schedule }, { database, logger }) {
   const log = logger.child({ hook: 'audit' })
 
   async function resolveMemberId(directusUserId) {
@@ -78,12 +123,12 @@ export function registerAuditHook({ action }, { database, logger }) {
   action('items.create', async ({ collection, key, payload }, ctx) => {
     await writeLog({
       collection, recordId: key, actionType: 'create',
-      data: summarisePayload(payload), accountability: ctx.accountability,
+      data: summarisePayload(collection, payload), accountability: ctx.accountability,
     })
   })
 
   action('items.update', async ({ collection, keys, payload }, ctx) => {
-    const data = summarisePayload(payload)
+    const data = summarisePayload(collection, payload)
     for (const k of keys || []) {
       await writeLog({
         collection, recordId: k, actionType: 'update',
@@ -101,5 +146,27 @@ export function registerAuditHook({ action }, { database, logger }) {
     }
   })
 
-  log.info('Audit hook loaded — server-authoritative user_logs writes')
+  // Audit 2026-05-12 #11 — purge user_logs rows older than 90 days. SECURITY.md
+  // and the read endpoint both advertise a 90-day retention window; without a
+  // purge, rows accumulate indefinitely (members.update payloads contain PII
+  // even after `REDACTED_FIELDS` — redaction prunes values, not field names,
+  // and free-text fields from other collections still leak). Runs daily at
+  // 02:15 UTC. Logs the deleted row count.
+  if (typeof schedule === 'function') {
+    schedule('15 2 * * *', async () => {
+      try {
+        const cutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
+        const deleted = await database('user_logs')
+          .where('date_created', '<', cutoff)
+          .delete()
+        if (deleted > 0) {
+          log.info(`[audit/purge] Deleted ${deleted} user_logs rows older than 90 days`)
+        }
+      } catch (err) {
+        log.error({ msg: `[audit/purge] ${err.message}`, stack: err.stack })
+      }
+    })
+  }
+
+  log.info('Audit hook loaded — server-authoritative user_logs writes + 90d purge cron')
 }

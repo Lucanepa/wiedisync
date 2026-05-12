@@ -41,6 +41,18 @@ function escapeEmailHtml(s) {
     .replace(/'/g, '&#39;')
 }
 
+// Strictly-validated YYYY-MM-DD date string for safe interpolation into
+// `database.raw` SQL templates. PG `date` columns come back as `Date` or
+// `string` depending on the driver — both paths funnel through this guard
+// before reaching SQL text. Returns null when the input doesn't match the
+// shape (caller must abort / skip rather than continue with an injection-
+// shaped value). 2026-05-12 audit finding #9.
+function safeDateStr(input) {
+  if (!input) return null
+  const raw = input?.toISOString?.().split('T')[0] || String(input).split('T')[0]
+  return /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : null
+}
+
 const PUSH_WORKER_URL = process.env.PUSH_WORKER_URL || 'https://kscw-push.lucanepa.workers.dev'
 const PUSH_AUTH_SECRET = process.env.PUSH_AUTH_SECRET || ''
 
@@ -651,8 +663,68 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     }
   }
 
-  action('absences.items.create', async ({ key }) => { await autoDeclineForAbsence(key) })
-  action('absences.items.update', async ({ keys }) => { for (const k of keys) await autoDeclineForAbsence(k) })
+  // Edit-attribution (migration 051): stamp directus_users.id of the writer
+  // on every authenticated create/update so the UI can flag third-party
+  // edits. System-context writes (no accountability) leave the columns null.
+  // Filters always overwrite client-supplied values so they can't be spoofed.
+  filter('absences.items.create', async (payload, _meta, { accountability }) => {
+    if (!accountability?.user) return payload
+    return { ...payload, last_edited_by: accountability.user, last_edited_at: new Date().toISOString() }
+  })
+  filter('absences.items.update', async (payload, _meta, { accountability }) => {
+    if (!accountability?.user) return payload
+    return { ...payload, last_edited_by: accountability.user, last_edited_at: new Date().toISOString() }
+  })
+
+  async function notifyAbsenceThirdParty(absenceId, op) {
+    try {
+      const row = await database('absences').where('id', absenceId)
+        .select('id', 'member', 'start_date', 'end_date', 'type', 'reason', 'reason_detail', 'last_edited_by', 'indefinite').first()
+      if (!row || !row.last_edited_by || !row.member) return
+
+      const memberRow = await database('members').where('id', row.member)
+        .select('id', 'user').first()
+      if (!memberRow) return
+      if (memberRow.user && memberRow.user === row.last_edited_by) return // self-edit
+
+      const editorUser = await database('directus_users').where('id', row.last_edited_by)
+        .select('first_name', 'last_name').first()
+      const editorName = [editorUser?.first_name, editorUser?.last_name].filter(Boolean).join(' ') || 'Staff'
+
+      const isWeekly = row.type === 'weekly'
+      await database('notifications').insert({
+        member: row.member,
+        type: 'absence_third_party_edit',
+        title: op === 'create'
+          ? (isWeekly ? 'absence_weekly_created_for_you' : 'absence_created_for_you')
+          : (isWeekly ? 'absence_weekly_updated_for_you' : 'absence_updated_for_you'),
+        body: JSON.stringify({
+          editor: editorName,
+          start: row.start_date,
+          end: row.indefinite ? null : row.end_date,
+          reason: row.reason || null,
+          detail: row.reason_detail || null,
+          weekly: isWeekly,
+        }),
+        activity_type: 'absence',
+        activity_id: String(row.id),
+        read: false,
+      })
+    } catch (err) {
+      log.error({ msg: `[absence-notify] ${err.message}`, event: 'absence_notify', absenceId, stack: err.stack })
+    }
+  }
+
+  action('absences.items.create', async ({ key }) => {
+    await autoDeclineForAbsence(key)
+    await notifyAbsenceThirdParty(key, 'create')
+  })
+  action('absences.items.update', async ({ keys }) => {
+    for (const k of keys) {
+      await autoDeclineForAbsence(k)
+      await notifyAbsenceThirdParty(k, 'update')
+    }
+  })
   action('absences.items.delete', async ({ keys }) => {
     // Reverse any auto-declines this absence had created. Manual overrides are
     // protected by the clear-marker trigger.
@@ -1131,8 +1203,9 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     try {
       const training = await database('trainings').where('id', key).first()
       if (!training || training.cancelled || !training.team || !training.date) return
-      const dateStr = training.date.toISOString?.().split('T')[0] || String(training.date).split('T')[0]
-      // Postgres DOW for this date
+      const dateStr = safeDateStr(training.date)
+      if (!dateStr) return
+      // Postgres DOW for this date — dateStr is regex-validated above.
       const pgDow = `EXTRACT(DOW FROM DATE '${dateStr}')`
 
       const res = await database.raw(`
@@ -1164,7 +1237,8 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     try {
       const game = await database('games').where('id', key).first()
       if (!game || !game.kscw_team || !game.date) return
-      const dateStr = game.date.toISOString?.().split('T')[0] || String(game.date).split('T')[0]
+      const dateStr = safeDateStr(game.date)
+      if (!dateStr) return
       const pgDow = `EXTRACT(DOW FROM DATE '${dateStr}')`
 
       const res = await database.raw(`
@@ -1198,8 +1272,8 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     try {
       const event = await database('events').where('id', key).first()
       if (!event || !event.start_date) return
-      const dateStr = event.start_date.toISOString?.().split('T')[0]
-        || String(event.start_date).split('T')[0]
+      const dateStr = safeDateStr(event.start_date)
+      if (!dateStr) return
       const pgDow = `EXTRACT(DOW FROM DATE '${dateStr}')`
 
       const res = await database.raw(`
@@ -2801,7 +2875,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
   })
 
   // ── Audit hook — server-authoritative user_logs writes ─────────
-  registerAuditHook({ action }, { database, logger })
+  registerAuditHook({ action, schedule }, { database, logger })
 
   log.info('KSCW hooks loaded: role-sync (5 actions, 2 filters), Turnstile, member privacy, registration approval, Spielplaner scope guard, participation absence-aware decline, guest-level RSVP gate, edit-attribution (migration 046), audit log, 11 crons (validations+notifications in Postgres)')
 }

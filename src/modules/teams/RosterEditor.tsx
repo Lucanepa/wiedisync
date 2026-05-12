@@ -13,6 +13,7 @@ import TeamChip from '../../components/TeamChip'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import InviteExternalUserModal from './InviteExternalUserModal'
 import TeamSponsorsEditor from './TeamSponsorsEditor'
+import TrainingForm from '../trainings/TrainingForm'
 import EmptyState from '../../components/EmptyState'
 import { getFileUrl } from '../../utils/fileUrl'
 import { getCurrentSeason } from '../../utils/dateHelpers'
@@ -641,6 +642,7 @@ function TeamSettingsSection({ team, onUpdate }: { team: Team; onUpdate: (s: Tea
   const settings: TeamSettings = (team.features_enabled as TeamSettings) ?? {}
   const [openForPlayers, setOpenForPlayers] = useState(team.open_for_players ?? false)
   const [showGuests, setShowGuests] = useState(team.show_guests_on_website ?? true)
+  const [trialFormOpen, setTrialFormOpen] = useState(false)
   const [socialUrl, setSocialUrl] = useState(team.social_url ?? '')
   const [facebookUrl, setFacebookUrl] = useState(team.facebook_url ?? '')
   const [tiktokUrl, setTiktokUrl] = useState(team.tiktok_url ?? '')
@@ -698,6 +700,19 @@ function TeamSettingsSection({ team, onUpdate }: { team: Team; onUpdate: (s: Tea
           <SettingRow label={t('featureOpenForPlayers')} hint={t('featureOpenForPlayersHint')}>
             <SwitchToggle checked={openForPlayers} onChange={toggleOpenForPlayers} />
           </SettingRow>
+          {openForPlayers && (
+            <div className="flex items-center justify-between gap-4 px-4 py-3">
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{t('trialTrainingLabel')}</div>
+                <div className="text-xs italic text-gray-500 dark:text-gray-400">{t('trialTrainingHint')}</div>
+              </div>
+              <div className="shrink-0">
+                <Button type="button" variant="outline" size="sm" onClick={() => setTrialFormOpen(true)}>
+                  {t('newTrialTraining')}
+                </Button>
+              </div>
+            </div>
+          )}
           <SettingRow label={t('showGuestsOnWebsite')} hint={t('showGuestsOnWebsiteHint')}>
             <SwitchToggle checked={showGuests} onChange={toggleShowGuests} />
           </SettingRow>
@@ -778,6 +793,17 @@ function TeamSettingsSection({ team, onUpdate }: { team: Team; onUpdate: (s: Tea
           </SettingRow>
         </SettingsGroup>
       </div>
+
+      <TrainingForm
+        open={trialFormOpen}
+        defaultTeamId={team.id}
+        defaultIsTrial
+        onSave={() => {
+          setTrialFormOpen(false)
+          toast.success(t('trialTrainingCreated'))
+        }}
+        onCancel={() => setTrialFormOpen(false)}
+      />
     </div>
   )
 }

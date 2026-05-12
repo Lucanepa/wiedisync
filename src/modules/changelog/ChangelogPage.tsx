@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.8.3'
+const APP_VERSION = '4.8.4'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,21 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.8.4',
+    date: '2026-05-12',
+    sections: [
+      {
+        title: 'Coaches & team responsibles can manage their players\' absences',
+        items: [
+          'Coaches and team responsibles can now create, edit and delete absences and weekly unavailabilities for any member of a team they coach or are TR for — useful when a player asks the coach to log an injury or vacation on their behalf rather than doing it themselves. Scope is enforced server-side: a coach can\'t touch a player who isn\'t on one of their teams.',
+          'Every staff-issued absence write is attributed: the row now stores `last_edited_by` (the writer\'s user) + `last_edited_at` (wall-clock). When the writer differs from the affected member, the absence card shows an italic *"Edited by team staff on dd.mm.yyyy HH:MM"* line under the reason — so members always see when their record was touched by someone else and never silently.',
+          'The affected member also receives an in-app notification when a third party (coach/TR/admin) adds or updates one of their absences or weekly unavailabilities, naming the editor. Self-edits and system writes (cron auto-decline, hall-closure unwind) are silent. Notification keys translated across all 5 locales.',
+          'Backend: migration 051 adds the two attribution columns (mirrors migration 046 on `participations`); the kscw-hooks `filter(\'absences.items.{create,update}\')` stamps the writer from `accountability.user` so client-supplied values can\'t be spoofed; the `action` hook fires the notification.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.8.3',
     date: '2026-05-12',

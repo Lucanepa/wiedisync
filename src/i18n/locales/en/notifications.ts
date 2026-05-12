@@ -48,6 +48,10 @@ export default {
   carpool_cancelled: '{{driver}} cancelled the ride to {{game}}',
   task_assigned: 'You have been assigned: {{label}}',
   new_report: 'New report: {{reason}}',
+  absence_created_for_you: '{{editor}} added an absence for you (from {{start}})',
+  absence_updated_for_you: '{{editor}} updated your absence (from {{start}})',
+  absence_weekly_created_for_you: '{{editor}} added a weekly unavailability for you',
+  absence_weekly_updated_for_you: '{{editor}} updated your weekly unavailability',
   // Type labels for new features
   pollCreated: 'Poll',
   carpoolUpdate: 'Carpool',

@@ -104,4 +104,6 @@ export default {
   useTeamDefault: 'Valore predefinito della squadra',
   on: 'On',
   off: 'Off',
+  isTrialTraining: 'Allenamento di prova',
+  isTrialTrainingHint: 'Visibile pubblicamente sulla pagina della squadra quando la squadra è aperta a nuovi giocatori.',
 } as const

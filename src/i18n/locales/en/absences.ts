@@ -86,6 +86,7 @@ export default {
   editWeeklyTitle: 'Edit Weekly Unavailability',
   daysOfWeek: 'Days of week',
   noteOptional: 'Note (optional)',
+  editedByStaffOn: 'Edited by team staff on {{at}}',
   notePlaceholder: 'Additional information...',
   atLeastOneDay: 'Select at least one day',
   noWeeklyAbsences: 'No weekly unavailabilities',

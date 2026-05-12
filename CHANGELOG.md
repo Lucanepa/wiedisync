@@ -2,6 +2,16 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## v4.8.4 — 2026-05-12
+
+Coaches & team responsibles can manage their players' absences on behalf, with full attribution and member notification:
+
+- LEADER policy gains `absences.create/update/delete` scoped to team members (v4.8.3 / migration 050 set up the perms; v4.8.4 adds the audit + notification layer on top).
+- Migration 051 adds `last_edited_by uuid` + `last_edited_at timestamptz` on `absences` (mirror of migration 046 on `participations`).
+- `kscw-hooks` filters `absences.items.{create,update}` stamp the writer from `accountability.user` (un-spoofable from the client). System writes (cron, hall-closure unwind) leave the columns null.
+- New `notifyAbsenceThirdParty` action fires an in-app notification (`absence_third_party_edit`, title key one of `absence_{,weekly_}{created,updated}_for_you`) to the affected member when the writer's user differs from the member's linked user. Editor name + reason + start/end are interpolated from the JSON body. 5-locale i18n.
+- `AbsenceCard` + `WeeklyUnavailabilityCard` render an italic *"Edited by team staff on dd.mm.yyyy HH:MM"* line under the reason when `last_edited_by` ≠ the member's `user`. Uses `formatDateTimeCompact` (Swiss / 24h).
+
 ## v4.8.3 — 2026-05-12
 
 Deep security audit + remediation. Eight Fix-this-week findings closed:

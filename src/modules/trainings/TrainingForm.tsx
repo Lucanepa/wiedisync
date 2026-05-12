@@ -41,11 +41,13 @@ interface TrainingFormProps {
   training?: Training | null
   editScope?: RecurringEditScope
   defaultTeamId?: string | null
+  /** Preset `is_trial` when creating a new training (e.g. from the "+ New trial training" button). */
+  defaultIsTrial?: boolean
   onSave: () => void
   onCancel: () => void
 }
 
-export default function TrainingForm({ open, training, editScope = 'this', defaultTeamId, onSave, onCancel }: TrainingFormProps) {
+export default function TrainingForm({ open, training, editScope = 'this', defaultTeamId, defaultIsTrial = false, onSave, onCancel }: TrainingFormProps) {
   const { t } = useTranslation('trainings')
   const { t: tc } = useTranslation('common')
   const { create, update, isLoading: isMutating } = useMutation<Training>('trainings')
@@ -82,6 +84,7 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
   const [respondByDefaultDays, setRespondByDefaultDays] = useState<number | null>(null)
   const [autoConfirmRsvp, setAutoConfirmRsvp] = useState<boolean | null>(null)
   const [teamAutoConfirmDefault, setTeamAutoConfirmDefault] = useState(false)
+  const [isTrial, setIsTrial] = useState(false)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
@@ -249,6 +252,7 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
       setExcludedGuestLevels(parsedExcluded.map((n: unknown) => Number(n)).filter((n: number) => [1, 2, 3].includes(n)))
       const rawAcr = (training as Training).auto_confirm_rsvp
       setAutoConfirmRsvp(rawAcr === true ? true : rawAcr === false ? false : null)
+      setIsTrial(!!training.is_trial)
       // Edit mode: if training has a hall_slot, start in auto mode with it pre-selected
       if (training.hall_slot) {
         setSlotMode('auto')
@@ -277,6 +281,7 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
       setRespondByDefaultDays(null)
       setAutoConfirmRsvp(null)
       setTeamAutoConfirmDefault(false)
+      setIsTrial(defaultIsTrial)
       defaultsAppliedForTeam.current = null
       setSlotMode('auto')
       setSelectedSlotKey('')
@@ -333,6 +338,7 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
       auto_cancel_on_min: autoCancelOnMin,
       excluded_guest_levels: excludedGuestLevels,
       auto_confirm_rsvp: autoConfirmRsvp,
+      is_trial: isTrial,
     }
 
     setIsLoading(true)
@@ -623,6 +629,14 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
           <div>
             <span>{t('requireNoteIfAbsent', { ns: 'participation' })}</span>
             <p className="text-xs text-muted-foreground">{t('requireNoteIfAbsentHint', { ns: 'participation' })}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+          <Switch checked={isTrial} onCheckedChange={setIsTrial} />
+          <div>
+            <span>{t('isTrialTraining')}</span>
+            <p className="text-xs text-muted-foreground">{t('isTrialTrainingHint')}</p>
           </div>
         </div>
 

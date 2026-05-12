@@ -48,6 +48,10 @@ export default {
   carpool_cancelled: '{{driver}} hat die Fahrt zu {{game}} abgesagt',
   task_assigned: 'Dir wurde eine Aufgabe zugewiesen: {{label}}',
   new_report: 'Neue Meldung: {{reason}}',
+  absence_created_for_you: '{{editor}} hat eine Absenz für dich eingetragen (ab {{start}})',
+  absence_updated_for_you: '{{editor}} hat deine Absenz angepasst (ab {{start}})',
+  absence_weekly_created_for_you: '{{editor}} hat eine wöchentliche Verhinderung für dich eingetragen',
+  absence_weekly_updated_for_you: '{{editor}} hat deine wöchentliche Verhinderung angepasst',
   // Typ-Labels für neue Features
   pollCreated: 'Umfrage',
   carpoolUpdate: 'Fahrgemeinschaft',

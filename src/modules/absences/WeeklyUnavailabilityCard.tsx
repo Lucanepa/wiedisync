@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { formatDate } from '../../utils/dateHelpers'
+import { formatDate, formatDateTimeCompact } from '../../utils/dateHelpers'
 import { TableCell, TableRow } from '../../components/ui/table'
 import type { Absence, Member } from '../../types'
 import { asObj } from '../../utils/relations'
@@ -93,6 +93,18 @@ export default function WeeklyUnavailabilityCard({ absence, onEdit, onDelete, sh
         {absence.reason_detail && (
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{absence.reason_detail}</p>
         )}
+        {(() => {
+          // Third-party edit attribution (migration 051).
+          const editedBy = absence.last_edited_by
+          const editedAt = absence.last_edited_at
+          if (!editedBy || !editedAt) return null
+          if (m?.user && m.user === editedBy) return null
+          return (
+            <p className="mt-1 text-xs italic text-gray-400 dark:text-gray-500">
+              {t('editedByStaffOn', { defaultValue: 'Edited by team staff on {{at}}', at: formatDateTimeCompact(editedAt) })}
+            </p>
+          )
+        })()}
       </TableCell>
       {canEdit ? (
         <TableCell className="text-right">

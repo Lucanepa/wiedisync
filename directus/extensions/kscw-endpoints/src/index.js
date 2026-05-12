@@ -432,7 +432,7 @@ export default {
 
         const today = new Date().toISOString().split('T')[0]
 
-        const [roster, coaches, upcomingGames, completedGames, trainings, rankings, sponsors] = await Promise.all([
+        const [roster, coaches, upcomingGames, completedGames, trainings, trialTrainings, rankings, sponsors] = await Promise.all([
           database('member_teams')
             .join('members', 'members.id', 'member_teams.member')
             .where('member_teams.team', team.id)
@@ -456,6 +456,15 @@ export default {
           database('trainings')
             .where('team', team.id).where('date', '>=', today).where('cancelled', false)
             .orderBy('date').limit(10),
+          // Trial trainings (Probetrainings): publicly surfaced on the team
+          // page next to the "Get in touch" CTA when the team is open to new
+          // players. Only populated when `open_for_players=true`.
+          team.open_for_players
+            ? database('trainings')
+                .where('team', team.id).where('date', '>=', today).where('cancelled', false)
+                .where('is_trial', true)
+                .orderBy('date').limit(10)
+            : Promise.resolve([]),
           // Rankings: all teams in same league+season (team.league matches overall league name)
           team.league && team.season
             ? database('rankings')
@@ -567,21 +576,25 @@ export default {
         // Fall back to the linked hall's name/address when the training row's
         // denormalized hall_name is empty (older trainings created before the
         // column was populated still reference a hall via FK).
-        const hallIds = [...new Set(trainings.map((t) => t.hall).filter((id) => id != null))]
+        const hallIds = [...new Set(
+          [...trainings, ...trialTrainings].map((t) => t.hall).filter((id) => id != null)
+        )]
         const hallById = hallIds.length
           ? new Map(
               (await database('halls').whereIn('id', hallIds).select('id', 'name', 'address'))
                 .map((h) => [h.id, h])
             )
           : new Map()
-        const trainingsPublic = trainings.map((t) => {
+        const enrichTraining = (t) => {
           const h = t.hall != null ? hallById.get(t.hall) : null
           return {
             ...t,
             hall_name: t.hall_name || (h?.name ?? null),
             hall_address: t.hall_address || (h?.address ?? null),
           }
-        })
+        }
+        const trainingsPublic = trainings.map(enrichTraining)
+        const trialTrainingsPublic = trialTrainings.map(enrichTraining)
 
         res.json({
           data: {
@@ -591,6 +604,7 @@ export default {
             upcoming_games: upcomingPublic,
             results: resultsPublic,
             upcoming_trainings: trainingsPublic,
+            trial_trainings: trialTrainingsPublic,
             rankings,
             sponsors,
           },

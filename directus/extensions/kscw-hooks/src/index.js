@@ -23,6 +23,7 @@ import { logCronError, logCronRun, logWarning, logAuthDenial, cleanOldLogs, writ
 import { initSentry } from '../../kscw-endpoints/src/sentry.js'
 import { buildEmailLayout, buildInfoCard, buildAlertBox, bucketEmailsByLocale } from '../../kscw-endpoints/src/email-template.js'
 import { sendLocalizedPush, bucketMembersByLocale, tPush } from '../../kscw-endpoints/src/push-i18n.js'
+import { registerAuditHook } from './audit.js'
 
 // Frontend URL — env var or auto-detect from Directus PUBLIC_URL
 const FRONTEND_URL = process.env.FRONTEND_URL
@@ -2672,5 +2673,8 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     return out
   })
 
-  log.info('KSCW hooks loaded: role-sync (5 actions, 2 filters), Turnstile, member privacy, registration approval, Spielplaner scope guard, participation absence-aware decline, guest-level RSVP gate, edit-attribution (migration 046), 11 crons (validations+notifications in Postgres)')
+  // ── Audit hook — server-authoritative user_logs writes ─────────
+  registerAuditHook({ action }, { database, logger })
+
+  log.info('KSCW hooks loaded: role-sync (5 actions, 2 filters), Turnstile, member privacy, registration approval, Spielplaner scope guard, participation absence-aware decline, guest-level RSVP gate, edit-attribution (migration 046), audit log, 11 crons (validations+notifications in Postgres)')
 }

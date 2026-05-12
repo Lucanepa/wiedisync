@@ -32,6 +32,7 @@ import { registerActivitiesWithParticipations } from './activities.js'
 import { registerSvLicence } from './sv-licence.js'
 import { registerMigrationsStatus } from './migrations-status.js'
 import { registerSyncStatus } from './sync-status.js'
+import { registerAudit } from './audit.js'
 
 // ── Helpers ──────────────────────────────────────────────────────
 
@@ -1829,7 +1830,8 @@ export default {
     registerSvLicence(router, ctx)
     registerMigrationsStatus(router, ctx)
     registerSyncStatus(router, ctx)
+    registerAudit(router, ctx)
 
-    log.info('KSCW endpoints loaded: ~54 routes')
+    log.info('KSCW endpoints loaded: ~56 routes')
   },
 }

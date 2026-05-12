@@ -24,6 +24,7 @@ import { initSentry } from '../../kscw-endpoints/src/sentry.js'
 import { buildEmailLayout, buildInfoCard, buildAlertBox, bucketEmailsByLocale } from '../../kscw-endpoints/src/email-template.js'
 import { sendLocalizedPush, bucketMembersByLocale, tPush } from '../../kscw-endpoints/src/push-i18n.js'
 import { registerAuditHook } from './audit.js'
+import { sanitizeAnnouncementHtml } from './sanitize-html.js'
 
 // Frontend URL — env var or auto-detect from Directus PUBLIC_URL
 const FRONTEND_URL = process.env.FRONTEND_URL
@@ -534,6 +535,15 @@ export default ({ action, filter, init, schedule }, { services, database, logger
           try { daysOfWeek = JSON.parse(daysOfWeek) } catch { daysOfWeek = [] }
         }
         if (!Array.isArray(daysOfWeek) || daysOfWeek.length === 0) return
+        // Audit 2026-05-12 #9 — coerce each entry to a valid 0..6 integer
+        // BEFORE interpolating into raw SQL. Even though the source is a
+        // jsonb column, the trigger path doesn't guarantee element type, so
+        // a malformed value (string, decimal, out-of-range) would otherwise
+        // land in the IN-list verbatim.
+        daysOfWeek = daysOfWeek
+          .map(d => Number(d))
+          .filter(d => Number.isInteger(d) && d >= 0 && d <= 6)
+        if (daysOfWeek.length === 0) return
       }
 
       // Day-of-week filter for weekly absences (Postgres: 0=Sun,1=Mon..6=Sat; our format: 0=Mon..6=Sun)
@@ -985,9 +995,17 @@ export default ({ action, filter, init, schedule }, { services, database, logger
             try {
               const tr = pickAnnouncementTranslation(translations, r.language)
               const title = tr.title || baseTitle
-              const bodyHtml = tr.body || baseTr.body || ''
+              const rawBodyHtml = tr.body || baseTr.body || ''
               const isGerman = !r.language || r.language === 'german' || r.language === 'swiss_german'
               const ctaLabel = isGerman ? 'Auf WiediSync ansehen' : 'View on WiediSync'
+
+              // Audit 2026-05-12 #14 — allowlist-sanitize the announcement body
+              // before interpolating into the outbound email. Admin-authored
+              // rich text only; strips script/style/iframe/img and all
+              // attributes except https-only href on <a>. Closes the
+              // phishing-redirect / tracking-pixel / event-handler injection
+              // vector that a compromised Sport Admin could exploit.
+              const bodyHtml = sanitizeAnnouncementHtml(rawBodyHtml)
 
               // Gate: never render `ann.link` inline in the email. External/CTA
               // links stay behind wiedisync login — recipients click the layout
@@ -1223,9 +1241,10 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       if (!training || training.cancelled || !training.team || !training.date) return
       const dateStr = safeDateStr(training.date)
       if (!dateStr) return
-      // Postgres DOW for this date — dateStr is regex-validated above.
-      const pgDow = `EXTRACT(DOW FROM DATE '${dateStr}')`
 
+      // Audit 2026-05-12 #9 — dateStr is regex-validated by safeDateStr,
+      // but parameterize through the driver anyway (defense-in-depth: no
+      // string concatenation into the SQL fragment).
       const res = await database.raw(`
         INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff, auto_declined_by)
         SELECT mt.member, 'training', ?::text, 'declined', COALESCE(a.reason, ''), 0, false, a.id
@@ -1234,12 +1253,12 @@ export default ({ action, filter, init, schedule }, { services, database, logger
         WHERE mt.team = ?::integer
           AND a.start_date::date <= ?::date AND a.end_date::date >= ?::date
           AND (a.affects::jsonb @> '"all"' OR a.affects::jsonb @> '"trainings"')
-          AND (a.type != 'weekly' OR (a.days_of_week::jsonb @> to_jsonb((${pgDow}::int + 6) % 7)))
+          AND (a.type != 'weekly' OR (a.days_of_week::jsonb @> to_jsonb((EXTRACT(DOW FROM ?::date)::int + 6) % 7)))
           AND NOT EXISTS (
             SELECT 1 FROM participations p
             WHERE p.activity_type = 'training' AND p.activity_id = ?::text AND p.member = mt.member
           )
-      `, [String(key), training.team, dateStr, dateStr, String(key)])
+      `, [String(key), training.team, dateStr, dateStr, dateStr, String(key)])
       if (res?.rowCount > 0) log.info(`[absence-auto-decline] Training ${key}: ${res.rowCount} members auto-declined`)
 
       // Auto-confirm pass (PlayerPlus-style opt-out RSVP). Considers per-activity
@@ -1257,8 +1276,6 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       if (!game || !game.kscw_team || !game.date) return
       const dateStr = safeDateStr(game.date)
       if (!dateStr) return
-      const pgDow = `EXTRACT(DOW FROM DATE '${dateStr}')`
-
       const res = await database.raw(`
         INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff, auto_declined_by)
         SELECT mt.member, 'game', ?::text, 'declined', COALESCE(a.reason, ''), 0, false, a.id
@@ -1267,12 +1284,12 @@ export default ({ action, filter, init, schedule }, { services, database, logger
         WHERE mt.team = ?::integer
           AND a.start_date::date <= ?::date AND a.end_date::date >= ?::date
           AND (a.affects::jsonb @> '"all"' OR a.affects::jsonb @> '"games"')
-          AND (a.type != 'weekly' OR (a.days_of_week::jsonb @> to_jsonb((${pgDow}::int + 6) % 7)))
+          AND (a.type != 'weekly' OR (a.days_of_week::jsonb @> to_jsonb((EXTRACT(DOW FROM ?::date)::int + 6) % 7)))
           AND NOT EXISTS (
             SELECT 1 FROM participations p
             WHERE p.activity_type = 'game' AND p.activity_id = ?::text AND p.member = mt.member
           )
-      `, [String(key), game.kscw_team, dateStr, dateStr, String(key)])
+      `, [String(key), game.kscw_team, dateStr, dateStr, dateStr, String(key)])
       if (res?.rowCount > 0) log.info(`[absence-auto-decline] Game ${key}: ${res.rowCount} members auto-declined`)
 
       // Auto-confirm pass — per-activity override + team default. Guest-level=0
@@ -1292,8 +1309,6 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       if (!event || !event.start_date) return
       const dateStr = safeDateStr(event.start_date)
       if (!dateStr) return
-      const pgDow = `EXTRACT(DOW FROM DATE '${dateStr}')`
-
       const res = await database.raw(`
         INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff, auto_declined_by)
         SELECT DISTINCT ON (mt.member) mt.member, 'event', ?::text, 'declined', COALESCE(a.reason, ''), 0, false, a.id
@@ -1303,12 +1318,12 @@ export default ({ action, filter, init, schedule }, { services, database, logger
         WHERE et.events_id = ?::integer
           AND a.start_date::date <= ?::date AND a.end_date::date >= ?::date
           AND (a.affects::jsonb @> '"all"' OR a.affects::jsonb @> '"events"')
-          AND (a.type != 'weekly' OR (a.days_of_week::jsonb @> to_jsonb((${pgDow}::int + 6) % 7)))
+          AND (a.type != 'weekly' OR (a.days_of_week::jsonb @> to_jsonb((EXTRACT(DOW FROM ?::date)::int + 6) % 7)))
           AND NOT EXISTS (
             SELECT 1 FROM participations p
             WHERE p.activity_type = 'event' AND p.activity_id = ?::text AND p.member = mt.member
           )
-      `, [String(key), key, dateStr, dateStr, String(key)])
+      `, [String(key), key, dateStr, dateStr, dateStr, String(key)])
       if (res?.rowCount > 0) log.info(`[absence-auto-decline] Event ${key}: ${res.rowCount} members auto-declined`)
     } catch (err) {
       log.error({ msg: `[absence-auto-decline] Event create: ${err.message}`, event: 'absence_auto_decline_event', key, stack: err.stack })
@@ -1322,7 +1337,6 @@ export default ({ action, filter, init, schedule }, { services, database, logger
   // are safe — the BEFORE UPDATE trigger on participations detaches them.
 
   async function reEvalActivityAutoDeclines(activityType, activityId, teamFilterSql, teamFilterParams, dateStr) {
-    const pgDow = `EXTRACT(DOW FROM DATE '${dateStr}')`
     // 1. Remove auto-declines that no longer match (new date outside window)
     await database.raw(`
       DELETE FROM participations p
@@ -1336,10 +1350,10 @@ export default ({ action, filter, init, schedule }, { services, database, logger
             NOT (a.affects::jsonb @> '"all"' OR a.affects::jsonb @> ?)
           )
           OR (
-            a.type = 'weekly' AND NOT (a.days_of_week::jsonb @> to_jsonb((${pgDow}::int + 6) % 7))
+            a.type = 'weekly' AND NOT (a.days_of_week::jsonb @> to_jsonb((EXTRACT(DOW FROM ?::date)::int + 6) % 7))
           )
         )
-    `, [activityType, String(activityId), dateStr, dateStr, `"${activityType}s"`])
+    `, [activityType, String(activityId), dateStr, dateStr, `"${activityType}s"`, dateStr])
     // 2. Insert fresh auto-declines for the new date (NOT EXISTS skips manual overrides)
     await database.raw(`
       INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff, auto_declined_by)
@@ -1349,12 +1363,12 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       WHERE ${teamFilterSql}
         AND a.start_date::date <= ?::date AND a.end_date::date >= ?::date
         AND (a.affects::jsonb @> '"all"' OR a.affects::jsonb @> ?)
-        AND (a.type != 'weekly' OR (a.days_of_week::jsonb @> to_jsonb((${pgDow}::int + 6) % 7)))
+        AND (a.type != 'weekly' OR (a.days_of_week::jsonb @> to_jsonb((EXTRACT(DOW FROM ?::date)::int + 6) % 7)))
         AND NOT EXISTS (
           SELECT 1 FROM participations p
           WHERE p.activity_type = ? AND p.activity_id = ?::text AND p.member = mt.member
         )
-    `, [activityType, String(activityId), ...teamFilterParams, dateStr, dateStr, `"${activityType}s"`, activityType, String(activityId)])
+    `, [activityType, String(activityId), ...teamFilterParams, dateStr, dateStr, `"${activityType}s"`, dateStr, activityType, String(activityId)])
   }
 
   action('trainings.items.update', async ({ keys, payload }) => {

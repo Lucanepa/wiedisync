@@ -87,6 +87,8 @@ export default {
   daysOfWeek: 'Giorni della settimana',
   noteOptional: 'Nota (facoltativo)',
   editedByStaffOn: 'Modificato dallo staff il {{at}}',
+  detailsOnBehalfPlaceholder: 'Perché lo stai registrando al posto della/del giocatrice/giocatore?',
+  noteOnBehalfHint: 'Stai modificando al posto di un\'altra persona — per favore lascia una nota con il motivo. La nota è visibile alla persona interessata.',
   notePlaceholder: 'Informazioni aggiuntive...',
   atLeastOneDay: 'Seleziona almeno un giorno',
   noWeeklyAbsences: 'Nessuna indisponibilità settimanale',

@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.8.6'
+const APP_VERSION = '4.8.7'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,19 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.8.7',
+    date: '2026-05-12',
+    sections: [
+      {
+        title: 'Third-party absence edits now trigger a web push + UX nudge to leave a note',
+        items: [
+          'Push fanout for third-party absence edits: when a coach/TR/admin creates or updates an absence (or weekly unavailability) on behalf of a player, the player now gets a web push *in addition to* the in-app notification — same dispatch path as `upcoming_activity` / `deadline_reminder`, fully localized across 5 locales via `push-i18n.js` (`absence.{,weekly.}{created,updated}.{title,body}`).',
+          '`AbsenceForm` and `WeeklyUnavailabilityForm` now surface an amber nudge under the note field when a coach/TR is editing on behalf of another member: *"You\'re editing on behalf of another player — please leave a note explaining why. The note is visible to the player."* The placeholder also switches to *"Why are you logging this on behalf of the player?"* so the cursor lands on the right prompt. The reason_detail / note column doubles as the audit trail and is shown to the affected member, paired with the existing italic *"Edited by team staff on …"* attribution line.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.8.6',
     date: '2026-05-12',

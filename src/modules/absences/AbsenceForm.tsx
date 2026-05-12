@@ -188,8 +188,15 @@ export default function AbsenceForm({ open, absence, onSave, onCancel, forTeam, 
           value={reasonDetail}
           onChange={(e) => setReasonDetail(e.target.value)}
           rows={2}
-          placeholder={t('detailsPlaceholder')}
+          placeholder={showMemberPicker && memberId && memberId !== user?.id
+            ? t('detailsOnBehalfPlaceholder')
+            : t('detailsPlaceholder')}
         />
+        {showMemberPicker && memberId && memberId !== user?.id && (
+          <p className="-mt-3 text-xs text-amber-600 dark:text-amber-400">
+            {t('noteOnBehalfHint')}
+          </p>
+        )}
 
         <div data-tour="affects-teams">
         <AffectsMultiSelect

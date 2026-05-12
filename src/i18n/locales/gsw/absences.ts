@@ -87,6 +87,8 @@ export default {
   daysOfWeek: 'Wuchetäg',
   noteOptional: 'Notiz (optional)',
   editedByStaffOn: 'Bearbeitet vom Trainerteam am {{at}}',
+  detailsOnBehalfPlaceholder: 'Worum treisch du das für d Spilerin/de Spiler ii?',
+  noteOnBehalfHint: 'Du bearbeitisch für e anderi Person — bitte hinterlass e Notiz mit em Grund. D Notiz isch für d betroffeni Person sichtbar.',
   notePlaceholder: 'Zusätzlichi Infos...',
   atLeastOneDay: 'Mindestens ein Tag wähle',
   noWeeklyAbsences: 'Käni wöchentlichi Abweseheite',

@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.8.5'
+const APP_VERSION = '4.8.6'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,20 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.8.6',
+    date: '2026-05-12',
+    sections: [
+      {
+        title: 'Coach RSVPs now visible in the participation modal staff section',
+        items: [
+          'After v4.8.5, Michelle (Vorstand coaching H2/H3 without being on either roster) could click Ja/Vielleicht/Nein on her team\'s trainings and her response saved correctly — but the participation modal\'s STAFF section always showed her as "Keine Antwort" regardless of what she clicked.',
+          'Root cause: `useTeamParticipations` filters by `member IN <roster ids>` at query time. A coach not in `member_teams` is excluded from that result, so the modal\'s main `participations` array never contained their `is_staff=true` row — even though the row existed in the DB. The staff-status lookup (`getStaffMemberStatus`) read from that empty-for-staff array and always returned null.',
+          'Fix: the modal now keeps a separate `staffParticipationRows` state populated from the dedicated `is_staff=true` fetch (which already existed but only stored member objects). Switched that fetch from `fetchAllItems` + `useEffect` to `useCollection`, so it auto-invalidates when any participation mutates — meaning a coach\'s click instantly updates the modal without a manual refresh.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.8.5',
     date: '2026-05-12',

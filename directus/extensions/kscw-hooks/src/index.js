@@ -710,6 +710,24 @@ export default ({ action, filter, init, schedule }, { services, database, logger
         activity_id: String(row.id),
         read: false,
       })
+
+      // Web push fanout — same dispatch path as upcoming_activity /
+      // deadline_reminder. The dd.mm.yyyy formatter mirrors the front-end
+      // (Swiss / dot-day-first) so the push body matches the in-app row.
+      const startFmt = row.start_date
+        ? String(row.start_date).slice(0, 10).split('-').reverse().join('.')
+        : ''
+      const keyBase = isWeekly
+        ? (op === 'create' ? 'absence.weekly.created' : 'absence.weekly.updated')
+        : (op === 'create' ? 'absence.created' : 'absence.updated')
+      await sendLocalizedPush(
+        database,
+        [row.member],
+        (ids, title, body) => sendPushToMembers(database, ids, title, body, `${FRONTEND_URL}/absences`, 'absence', log),
+        `${keyBase}.title`,
+        `${keyBase}.body`,
+        { editor: editorName, start: startFmt },
+      )
     } catch (err) {
       log.error({ msg: `[absence-notify] ${err.message}`, event: 'absence_notify', absenceId, stack: err.stack })
     }

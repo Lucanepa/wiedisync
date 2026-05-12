@@ -236,7 +236,7 @@ export default function HomePage() {
 
   const { data: eventsRaw, isLoading: eventsLoading } = useCollection<EventExpanded>('events', {
     filter: eventFilter,
-    fields: ['*', 'teams.teams_id.*'],
+    fields: ['*', 'teams.teams_id.*', 'teams.teams_id.coach.members_id', 'teams.teams_id.team_responsible.members_id'],
     sort: ['start_date'],
     limit: 10,
     enabled: !eventIdsLoading,

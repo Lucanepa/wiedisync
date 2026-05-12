@@ -27,9 +27,21 @@ export function memberName(m: { first_name?: string; last_name?: string } | null
 }
 
 /**
- * Extract member IDs from a Directus M2M junction field (coach, captain, team_responsible).
- * Handles: [5, 10] (raw IDs), [{members_id: 5}] (junction objects), null, undefined, non-array.
- * Always returns string[] for safe comparison with stringified record IDs.
+ * Extract member IDs from a Directus M2M junction field (coach, team_responsible).
+ *
+ * DANGER: bare ID arrays like `[5, 10]` are interpreted as member IDs but in
+ * practice Directus returns those for *unexpanded* M2M fields where the
+ * integers are JUNCTION row IDs (`teams_coaches.id`), NOT member IDs. Using
+ * this on an unexpanded M2M caused the 2026-05-12 "ghost roster" bug where
+ * Aditya Dave (member 6) appeared in D1's absences because D1's
+ * `teams_coaches.id` happened to be 6.
+ *
+ * RULE: always pass `coach.members_id` / `team_responsible.members_id` in
+ * your Directus `fields:` array so the values arrive as
+ * `[{members_id: 5}]` and the bare-number branch is never hit.
+ *
+ * For M2O fields like `captain` (single FK to members), use `relId()`
+ * instead — bare-number values there ARE member IDs.
  */
 export function flattenMemberIds(field: unknown): string[] {
   if (field == null) return []

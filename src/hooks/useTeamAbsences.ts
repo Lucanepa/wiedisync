@@ -36,11 +36,17 @@ export function useTeamAbsences(teamIds: string[], startDate: string, endDate: s
       })
       const memberIdSet = new Set(memberTeams.map((mt) => mt.member))
 
-      // Also include coaches and team_responsibles (they may not have member_teams records)
+      // Also include coaches and team_responsibles (they may not have member_teams records).
+      // CRITICAL: must request `coach.members_id` + `team_responsible.members_id` — without
+      // expansion Directus returns the M2M junction row IDs (teams_coaches.id) which look
+      // like member IDs but aren't. flattenMemberIds then pollutes the set with random
+      // members whose id happens to equal a junction id (ghost roster bug, 2026-05-12).
       const validTeamIds = teamIds.filter((id) => id != null && id !== '' && id !== 'null' && id !== 'undefined')
       for (const teamId of validTeamIds) {
         try {
-          const team = await fetchItem<Record<string, unknown>>('teams', teamId)
+          const team = await fetchItem<Record<string, unknown>>('teams', teamId, {
+            fields: ['coach.members_id', 'team_responsible.members_id'],
+          })
           const coachIds = flattenMemberIds(team.coach)
           const trIds = flattenMemberIds(team.team_responsible)
           for (const id of [...coachIds, ...trIds]) {

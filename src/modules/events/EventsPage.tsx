@@ -95,7 +95,7 @@ export default function EventsPage() {
     filter: eventFilter,
     sort: ['start_date'],
     limit: 50,
-    fields: ['*', 'teams.teams_id.*', 'invited_members.members_id', 'invited_roles', 'send_email_invite'],
+    fields: ['*', 'teams.teams_id.*', 'teams.teams_id.coach.members_id', 'teams.teams_id.team_responsible.members_id', 'invited_members.members_id', 'invited_roles', 'send_email_invite'],
     enabled: !teamsLoading && (effectiveIsAdmin || !eventIdsLoading),
   })
   const events = eventsRaw ?? []

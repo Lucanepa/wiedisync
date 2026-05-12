@@ -5,7 +5,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useCollection } from '../../lib/query'
 import { useNotifications } from '../../hooks/useNotifications'
 import { useSportPreference } from '../../hooks/useSportPreference'
-import { formatDate, formatDateCompact, formatTime, formatWeekday, todayLocal } from '../../utils/dateHelpers'
+import { formatDate, formatDateCompact, formatTime, formatWeekday, todayLocal, toZurichDateString } from '../../utils/dateHelpers'
 import { asObj, relId, teamCoachIds } from '../../utils/relations'
 import TeamChip from '../../components/TeamChip'
 import StatusBadge from '../../components/StatusBadge'
@@ -306,7 +306,7 @@ export default function HomePage() {
     for (const g of nextGames) items.push({ id: g.id, type: 'game', date: g.date })
     for (const g of latestResults) items.push({ id: g.id, type: 'game', date: g.date })
     for (const tr of nextTrainings) items.push({ id: tr.id, type: 'training', date: tr.date })
-    for (const ev of events) items.push({ id: ev.id, type: 'event', date: ev.start_date?.split('T')[0] ?? '' })
+    for (const ev of events) items.push({ id: ev.id, type: 'event', date: toZurichDateString(ev.start_date) })
     return items
   }, [allDataLoaded, nextGames, latestResults, nextTrainings, events])
 
@@ -1028,7 +1028,7 @@ function NextAppointments({
       if (tr.date) items.push({ type: 'training', date: tr.date, data: tr })
     }
     for (const ev of events) {
-      if (ev.start_date) items.push({ type: 'event', date: ev.start_date.split('T')[0], data: ev })
+      if (ev.start_date) items.push({ type: 'event', date: toZurichDateString(ev.start_date), data: ev })
     }
     items.sort((a, b) => a.date.localeCompare(b.date))
     return items
@@ -1175,14 +1175,41 @@ function EventRow({ event, onClick, participationStatus }: { event: EventExpande
 
         {/* Content row: date badge + details */}
         <div className="flex items-start gap-2.5">
-          <div className="flex h-9 w-9 shrink-0 flex-col items-center justify-center rounded-lg bg-brand-50 dark:bg-brand-900/40">
-            <span className="text-sm font-bold leading-none text-brand-600 dark:text-brand-400">
-              {new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Zurich', day: 'numeric' }).format(new Date(event.start_date))}
-            </span>
-            <span className="text-[9px] font-medium uppercase text-brand-500 dark:text-brand-400">
-              {new Intl.DateTimeFormat(i18n.language, { timeZone: 'Europe/Zurich', month: 'short' }).format(new Date(event.start_date))}
-            </span>
-          </div>
+          {(() => {
+            const startZh = toZurichDateString(event.start_date)
+            const endZh = toZurichDateString(event.end_date)
+            const isMultiDay = !!endZh && endZh !== startZh
+            const dayFmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Zurich', day: 'numeric' })
+            const monthFmt = new Intl.DateTimeFormat(i18n.language, { timeZone: 'Europe/Zurich', month: 'short' })
+            const startDay = dayFmt.format(new Date(event.start_date))
+            const startMonth = monthFmt.format(new Date(event.start_date))
+            if (!isMultiDay) {
+              return (
+                <div className="flex h-9 w-9 shrink-0 flex-col items-center justify-center rounded-lg bg-brand-50 dark:bg-brand-900/40">
+                  <span className="text-sm font-bold leading-none text-brand-600 dark:text-brand-400">{startDay}</span>
+                  <span className="text-[9px] font-medium uppercase text-brand-500 dark:text-brand-400">{startMonth}</span>
+                </div>
+              )
+            }
+            const endDay = dayFmt.format(new Date(event.end_date))
+            const endMonth = monthFmt.format(new Date(event.end_date))
+            const sameMonth = startMonth === endMonth
+            return (
+              <div className="flex h-9 shrink-0 items-center gap-0.5 rounded-lg bg-brand-50 px-1.5 dark:bg-brand-900/40">
+                <div className="flex flex-col items-center justify-center leading-none">
+                  <span className="text-sm font-bold text-brand-600 dark:text-brand-400">{startDay}</span>
+                  {!sameMonth && (
+                    <span className="text-[9px] font-medium uppercase text-brand-500 dark:text-brand-400">{startMonth}</span>
+                  )}
+                </div>
+                <span className="text-xs font-medium text-brand-500 dark:text-brand-400">–</span>
+                <div className="flex flex-col items-center justify-center leading-none">
+                  <span className="text-sm font-bold text-brand-600 dark:text-brand-400">{endDay}</span>
+                  <span className="text-[9px] font-medium uppercase text-brand-500 dark:text-brand-400">{sameMonth ? startMonth : endMonth}</span>
+                </div>
+              </div>
+            )
+          })()}
 
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium leading-snug text-gray-900 dark:text-gray-100">

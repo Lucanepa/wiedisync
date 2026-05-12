@@ -223,6 +223,18 @@ export function todayLocal(): string {
   return toISODate(new Date())
 }
 
+/** Returns the Europe/Zurich calendar date as "YYYY-MM-DD" for the given instant.
+ *  Critical for all-day events: Directus stores them as 22:00 UTC the previous day
+ *  (= midnight Zurich), so `iso.split('T')[0]` returns the wrong day. */
+export function toZurichDateString(input: string | Date | null | undefined): string {
+  if (!input) return ''
+  const d = typeof input === 'string' ? parseFlexible(input) : input
+  if (Number.isNaN(d.getTime())) return ''
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: ZURICH, year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(d)
+}
+
 
 // --- Hallenplan utilities ---
 

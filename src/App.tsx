@@ -62,7 +62,40 @@ const ConversationPage = lazy(() => import('./modules/messaging/pages/Conversati
 const MessagingSettingsPage = lazy(() => import('./modules/messaging/pages/MessagingSettingsPage'))
 const AdminReportsPage = lazy(() => import('./modules/admin/AdminReportsPage'))
 
-function SentryFallback() {
+// Stale lazy-import chunks (after a deploy) throw
+// `TypeError: Failed to fetch dynamically imported module: …` in Chromium and
+// `Importing a module script failed.` in Safari. Detected here so we can hot-
+// reload once instead of stranding the user on a blank /guide-style page.
+function isChunkLoadError(error: unknown): boolean {
+  const msg = error instanceof Error ? error.message : String(error ?? '')
+  return /Failed to fetch dynamically imported module|Importing a module script failed|Loading chunk \d+ failed|ChunkLoadError/i.test(msg)
+}
+
+const RELOAD_COOLDOWN_KEY = 'wiedisync-chunk-reload-ts'
+
+function maybeReloadOnStaleChunk(error: unknown): boolean {
+  if (!isChunkLoadError(error)) return false
+  const now = Date.now()
+  const last = Number(sessionStorage.getItem(RELOAD_COOLDOWN_KEY) || 0)
+  if (now - last < 10_000) return false // reload-loop guard
+  sessionStorage.setItem(RELOAD_COOLDOWN_KEY, String(now))
+  window.location.reload()
+  return true
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('unhandledrejection', (event) => {
+    if (maybeReloadOnStaleChunk(event.reason)) event.preventDefault()
+  })
+  window.addEventListener('error', (event) => {
+    if (maybeReloadOnStaleChunk(event.error || event.message)) event.preventDefault()
+  })
+}
+
+function SentryFallback({ error }: { error?: unknown } = {}) {
+  if (typeof window !== 'undefined' && maybeReloadOnStaleChunk(error)) {
+    return null
+  }
   // Error boundary — cannot rely on i18n being loaded. Plain English + a
   // compact DE translation as bilingual fallback for the Swiss audience.
   return (
@@ -83,7 +116,7 @@ function SentryFallback() {
 
 export default function App() {
   return (
-    <SentryErrorBoundary fallback={<SentryFallback />}>
+    <SentryErrorBoundary fallback={({ error }) => <SentryFallback error={error} />}>
     <QueryProvider>
     <ThemeProvider>
     <AuthProvider>

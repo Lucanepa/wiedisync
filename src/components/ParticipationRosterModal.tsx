@@ -122,6 +122,12 @@ export default function ParticipationRosterModal({
   const { members, isLoading: membersLoading } = useMultiTeamMembers(teamIds)
   const [absences, setAbsences] = useState<Absence[]>([])
   const [staffMembers, setStaffMembers] = useState<Member[]>([])
+  // Staff participation rows (is_staff=true) for this activity. Tracked
+  // separately because `useTeamParticipations` filters by roster member IDs —
+  // a coach/TR not in member_teams won't appear in that query at all, so
+  // their RSVP status would otherwise render as "Keine Antwort" in the
+  // staff section even after they clicked Yes/Maybe/No.
+  const [staffParticipationRows, setStaffParticipationRows] = useState<Participation[]>([])
   const [activeSessionTab, setActiveSessionTab] = useState<string | null>(null) // null = overall
   const [statusFilter, setStatusFilter] = useState<string | null>(null) // null = "All"
 
@@ -352,35 +358,44 @@ export default function ParticipationRosterModal({
     }
   }, [activityId, activityType, participations, create, update, remove])
 
-  // Fetch staff participations (coaches/team_responsible who aren't in member_teams)
+  // Staff participations (coaches/team_responsible who aren't in member_teams).
+  // Use `useCollection` so the modal auto-refreshes when any staff member
+  // RSVPs — the create/update mutations invalidate the 'participations'
+  // collection key, which also matches this query.
+  const { data: staffPartsRaw } = useCollection<Participation>('participations', {
+    all: true,
+    enabled: !!user && open && !!activityId && !isClubWide,
+    filter: {
+      _and: [
+        { activity_type: { _eq: activityType } },
+        { activity_id: { _eq: activityId } },
+        { is_staff: { _eq: true } },
+      ],
+    },
+  })
+
+  // Resolve staff member objects (for display) when the staff participation set changes.
   useEffect(() => {
     if (!user || !open || !activityId || isClubWide) return
-    fetchAllItems<Participation>('participations', {
-        filter: {
-          _and: [
-            { activity_type: { _eq: activityType } },
-            { activity_id: { _eq: activityId } },
-            { is_staff: { _eq: true } },
-          ],
-        },
+    const staffParts = staffPartsRaw ?? []
+    const staffOnlyParts = staffParts.filter((p) => !memberIds.includes(p.member))
+    setStaffParticipationRows(staffOnlyParts)
+    if (staffOnlyParts.length === 0) {
+      setStaffMembers([])
+      return
+    }
+    const staffMemberIds = [...new Set(staffOnlyParts.map((p) => p.member))]
+    fetchAllItems<Member>('members', {
+      filter: { id: { _in: staffMemberIds } },
+      fields: ['id', 'first_name', 'last_name', 'photo'],
+    })
+      .then((members) => setStaffMembers(members.sort(byFirstThenLastName)))
+      .catch(() => {
+        setStaffMembers([])
+        setStaffParticipationRows([])
       })
-      .then(async (staffParts) => {
-        // Filter out any that are already in the member list
-        const staffOnlyParts = staffParts.filter((p) => !memberIds.includes(p.member))
-        if (staffOnlyParts.length === 0) {
-          setStaffMembers([])
-          return
-        }
-        const staffMemberIds = [...new Set(staffOnlyParts.map((p) => p.member))]
-        const members = await fetchAllItems<Member>('members', {
-          filter: { id: { _in: staffMemberIds } },
-          fields: ['id', 'first_name', 'last_name', 'photo'],
-        })
-        setStaffMembers(members.sort(byFirstThenLastName))
-      })
-      .catch(() => setStaffMembers([]))
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, activityId, activityType, isClubWide, memberIds.join(',')])
+  }, [open, activityId, activityType, isClubWide, memberIds.join(','), staffPartsRaw])
 
   // For the overall tab, compute per-member session counts
   const memberSessionCounts = useMemo(() => {
@@ -500,8 +515,11 @@ export default function ParticipationRosterModal({
   const notResponded = memberList.length - summaryParticipations.length - absentWithoutParticipation
   const totalGuests = confirmedGuests + tentativeGuests
 
-  // Staff counts — only staff who are NOT also players
-  const staffParticipations = participations.filter(p => p.is_staff && !memberIdSet.has(p.member))
+  // Staff participations come from the dedicated fetch above. The main
+  // `participations` array is filtered by `member IN <roster ids>` at query
+  // time (see `useTeamParticipations`), so a coach not in member_teams
+  // won't appear there even if they have an `is_staff=true` row.
+  const staffParticipations = staffParticipationRows.filter(p => !memberIdSet.has(p.member))
   // "Coach present" = staff-only confirmed + player-coaches confirmed (coach only — captain/TR don't count).
   // Player-coach lookup walks the FULL participations list (not `summaryParticipations`,
   // which now excludes `is_staff` rows): a coach who has only an `is_staff` confirmed

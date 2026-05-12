@@ -2,6 +2,17 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## v4.8.6 — 2026-05-12
+
+### Coach RSVPs now visible in participation modal staff section
+
+- Coaches/TRs not on their team's roster (Michelle: Vorstand coaching H2/H3) could click Yes/Maybe/No on their team's trainings and the row saved correctly to `participations` with `is_staff=true`, but the participation modal's STAFF section always rendered them as "Keine Antwort" regardless of what they clicked.
+- Root cause: `useTeamParticipations` filters by `member IN <roster member ids>` at query time. A coach not in `member_teams` is excluded from that query's result, so the modal's main `participations` array never contained their `is_staff=true` row. The staff-status lookup (`getStaffMemberStatus`) read from that array and always returned null.
+- Fix in `src/components/ParticipationRosterModal.tsx`:
+  - New `staffParticipationRows` state keeps the dedicated `is_staff=true` fetch's rows around (previously only the resolved member objects were kept).
+  - `staffParticipations` is now derived from that state instead of the roster-scoped `participations` array.
+  - Switched the staff fetch from `fetchAllItems` + `useEffect` to `useCollection` so it auto-invalidates when any participation mutates (`useCreate`/`useUpdate` call `qc.invalidateQueries({ queryKey: keys.collection('participations') })`). A coach's click now updates the modal without a manual refresh.
+
 ## v4.8.4 — 2026-05-12
 
 Coaches & team responsibles can manage their players' absences on behalf, with full attribution and member notification:

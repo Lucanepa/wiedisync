@@ -4,6 +4,7 @@ import { Check, X, ChevronDown, ChevronUp, Save, Download, FileText, ExternalLin
 import { useCollection, useUpdate } from '../../lib/query'
 import { useAuth } from '../../hooks/useAuth'
 import { assetUrl } from '../../lib/api'
+import { sanitizeUrl } from '../../utils/sanitizeUrl'
 import TeamChip from '../../components/TeamChip'
 import { formatDate } from '../../utils/dateHelpers'
 import { toast } from 'sonner'
@@ -499,12 +500,18 @@ export default function AnmeldungenPage() {
 function FilePreview({ url }: { url: string }) {
   // Try to render as image — if it fails (PDF/other), show a download prompt
   const [isImage, setIsImage] = useState(true)
+  // 2026-05-12 audit #17: defence-in-depth — `url` is produced by assetUrl()
+  // which builds from API_URL + fileId. UUID format constraint makes
+  // injection unlikely; routing through sanitizeUrl makes the pattern
+  // consistent with sponsor / pr_url sinks elsewhere.
+  const safeUrl = sanitizeUrl(url)
+  if (!safeUrl) return null
 
   return (
     <div className="flex flex-col items-center gap-3">
       {isImage ? (
         <img
-          src={url}
+          src={safeUrl}
           alt="Document"
           className="max-h-[70vh] w-auto rounded-md border border-gray-200 dark:border-gray-700"
           onError={() => setIsImage(false)}
@@ -516,7 +523,7 @@ function FilePreview({ url }: { url: string }) {
         </div>
       )}
       <a
-        href={url}
+        href={safeUrl}
         target="_blank"
         rel="noopener noreferrer"
         className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400"

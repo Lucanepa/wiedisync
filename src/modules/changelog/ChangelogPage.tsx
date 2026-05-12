@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.8.4'
+const APP_VERSION = '4.8.5'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,27 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.8.5',
+    date: '2026-05-12',
+    sections: [
+      {
+        title: 'Security follow-ups from the 2026-05-12 audit (High + Medium tier)',
+        items: [
+          'Member-tier reads on `participations` and `absences` no longer return the `last_*_edited_by` directus_users UUIDs — only the timestamps. Coaches/TRs still see them via LEADER for "who edited this" attribution. Closes an enumeration path where one Member could correlate Directus user UUIDs across teams.',
+          'Messaging GDPR `/messaging/export` now filters `deleted_at IS NULL` and drops `reports_filed.message_snapshot` from the bundle — the snapshot is a moderation artefact of another member\'s pre-redaction message and doesn\'t belong in the reporter\'s personal export.',
+          '`/messaging/conversations/:id/clear` now caps each call at 500 rows (returns `more: true` when there are more to clear), and refuses if the caller has `communications_banned = true`.',
+          '`sanitizeUrl()` + `isSafeAppLink()` now reject `http:` for absolute URLs (HSTS downgrade protection); relative paths starting with `/` still pass. `FilePreview` (Anmeldungen) now wraps the assetUrl through `sanitizeUrl`.',
+          'Admin explorer "Open in Directus" link constrains the type segment to a known bucket and url-encodes both path components — defends against any future API response that ships an unexpected `type`.',
+          'Sentry Replay `networkDetailDenyUrls` now also denies `sentry-tunnel.kscw.ch` — breadcrumb URL metadata for tunnel traffic stays out of replays.',
+          'Game-scheduling rate limiter prefers `CF-Connecting-IP` over `req.ip` over the first hop of `X-Forwarded-For`, closing the path where the limiter could collapse to a single tunnel IP and block all callers (or never block anyone, depending on `trust proxy` config).',
+          'Tokenised away-game proposals validate `date` as `YYYY-MM-DD` and `start_time` as `HH:MM` before storing; location capped at 200 chars.',
+          'Hook layer: the 3 `EXTRACT(DOW FROM DATE \'${dateStr}\')` interpolation sites in the absence-auto-decline pipeline now go through a `safeDateStr()` regex guard before reaching SQL text — eliminates the lingering string-interpolation risk even though the column type protected us in practice.',
+          'Push worker VAPID `sub` claim moved from hardcoded source to `env.VAPID_SUB` worker secret with a `kontakt@kscw.ch` fallback (already shipped in v4.8.4 patch).',
+        ],
+      },
+    ],
+  },
   {
     version: '4.8.4',
     date: '2026-05-12',

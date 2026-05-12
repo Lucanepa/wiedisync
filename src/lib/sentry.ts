@@ -40,7 +40,13 @@ export function initSentry() {
         maskAllText: true,
         maskAllInputs: true,
         blockAllMedia: true,
-        networkDetailDenyUrls: [/directus(?:-dev)?\.kscw\.ch/],
+        // 2026-05-12 audit #19: also deny our own Sentry tunnel — breadcrumbs
+        // captured during replay can include XHR metadata for outbound calls
+        // to the tunnel that may carry auth context.
+        networkDetailDenyUrls: [
+          /directus(?:-dev)?\.kscw\.ch/,
+          /sentry-tunnel\.kscw\.ch/,
+        ],
       }),
     ],
 

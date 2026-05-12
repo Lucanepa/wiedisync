@@ -6,7 +6,7 @@
 const ACCENT = { vb: '#FFC832', bb: '#F97316', neutral: '#4A55A2' }
 
 /** Escape HTML special characters to prevent injection in email templates */
-function escHtml(str) {
+export function escHtml(str) {
   return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
 

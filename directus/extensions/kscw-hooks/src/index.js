@@ -712,38 +712,43 @@ export default ({ action, filter, init, schedule }, { services, database, logger
         .select('email', 'first_name', 'language')
       // Per-recipient locale via members.language → 5 buckets (de/gsw/en/fr/it)
       const TJR_LANG_TO_CODE = { german: 'de', swiss_german: 'gsw', english: 'en', french: 'fr', italian: 'it' }
+      // Escape member-supplied first/last name + admin-supplied team name before
+      // they land in email HTML; subject lines are plain text so they don't
+      // need escaping, only the `intro` HTML body.
+      const safeMemberName = `${escapeEmailHtml(member.first_name || '')} ${escapeEmailHtml(member.last_name || '')}`.trim()
+      const safeTeamNameHtml = escapeEmailHtml(teamName)
       const TJR = {
         de: {
           subject: `WiediSync — Neue Beitrittsanfrage für ${teamName}`,
-          intro: `<strong>${member.first_name} ${member.last_name}</strong> möchte dem Team <strong>${teamName}</strong> beitreten.`,
+          intro: `<strong>${safeMemberName}</strong> möchte dem Team <strong>${safeTeamNameHtml}</strong> beitreten.`,
           alertTitle: 'Aktion erforderlich',
           alertBody: 'Bitte genehmige oder lehne die Anfrage auf der Teamseite ab.',
           cta: 'Zur Teamseite', title: 'Neue Beitrittsanfrage',
         },
         gsw: {
           subject: `WiediSync — Neui Bytrittsaafrog für ${teamName}`,
-          intro: `<strong>${member.first_name} ${member.last_name}</strong> möcht zum Team <strong>${teamName}</strong>.`,
+          intro: `<strong>${safeMemberName}</strong> möcht zum Team <strong>${safeTeamNameHtml}</strong>.`,
           alertTitle: 'Aktion erforderlich',
           alertBody: 'Bitte bewillig oder läne d Aafrog uf dr Team-Site ab.',
           cta: 'Zur Team-Site', title: 'Neui Bytrittsaafrog',
         },
         en: {
           subject: `WiediSync — New join request for ${teamName}`,
-          intro: `<strong>${member.first_name} ${member.last_name}</strong> wants to join team <strong>${teamName}</strong>.`,
+          intro: `<strong>${safeMemberName}</strong> wants to join team <strong>${safeTeamNameHtml}</strong>.`,
           alertTitle: 'Action required',
           alertBody: 'Please approve or reject the request on the team page.',
           cta: 'Go to team page', title: 'New join request',
         },
         fr: {
           subject: `WiediSync — Nouvelle demande d'adhésion pour ${teamName}`,
-          intro: `<strong>${member.first_name} ${member.last_name}</strong> souhaite rejoindre l'équipe <strong>${teamName}</strong>.`,
+          intro: `<strong>${safeMemberName}</strong> souhaite rejoindre l'équipe <strong>${safeTeamNameHtml}</strong>.`,
           alertTitle: 'Action requise',
           alertBody: "Merci d'approuver ou de refuser la demande sur la page de l'équipe.",
           cta: "Voir la page de l'équipe", title: "Nouvelle demande d'adhésion",
         },
         it: {
           subject: `WiediSync — Nuova richiesta di adesione per ${teamName}`,
-          intro: `<strong>${member.first_name} ${member.last_name}</strong> vuole unirsi alla squadra <strong>${teamName}</strong>.`,
+          intro: `<strong>${safeMemberName}</strong> vuole unirsi alla squadra <strong>${safeTeamNameHtml}</strong>.`,
           alertTitle: 'Azione richiesta',
           alertBody: 'Approva o rifiuta la richiesta sulla pagina della squadra.',
           cta: 'Vai alla pagina della squadra', title: 'Nuova richiesta di adesione',

@@ -149,6 +149,71 @@ async function main() {
   // 4. Custom endpoint sanity
   await check('kscw/web-push/vapid-public-key', () => api('GET', '/kscw/web-push/vapid-public-key'))
 
+  // 4b. Negative LEADER assertions — runs only if a coach token is present
+  // in .env.local. Catches the v4.8.1 LEADER-per-user regression class where
+  // an unfiltered LEADER policy lets coaches read/write across the whole club.
+  // Resolution order mirrors the Member token:
+  //   1. --coach-token / SMOKE_TEST_COACH_TOKEN
+  //   2. DIRECTUS_DEV_USER_TOKEN_COACH (dev URL)
+  //   3. DIRECTUS_PROD_USER_TOKEN_COACH (prod URL)
+  const COACH_TOKEN = args['coach-token']
+    || process.env.SMOKE_TEST_COACH_TOKEN
+    || (URL.includes('directus-dev') ? process.env.DIRECTUS_DEV_USER_TOKEN_COACH : '')
+    || (URL.includes('directus.kscw.ch') ? process.env.DIRECTUS_PROD_USER_TOKEN_COACH : '')
+    || ''
+
+  if (COACH_TOKEN) {
+    console.log('\n[smoke] Coach-token negative checks:')
+    token = COACH_TOKEN
+    // Identify the coach's teams so we can construct cross-team probes.
+    const cme = await api('GET', '/users/me?fields=id')
+    const coachMemberRow = await api('GET', `/items/members?filter[user][_eq]=${cme.json?.data?.id}&fields=id`)
+    const coachMemberId = coachMemberRow.json?.data?.[0]?.id
+    const coachTeams = coachMemberId
+      ? await api('GET', `/items/teams?filter[coach][members_id][_eq]=${coachMemberId}&fields=id&limit=-1`)
+      : { json: { data: [] } }
+    const coachTeamIds = (coachTeams.json?.data || []).map(t => t.id)
+
+    // 4b.1 — participations.read must NOT return rows whose member is on
+    // zero teams the coach coaches/TRs. We probe by reading participations
+    // and asserting every row's member is reachable via the coach's teams.
+    await check('participations.read scoped to coach teams', async () => {
+      const r = await api('GET', '/items/participations?fields=id,member.id&limit=50')
+      if (r.status >= 400) return r
+      const rows = r.json?.data || []
+      if (rows.length === 0 || coachTeamIds.length === 0) return { ...r, status: 200, ok: true }
+      // Sample membership map for the returned members
+      const memberIds = [...new Set(rows.map(p => p.member?.id).filter(Boolean))]
+      if (memberIds.length === 0) return { ...r, status: 200, ok: true }
+      const mtRes = await api('GET', `/items/member_teams?filter[member][_in]=${memberIds.join(',')}&fields=member,team&limit=-1`)
+      const teamsByMember = new Map()
+      for (const mt of mtRes.json?.data || []) {
+        const m = String(mt.member); const t = mt.team
+        if (!teamsByMember.has(m)) teamsByMember.set(m, new Set())
+        teamsByMember.get(m).add(t)
+      }
+      const leaked = rows.some(p => {
+        if (!p.member?.id) return false
+        const ts = teamsByMember.get(String(p.member.id)) || new Set()
+        return ![...ts].some(t => coachTeamIds.includes(t))
+      })
+      return leaked
+        ? { status: 500, ok: false, json: null, text: 'participations leaked from outside coach teams' }
+        : { ...r, status: 200, ok: true }
+    })
+
+    // 4b.2 — user_logs.read must 403 for a coach (removed from LEADER 2026-05-12).
+    await check('user_logs direct read (coach must 403)', async () => {
+      const r = await api('GET', '/items/user_logs?limit=1')
+      return r.status === 403 ? { ...r, status: 200, ok: true } : { ...r, status: 500 }
+    })
+
+    // Restore Member token for any subsequent checks.
+    token = PRESET_TOKEN
+  } else {
+    console.log('\n[smoke] (skipping coach-token negative checks — no DIRECTUS_*_USER_TOKEN_COACH set)')
+  }
+
   // 5. Result
   console.log('\n' + '─'.repeat(50))
   console.log(`[smoke] ${checks.filter(c => c.ok).length}/${checks.length} passed`)

@@ -81,6 +81,8 @@ export default function ManualGameModal({
   const [awayVenue, setAwayVenue] = useState({ name: '', address: '', city: '', plus_code: '' })
   const [league, setLeague] = useState('')
   const [round, setRound] = useState('')
+  const [autoConfirmRsvp, setAutoConfirmRsvp] = useState<boolean | null>(null)
+  const [teamAutoConfirmDefault, setTeamAutoConfirmDefault] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
   // Prefill date on (re)open (create mode)
@@ -119,7 +121,20 @@ export default function ManualGameModal({
     })
     setLeague(editingGame.league ?? '')
     setRound(editingGame.round ?? '')
+    const rawAcr = (editingGame as Game & { auto_confirm_rsvp?: boolean | null }).auto_confirm_rsvp
+    setAutoConfirmRsvp(rawAcr === true ? true : rawAcr === false ? false : null)
   }, [open, editingGame])
+
+  // Load team default for the auto-confirm hint label
+  useEffect(() => {
+    if (!open || !teamId) {
+      setTeamAutoConfirmDefault(false)
+      return
+    }
+    const teamRel = (allTeams ?? []).find((t) => String(t.id) === teamId) as Team | undefined
+    const fe = teamRel?.features_enabled as { game_auto_confirm?: boolean } | undefined
+    setTeamAutoConfirmDefault(fe?.game_auto_confirm === true)
+  }, [open, teamId, allTeams])
 
   // Auto-select the single editable team when there's only one
   useEffect(() => {
@@ -141,6 +156,8 @@ export default function ManualGameModal({
       setAwayVenue({ name: '', address: '', city: '', plus_code: '' })
       setLeague('')
       setRound('')
+      setAutoConfirmRsvp(null)
+      setTeamAutoConfirmDefault(false)
       setSubmitError(null)
     }
   }, [open])
@@ -274,6 +291,7 @@ export default function ManualGameModal({
           : null,
       league: league.trim(),
       round: round.trim(),
+      auto_confirm_rsvp: autoConfirmRsvp,
     }
 
     try {
@@ -456,6 +474,43 @@ export default function ManualGameModal({
           <div>
             <Label htmlFor="round">{t('manualGame.round')}</Label>
             <Input id="round" value={round} onChange={(e) => setRound(e.target.value)} />
+          </div>
+        </div>
+
+        {/* Auto-confirm RSVP override */}
+        <div className="space-y-1.5 text-sm">
+          <div>
+            <Label className="font-medium">{t('manualGame.autoConfirmRsvp', { defaultValue: 'Auto-confirm RSVP' })}</Label>
+            <p className="text-xs text-muted-foreground">
+              {t('manualGame.autoConfirmRsvpHint', {
+                defaultValue: 'Override team default ({{def}}). All eligible members start as confirmed; they must opt out.',
+                def: teamAutoConfirmDefault ? t('manualGame.on', { defaultValue: 'On' }) : t('manualGame.off', { defaultValue: 'Off' }),
+              })}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {([
+              { value: null, label: t('manualGame.useTeamDefault', { defaultValue: 'Use team default' }) },
+              { value: true, label: t('manualGame.on', { defaultValue: 'On' }) },
+              { value: false, label: t('manualGame.off', { defaultValue: 'Off' }) },
+            ] as { value: boolean | null; label: string }[]).map((opt) => {
+              const active = autoConfirmRsvp === opt.value
+              return (
+                <button
+                  key={String(opt.value)}
+                  type="button"
+                  onClick={() => setAutoConfirmRsvp(opt.value)}
+                  className={cn(
+                    'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+                    active
+                      ? 'border-brand-500 bg-brand-100 text-brand-700 dark:border-brand-600 dark:bg-brand-900/30 dark:text-brand-300'
+                      : 'border-gray-300 bg-transparent text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-800',
+                  )}
+                >
+                  {opt.label}
+                </button>
+              )
+            })}
           </div>
         </div>
 

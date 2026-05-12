@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.8.1'
+const APP_VERSION = '4.8.2'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,20 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.8.2',
+    date: '2026-05-12',
+    sections: [
+      {
+        title: 'Coaches see their team trainings & events again',
+        items: [
+          'Michelle Howald coaches H2 and H3 but isn\'t on either roster (Vorstand member, doesn\'t play). After v4.8.1 fixed the LEADER policy attachment, she still saw zero trainings for her teams — because the LEADER policy was missing `trainings.read` entirely, and the Member fallback policy scopes trainings.read to `member_teams` (i.e. you only see trainings of teams you play on, not teams you coach).',
+          'Same gap for `events.read` and `events.delete` (LEADER had only create/update, no read or delete). Coaches couldn\'t see private team events or cancel them.',
+          'Fix: LEADER now has `trainings.read` and `trainings.delete` scoped via the coach/TR M2M traversal (`team.coach.members_id.user = $CURRENT_USER` OR `team.team_responsible.members_id.user = $CURRENT_USER`), plus `events.read` (with the same coach/TR scope union\'d with the existing club-wide/invited filters) and `events.delete` (scoped to event creator or coach/TR of an attached team). Verified: Michelle can now read H2/H3 trainings; reading trainings of a team she doesn\'t coach correctly returns empty.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.8.1',
     date: '2026-05-12',

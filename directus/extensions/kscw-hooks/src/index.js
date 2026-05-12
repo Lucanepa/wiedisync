@@ -1038,6 +1038,89 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     }
   })
 
+  // ── Auto-confirm RSVP helpers ──────────────────────────────────
+  // Insert `confirmed` participations for all eligible members of an activity.
+  // Uses NOT EXISTS to skip members already declined (absence overlay), already
+  // confirmed/tentative (manual), and members in the training's excluded
+  // guest-levels. Idempotent: safe to call on create AND on later flip-on.
+  //
+  // Returns rowCount inserted (0 if disabled / nothing to do).
+  function parseTeamFeatures(fe) {
+    if (typeof fe === 'string') {
+      try { return JSON.parse(fe) || {} } catch { return {} }
+    }
+    return fe || {}
+  }
+
+  async function effectiveTrainingAutoConfirm(training, team) {
+    if (training.auto_confirm_rsvp === true) return true
+    if (training.auto_confirm_rsvp === false) return false
+    return parseTeamFeatures(team?.features_enabled).training_auto_confirm === true
+  }
+
+  async function effectiveGameAutoConfirm(game, team) {
+    if (game.auto_confirm_rsvp === true) return true
+    if (game.auto_confirm_rsvp === false) return false
+    return parseTeamFeatures(team?.features_enabled).game_auto_confirm === true
+  }
+
+  async function autoConfirmTraining(trainingId, { onlyIfFuture = false } = {}) {
+    const training = await database('trainings').where('id', trainingId).first()
+    if (!training || training.cancelled || !training.team || !training.date) return 0
+    if (onlyIfFuture) {
+      const today = new Date().toISOString().split('T')[0]
+      const dateStr = training.date.toISOString?.().split('T')[0] || String(training.date).split('T')[0]
+      if (dateStr < today) return 0
+    }
+    const team = await database('teams').where('id', training.team).first('features_enabled')
+    if (!(await effectiveTrainingAutoConfirm(training, team))) return 0
+
+    let excluded = training.excluded_guest_levels
+    if (typeof excluded === 'string') { try { excluded = JSON.parse(excluded) } catch { excluded = [] } }
+    if (!Array.isArray(excluded)) excluded = []
+    const excludedClause = excluded.length > 0
+      ? `AND mt.guest_level NOT IN (${excluded.map(() => '?').join(',')})`
+      : ''
+    const ins = await database.raw(`
+      INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff)
+      SELECT mt.member, 'training', ?::text, 'confirmed', '', 0, false
+      FROM member_teams mt
+      WHERE mt.team = ?::integer
+        ${excludedClause}
+        AND NOT EXISTS (
+          SELECT 1 FROM participations p
+          WHERE p.activity_type = 'training' AND p.activity_id = ?::text AND p.member = mt.member
+        )
+    `, [String(trainingId), training.team, ...excluded, String(trainingId)])
+    return ins?.rowCount || 0
+  }
+
+  async function autoConfirmGame(gameId, { onlyIfFuture = false } = {}) {
+    const game = await database('games').where('id', gameId).first()
+    if (!game || !game.kscw_team || !game.date) return 0
+    if (['completed', 'postponed', 'cancelled'].includes(game.status || '')) return 0
+    if (onlyIfFuture) {
+      const today = new Date().toISOString().split('T')[0]
+      const dateStr = game.date.toISOString?.().split('T')[0] || String(game.date).split('T')[0]
+      if (dateStr < today) return 0
+    }
+    const team = await database('teams').where('id', game.kscw_team).first('features_enabled')
+    if (!(await effectiveGameAutoConfirm(game, team))) return 0
+
+    const ins = await database.raw(`
+      INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff)
+      SELECT mt.member, 'game', ?::text, 'confirmed', '', 0, false
+      FROM member_teams mt
+      WHERE mt.team = ?::integer
+        AND mt.guest_level = 0
+        AND NOT EXISTS (
+          SELECT 1 FROM participations p
+          WHERE p.activity_type = 'game' AND p.activity_id = ?::text AND p.member = mt.member
+        )
+    `, [String(gameId), game.kscw_team, String(gameId)])
+    return ins?.rowCount || 0
+  }
+
   // When a training/game is created, auto-decline for members with overlapping absences
   action('trainings.items.create', async ({ key }) => {
     try {
@@ -1063,32 +1146,10 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       `, [String(key), training.team, dateStr, dateStr, String(key)])
       if (res?.rowCount > 0) log.info(`[absence-auto-decline] Training ${key}: ${res.rowCount} members auto-declined`)
 
-      // Auto-confirm pass (PlayerPlus-style opt-out RSVP). Requires team setting
-      // `training_auto_confirm`. Skips members already declined above by absence
-      // overlap, manual overrides, and members in excluded guest levels.
-      const team = await database('teams').where('id', training.team).first('features_enabled')
-      let fe = team?.features_enabled
-      if (typeof fe === 'string') { try { fe = JSON.parse(fe) } catch { fe = {} } }
-      if (fe && fe.training_auto_confirm === true) {
-        let excluded = training.excluded_guest_levels
-        if (typeof excluded === 'string') { try { excluded = JSON.parse(excluded) } catch { excluded = [] } }
-        if (!Array.isArray(excluded)) excluded = []
-        const excludedClause = excluded.length > 0
-          ? `AND mt.guest_level NOT IN (${excluded.map(() => '?').join(',')})`
-          : ''
-        const ins = await database.raw(`
-          INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff)
-          SELECT mt.member, 'training', ?::text, 'confirmed', '', 0, false
-          FROM member_teams mt
-          WHERE mt.team = ?::integer
-            ${excludedClause}
-            AND NOT EXISTS (
-              SELECT 1 FROM participations p
-              WHERE p.activity_type = 'training' AND p.activity_id = ?::text AND p.member = mt.member
-            )
-        `, [String(key), training.team, ...excluded, String(key)])
-        if (ins?.rowCount > 0) log.info(`[auto-confirm] Training ${key}: ${ins.rowCount} members auto-confirmed`)
-      }
+      // Auto-confirm pass (PlayerPlus-style opt-out RSVP). Considers per-activity
+      // override + team default. NOT EXISTS protects absence-declined rows above.
+      const confirmed = await autoConfirmTraining(key)
+      if (confirmed > 0) log.info(`[auto-confirm] Training ${key}: ${confirmed} members auto-confirmed`)
     } catch (err) {
       log.error({ msg: `[absence-auto-decline] Training create: ${err.message}`, event: 'absence_auto_decline_training', key, stack: err.stack })
     }
@@ -1117,28 +1178,11 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       `, [String(key), game.kscw_team, dateStr, dateStr, String(key)])
       if (res?.rowCount > 0) log.info(`[absence-auto-decline] Game ${key}: ${res.rowCount} members auto-declined`)
 
-      // Auto-confirm pass — requires team setting `game_auto_confirm`. Only full
-      // members (guest_level = 0) — guests are blocked from confirming games by
-      // trg_participations_guest_block. Skips active/scheduled games only.
-      if (!['completed', 'postponed', 'cancelled'].includes(game.status || '')) {
-        const team = await database('teams').where('id', game.kscw_team).first('features_enabled')
-        let fe = team?.features_enabled
-        if (typeof fe === 'string') { try { fe = JSON.parse(fe) } catch { fe = {} } }
-        if (fe && fe.game_auto_confirm === true) {
-          const ins = await database.raw(`
-            INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff)
-            SELECT mt.member, 'game', ?::text, 'confirmed', '', 0, false
-            FROM member_teams mt
-            WHERE mt.team = ?::integer
-              AND mt.guest_level = 0
-              AND NOT EXISTS (
-                SELECT 1 FROM participations p
-                WHERE p.activity_type = 'game' AND p.activity_id = ?::text AND p.member = mt.member
-              )
-          `, [String(key), game.kscw_team, String(key)])
-          if (ins?.rowCount > 0) log.info(`[auto-confirm] Game ${key}: ${ins.rowCount} members auto-confirmed`)
-        }
-      }
+      // Auto-confirm pass — per-activity override + team default. Guest-level=0
+      // only (trg_participations_guest_block enforces). NOT EXISTS protects
+      // absence-declined rows above and any prior participation.
+      const confirmed = await autoConfirmGame(key)
+      if (confirmed > 0) log.info(`[auto-confirm] Game ${key}: ${confirmed} members auto-confirmed`)
     } catch (err) {
       log.error({ msg: `[absence-auto-decline] Game create: ${err.message}`, event: 'absence_auto_decline_game', key, stack: err.stack })
     }
@@ -1217,32 +1261,110 @@ export default ({ action, filter, init, schedule }, { services, database, logger
   }
 
   action('trainings.items.update', async ({ keys, payload }) => {
-    // Only re-eval when date changed — cancelled flips handled by the separate closure logic
-    if (!payload || !('date' in payload)) return
-    try {
-      for (const k of keys) {
-        const t = await database('trainings').where('id', k).first()
-        if (!t || t.cancelled || !t.team || !t.date) continue
-        const dateStr = t.date.toISOString?.().split('T')[0] || String(t.date).split('T')[0]
-        await reEvalActivityAutoDeclines('training', k, 'mt.team = ?::integer', [t.team], dateStr)
+    // Re-eval absence-decline when date changed
+    if (payload && 'date' in payload) {
+      try {
+        for (const k of keys) {
+          const t = await database('trainings').where('id', k).first()
+          if (!t || t.cancelled || !t.team || !t.date) continue
+          const dateStr = t.date.toISOString?.().split('T')[0] || String(t.date).split('T')[0]
+          await reEvalActivityAutoDeclines('training', k, 'mt.team = ?::integer', [t.team], dateStr)
+        }
+      } catch (err) {
+        log.error({ msg: `[absence-auto-decline] Training update: ${err.message}`, event: 'absence_auto_decline_training_update', keys, stack: err.stack })
       }
-    } catch (err) {
-      log.error({ msg: `[absence-auto-decline] Training update: ${err.message}`, event: 'absence_auto_decline_training_update', keys, stack: err.stack })
+    }
+
+    // Backfill auto-confirm when auto_confirm_rsvp flips on (or any future-dated
+    // update where effective auto-confirm is true and rows are missing).
+    if (payload && 'auto_confirm_rsvp' in payload) {
+      try {
+        for (const k of keys) {
+          const c = await autoConfirmTraining(k, { onlyIfFuture: true })
+          if (c > 0) log.info(`[auto-confirm] Training ${k} update: ${c} members auto-confirmed`)
+        }
+      } catch (err) {
+        log.error({ msg: `[auto-confirm] Training update: ${err.message}`, keys, stack: err.stack })
+      }
     }
   })
 
   action('games.items.update', async ({ keys, payload }) => {
-    if (!payload || !('date' in payload)) return
+    if (payload && 'date' in payload) {
+      try {
+        for (const k of keys) {
+          const g = await database('games').where('id', k).first()
+          if (!g || !g.kscw_team || !g.date) continue
+          if (['completed', 'postponed', 'cancelled'].includes(g.status)) continue
+          const dateStr = g.date.toISOString?.().split('T')[0] || String(g.date).split('T')[0]
+          await reEvalActivityAutoDeclines('game', k, 'mt.team = ?::integer', [g.kscw_team], dateStr)
+        }
+      } catch (err) {
+        log.error({ msg: `[absence-auto-decline] Game update: ${err.message}`, event: 'absence_auto_decline_game_update', keys, stack: err.stack })
+      }
+    }
+
+    if (payload && 'auto_confirm_rsvp' in payload) {
+      try {
+        for (const k of keys) {
+          const c = await autoConfirmGame(k, { onlyIfFuture: true })
+          if (c > 0) log.info(`[auto-confirm] Game ${k} update: ${c} members auto-confirmed`)
+        }
+      } catch (err) {
+        log.error({ msg: `[auto-confirm] Game update: ${err.message}`, keys, stack: err.stack })
+      }
+    }
+  })
+
+  // Team toggle flip → backfill future activities that still inherit (auto_confirm_rsvp IS NULL).
+  action('teams.items.update', async ({ keys, payload }) => {
+    if (!payload || !('features_enabled' in payload)) return
+    const fe = parseTeamFeatures(payload.features_enabled)
+    const wantsTraining = fe.training_auto_confirm === true
+    const wantsGame = fe.game_auto_confirm === true
+    if (!wantsTraining && !wantsGame) return
+
     try {
-      for (const k of keys) {
-        const g = await database('games').where('id', k).first()
-        if (!g || !g.kscw_team || !g.date) continue
-        if (['completed', 'postponed', 'cancelled'].includes(g.status)) continue
-        const dateStr = g.date.toISOString?.().split('T')[0] || String(g.date).split('T')[0]
-        await reEvalActivityAutoDeclines('game', k, 'mt.team = ?::integer', [g.kscw_team], dateStr)
+      for (const teamId of keys) {
+        if (wantsTraining) {
+          const rows = await database.raw(`
+            INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff)
+            SELECT mt.member, 'training', t.id::text, 'confirmed', '', 0, false
+            FROM trainings t
+            JOIN member_teams mt ON mt.team = t.team
+            WHERE t.team = ?::integer
+              AND t.cancelled = false
+              AND t.date >= CURRENT_DATE
+              AND t.auto_confirm_rsvp IS NULL
+              AND NOT (COALESCE(t.excluded_guest_levels, '[]')::jsonb @> to_jsonb(mt.guest_level))
+              AND NOT EXISTS (
+                SELECT 1 FROM participations p
+                WHERE p.activity_type = 'training' AND p.activity_id = t.id::text AND p.member = mt.member
+              )
+          `, [teamId])
+          if (rows?.rowCount > 0) log.info(`[auto-confirm] Team ${teamId} training backfill: ${rows.rowCount} confirmed`)
+        }
+        if (wantsGame) {
+          const rows = await database.raw(`
+            INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff)
+            SELECT mt.member, 'game', g.id::text, 'confirmed', '', 0, false
+            FROM games g
+            JOIN member_teams mt ON mt.team = g.kscw_team
+            WHERE g.kscw_team = ?::integer
+              AND g.date >= CURRENT_DATE
+              AND g.auto_confirm_rsvp IS NULL
+              AND COALESCE(g.status, '') NOT IN ('completed','postponed','cancelled')
+              AND mt.guest_level = 0
+              AND NOT EXISTS (
+                SELECT 1 FROM participations p
+                WHERE p.activity_type = 'game' AND p.activity_id = g.id::text AND p.member = mt.member
+              )
+          `, [teamId])
+          if (rows?.rowCount > 0) log.info(`[auto-confirm] Team ${teamId} game backfill: ${rows.rowCount} confirmed`)
+        }
       }
     } catch (err) {
-      log.error({ msg: `[absence-auto-decline] Game update: ${err.message}`, event: 'absence_auto_decline_game_update', keys, stack: err.stack })
+      log.error({ msg: `[auto-confirm] Team toggle backfill: ${err.message}`, keys, stack: err.stack })
     }
   })
 

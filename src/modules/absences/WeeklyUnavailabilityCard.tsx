@@ -47,7 +47,11 @@ export default function WeeklyUnavailabilityCard({ absence, onEdit, onDelete, sh
 
   const activeDays = new Set(absence.days_of_week ?? [])
 
+  // Mobile colSpan for the wrapped actions row: 7 day cells + optional member.
+  const mobileColSpan = 7 + (showMemberName ? 1 : 0)
+
   return (
+    <>
     <TableRow className="align-top">
       {showMemberName && (
         <TableCell className="whitespace-normal text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -115,8 +119,8 @@ export default function WeeklyUnavailabilityCard({ absence, onEdit, onDelete, sh
         })()}
       </TableCell>
       {canEdit ? (
-        <TableCell className="text-right">
-          <div className="flex flex-col items-stretch gap-1 sm:flex-row sm:justify-end sm:gap-2">
+        <TableCell className="hidden sm:table-cell text-right">
+          <div className="flex justify-end gap-2">
             <button
               onClick={() => onEdit(absence)}
               className="min-h-[36px] rounded px-3 py-1.5 text-sm text-brand-600 hover:bg-brand-50 hover:text-brand-700"
@@ -132,8 +136,29 @@ export default function WeeklyUnavailabilityCard({ absence, onEdit, onDelete, sh
           </div>
         </TableCell>
       ) : (
-        <TableCell />
+        <TableCell className="hidden sm:table-cell" />
       )}
     </TableRow>
+    {canEdit && (
+      <TableRow className="sm:hidden border-t-0">
+        <TableCell colSpan={mobileColSpan} className="pt-0 pb-2">
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => onEdit(absence)}
+              className="min-h-[36px] rounded px-3 py-1.5 text-sm text-brand-600 hover:bg-brand-50 hover:text-brand-700"
+            >
+              {t('common:edit')}
+            </button>
+            <button
+              onClick={() => onDelete(absence.id)}
+              className="min-h-[36px] rounded px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 hover:text-red-800"
+            >
+              {t('common:delete')}
+            </button>
+          </div>
+        </TableCell>
+      </TableRow>
+    )}
+    </>
   )
 }

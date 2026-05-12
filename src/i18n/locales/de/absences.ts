@@ -87,6 +87,8 @@ export default {
   daysOfWeek: 'Wochentage',
   noteOptional: 'Notiz (optional)',
   editedByStaffOn: 'Bearbeitet vom Trainerteam am {{at}}',
+  detailsOnBehalfPlaceholder: 'Warum trägst du das stellvertretend für die Spielerin/den Spieler ein?',
+  noteOnBehalfHint: 'Du bearbeitest stellvertretend für eine andere Person — bitte hinterlasse eine Notiz mit dem Grund. Die Notiz ist für die betroffene Person sichtbar.',
   notePlaceholder: 'Zusätzliche Informationen...',
   atLeastOneDay: 'Mindestens ein Tag wählen',
   noWeeklyAbsences: 'Keine wöchentlichen Abwesenheiten',

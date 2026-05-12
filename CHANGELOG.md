@@ -2,6 +2,14 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## v4.8.7 — 2026-05-12
+
+Web push on third-party absence edits + UX nudge for coaches.
+
+- `push-i18n.js` gains 8 new translations: `absence.{,weekly.}{created,updated}.{title,body}` across `de / gsw / en / fr / it`.
+- `kscw-hooks` `notifyAbsenceThirdParty` now dispatches a web push via `sendLocalizedPush` after the in-app insert. Body interpolates editor name and `dd.mm.yyyy` start date; opens `${FRONTEND_URL}/absences` on click; tagged `absence` so subsequent edits collapse the prior toast.
+- `AbsenceForm` + `WeeklyUnavailabilityForm` show an amber hint under the note field — *"You're editing on behalf of another player — please leave a note explaining why. The note is visible to the player."* — when `memberId !== currentUser.id`. Placeholder swaps to a question prompt in the same case. The `reason_detail` / note field doubles as the audit trail and is shown to the affected member alongside the existing *"Edited by team staff on …"* attribution.
+
 ## v4.8.6 — 2026-05-12
 
 ### Coach RSVPs now visible in participation modal staff section

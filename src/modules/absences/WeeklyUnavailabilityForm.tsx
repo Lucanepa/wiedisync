@@ -210,8 +210,15 @@ export default function WeeklyUnavailabilityForm({ open, absence, onSave, onCanc
           value={note}
           onChange={(e) => setNote(e.target.value)}
           rows={2}
-          placeholder={t('notePlaceholder')}
+          placeholder={showMemberPicker && memberId && memberId !== user?.id
+            ? t('detailsOnBehalfPlaceholder')
+            : t('notePlaceholder')}
         />
+        {showMemberPicker && memberId && memberId !== user?.id && (
+          <p className="-mt-3 text-xs text-amber-600 dark:text-amber-400">
+            {t('noteOnBehalfHint')}
+          </p>
+        )}
 
         {validationError && (
           <p className="text-sm text-red-600">{validationError}</p>

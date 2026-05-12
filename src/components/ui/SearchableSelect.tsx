@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { Check, ChevronsUpDown, X } from 'lucide-react'
 import { Label } from '@/components/ui/label'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { cn } from '@/lib/utils'
 
 export interface SearchableSelectOption {
@@ -30,6 +31,7 @@ export default function SearchableSelect({
   error,
 }: SearchableSelectProps) {
   const { t } = useTranslation('common')
+  const isDesktop = useMediaQuery('(min-width: 640px)')
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
@@ -39,7 +41,11 @@ export default function SearchableSelect({
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({})
   // Portal target — prefer the nearest [role="dialog"] ancestor so the
   // dropdown lives inside Radix Dialog's focus-trap / inert-sibling scope.
-  // Falls back to document.body when not inside a dialog.
+  // Falls back to document.body when not inside a dialog. On mobile we
+  // skip portalling entirely and render inline — iOS keyboard appearance
+  // shifts Vaul drawer's transformed bounds and detaches absolute-
+  // positioned children, so an inline flow that pushes the form down is
+  // less fragile.
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null)
 
   const selectedLabel = options.find((o) => o.value === value)?.label ?? ''
@@ -55,6 +61,11 @@ export default function SearchableSelect({
   // position:absolute with coordinates relative to the target's bounding box.
   useLayoutEffect(() => {
     if (!open || !triggerRef.current) return
+    if (!isDesktop) {
+      // Inline render on mobile — no portal, no positioning calc.
+      setPortalTarget(null)
+      return
+    }
     const dialogAncestor = triggerRef.current.closest('[role="dialog"]') as HTMLElement | null
     const target = dialogAncestor ?? document.body
     setPortalTarget(target)
@@ -86,16 +97,17 @@ export default function SearchableSelect({
       window.removeEventListener('scroll', updatePosition, true)
       window.removeEventListener('resize', updatePosition)
     }
-  }, [open])
+  }, [open, isDesktop])
 
-  // Focus input when dropdown opens
+  // Focus input when dropdown opens — desktop only. On mobile we avoid the
+  // search input entirely (would pop the iOS keyboard and break the layout).
   useEffect(() => {
-    if (open) {
+    if (open && isDesktop) {
       requestAnimationFrame(() => inputRef.current?.focus())
-    } else {
+    } else if (!open) {
       setSearch('')
     }
-  }, [open])
+  }, [open, isDesktop])
 
   // Close on outside click
   useEffect(() => {
@@ -124,7 +136,7 @@ export default function SearchableSelect({
           error && 'border-destructive',
         )}
       >
-        {open ? (
+        {open && isDesktop ? (
           <input
             ref={inputRef}
             type="text"
@@ -146,7 +158,7 @@ export default function SearchableSelect({
             role="combobox"
             aria-expanded={open}
             className="flex flex-1 items-center justify-between px-3 py-2 text-left"
-            onClick={() => setOpen(true)}
+            onClick={() => setOpen((v) => !v)}
           >
             <span className={selectedLabel ? '' : 'text-muted-foreground'}>
               {selectedLabel || placeholder}
@@ -154,7 +166,7 @@ export default function SearchableSelect({
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </button>
         )}
-        {open && value && (
+        {open && isDesktop && value && (
           <button
             type="button"
             className="mr-2 rounded p-0.5 text-muted-foreground hover:text-foreground"
@@ -164,7 +176,42 @@ export default function SearchableSelect({
           </button>
         )}
       </div>
-      {open && portalTarget && createPortal(
+      {open && !isDesktop && (
+        <div ref={dropdownRef} data-searchable-select className="mt-1 cursor-default rounded-md border bg-popover shadow-md">
+          <ul
+            className="max-h-72 overflow-y-auto overscroll-contain py-1 [touch-action:pan-y] [-webkit-overflow-scrolling:touch]"
+            role="listbox"
+          >
+            {options.length === 0 && (
+              <li className="px-3 py-2 text-sm text-muted-foreground">{t('noResults')}</li>
+            )}
+            {options.map((option) => (
+              <li
+                key={option.value}
+                role="option"
+                aria-selected={value === option.value}
+                className={cn(
+                  'flex min-h-[44px] cursor-pointer select-none items-center px-3 py-2 text-sm hover:bg-accent',
+                  value === option.value && 'bg-accent',
+                )}
+                onClick={() => {
+                  onChange(option.value)
+                  setOpen(false)
+                }}
+              >
+                <Check
+                  className={cn(
+                    'mr-2 h-4 w-4',
+                    value === option.value ? 'opacity-100' : 'opacity-0',
+                  )}
+                />
+                {option.label}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {open && isDesktop && portalTarget && createPortal(
         <div ref={dropdownRef} data-searchable-select style={dropdownStyle} className="cursor-default rounded-md border bg-popover shadow-md">
           <ul
             className="max-h-60 overflow-y-auto overscroll-contain py-1 [touch-action:pan-y] [-webkit-overflow-scrolling:touch]"

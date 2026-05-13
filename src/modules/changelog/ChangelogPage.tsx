@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.9.1'
+const APP_VERSION = '4.9.2'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,19 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.9.2',
+    date: '2026-05-13',
+    sections: [
+      {
+        title: 'Trial training (Probetraining) overrides the regular team training on the same date',
+        items: [
+          'Booking a trial training for a team on a date that already has a regular training now auto-cancels the regular row (reason: "Replaced by trial training"). Works in reverse too — if the nightly indefinite-slot top-up later inserts a regular training on a date that already holds a trial, the new row self-cancels. Deleting the trial reverses the cancellation. Manual cancel/uncancel by an admin detaches the row from the auto-origin, so a later trial removal won\'t silently undo an admin\'s intent.',
+          'Implemented as Postgres triggers (migration 055), not a Directus hook — because the slot-cascade does raw INSERTs that bypass Directus action hooks. Keeping the rule in the DB means the admin UI path and the cascade path both produce the same result. Backfill on apply caught one existing prod row (D2, 2026-05-20).',
+        ],
+      },
+    ],
+  },
   {
     version: '4.9.1',
     date: '2026-05-13',

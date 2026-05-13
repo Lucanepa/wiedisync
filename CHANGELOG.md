@@ -2,6 +2,13 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## v4.9.2 — 2026-05-13
+
+Trial training (Probetraining) now overrides the regular team training on the same date.
+
+- **Trial wins, automatically.** Booking a trial training for a team on a date that already has a regular training auto-cancels the regular row (`cancel_reason = 'Replaced by trial training'`, `auto_cancelled_by_trial` marker set). Works the other way around too: if the slot-cascade rolling top-up later inserts a regular training on a date that already holds a trial, the new row self-cancels. Deleting the trial reverses the cancellation. Manual user-driven cancel/uncancel detaches from the auto-origin (mirrors the closure-auto-cancel pattern from migration 028), so a later trial removal won't silently undo a user's intent.
+- **Migration 055 — Postgres triggers, not JS.** Two AFTER triggers on `trainings` (INSERT enforces trial-wins, DELETE reverses) plus an extension of the existing `trg_trainings_clear_auto_cancel_marker` to cover the new marker. Done in the DB rather than a Directus hook because slot-cascade does raw knex inserts that bypass Directus action hooks — putting the rule in Postgres keeps the admin-UI path and the cascade path honest with one source of truth. Backfilled one prod row on apply (D2's 2026-05-20 regular training, where the admin had already booked a trial).
+
 ## v4.9.1 — 2026-05-13
 
 Cascaded trainings now auto-RSVP (absence-decline + team-toggle auto-confirm), and slot deletion cascades to future trainings.

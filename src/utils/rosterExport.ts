@@ -11,6 +11,11 @@ export type RosterExportRow = {
   positions: string
   status: string
   guests: number
+  /** True when the player themselves is a guest on this team (member_teams
+   *  `guest_level > 0`) — distinct from `guests` which counts plus-ones the
+   *  player brings. Rendered as ✓ in the PNG/PDF guests column and "Yes" in
+   *  CSV so a coach can spot guest players at a glance. */
+  isGuest: boolean
   note: string
   rsvpAt: string
   /** Localized "Edited to X by Y on Z" sentence when the row was last
@@ -38,7 +43,7 @@ export type RosterExportMeta = {
   positionsSummary: string
 }
 
-const COLUMNS = ['Name', 'Number', 'Positions', 'Status', 'Guests', 'Note', 'RSVP time', 'Edited by']
+const COLUMNS = ['Name', 'Number', 'Positions', 'Status', 'Guest', 'Plus-ones', 'Note', 'RSVP time', 'Edited by']
 
 /** Replace characters that break filenames on Windows/Unix. Em/en dashes
  *  collapse with surrounding whitespace into a single `_` so titles like
@@ -72,6 +77,7 @@ export function exportRosterCsv(rows: RosterExportRow[], meta: RosterExportMeta)
     r.jerseyNumber ?? '',
     r.positions,
     r.status,
+    r.isGuest ? 'Yes' : '',
     r.guests,
     r.note,
     r.rsvpAt,

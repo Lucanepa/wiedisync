@@ -106,4 +106,5 @@ export default {
   off: 'Désactivé',
   isTrialTraining: 'Entraînement d\'essai',
   isTrialTrainingHint: 'Visible publiquement sur la page d\'équipe lorsque l\'équipe est ouverte aux nouveaux joueurs.',
+  trialBadge: 'Essai',
 } as const

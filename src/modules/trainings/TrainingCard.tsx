@@ -70,6 +70,11 @@ export default function TrainingCard({ training, participations, myParticipation
           {!training.cancelled && warnings.length > 0 && (
             <ParticipationWarningBadge warnings={warnings} namespace="participation" />
           )}
+          {training.is_trial && (
+            <span className="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-700 dark:bg-brand-900/30 dark:text-brand-300">
+              {t('trialBadge')}
+            </span>
+          )}
           {training.cancelled && (
             <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
               {t('cancelled')}

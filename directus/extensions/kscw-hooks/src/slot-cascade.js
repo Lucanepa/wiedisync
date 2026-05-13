@@ -83,6 +83,22 @@ function rollingHorizonDate() {
   return toISODate(d)
 }
 
+/** Run a knex callback in a transaction that suppresses the
+ *  `trg_trainings_notify` Postgres trigger via the
+ *  `kscw.skip_trainings_notify` GUC (set by migration 054). Used so that
+ *  slot-cascade bulk INSERTs/UPDATEs/DELETEs on `trainings` don't
+ *  push-spam every member on every routine top-up.
+ *
+ *  Third arg to `set_config` is `is_local = true` → the setting is scoped
+ *  to the current transaction only, so it can't leak to other queries on
+ *  the pooled connection after COMMIT/ROLLBACK. */
+async function withTrainingsNotifySilenced(database, fn) {
+  return database.transaction(async (trx) => {
+    await trx.raw("SELECT set_config('kscw.skip_trainings_notify', 'on', true)")
+    return fn(trx)
+  })
+}
+
 /** Map our day_of_week (0=Mon … 6=Sun) to JS getDay() (0=Sun … 6=Sat). */
 function targetJsDay(dayOfWeek) {
   return (dayOfWeek + 1) % 7
@@ -163,7 +179,10 @@ async function expectedDates(database, slot, start, end) {
 }
 
 /** Initial generation when a new training slot is created. Mirrors the old
- *  React `generateTrainings` exactly, just running server-side now. */
+ *  React `generateTrainings` exactly, just running server-side now.
+ *  Notifications are suppressed for the bulk insert — admins creating a
+ *  new slot shouldn't push-spam every member with 30+ "training_created"
+ *  pings for the routine weekly skeleton. */
 export async function generateInitialTrainings(database, slotId, log) {
   const slot = await database('hall_slots').where('id', slotId).first()
   if (!slot || slot.slot_type !== 'training' || !slot.hall) return
@@ -174,25 +193,24 @@ export async function generateInitialTrainings(database, slotId, log) {
   const end = effectiveEnd(slot)
   const dates = await expectedDates(database, slot, start, end)
   if (dates.length === 0) return
-  // Avoid duplicates if generation reruns for any reason.
-  const existing = await database('trainings')
-    .where('hall_slot', slotId)
-    .select('date')
-  const existingSet = new Set(existing.map(r => toISODate(parseDate(r.date))))
-  const inserts = dates
-    .filter(d => !existingSet.has(d))
-    .map(d => ({
-      team: teamId,
-      hall_slot: slotId,
-      hall: slot.hall,
-      date: d,
-      start_time: slot.start_time,
-      end_time: slot.end_time,
-      cancelled: false,
-    }))
-  if (inserts.length === 0) return
-  await database('trainings').insert(inserts)
-  log?.info?.({ msg: '[slot-cascade] generated initial trainings', slot: slotId, count: inserts.length, event: 'slot_generate' })
+  await withTrainingsNotifySilenced(database, async (trx) => {
+    const existing = await trx('trainings').where('hall_slot', slotId).select('date')
+    const existingSet = new Set(existing.map(r => toISODate(parseDate(r.date))))
+    const inserts = dates
+      .filter(d => !existingSet.has(d))
+      .map(d => ({
+        team: teamId,
+        hall_slot: slotId,
+        hall: slot.hall,
+        date: d,
+        start_time: slot.start_time,
+        end_time: slot.end_time,
+        cancelled: false,
+      }))
+    if (inserts.length === 0) return
+    await trx('trainings').insert(inserts)
+    log?.info?.({ msg: '[slot-cascade] generated initial trainings', slot: slotId, count: inserts.length, event: 'slot_generate' })
+  })
 }
 
 /** Apply the cascade after a slot update. `pre` is the snapshot from the
@@ -207,113 +225,102 @@ export async function cascadeSlotUpdate(database, slotId, pre, log) {
 
   const today = todayStr()
 
-  // 1. Shift dates if day_of_week changed. Use signed delta so a switch from
-  //    Sunday (6) → Monday (0) lands on the same calendar week's Monday
-  //    rather than next week's. Range: -6..+6.
-  let dateShiftApplied = false
-  if (pre.day_of_week != null && post.day_of_week != null && pre.day_of_week !== post.day_of_week) {
-    const delta = post.day_of_week - pre.day_of_week
-    const future = await database('trainings')
-      .where('hall_slot', slotId)
-      .andWhere('date', '>=', today)
-      .select('id', 'date')
-    for (const tr of future) {
-      const newDate = parseDate(tr.date)
-      newDate.setUTCDate(newDate.getUTCDate() + delta)
-      const newDateStr = toISODate(newDate)
-      // Skip when shifted date already has a training (rare — happens if the
-      // user previously moved a single training manually onto the target
-      // weekday). Leave the conflict in place; admin can resolve.
-      const clash = await database('trainings')
-        .where('hall_slot', slotId)
-        .andWhere('date', newDateStr)
-        .andWhereNot('id', tr.id)
-        .first()
-      if (clash) continue
-      await database('trainings').where('id', tr.id).update({ date: newDateStr })
-    }
-    dateShiftApplied = true
-  }
-
-  // 2. Patch time / hall / team on remaining future trainings. Always pulls
-  //    the canonical post-state — covers the case where the date shift just
-  //    moved a row and we still need its new time/hall to be correct.
-  const timeChanged = pre.start_time !== post.start_time || pre.end_time !== post.end_time
-  const hallChanged = pre.hall !== post.hall
-  const preTeam = pre.teams[0] ?? null
-  const postTeam = post.teams[0] ?? null
-  const teamChanged = preTeam !== postTeam
-
-  if (timeChanged || hallChanged || teamChanged || dateShiftApplied) {
-    const patch = {}
-    if (timeChanged) { patch.start_time = post.start_time; patch.end_time = post.end_time }
-    if (hallChanged) patch.hall = post.hall
-    if (teamChanged && postTeam != null) patch.team = postTeam
-    if (Object.keys(patch).length > 0) {
-      await database('trainings')
+  // All mutations on `trainings` here are routine slot-edit propagation —
+  // members already know about the slot, they don't need a push per row.
+  // Single transaction with the silencer flag set.
+  await withTrainingsNotifySilenced(database, async (trx) => {
+    // 1. Shift dates if day_of_week changed. Use signed delta so a switch
+    //    from Sunday (6) → Monday (0) lands on the same calendar week's
+    //    Monday rather than next week's. Range: -6..+6.
+    let dateShiftApplied = false
+    if (pre.day_of_week != null && post.day_of_week != null && pre.day_of_week !== post.day_of_week) {
+      const delta = post.day_of_week - pre.day_of_week
+      const future = await trx('trainings')
         .where('hall_slot', slotId)
         .andWhere('date', '>=', today)
-        .update(patch)
+        .select('id', 'date')
+      for (const tr of future) {
+        const newDate = parseDate(tr.date)
+        newDate.setUTCDate(newDate.getUTCDate() + delta)
+        const newDateStr = toISODate(newDate)
+        // Skip when shifted date already has a training (rare — happens if
+        // the user previously moved a single training manually onto the
+        // target weekday). Leave the conflict in place; admin can resolve.
+        const clash = await trx('trainings')
+          .where('hall_slot', slotId)
+          .andWhere('date', newDateStr)
+          .andWhereNot('id', tr.id)
+          .first()
+        if (clash) continue
+        await trx('trainings').where('id', tr.id).update({ date: newDateStr })
+      }
+      dateShiftApplied = true
     }
-  }
 
-  // 3. Trim trainings outside the new validity window (future only — past
-  //    rows are immutable history). Lower bound (valid_from) always trims
-  //    for both indefinite and bounded slots. Upper bound (valid_until)
-  //    only trims when the slot is bounded — for indefinite slots the
-  //    rolling horizon is a *generation* target, not a deletion target,
-  //    so members never see existing trainings vanish when an admin tweaks
-  //    a slot's time or hall.
-  const newStart = effectiveStart(post)
-  const newEnd = effectiveEnd(post)
+    // 2. Patch time / hall / team on remaining future trainings.
+    const timeChanged = pre.start_time !== post.start_time || pre.end_time !== post.end_time
+    const hallChanged = pre.hall !== post.hall
+    const preTeam = pre.teams[0] ?? null
+    const postTeam = post.teams[0] ?? null
+    const teamChanged = preTeam !== postTeam
 
-  // Drop anything strictly before new start (today or valid_from, whichever
-  //  is later) — only delete uncancelled trainings to preserve manually
-  //  cancelled rows the admin may still want to see in history. They're
-  //  future-dated, so this is intentional: window shrinking removes the
-  //  weekly skeleton, not a coach's note.
-  await database('trainings')
-    .where('hall_slot', slotId)
-    .andWhere('date', '>=', today)
-    .andWhere('date', '<', newStart)
-    .del()
+    if (timeChanged || hallChanged || teamChanged || dateShiftApplied) {
+      const patch = {}
+      if (timeChanged) { patch.start_time = post.start_time; patch.end_time = post.end_time }
+      if (hallChanged) patch.hall = post.hall
+      if (teamChanged && postTeam != null) patch.team = postTeam
+      if (Object.keys(patch).length > 0) {
+        await trx('trainings')
+          .where('hall_slot', slotId)
+          .andWhere('date', '>=', today)
+          .update(patch)
+      }
+    }
 
-  // Upper-bound trim only for bounded slots. Indefinite = never delete the
-  // tail; rolling cron keeps it healthy.
-  if (!post.indefinite) {
-    await database('trainings')
+    // 3. Trim trainings outside the new validity window. Lower bound
+    //    always trims; upper bound only for bounded slots.
+    const newStart = effectiveStart(post)
+    const newEnd = effectiveEnd(post)
+
+    await trx('trainings')
       .where('hall_slot', slotId)
       .andWhere('date', '>=', today)
-      .andWhere('date', '>', newEnd)
+      .andWhere('date', '<', newStart)
       .del()
-  }
 
-  // 4. Generate missing dates inside the new window. Reuses the create-time
-  //    helper after first computing the existing set so we never double-
-  //    insert when only the time/hall changed.
-  const desired = await expectedDates(database, post, newStart, newEnd)
-  if (desired.length > 0 && postTeam != null) {
-    const existing = await database('trainings')
-      .where('hall_slot', slotId)
-      .andWhere('date', '>=', today)
-      .select('date')
-    const existingSet = new Set(existing.map(r => toISODate(parseDate(r.date))))
-    const inserts = desired
-      .filter(d => !existingSet.has(d))
-      .map(d => ({
-        team: postTeam,
-        hall_slot: slotId,
-        hall: post.hall,
-        date: d,
-        start_time: post.start_time,
-        end_time: post.end_time,
-        cancelled: false,
-      }))
-    if (inserts.length > 0) {
-      await database('trainings').insert(inserts)
-      log?.info?.({ msg: '[slot-cascade] filled missing trainings', slot: slotId, count: inserts.length, event: 'slot_fill' })
+    if (!post.indefinite) {
+      await trx('trainings')
+        .where('hall_slot', slotId)
+        .andWhere('date', '>=', today)
+        .andWhere('date', '>', newEnd)
+        .del()
     }
-  }
+
+    // 4. Generate missing dates inside the new window.
+    const desired = await expectedDates(trx, post, newStart, newEnd)
+    if (desired.length > 0 && postTeam != null) {
+      const existing = await trx('trainings')
+        .where('hall_slot', slotId)
+        .andWhere('date', '>=', today)
+        .select('date')
+      const existingSet = new Set(existing.map(r => toISODate(parseDate(r.date))))
+      const inserts = desired
+        .filter(d => !existingSet.has(d))
+        .map(d => ({
+          team: postTeam,
+          hall_slot: slotId,
+          hall: post.hall,
+          date: d,
+          start_time: post.start_time,
+          end_time: post.end_time,
+          cancelled: false,
+        }))
+      if (inserts.length > 0) {
+        await trx('trainings').insert(inserts)
+        log?.info?.({ msg: '[slot-cascade] filled missing trainings', slot: slotId, count: inserts.length, event: 'slot_fill' })
+      }
+    }
+  })
 }
 
 /** Nightly rolling top-up for indefinite training slots. Generates any
@@ -363,7 +370,7 @@ export async function topUpIndefiniteSlots(database, log) {
           cancelled: false,
         }))
       if (inserts.length === 0) continue
-      await database('trainings').insert(inserts)
+      await withTrainingsNotifySilenced(database, (trx) => trx('trainings').insert(inserts))
       totalCreated += inserts.length
       log?.info?.({ msg: '[slot-cascade] rolling top-up', slot: slotRow.id, count: inserts.length, event: 'slot_topup' })
     } catch (err) {

@@ -42,8 +42,19 @@ function toISODate(d) {
   return `${y}-${m}-${day}`
 }
 
-/** Parse YYYY-MM-DD into a UTC-anchored Date. */
+/** Coerce a Postgres `date` value (which pg-node returns as a JS Date
+ *  object in the server's TZ, not a string) or an ISO string to a
+ *  YYYY-MM-DD-anchored UTC Date. Bare `String(date)` produces
+ *  `"Wed Sep 01 2025 …"` which slice(0,10)'d gives `"Wed Sep 01"` and
+ *  blows up `new Date(...)` into Invalid Date → NaN-NaN-NaN downstream.
+ *  Branch on Date instance so we read the calendar fields directly. */
 function parseDate(s) {
+  if (s instanceof Date) {
+    const y = s.getFullYear()
+    const m = String(s.getMonth() + 1).padStart(2, '0')
+    const d = String(s.getDate()).padStart(2, '0')
+    return new Date(`${y}-${m}-${d}T00:00:00Z`)
+  }
   const str = String(s).slice(0, 10)
   return new Date(str + 'T00:00:00Z')
 }

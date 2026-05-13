@@ -104,7 +104,7 @@ export function trainingToVirtualSlot(
     valid_until: trainingDate,
     label: training.cancelled
       ? `Abgesagt${training.cancel_reason ? ': ' + training.cancel_reason : ''}`
-      : '',
+      : (training.is_trial ? 'Probetraining' : ''),
     notes: training.notes || '',
     _virtual: {
       source: 'training',
@@ -268,6 +268,19 @@ export function annotateFreedSlots(
     }
   }
 
+  // Index non-cancelled trainings by hall_slot + date — when a trial training
+  // replaces a regular one, the original is cancelled (auto_cancelled_by_trial)
+  // but the trial occupies the same slot. Without this guard, the slot would
+  // render as "Available" green while a probetraining is actually scheduled.
+  const replacementByKey = new Set<string>()
+  for (const vs of virtualSlots) {
+    if (vs._virtual?.source !== 'training') continue
+    const training = vs._virtual.sourceRecord as Training
+    if (training.cancelled || !training.hall_slot) continue
+    const dateStr = training.date.slice(0, 10)
+    replacementByKey.add(`${training.hall_slot}-${dateStr}`)
+  }
+
   return virtualSlots.map((vs) => {
     const meta = vs._virtual
     if (!meta) return vs
@@ -278,6 +291,10 @@ export function annotateFreedSlots(
       if (training.hall_slot) {
         const dateStr = training.date.slice(0, 10)
         if (isClosedOnDate(vs.hall, dateStr, closures)) return vs
+
+        // A replacement training (typically a trial) covers this slot —
+        // don't render the cancelled original as freed, the slot is taken.
+        if (replacementByKey.has(`${training.hall_slot}-${dateStr}`)) return vs
 
         const claim = claimsByKey.get(`${training.hall_slot}-${dateStr}`)
         return {

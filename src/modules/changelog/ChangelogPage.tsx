@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.9.2'
+const APP_VERSION = '4.9.3'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,21 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.9.3',
+    date: '2026-05-13',
+    sections: [
+      {
+        title: 'Trial training transforms the regular row in place — no more duplicate sibling',
+        items: [
+          'Migration 055 created a second row when a trial replaced a regular training on the same date — the original was cancelled, the trial added alongside. That meant the slot rendered as "Available" (because of the cancelled row) while the trial sat hidden behind it, and any RSVPs/notes on the original were stranded. Migration 056 replaces this with single-row transform-in-place: booking a trial on a date with an existing regular training now flips `is_trial = true` on that row, merges any participations the new payload carried (skipping duplicates), and discards the just-inserted trial row. The mental model matches what users expect: the training stays, it just becomes the trial. RSVPs / notes / overrides are preserved.',
+          'Implementation: AFTER INSERT trigger (not BEFORE) so Directus\'s `INSERT … RETURNING *` still gets a row back and the admin UI never sees a 0-rows error; the cleanup runs in the same statement so the briefly-existing row is gone before any side-effects can observe it. Frontend `onSave()` refetch immediately picks up the transformed regular row. Symmetric protection on the other side: when slot-cascade\'s rolling top-up later tries to insert a regular training on a date that already holds a trial, the duplicate is discarded.',
+          'Manual one-offs still work: if you create a trial for a date when the team doesn\'t regularly train (no matching regular row exists), a fresh standalone trial row is inserted, same as before.',
+          'Backfill on apply: the one existing legacy prod pair (D2 + trial 697 on 2026-05-20) was collapsed into a single row 221 marked `is_trial = true`, marker cleared.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.9.2',
     date: '2026-05-13',

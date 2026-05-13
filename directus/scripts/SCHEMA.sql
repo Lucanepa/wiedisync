@@ -2,7 +2,7 @@
 -- KSCW SCHEMA baseline — GENERATED, DO NOT EDIT BY HAND
 -- ============================================================================
 --
--- Generated:   2026-05-13T14:31:58.411Z
+-- Generated:   2026-05-13T19:53:54.739Z
 -- Source:      prod (db=postgres)
 -- Generator:   directus/scripts/regenerate-baseline.mjs
 --
@@ -1232,9 +1232,13 @@ CREATE FUNCTION public.trg_trainings_clear_auto_cancel_marker() RETURNS trigger
     SET search_path TO 'public'
     AS $$
 BEGIN
-  IF NEW.cancelled IS DISTINCT FROM OLD.cancelled
-     AND NEW.auto_cancelled_by_closure IS NOT DISTINCT FROM OLD.auto_cancelled_by_closure THEN
-    NEW.auto_cancelled_by_closure := NULL;
+  IF NEW.cancelled IS DISTINCT FROM OLD.cancelled THEN
+    IF NEW.auto_cancelled_by_closure IS NOT DISTINCT FROM OLD.auto_cancelled_by_closure THEN
+      NEW.auto_cancelled_by_closure := NULL;
+    END IF;
+    IF NEW.auto_cancelled_by_trial IS NOT DISTINCT FROM OLD.auto_cancelled_by_trial THEN
+      NEW.auto_cancelled_by_trial := NULL;
+    END IF;
   END IF;
   RETURN NEW;
 END;
@@ -1324,6 +1328,86 @@ BEGIN
       AND freed_reason = 'cancelled_training' AND status = 'active';
   END IF;
   RETURN NEW;
+END;
+$$;
+
+
+--
+-- Name: trg_trainings_trial_transform(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.trg_trainings_trial_transform() RETURNS trigger
+    LANGUAGE plpgsql
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_existing_id integer;
+BEGIN
+  -- Skip cancelled inserts and inserts missing the join keys.
+  IF NEW.cancelled = true OR NEW.team IS NULL OR NEW.date IS NULL THEN
+    RETURN NULL;
+  END IF;
+
+  IF NEW.is_trial = true THEN
+    -- New is a trial. Look for an existing non-cancelled regular sibling.
+    SELECT id INTO v_existing_id
+    FROM trainings
+    WHERE team = NEW.team
+      AND date = NEW.date
+      AND id <> NEW.id
+      AND is_trial = false
+      AND cancelled = false
+    LIMIT 1;
+
+    IF v_existing_id IS NOT NULL THEN
+      -- Merge participations of the just-inserted trial onto the regular,
+      -- then transform the regular and delete the trial.
+      INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff, auto_declined_by)
+      SELECT src.member, 'training', v_existing_id::text, src.status, src.note, src.guest_count, src.is_staff, src.auto_declined_by
+      FROM participations src
+      WHERE src.activity_type = 'training' AND src.activity_id = NEW.id::text
+        AND NOT EXISTS (
+          SELECT 1 FROM participations dst
+          WHERE dst.activity_type = 'training' AND dst.activity_id = v_existing_id::text
+            AND dst.member = src.member
+        );
+
+      DELETE FROM participations
+      WHERE activity_type = 'training' AND activity_id = NEW.id::text;
+
+      UPDATE trainings
+      SET is_trial = true,
+          notes = CASE WHEN NEW.notes IS NOT NULL AND NEW.notes <> ''
+                       THEN NEW.notes ELSE notes END,
+          min_participants = COALESCE(NEW.min_participants, min_participants),
+          max_participants = COALESCE(NEW.max_participants, max_participants),
+          excluded_guest_levels = COALESCE(NEW.excluded_guest_levels, excluded_guest_levels),
+          require_note_if_absent = NEW.require_note_if_absent
+      WHERE id = v_existing_id;
+
+      DELETE FROM trainings WHERE id = NEW.id;
+    END IF;
+    -- else: trial standalone, no existing regular — leave it alone.
+
+  ELSE
+    -- New is a regular. If a trial already covers this date (e.g.
+    -- slot-cascade rolling top-up landing post-trial-booking),
+    -- discard the duplicate so the trial stays the only row.
+    IF EXISTS (
+      SELECT 1 FROM trainings
+      WHERE team = NEW.team
+        AND date = NEW.date
+        AND id <> NEW.id
+        AND is_trial = true
+        AND cancelled = false
+    ) THEN
+      DELETE FROM participations
+      WHERE activity_type = 'training' AND activity_id = NEW.id::text;
+      DELETE FROM trainings WHERE id = NEW.id;
+    END IF;
+  END IF;
+
+  RETURN NULL;
 END;
 $$;
 
@@ -3492,7 +3576,8 @@ CREATE TABLE public.trainings (
     auto_cancelled_by_closure integer,
     excluded_guest_levels jsonb DEFAULT '[]'::jsonb NOT NULL,
     auto_confirm_rsvp boolean,
-    is_trial boolean DEFAULT false NOT NULL
+    is_trial boolean DEFAULT false NOT NULL,
+    auto_cancelled_by_trial integer
 );
 
 
@@ -3508,6 +3593,13 @@ COMMENT ON COLUMN public.trainings.auto_confirm_rsvp IS 'NULL = inherit teams.fe
 --
 
 COMMENT ON COLUMN public.trainings.is_trial IS 'When true, the training is a public trial training (Probetraining) — surfaced on the kscw-website team page next to the "Get in touch" CTA for teams with open_for_players=true.';
+
+
+--
+-- Name: COLUMN trainings.auto_cancelled_by_trial; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.trainings.auto_cancelled_by_trial IS 'When non-null, this training was auto-cancelled because trial training id=<this> exists for the same team+date. Cleared automatically by trg_trainings_clear_auto_cancel_marker when a user manually toggles `cancelled`.';
 
 
 --
@@ -5857,6 +5949,13 @@ CREATE INDEX idx_trainings_auto_cancelled_by_closure ON public.trainings USING b
 
 
 --
+-- Name: idx_trainings_auto_cancelled_by_trial; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_trainings_auto_cancelled_by_trial ON public.trainings USING btree (auto_cancelled_by_trial) WHERE (auto_cancelled_by_trial IS NOT NULL);
+
+
+--
 -- Name: member_teams_member_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6449,6 +6548,13 @@ CREATE TRIGGER trg_trainings_notify AFTER INSERT OR DELETE OR UPDATE ON public.t
 --
 
 CREATE TRIGGER trg_trainings_revoke_claims AFTER UPDATE ON public.trainings FOR EACH ROW EXECUTE FUNCTION public.trg_trainings_revoke_claims();
+
+
+--
+-- Name: trainings trg_trainings_trial_transform; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_trainings_trial_transform AFTER INSERT ON public.trainings FOR EACH ROW EXECUTE FUNCTION public.trg_trainings_trial_transform();
 
 
 --

@@ -2,6 +2,15 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## v4.9.3 — 2026-05-13
+
+Trial training now transforms the existing regular row in place instead of creating a cancelled-sibling pair.
+
+- **Single-row model (migration 056).** Replaces 055's "two rows, cancel one" approach. Booking a trial on a date with an existing regular training flips `is_trial = true` on that row, merges any participations from the just-inserted trial (NOT EXISTS guard against duplicates), then deletes the trial sibling — all in a single AFTER INSERT trigger statement. Frontend `onSave()` refetch picks up the transformed row immediately. Symmetric: slot-cascade rolling top-up landing on a trial-occupied date discards the duplicate regular insert. Standalone trial (no matching regular for that date) still works as a fresh INSERT.
+- **Why AFTER INSERT, not BEFORE.** BEFORE INSERT returning NULL would zero out `INSERT … RETURNING *`, breaking the admin UI's expectation of getting an inserted row back. AFTER INSERT lets the statement complete normally, then cleans up — Directus's response still carries the briefly-existing row, side-effects (action hooks, applyTrainingAutoRSVP) gracefully no-op on the deleted ID, and no frontend plumbing was needed.
+- **Backfill.** The one legacy dual-row pair on prod (D2 + trial 697 on 2026-05-20) was collapsed: training 221 marked `is_trial=true`, marker cleared, trial 697 deleted, participations preserved.
+- **Hallenplan rendering follow-up.** The "trial-replaced slot rendering as Available" UI patch from earlier today (defensive fix for legacy dual-row data) stays in place — harmless when no such pairs exist post-migration.
+
 ## v4.9.2 — 2026-05-13
 
 Trial training (Probetraining) now overrides the regular team training on the same date.

@@ -59,12 +59,28 @@ function parseDate(s) {
   return new Date(str + 'T00:00:00Z')
 }
 
-/** Season-end fallback (May 31 of current or next season) — same rule as
- *  the React editor so create-time generation matches. */
+/** Rolling-horizon length for indefinite training slots. "Indefinite" can't
+ *  mean literally forever (the trainings table would be unbounded), so the
+ *  cron + cascade keep `INDEFINITE_HORIZON_WEEKS` worth of upcoming
+ *  trainings always populated and never trim past that point. 12 weeks is
+ *  the PlayerPlus default and matches the typical "next 3 months" planning
+ *  window members care about. Tune here when needed. */
+const INDEFINITE_HORIZON_WEEKS = 12
+
+/** Season-end fallback for non-indefinite slots that omit `valid_until` —
+ *  legacy create-time behavior the React editor used to apply. Returns
+ *  May 31 of current or next season. */
 function seasonEndDate() {
   const now = new Date()
   const year = now.getUTCMonth() < 5 ? now.getUTCFullYear() : now.getUTCFullYear() + 1
   return `${year}-05-31`
+}
+
+/** YYYY-MM-DD `INDEFINITE_HORIZON_WEEKS` weeks from today. */
+function rollingHorizonDate() {
+  const d = parseDate(todayStr())
+  d.setUTCDate(d.getUTCDate() + INDEFINITE_HORIZON_WEEKS * 7)
+  return toISODate(d)
 }
 
 /** Map our day_of_week (0=Mon … 6=Sun) to JS getDay() (0=Sun … 6=Sat). */
@@ -101,10 +117,13 @@ export async function snapshotSlot(database, slotId) {
   }
 }
 
-/** Effective window end for generation: explicit valid_until wins, else
- *  season-end when indefinite or unset. */
+/** Effective window end for generation. For indefinite slots this is the
+ *  rolling horizon (today + N weeks) — the upper bound is "soft" because
+ *  the nightly cron keeps extending it. For bounded slots, explicit
+ *  `valid_until` wins; falls back to season-end on legacy rows that have
+ *  neither indefinite nor valid_until set. */
 function effectiveEnd(slot) {
-  if (slot.indefinite) return seasonEndDate()
+  if (slot.indefinite) return rollingHorizonDate()
   return slot.valid_until || seasonEndDate()
 }
 
@@ -239,8 +258,12 @@ export async function cascadeSlotUpdate(database, slotId, pre, log) {
   }
 
   // 3. Trim trainings outside the new validity window (future only — past
-  //    rows are immutable history). Indefinite means "no upper bound until
-  //    season end", so the trim uses `seasonEndDate()` as the ceiling there.
+  //    rows are immutable history). Lower bound (valid_from) always trims
+  //    for both indefinite and bounded slots. Upper bound (valid_until)
+  //    only trims when the slot is bounded — for indefinite slots the
+  //    rolling horizon is a *generation* target, not a deletion target,
+  //    so members never see existing trainings vanish when an admin tweaks
+  //    a slot's time or hall.
   const newStart = effectiveStart(post)
   const newEnd = effectiveEnd(post)
 
@@ -255,12 +278,15 @@ export async function cascadeSlotUpdate(database, slotId, pre, log) {
     .andWhere('date', '<', newStart)
     .del()
 
-  // Drop anything strictly after new end.
-  await database('trainings')
-    .where('hall_slot', slotId)
-    .andWhere('date', '>=', today)
-    .andWhere('date', '>', newEnd)
-    .del()
+  // Upper-bound trim only for bounded slots. Indefinite = never delete the
+  // tail; rolling cron keeps it healthy.
+  if (!post.indefinite) {
+    await database('trainings')
+      .where('hall_slot', slotId)
+      .andWhere('date', '>=', today)
+      .andWhere('date', '>', newEnd)
+      .del()
+  }
 
   // 4. Generate missing dates inside the new window. Reuses the create-time
   //    helper after first computing the existing set so we never double-
@@ -288,4 +314,61 @@ export async function cascadeSlotUpdate(database, slotId, pre, log) {
       log?.info?.({ msg: '[slot-cascade] filled missing trainings', slot: slotId, count: inserts.length, event: 'slot_fill' })
     }
   }
+}
+
+/** Nightly rolling top-up for indefinite training slots. Generates any
+ *  missing trainings between today and `today + INDEFINITE_HORIZON_WEEKS`,
+ *  skipping closures and existing dates. Bounded slots are left alone —
+ *  their valid_until is the source of truth. Past trainings are never
+ *  touched.
+ *
+ *  Idempotent: safe to run every night; only new dates that crossed into
+ *  the rolling window get an INSERT, everything else is a no-op. Returns
+ *  the total number of trainings created across all slots so the cron
+ *  caller can heartbeat it. */
+export async function topUpIndefiniteSlots(database, log) {
+  const slots = await database('hall_slots')
+    .where('slot_type', 'training')
+    .andWhere('indefinite', true)
+    .select('*')
+  if (slots.length === 0) return 0
+  const today = todayStr()
+  const horizon = rollingHorizonDate()
+  let totalCreated = 0
+  for (const slotRow of slots) {
+    try {
+      if (!slotRow.hall) continue
+      const teams = await getSlotTeams(database, slotRow.id)
+      const teamId = teams[0]
+      if (!teamId) continue
+      // Respect valid_from when set — don't generate before a slot starts.
+      const slotStart = slotRow.valid_from ? toISODate(parseDate(slotRow.valid_from)) : today
+      const start = slotStart > today ? slotStart : today
+      const desired = await expectedDates(database, slotRow, start, horizon)
+      if (desired.length === 0) continue
+      const existing = await database('trainings')
+        .where('hall_slot', slotRow.id)
+        .andWhere('date', '>=', today)
+        .select('date')
+      const existingSet = new Set(existing.map(r => toISODate(parseDate(r.date))))
+      const inserts = desired
+        .filter(d => !existingSet.has(d))
+        .map(d => ({
+          team: teamId,
+          hall_slot: slotRow.id,
+          hall: slotRow.hall,
+          date: d,
+          start_time: slotRow.start_time,
+          end_time: slotRow.end_time,
+          cancelled: false,
+        }))
+      if (inserts.length === 0) continue
+      await database('trainings').insert(inserts)
+      totalCreated += inserts.length
+      log?.info?.({ msg: '[slot-cascade] rolling top-up', slot: slotRow.id, count: inserts.length, event: 'slot_topup' })
+    } catch (err) {
+      log?.error?.({ msg: `[slot-cascade] top-up failed for slot ${slotRow.id}: ${err.message}`, event: 'slot_topup_failed', slot: slotRow.id, stack: err.stack })
+    }
+  }
+  return totalCreated
 }

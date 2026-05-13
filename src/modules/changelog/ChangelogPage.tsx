@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.8.9'
+const APP_VERSION = '4.9.0'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,21 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.9.0',
+    date: '2026-05-13',
+    sections: [
+      {
+        title: 'Hall-slot edits now cascade backend-wide, indefinite slots roll forward automatically',
+        items: [
+          'Editing a recurring hall-slot (time, hall, team, weekday, validity window) now propagates to every upcoming training of that slot — regardless of whether the edit came from the React Hallenplan editor, the Directus admin UI, or REST. Previously the cascade lived only in the React editor, so admin-UI / API edits silently diverged. Past trainings stay frozen as historical snapshots; weekday changes shift each future training to the same Mon–Sun week\'s new day, so RSVPs / notes / attendance carry over instead of being regenerated.',
+          'Indefinite slots now have a real rolling 12-week horizon. A nightly cron at 04:00 Zurich keeps the next ~3 months of trainings always populated; cascade no longer trims the tail when indefinite is on, so editing slot time/hall never deletes existing future trainings. (`INDEFINITE_HORIZON_WEEKS` tunable in `slot-cascade.js`.) Closures and existing dates are skipped — current max date is 2026-07-10 because Sommerferien runs 07-13 → mid-August.',
+          'Bulk auto-generated trainings (slot create, slot edit, nightly top-up) no longer push-spam team members. New Postgres GUC `kscw.skip_trainings_notify` set transaction-locally by the hook lets `trg_trainings_notify` short-circuit during routine fan-out, while one-off manual creates / updates via the admin still notify as before. (Migration 054.)',
+          'Roster export (CSV / PNG / PDF) now sorts by surname instead of first name, and adds a Guest column (✓ in PNG/PDF, "Yes" in CSV) populated from `member_teams.guest_level` — distinct from the existing plus-ones column so a coach can spot guest players at a glance.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.8.9',
     date: '2026-05-12',

@@ -2,7 +2,7 @@
 -- KSCW SCHEMA baseline — GENERATED, DO NOT EDIT BY HAND
 -- ============================================================================
 --
--- Generated:   2026-05-12T10:13:49.833Z
+-- Generated:   2026-05-13T14:31:58.411Z
 -- Source:      prod (db=postgres)
 -- Generator:   directus/scripts/regenerate-baseline.mjs
 --
@@ -1247,12 +1247,17 @@ $$;
 
 CREATE FUNCTION public.trg_trainings_notify() RETURNS trigger
     LANGUAGE plpgsql
-    SET search_path TO 'public'
     AS $$
 DECLARE
   v_type text; v_title text; v_body text; v_team_id int; v_id int;
   v_hall text;
 BEGIN
+  -- Silencer for bulk auto-generation (slot-cascade hook). Second arg
+  -- `true` means "return empty string if not set" instead of raising.
+  IF current_setting('kscw.skip_trainings_notify', true) = 'on' THEN
+    RETURN COALESCE(NEW, OLD);
+  END IF;
+
   IF TG_OP = 'INSERT' THEN
     v_team_id := NEW.team; v_id := NEW.id;
     IF v_team_id IS NULL THEN RETURN NEW; END IF;
@@ -1299,7 +1304,7 @@ BEGIN
   SELECT mt.member, v_type, v_title, v_body, 'training', v_id::text, v_team_id, false
   FROM member_teams mt WHERE mt.team = v_team_id;
 
-  IF TG_OP = 'DELETE' THEN RETURN OLD; ELSE RETURN NEW; END IF;
+  RETURN COALESCE(NEW, OLD);
 END;
 $$;
 
@@ -1429,7 +1434,9 @@ CREATE TABLE public.absences (
     date_created timestamp with time zone,
     date_updated timestamp with time zone,
     last_edited_by uuid,
-    last_edited_at timestamp with time zone
+    last_edited_at timestamp with time zone,
+    last_edited_name text,
+    last_edited_role text
 );
 
 
@@ -1445,6 +1452,20 @@ COMMENT ON COLUMN public.absences.last_edited_by IS 'directus_users.id of the wr
 --
 
 COMMENT ON COLUMN public.absences.last_edited_at IS 'Wall-clock of the most recent authenticated write. Null when never touched by an authenticated session.';
+
+
+--
+-- Name: COLUMN absences.last_edited_name; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.absences.last_edited_name IS 'Display name of the writer on the most recent create/update — first_name + last_name from directus_users. Stamped by kscw-hooks filter, null for system-context writes and pre-053 rows.';
+
+
+--
+-- Name: COLUMN absences.last_edited_role; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.absences.last_edited_role IS 'Role of the writer relative to the affected member: ''coach'', ''team_responsible'', ''admin'', or ''staff''. Resolved by checking teams_coaches / teams_responsibles for any overlap with the affected member''s teams. Stamped by kscw-hooks filter.';
 
 
 --
@@ -1929,7 +1950,8 @@ CREATE TABLE public.events (
     date_updated timestamp with time zone,
     invited_roles json,
     send_email_invite boolean DEFAULT false,
-    allow_maybe boolean DEFAULT true
+    allow_maybe boolean DEFAULT true,
+    signup_url character varying(500)
 );
 
 

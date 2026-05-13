@@ -2,6 +2,21 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## v4.9.0 — 2026-05-13
+
+Slot-edit cascade moved server-side, indefinite slots get a real rolling horizon, push notifications no longer fan out for auto-generated trainings, and the roster export grows a Guest column.
+
+- **Backend hall-slot cascade (`kscw-hooks/slot-cascade.js`).** The React Hallenplan editor used to be the only path that propagated slot edits to upcoming trainings; admin-UI / REST edits silently diverged. The cascade now lives in a Directus action hook on `hall_slots.items.update`, so every edit path produces the same result. Scope:
+  - `start_time` / `end_time` / `hall` / `team` cascade in place on `date >= today`.
+  - `day_of_week` change shifts each future training by `(new − old)` days, keeping the row in the same Mon–Sun calendar week so RSVPs / notes / attendance carry over instead of regenerating.
+  - `valid_from` shrinks → drop trainings before the new start. `valid_until` shrinks → drop trainings after the new end (bounded slots only — indefinite never trims the tail). Window extension → generate missing dates inside the new window, skipping closures + existing rows.
+  - Initial generation on slot create moved into the same hook (`hall_slots.items.create`) so rules match.
+- **Indefinite = rolling 12-week horizon.** "Indefinite" used to mean "extends to season-end (May 31)", which meant every cascade silently truncated trainings past that point. Now `indefinite=true` slots have a soft rolling horizon (`INDEFINITE_HORIZON_WEEKS` constant). A new nightly cron at 02:00 UTC / 04:00 Zurich walks every indefinite training slot and tops up the next ~12 weeks of trainings (skip closures + existing dates). Cascade no longer deletes anything past the horizon on indefinite slots, so admin slot edits never lose far-future trainings. Current dev/prod max date is 2026-07-10 because Sommerferien (07-13 → 08-16) blocks everything within reach.
+- **Push-notification silencer for bulk auto-generation (migration 054).** `trg_trainings_notify` previously fanned out a push to every team member on every INSERT/UPDATE/DELETE of a `trainings` row. With 54 indefinite slots × nightly top-up, that's overnight push spam. New transaction-scoped Postgres GUC `kscw.skip_trainings_notify` lets the cascade hook opt out: every bulk INSERT/UPDATE/DELETE in `slot-cascade.js` now runs inside a knex transaction that calls `set_config(..., true)`. Third-arg `true` = transaction-local, so the flag never leaks to other queries on the pooled connection. One-off CRUD via Directus admin / REST stays loud as before.
+- **Slot extension to 2026-06-27.** All 54 training slots on dev + prod patched: `valid_until = 2026-06-27`, then flipped back to `indefinite = true` via direct SQL once trainings were generated. The new cron picks it up from there.
+- **Roster export sorted by surname + Guest column.** Roster CSV/PNG/PDF previously sorted by first name. Admins clip these to a board where surname order is the convention, so the export now sorts by `last_name` then `first_name`. New "Guest" column (✓ in PNG/PDF, "Yes" in CSV) populated from `member_teams.guest_level` — distinct from the existing plus-ones column so a coach can spot guest players at a glance. Modal display order unchanged.
+- **Bug fixed during this work: `pg-node` returns Postgres `date` columns as JS Date objects in the server-local TZ, not ISO strings.** First dev cascade run got `String(date).slice(0, 10)` → `"Wed Sep 01"` → `new Date(…)` → `Invalid Date` → cascade aborted at the trim step with `invalid input syntax for type date: "NaN-NaN-NaN"`. Slot rows were already committed (action hooks fire post-commit), so the fix was forward-only: `parseDate` now branches on `instanceof Date` and reads calendar fields directly. Documented in `INFRA.md → Troubleshooting & Gotchas`.
+
 ## v4.8.9 — 2026-05-12
 
 Two participation-modal fixes.

@@ -10,22 +10,27 @@ const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET || ''
 const T = {
   de: {
     subject: (subj, name) => `[KSCW Kontakt] ${subj || 'Anfrage'} von ${name}`,
+    teamSubject: (team) => `Kontakt ${team}`,
     nameLabel: 'Name', emailLabel: 'E-Mail', subjectLabel: 'Betreff',
   },
   gsw: {
     subject: (subj, name) => `[KSCW Kontakt] ${subj || 'Aafrog'} vo ${name}`,
+    teamSubject: (team) => `Kontakt ${team}`,
     nameLabel: 'Name', emailLabel: 'E-Mail', subjectLabel: 'Betreff',
   },
   en: {
     subject: (subj, name) => `[KSCW Contact] ${subj || 'Inquiry'} from ${name}`,
+    teamSubject: (team) => `Contact ${team}`,
     nameLabel: 'Name', emailLabel: 'Email', subjectLabel: 'Subject',
   },
   fr: {
     subject: (subj, name) => `[KSCW Contact] ${subj || 'Demande'} de ${name}`,
+    teamSubject: (team) => `Contact ${team}`,
     nameLabel: 'Nom', emailLabel: 'E-mail', subjectLabel: 'Objet',
   },
   it: {
     subject: (subj, name) => `[KSCW Contatto] ${subj || 'Richiesta'} da ${name}`,
+    teamSubject: (team) => `Contatto ${team}`,
     nameLabel: 'Nome', emailLabel: 'E-mail', subjectLabel: 'Oggetto',
   },
 }
@@ -56,7 +61,8 @@ export function registerContactForm(router, { database, logger, services, getSch
 
   router.post('/contact', async (req, res) => {
     try {
-      const { name: rawName, email, subject: rawSubject, message, team_id, sport, turnstile_token } = req.body
+      const { name: rawName, email, subject: rawSubject, message, team_id, sport, turnstile_token, locale: rawLocale } = req.body
+      const senderLocale = CF_LOCALES.includes(rawLocale) ? rawLocale : 'de'
       if (!rawName || !email || !message) {
         return res.status(400).json({ error: 'name, email, message required' })
       }
@@ -76,23 +82,31 @@ export function registerContactForm(router, { database, logger, services, getSch
         return res.status(400).json({ error: 'Captcha verification failed' })
       }
 
-      // Determine recipient
+      // Determine recipient — M2M: teams_coaches/teams_responsibles
+      // (teams_id, members_id) join → members.email
       let toEmail = GENERAL_EMAIL
+      let teamName = null
       if (team_id) {
-        // Try to find team coaches/TR
-        const coaches = await database('teams_coaches')
-          .join('members', 'members.id', 'teams_coaches.members_id')
-          .where('teams_coaches.teams_id', team_id)
-          .whereNotNull('members.email')
-          .select('members.email')
-        const trs = await database('teams_responsibles')
-          .join('members', 'members.id', 'teams_responsibles.members_id')
-          .where('teams_responsibles.teams_id', team_id)
-          .whereNotNull('members.email')
-          .select('members.email')
+        const [coaches, trs, teamRow] = await Promise.all([
+          database('teams_coaches')
+            .join('members', 'members.id', 'teams_coaches.members_id')
+            .where('teams_coaches.teams_id', team_id)
+            .whereNotNull('members.email')
+            .select('members.email'),
+          database('teams_responsibles')
+            .join('members', 'members.id', 'teams_responsibles.members_id')
+            .where('teams_responsibles.teams_id', team_id)
+            .whereNotNull('members.email')
+            .select('members.email'),
+          database('teams').where('id', team_id).first('id', 'full_name', 'name'),
+        ])
         const recipients = [...coaches, ...trs]
           .map(r => r.email).filter(e => e && !e.includes('@placeholder'))
-        if (recipients.length > 0) toEmail = recipients.join(',')
+        // Dedupe — a member may be both coach and TR on the same team
+        const unique = Array.from(new Set(recipients))
+        if (unique.length > 0) toEmail = unique.join(',')
+        else if (sport && SPORT_EMAILS[sport]) toEmail = SPORT_EMAILS[sport]
+        if (teamRow) teamName = teamRow.full_name || teamRow.name || null
       } else if (sport && SPORT_EMAILS[sport]) {
         toEmail = SPORT_EMAILS[sport]
       }
@@ -109,9 +123,16 @@ export function registerContactForm(router, { database, logger, services, getSch
         const tos = buckets[loc]
         if (!tos.length) continue
         const tt = T[loc] || T.de
+        // For team contacts, use the sender's locale for the subject so the
+        // user-facing line matches the page they sent from ("Contact H1" /
+        // "Kontakt H1"). The body still translates per recipient preference.
+        const senderTT = T[senderLocale] || T.de
+        const mailSubject = (team_id && teamName)
+          ? senderTT.teamSubject(teamName)
+          : tt.subject(subject, name)
         await mail.send({
           to: tos.join(','),
-          subject: tt.subject(subject, name),
+          subject: mailSubject,
           text: `${tt.nameLabel}: ${name}\n${tt.emailLabel}: ${email}\n${tt.subjectLabel}: ${subject || '-'}\n\n${message}`,
         })
       }

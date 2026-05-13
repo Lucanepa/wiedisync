@@ -73,6 +73,11 @@ export default function TrainingDetailModal({ training, onClose }: TrainingDetai
           {/* Team + Date header */}
           <div className="flex items-center gap-2">
             {team && <TeamChip team={team.name} size="sm" />}
+            {training.is_trial && (
+              <span className="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-700 dark:bg-brand-900/30 dark:text-brand-300">
+                {t('trialBadge')}
+              </span>
+            )}
             {training.cancelled && (
               <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-400">
                 {t('cancelled')}

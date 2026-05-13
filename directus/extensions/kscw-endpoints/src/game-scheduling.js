@@ -123,9 +123,24 @@ export function registerGameScheduling(router, { database, logger, services, get
         opponent.first_viewed_at = nowIso
       }
 
+      // Exclude slots whose date falls within any event linked to this team
+      // (single-day or multi-day) — e.g. tournament weekend, team trip. Filter
+      // at read time (not generation) so events added after slot generation
+      // are respected without regenerating. Applies even on Spielsamstage.
       const slots = await database('game_scheduling_slots')
         .where('kscw_team', opponent.kscw_team)
         .whereNot('status', 'blocked')
+        .whereNotExists(function () {
+          this.select(database.raw('1'))
+            .from('events as e')
+            .join('events_teams as et', 'et.events_id', 'e.id')
+            .whereRaw('et.teams_id = ?', [opponent.kscw_team])
+            .whereRaw(
+              'game_scheduling_slots.date BETWEEN ' +
+              "(e.start_date AT TIME ZONE 'Europe/Zurich')::date " +
+              "AND (COALESCE(e.end_date, e.start_date) AT TIME ZONE 'Europe/Zurich')::date"
+            )
+        })
         .orderBy('date')
 
       const bookings = await database('game_scheduling_bookings')
@@ -216,6 +231,22 @@ export function registerGameScheduling(router, { database, logger, services, get
         }
         if (slot.kscw_team !== opponent.kscw_team) {
           throw Object.assign(new Error('Slot does not belong to this team'), { httpStatus: 400 })
+        }
+
+        // Re-check event coverage at booking time: an event may have been
+        // added between when the opponent loaded the slot list and clicked
+        // book. Mirrors the read-time filter in /terminplanung/slots.
+        const eventCover = await trx('events as e')
+          .join('events_teams as et', 'et.events_id', 'e.id')
+          .where('et.teams_id', opponent.kscw_team)
+          .whereRaw(
+            "?::date BETWEEN (e.start_date AT TIME ZONE 'Europe/Zurich')::date " +
+            "AND (COALESCE(e.end_date, e.start_date) AT TIME ZONE 'Europe/Zurich')::date",
+            [slot.date]
+          )
+          .first()
+        if (eventCover) {
+          throw Object.assign(new Error('Slot not available — team has an event on this date'), { httpStatus: 400 })
         }
 
         const existing = await trx('game_scheduling_bookings')

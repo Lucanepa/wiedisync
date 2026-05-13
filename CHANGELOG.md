@@ -2,6 +2,13 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## v4.9.1 — 2026-05-13
+
+Cascaded trainings now auto-RSVP (absence-decline + team-toggle auto-confirm), and slot deletion cascades to future trainings.
+
+- **Auto-RSVP applies to cascaded trainings.** Slot cascade (initial generate / fill-on-edit / nightly indefinite top-up) does bulk `INSERT INTO trainings` directly via knex, bypassing the Directus `trainings.items.create` event — so the existing auto-decline (absence overlap) + auto-confirm (`training_auto_confirm` team toggle) passes never fired. Refactored: the cascade functions now return created training IDs; the wiring code in `kscw-hooks/index.js` invokes a shared `applyTrainingAutoRSVP(id)` for each. Backfilled in this release for the 209 already-generated trainings (112 absences → declined, 200 → confirmed on prod).
+- **`hall_slots.items.delete` cascade.** Deleting a slot now wipes its future trainings + their participations in the same transaction (date ≥ today, Zurich tz). Historic trainings stay frozen as attendance records. Closes the orphan-FK gap that left 11 H3 Monday Manegg trainings dangling after slot 6 was deleted via admin UI.
+
 ## v4.9.0 — 2026-05-13
 
 Slot-edit cascade moved server-side, indefinite slots get a real rolling horizon, push notifications no longer fan out for auto-generated trainings, and the roster export grows a Guest column.

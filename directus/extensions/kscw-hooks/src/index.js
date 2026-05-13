@@ -1293,17 +1293,17 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     return ins?.rowCount || 0
   }
 
-  // When a training/game is created, auto-decline for members with overlapping absences
-  action('trainings.items.create', async ({ key }) => {
+  // Shared per-training pass: absence-decline then auto-confirm. Used by
+  // both the trainings.items.create hook and the slot-cascade callsites
+  // (initial generation, slot update fill, nightly rolling top-up) — those
+  // do bulk INSERTs directly on `trainings` and bypass the Directus
+  // item-create event, so without this we'd miss every cascaded training.
+  async function applyTrainingAutoRSVP(trainingId) {
     try {
-      const training = await database('trainings').where('id', key).first()
+      const training = await database('trainings').where('id', trainingId).first()
       if (!training || training.cancelled || !training.team || !training.date) return
       const dateStr = safeDateStr(training.date)
       if (!dateStr) return
-
-      // Audit 2026-05-12 #9 — dateStr is regex-validated by safeDateStr,
-      // but parameterize through the driver anyway (defense-in-depth: no
-      // string concatenation into the SQL fragment).
       const res = await database.raw(`
         INSERT INTO participations (member, activity_type, activity_id, status, note, guest_count, is_staff, auto_declined_by)
         SELECT mt.member, 'training', ?::text, 'declined', COALESCE(a.reason, ''), 0, false, a.id
@@ -1317,16 +1317,20 @@ export default ({ action, filter, init, schedule }, { services, database, logger
             SELECT 1 FROM participations p
             WHERE p.activity_type = 'training' AND p.activity_id = ?::text AND p.member = mt.member
           )
-      `, [String(key), training.team, dateStr, dateStr, dateStr, String(key)])
-      if (res?.rowCount > 0) log.info(`[absence-auto-decline] Training ${key}: ${res.rowCount} members auto-declined`)
-
-      // Auto-confirm pass (PlayerPlus-style opt-out RSVP). Considers per-activity
-      // override + team default. NOT EXISTS protects absence-declined rows above.
-      const confirmed = await autoConfirmTraining(key)
-      if (confirmed > 0) log.info(`[auto-confirm] Training ${key}: ${confirmed} members auto-confirmed`)
+      `, [String(trainingId), training.team, dateStr, dateStr, dateStr, String(trainingId)])
+      if (res?.rowCount > 0) log.info(`[absence-auto-decline] Training ${trainingId}: ${res.rowCount} members auto-declined`)
+      const confirmed = await autoConfirmTraining(trainingId)
+      if (confirmed > 0) log.info(`[auto-confirm] Training ${trainingId}: ${confirmed} members auto-confirmed`)
     } catch (err) {
-      log.error({ msg: `[absence-auto-decline] Training create: ${err.message}`, event: 'absence_auto_decline_training', key, stack: err.stack })
+      log.error({ msg: `[auto-rsvp] Training ${trainingId}: ${err.message}`, event: 'training_auto_rsvp_failed', trainingId, stack: err.stack })
     }
+  }
+
+  // When a training is created via Directus, run the auto-RSVP pass.
+  // (Slot-cascade bulk inserts call applyTrainingAutoRSVP directly — see
+  // the hall_slots.items.create / .update actions and the nightly cron.)
+  action('trainings.items.create', async ({ key }) => {
+    await applyTrainingAutoRSVP(key)
   })
 
   action('games.items.create', async ({ key }) => {
@@ -2994,7 +2998,8 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       const pre = pendingSlotPreState.get(id)
       pendingSlotPreState.delete(id)
       try {
-        await cascadeSlotUpdate(database, id, pre, log)
+        const createdIds = await cascadeSlotUpdate(database, id, pre, log)
+        for (const tid of createdIds || []) await applyTrainingAutoRSVP(tid)
       } catch (err) {
         log.error({ msg: `[slot-cascade] update cascade failed: ${err.message}`, event: 'slot_cascade_update_failed', slot: id, stack: err.stack })
       }
@@ -3003,10 +3008,38 @@ export default ({ action, filter, init, schedule }, { services, database, logger
 
   action('hall_slots.items.create', async ({ key }) => {
     try {
-      await generateInitialTrainings(database, key, log)
+      const createdIds = await generateInitialTrainings(database, key, log)
+      for (const tid of createdIds || []) await applyTrainingAutoRSVP(tid)
     } catch (err) {
       log.error({ msg: `[slot-cascade] initial generation failed: ${err.message}`, event: 'slot_cascade_create_failed', slot: key, stack: err.stack })
     }
+  })
+
+  // Slot deletion → wipe future trainings derived from it. Historic trainings
+  // (date < today) stay so attendance records aren't lost; future ones are
+  // generator output and would otherwise dangle with a now-invalid hall_slot
+  // FK. Participations are deleted in the same txn (no FK cascade — activity_id
+  // is a polymorphic int, not a real FK).
+  filter('hall_slots.items.delete', async (keys) => {
+    const ids = Array.isArray(keys) ? keys : (keys != null ? [keys] : [])
+    if (!ids.length) return keys
+    try {
+      const futureIds = await database('trainings')
+        .whereIn('hall_slot', ids)
+        .andWhere('date', '>=', database.raw("(now() AT TIME ZONE 'Europe/Zurich')::date"))
+        .pluck('id')
+      if (futureIds.length) {
+        await database('participations')
+          .where('activity_type', 'training')
+          .whereIn(database.raw('activity_id::int'), futureIds)
+          .delete()
+        const deleted = await database('trainings').whereIn('id', futureIds).delete()
+        log.info({ msg: `[slot-cascade] deleted ${deleted} future trainings for slot(s) ${ids.join(',')}`, event: 'slot_cascade_delete', slots: ids, count: deleted })
+      }
+    } catch (err) {
+      log.error({ msg: `[slot-cascade] delete cascade failed: ${err.message}`, event: 'slot_cascade_delete_failed', slots: ids, stack: err.stack })
+    }
+    return keys
   })
 
   // Nightly rolling top-up for indefinite training slots — keeps ~12 weeks
@@ -3018,7 +3051,9 @@ export default ({ action, filter, init, schedule }, { services, database, logger
   schedule('0 2 * * *', async () => {
     const startedAt = Date.now()
     try {
-      const created = await topUpIndefiniteSlots(database, log)
+      const created = await topUpIndefiniteSlots(database, log, async (ids) => {
+        for (const tid of ids) await applyTrainingAutoRSVP(tid)
+      })
       log.info({ msg: `[slot-cascade] nightly top-up: ${created} trainings created`, event: 'slot_topup_cron_done', count: created, duration_ms: Date.now() - startedAt })
     } catch (err) {
       log.error({ msg: `[slot-cascade] nightly top-up failed: ${err.message}`, event: 'slot_topup_cron_failed', stack: err.stack })

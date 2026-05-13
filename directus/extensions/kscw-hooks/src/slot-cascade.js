@@ -185,14 +185,15 @@ async function expectedDates(database, slot, start, end) {
  *  pings for the routine weekly skeleton. */
 export async function generateInitialTrainings(database, slotId, log) {
   const slot = await database('hall_slots').where('id', slotId).first()
-  if (!slot || slot.slot_type !== 'training' || !slot.hall) return
+  if (!slot || slot.slot_type !== 'training' || !slot.hall) return []
   const teams = await getSlotTeams(database, slotId)
   const teamId = teams[0]
-  if (!teamId) return
+  if (!teamId) return []
   const start = effectiveStart(slot)
   const end = effectiveEnd(slot)
   const dates = await expectedDates(database, slot, start, end)
-  if (dates.length === 0) return
+  if (dates.length === 0) return []
+  const createdIds = []
   await withTrainingsNotifySilenced(database, async (trx) => {
     const existing = await trx('trainings').where('hall_slot', slotId).select('date')
     const existingSet = new Set(existing.map(r => toISODate(parseDate(r.date))))
@@ -208,9 +209,11 @@ export async function generateInitialTrainings(database, slotId, log) {
         cancelled: false,
       }))
     if (inserts.length === 0) return
-    await trx('trainings').insert(inserts)
+    const rows = await trx('trainings').insert(inserts).returning('id')
+    for (const r of rows) createdIds.push(typeof r === 'object' ? r.id : r)
     log?.info?.({ msg: '[slot-cascade] generated initial trainings', slot: slotId, count: inserts.length, event: 'slot_generate' })
   })
+  return createdIds
 }
 
 /** Apply the cascade after a slot update. `pre` is the snapshot from the
@@ -218,12 +221,13 @@ export async function generateInitialTrainings(database, slotId, log) {
  *  values rather than trusting the payload (which may omit unchanged
  *  fields). */
 export async function cascadeSlotUpdate(database, slotId, pre, log) {
-  if (!pre) return
+  if (!pre) return []
   const post = await snapshotSlot(database, slotId)
-  if (!post) return
-  if (post.slot_type !== 'training') return
+  if (!post) return []
+  if (post.slot_type !== 'training') return []
 
   const today = todayStr()
+  const createdIds = []
 
   // All mutations on `trainings` here are routine slot-edit propagation —
   // members already know about the slot, they don't need a push per row.
@@ -316,11 +320,13 @@ export async function cascadeSlotUpdate(database, slotId, pre, log) {
           cancelled: false,
         }))
       if (inserts.length > 0) {
-        await trx('trainings').insert(inserts)
+        const rows = await trx('trainings').insert(inserts).returning('id')
+        for (const r of rows) createdIds.push(typeof r === 'object' ? r.id : r)
         log?.info?.({ msg: '[slot-cascade] filled missing trainings', slot: slotId, count: inserts.length, event: 'slot_fill' })
       }
     }
   })
+  return createdIds
 }
 
 /** Nightly rolling top-up for indefinite training slots. Generates any
@@ -333,7 +339,7 @@ export async function cascadeSlotUpdate(database, slotId, pre, log) {
  *  the rolling window get an INSERT, everything else is a no-op. Returns
  *  the total number of trainings created across all slots so the cron
  *  caller can heartbeat it. */
-export async function topUpIndefiniteSlots(database, log) {
+export async function topUpIndefiniteSlots(database, log, onCreated) {
   const slots = await database('hall_slots')
     .where('slot_type', 'training')
     .andWhere('indefinite', true)
@@ -370,8 +376,17 @@ export async function topUpIndefiniteSlots(database, log) {
           cancelled: false,
         }))
       if (inserts.length === 0) continue
-      await withTrainingsNotifySilenced(database, (trx) => trx('trainings').insert(inserts))
+      const createdIds = []
+      await withTrainingsNotifySilenced(database, async (trx) => {
+        const rows = await trx('trainings').insert(inserts).returning('id')
+        for (const r of rows) createdIds.push(typeof r === 'object' ? r.id : r)
+      })
       totalCreated += inserts.length
+      if (onCreated && createdIds.length) {
+        try { await onCreated(createdIds) } catch (err) {
+          log?.error?.({ msg: `[slot-cascade] onCreated callback failed for slot ${slotRow.id}: ${err.message}`, event: 'slot_topup_oncreated_failed', slot: slotRow.id, stack: err.stack })
+        }
+      }
       log?.info?.({ msg: '[slot-cascade] rolling top-up', slot: slotRow.id, count: inserts.length, event: 'slot_topup' })
     } catch (err) {
       log?.error?.({ msg: `[slot-cascade] top-up failed for slot ${slotRow.id}: ${err.message}`, event: 'slot_topup_failed', slot: slotRow.id, stack: err.stack })

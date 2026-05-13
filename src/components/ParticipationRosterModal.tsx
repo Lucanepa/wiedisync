@@ -770,7 +770,26 @@ export default function ParticipationRosterModal({
       if (noteAttr) lines.push(t('noteEditedByOn', { defaultValue: 'Note edited by {{name}} on {{at}}', ...noteAttr }))
       return lines.join('\n')
     }
-    const rows: RosterExportRow[] = filteredMemberList.map((m) => {
+    // Map memberId → guest_level from the `members` (member_teams junction)
+    // prop. Used to suffix `(Guest)` on roster exports so a coach scanning a
+    // PDF can tell at a glance which entries are guest players from another
+    // team rather than core roster.
+    const guestLevelByMember = new Map<string, number>()
+    for (const mt of members) {
+      const lvl = Number((mt as { guest_level?: number }).guest_level ?? 0)
+      const mid = String(asObj<Member>(mt.member)?.id ?? '')
+      if (mid) guestLevelByMember.set(mid, lvl)
+    }
+    const isGuestMember = (m: Member): boolean => (guestLevelByMember.get(String(m.id)) ?? 0) > 0
+    // Sort export by last name (then first name) — admins print these to clip
+    // to a board where alphabetical-by-surname is the convention.
+    const byLastName = <T extends { last_name?: string | null; first_name?: string | null }>(a: T, b: T) => {
+      const cmp = (a.last_name ?? '').localeCompare(b.last_name ?? '', undefined, { sensitivity: 'base' })
+      if (cmp !== 0) return cmp
+      return (a.first_name ?? '').localeCompare(b.first_name ?? '', undefined, { sensitivity: 'base' })
+    }
+    const sortedMembers = [...filteredMemberList].sort(byLastName)
+    const rows: RosterExportRow[] = sortedMembers.map((m) => {
       const p = participations.find((pt) => pt.member === m.id && !pt.is_staff) ?? participations.find((pt) => pt.member === m.id) ?? null
       const status = getMemberStatus(m.id)
       const absenceReason = getMemberAbsenceReason(m.id)
@@ -782,6 +801,7 @@ export default function ParticipationRosterModal({
         positions: translatePositions(m.position),
         status: statusLabelText(m.id, status),
         guests: p?.guest_count ?? 0,
+        isGuest: isGuestMember(m),
         // Custom note wins over absence-reason fallback even when cleared
         // to empty — staff explicit clear should remove the displayed note.
         // Absence reason is only surfaced when participation has no note set.
@@ -793,10 +813,14 @@ export default function ParticipationRosterModal({
     // When filter is "All", append waitlist + staff so the export reflects
     // everything visible in the modal.
     if (statusFilter === null) {
+      const waitlistRows: { m: Member; wp: Participation; role: string | undefined }[] = []
       for (const wp of waitlistedParts) {
         const m = memberList.find((mm) => mm.id === wp.member)
         if (!m) continue
-        const role = leadershipRoles.get(m.id)
+        waitlistRows.push({ m, wp, role: leadershipRoles.get(m.id) })
+      }
+      waitlistRows.sort((a, b) => byLastName(a.m, b.m))
+      for (const { m, wp, role } of waitlistRows) {
         const ts = wp.date_updated ?? wp.date_created ?? ''
         rows.push({
           name: fullName(m, role),
@@ -804,12 +828,14 @@ export default function ParticipationRosterModal({
           positions: translatePositions(m.position),
           status: t('waitlisted'),
           guests: wp.guest_count ?? 0,
+          isGuest: isGuestMember(m),
           note: wp.note || '',
           rsvpAt: ts ? formatDateTimeCompact(ts) : '',
           editedBy: formatAttribution(m, wp),
         })
       }
-      for (const sm of staffMembers) {
+      const sortedStaff = [...staffMembers].sort(byLastName)
+      for (const sm of sortedStaff) {
         const sp = staffParticipations.find((p) => p.member === sm.id) ?? null
         const ts = sp?.date_updated ?? sp?.date_created ?? ''
         rows.push({
@@ -818,6 +844,7 @@ export default function ParticipationRosterModal({
           positions: translatePositions(sm.position),
           status: sp?.status ? t(sp.status) : t('notResponded'),
           guests: sp?.guest_count ?? 0,
+          isGuest: false,
           note: sp?.note || '',
           rsvpAt: ts ? formatDateTimeCompact(ts) : '',
           editedBy: formatAttribution(sm, sp),
@@ -1183,6 +1210,7 @@ export default function ParticipationRosterModal({
                 <th style={{ textAlign: 'left', padding: '8px' }}>{t('name', { defaultValue: 'Name' })}</th>
                 <th style={{ textAlign: 'left', padding: '8px' }}>{t('positions', { defaultValue: 'Positions' })}</th>
                 <th style={{ textAlign: 'left', padding: '8px' }}>{t('status', { defaultValue: 'Status' })}</th>
+                <th style={{ textAlign: 'center', padding: '8px', width: '50px' }}>{t('guest', { defaultValue: 'Guest' })}</th>
                 <th style={{ textAlign: 'left', padding: '8px', width: '60px' }}>{t('guests')}</th>
                 <th style={{ textAlign: 'left', padding: '8px' }}>{t('note', { defaultValue: 'Note' })}</th>
                 <th style={{ textAlign: 'left', padding: '8px' }}>RSVP</th>
@@ -1204,6 +1232,7 @@ export default function ParticipationRosterModal({
                   </td>
                   <td style={{ padding: '6px 8px', color: '#6b7280', verticalAlign: 'top' }}>{r.positions}</td>
                   <td style={{ padding: '6px 8px', verticalAlign: 'top' }}>{r.status}</td>
+                  <td style={{ padding: '6px 8px', textAlign: 'center', verticalAlign: 'top' }}>{r.isGuest ? '✓' : ''}</td>
                   <td style={{ padding: '6px 8px', color: '#6b7280', fontVariantNumeric: 'tabular-nums', verticalAlign: 'top' }}>{r.guests > 0 ? `+${r.guests}` : ''}</td>
                   <td style={{ padding: '6px 8px', color: '#6b7280', verticalAlign: 'top' }}>{r.note}</td>
                   <td style={{ padding: '6px 8px', color: '#9ca3af', fontSize: '11px', verticalAlign: 'top' }}>{r.rsvpAt}</td>

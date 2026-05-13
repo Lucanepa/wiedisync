@@ -25,7 +25,7 @@ import { buildEmailLayout, buildInfoCard, buildAlertBox, bucketEmailsByLocale } 
 import { sendLocalizedPush, bucketMembersByLocale, tPush } from '../../kscw-endpoints/src/push-i18n.js'
 import { registerAuditHook } from './audit.js'
 import { sanitizeAnnouncementHtml } from './sanitize-html.js'
-import { snapshotSlot, cascadeSlotUpdate, generateInitialTrainings } from './slot-cascade.js'
+import { snapshotSlot, cascadeSlotUpdate, generateInitialTrainings, topUpIndefiniteSlots } from './slot-cascade.js'
 
 // Frontend URL — env var or auto-detect from Directus PUBLIC_URL
 const FRONTEND_URL = process.env.FRONTEND_URL
@@ -3006,6 +3006,22 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       await generateInitialTrainings(database, key, log)
     } catch (err) {
       log.error({ msg: `[slot-cascade] initial generation failed: ${err.message}`, event: 'slot_cascade_create_failed', slot: key, stack: err.stack })
+    }
+  })
+
+  // Nightly rolling top-up for indefinite training slots — keeps ~12 weeks
+  // of trainings always populated. `indefinite=true` slots have no upper
+  // bound (the cascade never trims their tail), so we need a daily push to
+  // keep the horizon advancing. Runs at 02:00 UTC (04:00 Zurich, after most
+  // sync crons) to give a fresh batch each morning. logCronRun gives the
+  // /status dashboard a heartbeat to confirm the cron is alive.
+  schedule('0 2 * * *', async () => {
+    const startedAt = Date.now()
+    try {
+      const created = await topUpIndefiniteSlots(database, log)
+      log.info({ msg: `[slot-cascade] nightly top-up: ${created} trainings created`, event: 'slot_topup_cron_done', count: created, duration_ms: Date.now() - startedAt })
+    } catch (err) {
+      log.error({ msg: `[slot-cascade] nightly top-up failed: ${err.message}`, event: 'slot_topup_cron_failed', stack: err.stack })
     }
   })
 

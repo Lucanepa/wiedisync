@@ -1,0 +1,280 @@
+/**
+ * Hall-slot → trainings cascade.
+ *
+ * Centralizes the "edit the recurring slot, propagate to upcoming trainings"
+ * logic that used to live in the React SlotEditor. Running it as a Directus
+ * hook means edits via the admin UI, REST, or any other client cascade the
+ * same way — no more silent divergence when someone touches `hall_slots`
+ * outside the React editor.
+ *
+ * Scope: only `slot_type = 'training'` slots, only future trainings
+ * (`date >= today`). Past trainings stay frozen as historical snapshots
+ * (RSVPs/attendance from last month must not retcon).
+ *
+ * Cascaded fields:
+ *   • day_of_week           → shifts each future training's date by
+ *                              (newDay − oldDay) days, keeping the row in
+ *                              the same Mon–Sun calendar week so RSVPs +
+ *                              notes carry over.
+ *   • start_time / end_time → patched in place.
+ *   • hall                  → patched in place.
+ *   • team (M2M)            → first selected team patched onto trainings.
+ *   • valid_from / valid_until / indefinite
+ *                           → trim future trainings outside the new window;
+ *                              generate missing dates inside the new window
+ *                              (skipping closures + existing dates).
+ *
+ * Create-time generation (called from `hall_slots.items.create`) lives in
+ * the same module so the rules match exactly.
+ */
+
+/** ISO date (YYYY-MM-DD) for "today" in the server's timezone. */
+function todayStr() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+/** Format a JS Date as YYYY-MM-DD (UTC components — we anchor everything to
+ *  UTC midnight to dodge DST surprises in date arithmetic). */
+function toISODate(d) {
+  const y = d.getUTCFullYear()
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(d.getUTCDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+/** Parse YYYY-MM-DD into a UTC-anchored Date. */
+function parseDate(s) {
+  const str = String(s).slice(0, 10)
+  return new Date(str + 'T00:00:00Z')
+}
+
+/** Season-end fallback (May 31 of current or next season) — same rule as
+ *  the React editor so create-time generation matches. */
+function seasonEndDate() {
+  const now = new Date()
+  const year = now.getUTCMonth() < 5 ? now.getUTCFullYear() : now.getUTCFullYear() + 1
+  return `${year}-05-31`
+}
+
+/** Map our day_of_week (0=Mon … 6=Sun) to JS getDay() (0=Sun … 6=Sat). */
+function targetJsDay(dayOfWeek) {
+  return (dayOfWeek + 1) % 7
+}
+
+/** Fetch the M2M teams attached to a slot (returns array of team ids). */
+async function getSlotTeams(database, slotId) {
+  const rows = await database('hall_slots_teams')
+    .where('hall_slots_id', slotId)
+    .select('teams_id')
+  return rows.map(r => r.teams_id).filter(t => t != null)
+}
+
+/** Snapshot a slot's cascade-relevant fields plus its team junction. Used
+ *  by the filter hook to capture pre-state before Directus applies the
+ *  update. */
+export async function snapshotSlot(database, slotId) {
+  const slot = await database('hall_slots').where('id', slotId).first()
+  if (!slot) return null
+  const teams = await getSlotTeams(database, slotId)
+  return {
+    id: slot.id,
+    day_of_week: slot.day_of_week,
+    start_time: slot.start_time,
+    end_time: slot.end_time,
+    hall: slot.hall,
+    slot_type: slot.slot_type,
+    valid_from: slot.valid_from ? toISODate(parseDate(slot.valid_from)) : null,
+    valid_until: slot.valid_until ? toISODate(parseDate(slot.valid_until)) : null,
+    indefinite: !!slot.indefinite,
+    teams,
+  }
+}
+
+/** Effective window end for generation: explicit valid_until wins, else
+ *  season-end when indefinite or unset. */
+function effectiveEnd(slot) {
+  if (slot.indefinite) return seasonEndDate()
+  return slot.valid_until || seasonEndDate()
+}
+
+/** Effective window start for generation: never reach into the past — the
+ *  cascade only ever touches `date >= today`. */
+function effectiveStart(slot) {
+  const today = todayStr()
+  return (slot.valid_from && slot.valid_from > today) ? slot.valid_from : today
+}
+
+/** Return all dates the slot's weekly recurrence would land on between
+ *  `start` and `end` (inclusive), skipping hall closures. Used to compute
+ *  which trainings need to exist for the new window. */
+async function expectedDates(database, slot, start, end) {
+  const out = []
+  if (!start || !end || start > end) return out
+  const closures = await database('hall_closures')
+    .where('hall', slot.hall)
+    .select('start_date', 'end_date')
+  const isClosed = (dateStr) => closures.some(c => {
+    const s = c.start_date ? toISODate(parseDate(c.start_date)) : null
+    const e = c.end_date ? toISODate(parseDate(c.end_date)) : null
+    return s && e && s <= dateStr && e >= dateStr
+  })
+  const target = targetJsDay(slot.day_of_week)
+  const cur = parseDate(start)
+  const endD = parseDate(end)
+  while (cur.getUTCDay() !== target && cur <= endD) {
+    cur.setUTCDate(cur.getUTCDate() + 1)
+  }
+  while (cur <= endD) {
+    const dateStr = toISODate(cur)
+    if (!isClosed(dateStr)) out.push(dateStr)
+    cur.setUTCDate(cur.getUTCDate() + 7)
+  }
+  return out
+}
+
+/** Initial generation when a new training slot is created. Mirrors the old
+ *  React `generateTrainings` exactly, just running server-side now. */
+export async function generateInitialTrainings(database, slotId, log) {
+  const slot = await database('hall_slots').where('id', slotId).first()
+  if (!slot || slot.slot_type !== 'training' || !slot.hall) return
+  const teams = await getSlotTeams(database, slotId)
+  const teamId = teams[0]
+  if (!teamId) return
+  const start = effectiveStart(slot)
+  const end = effectiveEnd(slot)
+  const dates = await expectedDates(database, slot, start, end)
+  if (dates.length === 0) return
+  // Avoid duplicates if generation reruns for any reason.
+  const existing = await database('trainings')
+    .where('hall_slot', slotId)
+    .select('date')
+  const existingSet = new Set(existing.map(r => toISODate(parseDate(r.date))))
+  const inserts = dates
+    .filter(d => !existingSet.has(d))
+    .map(d => ({
+      team: teamId,
+      hall_slot: slotId,
+      hall: slot.hall,
+      date: d,
+      start_time: slot.start_time,
+      end_time: slot.end_time,
+      cancelled: false,
+    }))
+  if (inserts.length === 0) return
+  await database('trainings').insert(inserts)
+  log?.info?.({ msg: '[slot-cascade] generated initial trainings', slot: slotId, count: inserts.length, event: 'slot_generate' })
+}
+
+/** Apply the cascade after a slot update. `pre` is the snapshot from the
+ *  filter hook; the post-state is re-read here so we see the actual stored
+ *  values rather than trusting the payload (which may omit unchanged
+ *  fields). */
+export async function cascadeSlotUpdate(database, slotId, pre, log) {
+  if (!pre) return
+  const post = await snapshotSlot(database, slotId)
+  if (!post) return
+  if (post.slot_type !== 'training') return
+
+  const today = todayStr()
+
+  // 1. Shift dates if day_of_week changed. Use signed delta so a switch from
+  //    Sunday (6) → Monday (0) lands on the same calendar week's Monday
+  //    rather than next week's. Range: -6..+6.
+  let dateShiftApplied = false
+  if (pre.day_of_week != null && post.day_of_week != null && pre.day_of_week !== post.day_of_week) {
+    const delta = post.day_of_week - pre.day_of_week
+    const future = await database('trainings')
+      .where('hall_slot', slotId)
+      .andWhere('date', '>=', today)
+      .select('id', 'date')
+    for (const tr of future) {
+      const newDate = parseDate(tr.date)
+      newDate.setUTCDate(newDate.getUTCDate() + delta)
+      const newDateStr = toISODate(newDate)
+      // Skip when shifted date already has a training (rare — happens if the
+      // user previously moved a single training manually onto the target
+      // weekday). Leave the conflict in place; admin can resolve.
+      const clash = await database('trainings')
+        .where('hall_slot', slotId)
+        .andWhere('date', newDateStr)
+        .andWhereNot('id', tr.id)
+        .first()
+      if (clash) continue
+      await database('trainings').where('id', tr.id).update({ date: newDateStr })
+    }
+    dateShiftApplied = true
+  }
+
+  // 2. Patch time / hall / team on remaining future trainings. Always pulls
+  //    the canonical post-state — covers the case where the date shift just
+  //    moved a row and we still need its new time/hall to be correct.
+  const timeChanged = pre.start_time !== post.start_time || pre.end_time !== post.end_time
+  const hallChanged = pre.hall !== post.hall
+  const preTeam = pre.teams[0] ?? null
+  const postTeam = post.teams[0] ?? null
+  const teamChanged = preTeam !== postTeam
+
+  if (timeChanged || hallChanged || teamChanged || dateShiftApplied) {
+    const patch = {}
+    if (timeChanged) { patch.start_time = post.start_time; patch.end_time = post.end_time }
+    if (hallChanged) patch.hall = post.hall
+    if (teamChanged && postTeam != null) patch.team = postTeam
+    if (Object.keys(patch).length > 0) {
+      await database('trainings')
+        .where('hall_slot', slotId)
+        .andWhere('date', '>=', today)
+        .update(patch)
+    }
+  }
+
+  // 3. Trim trainings outside the new validity window (future only — past
+  //    rows are immutable history). Indefinite means "no upper bound until
+  //    season end", so the trim uses `seasonEndDate()` as the ceiling there.
+  const newStart = effectiveStart(post)
+  const newEnd = effectiveEnd(post)
+
+  // Drop anything strictly before new start (today or valid_from, whichever
+  //  is later) — only delete uncancelled trainings to preserve manually
+  //  cancelled rows the admin may still want to see in history. They're
+  //  future-dated, so this is intentional: window shrinking removes the
+  //  weekly skeleton, not a coach's note.
+  await database('trainings')
+    .where('hall_slot', slotId)
+    .andWhere('date', '>=', today)
+    .andWhere('date', '<', newStart)
+    .del()
+
+  // Drop anything strictly after new end.
+  await database('trainings')
+    .where('hall_slot', slotId)
+    .andWhere('date', '>=', today)
+    .andWhere('date', '>', newEnd)
+    .del()
+
+  // 4. Generate missing dates inside the new window. Reuses the create-time
+  //    helper after first computing the existing set so we never double-
+  //    insert when only the time/hall changed.
+  const desired = await expectedDates(database, post, newStart, newEnd)
+  if (desired.length > 0 && postTeam != null) {
+    const existing = await database('trainings')
+      .where('hall_slot', slotId)
+      .andWhere('date', '>=', today)
+      .select('date')
+    const existingSet = new Set(existing.map(r => toISODate(parseDate(r.date))))
+    const inserts = desired
+      .filter(d => !existingSet.has(d))
+      .map(d => ({
+        team: postTeam,
+        hall_slot: slotId,
+        hall: post.hall,
+        date: d,
+        start_time: post.start_time,
+        end_time: post.end_time,
+        cancelled: false,
+      }))
+    if (inserts.length > 0) {
+      await database('trainings').insert(inserts)
+      log?.info?.({ msg: '[slot-cascade] filled missing trainings', slot: slotId, count: inserts.length, event: 'slot_fill' })
+    }
+  }
+}

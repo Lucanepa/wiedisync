@@ -21,6 +21,7 @@ const CHANGELOG: ChangelogEntry[] = [
           'Booking a trial training for a team on a date that already has a regular training now auto-cancels the regular row (reason: "Replaced by trial training"). Works in reverse too — if the nightly indefinite-slot top-up later inserts a regular training on a date that already holds a trial, the new row self-cancels. Deleting the trial reverses the cancellation. Manual cancel/uncancel by an admin detaches the row from the auto-origin, so a later trial removal won\'t silently undo an admin\'s intent.',
           'Trial trainings now carry a "Probetraining" badge automatically on the training card and detail modal, so they\'re identifiable at a glance.',
           'Implemented as Postgres triggers (migration 055), not a Directus hook — because the slot-cascade does raw INSERTs that bypass Directus action hooks. Keeping the rule in the DB means the admin UI path and the cascade path both produce the same result. Backfill on apply caught one existing prod row (D2, 2026-05-20).',
+          'Hallenplan rendering fix: a slot whose regular training was auto-cancelled in favour of a trial no longer renders as a green "Available" (freed) tile — the trial training takes the slot. `annotateFreedSlots` now checks for a non-cancelled replacement training on the same hall_slot+date before promoting the cancelled original to freed.',
         ],
       },
     ],

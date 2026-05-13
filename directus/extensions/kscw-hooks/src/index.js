@@ -25,6 +25,7 @@ import { buildEmailLayout, buildInfoCard, buildAlertBox, bucketEmailsByLocale } 
 import { sendLocalizedPush, bucketMembersByLocale, tPush } from '../../kscw-endpoints/src/push-i18n.js'
 import { registerAuditHook } from './audit.js'
 import { sanitizeAnnouncementHtml } from './sanitize-html.js'
+import { snapshotSlot, cascadeSlotUpdate, generateInitialTrainings } from './slot-cascade.js'
 
 // Frontend URL — env var or auto-detect from Directus PUBLIC_URL
 const FRONTEND_URL = process.env.FRONTEND_URL
@@ -2962,6 +2963,50 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       out.last_note_edited_at = now
     }
     return out
+  })
+
+  // ── Hall-slot → trainings cascade ──────────────────────────────
+  // Snapshot pre-state in a filter hook (Directus has already merged the
+  // payload into `payload` here, but we need the BEFORE values to detect
+  // what actually changed). The action then re-reads post-state and
+  // applies the cascade. Map is keyed by slotId so concurrent updates
+  // don't clobber each other's snapshots.
+  const pendingSlotPreState = new Map()
+
+  filter('hall_slots.items.update', async (payload, meta) => {
+    try {
+      const keys = Array.isArray(meta?.keys) ? meta.keys : (meta?.key != null ? [meta.key] : [])
+      for (const k of keys) {
+        if (!pendingSlotPreState.has(k)) {
+          const pre = await snapshotSlot(database, k)
+          if (pre) pendingSlotPreState.set(k, pre)
+        }
+      }
+    } catch (err) {
+      log.error({ msg: `[slot-cascade] snapshot failed: ${err.message}`, event: 'slot_cascade_snapshot_failed', stack: err.stack })
+    }
+    return payload
+  })
+
+  action('hall_slots.items.update', async ({ keys }) => {
+    const ids = Array.isArray(keys) ? keys : (keys != null ? [keys] : [])
+    for (const id of ids) {
+      const pre = pendingSlotPreState.get(id)
+      pendingSlotPreState.delete(id)
+      try {
+        await cascadeSlotUpdate(database, id, pre, log)
+      } catch (err) {
+        log.error({ msg: `[slot-cascade] update cascade failed: ${err.message}`, event: 'slot_cascade_update_failed', slot: id, stack: err.stack })
+      }
+    }
+  })
+
+  action('hall_slots.items.create', async ({ key }) => {
+    try {
+      await generateInitialTrainings(database, key, log)
+    } catch (err) {
+      log.error({ msg: `[slot-cascade] initial generation failed: ${err.message}`, event: 'slot_cascade_create_failed', slot: key, stack: err.stack })
+    }
   })
 
   // ── Audit hook — server-authoritative user_logs writes ─────────

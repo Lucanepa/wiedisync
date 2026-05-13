@@ -11,9 +11,9 @@ import DatePicker from '@/components/ui/DatePicker'
 import { Switch } from '@/components/ui/switch'
 import { logActivity } from '../../../utils/logActivity'
 import { useConflictChecker } from '../hooks/useConflictChecker'
-import { minutesToTime, timeToMinutes, toISODate } from '../../../utils/dateHelpers'
-import type { Hall, HallClosure, HallSlot, Team } from '../../../types'
-import { createRecord, deleteRecord, fetchAllItems, updateRecord, teamToM2M } from '../../../lib/api'
+import { minutesToTime, timeToMinutes } from '../../../utils/dateHelpers'
+import type { Hall, HallSlot, Team } from '../../../types'
+import { createRecord, deleteRecord, updateRecord, teamToM2M } from '../../../lib/api'
 
 interface SlotEditorProps {
   slot: HallSlot | null
@@ -105,85 +105,13 @@ export default function SlotEditor({
 
   const isCombo = COMBO_VALUE && form.hall === COMBO_VALUE
 
-  /** Generate season-end date (May 31 of current or next year) */
-  function getSeasonEndDate(): string {
-    const now = new Date()
-    const year = now.getMonth() < 5 ? now.getFullYear() : now.getFullYear() + 1
-    return `${year}-05-31`
-  }
-
-  /** Generate training dates for a slot, skipping closures and existing trainings */
-  async function generateTrainings(slotId: string, slotData: typeof form & { indefinite: boolean }) {
-    const today = new Date().toISOString().slice(0, 10)
-    const startDate = slotData.valid_from > today ? slotData.valid_from : today
-    const endDate = slotData.indefinite ? getSeasonEndDate() : (slotData.valid_until || getSeasonEndDate())
-    if (!startDate || !endDate) return
-
-    // Fetch closures and existing trainings
-    const hallId = isCombo ? kwiA!.id : slotData.hall
-    const [closures, existing] = await Promise.all([
-      fetchAllItems<HallClosure>('hall_closures'),
-      fetchAllItems<{ date: string }>('trainings', {
-        filter: { hall_slot: { _eq: slotId } },
-        fields: ['date'],
-      }),
-    ])
-    const existingDates = new Set(existing.map((t) => t.date.slice(0, 10)))
-
-    // Generate dates matching day_of_week
-    const targetJsDay = (slotData.day_of_week + 1) % 7
-    const current = new Date(startDate)
-    const end = new Date(endDate)
-
-    // Advance to first matching day
-    while (current.getDay() !== targetJsDay && current <= end) {
-      current.setDate(current.getDate() + 1)
-    }
-
-    while (current <= end) {
-      const dateStr = toISODate(current)
-      const isClosed = closures.some(
-        (c) => c.hall === hallId && c.start_date <= dateStr && c.end_date >= dateStr,
-      )
-      if (!isClosed && !existingDates.has(dateStr)) {
-        const rec = await createRecord<{ id: string }>('trainings', {
-          team: slotData.team[0] || '',
-          hall_slot: slotId,
-          date: dateStr,
-          start_time: slotData.start_time,
-          end_time: slotData.end_time,
-          hall: hallId,
-          cancelled: false,
-        })
-        logActivity('create', 'trainings', rec.id, { team: slotData.team[0] || '', date: dateStr })
-      }
-      current.setDate(current.getDate() + 7)
-    }
-  }
-
-  /** Cascade slot changes to future trainings */
-  async function cascadeChanges(slotId: string, oldSlot: HallSlot, newData: typeof form) {
-    const today = new Date().toISOString().slice(0, 10)
-    const futureTrainings = await fetchAllItems<{id: string}>('trainings', {
-      filter: { _and: [{ hall_slot: { _eq: slotId } }, { date: { _gte: today } }] },
-    })
-    if (futureTrainings.length === 0) return
-
-    const ownerChanged = JSON.stringify(oldSlot.team) !== JSON.stringify(newData.team)
-    const timeChanged = oldSlot.start_time !== newData.start_time || oldSlot.end_time !== newData.end_time
-    const hallChanged = oldSlot.hall !== newData.hall
-
-    if (ownerChanged || timeChanged || hallChanged) {
-      const hallId = isCombo ? kwiA!.id : newData.hall
-      for (const tr of futureTrainings) {
-        await updateRecord('trainings', tr.id, {
-          ...(ownerChanged ? { team: newData.team[0] || '' } : {}),
-          ...(timeChanged ? { start_time: newData.start_time, end_time: newData.end_time } : {}),
-          ...(hallChanged ? { hall: hallId } : {}),
-        })
-      }
-    }
-  }
+  // Cascade + initial generation moved to the backend (`kscw-hooks`
+  // `hall_slots.items.create` + `.update`) — see `slot-cascade.js`. Keeps
+  // admin-UI / REST edits in sync with the React editor and adds:
+  //   • day_of_week shift (existing future trainings re-dated to the new
+  //     weekday in the same Mon-Sun week, preserving RSVPs/notes)
+  //   • valid_from / valid_until / indefinite cascade (trim future
+  //     trainings outside new window; generate missing dates inside).
 
   async function handleSave() {
     if (!form.hall) {
@@ -228,17 +156,8 @@ export default function SlotEditor({
         savedSlotId = rec.id
       }
 
-      // For training slots: cascade changes or auto-generate
-      if (payload.slot_type === 'training' && savedSlotId) {
-        if (slot) {
-          // Existing slot — cascade changes to future trainings
-          await cascadeChanges(savedSlotId, slot, form)
-        } else {
-          // New slot — auto-generate trainings
-          await generateTrainings(savedSlotId, payload)
-        }
-      }
-
+      // Cascade + generation now run as Directus action hooks
+      // (`hall_slots.items.create` / `.update`) — see slot-cascade.js.
       onSaved()
       onClose()
     } catch (err) {

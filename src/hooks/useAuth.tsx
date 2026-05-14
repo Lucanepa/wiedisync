@@ -183,7 +183,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setIsSpielplaner(!!member.is_spielplaner)
           setCurrentMemberId(member.id)
           addBreadcrumb('auth.init', { memberId: member.id })
-          setSentryUser({ id: member.id })
+          setSentryUser({ id: member.id, displayName: [member.first_name, member.last_name].filter(Boolean).join(' ').trim() || undefined })
           await loadTeamContext(member.id)
         } else {
           // Token refreshed but no linked member — clear auth
@@ -215,6 +215,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!user || !teamsReady) return
     setSentryUser({
       id: user.id,
+      displayName: [user.first_name, user.last_name].filter(Boolean).join(' ').trim() || undefined,
       roles: Array.isArray(user.role) ? user.role : [],
       memberTeamIds,
       coachTeamIds,
@@ -237,7 +238,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsSpielplaner(!!member.is_spielplaner)
       setCurrentMemberId(member.id)
       addBreadcrumb('auth.login_success', { memberId: member.id })
-      setSentryUser({ id: member.id })
+      setSentryUser({ id: member.id, displayName: [member.first_name, member.last_name].filter(Boolean).join(' ').trim() || undefined })
       await loadTeamContext(member.id)
     }
   }, [fetchMember, loadTeamContext])

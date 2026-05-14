@@ -196,12 +196,16 @@ export default function TeamDetail() {
         fields: ['id'],
       })
       if (!existing.length) {
-        const mt = await createRecord<{id: string}>('member_teams', {
-          member: member.id,
-          team: teamId!,
-          season: getCurrentSeason(),
-        })
-        logActivity('create', 'member_teams', mt.id, { member: member.id, team: teamId })
+        try {
+          const mt = await createRecord<{id: string}>('member_teams', {
+            member: member.id,
+            team: teamId!,
+            season: getCurrentSeason(),
+          }, { silentOnUnique: true })
+          logActivity('create', 'member_teams', mt.id, { member: member.id, team: teamId })
+        } catch (err) {
+          if (!/has to be unique/i.test(err instanceof Error ? err.message : '')) throw err
+        }
       }
       await updateRecord('members', member.id, { coach_approved_team: true })
       logActivity('update', 'members', member.id, { coach_approved_team: true })
@@ -249,13 +253,17 @@ export default function TeamDetail() {
           logActivity('update', 'member_teams', existing[0].id, { guest_level: guestLevel })
         }
       } else {
-        const mt = await createRecord<{id: string}>('member_teams', {
-          member: member.id,
-          team: teamId!,
-          season: getCurrentSeason(),
-          guest_level: guestLevel,
-        })
-        logActivity('create', 'member_teams', mt.id, { member: member.id, team: teamId, guest_level: guestLevel })
+        try {
+          const mt = await createRecord<{id: string}>('member_teams', {
+            member: member.id,
+            team: teamId!,
+            season: getCurrentSeason(),
+            guest_level: guestLevel,
+          }, { silentOnUnique: true })
+          logActivity('create', 'member_teams', mt.id, { member: member.id, team: teamId, guest_level: guestLevel })
+        } catch (err) {
+          if (!/has to be unique/i.test(err instanceof Error ? err.message : '')) throw err
+        }
       }
       await updateRecord('team_requests', request.id, { status: 'approved' })
       refetchTeamRequests()

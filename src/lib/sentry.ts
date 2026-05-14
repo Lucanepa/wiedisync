@@ -109,6 +109,7 @@ export function initSentry() {
 
 interface SentryUserContext {
   id: string
+  displayName?: string
   roles?: string[]
   memberTeamIds?: string[]
   coachTeamIds?: string[]
@@ -123,8 +124,8 @@ interface SentryUserContext {
  */
 export function setSentryUser(user: SentryUserContext | null) {
   if (user) {
-    // Only send user ID to Sentry — no PII (email/name)
-    Sentry.setUser({ id: user.id })
+    // ID + display name only — no email (PII)
+    Sentry.setUser({ id: user.id, username: user.displayName || `member#${user.id}` })
     Sentry.setTag('user.role', user.roles?.join(',') || 'member')
     Sentry.setTag('user.sport', user.primarySport || 'unknown')
     Sentry.setTag('user.is_admin', String(!!user.isAdmin))

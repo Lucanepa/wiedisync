@@ -51,11 +51,11 @@ export function useMutation<T = Record<string, unknown>>(collection: string) {
   const [error, setError] = useState<Error | null>(null)
 
   const create = useCallback(
-    async (data: Record<string, unknown>) => {
+    async (data: Record<string, unknown>, opts: { silentOnUnique?: boolean } = {}) => {
       setIsLoading(true)
       setError(null)
       try {
-        const record = await createRecord<T>(collection, data)
+        const record = await createRecord<T>(collection, data, opts)
         const id = (record as Record<string, unknown>).id
         if (!SKIP_LOG.has(collection)) logActivity('create', collection, String(id), data)
         queryClient.invalidateQueries({ queryKey: keys.collection(collection) })

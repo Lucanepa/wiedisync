@@ -345,11 +345,18 @@ export async function countItems(
 export async function createRecord<T = Record<string, unknown>>(
   collection: string,
   data: Record<string, unknown>,
+  opts: { silentOnUnique?: boolean } = {},
 ): Promise<T> {
   try {
     const item = await client.request<T>(createItem(collection, data as never))
     return stringifyId(item)
   } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    if (opts.silentOnUnique && /has to be unique/i.test(msg)) {
+      // Pre-check raced or RLS hid an existing row; the (member, team) invariant
+      // is satisfied either way. Caller will refetch.
+      throw err
+    }
     captureApiError(err, { operation: 'createRecord', collection, payload: data })
     throw err
   }

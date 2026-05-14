@@ -113,7 +113,11 @@ export default function RosterEditor() {
         fields: ['id'],
       })
       if (!existing.length) {
-        await create({ member: memberId, team: teamId, season })
+        try {
+          await create({ member: memberId, team: teamId, season }, { silentOnUnique: true })
+        } catch (err) {
+          if (!/has to be unique/i.test(err instanceof Error ? err.message : '')) throw err
+        }
       }
       const member = allMembers.find(m => m.id === memberId)
       toast.success(t('memberAdded', { name: displayName(member ?? {} as Member) }))

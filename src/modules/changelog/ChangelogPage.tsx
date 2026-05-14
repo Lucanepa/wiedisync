@@ -23,6 +23,13 @@ const CHANGELOG: ChangelogEntry[] = [
           'Cleanup on prod: 50 bug-induced auto-decline rows removed across 13 absences and 11 members (members 6, 19, 25, 33, 72, 93, 180, 255, 313, 415, 467). Daniela\'s 11 D4 trainings that were auto-confirmed at 22:10 right before the bug fired (424–427, 536–539, 616–617, 672–673) have been restored to `confirmed`. Other affected members reset to "no RSVP" (neutral) — they can re-RSVP normally.',
         ],
       },
+      {
+        title: 'Sentry: member name in user context, member_teams duplicate noise silenced',
+        items: [
+          '`setSentryUser` now passes `username = "First Last"` alongside the member ID, so error emails and the issue UI show "Anna Müller" instead of just `id:93`. Email is still withheld (PII).',
+          'The (member, team) unique constraint on `member_teams` (migration 044) was firing as a Sentry error every time a coach hit "approve" on a member who was already on the roster (RLS-blinded pre-check or fast double-tap). Added a `silentOnUnique` flag to `createRecord` / `useMutation.create` and wired the three `member_teams` insertion sites (`RosterEditor.handleAdd`, `TeamDetail.handleApprove`, `TeamDetail.handleApproveRequest`) to swallow the duplicate-key 400 — the constraint is a hard backstop, not an actionable error.',
+        ],
+      },
     ],
   },
   {

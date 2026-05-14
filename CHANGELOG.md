@@ -11,6 +11,11 @@ Critical fix — future-dated absences were silently over-declining every activi
 - **Fix.** Route both `absence.start_date` and `absence.end_date` through the existing `safeDateStr()` helper (line 52) before any comparison or SQL bind. Identical pattern to what other call sites already use.
 - **Data cleanup.** Deleted all 50 bug-induced rows (`participations` with `auto_declined_by` pointing at an absence whose `start_date > activity_date`). Daniela's 11 D4 trainings that the team's auto-confirm flag had just confirmed at 22:10 right before the bug fired (424–427, 536–539, 616–617, 672–673) were re-inserted as `confirmed` to restore her actual state. Other affected members reset to "no RSVP" — neutral, they can re-RSVP normally.
 
+Also bundled in v4.9.4:
+
+- **Sentry user context now carries member display name.** `setSentryUser` passes `username = "First Last"` alongside the ID, so issue notifications show "Anna Müller" instead of `id:93`. Email is still withheld (PII).
+- **`member_teams` duplicate-key noise silenced.** The migration-044 unique constraint on (member, team) was firing as a Sentry error every time a coach approved a member who was already on the roster (RLS-blinded pre-check or fast double-tap). Added `silentOnUnique` opt-in to `createRecord` / `useMutation.create` and wired the three insertion sites (`RosterEditor.handleAdd`, `TeamDetail.handleApprove`, `TeamDetail.handleApproveRequest`) to swallow the duplicate — the constraint stays as the hard backstop, but it's not an actionable error.
+
 ## v4.9.3 — 2026-05-13
 
 Trial training now transforms the existing regular row in place instead of creating a cancelled-sibling pair.

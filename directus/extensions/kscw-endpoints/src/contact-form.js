@@ -37,6 +37,24 @@ const T = {
 
 const CF_LOCALES = ['de', 'gsw', 'en', 'fr', 'it']
 
+// Auto-reply sent to the sender's own email after submission. Intentionally
+// contains zero recipient information — exposing the team mailbox would
+// defeat the privacy of the contact flow.
+const ACK_BODY = {
+  de: (name) => `Hallo ${name},\n\nDanke für deine Nachricht an den KSC Wiedikon. Wir melden uns so bald wie möglich bei dir.\n\nKopie deiner Nachricht:\n— — — — — — — — — —\n`,
+  gsw: (name) => `Sali ${name},\n\nDanke für dini Nachricht ans KSC Wiedikon. Mer mälde üs so schnell wie möglich.\n\nKopie vo dinere Nachricht:\n— — — — — — — — — —\n`,
+  en: (name) => `Hi ${name},\n\nThanks for reaching out to KSC Wiedikon. We'll get back to you as soon as possible.\n\nA copy of your message:\n— — — — — — — — — —\n`,
+  fr: (name) => `Bonjour ${name},\n\nMerci pour ton message au KSC Wiedikon. Nous te répondrons dès que possible.\n\nCopie de ton message :\n— — — — — — — — — —\n`,
+  it: (name) => `Ciao ${name},\n\nGrazie per il tuo messaggio a KSC Wiedikon. Ti risponderemo il prima possibile.\n\nCopia del tuo messaggio:\n— — — — — — — — — —\n`,
+}
+const ACK_OUTRO = {
+  de: '\n— — — — — — — — — —\n\nSportliche Grüsse\nKSC Wiedikon',
+  gsw: '\n— — — — — — — — — —\n\nSportlichi Grüess\nKSC Wiedikon',
+  en: '\n— — — — — — — — — —\n\nBest regards\nKSC Wiedikon',
+  fr: '\n— — — — — — — — — —\n\nMeilleures salutations\nKSC Wiedikon',
+  it: '\n— — — — — — — — — —\n\nCordiali saluti\nKSC Wiedikon',
+}
+
 const SPORT_EMAILS = {
   volleyball: process.env.CONTACT_EMAIL_VB || 'volleyball@kscw.ch',
   basketball: process.env.CONTACT_EMAIL_BB || 'basketball@kscw.ch',
@@ -135,6 +153,25 @@ export function registerContactForm(router, { database, logger, services, getSch
           subject: mailSubject,
           text: `${tt.nameLabel}: ${name}\n${tt.emailLabel}: ${email}\n${tt.subjectLabel}: ${subject || '-'}\n\n${message}`,
         })
+      }
+
+      // Separate confirmation to the sender — echoes their own message back so
+      // they have a record. Deliberately does NOT include any recipient
+      // address (would defeat the whole point of hiding coach/TR emails).
+      const ackTT = T[senderLocale] || T.de
+      const ackSubject = (team_id && teamName)
+        ? ackTT.teamSubject(teamName)
+        : ackTT.subject(subject, name)
+      try {
+        await mail.send({
+          to: email,
+          subject: ackSubject,
+          text: ACK_BODY[senderLocale](name) + message + ACK_OUTRO[senderLocale],
+        })
+      } catch (ackErr) {
+        // Confirmation failure shouldn't fail the whole request — the real
+        // message already reached the team. Log and continue.
+        log.warn({ msg: `contact: ack mail failed: ${ackErr.message}` })
       }
 
       log.info(`Contact form sent to team ${team_id} contact`)

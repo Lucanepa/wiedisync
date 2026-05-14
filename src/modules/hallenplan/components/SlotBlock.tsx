@@ -1,34 +1,16 @@
 import { useTranslation } from 'react-i18next'
+import { Basketball, Volleyball } from '@phosphor-icons/react'
 import ConflictBadge from './ConflictBadge'
 import type { PositionedSlot } from '../utils/timeGrid'
 
-/** Volleyball ball watermark */
-const VolleyballIcon = () => (
-  <svg className="absolute inset-0 m-auto h-[60%] w-[60%] opacity-15" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10" fill="currentColor" stroke="currentColor" strokeWidth="1.5" opacity="0.3" />
-    <path d="M11.1 7.1a16.55 16.55 0 0 1 10.9 4" stroke="currentColor" strokeWidth="1.5" />
-    <path d="M12 12a12.6 12.6 0 0 1-8.7 5" stroke="currentColor" strokeWidth="1.5" />
-    <path d="M16.8 13.6a16.55 16.55 0 0 1-9 7.5" stroke="currentColor" strokeWidth="1.5" />
-    <path d="M20.7 17a12.8 12.8 0 0 0-8.7-5 13.3 13.3 0 0 1 0-10" stroke="currentColor" strokeWidth="1.5" />
-    <path d="M6.3 3.8a16.55 16.55 0 0 0 1.9 11.5" stroke="currentColor" strokeWidth="1.5" />
-  </svg>
-)
-
-/** Basketball ball watermark */
-const BasketballIcon = () => (
-  <svg className="absolute inset-0 m-auto h-[60%] w-[60%] opacity-15" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round" style={{ transform: 'rotate(90deg)' }}>
-    <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.3" />
-    <path d="M4.93 4.93c4.08 2.64 8.74 3.2 14.14 0" stroke="currentColor" strokeWidth="1.5" />
-    <path d="M4.93 19.07c4.08-2.64 8.74-3.2 14.14 0" stroke="currentColor" strokeWidth="1.5" />
-    <line x1="12" y1="2" x2="12" y2="22" stroke="currentColor" strokeWidth="1.5" />
-    <line x1="2" y1="12" x2="22" y2="12" stroke="currentColor" strokeWidth="1.5" />
-  </svg>
-)
-
 /** Sport-specific ball icon watermark */
 const SlotIcon = ({ sport }: { sport?: string }) => {
-  if (sport === 'volleyball') return <VolleyballIcon />
-  if (sport === 'basketball') return <BasketballIcon />
+  if (sport === 'volleyball') return (
+    <Volleyball weight="fill" className="absolute inset-0 m-auto h-[60%] w-[60%] opacity-15" />
+  )
+  if (sport === 'basketball') return (
+    <Basketball weight="fill" className="absolute inset-0 m-auto h-[60%] w-[60%] opacity-15" />
+  )
   return null
 }
 
@@ -58,19 +40,10 @@ function getSlotColor(sport: string | undefined, slotType: string) {
 /** Inline sport icon for slot content */
 const SportIcon = ({ sport, className = '' }: { sport?: string; className?: string }) => {
   if (sport === 'volleyball') return (
-    <svg className={`inline-block shrink-0 ${className}`} viewBox="0 0 24 24" fill="currentColor" width="12" height="12">
-      <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="2" />
-      <path d="M12 2C12 2 12 12 12 12" stroke="currentColor" strokeWidth="1.5" fill="none" />
-      <path d="M12 12C12 12 20.5 7 21.5 6.5" stroke="currentColor" strokeWidth="1.5" fill="none" />
-      <path d="M12 12C12 12 3.5 7 2.5 6.5" stroke="currentColor" strokeWidth="1.5" fill="none" />
-    </svg>
+    <Volleyball weight="regular" className={`inline-block shrink-0 ${className}`} size={12} />
   )
   if (sport === 'basketball') return (
-    <svg className={`inline-block shrink-0 ${className}`} viewBox="0 0 24 24" fill="currentColor" width="12" height="12">
-      <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="2" />
-      <path d="M2 12h20M12 2v20" stroke="currentColor" strokeWidth="1.5" fill="none" />
-      <path d="M5.5 4.5c3 3 3 7 0 11M18.5 4.5c-3 3-3 7 0 11" stroke="currentColor" strokeWidth="1.5" fill="none" />
-    </svg>
+    <Basketball weight="regular" className={`inline-block shrink-0 ${className}`} size={12} />
   )
   return null
 }

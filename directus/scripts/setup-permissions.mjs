@@ -291,6 +291,9 @@ const PUBLIC_TEAM_FIELDS = [
   'id', 'name', 'full_name', 'sport', 'league', 'season', 'team_picture',
   'team_picture_pos', 'active', 'social_url', 'color', 'coach', 'captain',
   'team_responsible', 'sponsors',
+  // Exposed so the kscw-website contact form can filter the team dropdown to
+  // recruiting teams only. Boolean flag, no PII.
+  'open_for_players',
 ]
 
 /** Coach Dashboard prefs — readable by Coach/Team Responsible/Admin via an explicit read row. NOT added to PUBLIC_TEAM_FIELDS. */

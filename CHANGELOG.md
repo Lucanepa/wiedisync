@@ -2,6 +2,15 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## v4.9.4 — 2026-05-14
+
+Critical fix — future-dated absences were silently over-declining every activity from creation date through end_date.
+
+- **Symptom.** Daniela Imhof (D4) added a 2-day "work" absence for Aug 27–28 and every D4 training from May 18 through July 9 instantly flipped to declined with note "work". Bug also hit 10 other members across 12 other absences (members 6, 19, 25, 33, 72, 93, 180, 313, 415, 467) — 50 orphan rows total on prod.
+- **Cause.** `autoDeclineForAbsence()` in `directus/extensions/kscw-hooks/src/index.js` did `absence.start_date?.split?.('T')[0] || absence.start_date`. Knex returns Postgres `date` columns as JS `Date` objects, so `.split` short-circuited to undefined and the fallback handed back the Date itself. The subsequent `startDate > today` compared a Date to a `'YYYY-MM-DD'` string — coerced via `valueOf()` to a `number > NaN` which is always false. `effectiveStart` therefore clamped to today for every future absence, and the SQL window became today → end_date.
+- **Fix.** Route both `absence.start_date` and `absence.end_date` through the existing `safeDateStr()` helper (line 52) before any comparison or SQL bind. Identical pattern to what other call sites already use.
+- **Data cleanup.** Deleted all 50 bug-induced rows (`participations` with `auto_declined_by` pointing at an absence whose `start_date > activity_date`). Daniela's 11 D4 trainings that the team's auto-confirm flag had just confirmed at 22:10 right before the bug fired (424–427, 536–539, 616–617, 672–673) were re-inserted as `confirmed` to restore her actual state. Other affected members reset to "no RSVP" — neutral, they can re-RSVP normally.
+
 ## v4.9.3 — 2026-05-13
 
 Trial training now transforms the existing regular row in place instead of creating a cancelled-sibling pair.

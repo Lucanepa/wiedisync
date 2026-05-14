@@ -1,7 +1,7 @@
 {
   "name": "wiedisync",
   "private": true,
-  "version": "4.9.3",
+  "version": "4.9.4",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -50,6 +50,7 @@
     "@dnd-kit/modifiers": "^9.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@marsidev/react-turnstile": "^1.5.2",
+    "@phosphor-icons/react": "^2.1.10",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",

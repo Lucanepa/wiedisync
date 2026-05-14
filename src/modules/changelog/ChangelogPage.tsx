@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.9.3'
+const APP_VERSION = '4.9.4'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,20 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.9.4',
+    date: '2026-05-14',
+    sections: [
+      {
+        title: 'Absence auto-decline no longer over-reaches into pre-start dates',
+        items: [
+          'Future-dated absences were silently declining every activity from the day the absence was created through the end_date — completely ignoring the start_date. Daniela Imhof (D4) reported all her May/June/July trainings declined with reason "work" right after she added a 2-day absence in August. Cause: knex returns Postgres `date` columns as JS `Date` objects, so `absence.start_date?.split?.(\'T\')[0] || absence.start_date` short-circuited to the raw Date, and `Date > \'2026-05-13\'` coerced to a NaN comparison that always returned false. `effectiveStart` was therefore clamped to today for every future absence.',
+          'Fix in `directus/extensions/kscw-hooks/src/index.js`: route both `absence.start_date` and `absence.end_date` through `safeDateStr()` before any comparison or SQL bind. Now `effectiveStart = max(absence.start_date, today)` as originally intended.',
+          'Cleanup on prod: 50 bug-induced auto-decline rows removed across 13 absences and 11 members (members 6, 19, 25, 33, 72, 93, 180, 255, 313, 415, 467). Daniela\'s 11 D4 trainings that were auto-confirmed at 22:10 right before the bug fired (424–427, 536–539, 616–617, 672–673) have been restored to `confirmed`. Other affected members reset to "no RSVP" (neutral) — they can re-RSVP normally.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.9.3',
     date: '2026-05-13',

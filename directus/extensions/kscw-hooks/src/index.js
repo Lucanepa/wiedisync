@@ -516,8 +516,16 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       if (!absence) return
 
       const memberId = absence.member
-      const startDate = absence.start_date?.split?.('T')[0] || absence.start_date
-      const endDate = absence.end_date?.split?.('T')[0] || absence.end_date
+      // 2026-05-14: knex returns Postgres `date` columns as JS Date objects, so
+      // `.split('T')[0]` short-circuits to undefined and the fallback handed
+      // back the Date itself. `Date > '2026-05-13'` then coerced to `NaN >
+      // NaN` → false, so `effectiveStart` was ALWAYS clamped to today even for
+      // future-dated absences. Net: a future absence (e.g. Aug 27–28) declined
+      // every activity from today through end_date. Always coerce to
+      // YYYY-MM-DD string via safeDateStr() before any comparison or SQL bind.
+      const startDate = safeDateStr(absence.start_date)
+      const endDate = safeDateStr(absence.end_date)
+      if (!startDate || !endDate) return
       const today = new Date().toISOString().split('T')[0]
       const effectiveStart = startDate > today ? startDate : today
 

@@ -187,7 +187,13 @@ export default function TeamDetail() {
   const rosterMembers = useMemo(() => sortMembers(members.filter(mt => (Number(mt.guest_level) || 0) === 0)), [members, sortMembers])
   const guestMembers = useMemo(() => sortMembers(members.filter(mt => (Number(mt.guest_level) || 0) > 0)), [members, sortMembers])
 
+  // Busy guards — prevent mobile double-tap / re-render from firing twice.
+  const inFlightApprove = useRef<Set<string>>(new Set())
+  const inFlightReject = useRef<Set<string>>(new Set())
+
   async function handleApprove(member: Member) {
+    if (inFlightApprove.current.has(String(member.id))) return
+    inFlightApprove.current.add(String(member.id))
     try {
       // Create member_teams FIRST — Postgres trigger blocks coach_approved_team=true without it.
       // Skip insert if a row already exists; unique constraint (migration 044) is the hard backstop.
@@ -212,10 +218,14 @@ export default function TeamDetail() {
       refetchPending()
     } catch {
       // ignore
+    } finally {
+      inFlightApprove.current.delete(String(member.id))
     }
   }
 
   async function handleReject(memberId: string) {
+    if (inFlightReject.current.has(String(memberId))) return
+    inFlightReject.current.add(String(memberId))
     try {
       await updateRecord('members', memberId, {
         kscw_membership_active: false,
@@ -226,6 +236,8 @@ export default function TeamDetail() {
       refetchPending()
     } catch {
       // ignore
+    } finally {
+      inFlightReject.current.delete(String(memberId))
     }
   }
 
@@ -236,9 +248,12 @@ export default function TeamDetail() {
     setRequestGuestLevels((prev) => ({ ...prev, [requestId]: level }))
   }
 
+  const inFlightApproveReq = useRef<Set<string>>(new Set())
   async function handleApproveRequest(request: TeamRequest) {
     const member = asObj<Member>(request.member)
     if (!member) return
+    if (inFlightApproveReq.current.has(String(request.id))) return
+    inFlightApproveReq.current.add(String(request.id))
     const guestLevel = requestGuestLevels[request.id] ?? 0
     try {
       // If a member_teams row exists for (member, team), update its guest_level rather
@@ -269,6 +284,8 @@ export default function TeamDetail() {
       refetchTeamRequests()
     } catch {
       // ignore
+    } finally {
+      inFlightApproveReq.current.delete(String(request.id))
     }
   }
 

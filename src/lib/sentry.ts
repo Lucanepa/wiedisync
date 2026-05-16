@@ -9,6 +9,7 @@
  */
 
 import * as Sentry from '@sentry/react'
+import { toError } from '../utils/toError'
 
 const host = typeof window !== 'undefined' ? window.location.hostname : ''
 const isProd = host === 'wiedisync.kscw.ch'
@@ -310,29 +311,8 @@ export function addBreadcrumb(message: string, data?: Record<string, unknown>) {
 }
 
 // ── Error normalization ──────────────────────────────────────────
-
-/**
- * Convert any thrown value into a proper Error with a readable message.
- * Directus SDK throws plain objects like { errors: [{ message: '...' }] }
- * which stringify as "[object Object]" in Sentry.
- */
-function toError(error: unknown): Error {
-  if (error instanceof Error) return error
-  if (error && typeof error === 'object') {
-    const obj = error as Record<string, unknown>
-    // Directus SDK: { errors: [{ message: '...' }] }
-    if (Array.isArray(obj.errors) && obj.errors[0]?.message) {
-      return new Error(String(obj.errors[0].message))
-    }
-    // Generic: { message: '...' }
-    if (typeof obj.message === 'string') {
-      return new Error(obj.message)
-    }
-    // Last resort: JSON.stringify
-    try { return new Error(JSON.stringify(error).slice(0, 500)) } catch { /* fall through */ }
-  }
-  return new Error(String(error))
-}
+// `toError` lives in utils/toError.ts (shared with useMutation) so the
+// Directus-shape unwrapping logic can't drift between the two call sites.
 
 // ── PII scrubbing ────────────────────────────────────────────────
 

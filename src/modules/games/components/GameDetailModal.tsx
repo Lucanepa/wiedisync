@@ -22,6 +22,7 @@ import CarpoolSection from '../../carpool/CarpoolSection'
 import BroadcastButton from '../../broadcast/BroadcastButton'
 import { isFeatureEnabled } from '../../../utils/featureToggles'
 import { asObj, relId, flattenMemberIds } from '../../../utils/relations'
+import CancelActivityButton from '../../../components/CancelActivityButton'
 
 const GAME_EXPAND = 'kscw_team,hall,scorer_member,scoreboard_member,scorer_scoreboard_member,scorer_duty_team,scoreboard_duty_team,scorer_scoreboard_duty_team,bb_scorer_member,bb_timekeeper_member,bb_24s_official,bb_duty_team,bb_scorer_duty_team,bb_timekeeper_duty_team,bb_24s_duty_team'
 
@@ -220,6 +221,16 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
                   isCoachOf: coachTeamIds,
                   isResponsibleOf: teamResponsibleIds,
                 } : null}
+              />
+            )}
+            {(game.status === 'scheduled' || game.status === 'cancelled') && (
+              <CancelActivityButton
+                kind="game"
+                activityId={game.id}
+                isCancelled={game.status === 'cancelled'}
+                teamIds={kscwTeamId ? [kscwTeamId] : []}
+                variant="inline"
+                onDone={onClose}
               />
             )}
             <button

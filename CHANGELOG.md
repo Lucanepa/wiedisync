@@ -2,6 +2,15 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## v4.12.0 — 2026-05-18
+
+Training cancellations now reach the team, trial trainings can advertise recruiting positions, and the training detail modal layout is fixed.
+
+- **Cancelled trainings notify the team.** When a coach or team-responsible cancels a training, every team member (players + coaches + TR) now receives an in-app notification and a web push. Previously cancelling was silent unless the coach manually used "Contact". Backend hook on `trainings.items.update` (future trainings only); new `trainingCancelled` push strings in all 5 locales (the in-app `training_cancelled` key already existed).
+- **Detail modal layout.** The "Cancel training" / "Contact" actions moved out of the header — where they overlapped the title on the narrow modal — to a bottom action row.
+- **Trial-training recruiting positions.** A trial training can now specify which positions the team is looking for ("Positions we are looking for"), surfaced to prospective players on the public team page. Migration 060 adds `trainings.recruiting_positions` and fix-forwards the migration-056 trial-transform trigger so the field survives the in-place transform.
+- **Public barrage standings.** `/public/team/:id` now also surfaces the barrage (promotion/relegation playoff) standings a team appears in, not just its regular-league ranking.
+
 ## v4.11.0 — 2026-05-18
 
 Email is now mandatory, and members can hide it from others.

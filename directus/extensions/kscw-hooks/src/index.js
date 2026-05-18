@@ -1442,7 +1442,79 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     `, [activityType, String(activityId), ...teamFilterParams, dateStr, dateStr, `"${activityType}s"`, dateStr, activityType, String(activityId)])
   }
 
+  // Notify the whole team (players + coaches + TR) when a training is
+  // cancelled from the "Cancel training" control. Mirrors notifyAbsenceThirdParty:
+  // an in-app `notifications` row (client localizes via title+body keys) plus a
+  // per-recipient localized web push. Reinstating sends cancelled:false so it
+  // never reaches here; past trainings are skipped (nothing to warn about).
+  async function notifyTrainingCancelled(trainingId) {
+    const tr = await database('trainings').where('id', trainingId)
+      .select('id', 'team', 'date', 'cancelled').first()
+    if (!tr || !tr.cancelled || !tr.team || !tr.date) return
+
+    const dateStr = safeDateStr(tr.date)
+    if (!dateStr) return
+    const today = safeDateStr(new Date())
+    if (today && dateStr < today) return // past training — skip
+
+    const teamRow = await database('teams').where('id', tr.team).select('name').first()
+    const teamName = teamRow?.name || `Team ${tr.team}`
+
+    const [players, coaches, trs] = await Promise.all([
+      database('member_teams').where('team', tr.team).select('member'),
+      database('teams_coaches').where('teams_id', tr.team).select('members_id'),
+      database('teams_responsibles').where('teams_id', tr.team).select('members_id'),
+    ])
+    const memberIds = [...new Set([
+      ...players.map(r => r.member),
+      ...coaches.map(r => r.members_id),
+      ...trs.map(r => r.members_id),
+    ].filter(Boolean))]
+    if (memberIds.length === 0) return
+
+    const active = await database('members')
+      .whereIn('id', memberIds)
+      .andWhere('wiedisync_active', true)
+      .select('id')
+    const recipientIds = active.map(r => r.id)
+    if (recipientIds.length === 0) return
+
+    const dateFmt = dateStr.split('-').reverse().join('.') // dd.mm.yyyy
+
+    await database('notifications').insert(recipientIds.map(rid => ({
+      member: rid,
+      type: 'training_cancelled',
+      title: 'training_cancelled',
+      body: JSON.stringify({ date: dateFmt }),
+      activity_type: 'training',
+      activity_id: String(tr.id),
+      team: tr.team,
+      read: false,
+    })))
+
+    await sendLocalizedPush(
+      database,
+      recipientIds,
+      (pids, title, body) => sendPushToMembers(database, pids, title, body, `${FRONTEND_URL}/trainings`, `training-cancelled-${tr.id}`, log),
+      'trainingCancelled.title',
+      'trainingCancelled.body',
+      { team: teamName, date: dateFmt },
+    )
+  }
+
   action('trainings.items.update', async ({ keys, payload }) => {
+    // Notify the team when a training is cancelled (coach/TR pressed "Cancel
+    // training"). payload.cancelled === true only on the cancel transition.
+    if (payload && payload.cancelled === true) {
+      for (const k of keys) {
+        try {
+          await notifyTrainingCancelled(k)
+        } catch (err) {
+          log.error({ msg: `[training-cancel-notify] ${err.message}`, event: 'training_cancel_notify', keys: [k], stack: err.stack })
+        }
+      }
+    }
+
     // Re-eval absence-decline when date changed
     if (payload && 'date' in payload) {
       try {

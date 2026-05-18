@@ -197,6 +197,20 @@ const T = {
     fr: 'Nouveau message sur KSCW',
     it: 'Nuovo messaggio in KSCW',
   },
+  'trainingCancelled.title': {
+    de: 'Training abgesagt',
+    gsw: 'Training abgseit',
+    en: 'Training cancelled',
+    fr: 'Entraînement annulé',
+    it: 'Allenamento annullato',
+  },
+  'trainingCancelled.body': {
+    de: '{team}-Training am {date} wurde abgesagt',
+    gsw: '{team}-Training am {date} isch abgseit worde',
+    en: '{team} training on {date} was cancelled',
+    fr: 'L’entraînement {team} du {date} a été annulé',
+    it: 'L’allenamento {team} del {date} è stato annullato',
+  },
 }
 
 /**

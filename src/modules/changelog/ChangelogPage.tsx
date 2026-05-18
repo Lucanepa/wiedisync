@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.11.0'
+const APP_VERSION = '4.12.0'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,36 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.12.0',
+    date: '2026-05-18',
+    sections: [
+      {
+        title: 'Cancelled trainings notify the team',
+        items: [
+          'When a coach or team-responsible cancels a training, everyone on the team now gets a notification and a push — previously the cancellation was silent.',
+        ],
+      },
+      {
+        title: 'Training detail layout fix',
+        items: [
+          'The "Cancel training" and "Contact" actions moved to a bottom row so they no longer overlap the title on small screens.',
+        ],
+      },
+      {
+        title: 'Trial trainings: recruiting positions',
+        items: [
+          'A trial training can now list the positions the team is looking for — shown to prospective players on the public team page.',
+        ],
+      },
+      {
+        title: 'Public team page',
+        items: [
+          'Team pages now also show barrage (promotion/relegation) standings, not just the regular-league ranking.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.11.0',
     date: '2026-05-18',

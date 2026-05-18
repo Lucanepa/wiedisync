@@ -669,7 +669,7 @@ export default function TrainingForm({ open, training, editScope = 'this', defau
                           active ? prev.filter((x) => x !== p) : [...prev, p],
                         )
                       }
-                      className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+                      className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
                         active
                           ? 'border-brand-500 bg-brand-500 text-white'
                           : 'border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-500 dark:text-gray-300 dark:hover:bg-gray-700'

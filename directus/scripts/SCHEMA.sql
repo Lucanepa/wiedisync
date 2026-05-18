@@ -2,7 +2,7 @@
 -- KSCW SCHEMA baseline — GENERATED, DO NOT EDIT BY HAND
 -- ============================================================================
 --
--- Generated:   2026-05-13T19:53:54.739Z
+-- Generated:   2026-05-18T13:14:41.668Z
 -- Source:      prod (db=postgres)
 -- Generator:   directus/scripts/regenerate-baseline.mjs
 --
@@ -851,6 +851,25 @@ BEGIN
   END IF;
 
   RETURN v_row;
+END;
+$$;
+
+
+--
+-- Name: members_prevent_email_blanking(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.members_prevent_email_blanking() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF OLD.email IS NOT NULL AND btrim(OLD.email) <> ''
+     AND (NEW.email IS NULL OR btrim(NEW.email) = '') THEN
+    RAISE EXCEPTION
+      'members.email cannot be cleared once set (member id %): it is the member''s only contact channel and is required for notifications and ClubDesk sync', OLD.id
+      USING ERRCODE = 'check_violation';
+  END IF;
+  RETURN NEW;
 END;
 $$;
 
@@ -2035,7 +2054,9 @@ CREATE TABLE public.events (
     invited_roles json,
     send_email_invite boolean DEFAULT false,
     allow_maybe boolean DEFAULT true,
-    signup_url character varying(500)
+    signup_url character varying(500),
+    cancelled boolean DEFAULT false NOT NULL,
+    cancel_reason text
 );
 
 
@@ -2725,8 +2746,16 @@ CREATE TABLE public.members (
     consent_prompted_at timestamp with time zone,
     consent_decision character varying(255) DEFAULT 'pending'::character varying NOT NULL,
     last_export_at timestamp with time zone,
+    hide_email boolean DEFAULT false NOT NULL,
     CONSTRAINT members_role_values_valid CHECK (((role)::jsonb <@ '["user", "admin", "superuser", "vb_admin", "bb_admin", "vorstand", "website_admin"]'::jsonb))
 );
+
+
+--
+-- Name: COLUMN members.hide_email; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.members.hide_email IS 'When true, the member''s email is nulled in members.items.read for everyone except admins and the member themselves (mirrors hide_phone). Enforced by the kscw-hooks Member Privacy filter.';
 
 
 --
@@ -3340,6 +3369,47 @@ CREATE TABLE public.reports (
     resolved_at timestamp with time zone,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
+
+
+--
+-- Name: scorer_courses; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.scorer_courses (
+    id integer NOT NULL,
+    slug_id character varying(255) NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    title_de character varying(255) NOT NULL,
+    title_en character varying(255) NOT NULL,
+    date_iso date,
+    "time" character varying(255),
+    mode character varying(255) DEFAULT 'in_person'::character varying NOT NULL,
+    sort integer DEFAULT 0,
+    form_slug_de character varying(255),
+    form_slug_en character varying(255),
+    date_created timestamp with time zone,
+    date_updated timestamp with time zone
+);
+
+
+--
+-- Name: scorer_courses_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.scorer_courses_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: scorer_courses_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.scorer_courses_id_seq OWNED BY public.scorer_courses.id;
 
 
 --
@@ -4730,6 +4800,13 @@ ALTER TABLE ONLY public.registrations ALTER COLUMN id SET DEFAULT nextval('publi
 
 
 --
+-- Name: scorer_courses id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.scorer_courses ALTER COLUMN id SET DEFAULT nextval('public.scorer_courses_id_seq'::regclass);
+
+
+--
 -- Name: scorer_delegations id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -5264,6 +5341,14 @@ ALTER TABLE ONLY public.registrations
 
 ALTER TABLE ONLY public.reports
     ADD CONSTRAINT reports_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: scorer_courses scorer_courses_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.scorer_courses
+    ADD CONSTRAINT scorer_courses_pkey PRIMARY KEY (id);
 
 
 --
@@ -6436,6 +6521,13 @@ CREATE TRIGGER trg_halls_protect_delete BEFORE DELETE ON public.halls FOR EACH R
 --
 
 CREATE TRIGGER trg_members_coach_approval_guard BEFORE UPDATE ON public.members FOR EACH ROW EXECUTE FUNCTION public.trg_members_coach_approval_guard();
+
+
+--
+-- Name: members trg_members_prevent_email_blanking; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_members_prevent_email_blanking BEFORE UPDATE OF email ON public.members FOR EACH ROW WHEN (((old.email)::text IS DISTINCT FROM (new.email)::text)) EXECUTE FUNCTION public.members_prevent_email_blanking();
 
 
 --

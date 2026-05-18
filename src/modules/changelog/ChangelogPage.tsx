@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.9.4'
+const APP_VERSION = '4.9.5'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,19 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.9.5',
+    date: '2026-05-18',
+    sections: [
+      {
+        title: 'Bug fixes and polish',
+        items: [
+          'Fixed a permissions regression where opening Events could fail to load participation data ("no permission to access session_id / waitlisted_at"). The fields were already correct in the codebase — production permissions just needed reconciling.',
+          'Error reports for failed saves now carry the real cause instead of an opaque "[object Object]". Internal-only — improves how quickly we can diagnose and fix issues you hit.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.9.4',
     date: '2026-05-14',

@@ -2,6 +2,13 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## v4.9.5 — 2026-05-18
+
+Bug fixes and polish.
+
+- **Participations permission regression.** Members opening `/events` could hit "no permission to access fields session_id, waitlisted_at in collection participations". The fields exist and `setup-permissions.mjs:484` already granted them (in the prod branch since 2026-05-12) — prod permissions were just stale. Reconciled via `npm run db:setup-perms:prod` (357 permissions, 0 errors).
+- **`[object Object]` Sentry noise.** Duplicate `toError` in `useMutation.ts` + `sentry.ts` both passed Error instances through unchanged and fell back to `String(err)`, so a failing trainings update surfaced as an unactionable `[object Object]` with no status/message. Extracted one shared `src/utils/toError.ts` that recovers the Directus `{errors}`/`{message}`/status message even when wrapped as a useless-message Error, summarizes non-serializable objects, and always attaches the original as `.cause`.
+
 ## v4.9.4 — 2026-05-14
 
 Critical fix — future-dated absences were silently over-declining every activity from creation date through end_date.

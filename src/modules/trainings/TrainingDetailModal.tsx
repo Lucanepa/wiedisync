@@ -44,8 +44,8 @@ export default function TrainingDetailModal({ training, onClose }: TrainingDetai
   const hall = asObj<Hall>(training.hall)
   const coach = asObj<Member>(training.coach)
 
-  const headerBroadcast = (
-    <div className="flex items-center gap-2">
+  const actionRow = (
+    <>
       <CancelActivityButton
         kind="training"
         activityId={training.id}
@@ -76,12 +76,12 @@ export default function TrainingDetailModal({ training, onClose }: TrainingDetai
           }}
         />
       ) : null}
-    </div>
+    </>
   )
 
   return (
     <>
-      <Modal open={!!training} onClose={onClose} title={t('title')} size="sm" headerAction={headerBroadcast}>
+      <Modal open={!!training} onClose={onClose} title={t('title')} size="sm">
         <div className="space-y-4">
           {/* Team + Date header */}
           <div className="flex items-center gap-2">
@@ -192,6 +192,11 @@ export default function TrainingDetailModal({ training, onClose }: TrainingDetai
               </div>
             </div>
           )}
+
+          {/* Actions — kept at the bottom so they never overlap the title */}
+          <div className="flex flex-wrap items-center gap-2 border-t border-gray-200 pt-3 dark:border-gray-700">
+            {actionRow}
+          </div>
         </div>
       </Modal>
 

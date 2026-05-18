@@ -558,6 +558,10 @@
             {
               "text": "postponed",
               "value": "postponed"
+            },
+            {
+              "text": "cancelled",
+              "value": "cancelled"
             }
           ]
         },

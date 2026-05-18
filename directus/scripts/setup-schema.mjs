@@ -285,7 +285,7 @@ const COLLECTIONS = [
       string('round'),
       string('season'),
       select('type', ['home', 'away']),
-      select('status', ['scheduled', 'live', 'completed', 'postponed']),
+      select('status', ['scheduled', 'live', 'completed', 'postponed', 'cancelled']),
       integer('home_score', { default: 0 }),
       integer('away_score', { default: 0 }),
       json('sets_json'),

@@ -54,4 +54,5 @@ export default {
   enableTasks: 'Attiva compiti',
   enableTasksHint: 'I partecipanti possono assegnare e prendere in carico responsabilità per questo evento.',
   minParticipants: 'Min. partecipanti',
+  cancelled: 'Annullato',
 } as const

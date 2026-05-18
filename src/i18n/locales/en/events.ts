@@ -55,4 +55,5 @@ export default {
   enableTasks: 'Enable tasks',
   enableTasksHint: 'Let participants assign and claim duties for this event.',
   minParticipants: 'Min. participants',
+  cancelled: 'Cancelled',
 } as const

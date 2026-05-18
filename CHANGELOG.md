@@ -2,6 +2,14 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## v4.10.0 — 2026-05-18
+
+Coaches and team-responsibles can cancel and reinstate trainings, events, and games.
+
+- **Cancel / reinstate control.** A "Cancel" (and once cancelled, "Reinstate") action is available to coaches and team-responsibles on every training, event, and game — both on the card and inside the detail modal reachable from the Home agenda.
+- **Team notification + visual state.** Cancelling sends the existing team notification; the cancelled activity is dimmed and its RSVP controls are hidden so nobody responds to a dead activity.
+- **Hall slot freed.** Cancelling a training or a home game releases its hall slot, so other teams can claim the freed time.
+
 ## v4.9.5 — 2026-05-18
 
 Bug fixes and polish.

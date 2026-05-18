@@ -272,7 +272,7 @@ export interface Game extends BaseRecord {
   round: string
   season: string
   type: 'home' | 'away'
-  status: 'scheduled' | 'live' | 'completed' | 'postponed'
+  status: 'scheduled' | 'live' | 'completed' | 'postponed' | 'cancelled'
   home_score: number
   away_score: number
   sets_json: unknown
@@ -434,6 +434,8 @@ export interface Event extends BaseRecord {
   invited_roles: string[] | null
   invited_members: string[]
   send_email_invite: boolean
+  cancelled: boolean
+  cancel_reason: string
 
 }
 

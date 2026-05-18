@@ -133,6 +133,12 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
             ))}
           </div>
 
+          {event.cancelled && event.cancel_reason && (
+            <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
+              {event.cancel_reason}
+            </p>
+          )}
+
           {/* Details */}
           <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
             <div className="flex items-center gap-2">
@@ -209,6 +215,7 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
           )}
 
           {/* Participation section */}
+          {!event.cancelled && (
           <div className="space-y-3 border-t border-gray-200 pt-3 dark:border-gray-700">
             {/* Multi-session button + note */}
             {hasSessionMode && sessions.length > 0 ? (
@@ -249,6 +256,7 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
               </button>
             </div>
           </div>
+          )}
         </div>
       </Modal>
 

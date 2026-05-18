@@ -433,7 +433,7 @@ export default {
 
         const today = new Date().toISOString().split('T')[0]
 
-        const [roster, coaches, upcomingGames, completedGames, trainings, trialTrainings, rankings, sponsors] = await Promise.all([
+        const [roster, coaches, upcomingGames, completedGames, trainings, trialTrainings, rankings, barrageRankings, sponsors] = await Promise.all([
           database('member_teams')
             .join('members', 'members.id', 'member_teams.member')
             .where('member_teams.team', team.id)
@@ -471,6 +471,21 @@ export default {
             ? database('rankings')
                 .where('league', team.league).where('season', team.season)
                 .orderBy('rank')
+            : Promise.resolve([]),
+          // Barrage standings this team appears in — promotion/relegation playoffs
+          // ONLY (the `%barrage%` match deliberately excludes cup/Pokal/Turnier).
+          // The regular-league query above keys off `team.league`, which never
+          // equals the barrage group caption, so these rows would otherwise be
+          // dropped and the promotion would be invisible on the public site.
+          team.team_id && team.season
+            ? database('rankings')
+                .whereIn('league', database('rankings')
+                  .select('league')
+                  .where('season', team.season)
+                  .where('team_id', team.team_id)
+                  .whereRaw('league ILIKE ?', ['%barrage%']))
+                .where('season', team.season)
+                .orderBy('league').orderBy('rank')
             : Promise.resolve([]),
           // Sponsors: only sponsors explicitly linked to this team via junction table
           database('sponsors')
@@ -607,6 +622,7 @@ export default {
             upcoming_trainings: trainingsPublic,
             trial_trainings: trialTrainingsPublic,
             rankings,
+            barrage_rankings: barrageRankings,
             sponsors,
           },
         })

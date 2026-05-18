@@ -392,6 +392,8 @@ export interface Training extends BaseRecord {
   auto_confirm_rsvp?: boolean | null
   /** Trial training (Probetraining): publicly visible on the website when the team is open for new players. */
   is_trial?: boolean
+  /** Trial training only: positions the team is recruiting for. Empty/undefined = open to all. */
+  recruiting_positions?: MemberPosition[] | null
 }
 
 export interface Absence extends BaseRecord {

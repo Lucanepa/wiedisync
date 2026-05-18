@@ -17,6 +17,7 @@ export default {
   statusLive: 'In diretta',
   statusPostponed: 'Rinviata',
   statusCompleted: 'Completata',
+  statusCancelled: 'Annullato',
   statusPlanned: 'Programmata',
 
   // Table headers (rankings)

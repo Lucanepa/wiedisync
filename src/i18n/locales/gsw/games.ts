@@ -17,6 +17,7 @@ export default {
   statusLive: 'Live',
   statusPostponed: 'Verschobe',
   statusCompleted: 'Fertig',
+  statusCancelled: 'Abgseit',
   statusPlanned: 'Geplant',
 
   // Table headers (rankings)

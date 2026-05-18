@@ -55,4 +55,5 @@ export default {
   enableTasks: 'Aufgaben aktivieren',
   enableTasksHint: 'Teilnehmer können Pflichten für diesen Event zuweisen und übernehmen.',
   minParticipants: 'Min. Teilnehmer',
+  cancelled: 'Abgesagt',
 } as const

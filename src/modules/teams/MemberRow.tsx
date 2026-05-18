@@ -267,7 +267,7 @@ export default function MemberRow({ memberTeam, teamId: _teamId, teamSlug, team,
 
       {showContact && (
         <td className="hidden px-4 py-3 text-sm text-gray-500 md:table-cell dark:text-gray-400">
-          {member.email || '—'}
+          {member.hide_email ? '—' : (member.email || '—')}
         </td>
       )}
       {showContact && (

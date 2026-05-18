@@ -443,6 +443,12 @@ export async function kscwApi<T = unknown>(
     const err = new Error(`API ${path}: ${res.status}`) as Error & { code?: string }
     // Parse response body and attach error code if present
     try { const parsed = JSON.parse(responseBody); if (parsed?.code) err.code = parsed.code } catch { /* ignore */ }
+    // Benign: an unauthenticated session hitting a protected endpoint (e.g. iOS
+    // Safari evicted the stored token while backgrounded). The throw still drives
+    // the login redirect; reporting it to Sentry/JSONL is just noise. Mirrors the
+    // no-token auth-error suppression in sentry.ts. Real auth bugs (401/403 while
+    // authenticated, refresh failed) still fall through to captureApiError below.
+    if (res.status === 401 && !isAuthenticated()) throw err
     captureApiError(err, {
       operation: 'kscwApi',
       endpoint: path,

@@ -18,6 +18,7 @@ import { useMyCoveringAbsence } from '../../../hooks/useMyCoveringAbsence'
 import { useAbsenceNoteText } from '../../../hooks/useAbsenceNoteText'
 import type { Participation } from '../../../types'
 import { asObj, relId, teamCoachIds } from '../../../utils/relations'
+import CancelActivityButton from '../../../components/CancelActivityButton'
 
 function parseSets(json: unknown): Array<{ home: number; away: number }> {
   if (!Array.isArray(json)) return []
@@ -71,6 +72,12 @@ function StatusBadge({ status }: { status: Game['status'] }) {
           {t('statusCompleted')}
         </span>
       )
+    case 'cancelled':
+      return (
+        <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-400">
+          {t('statusCancelled')}
+        </span>
+      )
     default:
       return null
   }
@@ -78,11 +85,11 @@ function StatusBadge({ status }: { status: Game['status'] }) {
 
 export default function GameCard({ game, onClick, variant = 'card', participations, myParticipation, warnings, onParticipationSaved, onOpenRoster, onEdit, onDelete }: GameCardProps) {
   const { t } = useTranslation('games')
-  const { user, canParticipateIn, isCoachOf } = useAuth()
+  const { user, canParticipateIn, isCoachOf, teamResponsibleIds } = useAuth()
   const { effectiveIsAdmin } = useAdminMode()
   const canParticipate = !!user && !!game.kscw_team && canParticipateIn(game.kscw_team)
   const teamIdForPerms = relId(game.kscw_team)
-  const canManage = !!user && (effectiveIsAdmin || isCoachOf(teamIdForPerms))
+  const canManage = !!user && (effectiveIsAdmin || isCoachOf(teamIdForPerms) || teamResponsibleIds.includes(teamIdForPerms))
   const canDelete = canManage && game.source === 'manual'
   const expanded = game as unknown as ExpandedGame
   const expandedHall = asObj<Hall & BaseRecord>(expanded.hall)
@@ -260,7 +267,7 @@ export default function GameCard({ game, onClick, variant = 'card', participatio
     <div
       data-tour="game-card"
       onClick={() => onClick?.(game)}
-      className={`flex items-stretch overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-card transition-shadow ${onClick ? 'cursor-pointer hover:shadow-card-hover' : ''}`}
+      className={`flex items-stretch overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-card transition-shadow ${onClick ? 'cursor-pointer hover:shadow-card-hover' : ''}${game.status === 'cancelled' ? ' opacity-60' : ''}`}
     >
       {/* Participation status vertical banner */}
       {user && myStatus && (
@@ -279,6 +286,16 @@ export default function GameCard({ game, onClick, variant = 'card', participatio
         }`}>
           {game.type === 'home' ? t('typeHomeShort') : t('typeAwayShort')}
         </span>
+        {(game.status === 'scheduled' || game.status === 'cancelled') && (
+          <CancelActivityButton
+            kind="game"
+            activityId={game.id}
+            isCancelled={game.status === 'cancelled'}
+            teamIds={teamIdForPerms ? [teamIdForPerms] : []}
+            variant="icon"
+            onDone={onParticipationSaved}
+          />
+        )}
         {onOpenRoster && (
           <button
             onClick={() => onOpenRoster(game)}

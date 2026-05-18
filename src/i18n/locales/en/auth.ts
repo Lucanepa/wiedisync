@@ -110,6 +110,8 @@ export default {
   privacySection: 'Privacy',
   hidePhone: 'Hide phone number',
   hidePhoneHint: 'Your phone number will not be shown to other members.',
+  hideEmail: 'Hide email address',
+  hideEmailHint: 'Your email address will not be shown to other members.',
   birthdateVisibility: 'Birthdate visibility',
   birthdateVisibilityFull: 'Show full date',
   birthdateVisibilityYearOnly: 'Year only',
@@ -214,4 +216,6 @@ export default {
   clubdeskUpdateSent: 'Data update sent to admin',
   invalidAhvFormat: 'AHV number must follow format 756.XXXX.XXXX.XX',
   invalidPlz: 'PLZ must be a 4-digit Swiss postal code',
+  requiredProfileFields: 'First name, last name and email are required',
+  invalidEmail: 'Please enter a valid email address',
 } as const

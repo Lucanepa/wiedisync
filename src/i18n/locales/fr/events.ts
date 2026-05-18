@@ -54,4 +54,5 @@ export default {
   enableTasks: 'Activer les taches',
   enableTasksHint: 'Les participants peuvent assigner et prendre en charge des responsabilites pour cet evenement.',
   minParticipants: 'Min. participants',
+  cancelled: 'Annulé',
 } as const

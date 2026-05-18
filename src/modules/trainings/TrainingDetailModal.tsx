@@ -15,6 +15,7 @@ import { sanitizeUrl } from '../../utils/sanitizeUrl'
 import { isFeatureEnabled } from '../../utils/featureToggles'
 import type { Training, Team, Hall, Member } from '../../types'
 import { asObj, relId, flattenMemberIds } from '../../utils/relations'
+import CancelActivityButton from '../../components/CancelActivityButton'
 import { MapPin, Clock, MessageSquare, User, Users, Calendar, Check, UserPlus } from 'lucide-react'
 
 type TrainingExpanded = Training & {
@@ -43,28 +44,40 @@ export default function TrainingDetailModal({ training, onClose }: TrainingDetai
   const hall = asObj<Hall>(training.hall)
   const coach = asObj<Member>(training.coach)
 
-  const headerBroadcast = user ? (
-    <BroadcastButton
-      activity={{
-        type: 'training',
-        id: Number(training.id),
-        title: team?.name ?? t('title'),
-        start_date: training.date && training.start_time
-          ? `${training.date}T${training.start_time}`
-          : training.date,
-        location: hall?.name ?? training.hall_name,
-        teamName: team?.name,
-        sport: (team?.sport as 'volleyball' | 'basketball' | undefined) ?? null,
-        teamId: teamId ? Number(teamId) : undefined,
-      }}
-      member={{
-        id: user.id,
-        role: user.role ?? null,
-        isCoachOf: coachTeamIds,
-        isResponsibleOf: teamResponsibleIds,
-      }}
-    />
-  ) : null
+  const headerBroadcast = (
+    <div className="flex items-center gap-2">
+      <CancelActivityButton
+        kind="training"
+        activityId={training.id}
+        isCancelled={!!training.cancelled}
+        teamIds={teamId ? [teamId] : []}
+        variant="inline"
+        onDone={onClose}
+      />
+      {user ? (
+        <BroadcastButton
+          activity={{
+            type: 'training',
+            id: Number(training.id),
+            title: team?.name ?? t('title'),
+            start_date: training.date && training.start_time
+              ? `${training.date}T${training.start_time}`
+              : training.date,
+            location: hall?.name ?? training.hall_name,
+            teamName: team?.name,
+            sport: (team?.sport as 'volleyball' | 'basketball' | undefined) ?? null,
+            teamId: teamId ? Number(teamId) : undefined,
+          }}
+          member={{
+            id: user.id,
+            role: user.role ?? null,
+            isCoachOf: coachTeamIds,
+            isResponsibleOf: teamResponsibleIds,
+          }}
+        />
+      ) : null}
+    </div>
+  )
 
   return (
     <>

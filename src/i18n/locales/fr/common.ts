@@ -107,4 +107,21 @@ export default {
   sport: 'Sport',
   volleyball: 'Volleyball',
   basketball: 'Basketball',
+
+  // Cancel / reinstate activity
+  cancelTrainingAction: 'Annuler l’entraînement',
+  cancelEventAction: 'Annuler l’événement',
+  cancelGameAction: 'Annuler le match',
+  reinstateAction: 'Rétablir',
+  cancelTrainingConfirm: 'Annuler cet entraînement ? L’équipe est notifiée et le créneau de salle est libéré pour d’autres équipes.',
+  cancelEventConfirm: 'Annuler cet événement ? L’équipe est notifiée.',
+  cancelGameConfirm: 'Annuler ce match ? L’équipe est notifiée.',
+  reinstateTrainingConfirm: 'Rétablir cet entraînement ? Il redevient actif et reprend son créneau de salle.',
+  reinstateEventConfirm: 'Rétablir cet événement ?',
+  reinstateGameConfirm: 'Rétablir ce match ?',
+  cancelReasonLabel: 'Motif (facultatif)',
+  cancelReasonPlaceholder: 'Visible par l’équipe — p. ex. salle inondée',
+  keepBtn: 'Conserver',
+  cancelConfirmBtn: 'Annuler',
+  reinstateConfirmBtn: 'Rétablir',
 } as const

@@ -13,6 +13,7 @@ import { useMyCoveringAbsence } from '../../hooks/useMyCoveringAbsence'
 import { useAbsenceNoteText } from '../../hooks/useAbsenceNoteText'
 import { formatDate, formatTime, getDeadlineDate } from '../../utils/dateHelpers'
 import type { Event, Team, Participation } from '../../types'
+import CancelActivityButton from '../../components/CancelActivityButton'
 
 /** Extract Team objects from Directus M2M junction array (events_teams[].teams_id) */
 function asTeams(teams: unknown[] | null | undefined): Team[] {
@@ -83,7 +84,7 @@ export default function EventCard({ event, onClick, onEdit, onDelete, onOpenRost
   return (
     <div
       data-tour="event-card"
-      className={`flex items-stretch overflow-hidden rounded-xl border border-gray-200 bg-white shadow-card dark:border-gray-700 dark:bg-gray-800${onClick ? ' cursor-pointer transition-shadow hover:shadow-card-hover' : ''}`}
+      className={`flex items-stretch overflow-hidden rounded-xl border border-gray-200 bg-white shadow-card dark:border-gray-700 dark:bg-gray-800${onClick ? ' cursor-pointer transition-shadow hover:shadow-card-hover' : ''}${event.cancelled ? ' opacity-60' : ''}`}
       onClick={onClick}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
@@ -101,6 +102,19 @@ export default function EventCard({ event, onClick, onEdit, onDelete, onOpenRost
           <h2 className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">{event.title}</h2>
         </div>
         <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          {event.cancelled && (
+            <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-400">
+              {t('cancelled')}
+            </span>
+          )}
+          <CancelActivityButton
+            kind="event"
+            activityId={event.id}
+            isCancelled={!!event.cancelled}
+            teamIds={asTeams(event.teams).map((tm) => String(tm.id))}
+            variant="icon"
+            onDone={onParticipationSaved}
+          />
           {onOpenRoster && (
             <button
               onClick={() => onOpenRoster(event)}
@@ -166,6 +180,9 @@ export default function EventCard({ event, onClick, onEdit, onDelete, onOpenRost
           ? <RichText html={event.description} className="mt-1 text-sm text-gray-500 dark:text-gray-400" />
           : <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{event.description}</p>
       )}
+      {event.cancelled && event.cancel_reason && (
+        <p className="mt-1 text-xs text-red-600 dark:text-red-400">{event.cancel_reason}</p>
+      )}
       {teams.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1">
           {teams.map((team) => (
@@ -180,7 +197,7 @@ export default function EventCard({ event, onClick, onEdit, onDelete, onOpenRost
       )}
 
       {/* Bottom row: RSVP + participation bars */}
-      {canRSVP && (
+      {canRSVP && !event.cancelled && (
         <div data-tour="event-rsvp" className="mt-2.5 space-y-1.5" onClick={(e) => e.stopPropagation()}>
           <div className="flex flex-wrap items-end justify-between gap-2">
             <EventCardParticipation

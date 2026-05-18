@@ -2268,7 +2268,7 @@ export default ({ action, filter, init, schedule }, { services, database, logger
     }
   })
 
-  // ── 11. Filter: Member Privacy (birthdate_visibility, hide_phone) ──
+  // ── 11. Filter: Member Privacy (birthdate_visibility, hide_phone, hide_email) ──
   // Enforces privacy settings at the API level so even direct API access respects them.
   // Admins and the member's own record are exempt.
 
@@ -2296,6 +2296,11 @@ export default ({ action, filter, init, schedule }, { services, database, logger
       // Phone visibility
       if (item.hide_phone === true) {
         item.phone = null
+      }
+
+      // Email visibility
+      if (item.hide_email === true) {
+        item.email = null
       }
 
       // AHV number — only visible to self and admins

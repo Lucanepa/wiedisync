@@ -46,6 +46,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
   const [number, setNumber] = useState<number>(0)
   const [birthdate, setBirthdate] = useState('')
   const [hidePhone, setHidePhone] = useState(false)
+  const [hideEmail, setHideEmail] = useState(false)
   const [birthdateVisibility, setBirthdateVisibility] = useState<'full' | 'year_only' | 'hidden'>('full')
   const [language, setLanguage] = useState<BackendLanguage>('german')
   const [websiteVisible, setWebsiteVisible] = useState(true)
@@ -78,6 +79,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
       setNumber(user.number ?? 0)
       setBirthdate(user.birthdate ? user.birthdate.slice(0, 10) : '')
       setHidePhone(user.hide_phone ?? false)
+      setHideEmail(user.hide_email ?? false)
       setWebsiteVisible(user.website_visible ?? true)
       setBirthdateVisibility((user.birthdate_visibility as 'full' | 'year_only' | 'hidden') || 'hidden')
       setLanguage((user.language as BackendLanguage) || 'german')
@@ -142,6 +144,24 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
     setLoading(true)
 
     try {
+      // First name, last name and email are mandatory — never let a member
+      // blank them out (an empty email wipes their only contact channel and
+      // breaks notifications / ClubDesk sync). `required` on the inputs blocks
+      // empty submits; this also rejects whitespace-only and bad email formats.
+      const fn = firstName.trim()
+      const ln = lastName.trim()
+      const em = email.trim()
+      if (!fn || !ln || !em) {
+        setError(t('requiredProfileFields'))
+        setLoading(false)
+        return
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) {
+        setError(t('invalidEmail'))
+        setLoading(false)
+        return
+      }
+
       // Check for duplicate number in the same team(s)
       if (number > 0 && number !== user.number) {
         const myTeams = await fetchAllItems('member_teams', {
@@ -166,12 +186,13 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
       }
 
       const payload: Record<string, unknown> = {
-        first_name: firstName,
-        last_name: lastName,
-        email,
+        first_name: fn,
+        last_name: ln,
+        email: em,
         phone,
         number,
         hide_phone: hidePhone,
+        hide_email: hideEmail,
         birthdate_visibility: birthdateVisibility,
         website_visible: websiteVisible,
         language,
@@ -219,12 +240,12 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
       } else {
         await updateRecord('members', user.id, payload)
       }
-      logActivity('update', 'members', user.id, { first_name: firstName, last_name: lastName, phone, language, position: selectedPositions })
+      logActivity('update', 'members', user.id, { first_name: fn, last_name: ln, phone, language, position: selectedPositions })
       // Detect ClubDesk field changes and notify admin
       const clubdeskFields = {
-        first_name: { old: user.first_name, new: firstName },
-        last_name: { old: user.last_name, new: lastName },
-        email: { old: user.email, new: email },
+        first_name: { old: user.first_name, new: fn },
+        last_name: { old: user.last_name, new: ln },
+        email: { old: user.email, new: em },
         phone: { old: user.phone, new: phone },
         birthdate: { old: user.birthdate?.slice(0, 10) || '', new: birthdate },
         anrede: { old: user.anrede || '', new: anrede },
@@ -235,9 +256,13 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
         sex: { old: user.sex || '', new: sex },
         ahv_nummer: { old: user.ahv_nummer || '', new: ahvNummer },
       }
+      // Normalize before diffing — `undefined`/`null`/`''`/whitespace must all
+      // compare equal, otherwise an empty optional field (e.g. phone) emits a
+      // bogus "— → —" change row in the admin ClubDesk email.
+      const norm = (v: unknown) => String(v ?? '').trim()
       const changes = Object.entries(clubdeskFields)
-        .filter(([, v]) => v.old !== v.new)
-        .map(([field, v]) => ({ field, old_value: v.old, new_value: v.new }))
+        .filter(([, v]) => norm(v.old) !== norm(v.new))
+        .map(([field, v]) => ({ field, old_value: norm(v.old), new_value: norm(v.new) }))
 
       if (changes.length > 0) {
         // Fire-and-forget — don't block modal close for the email
@@ -247,8 +272,8 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
             member_id: user.id,
             changes,
             current_data: {
-              anrede, first_name: firstName, last_name: lastName,
-              email, phone, adresse, plz, ort,
+              anrede, first_name: fn, last_name: ln,
+              email: em, phone, adresse, plz, ort,
               birthdate, nationalitaet, sex, ahv_nummer: ahvNummer,
               beitragskategorie: user.beitragskategorie || '',
             },
@@ -391,6 +416,7 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          required
         />
 
         <FormInput
@@ -587,6 +613,13 @@ export default function ProfileEditModal({ open, onClose, onboarding }: ProfileE
                 <div>
                   <span className="text-sm text-gray-700 dark:text-gray-300">{t('hidePhone')}</span>
                   <p className="text-xs text-gray-500 dark:text-gray-400">{t('hidePhoneHint')}</p>
+                </div>
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <Switch checked={hideEmail} onCheckedChange={setHideEmail} />
+                <div>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">{t('hideEmail')}</span>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('hideEmailHint')}</p>
                 </div>
               </label>
               <FormField label={t('birthdateVisibility')}>

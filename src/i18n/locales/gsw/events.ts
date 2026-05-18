@@ -55,4 +55,5 @@ export default {
   enableTasks: 'Ufgabe aktiviere',
   enableTasksHint: 'Teilnehmer chönd Pflichte für de Event zuewise und überneh.',
   minParticipants: 'Min. Teilnehmer',
+  cancelled: 'Abgseit',
 } as const

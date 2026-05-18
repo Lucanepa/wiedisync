@@ -213,6 +213,7 @@ const COLLECTIONS = [
       boolean('coach_approved_team'),
       select('language', ['english', 'german', 'french', 'italian', 'swiss_german']),
       boolean('hide_phone'),
+      boolean('hide_email'),
       select('birthdate_visibility', ['full', 'year_only', 'hidden']),
       boolean('website_visible'),
       boolean('wiedisync_active'),

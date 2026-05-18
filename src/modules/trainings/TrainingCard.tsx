@@ -13,6 +13,7 @@ import ParticipationWarningBadge from '../../components/ParticipationWarningBadg
 import { getTrainingWarnings } from '../../utils/participationWarnings'
 import type { Training, Team, Hall, Member, Participation } from '../../types'
 import { asObj, relId, memberName, teamCoachIds } from '../../utils/relations'
+import CancelActivityButton from '../../components/CancelActivityButton'
 
 type TrainingExpanded = Training & {
   team: Team | string
@@ -80,6 +81,13 @@ export default function TrainingCard({ training, participations, myParticipation
               {t('cancelled')}
             </span>
           )}
+          <CancelActivityButton
+            kind="training"
+            activityId={training.id}
+            isCancelled={!!training.cancelled}
+            teamIds={teamId ? [teamId] : []}
+            variant="icon"
+          />
         </div>
       </div>
 

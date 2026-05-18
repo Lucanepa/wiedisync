@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.9.5'
+const APP_VERSION = '4.11.0'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,40 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.11.0',
+    date: '2026-05-18',
+    sections: [
+      {
+        title: 'Email is now required',
+        items: [
+          'First name, last name and email are mandatory when editing your profile — the email field can no longer be cleared.',
+          'A server-side safeguard prevents an existing email from being wiped through any other path.',
+        ],
+      },
+      {
+        title: 'Hide email from other members',
+        items: [
+          'New "Hide email address" privacy toggle in Profile, mirroring "Hide phone number".',
+          'When on, your email is hidden from other members wherever contact details appear — rosters, player profiles, scorer and game contact info.',
+        ],
+      },
+    ],
+  },
+  {
+    version: '4.10.0',
+    date: '2026-05-18',
+    sections: [
+      {
+        title: 'Cancel trainings, events & games',
+        items: [
+          'Coaches and team-responsibles can now cancel — or reinstate — a training, event or game directly from its card or detail view.',
+          'Cancelling notifies the team; the cancelled activity is dimmed and its RSVP controls are hidden.',
+          'A cancelled training or home game automatically frees its hall slot so other teams can claim it.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.9.5',
     date: '2026-05-18',

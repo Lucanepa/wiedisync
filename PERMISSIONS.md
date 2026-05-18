@@ -50,6 +50,7 @@ Used throughout — repeated literally rather than via subqueries because Direct
 | games | read | none | Limited fields (`PUBLIC_GAME_FIELDS`) |
 | rankings | read | none | |
 | sponsors | read | `active = true` | |
+| scorer_courses | read | `active = true` | Scorer-course sign-up sessions (kscw-website) |
 | teams_sponsors | read | none | Junction for kscw-website |
 | teams_coaches | read | none | Junction for kscw-website |
 | members | read | none | Fields: `id, first_name, last_name, photo` only |

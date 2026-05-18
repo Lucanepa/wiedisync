@@ -20,6 +20,7 @@ import { isFeatureEnabled } from '../../utils/featureToggles'
 import { Calendar, Clock, MapPin, Users, Check, MessageSquare, UserPlus } from 'lucide-react'
 import { flattenMemberIds } from '../../utils/relations'
 import type { Event, Team, EventSession, Participation, VolleyPosition } from '../../types'
+import CancelActivityButton from '../../components/CancelActivityButton'
 
 const VOLLEY_POSITIONS: VolleyPosition[] = ['Setter', 'Outside', 'Middle', 'Opposite', 'Libero', 'Universal']
 
@@ -84,24 +85,36 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
 
   const teams = asTeams(event.teams)
 
-  const headerBroadcast = user ? (
-    <BroadcastButton
-      activity={{
-        type: 'event',
-        id: Number(event.id),
-        title: event.title,
-        start_date: event.start_date,
-        location: event.location,
-        sport: null,
-      }}
-      member={{
-        id: user.id,
-        role: user.role ?? null,
-        isCoachOf: coachTeamIds,
-        isResponsibleOf: teamResponsibleIds,
-      }}
-    />
-  ) : null
+  const headerBroadcast = (
+    <div className="flex items-center gap-2">
+      <CancelActivityButton
+        kind="event"
+        activityId={event.id}
+        isCancelled={!!event.cancelled}
+        teamIds={teams.map((tm) => String(tm.id))}
+        variant="inline"
+        onDone={onClose}
+      />
+      {user ? (
+        <BroadcastButton
+          activity={{
+            type: 'event',
+            id: Number(event.id),
+            title: event.title,
+            start_date: event.start_date,
+            location: event.location,
+            sport: null,
+          }}
+          member={{
+            id: user.id,
+            role: user.role ?? null,
+            isCoachOf: coachTeamIds,
+            isResponsibleOf: teamResponsibleIds,
+          }}
+        />
+      ) : null}
+    </div>
+  )
 
   return (
     <>
@@ -110,6 +123,11 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
           {/* Type badge + teams */}
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge status={event.event_type} colorMap={eventTypeColors} />
+            {event.cancelled && (
+              <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                {t('cancelled')}
+              </span>
+            )}
             {teams.map((team) => (
               <TeamChip key={team.id} team={team.name} size="sm" />
             ))}

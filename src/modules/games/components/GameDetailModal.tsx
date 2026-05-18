@@ -21,7 +21,7 @@ import TasksSection from '../../tasks/TasksSection'
 import CarpoolSection from '../../carpool/CarpoolSection'
 import BroadcastButton from '../../broadcast/BroadcastButton'
 import { isFeatureEnabled } from '../../../utils/featureToggles'
-import { asObj, relId, flattenMemberIds } from '../../../utils/relations'
+import { asObj, relId, teamCoachIds } from '../../../utils/relations'
 import CancelActivityButton from '../../../components/CancelActivityButton'
 
 const GAME_EXPAND = 'kscw_team,hall,scorer_member,scoreboard_member,scorer_scoreboard_member,scorer_duty_team,scoreboard_duty_team,scorer_scoreboard_duty_team,bb_scorer_member,bb_timekeeper_member,bb_24s_official,bb_duty_team,bb_scorer_duty_team,bb_timekeeper_duty_team,bb_24s_duty_team'
@@ -386,7 +386,7 @@ export default function GameDetailModal({ game, onClose, readOnly }: GameDetailM
                   })()}
                 </div>
             <div className="ml-auto border-l pl-3 dark:border-gray-600">
-              <ParticipationSummary activityType="game" activityId={game.id} bars coachMemberIds={[...flattenMemberIds(kscwTeamObj?.coach), ...flattenMemberIds(kscwTeamObj?.captain), ...flattenMemberIds(kscwTeamObj?.team_responsible)]} />
+              <ParticipationSummary activityType="game" activityId={game.id} bars coachMemberIds={teamCoachIds(kscwTeamObj)} />
             </div>
             {/* Participation note */}
             {effectiveStatus && (

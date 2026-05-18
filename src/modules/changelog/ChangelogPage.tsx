@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ScrollText } from 'lucide-react'
 import { Badge } from '../../components/ui/badge'
 
-const APP_VERSION = '4.12.0'
+const APP_VERSION = '4.12.1'
 
 interface ChangelogEntry {
   version: string
@@ -11,6 +11,24 @@ interface ChangelogEntry {
 }
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '4.12.1',
+    date: '2026-05-18',
+    sections: [
+      {
+        title: '"Coach present" accuracy',
+        items: [
+          'The "Coach present" badge on training, game and event details now lights up only when an actual coach has confirmed — previously the team captain or a team-responsible RSVPing "Yes" was enough to show it, even on teams with no coach.',
+        ],
+      },
+      {
+        title: 'Date format',
+        items: [
+          'Dates in the app now always show in Swiss format (20.05.2026) regardless of UI language — English users were seeing 20/05/2026 with slashes.',
+        ],
+      },
+    ],
+  },
   {
     version: '4.12.0',
     date: '2026-05-18',

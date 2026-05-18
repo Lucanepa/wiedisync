@@ -18,7 +18,7 @@ import TasksSection from '../tasks/TasksSection'
 import BroadcastButton from '../broadcast/BroadcastButton'
 import { isFeatureEnabled } from '../../utils/featureToggles'
 import { Calendar, Clock, MapPin, Users, Check, MessageSquare, UserPlus } from 'lucide-react'
-import { flattenMemberIds } from '../../utils/relations'
+import { teamCoachIds } from '../../utils/relations'
 import type { Event, Team, EventSession, Participation, VolleyPosition } from '../../types'
 import CancelActivityButton from '../../components/CancelActivityButton'
 
@@ -244,7 +244,7 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
             {/* Summary + roster button */}
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <ParticipationSummary activityType="event" activityId={event.id} bars coachMemberIds={teams.flatMap(t => [...flattenMemberIds(t.coach), ...flattenMemberIds(t.captain), ...flattenMemberIds(t.team_responsible)])} />
+                <ParticipationSummary activityType="event" activityId={event.id} bars coachMemberIds={teams.flatMap(t => teamCoachIds(t))} />
               </div>
               <button
                 onClick={() => setRosterOpen(true)}

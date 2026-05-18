@@ -2,6 +2,13 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## v4.12.1 — 2026-05-18
+
+Two bug fixes: a misleading "Coach present" badge and English-locale date formatting.
+
+- **"Coach present" badge accuracy.** The badge on the training/game/event detail modals built `coachMemberIds` from `coach + captain + team_responsible`, while every card/list view uses the `teamCoachIds()` helper (coach-only, by explicit design). Because the captain is a core player who almost always RSVPs "Yes", the detail modals showed "Coach present" on virtually every session — even on teams with no coach assigned — contradicting the matching card. All three detail modals (`TrainingDetailModal`, `GameDetailModal`, `EventDetailModal`) now use `teamCoachIds()`. Genuine coaches who RSVP as staff are still counted via the separate `is_staff` path, so no real coaches are lost.
+- **Date format for English users.** `formatDate()` in `dateHelpers.ts` defaulted to `currentLocale()`, which returns `en-GB` for English UI — rendering dates as `20/05/2026` (slashes), violating the app-wide Swiss `dd.mm.yyyy` convention. It now defaults to `de-CH` (consistent with `formatDateCompact` directly above it), so dates render as `20.05.2026` regardless of UI language. Weekday names remain localised.
+
 ## v4.12.0 — 2026-05-18
 
 Training cancellations now reach the team, trial trainings can advertise recruiting positions, and the training detail modal layout is fixed.

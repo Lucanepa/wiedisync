@@ -14,7 +14,7 @@ import BroadcastButton from '../broadcast/BroadcastButton'
 import { sanitizeUrl } from '../../utils/sanitizeUrl'
 import { isFeatureEnabled } from '../../utils/featureToggles'
 import type { Training, Team, Hall, Member } from '../../types'
-import { asObj, relId, flattenMemberIds } from '../../utils/relations'
+import { asObj, relId, teamCoachIds } from '../../utils/relations'
 import CancelActivityButton from '../../components/CancelActivityButton'
 import { MapPin, Clock, MessageSquare, User, Users, Calendar, Check, UserPlus } from 'lucide-react'
 
@@ -179,7 +179,7 @@ export default function TrainingDetailModal({ training, onClose }: TrainingDetai
               {/* Summary + roster button */}
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <ParticipationSummary activityType="training" activityId={training.id} bars coachMemberIds={[...flattenMemberIds(team?.coach), ...flattenMemberIds(team?.captain), ...flattenMemberIds(team?.team_responsible)]} />
+                  <ParticipationSummary activityType="training" activityId={training.id} bars coachMemberIds={teamCoachIds(team)} />
                 </div>
                 <button
                   onClick={() => setRosterOpen(true)}

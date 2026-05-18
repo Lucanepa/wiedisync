@@ -172,7 +172,7 @@ export function formatDateCompact(d: string, locale?: string): string {
 }
 
 export function formatDate(d: string, locale?: string): string {
-  return formatDateZurich(d, locale ?? currentLocale())
+  return formatDateZurich(d, locale)
 }
 
 export function formatDateShort(d: string): string {

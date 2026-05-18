@@ -389,6 +389,7 @@ async function main() {
     await setPermRead(PUBLIC_POLICY, 'games', null, PUBLIC_GAME_FIELDS)
     await setPermRead(PUBLIC_POLICY, 'rankings')
     await setPermRead(PUBLIC_POLICY, 'sponsors', { active: { _eq: true } })
+    await setPermRead(PUBLIC_POLICY, 'scorer_courses', { active: { _eq: true } })
 
     // Junction tables for deep queries (website needs coach names, sponsor logos)
     await setPermRead(PUBLIC_POLICY, 'teams_sponsors')

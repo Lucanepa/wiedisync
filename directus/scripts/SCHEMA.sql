@@ -2,7 +2,7 @@
 -- KSCW SCHEMA baseline — GENERATED, DO NOT EDIT BY HAND
 -- ============================================================================
 --
--- Generated:   2026-05-18T13:14:41.668Z
+-- Generated:   2026-05-18T15:31:07.829Z
 -- Source:      prod (db=postgres)
 -- Generator:   directus/scripts/regenerate-baseline.mjs
 --
@@ -1401,7 +1401,8 @@ BEGIN
           min_participants = COALESCE(NEW.min_participants, min_participants),
           max_participants = COALESCE(NEW.max_participants, max_participants),
           excluded_guest_levels = COALESCE(NEW.excluded_guest_levels, excluded_guest_levels),
-          require_note_if_absent = NEW.require_note_if_absent
+          require_note_if_absent = NEW.require_note_if_absent,
+          recruiting_positions = COALESCE(NEW.recruiting_positions, recruiting_positions)
       WHERE id = v_existing_id;
 
       DELETE FROM trainings WHERE id = NEW.id;
@@ -3647,7 +3648,8 @@ CREATE TABLE public.trainings (
     excluded_guest_levels jsonb DEFAULT '[]'::jsonb NOT NULL,
     auto_confirm_rsvp boolean,
     is_trial boolean DEFAULT false NOT NULL,
-    auto_cancelled_by_trial integer
+    auto_cancelled_by_trial integer,
+    recruiting_positions jsonb
 );
 
 
@@ -3670,6 +3672,13 @@ COMMENT ON COLUMN public.trainings.is_trial IS 'When true, the training is a pub
 --
 
 COMMENT ON COLUMN public.trainings.auto_cancelled_by_trial IS 'When non-null, this training was auto-cancelled because trial training id=<this> exists for the same team+date. Cleared automatically by trg_trainings_clear_auto_cancel_marker when a user manually toggles `cancelled`.';
+
+
+--
+-- Name: COLUMN trainings.recruiting_positions; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.trainings.recruiting_positions IS 'Trial trainings only: MemberPosition[] the team is recruiting for (e.g. ["setter","middle"]). NULL/[] = open to all positions. Surfaced on the public team page when open_for_players=true.';
 
 
 --

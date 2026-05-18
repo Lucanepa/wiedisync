@@ -108,4 +108,21 @@ export default {
   volleyball: 'Volleyball',
   basketball: 'Basketball',
   copied: 'Copied!',
+
+  // Cancel / reinstate activity
+  cancelTrainingAction: 'Cancel training',
+  cancelEventAction: 'Cancel event',
+  cancelGameAction: 'Cancel game',
+  reinstateAction: 'Reinstate',
+  cancelTrainingConfirm: 'Cancel this training? The team is notified and the hall slot is freed for other teams.',
+  cancelEventConfirm: 'Cancel this event? The team is notified.',
+  cancelGameConfirm: 'Cancel this game? The team is notified.',
+  reinstateTrainingConfirm: 'Reinstate this training? It becomes active again and reclaims its hall slot.',
+  reinstateEventConfirm: 'Reinstate this event?',
+  reinstateGameConfirm: 'Reinstate this game?',
+  cancelReasonLabel: 'Reason (optional)',
+  cancelReasonPlaceholder: 'Visible to the team — e.g. hall flooded',
+  keepBtn: 'Keep it',
+  cancelConfirmBtn: 'Cancel it',
+  reinstateConfirmBtn: 'Reinstate',
 } as const

@@ -108,4 +108,21 @@ export default {
   volleyball: 'Volleyball',
   basketball: 'Basketball',
   copied: 'Kopiert!',
+
+  // Cancel / reinstate activity
+  cancelTrainingAction: 'Training absagen',
+  cancelEventAction: 'Anlass absagen',
+  cancelGameAction: 'Spiel absagen',
+  reinstateAction: 'Wiederherstellen',
+  cancelTrainingConfirm: 'Dieses Training absagen? Das Team wird benachrichtigt und der Hallenplatz für andere Teams freigegeben.',
+  cancelEventConfirm: 'Diesen Anlass absagen? Das Team wird benachrichtigt.',
+  cancelGameConfirm: 'Dieses Spiel absagen? Das Team wird benachrichtigt.',
+  reinstateTrainingConfirm: 'Dieses Training wiederherstellen? Es wird wieder aktiv und beansprucht den Hallenplatz erneut.',
+  reinstateEventConfirm: 'Diesen Anlass wiederherstellen?',
+  reinstateGameConfirm: 'Dieses Spiel wiederherstellen?',
+  cancelReasonLabel: 'Grund (optional)',
+  cancelReasonPlaceholder: 'Für das Team sichtbar — z. B. Halle überschwemmt',
+  keepBtn: 'Behalten',
+  cancelConfirmBtn: 'Absagen',
+  reinstateConfirmBtn: 'Wiederherstellen',
 } as const

@@ -108,4 +108,21 @@ export default {
   volleyball: 'Volley',
   basketball: 'Basketball',
   copied: 'Kopiert!',
+
+  // Cancel / reinstate activity
+  cancelTrainingAction: 'Training absäge',
+  cancelEventAction: 'Aalass absäge',
+  cancelGameAction: 'Spiel absäge',
+  reinstateAction: 'Wiederhärstelle',
+  cancelTrainingConfirm: 'Das Training absäge? S Team wird benachrichtigt und de Hallenplatz für anderi Teams frigäh.',
+  cancelEventConfirm: 'De Aalass absäge? S Team wird benachrichtigt.',
+  cancelGameConfirm: 'S Spiel absäge? S Team wird benachrichtigt.',
+  reinstateTrainingConfirm: 'Das Training wiederhärstelle? Es wird wieder aktiv und beansprucht de Hallenplatz wieder.',
+  reinstateEventConfirm: 'De Aalass wiederhärstelle?',
+  reinstateGameConfirm: 'S Spiel wiederhärstelle?',
+  cancelReasonLabel: 'Grund (optional)',
+  cancelReasonPlaceholder: 'Für s Team sichtbar — z. B. Halle überschwemmt',
+  keepBtn: 'Bhalte',
+  cancelConfirmBtn: 'Absäge',
+  reinstateConfirmBtn: 'Wiederhärstelle',
 } as const

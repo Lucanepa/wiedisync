@@ -107,4 +107,21 @@ export default {
   sport: 'Sport',
   volleyball: 'Pallavolo',
   basketball: 'Pallacanestro',
+
+  // Cancel / reinstate activity
+  cancelTrainingAction: 'Annulla allenamento',
+  cancelEventAction: 'Annulla evento',
+  cancelGameAction: 'Annulla partita',
+  reinstateAction: 'Ripristina',
+  cancelTrainingConfirm: 'Annullare questo allenamento? La squadra viene avvisata e lo slot palestra è liberato per altre squadre.',
+  cancelEventConfirm: 'Annullare questo evento? La squadra viene avvisata.',
+  cancelGameConfirm: 'Annullare questa partita? La squadra viene avvisata.',
+  reinstateTrainingConfirm: 'Ripristinare questo allenamento? Torna attivo e riprende il suo slot palestra.',
+  reinstateEventConfirm: 'Ripristinare questo evento?',
+  reinstateGameConfirm: 'Ripristinare questa partita?',
+  cancelReasonLabel: 'Motivo (facoltativo)',
+  cancelReasonPlaceholder: 'Visibile alla squadra — es. palestra allagata',
+  keepBtn: 'Mantieni',
+  cancelConfirmBtn: 'Annulla',
+  reinstateConfirmBtn: 'Ripristina',
 } as const

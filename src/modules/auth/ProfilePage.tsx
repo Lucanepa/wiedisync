@@ -235,7 +235,12 @@ export default function ProfilePage() {
         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{t('contactPrivacyNotice')}</p>
         <div className="mt-3 grid gap-4 sm:grid-cols-2">
           <div className="rounded-lg border bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-            <p className="text-sm text-gray-500 dark:text-gray-400">{t('email')}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('email')}</p>
+              {user.hide_email && (
+                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">{t('hidden')}</span>
+              )}
+            </div>
             <p className="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">{user.email || '—'}</p>
           </div>
           <div className="rounded-lg border bg-white p-4 dark:border-gray-700 dark:bg-gray-800">

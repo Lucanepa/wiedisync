@@ -109,6 +109,7 @@ export interface Member extends BaseRecord {
   requested_team: string
   language: 'english' | 'german' | 'french' | 'italian' | 'swiss_german' | ''
   hide_phone: boolean
+  hide_email: boolean
   birthdate_visibility: 'full' | 'year_only' | 'hidden'
   website_visible: boolean
   is_spielplaner: boolean

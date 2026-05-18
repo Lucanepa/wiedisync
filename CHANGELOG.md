@@ -2,6 +2,14 @@
 
 All notable changes to Wiedisync are documented in this file. Recent releases carry more detail; older entries are one-liners — see `git log` for the full text.
 
+## v4.11.0 — 2026-05-18
+
+Email is now mandatory, and members can hide it from others.
+
+- **Email required.** First name, last name and email are mandatory in profile editing — the email field can no longer be left empty (an empty email broke notifications, password reset and ClubDesk sync). Migration 059 adds a server-side trigger that refuses to blank an existing email through any write path.
+- **Hide email.** New "Hide email address" privacy toggle (Profile → Privacy), mirroring "Hide phone number". When on, the email is nulled in the API for everyone except the member and admins, and hidden in every UI surface that shows contact details. Migration 058 adds `members.hide_email`.
+- **Fix.** The admin ClubDesk-update email no longer shows a spurious empty "Phone — → —" row when an optional field was never set.
+
 ## v4.10.0 — 2026-05-18
 
 Coaches and team-responsibles can cancel and reinstate trainings, events, and games.

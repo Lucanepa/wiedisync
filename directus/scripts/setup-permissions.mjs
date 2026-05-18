@@ -268,7 +268,7 @@ const MEMBER_VISIBLE_FIELDS = [
   'id', 'first_name', 'last_name', 'photo', 'number',
   'position', 'licences', 'user',
   'coach_approved_team', 'role', 'language',
-  'requested_team', 'birthdate_visibility', 'hide_phone',
+  'requested_team', 'birthdate_visibility', 'hide_phone', 'hide_email',
   'license_nr', 'sex', 'licence_category', 'licence_activated', 'licence_validated',
   'kscw_membership_active', 'shell', 'shell_expires',
   // 2026-05-12: needed by /teams/* coach-approval queries (sort/filter on
@@ -279,7 +279,7 @@ const MEMBER_VISIBLE_FIELDS = [
 /** Fields a member can update on their own profile */
 const MEMBER_EDITABLE_FIELDS = [
   'first_name', 'last_name', 'phone', 'birthdate', 'email',
-  'birthdate_visibility', 'hide_phone', 'photo', 'language',
+  'birthdate_visibility', 'hide_phone', 'hide_email', 'photo', 'language',
   'position', 'number', 'licences', 'website_visible',
   'requested_team',
   // ClubDesk personal data fields

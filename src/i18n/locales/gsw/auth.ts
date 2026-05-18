@@ -110,6 +110,8 @@ export default {
   privacySection: 'Dateschutz',
   hidePhone: 'Telefonnummere verstecke',
   hidePhoneHint: 'Dini Telefonnummere wird für anderi Mitglieder nöd aazeigt.',
+  hideEmail: 'E-Mail-Adrässe verstecke',
+  hideEmailHint: 'Dini E-Mail-Adrässe wird für anderi Mitglieder nöd aazeigt.',
   birthdateVisibility: 'Geburtstag-Sichtbarkeit',
   birthdateVisibilityFull: 'Vollständig aazeige',
   birthdateVisibilityYearOnly: 'Nur Jahrgang',
@@ -214,4 +216,6 @@ export default {
   clubdeskUpdateSent: 'Datenanpassung an Admin gesendet',
   invalidAhvFormat: 'AHV-Nummer muss das Format 756.XXXX.XXXX.XX haben',
   invalidPlz: 'PLZ muss eine 4-stellige Schweizer Postleitzahl sein',
+  requiredProfileFields: 'Vorname, Nachname und E-Mail sind nötig',
+  invalidEmail: 'Bitte gib e gültigi E-Mail-Adrässe i',
 } as const

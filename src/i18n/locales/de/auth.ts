@@ -110,6 +110,8 @@ export default {
   privacySection: 'Datenschutz',
   hidePhone: 'Telefonnummer verbergen',
   hidePhoneHint: 'Deine Telefonnummer wird für andere Mitglieder nicht angezeigt.',
+  hideEmail: 'E-Mail-Adresse verbergen',
+  hideEmailHint: 'Deine E-Mail-Adresse wird für andere Mitglieder nicht angezeigt.',
   birthdateVisibility: 'Geburtsdatum-Sichtbarkeit',
   birthdateVisibilityFull: 'Vollständig anzeigen',
   birthdateVisibilityYearOnly: 'Nur Jahrgang',
@@ -214,4 +216,6 @@ export default {
   clubdeskUpdateSent: 'Datenanpassung an Admin gesendet',
   invalidAhvFormat: 'AHV-Nummer muss das Format 756.XXXX.XXXX.XX haben',
   invalidPlz: 'PLZ muss eine 4-stellige Schweizer Postleitzahl sein',
+  requiredProfileFields: 'Vorname, Nachname und E-Mail sind erforderlich',
+  invalidEmail: 'Bitte eine gültige E-Mail-Adresse eingeben',
 } as const
